@@ -1,0 +1,46 @@
+---
+name: kata-design-doc
+description: >-
+  Compile a grill's decision ledger + glossary into a single FROZEN design contract — the locked source of
+  truth both planning and execution serve. Use after grilling, before task-planning, to turn resolved
+  decisions into a specific, testable, freeze-ready DESIGN with explicit acceptance and locked decisions.
+version: 0.1.0
+category: plan
+status: experimental
+agnostic: true
+allowed-tools: [Read, Grep, Glob, Write, Edit]
+model: opus
+source: adapted-from mattpocock/skills {to-prd} + superpowers brainstorming + GSD spec-phase
+tags: [plan, freeze, design-contract, spec]
+---
+
+# kata-design-doc — freeze the decisions into a contract
+
+FREEZE turns the grill's output into the **single document execution serves**. It does not introduce new
+decisions — every decision must already be resolved in the ledger ([[kata-grill]]). If the design-doc author
+finds an unresolved branch, that is a signal the grill was incomplete: **return to grilling**, do not decide
+it here.
+
+## Inputs
+The decision ledger (`resources/DECISION-LEDGER.md` shape), the glossary ([[kata-context]]), any ADRs, and
+the original spec/requirements.
+
+## The DESIGN contract MUST contain
+1. **Requirements** it satisfies (traceable IDs where they exist).
+2. **Where it lives** — the exact components/files/insertion points it touches (grounded in the code).
+3. **LOCKED decisions** — each resolved branch from the ledger, restated as a numbered locked decision with
+   its rationale. Mark any tunable knobs explicitly (locked *structure*, tunable *value*).
+4. **The integrity/edge cases** surfaced during grilling and how they're handled.
+5. **Backward-compatibility contract** — what existing behavior must be preserved, stated as a checkable claim.
+6. **Acceptance criteria** — phase-level, **default-FAIL and runnable**: tests/build/security gates with real
+   numbers, plus behavioral assertions (incl. the drift-magnet checks). "Done" is defined here.
+
+## Quality bar (freeze-readiness)
+- Every LOCKED decision is specific enough to execute without re-deciding (the two-builders-can't-diverge test).
+- Acceptance criteria are **falsifiable** — each maps to something a fresh-context evaluator can run/read.
+- Nothing in the doc is "TBD". A TBD means the grill isn't finished.
+- The doc is the *control*: if it feeds an A/B or multiple executors, it must be identical for all of them.
+
+## Output
+A `DESIGN.md` (SCREAMING-KEBAB, durable). Hand to [[kata-plan]] for the task-level execution plan. Once
+written, the DESIGN is **frozen** — changes are deliberate re-freezes, not edits-in-flight ([[kata-orchestrate]]).

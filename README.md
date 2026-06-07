@@ -13,8 +13,12 @@ run improves the harness.
 
 ## Status
 
-Pre-**v0.1** — Claude-only one-shot core, dogfooded by building KataHarness itself, then applied to
-CryptoPortfolioPlanner. Roadmap: `.planning/ROADMAP.md`.
+**v0.1 skill-complete (experimental).** All 10 v0.1 skills built + `kata-review` (adversarial leg). The
+**execution half** (`kata-orchestrate/worktree/board/tdd/evaluate`) is field-proven — it built CPP Phase 3
+green via subagents in isolated worktrees (A/B vs GSD: tied on objective metrics — see
+`.planning/LESSONS-LEARNED.md` L9/L10). The **planning half** (`kata-grill/context/design-doc/plan`) is built
+but not yet field-tested; that is the next validation (an A/B that varies the planning step). Claude-only
+core; adapters + the remaining skills are post-v0.1. Roadmap: `.planning/ROADMAP.md`.
 
 ## The spine
 
@@ -31,10 +35,10 @@ CryptoPortfolioPlanner. Roadmap: `.planning/ROADMAP.md`.
 
 | Skill | Ver | Category | Status | Source | Use |
 |---|---|---|---|---|---|
-| `kata-grill` | 0.0.0 | plan | planned | mattpocock grill-me + grill-with-docs | Relentless doc-grounded interrogation that resolves every decision branch |
-| `kata-context` | 0.0.0 | plan | planned | mattpocock ubiquitous-language | Build/maintain CONTEXT.md shared/ubiquitous language |
-| `kata-design-doc` | 0.0.0 | plan | planned | mattpocock to-prd + brainstorming | Synthesize the frozen design doc / spec |
-| `kata-plan` | 0.0.0 | plan | planned | mattpocock to-issues + GSD/BMAD | Produce the precise, task-level execution plan |
+| `kata-grill` | 0.1.0 | plan | experimental | mattpocock grill-me + grill-with-docs | Relentless doc-grounded interrogation that resolves every decision branch |
+| `kata-context` | 0.1.0 | plan | experimental | mattpocock ubiquitous-language | Build/maintain CONTEXT.md shared/ubiquitous language |
+| `kata-design-doc` | 0.1.0 | plan | experimental | mattpocock to-prd + brainstorming | Synthesize the frozen design doc / spec |
+| `kata-plan` | 0.1.0 | plan | experimental | mattpocock to-issues + GSD/BMAD | Produce the precise, task-level execution plan |
 | `kata-orchestrate` | 0.1.0 | coordinate | experimental | Anthropic harness + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
 | `kata-board` | 0.1.0 | coordinate | experimental | Claude Teams *protocol* (agnostic reimpl) | Append-only mailbox/message board for lateral peer comms |
 | `kata-tasklist` | 0.0.0 | coordinate | planned | Claude Teams *protocol* | Shared, file-locked task claim + dependencies |
@@ -42,8 +46,8 @@ CryptoPortfolioPlanner. Roadmap: `.planning/ROADMAP.md`.
 | `kata-tdd` | 0.1.0 | execute | experimental | mattpocock tdd | Red-green-refactor on a vertical slice |
 | `kata-diagnose` | 0.0.0 | execute | planned | mattpocock diagnose | Systematic debugging loop |
 | `kata-evaluate` | 0.1.0 | evaluate | experimental | Anthropic evaluator | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
-| `kata-review` | 0.0.0 | evaluate | planned | mattpocock review | Adversarial/standards code review |
-| `kata-handoff` | 0.0.0 | handoff | planned | mattpocock handoff + Anthropic reset-with-handoff | Two-way durable handoff (session/agent/tool) |
+| `kata-review` | 0.1.0 | evaluate | experimental | mattpocock review | Adversarial/standards code review |
+| `kata-handoff` | 0.1.0 | handoff | experimental | mattpocock handoff + Anthropic reset-with-handoff | Two-way durable handoff (session/agent/tool) |
 | `kata-selfhandoff` | 0.0.0 | handoff | planned | Anthropic compaction + mattpocock caveman | Configurable context-threshold self-handoff |
 | `kata-write-skill` | 0.0.0 | meta | planned | mattpocock write-a-skill | Author new skills to this standard |
 | `kata-improve` | 0.0.0 | meta | planned | Improvement Kata + improve-codebase-architecture | Fold lessons back into the harness |

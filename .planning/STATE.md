@@ -18,15 +18,26 @@
   fresh-context `kata-evaluate` 9/9 PASS, **0 drift / 0 escalations / 0 human interventions** ([[LESSONS-LEARNED]] L9).
 - Arm A lives on CPP branch `test/phase3-kata` (worktree `C:/Dev/_kata_armA/integration`).
 
+## Also done (2026-06-06, cont.)
+- **A/B verdict recorded: TIE** ([[LESSONS-LEARNED]] L10). Arm B (GSD) matched Arm A on every objective
+  metric incl. the identical in-lane auto-fix → execution half on-par, not better; differentiation lives in
+  the (frozen-for-both) planning half. User shipping Arm B to CPP `main`.
+- **Built the remaining v0.1 planning skills + the adversarial leg** → all `0.1.0/experimental`:
+  `kata-grill` (deep, to the L8 standard: GSD-format choice-or-text questions, relentless + doc-grounded,
+  doc-baking, convergence criteria, anti-shallow guard + a `resources/DECISION-LEDGER.md`),
+  `kata-context`, `kata-design-doc`, `kata-plan` (disjoint file-ownership + wave DAG), `kata-handoff`,
+  and **`kata-review`** (adversarial/red-team — the EVALUATE leg the A/B exposed as missing, L10).
+- **v0.1 is now skill-complete: 11 skills built** (the 10 + kata-review). README index promoted.
+
 ## Next action (in order)
-1. **Get Arm B numbers + render the A/B verdict.** User is running standard GSD as Arm B on CPP
-   `phase-3/gsd-baseline`. Compare one-shot-to-green / plan-drift / interventions / gate-integrity / hygiene
-   (per `docs/TEST-PLAN.md`); record the verdict in `LESSONS-LEARNED.md`. Decide which branch CPP keeps.
-2. **Fix the weak link: `kata-grill` (see [[LESSONS-LEARNED]] L8).** GSD-format clickable-or-plain-text
-   questions, iterative + demanding, grill-with-docs thoroughness + doc-baking, converging on a *very
-   specific* design contract. The one-pass WoZ grill is below standard.
-3. **Build the remaining v0.1 planning skills** (`kata-context, kata-design-doc, kata-plan`) + `kata-handoff`
-   to `docs/STANDARDS.md` frontmatter; then bump README + suite version.
+1. **The real test: an A/B that VARIES the planning step.** This run froze the spec for both arms, so the
+   grill (the differentiator) was untested. Next: pick a fresh complex task; Arm A plans via `kata-grill`→
+   `kata-design-doc`→`kata-plan` for real, Arm B via GSD planning; then execute + compare. Only this can
+   show whether the grill earns the harness's complexity ([[LESSONS-LEARNED]] L10).
+2. **Field-test `kata-grill` itself** — its depth is built but unproven on a live user. Watch for: does it
+   actually converge on a *more specific* contract than the WoZ survey did?
+3. **Backlog (post-v0.1):** `kata-diagnose, kata-tasklist, kata-selfhandoff, kata-write-skill, kata-improve,
+   kata-zoom-out, kata-engram`; adapters (`claude/codex/kiro/acp-quick`); set a git remote before public release.
 
 ## Model per stage
 Build KataHarness → **Opus 4.8**. CPP test arms → **Sonnet 4.6** (constant across arms). I pin subagent
