@@ -10,7 +10,7 @@ status: experimental
 agnostic: true
 allowed-tools: [Read, Grep, Glob, Write, Edit]
 model: opus
-source: adapted-from mattpocock/skills {to-issues} + GSD plan-phase + BMAD role-agents + CPP plan format
+source: adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format
 tags: [plan, freeze, file-ownership, dag, waves]
 ---
 
@@ -20,6 +20,13 @@ The plan is the contract [[kata-orchestrate]] enforces. Its job is to make execu
 is small, owns a disjoint slice of files, has a runnable gate, and slots into a dependency DAG. **The plan
 adds no new decisions** — it only sequences the frozen DESIGN. An unresolved decision here means the grill /
 design-doc was incomplete; go back, don't decide in the plan.
+
+## Decompose vertically FIRST, then assign ownership
+Decompose by **vertical tracer-slices** — each task cuts through the layers it needs end-to-end (mattpocock
+to-issues; [[kata-tdd]] "vertical slices, never horizontal"). THEN take each slice's touched files as its
+ownership set. **File-ownership is the isolation mechanism, not the decomposition axis** — never carve
+horizontal layer-tasks just to make files disjoint. If two vertical slices genuinely share a file, sequence
+them in the DAG (one wave after another) rather than splitting into horizontal layers.
 
 ## The load-bearing property: DISJOINT file ownership
 Partition the work so **no file is owned by two tasks.** This is what lets concurrent workers run in isolated

@@ -21,6 +21,11 @@ decisions — every decision must already be resolved in the ledger ([[kata-gril
 finds an unresolved branch, that is a signal the grill was incomplete: **return to grilling**, do not decide
 it here.
 
+## Precondition — the ledger passed its adversarial gate
+Do not freeze a ledger that hasn't passed [[kata-grill]]'s fresh-context convergence check ([[kata-review]]).
+Freezing an un-audited ledger just launders an under-specified grill into a "frozen" contract. No gate → back
+to grilling.
+
 ## Inputs
 The decision ledger (`resources/DECISION-LEDGER.md` shape), the glossary ([[kata-context]]), any ADRs, and
 the original spec/requirements.
@@ -34,8 +39,12 @@ the original spec/requirements.
 5. **Backward-compatibility contract** — what existing behavior must be preserved, stated as a checkable claim.
 6. **Acceptance criteria** — phase-level, **default-FAIL and runnable**: tests/build/security gates with real
    numbers, plus behavioral assertions (incl. the drift-magnet checks). "Done" is defined here.
+7. **Test seams / testability** — the highest seam(s) at which the work will be tested + any testing
+   decisions, so the EXECUTE TDD phase builds to them (mattpocock to-prd).
 
 ## Quality bar (freeze-readiness)
+- **Trade-offs over verdicts** (BMAD): each LOCKED decision records the trade-off and the rejected
+  alternative, not just the pick — favor boring, reversible technology where the call is close.
 - Every LOCKED decision is specific enough to execute without re-deciding (the two-builders-can't-diverge test).
 - Acceptance criteria are **falsifiable** — each maps to something a fresh-context evaluator can run/read.
 - Nothing in the doc is "TBD". A TBD means the grill isn't finished.

@@ -25,6 +25,11 @@ glossary and **nothing else** — not a spec, not a scratchpad, not a home for i
 - Works hand-in-glove with [[kata-grill]]: when grilling resolves or sharpens a term, capture it here
   immediately (inline, not batched).
 
+## Relationship to [[kata-grill]] (no duplication)
+During a grill, [[kata-grill]] captures terms inline using *this* format and these rules. `kata-context` owns
+**standalone glossary maintenance** and **multi-context maps** outside a grill (e.g. a later refactor that
+renames a concept). One glossary, one format, two entry points — the rules live here; the grill references them.
+
 ## Rules (from grill-with-docs CONTEXT-FORMAT)
 - **Be opinionated.** When several words mean one concept, pick the best; list the rest under `_Avoid_:`.
 - **Tight definitions.** One or two sentences. Define what it IS, not what it does.

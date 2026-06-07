@@ -26,11 +26,14 @@ Handoffs flow every direction — session↔session, agent↔agent, tool↔tool.
    usually "confirm green," so give the expected numbers.
 3. **What shipped** — concretely, with paths; what is committed where.
 4. **NEXT STEP — in order** — the precise next actions, so the resumer starts *doing*, not deciding.
-5. **Open decisions for the human** — anything genuinely blocked on a person.
-6. **Redaction** — confirm no secrets/keys/PII (and redact if any).
+5. **Suggested next skills** — which kata-* the resumer will likely invoke next (orients them fast).
+6. **Open decisions for the human** — anything genuinely blocked on a person.
+7. **Redaction** — confirm no secrets/keys/PII (and redact if any).
 
 ## Discipline
 - **Durable first, compact second.** Write + git-commit the handoff BEFORE any `/compact` or session end.
+  *(Deliberate inversion of mattpocock handoff, which saves to OS temp — this harness goes durable / in-workspace
+  / git so handoffs survive as audit artifacts and cross sessions, agents, and tools.)*
 - **Point to paths; don't re-derive.** List artifacts by path so the resumer reads, not re-discovers.
 - **Anchor on the plan.** A resumer must be able to re-enter the loop at the exact task boundary.
 - Keep it dense (caveman-style compression is fine) but lossless on the NEXT STEP and the green numbers.

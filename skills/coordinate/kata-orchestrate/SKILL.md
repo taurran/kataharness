@@ -9,7 +9,7 @@ version: 0.1.0
 category: coordinate
 status: experimental
 agnostic: true
-allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit]
+allowed-tools: [Read, Grep, Glob, Bash, Write, Agent]   # Agent = the Claude-adapter binding of the abstract "dispatch worker" capability; v0.1 ships only the Claude adapter
 model: opus
 source: >-
   adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents
@@ -34,8 +34,12 @@ does not drift.**
 For each **wave** in dependency order:
 1. **Isolate.** Use [[kata-worktree]] to give each task-owner in the wave its own worktree on a per-task
    branch (sequential single-task waves may run directly on the integration branch).
-2. **Dispatch one subagent per task** (Agent tool, implementer model pinned — typically the cheaper
-   workhorse, held constant across any A/B). Each subagent prompt MUST carry, and ONLY carry, its task:
+2. **Dispatch one worker subagent per task** via the host's subagent mechanism *(adapter binding: Claude →
+   the `Agent` tool; other hosts → their subagent/ACP call — the capability is abstract, the binding is the
+   adapter's job)*. Pin the implementer model to the cheaper workhorse, held constant across any A/B. Each
+   worker prompt MUST carry, and ONLY carry, its task:
+   - an instruction to **execute via [[kata-tdd]]** (the worker's execute-phase discipline — vertical
+     red→green, stay in lane, escalate don't re-plan);
    - the task's `<action>`, `<read_first>`, `<acceptance_criteria>`, and its **owned files** (it may edit
      nothing else);
    - the rule: *"Execute against the frozen plan. Do not re-plan or re-decide any LOCKED decision. If you

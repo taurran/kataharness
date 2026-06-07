@@ -35,6 +35,9 @@ integration branch to grade.
 4. **Ownership respected.** Each task touched only its owned files; concurrent merges were conflict-free.
 5. **No scope creep.** Nothing built beyond the plan; no speculative features; no unrelated edits.
 6. **Backward-compatibility.** Pre-existing behavior/tests preserved where the plan promised it.
+7. **Standards conformance.** The change follows the repo's *documented* standards — `AGENTS.md`, the
+   `CONTEXT.md` glossary, ADRs, coding conventions — not only the spec (conformance-to-spec ≠
+   conformance-to-house-rules; mattpocock review's Standards axis).
 
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,

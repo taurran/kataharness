@@ -10,7 +10,7 @@ category: evaluate
 status: experimental
 agnostic: true
 allowed-tools: [Read, Grep, Glob, Bash]
-source: adapted-from mattpocock/skills {review} + CryptoPortfolioPlanner cpp-adversarial-validation
+source: adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate)
 tags: [evaluate, adversarial, red-team, no-write]
 ---
 

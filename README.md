@@ -29,6 +29,9 @@ core; adapters + the remaining skills are post-v0.1. Roadmap: `.planning/ROADMAP
 5. **Two-way, file-based handoff** + configurable self-handoff (anti-context-rot, not over-conservative).
 6. **Everything versioned** — per-skill semver in frontmatter; this index is the source of truth.
 
+> **v0.1 status:** spine #1, #2, #4, #6 are implemented in the built skills; #3 (agnostic *adapters*) and #5
+> (*self-handoff* automation) are designed but not yet built. See Status and `.planning/REVIEW-v0.1.md`.
+
 ## Skill index (source of truth — name · version · category · status · source · use)
 
 > All `0.0.0 / planned` until built. `source` records provenance (we stand on shoulders and attribute).
@@ -58,12 +61,12 @@ core; adapters + the remaining skills are post-v0.1. Roadmap: `.planning/ROADMAP
 
 ```
 AGENTS.md  CLAUDE.md(pointer)
-docs/      DESIGN · ARCHITECTURE · STANDARDS · TAXONOMY
-skills/    plan/ coordinate/ execute/ evaluate/ handoff/ meta/ cognition/
-adapters/  claude/ codex/ kiro/ acp-quick/
-protocol/  board · tasklist · state · handoff (agnostic file schemas)
+docs/      DESIGN · STANDARDS · TEST-PLAN            (ARCHITECTURE · TAXONOMY: planned)
+skills/    plan/ coordinate/ execute/ evaluate/ handoff/   (meta/ cognition/: planned)
+protocol/  board · state · handoff                  (tasklist: planned)
 research/  reference/ (vendored: mattpocock, BMAD; gitignored) · NOTES.md
-.planning/ PROJECT · CONTEXT · ROADMAP · STATE · DECISIONS · STEERING · LESSONS-LEARNED · BACKLOG
+.planning/ PROJECT · ROADMAP · STATE · DECISIONS · LESSONS-LEARNED · REVIEW-v0.1 · BACKLOG · STEERING
+adapters/  (planned — v0.1 is a Claude-only core)
 ```
 
 ## License

@@ -8,7 +8,9 @@
   (versioned skill index). `.planning/{PROJECT,ROADMAP,DECISIONS(14),LESSONS-LEARNED(7),BACKLOG,STATE,STEERING}.md`.
 - Reference skills vendored (gitignored): `research/reference/{mattpocock-skills,bmad-method}`; GSD local
   at `~/.claude/get-shit-done`.
-- **0 `kata-*` skills built yet** — all 18 in the README index are `0.0.0 / planned`. v0.1 = 10 skills.
+- **11 `kata-*` skills built** (the v0.1 ten + `kata-review`), all `0.1.0/experimental`; 7 remain
+  `0.0.0/planned` (diagnose, tasklist, selfhandoff, write-skill, improve, zoom-out, engram). The README
+  index is the source of truth. (Adversarial-reviewed 2026-06-06 → `.planning/REVIEW-v0.1.md`; fixes applied.)
 - **CPP baseline frozen** for the test: tag `cpp-phase2-baseline` pushed (220 tests green).
 
 ## Done so far (this session, 2026-06-06)

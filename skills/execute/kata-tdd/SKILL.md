@@ -43,6 +43,13 @@ pure data/config tasks with no new logic, "test" = the project's structural/vali
 After the task's behaviors pass: extract duplication, deepen modules, run the gate after each step. Never
 refactor while RED. Never add speculative features beyond the task.
 
+## Supporting depth (principles; full reference port is backlog)
+TDD quality rests on **deep modules** (small interface, deep implementation), **testable interface design**,
+disciplined **mocking** (test through public interfaces; don't mock internal collaborators — that couples
+tests to implementation), and **refactoring** patterns. v0.1 names these as principles; mattpocock tdd's full
+reference set (deep-modules / interface-design / mocking / tests / refactoring) is a backlog port. When a
+boundary or mocking question arises, prefer integration-style tests through the public interface.
+
 ## Report
 When your `<verify>` passes and you touched only owned files: append `DONE` to [[kata-board]] with the verify
 result, and hand the diff back for the orchestrator's gate. If blocked: `BLOCK`/`ESCALATE` and stop.

@@ -30,7 +30,8 @@ tags: [planning, grilling, ddd]  # OPTIONAL. Obsidian tags
 - `name` MUST equal the directory name and start with the `kata-` prefix.
 - `description` is the *only* thing a host model sees when deciding to invoke — make it trigger-rich.
 - `allowed-tools` enforces least privilege **structurally** (not by prose). Evaluator skills MUST omit
-  Write/Edit. This is the Anthropic "fresh-context, no-write evaluator" made structural.
+  Write/Edit (the Anthropic "fresh-context, no-write evaluator" made structural). Note: this is "no Write/Edit
+  tool," not a sandbox — `Bash` may remain for *running* gate commands; an evaluator must never author artifacts.
 - `agnostic: false` is allowed only inside `adapters/<tool>/` skills; core `skills/**` MUST be `true`.
 - `source:` is mandatory whenever a skill is derived from external work — we stand on shoulders *and
   attribute*.

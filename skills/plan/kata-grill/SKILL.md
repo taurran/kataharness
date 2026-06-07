@@ -71,6 +71,10 @@ As each branch resolves, capture it *then and there*:
 - **Decision ledger** — append every resolved branch (chosen option, rejected alternatives, rationale,
   provenance) to the running ledger. This is the raw material the FREEZE phase ([[kata-design-doc]]) compiles
   into the contract. See `resources/DECISION-LEDGER.md`.
+- **Checkpoint after EVERY resolved branch** (append to the ledger *before* posing the next question) so an
+  interrupted grill loses nothing — the ledger is the durable recovery point (GSD discuss-phase checkpointing).
+- **User-cited docs:** when the user points to a doc/source mid-grill, read it, add it to the canonical
+  references, and let it answer open branches before you ask more.
 
 ## Convergence criteria — the grill is DONE only when ALL hold
 - [ ] Every enumerated branch is resolved with a chosen option + rationale (none left "TBD").
@@ -81,6 +85,14 @@ As each branch resolves, capture it *then and there*:
       (the operational test: could two independent builders read this and diverge? If yes, keep grilling).
 
 If any box is unchecked, you are not done — return to Phase 1. Stopping early is the failure mode.
+
+## Don't grade your own convergence (the structural backstop)
+The criteria above are necessary but **self-assessed** — and the griller shares the exact bias that triggered
+[[LESSONS-LEARNED]] L8: stopping at the first plausible answer and *believing* it sufficed. So before
+declaring the grill done, hand the decision ledger to a **fresh-context adversarial check** ([[kata-review]],
+in its "could two independent builders still diverge here?" mode). This mirrors the no-write evaluator in
+EXECUTE — the one who did the work does not certify it. Only when that fresh pass returns SHIP is the grill
+complete; a HOLD names the under-specified branch → back to Phase 1.
 
 ## Handoff to FREEZE
 Output = the **decision ledger** + the updated **glossary** + any **ADRs**. These are consumed by

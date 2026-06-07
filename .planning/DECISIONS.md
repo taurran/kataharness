@@ -37,3 +37,11 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   Phase-3 design+plan to both.** Metrics: one-shot-to-green, plan-drift (target 0, esp. sleeve
   classification), interventions, gate integrity, handoff recovery, hygiene. **Validate the loop manually
   (Wizard-of-Oz) before building all skills.**
+- **D15 — Adversarial review (`kata-review`, fresh-context) is mandatory on everything built here, ≥ once,
+  before it is called done.** *Why:* the v0.1 adversarial pass (`.planning/REVIEW-v0.1.md`) caught real
+  defects a conformance gate missed — over-claims, source name-drops, the griller grading itself, a racy
+  board. Conformance ≠ correctness ([[LESSONS-LEARNED]] L6/L10). This is now standing process, not optional.
+- **D16 — v0.1 is NOT "validated" until a planning-VARIED A/B.** *Why:* the first A/B froze the plan for both
+  arms and tied (L10), so the harness's hypothesized edge (the grill) is untested. The ship-gate for calling
+  KataHarness validated is an A/B where Arm A plans via `kata-grill`→`kata-design-doc`→`kata-plan` for real
+  vs a GSD-planned baseline. Until then, v0.1 is "experimental, execution-half-proven."
