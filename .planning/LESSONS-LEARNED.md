@@ -65,3 +65,25 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
     `phase-3/gsd-baseline`) for the one-shot/drift/intervention comparison.
   *Baked in:* the 5 execution skills are `0.1.0/experimental` and proven on a real complex task. Next: get
   Arm B's numbers, then either tie/win → keep; or fold gaps back via `kata-improve`.
+- **L10 — A/B VERDICT: TIE. The execution half is on-par with GSD, not better — by the TEST-PLAN's own bar
+  the harness did not earn its complexity on this task.** Arm B (GSD baseline) landed green independently:
+  246 tests, det build 319,734 B, Snyk 0, gsd-verifier 5/5, **0 drift, 1 in-lane auto-fix, 0 escalations,
+  0 interventions** — i.e. **identical objective outcome to Arm A** (244 tests / det build / Snyk 0 /
+  kata-evaluate 9/9 / 0 drift / **the SAME 1 auto-fix** / 0 escalations / 0 interventions). TEST-PLAN bar:
+  "passes if Arm A reaches green with 0 drift AND *fewer* interventions; a mere tie means it isn't earning
+  its complexity." Interventions/drift were EQUAL → **tie, not a win.** *Why, and the lesson:*
+  1. **The test froze the spec+plan for both arms, so only EXECUTION was measured** — and both arms' execution
+     is the same shape ("dispatch workers per a frozen 4-task plan, gate, verify"). A tie there was near-baked-in.
+  2. **Both arms independently hit the identical hidden bug** (`macroBucket` stripped from the call-site inputs
+     projection → gate silently no-ops) and **both auto-fixed it in-lane in T4.** That convergence is strong
+     evidence the **frozen plan did the heavy lifting**, not the worktree/board/concurrency machinery.
+  3. KataHarness's differentiators (true T2‖T3 concurrency, worktree isolation, append-only board) bought **no
+     correctness edge** here; the objective metrics don't capture the one axis they'd help (wall-clock/throughput),
+     which is also confounded by the orchestrator running on Opus while workers ran Sonnet.
+  4. **The harness's real hypothesized value-add is the GRILL/PLAN half** (deep doc-grounded interrogation →
+     a better frozen spec) — and that was **hand-done identically for both arms**, so this A/B was structurally
+     blind to it. Ties back to [[L8]]: the grill is both the weak link AND the untested differentiator.
+  *Baked in:* (a) the **next A/B must VARY the planning step**, not freeze it — that's where differentiation
+  lives; (b) building `kata-grill` to the [[L8]] standard is now the load-bearing work, not optional polish;
+  (c) we also surfaced a loop gap — only `kata-evaluate` (conformance) ran, not `kata-review` (adversarial);
+  **neither arm got adversarial validation at all.** `kata-review` should join v0.1's evaluate phase. See `[[kata-review]]`.
