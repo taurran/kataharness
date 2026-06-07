@@ -1,0 +1,68 @@
+---
+name: kata-orchestrate
+description: >-
+  Plan-guardian orchestration for executing a FROZEN design+plan via subagents. Use to drive a phase build
+  end-to-end from a frozen PLAN: assign tasks by the wave/file-ownership DAG, dispatch one scoped subagent
+  per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
+  line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
+version: 0.1.0
+category: coordinate
+status: experimental
+agnostic: true
+allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit]
+model: opus
+source: >-
+  adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents
+tags: [coordinate, orchestration, plan-guardian, no-drift]
+---
+
+# kata-orchestrate — drive the frozen plan, dispatch, gate, hold the line
+
+You are the **plan-guardian**. You own the frozen DESIGN + PLAN, task assignment, the file-ownership
+partition, and the gates. Workers execute against the frozen plan and **never re-plan** — discovered
+unknowns ESCALATE to you (via [[kata-board]]) for a *deliberate* decision. This is the spine: **the plan
+does not drift.**
+
+## Preconditions (verify before any dispatch)
+1. A **frozen** PLAN exists with a wave/ownership DAG (e.g. `ownership:` + `waves:` + `depends_on:` in
+   frontmatter). If the plan is not frozen, stop — planning is a different phase.
+2. The target repo is **green at the fork point** (run its test/build gate; record the baseline numbers).
+3. The **file-ownership partition is disjoint** — no file appears under two tasks. If it isn't, the plan is
+   not executable concurrently; escalate to re-freeze, do not improvise.
+
+## The loop
+For each **wave** in dependency order:
+1. **Isolate.** Use [[kata-worktree]] to give each task-owner in the wave its own worktree on a per-task
+   branch (sequential single-task waves may run directly on the integration branch).
+2. **Dispatch one subagent per task** (Agent tool, implementer model pinned — typically the cheaper
+   workhorse, held constant across any A/B). Each subagent prompt MUST carry, and ONLY carry, its task:
+   - the task's `<action>`, `<read_first>`, `<acceptance_criteria>`, and its **owned files** (it may edit
+     nothing else);
+   - the rule: *"Execute against the frozen plan. Do not re-plan or re-decide any LOCKED decision. If you
+     hit an unknown or the plan seems wrong, STOP and ESCALATE via the board — do not improvise."*
+   - the per-task verify command (default-FAIL).
+   Parallel tasks in a wave → dispatch concurrently (background); each in its own worktree.
+3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
+   verify (tests + security scan). Not done until evidence is read and passes. Confirm it touched **only its
+   owned files** (drift check). 
+4. **Integrate.** Merge each completed task branch into the integration branch ([[kata-worktree]] — disjoint
+   files merge cleanly by construction). Re-run the gate on the integration branch.
+5. **Commit at the checkpoint** (conventional commit + project trailer) so compaction can't lose work.
+
+## Escalation (the no-re-plan escape valve)
+A subagent escalation (BLOCK/ESCALATE on the board) is an **event**, not a habit. On escalation: read it,
+make a *deliberate* decision yourself (you are the only one allowed to alter the plan), record it, and
+re-dispatch a tightened task. If the escalation reveals a LOCKED decision is wrong, **stop and escalate to
+the human** — do not silently re-decide it (that is the exact drift the harness exists to prevent).
+
+## Final gate
+After the last wave, on the integration branch:
+1. Full default-FAIL gate green (tests + security + deterministic build).
+2. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK.
+3. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
+4. Commit; if a handoff is needed, [[kata-handoff]].
+
+## Drift ledger (for A/B / audit)
+Track, as you go: unauthorized deviations from LOCKED decisions (target **0**), files touched outside
+ownership, human interventions, escalations, and whether the gate caught real issues. This is the evidence
+the run is judged on.

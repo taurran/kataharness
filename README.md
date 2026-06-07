@@ -35,13 +35,13 @@ CryptoPortfolioPlanner. Roadmap: `.planning/ROADMAP.md`.
 | `kata-context` | 0.0.0 | plan | planned | mattpocock ubiquitous-language | Build/maintain CONTEXT.md shared/ubiquitous language |
 | `kata-design-doc` | 0.0.0 | plan | planned | mattpocock to-prd + brainstorming | Synthesize the frozen design doc / spec |
 | `kata-plan` | 0.0.0 | plan | planned | mattpocock to-issues + GSD/BMAD | Produce the precise, task-level execution plan |
-| `kata-orchestrate` | 0.0.0 | coordinate | planned | Anthropic harness + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
-| `kata-board` | 0.0.0 | coordinate | planned | Claude Teams *protocol* (agnostic reimpl) | Append-only mailbox/message board for lateral peer comms |
+| `kata-orchestrate` | 0.1.0 | coordinate | experimental | Anthropic harness + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
+| `kata-board` | 0.1.0 | coordinate | experimental | Claude Teams *protocol* (agnostic reimpl) | Append-only mailbox/message board for lateral peer comms |
 | `kata-tasklist` | 0.0.0 | coordinate | planned | Claude Teams *protocol* | Shared, file-locked task claim + dependencies |
-| `kata-worktree` | 0.0.0 | coordinate | planned | CPP worktree proof | Per-owner git-worktree isolation for concurrent code |
-| `kata-tdd` | 0.0.0 | execute | planned | mattpocock tdd | Red-green-refactor on a vertical slice |
+| `kata-worktree` | 0.1.0 | coordinate | experimental | CPP worktree proof | Per-owner git-worktree isolation for concurrent code |
+| `kata-tdd` | 0.1.0 | execute | experimental | mattpocock tdd | Red-green-refactor on a vertical slice |
 | `kata-diagnose` | 0.0.0 | execute | planned | mattpocock diagnose | Systematic debugging loop |
-| `kata-evaluate` | 0.0.0 | evaluate | planned | Anthropic evaluator | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
+| `kata-evaluate` | 0.1.0 | evaluate | experimental | Anthropic evaluator | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
 | `kata-review` | 0.0.0 | evaluate | planned | mattpocock review | Adversarial/standards code review |
 | `kata-handoff` | 0.0.0 | handoff | planned | mattpocock handoff + Anthropic reset-with-handoff | Two-way durable handoff (session/agent/tool) |
 | `kata-selfhandoff` | 0.0.0 | handoff | planned | Anthropic compaction + mattpocock caveman | Configurable context-threshold self-handoff |
