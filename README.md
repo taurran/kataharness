@@ -13,12 +13,14 @@ run improves the harness.
 
 ## Status
 
-**v0.1 skill-complete (experimental).** All 10 v0.1 skills built + `kata-review` (adversarial leg). The
+**v0.1 skill-complete (experimental).** All 15 skills built (the v0.1 ten + `kata-review` + the
+v0.2-pulled-forward four: `kata-diagnose`, `kata-selfhandoff`, `kata-improve`, `kata-write-skill`). The
 **execution half** (`kata-orchestrate/worktree/board/tdd/evaluate`) is field-proven — it built CPP Phase 3
 green via subagents in isolated worktrees (A/B vs GSD: tied on objective metrics — see
 `.planning/LESSONS-LEARNED.md` L9/L10). The **planning half** (`kata-grill/context/design-doc/plan`) is built
 but not yet field-tested; that is the next validation (an A/B that varies the planning step). Claude-only
-core; adapters + the remaining skills are post-v0.1. Roadmap: `.planning/ROADMAP.md`.
+core; adapters + the 3 remaining skills (`kata-tasklist`, `kata-zoom-out`, `kata-engram`) are post-v0.1.
+Roadmap: `.planning/ROADMAP.md`.
 
 ## The spine
 
@@ -29,8 +31,8 @@ core; adapters + the remaining skills are post-v0.1. Roadmap: `.planning/ROADMAP
 5. **Two-way, file-based handoff** + configurable self-handoff (anti-context-rot, not over-conservative).
 6. **Everything versioned** — per-skill semver in frontmatter; this index is the source of truth.
 
-> **v0.1 status:** spine #1, #2, #4, #6 are implemented in the built skills; #3 (agnostic *adapters*) and #5
-> (*self-handoff* automation) are designed but not yet built. See Status and `.planning/REVIEW-v0.1.md`.
+> **v0.1 status:** spine #1, #2, #4, #5, #6 are implemented in the built skills; only #3 (agnostic *adapters*)
+> remains — v0.1 is a Claude-only core. See Status and `.planning/REVIEW-v0.1.md`.
 
 ## Skill index (source of truth — name · version · category · status · source · use)
 
@@ -62,7 +64,7 @@ core; adapters + the remaining skills are post-v0.1. Roadmap: `.planning/ROADMAP
 ```
 AGENTS.md  CLAUDE.md(pointer)
 docs/      DESIGN · STANDARDS · TEST-PLAN            (ARCHITECTURE · TAXONOMY: planned)
-skills/    plan/ coordinate/ execute/ evaluate/ handoff/   (meta/ cognition/: planned)
+skills/    plan/ coordinate/ execute/ evaluate/ handoff/ meta/   (cognition/: planned)
 protocol/  board · state · handoff                  (tasklist: planned)
 research/  reference/ (vendored: mattpocock, BMAD; gitignored) · NOTES.md
 .planning/ PROJECT · ROADMAP · STATE · DECISIONS · LESSONS-LEARNED · REVIEW-v0.1 · BACKLOG · STEERING

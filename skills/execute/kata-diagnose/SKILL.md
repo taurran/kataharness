@@ -20,7 +20,8 @@ Boundary with [[kata-tdd]]: tdd builds *new* behavior where RED is *expected* (y
 `kata-diagnose` is for *unexpected* RED — a regression, a should-pass test failing, broken/throwing behavior
 you can't green in one step. A worker switches tdd→diagnose only on a failure it can't immediately explain.
 Kata constraints still apply: **stay in your owned files; don't re-plan; escalate via [[kata-board]] if the
-fix needs a file you don't own or the plan looks wrong.**
+fix needs a file you don't own or the plan looks wrong.** Ground your mental model in the domain glossary
+([[kata-context]] / `CONTEXT.md`) and any ADRs / decision-ledger entries for the area before hypothesising.
 
 ## Phase 1 — Build a feedback loop (this IS the skill)
 A fast, deterministic, agent-runnable pass/fail signal for the bug. With it, bisection / hypothesis-testing /

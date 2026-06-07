@@ -39,4 +39,4 @@ Handoffs flow every direction — session↔session, agent↔agent, tool↔tool.
 - Keep it dense (caveman-style compression is fine) but lossless on the NEXT STEP and the green numbers.
 
 Self-handoff at a context threshold (write → compact → resume) is a related capability; prefer a
-**task-boundary** trigger over an arbitrary % so no mid-task state is lost. (See `kata-selfhandoff`, backlog.)
+**task-boundary** trigger over an arbitrary % so no mid-task state is lost. (Automated by [[kata-selfhandoff]].)

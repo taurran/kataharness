@@ -16,5 +16,5 @@ tags) — it is meant to be read by a human or a fresh agent ([[STANDARDS]] §5)
   7. **Redaction** — confirm no secrets/keys/PII.
 - **Frontmatter:** `date`, `branch`, `commit`, `green` (the gate numbers), `tags`.
 - **Self-handoff** (write→compact→resume at a context threshold) uses this same schema; prefer a
-  **task-boundary** trigger. The self-handoff *automation* is `kata-selfhandoff` (backlog); the artifact
+  **task-boundary** trigger. The self-handoff *automation* is [[kata-selfhandoff]]; the artifact
   shape is this file either way.

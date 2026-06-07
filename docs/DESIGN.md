@@ -54,11 +54,11 @@ everything versioned. These are the load-bearing invariants; features serve them
 | **HANDOFF** | `kata-handoff`, `kata-selfhandoff` | Two-way durable handoff; self-handoff at a configurable context threshold |
 | **IMPROVE** | `kata-improve`, `kata-zoom-out`, `kata-write-skill` | Fold lessons back; the harness improves itself |
 
-> **v0.1 built:** kata-grill, kata-context, kata-design-doc, kata-plan, kata-orchestrate, kata-board,
-> kata-worktree, kata-tdd, kata-evaluate, kata-handoff (+ kata-review, the adversarial EVALUATE leg).
-> **Not yet built (backlog):** kata-tasklist, kata-diagnose, kata-selfhandoff, kata-improve, kata-zoom-out,
-> kata-write-skill, kata-engram — the rows above that name these describe the intended loop, not shipped v0.1.
-> The IMPROVE phase in particular is not yet automated (improvement today = a human folding LESSONS-LEARNED back).
+> **Built (15, all `0.1.0`):** kata-grill, kata-context, kata-design-doc, kata-plan, kata-orchestrate,
+> kata-board, kata-worktree, kata-tdd, kata-diagnose, kata-evaluate, kata-review, kata-handoff,
+> kata-selfhandoff, kata-improve, kata-write-skill — the full loop GRILL→…→IMPROVE is wired.
+> **Not yet built:** kata-tasklist (deferred — needs worker self-selection; redundant with state.json + the
+> plan DAG today), kata-zoom-out (deferred — too thin), kata-engram (backlog, D9, gated on a mature engram).
 
 ## Planning engine (the one-shot enabler)
 
