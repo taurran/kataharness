@@ -19,6 +19,10 @@
    kata-orchestrate, kata-board, kata-worktree, kata-tdd, kata-evaluate, kata-handoff`. ~7 are adaptations
    of vendored mattpocock skills + the CPP `cpp-*` skills; only `kata-board`, `kata-worktree`, and
    `kata-plan` file-ownership are new. Each to `docs/STANDARDS.md` frontmatter (semver, source, allowed-tools).
+   **PRIORITY / weakest link (see [[LESSONS-LEARNED]] L8):** `kata-grill` must be MUCH deeper than the WoZ
+   manual grill — GSD-format clickable-or-plain-text questions, iterative + demanding, grill-with-docs
+   thoroughness + doc-baking, converging on a *very specific* design contract. The one-pass "4 decisions +
+   recommendations" used in the WoZ is explicitly below standard. Get the grill right first.
 3. **Re-run the automated A/B** on CPP Phase 3 (Sonnet) for the real result; record in `LESSONS-LEARNED.md`.
 
 ## Model per stage
