@@ -7,8 +7,10 @@ Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED
   (plan-guardian), `kata-board`, `kata-worktree`, `kata-tdd`, `kata-evaluate`, `kata-handoff`.
   Frontmatter/versioning/naming standard applied. **Dogfood: KataHarness builds itself**, then run it
   on CryptoPortfolioPlanner. No multi-tool adapters yet.
-- [ ] **v0.2 — Self-handoff + concurrency.** `kata-selfhandoff` (configurable threshold), `kata-tasklist`
-  (file-locked), multi-agent append-only board, `kata-diagnose`, `kata-review`, `kata-improve`.
+- [~] **v0.2 — Self-handoff + concurrency.** PULLED FORWARD into the v0.1 build: `kata-selfhandoff`,
+  `kata-diagnose`, `kata-review`, `kata-improve` (+ meta `kata-write-skill`) all built. **Remaining for v0.2:**
+  `kata-tasklist` (file-locked self-claim) + the multi-agent self-claim model — deferred until workers
+  self-select (today the orchestrator assigns, so it's redundant with state.json + the plan DAG).
 - [ ] **v0.3 — Adapters: Codex + Kiro.** `adapters/codex`, `adapters/kiro`; AGENTS.md normalization
   across tools; skill-format mapping; portability tests.
 - [ ] **v0.4 — ACP/Quick + cognition.** `adapters/acp-quick` (orchestrator-in-desktop via ACP);
@@ -20,5 +22,6 @@ then dogfood `kata-grill` to spec v0.1's first skills.
 ## Progress
 | Milestone | Status |
 |---|---|
-| v0.1 core | Foundation laid (docs/standards); skills not started |
-| v0.2–v0.4 | Not started |
+| v0.1 core | 11 skills built; adversarially reviewed + fixed; execution half field-proven (A/B tied, L10) |
+| v0.2 (pulled fwd) | diagnose/selfhandoff/improve/write-skill built; tasklist deferred (needs worker self-select) |
+| v0.3–v0.4 | Not started (adapters; ACP/Quick + kata-engram) |

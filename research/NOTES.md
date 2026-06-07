@@ -39,3 +39,11 @@
 | kata-board | append-only mailbox + escalation channel | file-locked task-claim → kata-tasklist (backlog); v0.1 uses orchestrator-assignment so no self-claim race |
 | kata-worktree | per-owner isolation | — |
 | kata-orchestrate | lead-as-plan-guardian; subagent dispatch (Claude binding = Agent tool; abstracted as adapter capability) | Teams itself (Claude-only) not depended on |
+
+## v0.2-pulled-forward additions (built ahead of milestone, 2026-06-07)
+| Skill | ADOPTED | DROPPED / NOTE |
+|---|---|---|
+| kata-diagnose | mattpocock diagnose — full: feedback-loop-first (the skill), 3–5 ranked falsifiable hypotheses, one-variable instrument + tagged logs, regression-seam-or-flag, post-mortem→kata-improve | the feedback-loop catalog moved to `resources/FEEDBACK-LOOPS.md` (progressive disclosure); boundary vs kata-tdd = unexpected-red vs expected-red |
+| kata-selfhandoff | Anthropic compaction (write→compact→resume) + caveman compression + D8 (configurable, anti-over-conservative, task-boundary) | delegates the artifact to kata-handoff — no format duplication |
+| kata-improve | the Improvement Kata (target→current→experiment) + improve-codebase-architecture (loose analog: deepening opportunities, CONTEXT/ADR-informed) retargeted at `skills/**`, not product code | BMAD persona role-agents still not taken; boundary vs kata-review = cross-run fold vs per-run find |
+| kata-write-skill | mattpocock write-a-skill: progressive disclosure, description-as-trigger, split when >100 lines, review checklist | points to `docs/STANDARDS.md` instead of restating the frontmatter schema (DRY) |

@@ -47,13 +47,13 @@ core; adapters + the remaining skills are post-v0.1. Roadmap: `.planning/ROADMAP
 | `kata-tasklist` | 0.0.0 | coordinate | planned | Claude Teams *protocol* | Shared, file-locked task claim + dependencies |
 | `kata-worktree` | 0.1.0 | coordinate | experimental | CPP worktree proof | Per-owner git-worktree isolation for concurrent code |
 | `kata-tdd` | 0.1.0 | execute | experimental | mattpocock tdd | Red-green-refactor on a vertical slice |
-| `kata-diagnose` | 0.0.0 | execute | planned | mattpocock diagnose | Systematic debugging loop |
+| `kata-diagnose` | 0.1.0 | execute | experimental | mattpocock diagnose | Diagnosis loop for unexpected failures (feedback-loop-first); boundary vs kata-tdd |
 | `kata-evaluate` | 0.1.0 | evaluate | experimental | Anthropic evaluator | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
 | `kata-review` | 0.1.0 | evaluate | experimental | CPP cpp-adversarial-validation (+ review Standards axis → kata-evaluate) | Fresh-context adversarial red-team of design + impl; SHIP/HOLD |
 | `kata-handoff` | 0.1.0 | handoff | experimental | mattpocock handoff + Anthropic reset-with-handoff | Two-way durable handoff (session/agent/tool) |
-| `kata-selfhandoff` | 0.0.0 | handoff | planned | Anthropic compaction + mattpocock caveman | Configurable context-threshold self-handoff |
-| `kata-write-skill` | 0.0.0 | meta | planned | mattpocock write-a-skill | Author new skills to this standard |
-| `kata-improve` | 0.0.0 | meta | planned | Improvement Kata + improve-codebase-architecture | Fold lessons back into the harness |
+| `kata-selfhandoff` | 0.1.0 | handoff | experimental | Anthropic compaction + mattpocock caveman | Configurable context-threshold self-handoff (delegates artifact to kata-handoff) |
+| `kata-write-skill` | 0.1.0 | meta | experimental | mattpocock write-a-skill | Author new skills to STANDARDS (points, not restates); kata-improve calls it |
+| `kata-improve` | 0.1.0 | meta | experimental | Improvement Kata + improve-codebase-architecture | Fold cross-run lessons back into the skills/ tree; calls kata-write-skill |
 | `kata-zoom-out` | 0.0.0 | meta | planned | mattpocock zoom-out | Higher-level perspective on unfamiliar areas |
 | `kata-engram` | 0.0.0 | cognition | backlog | kiban/kagami second-brain tie-in | Inject user cognitive-fingerprint/engram (gated on mature engram) |
 
