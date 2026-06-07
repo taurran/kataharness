@@ -42,3 +42,26 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
   *Baked in:* this is a hard requirement on `kata-grill` (and `kata-context`/`kata-design-doc`) when built
   in v0.1. The WoZ proved the *method shape*; it also proved the **grill step is the weakest link** and is
   the priority to get right. See `[[kata-grill]]`.
+- **L9 — Arm A (execution half) ran clean via real subagents; the EXECUTE/COORDINATE skills work.**
+  2026-06-06: built the 5 v0.1 execution skills (`kata-orchestrate`/`kata-worktree`/`kata-board`/`kata-tdd`/
+  `kata-evaluate`) on Opus, then executed CPP Phase 3 (G_macro) as **Arm A** — orchestrator = Opus (me),
+  4 implementer workers + the evaluator = **Sonnet**, in isolated CPP git worktrees off the frozen-spec
+  commit, gated default-FAIL. **Result on the frozen `03-DESIGN`/`03-01-PLAN`:**
+  - **One-shot to green:** YES — 244 tests (220 baseline + 24), 0 fail/skip; deterministic build (322,511 B);
+    Snyk 0. **Zero re-plans.**
+  - **Plan drift: 0.** All 4 LOCKED decisions honored verbatim — esp. the sleeve-classification drift-magnet
+    (all 11 `macroBucket` exact). Independently re-verified by a fresh-context `kata-evaluate` (9/9 PASS).
+  - **Human interventions during execution: 0.** **Escalations: 0** (plan was clear enough that no worker
+    needed to escalate). Changes confined to the 11 planned files — no scope creep.
+  - **Hygiene held:** disjoint file-ownership → concurrent T2‖T3 worktrees merged conflict-free;
+    append-only board, no state clobber ([[LESSONS-LEARNED]] L3 confirmed designed-out).
+  - **Notable (good signal):** the T4 worker discovered a real integration gap — `macroBucket` wasn't in the
+    `ui.js` `inputs` projection, so the gate would have *silently no-op'd* — and fixed it **in-lane** without
+    escalating or drifting, *because the end-to-end test it wrote actually exercised the gate*. Worker scoping
+    + behavior-focused tests caught what a shape-only test would have missed.
+  - **Caveats:** orchestrator was Opus / workers Sonnet (D13-allowed asymmetry — note in the verdict); the
+    grill/plan half was hand-done (the [[L8]] weak link), not skill-driven. **This validates the execution
+    half only.** The headline A/B verdict still needs **Arm B** (the user's concurrent GSD run on
+    `phase-3/gsd-baseline`) for the one-shot/drift/intervention comparison.
+  *Baked in:* the 5 execution skills are `0.1.0/experimental` and proven on a real complex task. Next: get
+  Arm B's numbers, then either tie/win → keep; or fold gaps back via `kata-improve`.

@@ -1,6 +1,6 @@
 # STATE — KataHarness
 
-**Phase:** Foundation laid + test designed · **Version:** pre-v0.1 · **Updated:** 2026-06-06
+**Phase:** v0.1 execution skills built + Arm A run green · **Version:** pre-v0.1 · **Updated:** 2026-06-06
 
 ## Where we are
 - Project scaffolded at `C:\Dev\Projects\KataHarness` (git, `.gitattributes eol=lf`). Foundation committed.
@@ -11,19 +11,22 @@
 - **0 `kata-*` skills built yet** — all 18 in the README index are `0.0.0 / planned`. v0.1 = 10 skills.
 - **CPP baseline frozen** for the test: tag `cpp-phase2-baseline` pushed (220 tests green).
 
-## Next action (fresh-context, in order)
-1. **(Recommended) Wizard-of-Oz validation** — run the `DESIGN.md` loop *by hand* on CPP Phase 3 (Arm A)
-   vs the GSD baseline (Arm B), **Sonnet both arms**, branches off `cpp-phase2-baseline`. Confirm the
-   method beats the baseline before automating. See `docs/TEST-PLAN.md`.
-2. **Build v0.1 skills on Opus 4.8** (D13) — the 10: `kata-grill, kata-context, kata-design-doc, kata-plan,
-   kata-orchestrate, kata-board, kata-worktree, kata-tdd, kata-evaluate, kata-handoff`. ~7 are adaptations
-   of vendored mattpocock skills + the CPP `cpp-*` skills; only `kata-board`, `kata-worktree`, and
-   `kata-plan` file-ownership are new. Each to `docs/STANDARDS.md` frontmatter (semver, source, allowed-tools).
-   **PRIORITY / weakest link (see [[LESSONS-LEARNED]] L8):** `kata-grill` must be MUCH deeper than the WoZ
-   manual grill — GSD-format clickable-or-plain-text questions, iterative + demanding, grill-with-docs
-   thoroughness + doc-baking, converging on a *very specific* design contract. The one-pass "4 decisions +
-   recommendations" used in the WoZ is explicitly below standard. Get the grill right first.
-3. **Re-run the automated A/B** on CPP Phase 3 (Sonnet) for the real result; record in `LESSONS-LEARNED.md`.
+## Done so far (this session, 2026-06-06)
+- Froze the shared control: CPP `03-DESIGN.md` + `03-01-PLAN.md` (4 locked decisions, 4-task disjoint partition).
+- Built the **5 v0.1 execution skills** (`kata-orchestrate/worktree/board/tdd/evaluate`) → `0.1.0/experimental`.
+- Ran **Arm A** (KataHarness via Sonnet subagents in CPP worktrees) → GREEN: 244 tests, det build, Snyk 0,
+  fresh-context `kata-evaluate` 9/9 PASS, **0 drift / 0 escalations / 0 human interventions** ([[LESSONS-LEARNED]] L9).
+- Arm A lives on CPP branch `test/phase3-kata` (worktree `C:/Dev/_kata_armA/integration`).
+
+## Next action (in order)
+1. **Get Arm B numbers + render the A/B verdict.** User is running standard GSD as Arm B on CPP
+   `phase-3/gsd-baseline`. Compare one-shot-to-green / plan-drift / interventions / gate-integrity / hygiene
+   (per `docs/TEST-PLAN.md`); record the verdict in `LESSONS-LEARNED.md`. Decide which branch CPP keeps.
+2. **Fix the weak link: `kata-grill` (see [[LESSONS-LEARNED]] L8).** GSD-format clickable-or-plain-text
+   questions, iterative + demanding, grill-with-docs thoroughness + doc-baking, converging on a *very
+   specific* design contract. The one-pass WoZ grill is below standard.
+3. **Build the remaining v0.1 planning skills** (`kata-context, kata-design-doc, kata-plan`) + `kata-handoff`
+   to `docs/STANDARDS.md` frontmatter; then bump README + suite version.
 
 ## Model per stage
 Build KataHarness → **Opus 4.8**. CPP test arms → **Sonnet 4.6** (constant across arms). I pin subagent
