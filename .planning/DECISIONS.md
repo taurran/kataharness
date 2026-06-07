@@ -26,3 +26,14 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   coordination state kept separate.**
 - **D12 — Provenance required (`source:` frontmatter) when adapting external skills.** Stand on
   shoulders *and* attribute.
+- **D13 — Model routing for build vs test.** Building KataHarness skills → **Opus 4.8** (best foot
+  forward; the harness quality matters most). The CPP Phase-3 **test arms → Sonnet 4.6** (both arms).
+  *Why:* the headline claim is "the harness lifts the cheaper workhorse model"; Opus would mask the lift.
+  If the test flubs, retry later. Subagent models are pinned on spawn; the main-session model is the
+  operator's `/model`.
+- **D14 — A/B test design (see docs/TEST-PLAN.md).** Target = CPP Phase 3 @ tag `cpp-phase2-baseline`.
+  Arm A = KataHarness loop; Arm B = our **current GSD process** (the honest baseline, not a naive agent).
+  **Hold model constant (Sonnet) across arms; fresh context per arm on its own branch; same frozen
+  Phase-3 design+plan to both.** Metrics: one-shot-to-green, plan-drift (target 0, esp. sleeve
+  classification), interventions, gate integrity, handoff recovery, hygiene. **Validate the loop manually
+  (Wizard-of-Oz) before building all skills.**
