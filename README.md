@@ -41,7 +41,7 @@ core; adapters + the remaining skills are post-v0.1. Roadmap: `.planning/ROADMAP
 | `kata-grill` | 0.1.0 | plan | experimental | mattpocock grill-me + grill-with-docs | Relentless doc-grounded interrogation that resolves every decision branch |
 | `kata-context` | 0.1.0 | plan | experimental | mattpocock ubiquitous-language | Build/maintain CONTEXT.md shared/ubiquitous language |
 | `kata-design-doc` | 0.1.0 | plan | experimental | mattpocock to-prd + brainstorming | Synthesize the frozen design doc / spec |
-| `kata-plan` | 0.1.0 | plan | experimental | mattpocock to-issues + GSD/BMAD | Produce the precise, task-level execution plan |
+| `kata-plan` | 0.1.0 | plan | experimental | mattpocock to-issues (vertical) + GSD plan-phase + BMAD trade-offs | Produce the precise, task-level execution plan (vertical slices → disjoint file-ownership + wave DAG) |
 | `kata-orchestrate` | 0.1.0 | coordinate | experimental | Anthropic harness + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
 | `kata-board` | 0.1.0 | coordinate | experimental | Claude Teams *protocol* (agnostic reimpl) | Append-only mailbox/message board for lateral peer comms |
 | `kata-tasklist` | 0.0.0 | coordinate | planned | Claude Teams *protocol* | Shared, file-locked task claim + dependencies |
@@ -49,7 +49,7 @@ core; adapters + the remaining skills are post-v0.1. Roadmap: `.planning/ROADMAP
 | `kata-tdd` | 0.1.0 | execute | experimental | mattpocock tdd | Red-green-refactor on a vertical slice |
 | `kata-diagnose` | 0.0.0 | execute | planned | mattpocock diagnose | Systematic debugging loop |
 | `kata-evaluate` | 0.1.0 | evaluate | experimental | Anthropic evaluator | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
-| `kata-review` | 0.1.0 | evaluate | experimental | mattpocock review | Adversarial/standards code review |
+| `kata-review` | 0.1.0 | evaluate | experimental | CPP cpp-adversarial-validation (+ review Standards axis → kata-evaluate) | Fresh-context adversarial red-team of design + impl; SHIP/HOLD |
 | `kata-handoff` | 0.1.0 | handoff | experimental | mattpocock handoff + Anthropic reset-with-handoff | Two-way durable handoff (session/agent/tool) |
 | `kata-selfhandoff` | 0.0.0 | handoff | planned | Anthropic compaction + mattpocock caveman | Configurable context-threshold self-handoff |
 | `kata-write-skill` | 0.0.0 | meta | planned | mattpocock write-a-skill | Author new skills to this standard |
