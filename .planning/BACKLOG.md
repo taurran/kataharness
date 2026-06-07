@@ -12,3 +12,11 @@ Promote to ROADMAP milestones when ready.
 - **Protocol specs** — flesh out `protocol/{board,tasklist,state,handoff}.md` schemas.
 - **Quick/work version** — fork/branch strategy for the AWS-internal variant.
 - **Periodic CPP check-in hook** — lightweight status-eval of KataHarness surfaced into CPP sessions.
+- **`kata-tasklist` reframe (D23)** — virtual task board over GSD structure + backlog, syncing to Jira/Asana
+  via MCP (env has `pm-skills`/`atlassian`). Replaces the old file-locked-claim purpose.
+- **`design` module (own spec)** — UI/UX, 2D/3D assets, slides, mobile, image-FM imagery; slots into Advanced.
+- **`docs/TAXONOMY.md`** — categories + `kata-<verb>` naming + tier-family convention (`kata-<verb>-<tier>`) +
+  spine-vs-module. Motivated by the modes tiering work; partially specced in `docs/MODES-DESIGN.md`.
+- **Skill efficiency refactors** (`.planning/SKILL-COST-RATINGS.md`) — grill L8-narrative + convergence
+  checklist → `resources/` (~30% lighter); orchestrate worker-prompt → `protocol/`; tdd supporting-depth → pointer.
+  Fold the grill one into Spec A (we restructure grill for tiering anyway).

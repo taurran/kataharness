@@ -16,6 +16,17 @@ Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED
 - [ ] **v0.4 — ACP/Quick + cognition.** `adapters/acp-quick` (orchestrator-in-desktop via ACP);
   `cognition/kata-engram` tie-in (gated on a mature kiban/kagami engram).
 
+### Modes & Cost-Tiering track (design DONE 2026-06-07 — `docs/MODES-DESIGN.md`; major new capability)
+Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-first. Sequence:
+- [ ] **Spec A — Mode/tier/module/config/bootstrap system.** cost-weight metadata on all skills; tier
+  `kata-grill`/`kata-review`/`kata-plan`/`kata-diagnose` (separate files, shared rubric); mode-hint depth for
+  `kata-design-doc`/`kata-tdd`; `kata-evaluate` stays single (floor, D22); `kata.config`; `kata-bootstrap`
+  (selector + cost preview); `docs/TAXONOMY.md`; orchestrate reads config. Fold grill efficiency refactor in.
+- [ ] **Spec B — Bake-off.** N variants → judge → pick → refine up (AgentHub / worktrees).
+- [ ] **Spec C — Version-ups of existing projects.** Improvement-Kata on live repos; consumes `kata.config`.
+- [ ] **`design` module (own spec).** UI/UX, 2D/3D assets, slides, mobile, image-FM — Claude's design
+  blind-spot; built to slot into Advanced; inherently tiered.
+
 **Pre-v0.1 (now):** finish `research/NOTES.md` deep-eval of mattpocock + BMAD + GSD (what to adopt);
 then dogfood `kata-grill` to spec v0.1's first skills.
 

@@ -33,15 +33,23 @@
   and **`kata-review`** (adversarial/red-team — the EVALUATE leg the A/B exposed as missing, L10).
 - **v0.1 is now skill-complete: 11 skills built** (the 10 + kata-review). README index promoted.
 
+## Active workstream — OPERATING MODES (design done 2026-06-07)
+Brainstormed a major new capability: cost/effort/thoroughness **operating modes** (Essential/Standard/Advanced),
+all one-shot, consistency-first. Full design in `docs/MODES-DESIGN.md`; vocabulary in `CONTEXT.md`; skill
+token-weights in `.planning/SKILL-COST-RATINGS.md`; decisions D17–D23. Prior art researched (FrugalGPT cascade,
+Cursor/AgentHub best-of-N, Claude `effort`, GitHub Spec Kit) — pieces exist; our synthesis (skill-set tiering +
+escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
+
 ## Next action (in order)
-1. **The real test: an A/B that VARIES the planning step.** This run froze the spec for both arms, so the
-   grill (the differentiator) was untested. Next: pick a fresh complex task; Arm A plans via `kata-grill`→
-   `kata-design-doc`→`kata-plan` for real, Arm B via GSD planning; then execute + compare. Only this can
-   show whether the grill earns the harness's complexity ([[LESSONS-LEARNED]] L10).
-2. **Field-test `kata-grill` itself** — its depth is built but unproven on a live user. Watch for: does it
-   actually converge on a *more specific* contract than the WoZ survey did?
-3. **Backlog (post-v0.1):** `kata-diagnose, kata-tasklist, kata-selfhandoff, kata-write-skill, kata-improve,
-   kata-zoom-out, kata-engram`; adapters (`claude/codex/kiro/acp-quick`); set a git remote before public release.
+1. **Modes: spec review → implement.** On resume: user reviews `docs/MODES-DESIGN.md`; confirm the 2 pending
+   items (mode=tier unification; `kata-bootstrap` as its own skill); then `kata-plan`/writing-plans for
+   **Spec A** (mode/tier/module/`kata.config`/`kata-bootstrap` + bake cost-weights into frontmatter + tier
+   `kata-grill`/`kata-review`/`kata-plan`/`kata-diagnose`; `kata-evaluate` stays single, D22; write `TAXONOMY.md`;
+   fold grill efficiency refactor in). Then Spec B (bake-off), Spec C (version-ups), `design` module (own spec).
+2. **D16 A/B (parallel priority):** planning-VARIED A/B to prove the grill differentiates — still outstanding;
+   do before calling v0.1 "validated."
+3. **Backlog:** `kata-tasklist` (reframed → virtual board/PM), `kata-zoom-out`, `kata-engram`; adapters; set a
+   git remote before public release.
 
 ## Model per stage
 Build KataHarness → **Opus 4.8**. CPP test arms → **Sonnet 4.6** (constant across arms). I pin subagent

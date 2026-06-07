@@ -45,3 +45,23 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   arms and tied (L10), so the harness's hypothesized edge (the grill) is untested. The ship-gate for calling
   KataHarness validated is an A/B where Arm A plans via `kata-grill`→`kata-design-doc`→`kata-plan` for real
   vs a GSD-planned baseline. Until then, v0.1 is "experimental, execution-half-proven."
+- **D17 — Operating modes are named Essential / Standard / Advanced.** *Why:* convey value, not cheapness
+  ("cost" rejected); "Master" rejected for the master/slave connotation. All three are one-shot; Standard/
+  Advanced raise quality. See `docs/MODES-DESIGN.md`.
+- **D18 — Consistency is the harness's north star.** Same mode → comparable, reproducible output. "Without
+  consistency it is nothing." Everything in the modes design serves this.
+- **D19 — Effort is an orthogonal overlay, not a mode axis.** Model + reasoning effort (Claude `effort`) set
+  independently at the bootstrap; "high effort + Essential skill set" is a valid combo.
+- **D20 — Modes compose from a spine + additive modules; modules are independent + additive.** À-la-carte:
+  any preset + added module (e.g. Essential + `design`). Each module declares needs/produces/slot.
+- **D21 — Tiering is cost-gated, two mechanisms.** Separate per-tier skill files (max determinism — avoids the
+  context-rot/overstep of one branching skill) for **high cost AND high variance** (`kata-grill`,
+  `kata-review`, `kata-plan`, `kata-diagnose`); a mode-passed **depth hint** (one file) for medium skills
+  (`kata-design-doc`, `kata-tdd`). The determinism premium scales with cost.
+- **D22 — `kata-evaluate` is NEVER tiered — it is the conformance floor.** The uniform default-FAIL gate is
+  the invariant that makes modes/variants comparable. `review` tiers (adversarial depth = discretionary);
+  `evaluate` does not (conformance = constant). This is the operational core of D18.
+- **D23 — `kata-tasklist` reframed** from file-locked claim → a **virtual task board** over GSD structure +
+  backlog, syncing to Jira/Asana via MCP (env already has `pm-skills`/`atlassian`). Orthogonal to modes; backlog.
+- **(pending, confirm at spec review)** mode=tier unification (one axis vs independent tier+module knobs);
+  `kata-bootstrap` as its own pre-loop skill. Recommended defaults: unified; own skill.
