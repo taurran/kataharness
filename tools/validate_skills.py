@@ -225,6 +225,30 @@ def check_taxonomy_present(_skills: list[Skill]) -> list[Finding]:
     return out
 
 
+WIKILINK = re.compile(r"\[\[(kata-[a-z0-9-]+)\]\]")
+# Bare family names that are valid tier-agnostic aliases even before A2 splits them into folders.
+KNOWN_FAMILIES = {"kata-grill", "kata-review", "kata-plan", "kata-diagnose"}
+
+
+def _valid_skill_targets() -> set[str]:
+    names = {p.parent.name for p in SKILLS_DIR.glob("*/*/SKILL.md")}
+    # a family folder = kata-<verb>/ containing RUBRIC.md but no SKILL.md (post-A2)
+    for rubric in SKILLS_DIR.glob("*/*/RUBRIC.md"):
+        names.add(rubric.parent.name)
+    return names | KNOWN_FAMILIES
+
+
+@check
+def check_wikilinks(skills: list[Skill]) -> list[Finding]:
+    targets = _valid_skill_targets()
+    out: list[Finding] = []
+    for s in skills:
+        for ref in set(WIKILINK.findall(s.body)):
+            if ref not in targets:
+                out.append(Finding("ERROR", s.dir.name, f"unresolved skill wikilink [[{ref}]]"))
+    return out
+
+
 def run_checks(skills: list[Skill]) -> list[Finding]:
     findings: list[Finding] = []
     for fn in CHECKS:

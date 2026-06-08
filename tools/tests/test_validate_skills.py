@@ -41,3 +41,12 @@ def test_protocol_schemas_present_on_real_tree():
 
 def test_taxonomy_present_on_real_tree():
     assert v.check_taxonomy_present([]) == []
+
+
+def test_unresolved_wikilink_is_an_error():
+    findings = v.check_wikilinks(_skills_in("bad-link"))
+    assert any("unresolved skill wikilink" in f.msg for f in findings)
+
+
+def test_real_tree_wikilinks_all_resolve():
+    assert v.check_wikilinks(v.load_skills()) == []
