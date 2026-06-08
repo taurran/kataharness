@@ -81,6 +81,72 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   module declares, D20). The "and how" is load-bearing: ingested skills declare their DAG slot so the
   orchestrator knows where to run them. *Why:* expressiveness for power users without sacrificing the
   pick-default-and-go floor or the reproducibility of `kata.config`.
+- **D25 — Standard is the DEFAULT mode** (pick-nothing-and-go). The bootstrap pre-selects Standard; it is
+  also `kata-orchestrate`'s **fallback tier when `kata.config` is absent/silent** (e.g. orchestrate run
+  directly without bootstrap → `[[kata-grill]]` resolves to `kata-grill-standard`). *Why:* the floor must be
+  a *nice* one-shot (user) — Standard = production-reasonable. **Essential is a deliberate cost downshift;
+  Advanced a deliberate upshift.** (Refines the earlier "floor leans Essential" assumption — floor = Standard.)
+- **D26 — Tier-family layout = peer tier-skills + a shared rubric resource; the bare family name is a
+  tier-agnostic alias (CONFIRMED, "Option A").** `skills/<cat>/kata-<verb>/RUBRIC.md` holds the tier-invariant
+  method (no `SKILL.md` → not invocable); `kata-<verb>-<tier>/SKILL.md` are thin peers carrying ONLY their
+  depth/breadth/stopping knob + a pointer to the rubric. The **bare `[[kata-<verb>]]` wikilink = the family**
+  (tier-agnostic); `kata-orchestrate` resolves family→concrete tier via `kata.config` (fallback Standard,
+  D25). *Why:* DRY-by-pointer with zero cross-tier bleed (D21), keeps every existing wikilink valid, and the
+  rubric move *is* the grill efficiency refactor. Families: grill/review/plan = 3 tiers; diagnose = 2
+  (`-light`/`-full`). **Spec A is split A1 (foundations) → A2 (tier families) → A3 (bootstrap+wiring)**, each
+  shippable; `kata-review` (D15) at each plan's end.
+- **D27 — A skill-conformance validator (`tools/`, Python/uv) is the default-FAIL gate for the modes work.**
+  Maintainer tooling, NOT part of the shipped agnostic skill core (agnosticism governs skill *content*, not
+  our own dev tooling) — skills stay pure markdown. Checks: required frontmatter incl. `cost-weight`,
+  `name`==dir, README-index sync, tier-family membership, `[[wikilink]]`/rubric-pointer resolution
+  (family aliases resolve to a folder, not a SKILL). Dogfoods spine #4.
+- **D28 — Frontmatter is the machine source of truth; the README index is the generated catalog + public
+  landing page (CONFIRMED).** The validator regenerates the README's mechanical columns
+  (version/category/status/cost-weight) from frontmatter; the "Use" prose + suite version/status are
+  hand-authored. *Why:* kills the dual-maintenance drift class; the README's real value post-spin-off is as
+  the GitHub front door / human discovery surface, not the machine truth. Supersedes the legacy STANDARDS §3
+  "README is the source of truth" line.
+- **D29 — Dependency pre-flight is a mandatory spine phase (NEW REQUIREMENT; architecture recommended,
+  confirming).** A long-running closed loop must NEVER stall mid-flight on a missing tool/library/MCP/OSS
+  repo/design-template/runtime/doc-capability. The grill+plan must **enumerate every external dependency**,
+  record it in a **Dependency Manifest** (name · type · version · purpose · install cmd · **verify cmd** ·
+  source/trust), and a **pre-flight gate pre-stages them — human-approved, then installed and verified —
+  BEFORE the loop launches.** Default-FAIL: the loop does not start until every declared dep verifies green.
+  **Spine, never tiered** (like `kata-evaluate` — missing deps break any mode; it's a consistency floor).
+  **Security posture (user's domain):** never auto-install — enumerate → present with source/trust →
+  human-approve → install → verify → record (supply-chain hygiene); pre-staging is also a determinism win
+  ([[LESSONS-LEARNED]] L1). New loop phase **PRE-FLIGHT** between FREEZE and EXECUTE. *Recommended shape
+  (confirming):* responsibilities distributed to `kata-grill` (enumerate) + `kata-design-doc`/`kata-plan`
+  (manifest) + a **new `kata-preflight` skill** (approve/install/verify gate) + a `kata-orchestrate`
+  precondition (refuse to dispatch until pre-flight cleared). Manifest schema → `protocol/dependencies.md`
+  (an A1 foundations deliverable alongside `kata.config`).
+- **D30 — KataHarness is clean-room independent of the user's AWS-internal harness/PM suite; its tracking
+  surfaces are modular trackers with open pointers, not a PM system.** The user is building a related
+  agent-harness + full project-management overlay for AWS-internal use (their design there). KataHarness is
+  the **independent, general, non-AWS** version — **no AWS-internal IP is imported**; build only from
+  general/public best practice + the user's general direction. The installed-library registry (D-registry),
+  the `kata-tasklist` board (D23), and any PM-ish surface are designed as **modular trackers exposing
+  documented `protocol/` extension points** so an *optional* external PM overlay (theirs or otherwise) can
+  attach later via D20's independent-additive-module contract — the **core never depends on a PM layer**.
+  This version stays the lite, general substrate. *Why:* protects the user's AWS-IP separation; keeps the
+  public project original; preserves a clean seam for an optional heavier overlay without coupling.
+- **D-multisession — Multi-session/tmux is NOT a core dependency; the board/state/worktree protocol already
+  IS multi-session support; the spawn/launch mechanism is an adapter binding.** Orchestrator/executor/
+  validator-in-separate-contexts works via the append-only board + single-writer state + worktree isolation
+  (already core, agnostic, L3). The *launcher* (subagents vs panes) is tool-specific: Claude adapter = the
+  `Agent` tool (subagents, one session — the user's stated preference over "many windows"); a future
+  **session-pool/multiplexer launcher adapter** (backlog, v0.3+) targets the platform terminal (Windows
+  Terminal/wezterm on the user's Win11 box; tmux on Linux — **tmux is Unix-only, wrong primitive to hard-code**).
+- **D-registry — Installed-library registry: machine-global, reference-counted, record-and-recommend (NEVER
+  auto-uninstall).** `kata-preflight` appends every install to a machine-global ledger (`~/.kata/
+  installed-registry.json`): package · version · source · **scope (global|project-local)** · requesting
+  project/branch · timestamp · used/unused. A cleanup-report mode **reference-counts across projects**
+  (safe-to-remove only if no other project's manifest still needs it) and recommends; the human executes.
+  Manifest gains **`scope`** and **`classification: build-time|runtime`** fields (A1) — runtime deps get
+  bundled into the artifact (a packaging task) → their global base copy becomes a cleanup candidate;
+  build-time deps are removable post-run. *Why:* leave-no-trace hygiene; cross-project view makes cleanup
+  *safe*; no destructive autonomous env changes (consistent with D29). Hooks (fields + ledger) land now;
+  the reference-counted cleanup report is a fast-follow within Spec D.
 - **D24d — `kata-orchestrate` stays a single config-driven skill, NOT three per-mode variants (CONFIRMED;
   reaffirms D21).** The tiered skills (grill/review/plan/diagnose) are forked because they carry
   judgment-heavy *branching prose* that risks context-rot/overstep across tiers; orchestrate is a

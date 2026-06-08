@@ -53,8 +53,12 @@ tags: [planning, grilling, ddd]  # OPTIONAL. Obsidian tags
   MINOR = new capability, PATCH = fix/wording. Optional `skills/**/CHANGELOG.md` for history.
 - **Suite version** lives in `README.md` + a future `package`/`plugin.json`; it is *not* the sum of
   skill versions — it marks compatible bundles.
-- **The README skill index is the source of truth** for which skills exist and at what version
-  (§ README). A skill not listed in the index with a version is not "released."
+- **Per-skill frontmatter is the machine source of truth** (version/category/status/cost-weight — one
+  place, can't drift). **The README skill index is the generated catalog + public landing page**: the
+  `tools/` validator regenerates its mechanical columns from frontmatter, while the "Use" prose column and
+  the suite-level version/status narrative are hand-authored. It is the human discovery surface and the repo
+  front door — not the machine truth (D28; supersedes the earlier "README index is the source of truth"
+  framing, a pre-spin-off legacy statement). A skill not present in the index is not "released."
 - `status` lifecycle: `experimental → beta → stable`; retiring → `deprecated` + `supersedes` on the
   replacement; deprecated skills move to a `deprecated/` area, never silently deleted.
 
