@@ -22,3 +22,12 @@ def test_name_mismatch_is_an_error():
 def test_cost_weight_out_of_range_is_an_error():
     findings = v.run_checks(_skills_in("bad-cost"))
     assert any(f.level == "ERROR" and "cost-weight" in f.msg for f in findings)
+
+
+def test_index_is_idempotent_under_regeneration():
+    skills = _skills_in("good")
+    use = {"kata-good": "does a good thing"}
+    block = v._build_index(skills, use)
+    # the generated block parses back to the same Use text
+    assert v._parse_existing_use(block).get("kata-good") == "does a good thing"
+    assert "| Cost |" in block

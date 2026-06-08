@@ -126,6 +126,68 @@ def check_tags_namespace(skills: list[Skill]) -> list[Finding]:
     return out
 
 
+INDEX_START = "<!-- SKILL-INDEX:START -->"
+INDEX_END = "<!-- SKILL-INDEX:END -->"
+INDEX_HEADER = "| Skill | Ver | Cost | Category | Status | Source | Use |"
+INDEX_SEP = "|---|---|---|---|---|---|---|"
+
+
+def _first_line(value) -> str:
+    if not value:
+        return "—"
+    return " ".join(str(value).split()).strip()
+
+
+def _parse_existing_use(readme_text: str) -> dict[str, str]:
+    """Preserve the hand-authored 'Use' column, keyed by skill name."""
+    use: dict[str, str] = {}
+    for line in readme_text.splitlines():
+        m = re.match(r"\|\s*`(kata-[a-z0-9-]+)`\s*\|.*\|([^|]*)\|\s*$", line)
+        if m:
+            use[m.group(1)] = m.group(2).strip()
+    return use
+
+
+def _build_index(skills: list[Skill], use_by_name: dict[str, str]) -> str:
+    rows = [INDEX_START, INDEX_HEADER, INDEX_SEP]
+    for s in sorted(skills, key=lambda x: (CATEGORY_ORDER.index(x.frontmatter["category"]), x.name)):
+        fm = s.frontmatter
+        use = use_by_name.get(s.name, "—")
+        cost = fm.get("cost-weight", "—")
+        rows.append(
+            f"| `{s.name}` | {fm['version']} | {cost} | {fm['category']} | "
+            f"{fm['status']} | {_first_line(fm.get('source'))} | {use} |"
+        )
+    rows.append(INDEX_END)
+    return "\n".join(rows)
+
+
+def _splice_index(readme_text: str, new_block: str) -> str:
+    start, end = readme_text.index(INDEX_START), readme_text.index(INDEX_END) + len(INDEX_END)
+    return readme_text[:start] + new_block + readme_text[end:]
+
+
+def regenerate_readme(skills: list[Skill], readme: Path = README) -> None:
+    text = readme.read_text(encoding="utf-8")
+    block = _build_index(skills, _parse_existing_use(text))
+    readme.write_text(_splice_index(text, block), encoding="utf-8")
+
+
+@check
+def check_readme_sync(skills: list[Skill]) -> list[Finding]:
+    # Only meaningful when running against the real skills tree; skip for fixture-based test calls.
+    if not skills or not all(SKILLS_DIR in s.dir.parents for s in skills):
+        return []
+    text = README.read_text(encoding="utf-8")
+    if INDEX_START not in text or INDEX_END not in text:
+        return [Finding("ERROR", "README.md", "missing SKILL-INDEX markers")]
+    current = text[text.index(INDEX_START): text.index(INDEX_END) + len(INDEX_END)]
+    expected = _build_index(skills, _parse_existing_use(text))
+    if current.strip() != expected.strip():
+        return [Finding("ERROR", "README.md", "skill index out of sync with frontmatter — run `--write`")]
+    return []
+
+
 def run_checks(skills: list[Skill]) -> list[Finding]:
     findings: list[Finding] = []
     for fn in CHECKS:
