@@ -63,5 +63,29 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `evaluate` does not (conformance = constant). This is the operational core of D18.
 - **D23 — `kata-tasklist` reframed** from file-locked claim → a **virtual task board** over GSD structure +
   backlog, syncing to Jira/Asana via MCP (env already has `pm-skills`/`atlassian`). Orthogonal to modes; backlog.
-- **(pending, confirm at spec review)** mode=tier unification (one axis vs independent tier+module knobs);
-  `kata-bootstrap` as its own pre-loop skill. Recommended defaults: unified; own skill.
+- **D24a — Mode is a single unified axis (CONFIRMED, was pending).** Picking a mode sets both breadth
+  (active modules) and depth (the tier of each tiered skill) in one move — three named, reproducible presets
+  (Essential/Standard/Advanced), not an independent tier×module matrix. *Why:* a combinatorial tier+module
+  surface means two runs of the "same" mode could differ — the exact thing D18 (consistency) forbids.
+  À-la-carte additions (D24c) are the pressure-release valve, not a second tier knob.
+- **D24b — `kata-bootstrap` is its own pre-loop skill (CONFIRMED, was pending).** It runs *before* the loop
+  and *writes* `kata.config`; `kata-orchestrate` *reads* it. Kept separate for single-responsibility, distinct
+  `allowed-tools` (bootstrap needs Write+AskUserQuestion; orchestrate is the weight-5 spawn-hub), and
+  independent invocability (re-bootstrap to step a branch up a tier without touching the orchestrator).
+- **D24c — Bootstrap is an expressive composition ladder over a one-keystroke floor.** Four rungs:
+  (1) **default → go** — the recommended mode yields a solid one-shot; the floor is never punishing.
+  (2) **add modules** — à-la-carte (D20). (3) **cross-tier skill picking** — the menu surfaces skills from
+  *other* tiers so a Standard run can pull in e.g. `kata-grill-advanced` for one cycle without promoting the
+  whole mode. (4) **external/custom skill ingestion with a declared slot** — name a skill to fold into the
+  cycle and specify *where it slots and at what point* (needs/produces/slot, the same clean interface every
+  module declares, D20). The "and how" is load-bearing: ingested skills declare their DAG slot so the
+  orchestrator knows where to run them. *Why:* expressiveness for power users without sacrificing the
+  pick-default-and-go floor or the reproducibility of `kata.config`.
+- **D24d — `kata-orchestrate` stays a single config-driven skill, NOT three per-mode variants (CONFIRMED;
+  reaffirms D21).** The tiered skills (grill/review/plan/diagnose) are forked because they carry
+  judgment-heavy *branching prose* that risks context-rot/overstep across tiers; orchestrate is a
+  *dispatcher* — what varies by mode (which skills/tiers, how many bake-off variants N) is a **data lookup
+  from `kata.config`**, not a prose branch. Three orchestrators = three near-identical copies of the
+  spawn/board/worktree/merge plumbing (duplicated substance) and three subtly different execution engines,
+  which destroys cross-mode comparability. *Why:* orchestrate + `kata-evaluate` are the two spine invariants
+  that make modes comparable to each other (D18/D22); they must stay singular.

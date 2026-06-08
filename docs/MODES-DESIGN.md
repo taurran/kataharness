@@ -26,7 +26,7 @@ yields comparable, reproducible output, run to run. "Without consistency it is n
 
 ## The architecture — two orthogonal dials + à-la-carte
 
-### Dial 1 — Mode = tier + modules (unified axis) *(confirm at spec review)*
+### Dial 1 — Mode = tier + modules (unified axis) — **CONFIRMED (D24a)**
 A **mode** sets two things at once, so the names `Essential / Standard / Advanced` describe both:
 1. **Which modules are active** (breadth), and
 2. **The tier of each tiered skill** (depth) — Essential mode runs the `-essential` variants, etc.
@@ -78,9 +78,23 @@ fresh-context spend is cheaper-to-the-loop than equivalent inline. Lets the boot
 each à-la-carte add. Heaviest: `kata-orchestrate` (5, spawn hub) > `kata-grill` (4) > diagnose/tdd/plan (3).
 
 ## New components
-- **`kata-bootstrap`** (new skill *(confirm at spec review)*) — pre-loop GSD-style Q&A selector: picks mode +
-  à-la-carte modules + effort, shows the **cost preview** (summed weights), writes `kata.config`, launches the
-  loop. Its own skill because it runs *before* the loop and writes config (not an orchestrator param).
+- **`kata-bootstrap`** (new skill — **CONFIRMED its own skill, D24b**) — pre-loop GSD-style Q&A selector,
+  built as an **expressive composition ladder over a one-keystroke floor (D24c)**:
+  1. **default → go** — accept the recommended mode and get a solid one-shot; the floor is never punishing.
+  2. **add modules** — à-la-carte (D20).
+  3. **cross-tier skill picking** — the menu surfaces skills from *other* tiers, so a Standard run can pull
+     in e.g. `kata-grill-advanced` for one cycle without promoting the whole mode.
+  4. **external/custom skill ingestion with a declared slot** — name a skill to fold into the cycle and
+     specify *where it slots and at what point* (needs/produces/slot — the same clean interface every module
+     declares). The "and how" is load-bearing: the ingested skill declares its DAG slot so `kata-orchestrate`
+     knows where to run it.
+  Throughout, it shows the **cost preview** (summed weights), then writes `kata.config` and launches the loop.
+  Its own skill because it runs *before* the loop and writes config (not an orchestrator param), needs
+  `Write`+`AskUserQuestion`, and is independently invocable (re-bootstrap to step a branch up a tier).
+- **`kata-orchestrate` stays single (D24d)** — one config-driven dispatcher, NOT three per-mode variants.
+  What varies by mode is a data lookup from `kata.config` (which skills/tiers, how many bake-off variants N),
+  not a prose branch — so it stays a spine invariant alongside `kata-evaluate` (the basis of cross-mode
+  comparability). Forking it would duplicate the spawn/board/merge plumbing and fragment the spine.
 - **`kata.config`** — per-branch provenance: `{ mode, modules[], effort, bakeoff: {N, lineage}, skillVersions }`.
   The reproducibility backbone; what makes escalation (C) and bake-off (B) comparable.
 - **`docs/TAXONOMY.md`** (to write) — categories, `kata-<verb>` naming, the **tier-family convention**
@@ -102,4 +116,6 @@ each à-la-carte add. Heaviest: `kata-orchestrate` (5, spawn hub) > `kata-grill`
 - `kata-tasklist` **reframed** (D23): from file-locked claim → a **virtual task board** over GSD structure +
   backlog, syncing to Jira/Asana via MCP (env already has `pm-skills`/`atlassian` MCP). Orthogonal to modes; backlog.
 - Efficiency refactors (grill prose + orchestrate worker-prompt → `resources/`/`protocol/`) — backlog / fold into Spec A.
-- Confirm at spec review: mode=tier unification (vs independent tier+module knobs); `kata-bootstrap` as its own skill.
+- ~~Confirm at spec review: mode=tier unification; `kata-bootstrap` as its own skill.~~ **RESOLVED 2026-06-07
+  (D24a/b/c/d):** unified axis; bootstrap is its own skill + an expressive composition ladder; orchestrate
+  stays single config-driven.
