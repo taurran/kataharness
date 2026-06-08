@@ -21,6 +21,7 @@ tags:
   - grilling
   - ddd
   - doc-baking
+  - ubiquitous-language
 ---
 # kata-grill-essential — fast top-risk grill
 
@@ -39,6 +40,12 @@ ambiguous and causing confusion in this session).
 **Stop** when the top-risk branches are resolved with no contradiction. Do NOT enumerate the full decision
 tree — that is Standard's job. Explicitly note in the ledger that this was an Essential-tier grill (partial
 tree, top-risk only) so downstream consumers know the coverage.
+
+**Convergence gate (non-waivable, D33).** After the top-risk branches are resolved, hand the decision
+ledger to a **fresh-context [[kata-review]] (essential tier) scoped to the branches that were grilled**.
+A SHIP from that pass closes the Essential grill; a HOLD names an under-specified branch to resolve before
+closing. No tier self-certifies — Essential narrows the *tree* it grills, not the *backstop* that gates
+it. The convergence gate is a structural invariant; a tier may reduce depth but may NOT drop it.
 
 **This tier does NOT replace a Standard grill before a production freeze.** Use it when a PoC or one-shot
 outcome is acceptable and the user has explicitly accepted the reduced coverage.

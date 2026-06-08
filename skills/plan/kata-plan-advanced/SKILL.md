@@ -21,6 +21,7 @@ tags:
   - freeze
   - dag
   - file-ownership
+  - waves
 ---
 # kata-plan-advanced — exhaustive plan with threat register
 
@@ -30,7 +31,7 @@ sets ONLY the depth.
 
 ## Depth contract (Advanced)
 
-Run the **full Standard method** (see `kata-plan-standard`) **plus**:
+Run the **full Standard-depth method (see the RUBRIC)** **plus**:
 
 - **Finer-grained slicing.** Where Standard might group related layers into one task, Advanced breaks them
   into smaller, more precisely scoped slices — each task's ownership set is tighter and its verify gate more

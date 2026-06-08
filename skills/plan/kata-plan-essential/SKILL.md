@@ -20,6 +20,7 @@ tags:
   - freeze
   - dag
   - file-ownership
+  - waves
 ---
 # kata-plan-essential — coarse vertical-slice plan
 
@@ -36,7 +37,12 @@ without drift:
   LOCKED decision unassigned to a task.
 - Assign **disjoint file ownership** (the load-bearing property — never skip this).
 - Build the **wave/DAG** (`ownership`, `waves`, `depends_on` frontmatter) from the ownership partition.
-- Every task must have a **runnable `verify`** command (default-FAIL) and **falsifiable acceptance criteria**.
+- Every task MUST carry: **`owns`** (disjoint file set), **`action`** (quoting every LOCKED decision it
+  implements verbatim from the DESIGN — the no-drift line, **non-waivable at any tier, D33**), **`verify`**
+  (runnable, default-FAIL), and **falsifiable `acceptance_criteria`**. `read_first` is present but may be
+  coarse at Essential tier. Dropping `action` or omitting verbatim decision quotes is never permitted
+  regardless of tier — a tier may reduce slice granularity but may NOT remove the per-task `action`/
+  verbatim-decision fields.
 - **Skip the threat model** unless attacker-reachable surface is immediately obvious from the DESIGN (e.g., a
   new public endpoint, auth change, or data-trust boundary). If skipped, note it explicitly.
 - No SUMMARY required.

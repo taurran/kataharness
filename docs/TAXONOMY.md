@@ -44,8 +44,8 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
 
 ## cost-weight (1–5)
 Each skill's `cost-weight` frontmatter (authority: `.planning/SKILL-COST-RATINGS.md`) lets `kata-bootstrap`
-price a mode + each à-la-carte add. Dominant axis = amplification (spawn ≫ loop ≫ none). Heaviest:
-`kata-orchestrate` (5) > `kata-grill` (4) > `kata-diagnose`/`kata-tdd`/`kata-plan` (3).
+price a mode + each à-la-carte add. Dominant axis = amplification (spawn ≫ loop ≫ none). Heaviest: `kata-orchestrate` (5); tiered families span a range (e.g. `kata-grill` 3/4/5,
+`kata-plan` 2/3/4) — see the per-tier table above and `.planning/SKILL-COST-RATINGS.md`.
 
 ## Protocol files
 `protocol/config.md` (`kata.config`) · `protocol/dependencies.md` (manifest) · `protocol/board.md` ·

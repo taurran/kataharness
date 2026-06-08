@@ -20,6 +20,7 @@ tags:
   - freeze
   - dag
   - file-ownership
+  - waves
 ---
 # kata-plan-standard — full vertical-slice plan (default)
 

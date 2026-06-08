@@ -21,6 +21,7 @@ tags:
   - grilling
   - ddd
   - doc-baking
+  - ubiquitous-language
 ---
 # kata-grill-advanced — exhaustive adversarial grill
 
@@ -29,7 +30,7 @@ format, doc-baking, the quality principles, the convergence/output definition). 
 
 ## Depth contract (Advanced)
 
-Run the **full Standard method** (see `kata-grill-standard`) **plus**:
+Run the **full Standard-depth method (see the RUBRIC)** **plus**:
 
 - **Re-derive the decision tree after each resolution, to exhaustion.** Do not batch or skip re-derivation
   steps: every resolved branch may unlock new branches, and Advanced does not stop until the re-derived tree

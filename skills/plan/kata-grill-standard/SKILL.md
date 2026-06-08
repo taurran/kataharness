@@ -20,6 +20,7 @@ tags:
   - grilling
   - ddd
   - doc-baking
+  - ubiquitous-language
 ---
 # kata-grill-standard — full doc-grounded grill (default)
 

@@ -28,17 +28,9 @@ the depth.
 
 ## Depth contract (Standard)
 
-Run the **full method** as defined in the RUBRIC — all five attack surfaces, each with cited evidence:
-
-1. **Decision judgment** — challenge every LOCKED decision on merit; argue the rejected alternative back.
-2. **Test adequacy** — enumerate behaviors NOT covered; probe boundary/clamping, monotonicity,
-   all-one-category, renormalization sign-flips, and interaction effects.
-3. **Assumptions & contradictions** — surface spec assumptions; check them against code/docs/data; flag
-   anything contradicting a prior decision, the glossary, or reality.
-4. **Security & failure surface** — attacker-reachable inputs, escaping, malformed/edge input behavior;
-   confirm plan-model threats are actually mitigated.
-5. **Second-order effects** — what does this change downstream that no one looked at?
-
-Produce a findings list (severity · attack · cited evidence · specific risk) and an overall SHIP / HOLD.
+Run **all five** attack surfaces exactly as defined in `../kata-review/RUBRIC.md` — full coverage, no
+surface skipped. The RUBRIC is the single source of truth for what each surface means, the cite-evidence
+rule, and the SHIP / HOLD output format. This tier does not narrow the surface set; it runs the complete
+adversarial pass at original depth.
 
 This is today's `kata-review` at its original depth — the default for any non-trivial adversarial pass.
