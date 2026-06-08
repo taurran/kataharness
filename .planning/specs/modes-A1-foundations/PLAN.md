@@ -164,8 +164,9 @@ README = REPO_ROOT / "README.md"
 CATEGORY_ORDER = ["plan", "coordinate", "execute", "evaluate", "handoff", "meta", "cognition"]
 CATEGORIES = set(CATEGORY_ORDER)
 STATUSES = {"experimental", "beta", "stable", "deprecated"}
-# Schema v2 (D31): license is required (public-intended); cost-weight added in Task 2.
-REQUIRED_KEYS = ("name", "description", "license", "version", "category", "status", "agnostic")
+# Schema v2 (D31): name-regex + description-length enforced here; `license` + `cost-weight` join
+# REQUIRED_KEYS in Task 2 (when all skills gain them in one pass — keeps the real tree green each step).
+REQUIRED_KEYS = ("name", "description", "version", "category", "status", "agnostic")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")   # agentskills.io spec
 DESCRIPTION_MAX = 1024
@@ -307,9 +308,10 @@ git commit -m "chore: add skill-conformance validator (maintainer tooling, D27)"
 
 - [ ] **Step 1: Add the cost-weight check to the validator**
 
-In `tools/validate_skills.py`, change the `REQUIRED_KEYS` tuple to include cost-weight:
+In `tools/validate_skills.py`, change the `REQUIRED_KEYS` tuple to include **both** `license` and
+`cost-weight` (both are added to every skill in Step 4 of this task):
 ```python
-REQUIRED_KEYS = ("name", "description", "version", "category", "status", "agnostic", "cost-weight")
+REQUIRED_KEYS = ("name", "description", "license", "version", "category", "status", "agnostic", "cost-weight")
 ```
 Then append these check functions (after `check_frontmatter`):
 ```python
@@ -388,7 +390,7 @@ def test_cost_weight_out_of_range_is_an_error():
 - [ ] **Step 3: Run the validator against the real tree to verify it FAILS**
 
 Run: `cd tools && uv run python validate_skills.py`
-Expected: exit 1 — 15 ERRORs, each `missing required frontmatter key: cost-weight`.
+Expected: exit 1 — 30 ERRORs (each skill missing `license` AND `cost-weight`). Step 4 fixes them.
 
 - [ ] **Step 4: Add schema-v2 fields to every skill**
 
