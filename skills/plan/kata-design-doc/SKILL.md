@@ -60,3 +60,15 @@ the original spec/requirements.
 ## Output
 A `DESIGN.md` (SCREAMING-KEBAB, durable). Hand to [[kata-plan]] for the task-level execution plan. Once
 written, the DESIGN is **frozen** — changes are deliberate re-freezes, not edits-in-flight ([[kata-orchestrate]]).
+
+## Depth by mode
+The active mode is set in `kata.config` and passed in the task by the orchestrator. Do not guess or infer it.
+
+- **Essential** — minimum viable artifact: requirements, LOCKED decisions, and acceptance criteria only.
+  Omit the backward-compat contract and test-seams sections unless they are obviously load-bearing for the
+  task. Suitable for a PoC or cheap one-shot where grill depth was also Essential.
+- **Standard** — the full skill as written above (all seven DESIGN contract sections, full quality bar).
+  Default when no mode is specified.
+- **Advanced** — Standard **+** fuller backward-compat analysis (enumerate every preserved invariant with a
+  checkable claim), threat notes (flag attacker-reachable surfaces from the integrity/edge-case section),
+  and explicit test seams for each acceptance criterion (not just the highest seam).

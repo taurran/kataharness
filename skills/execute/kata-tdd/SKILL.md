@@ -60,3 +60,15 @@ boundary or mocking question arises, prefer integration-style tests through the 
 ## Report
 When your `<verify>` passes and you touched only owned files: append `DONE` to [[kata-board]] with the verify
 result, and hand the diff back for the orchestrator's gate. If blocked: `BLOCK`/`ESCALATE` and stop.
+
+## Depth by mode
+The active mode is set in `kata.config` and passed in the task by the orchestrator. Do not guess or infer it.
+
+- **Essential** — cover the acceptance-criteria behaviors only: one test per behavior listed in the task,
+  minimal GREEN implementation, stop. Skip the refactor pass. No edge-case or boundary tests beyond what the
+  acceptance criteria explicitly name. Suitable for a PoC or cheap one-shot.
+- **Standard** — the full skill as written above (red→green per behavior, refactor while GREEN, no
+  speculative features). Default when no mode is specified.
+- **Advanced** — Standard **+** a deeper refactor pass after all behaviors are green (extract duplication,
+  deepen modules, verify deep-module boundaries), plus edge-case and boundary behaviors for each acceptance
+  criterion that has a non-trivial failure mode. Run the gate after every refactor step.
