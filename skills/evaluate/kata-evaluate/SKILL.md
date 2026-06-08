@@ -18,6 +18,8 @@ tags:
   - kata/spine
   - conformance
   - default-fail
+  - gate
+  - no-write
 ---
 
 # kata-evaluate — the default-FAIL gate

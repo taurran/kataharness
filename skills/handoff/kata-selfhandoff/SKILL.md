@@ -17,6 +17,8 @@ tags:
   - kata/handoff
   - kata/spine
   - self-handoff
+  - compaction
+  - context
 ---
 
 # kata-selfhandoff — reclaim context without losing the thread

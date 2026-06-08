@@ -50,3 +50,7 @@ def test_unresolved_wikilink_is_an_error():
 
 def test_real_tree_wikilinks_all_resolve():
     assert v.check_wikilinks(v.load_skills()) == []
+
+
+def test_real_tree_readme_in_sync():
+    assert v.check_readme_sync(v.load_skills()) == []

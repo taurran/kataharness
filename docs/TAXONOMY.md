@@ -28,7 +28,7 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
   (single config-driven dispatcher, D24d), all weight-1 skills, and the pre-flight gate (a spine floor, D29).
 
 ## Spine vs module
-- **Spine** (always runs — the consistency machine): `kata-grill` · `kata-design-doc` · `kata-plan` ·
+- **Spine** (always runs — the consistency machine): `kata-grill` · `kata-context` · `kata-design-doc` · `kata-plan` ·
   `kata-orchestrate` · `kata-board` · `kata-worktree` · `kata-tdd` · `kata-evaluate` · `kata-handoff` ·
   `kata-selfhandoff` · (pre-flight, Spec D). Every mode ends at the same `kata-evaluate` default-FAIL gate.
 - **Modules** (additive, independent, declare needs/produces/slot — D20): `quality` (`kata-review` +

@@ -29,7 +29,7 @@ Roadmap: `.planning/ROADMAP.md`.
 3. **Agnostic via adapters** — agnostic core + thin per-tool adapters (Claude/Codex/Kiro/ACP-Quick).
 4. **Default-FAIL** — fresh-context, no-write evaluator gates "done."
 5. **Two-way, file-based handoff** + configurable self-handoff (anti-context-rot, not over-conservative).
-6. **Everything versioned** — per-skill semver in frontmatter; this index is the source of truth.
+6. **Everything versioned** — per-skill semver in frontmatter (the machine source of truth); the README index is the generated catalog (D28).
 
 > **v0.1 status:** spine #1, #2, #4, #5, #6 are implemented in the built skills; only #3 (agnostic *adapters*)
 > remains — v0.1 is a Claude-only core. See Status and `.planning/REVIEW-v0.1.md`.

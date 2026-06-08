@@ -4,6 +4,9 @@
 > `kata-preflight` (Spec D) in the PRE-FLIGHT phase BEFORE the loop launches (D29). A long-running closed
 > loop must never stall mid-flight on a missing dependency. Machine state (JSON/table), not vault-managed.
 
+## Location
+`kata.dependencies.json` (JSON) at the working-branch root — written from the frozen manifest at FREEZE, read by `kata-preflight` in PRE-FLIGHT.
+
 ## Why it is a *frozen decision*, not a pre-flight decision
 The manifest is part of the frozen contract: the human approves the dependency *set + sources* when approving
 the design (`approval_mode: approve-at-freeze`). PRE-FLIGHT only **provisions** the approved set and verifies
@@ -21,6 +24,7 @@ signal ⇒ escalate ⇒ deliberate re-freeze (never a silent install). Workers *
 | `install` | string | The exact install command (recognized package manager — **never `curl \| bash` from an arbitrary domain**). |
 | `verify` | string | A runnable command proving presence (e.g. `expo --version`, `python -c "import docx"`). PRE-FLIGHT is default-FAIL on this. |
 | `source` | string | Registry/URL + a short trust note; reviewed by the human at freeze. |
+| `hash` | string | Optional integrity hash/checksum for the pinned artifact; verified on install when present. |
 | `scope` | `"global" \| "project-local"` | Install scope. Prefer `project-local` + pinned for determinism + easy cleanup (D-registry). |
 | `classification` | `"build-time" \| "runtime"` | `runtime` ⇒ must be bundled into the artifact (a packaging task) → its global base copy becomes a cleanup candidate; `build-time` ⇒ removable after the run (D-registry). |
 

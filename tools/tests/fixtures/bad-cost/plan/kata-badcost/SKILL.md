@@ -7,6 +7,9 @@ category: plan
 status: experimental
 agnostic: true
 cost-weight: 9
+tags:
+  - kata/plan
+  - kata/spine
 ---
 # kata-badcost
 Body.

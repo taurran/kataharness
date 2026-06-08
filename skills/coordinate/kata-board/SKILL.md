@@ -18,6 +18,8 @@ tags:
   - kata/spine
   - board
   - mailbox
+  - escalation
+  - protocol
 ---
 
 # kata-board — append-only coordination, no clobber

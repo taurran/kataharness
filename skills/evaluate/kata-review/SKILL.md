@@ -18,6 +18,7 @@ tags:
   - kata/module/quality
   - adversarial
   - red-team
+  - no-write
 ---
 
 # kata-review — attack the result before you trust it

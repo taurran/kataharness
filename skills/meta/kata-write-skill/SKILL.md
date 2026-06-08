@@ -16,6 +16,8 @@ tags:
   - kata/meta
   - kata/module/meta
   - authoring
+  - standards
+  - skills
 ---
 
 # kata-write-skill — make new skills the governed way

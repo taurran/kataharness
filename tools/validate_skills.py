@@ -53,7 +53,10 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     parts = text.split("---", 2)
     if len(parts) < 3:
         return {}, text
-    return (yaml.safe_load(parts[1]) or {}), parts[2]
+    fm = yaml.safe_load(parts[1])
+    if not isinstance(fm, dict):
+        fm = {}
+    return fm, parts[2]
 
 
 def load_skills(root: Path = SKILLS_DIR) -> list[Skill]:
@@ -139,12 +142,18 @@ def _first_line(value) -> str:
 
 
 def _parse_existing_use(readme_text: str) -> dict[str, str]:
-    """Preserve the hand-authored 'Use' column, keyed by skill name."""
+    """Preserve the hand-authored 'Use' column, keyed by skill name. Split-based (robust);
+    a literal '|' inside a Use cell must be escaped per Markdown."""
     use: dict[str, str] = {}
     for line in readme_text.splitlines():
-        m = re.match(r"\|\s*`(kata-[a-z0-9-]+)`\s*\|.*\|([^|]*)\|\s*$", line)
-        if m:
-            use[m.group(1)] = m.group(2).strip()
+        stripped = line.strip()
+        if not stripped.startswith("| `kata-"):
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if len(cells) >= 7:
+            m = re.match(r"`(kata-[a-z0-9-]+)`", cells[0])
+            if m:
+                use[m.group(1)] = cells[-1]
     return use
 
 
@@ -163,6 +172,8 @@ def _build_index(skills: list[Skill], use_by_name: dict[str, str]) -> str:
 
 
 def _splice_index(readme_text: str, new_block: str) -> str:
+    if INDEX_START not in readme_text or INDEX_END not in readme_text:
+        raise SystemExit("README is missing SKILL-INDEX markers; cannot regenerate.")
     start, end = readme_text.index(INDEX_START), readme_text.index(INDEX_END) + len(INDEX_END)
     return readme_text[:start] + new_block + readme_text[end:]
 
@@ -190,7 +201,7 @@ def check_readme_sync(skills: list[Skill]) -> list[Finding]:
 
 PROTOCOL_DIR = REPO_ROOT / "protocol"
 REQUIRED_PROTOCOL = {
-    "config.md": ["mode", "modules", "effort", "preflight", "skillVersions"],
+    "config.md": ["mode", "modules", "effort", "tiers", "preflight", "bakeoff", "skillVersions"],
     "dependencies.md": ["classification", "scope", "verify", "install"],
 }
 
@@ -263,7 +274,15 @@ def main(argv: list[str] | None = None) -> int:
 
     skills = load_skills()
     if args.write:
-        regenerate_readme(skills)  # defined in Task 3
+        # README-sync findings are EXPECTED pre-write, so they don't block the write;
+        # any OTHER skill error could corrupt the index, so refuse until it's fixed.
+        blocking = [f for f in run_checks(skills) if f.level == "ERROR" and f.where != "README.md"]
+        if blocking:
+            for f in blocking:
+                print(f"{f.level}: {f.where}: {f.msg}", file=sys.stderr)
+            print("\nRefusing --write: fix the skill errors above first.", file=sys.stderr)
+            return 1
+        regenerate_readme(skills)
         print(f"README index regenerated from {len(skills)} skills.")
 
     findings = run_checks(skills)

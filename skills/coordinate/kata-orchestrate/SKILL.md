@@ -20,6 +20,7 @@ tags:
   - kata/spine
   - orchestration
   - no-drift
+  - plan-guardian
 ---
 
 # kata-orchestrate — drive the frozen plan, dispatch, gate, hold the line

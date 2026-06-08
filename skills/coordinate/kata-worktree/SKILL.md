@@ -18,6 +18,7 @@ tags:
   - kata/spine
   - worktree
   - isolation
+  - git
 ---
 
 # kata-worktree — isolate every concurrent owner

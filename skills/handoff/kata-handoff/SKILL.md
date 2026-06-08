@@ -16,6 +16,8 @@ tags:
   - kata/handoff
   - kata/spine
   - handoff
+  - context
+  - durability
 ---
 
 # kata-handoff — durable, two-way, plan-anchored

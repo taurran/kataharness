@@ -17,6 +17,8 @@ tags:
   - kata/meta
   - kata/module/meta
   - improvement-kata
+  - retrospective
+  - continuous-improvement
 ---
 
 # kata-improve — every run improves the harness
