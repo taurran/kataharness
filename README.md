@@ -20,7 +20,12 @@ green via subagents in isolated worktrees (A/B vs GSD: tied on objective metrics
 `.planning/LESSONS-LEARNED.md` L9/L10). The **planning half** (`kata-grill/context/design-doc/plan`) is built
 but not yet field-tested; that is the next validation (an A/B that varies the planning step). Claude-only
 core; adapters + the 3 remaining skills (`kata-tasklist`, `kata-zoom-out`, `kata-engram`) are post-v0.1.
-Roadmap: `.planning/ROADMAP.md`.
+
+**Operating modes (in progress):** Spec A1 (foundations) landed on `modes/A1-foundations` — a skill-conformance
+validator (`tools/`), schema-v2 frontmatter (`cost-weight` + `license` + namespaced `tags`), a
+frontmatter-generated README index, the `kata.config` + dependency-manifest protocol schemas, and
+`docs/TAXONOMY.md`; adversarially reviewed (D15, HOLD→SHIP). Next: A2 (tier families). Roadmap:
+`.planning/ROADMAP.md`.
 
 ## The spine
 
