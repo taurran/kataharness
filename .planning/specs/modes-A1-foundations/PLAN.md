@@ -469,15 +469,19 @@ git commit -m "feat: schema-v2 frontmatter (cost-weight + license + namespaced t
 - Modify: `tools/validate_skills.py` (add `regenerate_readme` + `check_readme_sync`)
 - Modify: `tools/tests/test_validate_skills.py` (test regeneration round-trips)
 
-- [ ] **Step 1: Add index markers to README.md**
+- [ ] **Step 1: Relocate planned skills, then add index markers to README.md**
 
-Wrap the existing skill-index table (the `| Skill | Ver | ... |` block) with HTML-comment markers so
-regeneration is surgical and the hand-authored prose around it is untouched. Immediately *above* the table
-header line insert:
+The generated table contains only **built** skills (those with a `SKILL.md` — `regenerate_readme` globs them).
+The current index interleaves **3 planned skills that have no `SKILL.md`** (`kata-tasklist`, `kata-zoom-out`,
+`kata-engram`, all `0.0.0`). If left inside the markers they will be silently dropped on regeneration. So:
+1. **Remove those 3 rows** from the table and add a hand-maintained note **outside (below) the END marker**:
+   `> **Planned (roadmap, not yet built):** \`kata-tasklist\` · \`kata-zoom-out\` · \`kata-engram\` — see \`.planning/ROADMAP.md\`.`
+2. Wrap the **remaining (built-skill) table** with HTML-comment markers so regeneration is surgical. Immediately
+   *above* the table header line insert:
 ```html
 <!-- SKILL-INDEX:START -->
 ```
-and immediately *below* the last table row insert:
+and immediately *below* the last built-skill row insert:
 ```html
 <!-- SKILL-INDEX:END -->
 ```
