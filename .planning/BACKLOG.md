@@ -14,6 +14,10 @@ Promote to ROADMAP milestones when ready.
 - **Periodic CPP check-in hook** — lightweight status-eval of KataHarness surfaced into CPP sessions.
 - **`kata-tasklist` reframe (D23)** — virtual task board over GSD structure + backlog, syncing to Jira/Asana
   via MCP (env has `pm-skills`/`atlassian`). Replaces the old file-locked-claim purpose.
+- **Validator deeper checks (A1 REVIEW backlog)** — (3.1) `check_protocol_schemas`/`check_taxonomy_present`
+  use substring matching → can't detect substantive erasure; add structural checks if it bites. (3.3)
+  `check_tags_namespace` allows bogus `kata/...` sub-namespaces; add a `kata/...` prefix allowlist when
+  `kata/tier/<tier>` becomes load-bearing (A2-time).
 - **`kata-report` (D32)** — post-loop, handoff-phase build report: lite-synthesis of loop artifacts (DESIGN,
   DAG, decision ledger, manifest, diffs, evaluate/review verdicts, gate numbers) → durable `BUILD-REPORT.md`
   with a Mermaid "graphify-lite" diagram. Non-goal: from-scratch comprehension. Feeds `kata-improve`; open

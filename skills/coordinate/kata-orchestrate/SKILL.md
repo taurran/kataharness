@@ -5,15 +5,22 @@ description: >-
   end-to-end from a frozen PLAN: assign tasks by the wave/file-ownership DAG, dispatch one scoped subagent
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
+license: Apache-2.0
 version: 0.1.0
 category: coordinate
 status: experimental
 agnostic: true
+cost-weight: 5
 allowed-tools: [Read, Grep, Glob, Bash, Write, Agent]   # Agent = the Claude-adapter binding of the abstract "dispatch worker" capability; v0.1 ships only the Claude adapter
 model: opus
 source: >-
   adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents
-tags: [coordinate, orchestration, plan-guardian, no-drift]
+tags:
+  - kata/coordinate
+  - kata/spine
+  - orchestration
+  - no-drift
+  - plan-guardian
 ---
 
 # kata-orchestrate — drive the frozen plan, dispatch, gate, hold the line

@@ -5,13 +5,20 @@ description: >-
   run multiple task-owners in parallel without collision, or build on a branch without disturbing a
   human's active checkout. Covers creating/removing worktrees, per-task branches, clean disjoint merges,
   and the cross-repo rule (isolate the TARGET repo, not the harness repo).
+license: Apache-2.0
 version: 0.1.0
 category: coordinate
 status: experimental
 agnostic: true
+cost-weight: 1
 allowed-tools: [Bash, Read]
 source: adapted-from CryptoPortfolioPlanner worktree proof (LESSONS-LEARNED L2/L3)
-tags: [coordinate, git, worktree, isolation]
+tags:
+  - kata/coordinate
+  - kata/spine
+  - worktree
+  - isolation
+  - git
 ---
 
 # kata-worktree — isolate every concurrent owner

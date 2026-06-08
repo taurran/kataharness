@@ -4,13 +4,20 @@ description: >-
   Author a new kata-* skill to the project STANDARDS — correct frontmatter, least-privilege tools,
   provenance, semver, progressive disclosure, and registration in the README index. Use when a new skill is
   needed (typically invoked by kata-improve). Governs HOW to author well; kata-improve decides WHAT/WHEN.
+license: Apache-2.0
 version: 0.1.0
 category: meta
 status: experimental
 agnostic: true
+cost-weight: 1
 allowed-tools: [Read, Grep, Glob, Write, Edit]
 source: adapted-from mattpocock/skills productivity/write-a-skill
-tags: [meta, authoring, skills, standards]
+tags:
+  - kata/meta
+  - kata/module/meta
+  - authoring
+  - standards
+  - skills
 ---
 
 # kata-write-skill — make new skills the governed way

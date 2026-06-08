@@ -4,13 +4,20 @@ description: >-
   Build and maintain the project's ubiquitous-language glossary (CONTEXT.md) so every skill, agent, and
   durable doc speaks the same precise vocabulary. Use during grilling/planning whenever a term is resolved,
   sharpened, or found to conflict — keep the glossary canonical and implementation-free.
+license: Apache-2.0
 version: 0.1.0
 category: plan
 status: experimental
 agnostic: true
+cost-weight: 1
 allowed-tools: [Read, Grep, Glob, Write, Edit]
 source: adapted-from mattpocock/skills {ubiquitous-language, grill-with-docs CONTEXT-FORMAT}
-tags: [plan, ddd, ubiquitous-language, glossary]
+tags:
+  - kata/plan
+  - kata/spine
+  - ddd
+  - ubiquitous-language
+  - glossary
 ---
 
 # kata-context — one canonical word per concept

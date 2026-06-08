@@ -5,13 +5,19 @@ description: >-
   feedback-loop → ranked hypotheses → instrument → fix + regression → cleanup. Use when a test that should
   pass fails, a regression appears, or behavior is broken/throwing and the cause is unknown. Stays in the
   worker's owned files; escalates rather than re-planning.
+license: Apache-2.0
 version: 0.1.0
 category: execute
 status: experimental
 agnostic: true
+cost-weight: 3
 allowed-tools: [Read, Grep, Glob, Bash, Edit, Write]
 source: adapted-from mattpocock/skills engineering/diagnose
-tags: [execute, debugging, diagnosis]
+tags:
+  - kata/execute
+  - kata/module/quality
+  - debugging
+  - diagnosis
 ---
 
 # kata-diagnose — find the cause before you touch the fix

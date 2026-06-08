@@ -52,7 +52,7 @@ checks only what STANDARDS + the modes work require — it is not a general mark
 - Create: `tools/pyproject.toml`
 - Create: `tools/validate_skills.py`
 - Create: `tools/tests/test_validate_skills.py`
-- Create: `tools/tests/fixtures/good/kata-good/SKILL.md`
+- Create: `tools/tests/fixtures/good/plan/kata-good/SKILL.md`
 - Create: `tools/tests/fixtures/bad-name/kata-wrongname/SKILL.md`
 
 - [ ] **Step 1: Write the uv project file**
@@ -75,7 +75,7 @@ testpaths = ["tests"]
 
 - [ ] **Step 2: Write the fixtures**
 
-`tools/tests/fixtures/good/kata-good/SKILL.md`:
+`tools/tests/fixtures/good/plan/kata-good/SKILL.md`:
 ```markdown
 ---
 name: kata-good
@@ -164,8 +164,9 @@ README = REPO_ROOT / "README.md"
 CATEGORY_ORDER = ["plan", "coordinate", "execute", "evaluate", "handoff", "meta", "cognition"]
 CATEGORIES = set(CATEGORY_ORDER)
 STATUSES = {"experimental", "beta", "stable", "deprecated"}
-# Schema v2 (D31): license is required (public-intended); cost-weight added in Task 2.
-REQUIRED_KEYS = ("name", "description", "license", "version", "category", "status", "agnostic")
+# Schema v2 (D31): name-regex + description-length enforced here; `license` + `cost-weight` join
+# REQUIRED_KEYS in Task 2 (when all skills gain them in one pass — keeps the real tree green each step).
+REQUIRED_KEYS = ("name", "description", "version", "category", "status", "agnostic")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")   # agentskills.io spec
 DESCRIPTION_MAX = 1024
@@ -301,15 +302,16 @@ git commit -m "chore: add skill-conformance validator (maintainer tooling, D27)"
 **Files:**
 - Modify: `tools/validate_skills.py` (add `cost-weight` to required keys + range check; add tags-namespace check)
 - Modify: `tools/tests/test_validate_skills.py` (add range-check test)
-- Modify: `tools/tests/fixtures/good/kata-good/SKILL.md` (add `cost-weight: 2`)
-- Create: `tools/tests/fixtures/bad-cost/kata-badcost/SKILL.md`
+- Modify: `tools/tests/fixtures/good/plan/kata-good/SKILL.md` (add `cost-weight: 2`)
+- Create: `tools/tests/fixtures/bad-cost/plan/kata-badcost/SKILL.md`
 - Modify: all 15 `skills/**/SKILL.md`
 
 - [ ] **Step 1: Add the cost-weight check to the validator**
 
-In `tools/validate_skills.py`, change the `REQUIRED_KEYS` tuple to include cost-weight:
+In `tools/validate_skills.py`, change the `REQUIRED_KEYS` tuple to include **both** `license` and
+`cost-weight` (both are added to every skill in Step 4 of this task):
 ```python
-REQUIRED_KEYS = ("name", "description", "version", "category", "status", "agnostic", "cost-weight")
+REQUIRED_KEYS = ("name", "description", "license", "version", "category", "status", "agnostic", "cost-weight")
 ```
 Then append these check functions (after `check_frontmatter`):
 ```python
@@ -342,7 +344,7 @@ def check_tags_namespace(skills: list[Skill]) -> list[Finding]:
 
 - [ ] **Step 2: Update fixtures + add the bad-cost fixture + test**
 
-Update `tools/tests/fixtures/good/kata-good/SKILL.md` to full schema v2 (add `cost-weight: 2` and a
+Update `tools/tests/fixtures/good/plan/kata-good/SKILL.md` to full schema v2 (add `cost-weight: 2` and a
 namespaced `tags` block so it passes `check_tags_namespace`):
 ```markdown
 ---
@@ -362,7 +364,7 @@ tags:
 Body.
 ```
 
-Create `tools/tests/fixtures/bad-cost/kata-badcost/SKILL.md`:
+Create `tools/tests/fixtures/bad-cost/plan/kata-badcost/SKILL.md`:
 ```markdown
 ---
 name: kata-badcost
@@ -388,7 +390,7 @@ def test_cost_weight_out_of_range_is_an_error():
 - [ ] **Step 3: Run the validator against the real tree to verify it FAILS**
 
 Run: `cd tools && uv run python validate_skills.py`
-Expected: exit 1 — 15 ERRORs, each `missing required frontmatter key: cost-weight`.
+Expected: exit 1 — 30 ERRORs (each skill missing `license` AND `cost-weight`). Step 4 fixes them.
 
 - [ ] **Step 4: Add schema-v2 fields to every skill**
 
@@ -467,15 +469,19 @@ git commit -m "feat: schema-v2 frontmatter (cost-weight + license + namespaced t
 - Modify: `tools/validate_skills.py` (add `regenerate_readme` + `check_readme_sync`)
 - Modify: `tools/tests/test_validate_skills.py` (test regeneration round-trips)
 
-- [ ] **Step 1: Add index markers to README.md**
+- [ ] **Step 1: Relocate planned skills, then add index markers to README.md**
 
-Wrap the existing skill-index table (the `| Skill | Ver | ... |` block) with HTML-comment markers so
-regeneration is surgical and the hand-authored prose around it is untouched. Immediately *above* the table
-header line insert:
+The generated table contains only **built** skills (those with a `SKILL.md` — `regenerate_readme` globs them).
+The current index interleaves **3 planned skills that have no `SKILL.md`** (`kata-tasklist`, `kata-zoom-out`,
+`kata-engram`, all `0.0.0`). If left inside the markers they will be silently dropped on regeneration. So:
+1. **Remove those 3 rows** from the table and add a hand-maintained note **outside (below) the END marker**:
+   `> **Planned (roadmap, not yet built):** \`kata-tasklist\` · \`kata-zoom-out\` · \`kata-engram\` — see \`.planning/ROADMAP.md\`.`
+2. Wrap the **remaining (built-skill) table** with HTML-comment markers so regeneration is surgical. Immediately
+   *above* the table header line insert:
 ```html
 <!-- SKILL-INDEX:START -->
 ```
-and immediately *below* the last table row insert:
+and immediately *below* the last built-skill row insert:
 ```html
 <!-- SKILL-INDEX:END -->
 ```
@@ -862,7 +868,7 @@ def check_wikilinks(skills: list[Skill]) -> list[Finding]:
 
 - [ ] **Step 2: Add a test (good fixture references resolve; a bogus one fails)**
 
-Create `tools/tests/fixtures/bad-link/kata-badlink/SKILL.md`:
+Create `tools/tests/fixtures/bad-link/plan/kata-badlink/SKILL.md`:
 ```markdown
 ---
 name: kata-badlink

@@ -1,0 +1,13 @@
+[project]
+name = "kata-tools"
+version = "0.1.0"
+description = "KataHarness maintainer tooling (skill-conformance validator). Not shipped with the skill suite."
+requires-python = ">=3.12"
+dependencies = ["pyyaml>=6.0"]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

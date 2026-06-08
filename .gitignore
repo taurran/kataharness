@@ -2,3 +2,7 @@ research/reference/
 dist/
 node_modules/
 .DS_Store
+__pycache__/
+*.pyc
+*.pyo
+tools/.venv/

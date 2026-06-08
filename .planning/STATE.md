@@ -33,7 +33,14 @@
   and **`kata-review`** (adversarial/red-team — the EVALUATE leg the A/B exposed as missing, L10).
 - **v0.1 is now skill-complete: 11 skills built** (the 10 + kata-review). README index promoted.
 
-## Active workstream — OPERATING MODES (design done 2026-06-07)
+## Active workstream — OPERATING MODES (Spec A1 BUILT 2026-06-07)
+
+**Spec A1 (foundations) DONE** on branch `modes/A1-foundations` (not yet merged): skill-conformance validator
+(`tools/validate_skills.py`, 9 tests), schema-v2 frontmatter on all 15 skills (`cost-weight`+`license`+
+namespaced `tags`), frontmatter-generated README index, `protocol/config.md`+`protocol/dependencies.md`
+schemas, `docs/TAXONOMY.md`, Apache-2.0 `LICENSE`. Adversarially reviewed (`.planning/specs/modes-A1-foundations/REVIEW.md` — HOLD→SHIP; 4 blockers + 9 secondary fixed). **Next: A2 (tier families).**
+
+
 Brainstormed a major new capability: cost/effort/thoroughness **operating modes** (Essential/Standard/Advanced),
 all one-shot, consistency-first. Full design in `docs/MODES-DESIGN.md`; vocabulary in `CONTEXT.md`; skill
 token-weights in `.planning/SKILL-COST-RATINGS.md`; decisions D17–D23. Prior art researched (FrugalGPT cascade,

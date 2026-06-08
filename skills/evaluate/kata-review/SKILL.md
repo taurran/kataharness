@@ -5,13 +5,20 @@ description: >-
   conformance gate. Use after kata-evaluate passes, before trusting a result, to red-team the spec's
   judgment (classification, magnitude, assumptions), hunt missing test coverage, and probe the security and
   failure surface. Read-only; it finds problems, it does not fix them.
+license: Apache-2.0
 version: 0.1.0
 category: evaluate
 status: experimental
 agnostic: true
+cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Bash]
 source: adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate)
-tags: [evaluate, adversarial, red-team, no-write]
+tags:
+  - kata/evaluate
+  - kata/module/quality
+  - adversarial
+  - red-team
+  - no-write
 ---
 
 # kata-review — attack the result before you trust it

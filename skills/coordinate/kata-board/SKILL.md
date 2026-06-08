@@ -5,13 +5,21 @@ description: >-
   agents work the same plan and must claim tasks, report done, or ESCALATE an unknown without re-planning.
   An agnostic, file-based reimplementation of the Claude Agent Teams mailbox — append-only so no writer
   clobbers another (the failure mode of shared single-writer state).
+license: Apache-2.0
 version: 0.1.0
 category: coordinate
 status: experimental
 agnostic: true
+cost-weight: 2
 allowed-tools: [Read, Bash]
 source: adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3
-tags: [coordinate, protocol, mailbox, escalation]
+tags:
+  - kata/coordinate
+  - kata/spine
+  - board
+  - mailbox
+  - escalation
+  - protocol
 ---
 
 # kata-board — append-only coordination, no clobber

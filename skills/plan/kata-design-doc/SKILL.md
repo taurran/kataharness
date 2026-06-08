@@ -4,14 +4,21 @@ description: >-
   Compile a grill's decision ledger + glossary into a single FROZEN design contract — the locked source of
   truth both planning and execution serve. Use after grilling, before task-planning, to turn resolved
   decisions into a specific, testable, freeze-ready DESIGN with explicit acceptance and locked decisions.
+license: Apache-2.0
 version: 0.1.0
 category: plan
 status: experimental
 agnostic: true
+cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Write, Edit]
 model: opus
 source: adapted-from mattpocock/skills {to-prd} + superpowers brainstorming + GSD spec-phase
-tags: [plan, freeze, design-contract, spec]
+tags:
+  - kata/plan
+  - kata/spine
+  - freeze
+  - design-contract
+  - spec
 ---
 
 # kata-design-doc — freeze the decisions into a contract

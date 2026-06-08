@@ -5,13 +5,21 @@ description: >-
   frozen plan. Use as the final gate before "done" — run as a SEPARATE subagent with no Write/Edit so it
   cannot rubber-stamp the builder's work. Checks acceptance criteria, the green gate, drift against LOCKED
   decisions, and scope.
+license: Apache-2.0
 version: 0.1.0
 category: evaluate
 status: experimental
 agnostic: true
+cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Bash]
 source: adapted-from cpp-evaluation (CryptoPortfolioPlanner) + Anthropic fresh-context evaluator pattern
-tags: [evaluate, default-fail, gate, no-write]
+tags:
+  - kata/evaluate
+  - kata/spine
+  - conformance
+  - default-fail
+  - gate
+  - no-write
 ---
 
 # kata-evaluate — the default-FAIL gate
