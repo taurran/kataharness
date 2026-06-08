@@ -210,6 +210,21 @@ def check_protocol_schemas(_skills: list[Skill]) -> list[Finding]:
     return out
 
 
+TAXONOMY = REPO_ROOT / "docs" / "TAXONOMY.md"
+
+
+@check
+def check_taxonomy_present(_skills: list[Skill]) -> list[Finding]:
+    if not TAXONOMY.exists():
+        return [Finding("ERROR", "docs/TAXONOMY.md", "missing")]
+    text = TAXONOMY.read_text(encoding="utf-8")
+    out: list[Finding] = []
+    for term in ("kata-<verb>-<tier>", "RUBRIC.md", "Family alias", "Spine vs module"):
+        if term not in text:
+            out.append(Finding("ERROR", "docs/TAXONOMY.md", f"must document '{term}'"))
+    return out
+
+
 def run_checks(skills: list[Skill]) -> list[Finding]:
     findings: list[Finding] = []
     for fn in CHECKS:

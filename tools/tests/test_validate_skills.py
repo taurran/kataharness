@@ -37,3 +37,7 @@ def test_protocol_schemas_present_on_real_tree():
     # check_protocol_schemas reads the real protocol/ dir, not fixtures
     findings = v.check_protocol_schemas([])
     assert findings == [], f"protocol schemas incomplete: {findings}"
+
+
+def test_taxonomy_present_on_real_tree():
+    assert v.check_taxonomy_present([]) == []

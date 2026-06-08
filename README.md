@@ -64,7 +64,7 @@ Roadmap: `.planning/ROADMAP.md`.
 
 ```
 AGENTS.md  CLAUDE.md(pointer)
-docs/      DESIGN · STANDARDS · TEST-PLAN            (ARCHITECTURE · TAXONOMY: planned)
+docs/      DESIGN · STANDARDS · TEST-PLAN · TAXONOMY  (ARCHITECTURE: planned)
 skills/    plan/ coordinate/ execute/ evaluate/ handoff/ meta/   (cognition/: planned)
 protocol/  board · state · handoff                  (tasklist: planned)
 research/  reference/ (vendored: mattpocock, BMAD; gitignored) · NOTES.md
