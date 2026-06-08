@@ -30,3 +30,20 @@ kata-design-doc, kata-tdd. **Never tier:** kata-evaluate (floor) + all weight-1 
 convergence checklist to `resources/` (~30% lighter, pairs with tiering it). (2) kata-orchestrate worker-prompt
 template → `protocol/`/`resources/` pointer. (3) kata-tdd "Supporting depth" para → one-line pointer.
 Suite is otherwise disciplined (progressive disclosure + pointers; no restated-canon violations).
+
+---
+
+## Tier weights (A2)
+
+The four tiered families each carry per-tier `cost-weight` values. The **family base weight** equals the
+**Standard** (or full, for diagnose) tier — i.e., the default dispatch tier (D25).
+
+| family | essential | standard | advanced | full |
+|---|---|---|---|---|
+| kata-grill | 3 | **4** | 5 | — |
+| kata-review | 1 | **2** | 3 | — |
+| kata-plan | 2 | **3** | 4 | — |
+| kata-diagnose (light/full) | — | — | — | light **2** / full **3** |
+
+For `kata-diagnose`, the family base weight = its **full** tier (3), matching the prior single-skill weight.
+These weights are baked into each tier's `cost-weight` frontmatter field (authority: this file).
