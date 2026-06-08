@@ -170,6 +170,17 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `kata-improve`; a natural open pointer for the future PM overlay (D30); any aesthetic polish belongs to the
   `design` module, not here. Baseline report is near-free → leans always-on/spine-light, visuals tier up.
   **Backlog — does NOT block A1** (no foundation depends on it).
+- **D33 — Structural invariants are never tiered; tiers vary depth only.** Surfaced by the A2 adversarial
+  review (REVIEW.md H2/H3): the cheap tiers had accidentally dropped *spine invariants* — `kata-grill-essential`
+  went silent on the "don't grade your own convergence" backstop (the L8 anti-bias), and `kata-plan-essential`
+  dropped the `action` field that quotes LOCKED decisions verbatim (the no-drift line). **Rule:** a tier may
+  reduce depth/breadth/rigor, but may NOT relax a structural invariant — **no-self-certification (L8),
+  no-drift (verbatim LOCKED-decision quoting), default-FAIL, and DRY-by-pointer hold at EVERY tier.** This
+  generalizes D22 (kata-evaluate never tiered) from one skill to a principle. Essential still runs the
+  convergence gate (scoped to its branches, cheapest review tier); essential plans still carry `action` with
+  verbatim decisions. *Why:* consistency is the north star (D18) — if a cheap tier can silently skip the
+  anti-drift/anti-bias machinery, the harness's core guarantee evaporates at exactly the tier most likely to
+  ship fast.
 - **D24d — `kata-orchestrate` stays a single config-driven skill, NOT three per-mode variants (CONFIRMED;
   reaffirms D21).** The tiered skills (grill/review/plan/diagnose) are forked because they carry
   judgment-heavy *branching prose* that risks context-rot/overstep across tiers; orchestrate is a

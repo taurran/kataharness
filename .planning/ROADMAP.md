@@ -18,9 +18,11 @@ Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED
 
 ### Modes & Cost-Tiering track (design DONE 2026-06-07 — `docs/MODES-DESIGN.md`; major new capability)
 Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-first. Sequence:
-- [~] **Spec A — Mode/tier/module/config/bootstrap system.** **A1 (foundations) DONE** (validator +
-  cost-weight/license/namespaced-tags frontmatter + generated README index + `kata.config`/dependency-manifest
-  schemas + `docs/TAXONOMY.md`; reviewed HOLD→SHIP). **A2 (tier families) + A3 (bootstrap+wiring) remain.**
+- [~] **Spec A — Mode/tier/module/config/bootstrap system.** **A1 (foundations) DONE+merged** (validator +
+  cost-weight/license/namespaced-tags frontmatter + generated README index + schemas + TAXONOMY). **A2 (tier
+  families) DONE+merged** (grill/review/plan → 3 tiers, diagnose → light/full; RUBRIC-per-family; depth-hint
+  for design-doc/tdd; validator tier rules; reviewed HOLD→SHIP; **D33** structural-invariants-never-tiered).
+  **A3 (bootstrap + orchestrate config-wiring) remains.**
   cost-weight metadata on all skills; tier
   `kata-grill`/`kata-review`/`kata-plan`/`kata-diagnose` (separate files, shared rubric); mode-hint depth for
   `kata-design-doc`/`kata-tdd`; `kata-evaluate` stays single (floor, D22); `kata.config`; `kata-bootstrap`
