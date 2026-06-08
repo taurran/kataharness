@@ -147,6 +147,28 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   build-time deps are removable post-run. *Why:* leave-no-trace hygiene; cross-project view makes cleanup
   *safe*; no destructive autonomous env changes (consistent with D29). Hooks (fields + ledger) land now;
   the reference-counted cleanup report is a fast-follow within Spec D.
+- **D31 — Frontmatter schema v2 (audited live vs agentskills.io + Anthropic + Obsidian 1.9).** See
+  `.planning/specs/modes-A1-foundations/FRONTMATTER-AUDIT.md`. (a) **Governance fields stay top-level**
+  (Obsidian #1 priority; spec-tolerated) — no `metadata:` nesting, no duplication. (b) **`allowed-tools` keeps
+  the YAML list** for the Claude v0.1 adapter; the adapter normalizes to the open standard's space-separated
+  string. (c) **License = Apache-2.0** (patent grant, sensible for a framework) — adds the spec `license`
+  field to every skill AND closes the open license-selection item. (d) **Adopt `context: fork` as the
+  Claude-adapter evaluator binding + reserve `hooks`** for future automation (docs-only). Plus: add spec
+  `compatibility` (env hint / pre-flight), enforce the spec `name` regex + `description` ≤1024 in the
+  validator (spec-compliance by construction), and restructure `tags` into a `kata/...` automation namespace.
+  *Why:* fixes three real gaps (`license`, `compatibility`, name/description validation), maximizes Obsidian
+  compatibility, and scaffolds future automation — locked before A1 execution because the A1 validator
+  enforces this schema.
+- **D32 — Post-loop build report (`kata-report`), lite-synthesis not comprehension.** A handoff-phase skill
+  that compiles artifacts the loop ALREADY emitted (DESIGN, plan DAG, decision ledger, dependency manifest,
+  diffs, `kata-evaluate`/`kata-review` verdicts, drift ledger, gate numbers) into a durable Obsidian-native
+  `BUILD-REPORT.md`: TL;DR · LOCKED decisions · files changed · a **Mermaid "graphify-lite" diagram** of the
+  DAG/structure · evidence (green/drift=0) · next/open. **Explicit non-goal: from-scratch code comprehension**
+  (synthesize known artifacts, never re-derive — that's why it's cheap and can't hallucinate). Distinct from
+  `kata-handoff` by audience (report = "what was done" for the human; handoff = "how to continue"); feeds
+  `kata-improve`; a natural open pointer for the future PM overlay (D30); any aesthetic polish belongs to the
+  `design` module, not here. Baseline report is near-free → leans always-on/spine-light, visuals tier up.
+  **Backlog — does NOT block A1** (no foundation depends on it).
 - **D24d — `kata-orchestrate` stays a single config-driven skill, NOT three per-mode variants (CONFIRMED;
   reaffirms D21).** The tiered skills (grill/review/plan/diagnose) are forked because they carry
   judgment-heavy *branching prose* that risks context-rot/overstep across tiers; orchestrate is a

@@ -8,33 +8,65 @@
 
 Every `skills/<category>/<name>/SKILL.md` opens with YAML frontmatter:
 
+Schema v2 (2026-06-07) — audited live against the agentskills.io open standard, Anthropic Agent Skills,
+and Obsidian 1.9+ Properties. See `.planning/specs/modes-A1-foundations/FRONTMATTER-AUDIT.md` + decisions
+D26/D31.
+
 ```yaml
 ---
-name: kata-grill                # REQUIRED. agentskills.io id; matches dir; kebab-case; kata-<verb>
-description: >-                  # REQUIRED. one line; the discovery trigger (what + when)
+name: kata-grill                # REQUIRED (spec). ==dir; ^[a-z0-9]+(-[a-z0-9]+)*$; ≤64; no leading/trailing/`--`
+description: >-                  # REQUIRED (spec). non-empty; ≤1024; trigger-rich (what + when)
   Relentless, doc-grounded interrogation that resolves every decision branch and updates CONTEXT.md
+license: Apache-2.0             # REQUIRED here (spec field; public-intended → every skill carries it) — D31c
 version: 0.1.0                   # REQUIRED. semver, per-skill, independently bumped (see §3)
 category: plan                   # REQUIRED. one of: plan|coordinate|execute|evaluate|handoff|meta|cognition
 status: experimental             # REQUIRED. experimental | beta | stable | deprecated
 agnostic: true                   # REQUIRED. true = no tool-specific deps in the skill body
-allowed-tools: [Read, Grep, Glob, Write]   # OPTIONAL. least-privilege; evaluators are read-only
+cost-weight: 4                   # REQUIRED. 1–5 (authority: .planning/SKILL-COST-RATINGS.md) — D27
+allowed-tools: [Read, Grep, Glob, Write]   # OPTIONAL. YAML list (Claude v0.1); adapter normalizes to the open-standard space-separated string (D31b). Evaluators MUST omit Write/Edit.
 model: opus                      # OPTIONAL. only when the model is fixed for correctness
+compatibility: >-               # OPTIONAL (spec; ≤500). env requirements; doubles as a human-readable pre-flight hint (D29)
+  Requires git + a subagent-capable host
 source: >-                       # OPTIONAL but REQUIRED when adapting external work (provenance)
   adapted-from mattpocock/skills@{grill-me, grill-with-docs, ubiquitous-language}
 supersedes: []                   # OPTIONAL. skill names this replaces
-tags: [planning, grilling, ddd]  # OPTIONAL. Obsidian tags
+aliases: []                      # OPTIONAL (Obsidian-reserved). renames / tier-family alias surface
+tags:                            # OPTIONAL but RECOMMENDED. namespaced automation scaffold (§1.1)
+  - kata/plan                    #   kata/<category>
+  - kata/spine                   #   kata/spine | kata/module/<module>
+  - grilling                     #   free domain tags
 ---
 ```
 
 **Rules**
-- `name` MUST equal the directory name and start with the `kata-` prefix.
-- `description` is the *only* thing a host model sees when deciding to invoke — make it trigger-rich.
+- `name` MUST equal the directory name and match `^[a-z0-9]+(-[a-z0-9]+)*$`, ≤64 chars, no leading/trailing
+  hyphen, no `--` (agentskills.io spec — enforced by `tools/validate_skills.py`). The `kata-<verb>` /
+  `kata-<verb>-<tier>` conventions (§2, D26) are *additional* to the spec regex.
+- `description` MUST be non-empty and ≤1024 — it is the *only* thing a host model sees when deciding to
+  invoke; make it trigger-rich.
+- **Governance fields stay top-level (D31a)** — Obsidian-first: top-level properties are first-class in the
+  core Properties UI and queryable. The spec's `metadata:` map is the *blessed* home for custom keys, but we
+  keep them flat for vault visibility; the spec explicitly tolerates them ("agent-specific fields are safely
+  ignored"). Do NOT mirror a field both top-level and under `metadata:` (drift).
 - `allowed-tools` enforces least privilege **structurally** (not by prose). Evaluator skills MUST omit
-  Write/Edit (the Anthropic "fresh-context, no-write evaluator" made structural). Note: this is "no Write/Edit
-  tool," not a sandbox — `Bash` may remain for *running* gate commands; an evaluator must never author artifacts.
+  Write/Edit (the Anthropic fresh-context, no-write evaluator, made structural). Not a sandbox — `Bash` may
+  remain for *running* gate commands; an evaluator never authors artifacts. Canonical form is the YAML list
+  for the Claude v0.1 adapter; the adapter normalizes to the open standard's space-separated string (D31b).
 - `agnostic: false` is allowed only inside `adapters/<tool>/` skills; core `skills/**` MUST be `true`.
-- `source:` is mandatory whenever a skill is derived from external work — we stand on shoulders *and
-  attribute*.
+- `source:` is mandatory whenever a skill is derived from external work — we stand on shoulders *and attribute*.
+- **Obsidian:** only the *plural* reserved props exist — `tags` / `aliases` / `cssclasses` — and their values
+  MUST be lists (1.9 removed the singular `tag`/`alias`/`cssclass`). Never use the singular forms.
+
+### 1.1 Tag namespace (automation scaffold — D31)
+`tags` is the future-automation surface. Use Obsidian nested tags (`/`) so automations can query slices:
+- `kata/<category>` (always) · `kata/spine` OR `kata/module/<module>` (always) ·
+  `kata/tier/<tier>` (tier skills only, A2) · free domain tags (`grilling`, `tdd`, `red-team`, …).
+
+### 1.2 Reserved extension points (declared, not populated in v0.1)
+- `hooks:` — event-driven automation triggers (the home for future automated actions). Reserved.
+- `context: fork` (+`model`) — the **Claude-adapter binding** for our fresh-context, no-write evaluators
+  (`kata-evaluate`, `kata-review`). The capability is abstract; this is the binding, documented in the
+  Claude adapter, never depended on by the agnostic body.
 
 ## 2. Naming convention (permeates everything)
 

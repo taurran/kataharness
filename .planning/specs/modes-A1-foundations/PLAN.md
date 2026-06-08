@@ -80,6 +80,7 @@ testpaths = ["tests"]
 ---
 name: kata-good
 description: A conformant fixture skill.
+license: Apache-2.0
 version: 0.1.0
 category: plan
 status: experimental
@@ -94,6 +95,7 @@ Body.
 ---
 name: kata-mismatch
 description: Name does not match its directory.
+license: Apache-2.0
 version: 0.1.0
 category: plan
 status: experimental
@@ -162,8 +164,12 @@ README = REPO_ROOT / "README.md"
 CATEGORY_ORDER = ["plan", "coordinate", "execute", "evaluate", "handoff", "meta", "cognition"]
 CATEGORIES = set(CATEGORY_ORDER)
 STATUSES = {"experimental", "beta", "stable", "deprecated"}
-REQUIRED_KEYS = ("name", "description", "version", "category", "status", "agnostic")
+# Schema v2 (D31): license is required (public-intended); cost-weight added in Task 2.
+REQUIRED_KEYS = ("name", "description", "license", "version", "category", "status", "agnostic")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
+NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")   # agentskills.io spec
+DESCRIPTION_MAX = 1024
+NAME_MAX = 64
 
 
 @dataclass
@@ -214,8 +220,14 @@ def check_frontmatter(skills: list[Skill]) -> list[Finding]:
         for key in REQUIRED_KEYS:
             if key not in fm:
                 out.append(Finding("ERROR", where, f"missing required frontmatter key: {key}"))
-        if fm.get("name") != s.dir.name:
-            out.append(Finding("ERROR", where, f"name '{fm.get('name')}' != dir '{s.dir.name}'"))
+        name = fm.get("name", "")
+        if name != s.dir.name:
+            out.append(Finding("ERROR", where, f"name '{name}' != dir '{s.dir.name}'"))
+        if not NAME_RE.match(str(name)) or len(str(name)) > NAME_MAX:
+            out.append(Finding("ERROR", where, f"name '{name}' violates spec regex/length (≤{NAME_MAX})"))
+        desc = str(fm.get("description", ""))
+        if not desc.strip() or len(desc) > DESCRIPTION_MAX:
+            out.append(Finding("ERROR", where, f"description must be non-empty and ≤{DESCRIPTION_MAX} chars"))
         if fm.get("category") not in CATEGORIES:
             out.append(Finding("ERROR", where, f"category '{fm.get('category')}' not in {CATEGORY_ORDER}"))
         if fm.get("status") not in STATUSES:
@@ -280,10 +292,14 @@ git commit -m "chore: add skill-conformance validator (maintainer tooling, D27)"
 
 ---
 
-## Task 2: cost-weight frontmatter on all 15 skills
+## Task 2: schema-v2 frontmatter on all 15 skills (cost-weight + license + namespaced tags)
+
+> Schema v2 = D31 + STANDARDS §1. This single pass over all 15 skills adds `cost-weight` (1–5),
+> `license: Apache-2.0`, and restructures `tags` into the `kata/...` automation namespace (§1.1). It also
+> adds the validator's `cost-weight` range check and a `tags`-namespace lint.
 
 **Files:**
-- Modify: `tools/validate_skills.py` (add `cost-weight` to required keys + range check)
+- Modify: `tools/validate_skills.py` (add `cost-weight` to required keys + range check; add tags-namespace check)
 - Modify: `tools/tests/test_validate_skills.py` (add range-check test)
 - Modify: `tools/tests/fixtures/good/kata-good/SKILL.md` (add `cost-weight: 2`)
 - Create: `tools/tests/fixtures/bad-cost/kata-badcost/SKILL.md`
@@ -295,7 +311,7 @@ In `tools/validate_skills.py`, change the `REQUIRED_KEYS` tuple to include cost-
 ```python
 REQUIRED_KEYS = ("name", "description", "version", "category", "status", "agnostic", "cost-weight")
 ```
-Then append this check function (after `check_frontmatter`):
+Then append these check functions (after `check_frontmatter`):
 ```python
 @check
 def check_cost_weight(skills: list[Skill]) -> list[Finding]:
@@ -305,17 +321,53 @@ def check_cost_weight(skills: list[Skill]) -> list[Finding]:
         if not isinstance(cw, int) or isinstance(cw, bool) or not (1 <= cw <= 5):
             out.append(Finding("ERROR", s.dir.name, f"cost-weight '{cw}' must be an int 1-5"))
     return out
+
+
+@check
+def check_tags_namespace(skills: list[Skill]) -> list[Finding]:
+    """STANDARDS §1.1: every namespaced tag is under kata/...; kata/<category> + spine|module present."""
+    out: list[Finding] = []
+    for s in skills:
+        tags = s.frontmatter.get("tags") or []
+        if not isinstance(tags, list):
+            out.append(Finding("ERROR", s.dir.name, "tags must be a list (Obsidian)"))
+            continue
+        kata_tags = [t for t in tags if str(t).startswith("kata/")]
+        if f"kata/{s.frontmatter.get('category')}" not in kata_tags:
+            out.append(Finding("ERROR", s.dir.name, f"tags must include kata/{s.frontmatter.get('category')}"))
+        if not any(t == "kata/spine" or str(t).startswith("kata/module/") for t in kata_tags):
+            out.append(Finding("ERROR", s.dir.name, "tags must include kata/spine or kata/module/<module>"))
+    return out
 ```
 
 - [ ] **Step 2: Update fixtures + add the bad-cost fixture + test**
 
-Add `cost-weight: 2` to `tools/tests/fixtures/good/kata-good/SKILL.md` frontmatter.
+Update `tools/tests/fixtures/good/kata-good/SKILL.md` to full schema v2 (add `cost-weight: 2` and a
+namespaced `tags` block so it passes `check_tags_namespace`):
+```markdown
+---
+name: kata-good
+description: A conformant fixture skill.
+license: Apache-2.0
+version: 0.1.0
+category: plan
+status: experimental
+agnostic: true
+cost-weight: 2
+tags:
+  - kata/plan
+  - kata/spine
+---
+# kata-good
+Body.
+```
 
 Create `tools/tests/fixtures/bad-cost/kata-badcost/SKILL.md`:
 ```markdown
 ---
 name: kata-badcost
 description: cost-weight out of range.
+license: Apache-2.0
 version: 0.1.0
 category: plan
 status: experimental
@@ -338,32 +390,51 @@ def test_cost_weight_out_of_range_is_an_error():
 Run: `cd tools && uv run python validate_skills.py`
 Expected: exit 1 — 15 ERRORs, each `missing required frontmatter key: cost-weight`.
 
-- [ ] **Step 4: Add cost-weight to every skill**
+- [ ] **Step 4: Add schema-v2 fields to every skill**
 
-Add a `cost-weight: <N>` line to each skill's frontmatter (place it after `agnostic:`). Values:
-```
-skills/coordinate/kata-orchestrate/SKILL.md   cost-weight: 5
-skills/plan/kata-grill/SKILL.md               cost-weight: 4
-skills/execute/kata-diagnose/SKILL.md         cost-weight: 3
-skills/execute/kata-tdd/SKILL.md              cost-weight: 3
-skills/plan/kata-plan/SKILL.md                cost-weight: 3
-skills/plan/kata-design-doc/SKILL.md          cost-weight: 2
-skills/evaluate/kata-evaluate/SKILL.md        cost-weight: 2
-skills/evaluate/kata-review/SKILL.md          cost-weight: 2
-skills/coordinate/kata-board/SKILL.md         cost-weight: 2
-skills/handoff/kata-handoff/SKILL.md          cost-weight: 1
-skills/coordinate/kata-worktree/SKILL.md      cost-weight: 1
-skills/handoff/kata-selfhandoff/SKILL.md      cost-weight: 1
-skills/plan/kata-context/SKILL.md             cost-weight: 1
-skills/meta/kata-improve/SKILL.md             cost-weight: 1
-skills/meta/kata-write-skill/SKILL.md         cost-weight: 1
-```
-Example (`skills/coordinate/kata-orchestrate/SKILL.md`), insert the line:
+For each skill add three things: `license: Apache-2.0` (after `description`), `cost-weight: <N>` (after
+`agnostic`), and a restructured `tags:` block (STANDARDS §1.1). Per-skill values — cost-weight, the
+spine/module tag, and a suggested domain tag (preserve any existing domain tags):
+
+| Skill | cost | spine/module tag | domain tags (suggested; keep existing) |
+|---|---|---|---|
+| `skills/plan/kata-grill` | 4 | `kata/spine` | grilling, ddd, doc-baking |
+| `skills/plan/kata-context` | 1 | `kata/spine` | ddd, ubiquitous-language |
+| `skills/plan/kata-design-doc` | 2 | `kata/spine` | freeze, design-contract |
+| `skills/plan/kata-plan` | 3 | `kata/spine` | freeze, dag, file-ownership |
+| `skills/coordinate/kata-orchestrate` | 5 | `kata/spine` | orchestration, no-drift |
+| `skills/coordinate/kata-board` | 2 | `kata/spine` | board, mailbox |
+| `skills/coordinate/kata-worktree` | 1 | `kata/spine` | worktree, isolation |
+| `skills/execute/kata-tdd` | 3 | `kata/spine` | tdd, red-green-refactor |
+| `skills/execute/kata-diagnose` | 3 | `kata/module/quality` | debugging, diagnosis |
+| `skills/evaluate/kata-evaluate` | 2 | `kata/spine` | conformance, default-fail |
+| `skills/evaluate/kata-review` | 2 | `kata/module/quality` | adversarial, red-team |
+| `skills/handoff/kata-handoff` | 1 | `kata/spine` | handoff |
+| `skills/handoff/kata-selfhandoff` | 1 | `kata/spine` | self-handoff |
+| `skills/meta/kata-improve` | 1 | `kata/module/meta` | improvement-kata |
+| `skills/meta/kata-write-skill` | 1 | `kata/module/meta` | authoring |
+
+Each `tags:` block = `[kata/<category>, <spine-or-module-tag>, <domain tags…>]`. Example
+(`skills/coordinate/kata-orchestrate/SKILL.md`):
 ```yaml
+description: >-
+  ...
+license: Apache-2.0
+version: 0.1.0
+category: coordinate
+status: experimental
 agnostic: true
 cost-weight: 5
 allowed-tools: [Read, Grep, Glob, Bash, Write, Agent]   # Agent = the Claude-adapter binding ...
+...
+tags:
+  - kata/coordinate
+  - kata/spine
+  - orchestration
+  - no-drift
 ```
+(`kata/<category>` mirrors each skill's `category`; `kata-orchestrate` is spine, so `kata/spine`.) The
+validator's `check_tags_namespace` enforces that `kata/<category>` + a spine/module tag are present.
 
 - [ ] **Step 5: Run the unit tests + the real-tree validator to verify GREEN**
 
@@ -372,11 +443,19 @@ Expected: PASS (3 passed).
 Run: `cd tools && uv run python validate_skills.py`
 Expected: exit 0 — `15 skills checked — 0 error(s)`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Add the repo LICENSE + update README**
+
+The frontmatter now declares `license: Apache-2.0` on every skill (D31c), so the repo must carry it:
+- Create root `LICENSE` with the **standard Apache-2.0 license text** (verbatim from
+  https://www.apache.org/licenses/LICENSE-2.0.txt), copyright holder = the project owner, year 2026.
+- In `README.md`, change the License section from `TBD before public release ...` to:
+  `Apache-2.0 — see [LICENSE](./LICENSE).`
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add tools/ skills/
-git commit -m "feat: cost-weight metadata on all skills + validator range check"
+git add tools/ skills/ LICENSE README.md
+git commit -m "feat: schema-v2 frontmatter (cost-weight + license + namespaced tags) + Apache-2.0 LICENSE"
 ```
 
 ---
