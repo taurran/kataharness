@@ -162,8 +162,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
 - **D32 — Post-loop build report (`kata-report`), lite-synthesis not comprehension.** A handoff-phase skill
   that compiles artifacts the loop ALREADY emitted (DESIGN, plan DAG, decision ledger, dependency manifest,
   diffs, `kata-evaluate`/`kata-review` verdicts, drift ledger, gate numbers) into a durable Obsidian-native
-  `BUILD-REPORT.md`: TL;DR · LOCKED decisions · files changed · a **Mermaid "graphify-lite" diagram** of the
-  DAG/structure · evidence (green/drift=0) · next/open. **Explicit non-goal: from-scratch code comprehension**
+  `BUILD-REPORT.md`: TL;DR · LOCKED decisions · files changed · a **Mermaid structural diagram** of our own
+  build DAG/structure · evidence (green/drift=0) · next/open. (Renamed from "graphify-lite" to avoid collision
+  with the external Graphify code-navigation tool — see the optional-navigation-capability backlog item.) **Explicit non-goal: from-scratch code comprehension**
   (synthesize known artifacts, never re-derive — that's why it's cheap and can't hallucinate). Distinct from
   `kata-handoff` by audience (report = "what was done" for the human; handoff = "how to continue"); feeds
   `kata-improve`; a natural open pointer for the future PM overlay (D30); any aesthetic polish belongs to the
