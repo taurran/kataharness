@@ -17,8 +17,16 @@ A **tiered family** is a skill that exists at multiple depths for cost/quality t
 skills/<cat>/kata-<verb>/RUBRIC.md          # the tier-INVARIANT method (shared). No SKILL.md ⇒ not invocable.
 skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its depth/breadth/stopping knob + a pointer to ../kata-<verb>/RUBRIC.md
 ```
-- **Tiers:** `kata-grill` · `kata-review` · `kata-plan` → `essential` / `standard` / `advanced`;
-  `kata-diagnose` → `light` / `full`.
+- **Concrete family → tier map (A2):**
+
+  | family | tiers | base weight (Standard/full) |
+  |---|---|---|
+  | `kata-grill` | essential (3) · **standard (4)** · advanced (5) | 4 |
+  | `kata-review` | essential (1) · **standard (2)** · advanced (3) | 2 |
+  | `kata-plan` | essential (2) · **standard (3)** · advanced (4) | 3 |
+  | `kata-diagnose` | **light (2)** · **full (3)** | 3 |
+
+  `grill` · `plan` tiers carry `kata/spine`; `review` · `diagnose` tiers carry `kata/module/quality`.
 - **Family alias:** a bare `[[kata-<verb>]]` reference (in skills/docs/prose) means **the family,
   tier-agnostic**. `kata-orchestrate` resolves it to a concrete tier via `kata.config.tiers` (fallback:
   **Standard**, D25). So cross-skill references stay tier-agnostic by design.
@@ -36,8 +44,8 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
 
 ## cost-weight (1–5)
 Each skill's `cost-weight` frontmatter (authority: `.planning/SKILL-COST-RATINGS.md`) lets `kata-bootstrap`
-price a mode + each à-la-carte add. Dominant axis = amplification (spawn ≫ loop ≫ none). Heaviest:
-`kata-orchestrate` (5) > `kata-grill` (4) > `kata-diagnose`/`kata-tdd`/`kata-plan` (3).
+price a mode + each à-la-carte add. Dominant axis = amplification (spawn ≫ loop ≫ none). Heaviest: `kata-orchestrate` (5); tiered families span a range (e.g. `kata-grill` 3/4/5,
+`kata-plan` 2/3/4) — see the per-tier table above and `.planning/SKILL-COST-RATINGS.md`.
 
 ## Protocol files
 `protocol/config.md` (`kata.config`) · `protocol/dependencies.md` (manifest) · `protocol/board.md` ·

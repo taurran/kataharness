@@ -20,8 +20,16 @@ Promote to ROADMAP milestones when ready.
   `kata/tier/<tier>` becomes load-bearing (A2-time).
 - **`kata-report` (D32)** — post-loop, handoff-phase build report: lite-synthesis of loop artifacts (DESIGN,
   DAG, decision ledger, manifest, diffs, evaluate/review verdicts, gate numbers) → durable `BUILD-REPORT.md`
-  with a Mermaid "graphify-lite" diagram. Non-goal: from-scratch comprehension. Feeds `kata-improve`; open
-  pointer for a future PM overlay (D30). Baseline near-free (spine-light); visuals tier up.
+  with a Mermaid structural diagram (of our own build DAG). Non-goal: from-scratch comprehension. Feeds
+  `kata-improve`; open pointer for a future PM overlay (D30). Baseline near-free (spine-light); visuals tier up.
+- **Optional code-navigation capability (Graphify / MCP graph server)** — the "explore the codebase" step in
+  `kata-grill` Phase 0 / `kata-plan` (closest-analog) / `kata-diagnose` (trace) is an *abstract* capability;
+  bind it to an accelerated backend (Graphify's AST structural graph, or an MCP graph server) WHEN the
+  environment has it AND the codebase is large enough to warrant it. **Optional adapter-bound capability,
+  never a core dep** (agnostic core stays grep/glob/Read by default); pre-staged via D29. Usage discipline if
+  adopted: AST-only in-loop, bounded `--budget` queries, out-of-context oracle, NO always-on hook, no semantic
+  pass in-loop. **Highest value at Spec C (version-ups of large existing codebases) — defer the build to then;
+  the core loop isn't validated yet (D16).** Not worth wiring for v0.1's small dogfood codebases.
 - **`design` module (own spec)** — UI/UX, 2D/3D assets, slides, mobile, image-FM imagery; slots into Advanced.
 - **`docs/TAXONOMY.md`** — categories + `kata-<verb>` naming + tier-family convention (`kata-<verb>-<tier>`) +
   spine-vs-module. Motivated by the modes tiering work; partially specced in `docs/MODES-DESIGN.md`.

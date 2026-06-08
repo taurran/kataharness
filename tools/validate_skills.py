@@ -129,6 +129,37 @@ def check_tags_namespace(skills: list[Skill]) -> list[Finding]:
     return out
 
 
+TIER_RE = re.compile(r"^(kata-[a-z0-9]+(?:-[a-z0-9]+)*?)-(essential|standard|advanced|light|full)$")
+THREE_TIER = {"essential", "standard", "advanced"}
+TWO_TIER = {"light", "full"}
+FAMILY_TIERS = {
+    "kata-grill": THREE_TIER, "kata-review": THREE_TIER,
+    "kata-plan": THREE_TIER, "kata-diagnose": TWO_TIER,
+}
+
+
+@check
+def check_tier_family(skills: list[Skill]) -> list[Finding]:
+    """A tier skill (kata-<verb>-<tier>) must carry the matching kata/tier/<tier> tag and have a
+    sibling RUBRIC.md (the family's shared method). Closes A1 REVIEW backlog 3.3."""
+    out: list[Finding] = []
+    for s in skills:
+        m = TIER_RE.match(s.name)
+        if not m:
+            continue
+        family, tier = m.group(1), m.group(2)
+        allowed = FAMILY_TIERS.get(family)
+        if allowed is not None and tier not in allowed:
+            out.append(Finding("ERROR", s.dir.name, f"tier '{tier}' not valid for family {family}"))
+        tags = s.frontmatter.get("tags") or []
+        if f"kata/tier/{tier}" not in tags:
+            out.append(Finding("ERROR", s.dir.name, f"tier skill must tag kata/tier/{tier}"))
+        rubric = s.dir.parent / family / "RUBRIC.md"
+        if not rubric.exists():
+            out.append(Finding("ERROR", s.dir.name, f"tier family missing shared rubric: {family}/RUBRIC.md"))
+    return out
+
+
 INDEX_START = "<!-- SKILL-INDEX:START -->"
 INDEX_END = "<!-- SKILL-INDEX:END -->"
 INDEX_HEADER = "| Skill | Ver | Cost | Category | Status | Source | Use |"
@@ -257,6 +288,18 @@ def check_wikilinks(skills: list[Skill]) -> list[Finding]:
         for ref in set(WIKILINK.findall(s.body)):
             if ref not in targets:
                 out.append(Finding("ERROR", s.dir.name, f"unresolved skill wikilink [[{ref}]]"))
+    return out
+
+
+@check
+def check_rubric_wikilinks(_skills: list[Skill]) -> list[Finding]:
+    targets = _valid_skill_targets()
+    out: list[Finding] = []
+    for rubric in sorted(SKILLS_DIR.glob("*/*/RUBRIC.md")):
+        body = rubric.read_text(encoding="utf-8")
+        for ref in set(WIKILINK.findall(body)):
+            if ref not in targets:
+                out.append(Finding("ERROR", f"{rubric.parent.name}/RUBRIC.md", f"unresolved skill wikilink [[{ref}]]"))
     return out
 
 

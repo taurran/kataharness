@@ -54,3 +54,13 @@ def test_real_tree_wikilinks_all_resolve():
 
 def test_real_tree_readme_in_sync():
     assert v.check_readme_sync(v.load_skills()) == []
+
+
+def test_good_tier_skill_passes_tier_check():
+    assert v.check_tier_family(_skills_in("good-tier")) == []
+
+
+def test_tier_skill_missing_tag_and_rubric_errors():
+    findings = v.check_tier_family(_skills_in("bad-tier"))
+    assert any("kata/tier/standard" in f.msg for f in findings)
+    assert any("RUBRIC.md" in f.msg for f in findings)
