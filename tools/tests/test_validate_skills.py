@@ -17,3 +17,8 @@ def test_good_fixture_has_no_findings():
 def test_name_mismatch_is_an_error():
     findings = v.run_checks(_skills_in("bad-name"))
     assert any(f.level == "ERROR" and "name" in f.msg for f in findings)
+
+
+def test_cost_weight_out_of_range_is_an_error():
+    findings = v.run_checks(_skills_in("bad-cost"))
+    assert any(f.level == "ERROR" and "cost-weight" in f.msg for f in findings)

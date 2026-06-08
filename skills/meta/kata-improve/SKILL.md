@@ -5,13 +5,18 @@ description: >-
   run surprises back into the SKILLS. Use after a run/milestone to deepen skills, close recurring gaps, and
   bump versions. Targets the skills/ tree (not product code); decides WHAT to change and delegates new-skill
   authoring to kata-write-skill.
+license: Apache-2.0
 version: 0.1.0
 category: meta
 status: experimental
 agnostic: true
+cost-weight: 1
 allowed-tools: [Read, Grep, Glob, Edit, Write, Bash]
 source: adapted-from the Improvement Kata (Toyota Kata) + mattpocock/skills engineering/improve-codebase-architecture
-tags: [meta, kata, retrospective, continuous-improvement]
+tags:
+  - kata/meta
+  - kata/module/meta
+  - improvement-kata
 ---
 
 # kata-improve — every run improves the harness

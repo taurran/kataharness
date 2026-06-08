@@ -4,14 +4,22 @@ description: >-
   Turn a frozen DESIGN into a task-level execution plan with DISJOINT file-ownership, a wave/dependency DAG,
   and per-task acceptance criteria — the structure that makes no-drift, concurrent, plan-faithful execution
   possible. Use after the design is frozen, before dispatching any worker.
+license: Apache-2.0
 version: 0.1.0
 category: plan
 status: experimental
 agnostic: true
+cost-weight: 3
 allowed-tools: [Read, Grep, Glob, Write, Edit]
 model: opus
 source: adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format
-tags: [plan, freeze, file-ownership, dag, waves]
+tags:
+  - kata/plan
+  - kata/spine
+  - freeze
+  - dag
+  - file-ownership
+  - waves
 ---
 
 # kata-plan — decompose into ownable, gateable, drift-proof tasks

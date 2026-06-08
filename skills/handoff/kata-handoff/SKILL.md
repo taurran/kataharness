@@ -4,13 +4,18 @@ description: >-
   Write a durable, two-way, git-committed handoff so work survives session/agent/tool boundaries and
   compaction with zero loss. Use at the end of a session, when handing between agents/tools, or before a
   context reset — anchored on the frozen plan so the resumer re-enters mid-stream without re-deriving.
+license: Apache-2.0
 version: 0.1.0
 category: handoff
 status: experimental
 agnostic: true
+cost-weight: 1
 allowed-tools: [Read, Grep, Glob, Write, Bash]
 source: adapted-from mattpocock/skills {handoff} + Anthropic reset-with-handoff / compaction guidance
-tags: [handoff, durability, context]
+tags:
+  - kata/handoff
+  - kata/spine
+  - handoff
 ---
 
 # kata-handoff — durable, two-way, plan-anchored

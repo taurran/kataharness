@@ -73,4 +73,4 @@ adapters/  (planned — v0.1 is a Claude-only core)
 
 ## License
 
-TBD before public release (intended public / open-source).
+Apache-2.0 — see [LICENSE](./LICENSE).

@@ -25,7 +25,7 @@ CATEGORIES = set(CATEGORY_ORDER)
 STATUSES = {"experimental", "beta", "stable", "deprecated"}
 # Schema v2 (D31): name-regex + description-length enforced here; `license` + `cost-weight` join
 # REQUIRED_KEYS in Task 2 (when all skills gain them in one pass — keeps the real tree green each step).
-REQUIRED_KEYS = ("name", "description", "version", "category", "status", "agnostic")
+REQUIRED_KEYS = ("name", "description", "license", "version", "category", "status", "agnostic", "cost-weight")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")   # agentskills.io spec
 DESCRIPTION_MAX = 1024
@@ -96,6 +96,33 @@ def check_frontmatter(skills: list[Skill]) -> list[Finding]:
             out.append(Finding("ERROR", where, f"version '{fm.get('version')}' is not semver"))
         if "adapters" not in s.dir.parts and fm.get("agnostic") is not True:
             out.append(Finding("ERROR", where, "core skill must be agnostic: true"))
+    return out
+
+
+@check
+def check_cost_weight(skills: list[Skill]) -> list[Finding]:
+    out: list[Finding] = []
+    for s in skills:
+        cw = s.frontmatter.get("cost-weight")
+        if not isinstance(cw, int) or isinstance(cw, bool) or not (1 <= cw <= 5):
+            out.append(Finding("ERROR", s.dir.name, f"cost-weight '{cw}' must be an int 1-5"))
+    return out
+
+
+@check
+def check_tags_namespace(skills: list[Skill]) -> list[Finding]:
+    """STANDARDS §1.1: every namespaced tag is under kata/...; kata/<category> + spine|module present."""
+    out: list[Finding] = []
+    for s in skills:
+        tags = s.frontmatter.get("tags") or []
+        if not isinstance(tags, list):
+            out.append(Finding("ERROR", s.dir.name, "tags must be a list (Obsidian)"))
+            continue
+        kata_tags = [t for t in tags if str(t).startswith("kata/")]
+        if f"kata/{s.frontmatter.get('category')}" not in kata_tags:
+            out.append(Finding("ERROR", s.dir.name, f"tags must include kata/{s.frontmatter.get('category')}"))
+        if not any(t == "kata/spine" or str(t).startswith("kata/module/") for t in kata_tags):
+            out.append(Finding("ERROR", s.dir.name, "tags must include kata/spine or kata/module/<module>"))
     return out
 
 

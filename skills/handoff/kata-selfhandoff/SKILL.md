@@ -5,13 +5,18 @@ description: >-
   handoff, compact/reset, and resume re-anchored on the frozen plan — with zero task loss. Use to survive
   long runs without context rot. It is the TRIGGER POLICY only; it delegates the handoff artifact to
   kata-handoff and never re-implements the format.
+license: Apache-2.0
 version: 0.1.0
 category: handoff
 status: experimental
 agnostic: true
+cost-weight: 1
 allowed-tools: [Read, Grep, Glob, Write, Bash]
 source: adapted-from Anthropic compaction guidance + mattpocock caveman compression
-tags: [handoff, context, compaction, self-handoff]
+tags:
+  - kata/handoff
+  - kata/spine
+  - self-handoff
 ---
 
 # kata-selfhandoff — reclaim context without losing the thread

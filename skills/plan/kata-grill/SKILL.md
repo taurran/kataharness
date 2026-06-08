@@ -6,15 +6,23 @@ description: >-
   drift-proof design contract. Explores code/docs to answer instead of asking; poses structured
   choice-or-free-text questions with a recommendation each; stress-tests with concrete scenarios; sharpens
   terminology; and bakes resolved decisions into a glossary, ADRs, and a decision ledger as it goes.
+license: Apache-2.0
 version: 0.1.0
 category: plan
 status: experimental
 agnostic: true
+cost-weight: 4
 allowed-tools: [Read, Grep, Glob, Write, Edit]
 model: opus
 source: >-
   adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model
-tags: [plan, grilling, ddd, doc-baking, ubiquitous-language]
+tags:
+  - kata/plan
+  - kata/spine
+  - grilling
+  - ddd
+  - doc-baking
+  - ubiquitous-language
 ---
 
 # kata-grill — interrogate every branch until the design is specific enough that execution cannot drift

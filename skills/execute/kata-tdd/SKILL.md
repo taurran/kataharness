@@ -5,13 +5,20 @@ description: >-
   never re-planning. Use when a worker subagent is assigned a single plan task and must build it to its
   acceptance criteria — red→green→refactor, behavior over implementation, escalate unknowns instead of
   improvising.
+license: Apache-2.0
 version: 0.1.0
 category: execute
 status: experimental
 agnostic: true
+cost-weight: 3
 allowed-tools: [Read, Grep, Glob, Edit, Write, Bash]
 source: adapted-from mattpocock/skills engineering/tdd
-tags: [execute, tdd, red-green-refactor, worker]
+tags:
+  - kata/execute
+  - kata/spine
+  - tdd
+  - red-green-refactor
+  - worker
 ---
 
 # kata-tdd — build the slice, test-first, in your lane
