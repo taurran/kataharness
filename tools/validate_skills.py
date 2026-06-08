@@ -129,6 +129,28 @@ def check_tags_namespace(skills: list[Skill]) -> list[Finding]:
     return out
 
 
+TIER_RE = re.compile(r"^(kata-[a-z0-9]+(?:-[a-z0-9]+)*?)-(essential|standard|advanced|light|full)$")
+
+
+@check
+def check_tier_family(skills: list[Skill]) -> list[Finding]:
+    """A tier skill (kata-<verb>-<tier>) must carry the matching kata/tier/<tier> tag and have a
+    sibling RUBRIC.md (the family's shared method). Closes A1 REVIEW backlog 3.3."""
+    out: list[Finding] = []
+    for s in skills:
+        m = TIER_RE.match(s.name)
+        if not m:
+            continue
+        family, tier = m.group(1), m.group(2)
+        tags = s.frontmatter.get("tags") or []
+        if f"kata/tier/{tier}" not in tags:
+            out.append(Finding("ERROR", s.dir.name, f"tier skill must tag kata/tier/{tier}"))
+        rubric = s.dir.parent / family / "RUBRIC.md"
+        if not rubric.exists():
+            out.append(Finding("ERROR", s.dir.name, f"tier family missing shared rubric: {family}/RUBRIC.md"))
+    return out
+
+
 INDEX_START = "<!-- SKILL-INDEX:START -->"
 INDEX_END = "<!-- SKILL-INDEX:END -->"
 INDEX_HEADER = "| Skill | Ver | Cost | Category | Status | Source | Use |"
