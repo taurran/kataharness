@@ -40,6 +40,35 @@ files (high-cost skills) or a mode-passed depth hint (medium skills).
 **Tier-family**:
 A skill that exists as multiple per-tier files (`kata-<verb>-<tier>`) sharing one rubric resource.
 
+**RUBRIC**:
+The tier-invariant method shared by a tier-family's per-tier files, at `skills/<cat>/kata-<verb>/RUBRIC.md` —
+a resource, **not** a skill (no SKILL.md). The tier files carry only their depth knob and point to it
+(DRY-by-pointer).
+_Avoid_: base skill, template, shared SKILL
+
+**Family-alias**:
+A bare `[[kata-<verb>]]` reference = the **tier-agnostic family**; `kata-orchestrate` resolves it to a
+concrete tier via `kata.config` (fallback **Standard**, D25). Cross-skill references stay bare by design.
+_Avoid_: default skill, the base
+
+**Structural invariant**:
+A spine guarantee that holds at **every** tier — no-self-certification (L8), no-drift (verbatim LOCKED-decision
+quoting), default-FAIL, DRY-by-pointer. **Never tiered** (D33); tiers vary depth only. Generalizes the
+conformance floor from one skill to a principle.
+_Avoid_: rule, constraint
+
+## Pre-flight & dependencies
+**Pre-flight**:
+The mandatory spine phase between FREEZE and EXECUTE that pre-stages every external dependency —
+human-approved at FREEZE, then installed + verified — **before** the loop runs; workers cannot install (D29).
+A long-running loop must never stall mid-flight on a missing tool/lib/MCP.
+_Avoid_: setup, provisioning, install step
+
+**Dependency manifest**:
+The frozen list of external deps (name · version · install · verify · source/trust · scope · build-time/runtime)
+approved at FREEZE and provisioned at pre-flight. Schema: `protocol/dependencies.md`.
+_Avoid_: requirements, deps list
+
 **cost-weight**:
 A skill's 1–5 token-cost rating (base × amplification × exec-context), metadata used to price a mode.
 

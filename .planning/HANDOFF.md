@@ -1,50 +1,65 @@
 ---
-date: 2026-06-07
+date: 2026-06-08
 branch: master (local only — no remote yet)
-commit: see `git log -1` (modes-design checkpoint)
-green: n/a (KataHarness ships skills/docs, no test suite of its own)
-tags: [handoff, modes, checkpoint]
+commit: f4d7cb0 (Merge modes Spec A2 — tier families)
+green: validator 22 skills / 0 errors (exit 0) · pytest 11 passed · Snyk 0
+tags: [handoff, modes, A2-merged, checkpoint]
 ---
 
-# HANDOFF — KataHarness — 2026-06-07 (operating-modes design done; ready to compact)
+# HANDOFF — KataHarness — 2026-06-08 (Spec A1+A2 merged; A3 / D16-A/B decision pending)
 
-> **Fresh session: read in order, then resume.**
-> 1. `AGENTS.md` · 2. `docs/DESIGN.md` · 3. `docs/STANDARDS.md` · 4. **`docs/MODES-DESIGN.md`** (the new work) ·
-> 5. `CONTEXT.md` (vocabulary) · 6. `.planning/STATE.md` + `DECISIONS.md` (D1–D23) + `LESSONS-LEARNED.md`
-> (L1–L10) + `REVIEW-v0.1.md` + `SKILL-COST-RATINGS.md`.
+> **Fresh session: read in order, confirm green, then resume at NEXT STEP.**
 
-## Where we are
-- **15 of 18 skills built**, all `0.1.0/experimental`, adversarially reviewed + fixed (REVIEW-v0.1; HOLD→closed).
-  Deferred: `kata-tasklist` (reframed, D23), `kata-zoom-out`, `kata-engram`.
-- **Execution half field-proven**: built CPP Phase 3 (G_macro) green via subagents in worktrees; A/B vs GSD
-  **tied** (L10) — execution on-par, not better; the grill (differentiator) is untested. CPP Phase 3 lives on
-  CPP branch `test/phase3-kata` (worktree `C:/Dev/_kata_armA/integration`); user shipped GSD's Arm B to CPP main.
-- **NEW this session — operating-modes design (brainstormed, NOT implemented):** `docs/MODES-DESIGN.md` +
-  `CONTEXT.md` + `.planning/SKILL-COST-RATINGS.md`; decisions D17–D23. Cost-rating analyzer run on all 15 skills.
+## 1. Read-in order
+1. `AGENTS.md` (canonical) · 2. `docs/DESIGN.md` (charter) · 3. `docs/STANDARDS.md` (frontmatter v2 §1) ·
+4. **`docs/MODES-DESIGN.md`** (the modes architecture) · 5. `docs/TAXONOMY.md` (tier-family convention) ·
+6. `CONTEXT.md` (glossary) · 7. `.planning/STATE.md` · 8. `.planning/DECISIONS.md` (**D1–D33**) ·
+9. `.planning/LESSONS-LEARNED.md` (**L1–L10**) · 10. `.planning/SKILL-COST-RATINGS.md` ·
+11. the two spec folders: `.planning/specs/modes-A1-foundations/{PLAN,REVIEW}.md` +
+`.planning/specs/modes-A2-tier-families/{PLAN,REVIEW}.md`. Re-anchor on the FROZEN plans, not a summary.
 
-## The modes design in one breath
-Modes (Essential/Standard/Advanced) = **spine + module bundle + tier of each tiered skill** (one unified axis),
-× an orthogonal **effort overlay**, + à-la-carte modules. **Consistency is the north star** (D18); the
-`kata-evaluate` conformance gate is the uniform floor and is **never tiered** (D22). Tiering is **cost-gated**
-(D21): separate files for high-cost/variance skills (`grill`, `review`, `plan`, `diagnose`); mode-hint depth for
-medium (`design-doc`, `tdd`). A `kata-bootstrap` selector writes a per-branch `kata.config` (provenance →
-reproducibility → cheap step-up). Don't reinvent: model-effort = Claude `effort`; bake-off = AgentHub/worktrees.
+## 2. State (confirm green first)
+- Branch **master**, commit **f4d7cb0**. Local-only (no git remote yet).
+- Gate: `cd tools && uv run pytest -q` → **11 passed**; `cd tools && uv run python validate_skills.py` →
+  **`22 skills checked — 0 error(s)`**, exit 0. (`uv` is on PATH.)
 
-## NEXT STEP (in order)
-1. **User reviews `docs/MODES-DESIGN.md`.** Confirm the 2 pending items: **mode=tier unification** (vs
-   independent knobs) and **`kata-bootstrap` as its own skill** (recommended defaults: unified; own skill).
-2. **`kata-plan` / writing-plans → Spec A** (the mode/tier/module/config/bootstrap system + bake cost-weights
-   into frontmatter + tier grill/review/plan/diagnose + `TAXONOMY.md` + fold grill efficiency refactor). Then
-   Spec B (bake-off), Spec C (version-ups), `design` module (own spec).
-3. **Parallel: the D16 planning-varied A/B** (prove the grill differentiates) before calling v0.1 "validated."
+## 3. What shipped (Spec A1 + A2, both merged + adversarially reviewed HOLD→SHIP)
+- **A1 (foundations):** `tools/validate_skills.py` — the skill-conformance + README-regen validator
+  (Python/uv, maintainer-only, D27); schema-v2 frontmatter on every skill (`cost-weight` + `license` +
+  namespaced `tags`); frontmatter-generated README index; `protocol/config.md` (`kata.config`) +
+  `protocol/dependencies.md` schemas; `docs/TAXONOMY.md`; Apache-2.0 `LICENSE`.
+- **A2 (tier families):** `kata-grill`/`kata-review`/`kata-plan` → `-essential`/`-standard`/`-advanced`;
+  `kata-diagnose` → `-light`/`-full`; each a thin tier `SKILL.md` over a shared `kata-<verb>/RUBRIC.md`
+  (DRY-by-pointer). `kata-design-doc`/`kata-tdd` got a mode depth-hint. `kata-evaluate`/`kata-orchestrate`
+  stay single. **22 skills.** Validator gained tier-family rules (`check_tier_family`, `FAMILY_TIERS`,
+  `check_rubric_wikilinks`). New principle: **D33 — structural invariants are never tiered.**
+- Execution method that worked: subagent-driven (Sonnet implementers, Opus reviews each diff + gates on the
+  validator; fresh-context adversarial `kata-review` per spec, D15). The adversarial leg caught real blockers
+  the green gate missed in BOTH specs — keep doing it.
 
-## Suggested next skills
-`kata-plan` (Spec A plan) · `kata-write-skill` (for `kata-bootstrap` + the tier-family files) · `kata-review`
-(adversarial-review every new skill, D15) · `kata-improve` (fold the efficiency refactors).
+## 4. NEXT STEP — in order
+**A user decision gates the next phase** (asked at end of last session, not yet answered):
+1. **A3 — bootstrap + wiring** (finish the Spec A trilogy): build `kata-bootstrap` (the D24c composition
+   ladder — picks mode+modules+effort, cost-preview from `cost-weight`, writes `kata.config`) and teach
+   `kata-orchestrate` to **read `kata.config` + resolve family→tier** (fallback Standard, D25). This is what
+   makes the A2 tiers actually *dispatch* — today the tier files exist but nothing selects them.
+2. **D16 planning-varied A/B** — prove the grill actually differentiates (Arm A plans via
+   `kata-grill`→`kata-design-doc`→`kata-plan` for real vs a GSD-planned baseline). **The whole modes edifice
+   rests on the planning half being worth it, and that is still unproven** (L10 was a TIE on frozen-plan
+   execution). This is the real ship-gate for calling v0.1 "validated."
+3. **Pause** — A1+A2 are a clean merged milestone.
+- **Opus recommendation: 2 (the D16 A/B) or 3 over 1** — A3 wires machinery whose value hinges on the
+  unproven D16. If the user picks A3 anyway: `kata-plan`/writing-plans → A3 plan → subagent-driven
+  (Sonnet-execute/Opus-review) → `kata-review` (D15) → merge.
 
-## Open decisions for the human
-- The 2 pending confirmations above. · Set a **git remote** (still local-only) before public release. ·
-  License selection. · Whether to do Spec A before or after the D16 A/B.
+## 5. Suggested next skills
+A3 path: `kata-plan` (write the A3 plan) · `kata-write-skill` (author `kata-bootstrap`) · `kata-orchestrate`
+(the config-read wiring) · `kata-review` (D15 adversarial pass on everything new).
+D16 path: `kata-grill`/`kata-design-doc`/`kata-plan` run for real on a CPP-style target vs a baseline.
 
-## Redaction
-No secrets/keys/PII. Nothing to redact.
+## 6. Open decisions for the human
+- **The 1/2/3 call above** (A3 vs D16 A/B vs pause). · Set a **git remote** before public release. ·
+  Public-release prep (the project is Apache-2.0, public-intended, still local-only).
+
+## 7. Redaction
+No secrets / keys / PII. Nothing to redact.
