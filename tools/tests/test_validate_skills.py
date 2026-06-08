@@ -31,3 +31,9 @@ def test_index_is_idempotent_under_regeneration():
     # the generated block parses back to the same Use text
     assert v._parse_existing_use(block).get("kata-good") == "does a good thing"
     assert "| Cost |" in block
+
+
+def test_protocol_schemas_present_on_real_tree():
+    # check_protocol_schemas reads the real protocol/ dir, not fixtures
+    findings = v.check_protocol_schemas([])
+    assert findings == [], f"protocol schemas incomplete: {findings}"

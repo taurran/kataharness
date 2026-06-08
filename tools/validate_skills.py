@@ -188,6 +188,28 @@ def check_readme_sync(skills: list[Skill]) -> list[Finding]:
     return []
 
 
+PROTOCOL_DIR = REPO_ROOT / "protocol"
+REQUIRED_PROTOCOL = {
+    "config.md": ["mode", "modules", "effort", "preflight", "skillVersions"],
+    "dependencies.md": ["classification", "scope", "verify", "install"],
+}
+
+
+@check
+def check_protocol_schemas(_skills: list[Skill]) -> list[Finding]:
+    out: list[Finding] = []
+    for fname, required_terms in REQUIRED_PROTOCOL.items():
+        path = PROTOCOL_DIR / fname
+        if not path.exists():
+            out.append(Finding("ERROR", f"protocol/{fname}", "required protocol schema missing"))
+            continue
+        text = path.read_text(encoding="utf-8")
+        for term in required_terms:
+            if term not in text:
+                out.append(Finding("ERROR", f"protocol/{fname}", f"schema must document '{term}'"))
+    return out
+
+
 def run_checks(skills: list[Skill]) -> list[Finding]:
     findings: list[Finding] = []
     for fn in CHECKS:
