@@ -52,7 +52,7 @@ checks only what STANDARDS + the modes work require — it is not a general mark
 - Create: `tools/pyproject.toml`
 - Create: `tools/validate_skills.py`
 - Create: `tools/tests/test_validate_skills.py`
-- Create: `tools/tests/fixtures/good/kata-good/SKILL.md`
+- Create: `tools/tests/fixtures/good/plan/kata-good/SKILL.md`
 - Create: `tools/tests/fixtures/bad-name/kata-wrongname/SKILL.md`
 
 - [ ] **Step 1: Write the uv project file**
@@ -75,7 +75,7 @@ testpaths = ["tests"]
 
 - [ ] **Step 2: Write the fixtures**
 
-`tools/tests/fixtures/good/kata-good/SKILL.md`:
+`tools/tests/fixtures/good/plan/kata-good/SKILL.md`:
 ```markdown
 ---
 name: kata-good
@@ -302,8 +302,8 @@ git commit -m "chore: add skill-conformance validator (maintainer tooling, D27)"
 **Files:**
 - Modify: `tools/validate_skills.py` (add `cost-weight` to required keys + range check; add tags-namespace check)
 - Modify: `tools/tests/test_validate_skills.py` (add range-check test)
-- Modify: `tools/tests/fixtures/good/kata-good/SKILL.md` (add `cost-weight: 2`)
-- Create: `tools/tests/fixtures/bad-cost/kata-badcost/SKILL.md`
+- Modify: `tools/tests/fixtures/good/plan/kata-good/SKILL.md` (add `cost-weight: 2`)
+- Create: `tools/tests/fixtures/bad-cost/plan/kata-badcost/SKILL.md`
 - Modify: all 15 `skills/**/SKILL.md`
 
 - [ ] **Step 1: Add the cost-weight check to the validator**
@@ -344,7 +344,7 @@ def check_tags_namespace(skills: list[Skill]) -> list[Finding]:
 
 - [ ] **Step 2: Update fixtures + add the bad-cost fixture + test**
 
-Update `tools/tests/fixtures/good/kata-good/SKILL.md` to full schema v2 (add `cost-weight: 2` and a
+Update `tools/tests/fixtures/good/plan/kata-good/SKILL.md` to full schema v2 (add `cost-weight: 2` and a
 namespaced `tags` block so it passes `check_tags_namespace`):
 ```markdown
 ---
@@ -364,7 +364,7 @@ tags:
 Body.
 ```
 
-Create `tools/tests/fixtures/bad-cost/kata-badcost/SKILL.md`:
+Create `tools/tests/fixtures/bad-cost/plan/kata-badcost/SKILL.md`:
 ```markdown
 ---
 name: kata-badcost
@@ -864,7 +864,7 @@ def check_wikilinks(skills: list[Skill]) -> list[Finding]:
 
 - [ ] **Step 2: Add a test (good fixture references resolve; a bogus one fails)**
 
-Create `tools/tests/fixtures/bad-link/kata-badlink/SKILL.md`:
+Create `tools/tests/fixtures/bad-link/plan/kata-badlink/SKILL.md`:
 ```markdown
 ---
 name: kata-badlink
