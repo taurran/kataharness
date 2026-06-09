@@ -97,7 +97,7 @@ _Avoid_: wizard, setup
 
 **Version-up**:
 A one-shot feature-rollout / new version of an *existing* project, driven through the modes (the
-Improvement-Kata applied to live repos). Spec C.
+Improvement-Kata applied to live repos). **Built in Spec A4** (absorbed the old "Spec C").
 
 **Run-shape**:
 A named preset over the mode axis (individual / batch / version-up / advanced) that `kata-bootstrap`
@@ -126,3 +126,39 @@ _Avoid_: validation (bootstrap writes by construction; this is the consumer-side
 The run's subject: `greenfield` (new project) or `existing` (version-up — an existing repo `path` +
 a `baselineGate` regression command). Set in `kata.config`; determines which run-shape bundle applies.
 _Avoid_: project, repo
+
+## Version-up & the code graph (A4)
+**Structural map / `kata.graph.json`**:
+The feature-**agnostic**, content-hash-cached code graph built by `kata-graph` (nodes = files/symbols, edges =
+def/ref/call/import, per-node PageRank). The token-saving substrate version-up ingests. Schema: `protocol/graph.md`.
+Based on aider's repo-map; Graphify is an optional MCP oracle backend. _Avoid_: index, AST dump.
+
+**Digest**:
+The **use-time**, feature-seeded, token-budgeted projection of the structural map (top-PageRank signatures,
+~3k tokens default) injected into grill/plan. A view, not the cached graph. _Avoid_: summary.
+
+**Seeding**:
+Use-time boosting of PageRank (×10) for symbols matching the feature description + user-named files, so the
+digest is the feature's neighborhood. Never cached (the graph stays feature-agnostic). _Avoid_: filtering.
+
+**Footprint**:
+The ownership universe of a version-up run = **modified-files ∪ depth-1 reverse-dependents**; files outside are
+**off-limits, owned by no task**. The structural form of "don't break other aspects." _Avoid_: scope.
+
+**Blast-radius**:
+Reverse-reachability over `ref ∪ call` edges from the changed symbols = the regression-risk surface. Computed by
+the **planner** (inverting the graph's forward edges), not by `kata-graph`. _Avoid_: footprint (related, distinct).
+
+**Rolling frontier / frontier dispatch**:
+`kata-orchestrate`'s dispatch model — a task runs the moment its `depends_on` are integrated **and** its files are
+disjoint from every in-flight task; **waves are a derived view**, not a hard gate. Generalizes the old wave-gate.
+_Avoid_: wave (now derived).
+
+**Async escalation**:
+An escalation **parks** its task + DAG-dependents but does **not** halt the run; the frontier keeps draining;
+hard-wait for a human only when the frontier is empty ∧ open human-required escalations remain. _Avoid_: blocking escalation.
+
+**Escalation payload**:
+The structured artifact (`.kata/escalations/<task-id>.json`, `protocol/escalation.md`) carrying
+decision/options/recommendation/cost — its **own contract**, separate from the one-line board `ESCALATE`
+pointer. The engram learning surface (future, D56). _Avoid_: board message (that's just the pointer).

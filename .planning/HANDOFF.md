@@ -1,65 +1,71 @@
 ---
 date: 2026-06-08
 branch: master (local only — no remote yet)
-commit: f4d7cb0 (Merge modes Spec A2 — tier families)
-green: validator 22 skills / 0 errors (exit 0) · pytest 11 passed · Snyk 0
-tags: [handoff, modes, A2-merged, checkpoint]
+commit: de4b0ee (Merge modes Spec A4 — version-up + kata-graph) + docs/handoff on top
+green: validator 25 skills / 0 errors (exit 0) · pytest 13 passed · Snyk 0
+tags: [handoff, modes, spec-A-complete, A1-A4-merged, checkpoint]
 ---
 
-# HANDOFF — KataHarness — 2026-06-08 (Spec A1+A2 merged; A3 / D16-A/B decision pending)
+# HANDOFF — KataHarness — 2026-06-08 (Modes Spec A COMPLETE: A1+A2+A3+A4 merged)
 
-> **Fresh session: read in order, confirm green, then resume at NEXT STEP.**
+> **Fresh session: read in order, confirm green, then resume at NEXT STEP. Re-anchor on the FROZEN specs, not a summary.**
 
 ## 1. Read-in order
-1. `AGENTS.md` (canonical) · 2. `docs/DESIGN.md` (charter) · 3. `docs/STANDARDS.md` (frontmatter v2 §1) ·
-4. **`docs/MODES-DESIGN.md`** (the modes architecture) · 5. `docs/TAXONOMY.md` (tier-family convention) ·
-6. `CONTEXT.md` (glossary) · 7. `.planning/STATE.md` · 8. `.planning/DECISIONS.md` (**D1–D33**) ·
-9. `.planning/LESSONS-LEARNED.md` (**L1–L10**) · 10. `.planning/SKILL-COST-RATINGS.md` ·
-11. the two spec folders: `.planning/specs/modes-A1-foundations/{PLAN,REVIEW}.md` +
-`.planning/specs/modes-A2-tier-families/{PLAN,REVIEW}.md`. Re-anchor on the FROZEN plans, not a summary.
+1. `AGENTS.md` (canonical) · 2. `docs/DESIGN.md` (charter) · 3. `docs/STANDARDS.md` (frontmatter v2 §1 + the
+**versioning hold policy A** in §3) · 4. `docs/MODES-DESIGN.md` (modes architecture) · 5. `docs/TAXONOMY.md`
+(tier-family + module conventions) · 6. `CONTEXT.md` (glossary — now incl. the A4 graph/version-up terms) ·
+7. `.planning/STATE.md` · 8. `.planning/DECISIONS.md` (**D1–D56**) · 9. `.planning/LESSONS-LEARNED.md`
+(**L1–L10**) · 10. `.planning/SKILL-COST-RATINGS.md` · 11. the four spec folders under `.planning/specs/`
+(`modes-A1-foundations`, `-A2-tier-families`, `-A3-bootstrap-wiring`, `-A4-version-up`) —
+each has `{PLAN, REVIEW}` (+ A3/A4 also `GRILL-LEDGER`, A4 also `RESEARCH`, `DESIGN`).
 
 ## 2. State (confirm green first)
-- Branch **master**, commit **f4d7cb0**. Local-only (no git remote yet).
-- Gate: `cd tools && uv run pytest -q` → **11 passed**; `cd tools && uv run python validate_skills.py` →
-  **`22 skills checked — 0 error(s)`**, exit 0. (`uv` is on PATH.)
+- Branch **master**, tip ≈ **de4b0ee** + this handoff commit. **Local-only — no git remote yet.**
+- Gate: `cd tools && uv run pytest -q` → **13 passed**; `cd tools && uv run python validate_skills.py` →
+  **`25 skills checked — 0 error(s)`**, exit 0. (`uv` on PATH.)
 
-## 3. What shipped (Spec A1 + A2, both merged + adversarially reviewed HOLD→SHIP)
-- **A1 (foundations):** `tools/validate_skills.py` — the skill-conformance + README-regen validator
-  (Python/uv, maintainer-only, D27); schema-v2 frontmatter on every skill (`cost-weight` + `license` +
-  namespaced `tags`); frontmatter-generated README index; `protocol/config.md` (`kata.config`) +
-  `protocol/dependencies.md` schemas; `docs/TAXONOMY.md`; Apache-2.0 `LICENSE`.
-- **A2 (tier families):** `kata-grill`/`kata-review`/`kata-plan` → `-essential`/`-standard`/`-advanced`;
-  `kata-diagnose` → `-light`/`-full`; each a thin tier `SKILL.md` over a shared `kata-<verb>/RUBRIC.md`
-  (DRY-by-pointer). `kata-design-doc`/`kata-tdd` got a mode depth-hint. `kata-evaluate`/`kata-orchestrate`
-  stay single. **22 skills.** Validator gained tier-family rules (`check_tier_family`, `FAMILY_TIERS`,
-  `check_rubric_wikilinks`). New principle: **D33 — structural invariants are never tiered.**
-- Execution method that worked: subagent-driven (Sonnet implementers, Opus reviews each diff + gates on the
-  validator; fresh-context adversarial `kata-review` per spec, D15). The adversarial leg caught real blockers
-  the green gate missed in BOTH specs — keep doing it.
+## 3. What shipped — Modes Spec A (A1→A4), all merged + adversarially reviewed (D15)
+- **A1 (foundations):** `tools/validate_skills.py` (skill-conformance + README-regen validator, Python/uv);
+  schema-v2 frontmatter (`cost-weight`+`license`+namespaced `tags`); generated README index;
+  `protocol/{config,dependencies}.md`; `docs/TAXONOMY.md`; Apache-2.0 LICENSE.
+- **A2 (tier families):** grill/review/plan → essential/standard/advanced; diagnose → light/full; shared
+  `RUBRIC.md` per family (DRY-by-pointer); validator tier rules. **D33: structural invariants never tiered.**
+- **A3 (bootstrap + wiring):** `kata-bootstrap` (run-shape router — individual/batch/version-up/advanced as
+  PRESETS over the mode axis; D24c ladder) + `kata-readiness` + `kata-orchestrate` reads `kata.config` with a
+  **fail-closed load-guard**. `kata.config` gained `runShape`+`target`. D34–D46.
+- **A4 (version-up + kata-graph):** `kata-graph` — token-budgeted structural map of an existing repo (the
+  version-up ingestion engine) — **based on aider's repo-map** (tree-sitter tags + personalized PageRank +
+  token budget), **Graphify = optional MCP oracle backend**; tree-sitter hard floor; the **`kata.graph.json`**
+  contract (`protocol/graph.md`), feature-agnostic + cached; seeding/digest/blast-radius are use-time
+  projections. Version-up wiring (grill Phase 0 ingest, footprint = modified ∪ depth-1 reverse-deps ownership,
+  full-suite-green regression via existing `kata-evaluate`). **`kata-orchestrate` generalized to rolling
+  DAG-frontier dispatch + ASYNC escalation** (park/drain/hard-wait-iff-frontier-blocked; structured payload =
+  its own contract `protocol/escalation.md`). D47–D56. **25 skills.**
+- **Method that worked (keep doing it):** subagent-driven, **Opus on judgment tasks / Sonnet on mechanical**,
+  Opus reviews every diff + gates on validator. **Fresh-context adversarial gates (D15) are load-bearing** —
+  A4 took **3 convergence gates + a coherence audit** to freeze; each caught real defects (the seedSymbols
+  cache contradiction, the async/wave-model collision, the board/payload fusion). The no-drift discipline even
+  held at the worker level (a worker BLOCKED on a bad `[[kata-defer]]` link rather than improvising).
 
-## 4. NEXT STEP — in order
-**A user decision gates the next phase** (asked at end of last session, not yet answered):
-1. **A3 — bootstrap + wiring** (finish the Spec A trilogy): build `kata-bootstrap` (the D24c composition
-   ladder — picks mode+modules+effort, cost-preview from `cost-weight`, writes `kata.config`) and teach
-   `kata-orchestrate` to **read `kata.config` + resolve family→tier** (fallback Standard, D25). This is what
-   makes the A2 tiers actually *dispatch* — today the tier files exist but nothing selects them.
-2. **D16 planning-varied A/B** — prove the grill actually differentiates (Arm A plans via
-   `kata-grill`→`kata-design-doc`→`kata-plan` for real vs a GSD-planned baseline). **The whole modes edifice
-   rests on the planning half being worth it, and that is still unproven** (L10 was a TIE on frozen-plan
-   execution). This is the real ship-gate for calling v0.1 "validated."
-3. **Pause** — A1+A2 are a clean merged milestone.
-- **Opus recommendation: 2 (the D16 A/B) or 3 over 1** — A3 wires machinery whose value hinges on the
-  unproven D16. If the user picks A3 anyway: `kata-plan`/writing-plans → A3 plan → subagent-driven
-  (Sonnet-execute/Opus-review) → `kata-review` (D15) → merge.
+## 4. NEXT STEP — Spec A is COMPLETE; a user choice gates the next phase
+1. **Obsidian-KG / kata-understand spec** — the deferred emit+ingest (folder-based, pluggable frontmatter
+   profiles; bootstrap "emit a KG?" question + `knowledgeGraph` config; `kata-understand` base =
+   Understand-Anything) projecting from the `kata.graph.json` contract A4 built. **Wants PortaVault to exist
+   first** — the user is scaffolding that Obsidian vault; this is the natural next build once it's stood up. (D54/D55.)
+2. **Spec B — bake-off** (N variants → judge → pick → refine up; composes with version-up, D37).
+3. **D16 planning-varied A/B — the real v0.1 validation gate.** Prove the grill differentiates (Arm A plans via
+   `kata-grill`→`kata-design-doc`→`kata-plan` vs a baseline). Still unproven (L10 = TIE on frozen-plan execution).
+- **Opus recommendation:** if PortaVault is ready → **1** (it ties the user's second brain to the harness and is
+  high personal value); otherwise **3** (D16) is the honest v0.1 ship-gate; **2** anytime.
 
 ## 5. Suggested next skills
-A3 path: `kata-plan` (write the A3 plan) · `kata-write-skill` (author `kata-bootstrap`) · `kata-orchestrate`
-(the config-read wiring) · `kata-review` (D15 adversarial pass on everything new).
-D16 path: `kata-grill`/`kata-design-doc`/`kata-plan` run for real on a CPP-style target vs a baseline.
+- Any new spec: `kata-grill` (grill it first — the gates pay off) → `kata-design-doc` (freeze) → `kata-plan` →
+  subagent-driven build → `kata-review` (D15). `kata-write-skill` to author new skills to STANDARDS.
+- D16: run `kata-grill`/`kata-design-doc`/`kata-plan` for real on a CPP-style target vs a baseline; measure.
 
 ## 6. Open decisions for the human
-- **The 1/2/3 call above** (A3 vs D16 A/B vs pause). · Set a **git remote** before public release. ·
-  Public-release prep (the project is Apache-2.0, public-intended, still local-only).
+- **Which of 1/2/3 above** (gated partly on PortaVault readiness). · **Set a git remote** before public release
+  (Apache-2.0, public-intended, still local-only). · Suite/plugin packaging shape.
 
 ## 7. Redaction
 No secrets / keys / PII. Nothing to redact.

@@ -51,12 +51,14 @@ Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-f
 - [ ] **`design` module (own spec).** UI/UX, 2D/3D assets, slides, mobile, image-FM — Claude's design
   blind-spot; built to slot into Advanced; inherently tiered.
 
-**Pre-v0.1 (now):** finish `research/NOTES.md` deep-eval of mattpocock + BMAD + GSD (what to adopt);
-then dogfood `kata-grill` to spec v0.1's first skills.
+**Pre-v0.1 (now):** **Modes Spec A (A1–A4) COMPLETE + merged.** The remaining v0.1 validation gate is the
+**D16 planning-varied A/B** (prove the grill differentiates). Then the Obsidian-KG/kata-understand spec (wants
+PortaVault) and/or Spec B (bake-off).
 
 ## Progress
 | Milestone | Status |
 |---|---|
-| v0.1 core | 11 skills built; adversarially reviewed + fixed; execution half field-proven (A/B tied, L10) |
+| v0.1 core | 11 skills built; reviewed; execution half field-proven (A/B **tied**, L10) — planning A/B (D16) still pending |
+| Modes Spec A (A1–A4) | **COMPLETE + merged** — validator + tiers + bootstrap/readiness + version-up/kata-graph + frontier/async-escalation; **25 skills**; D1–D56 |
 | v0.2 (pulled fwd) | diagnose/selfhandoff/improve/write-skill built; tasklist deferred (needs worker self-select) |
 | v0.3–v0.4 | Not started (adapters; ACP/Quick + kata-engram) |

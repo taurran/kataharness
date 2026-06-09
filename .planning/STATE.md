@@ -69,16 +69,18 @@ token-weights in `.planning/SKILL-COST-RATINGS.md`; decisions D17–D23. Prior a
 Cursor/AgentHub best-of-N, Claude `effort`, GitHub Spec Kit) — pieces exist; our synthesis (skill-set tiering +
 escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
 
-## Next action (in order)
-1. **Spec A4 — version-up execution** (absorbs old Spec C): grill→plan→build `kata-graph` (pre-processing
-   structural map / version-up ingestion engine; agnostic grep/glob/Read core + optional AST/MCP adapter;
-   evaluate OSS minimal-step examples per D41) + existing-file-aware planning + the baseline-green regression
-   contract (`kata-evaluate` already *is* the no-regression gate). Carry the A3-review A4 notes (BACKLOG):
-   sharpen `kata-readiness` Scope 1 harness-vs-target wording. Then Spec B (bake-off), `design` module.
-2. **D16 A/B (parallel priority):** planning-VARIED A/B to prove the grill differentiates — still outstanding;
-   do before calling v0.1 "validated."
-3. **Backlog:** `kata-tasklist` (reframed → virtual board/PM), `kata-zoom-out`, `kata-engram`; adapters; set a
-   git remote before public release.
+## Next action (Spec A — A1–A4 — COMPLETE; pick one)
+1. **Obsidian-KG / kata-understand spec** — the deferred emit+ingest (folder-based, pluggable frontmatter
+   profiles; bootstrap "emit a KG?" question + `knowledgeGraph` config; `kata-understand` base =
+   Understand-Anything) over the `kata.graph.json` contract A4 built. **Wants PortaVault to exist first** (the
+   user is scaffolding it) — natural next build once the vault is stood up. (D54/D55.)
+2. **Spec B — bake-off** (N variants → judge → pick → refine up; composes with version-up, D37).
+3. **D16 planning-varied A/B (the real v0.1 validation gate):** prove the grill differentiates — Arm A plans
+   via `kata-grill`→`kata-design-doc`→`kata-plan` vs a baseline. Still outstanding (L10 was a TIE on frozen-plan
+   execution); do before calling v0.1 "validated."
+- **Backlog:** A3-review carry-overs (`kata-readiness` harness-vs-target wording for the KG spec; `tools/`
+  example-`kata.config` check) · `kata-defer`/`kata-understand`/`kata-tasklist`/`kata-engram` · adapters ·
+  **set a git remote before public release** (still local-only).
 
 ## Model per stage
 Build KataHarness → **Opus 4.8**. CPP test arms → **Sonnet 4.6** (constant across arms). I pin subagent
