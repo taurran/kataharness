@@ -35,10 +35,14 @@ Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-f
     load-guard** (GB12 — not a bootstrap validation phase). Bootstrap re-entrant (cold-start vs reconfigure —
     one skill, GB5) and version-up-aware day one (writes a correct version-up config routing to A4). Fold grill
     efficiency refactor in.
-  - **A4 — version-up execution bundle (absorbs the old standalone Spec C).** `kata-graph` (pre-processing
-    structural map of an existing repo — the ingestion engine, Graphify nod, GB6; agnostic default backend,
-    optional AST/MCP adapter) + existing-file-aware planning + a baseline-green regression contract on
-    `kata-evaluate`. Committed, next-in-line after A3. Composes with bakeoff (GB4).
+  - **A4 — version-up execution bundle (absorbs the old standalone Spec C).** [~] **DESIGN FROZEN + building
+    on `phase-2/modes-A4-version-up`.** Scope: **`kata-graph`** (new skill — tree-sitter-floor, feature-agnostic
+    cached `kata.graph.json` contract, ~3k-token feature-seeded digest, pluggable backend; `protocol/graph.md`)
+    + **version-up wiring** (grill Phase 0 ingest, footprint-scoped disjoint ownership, full-suite-green
+    regression contract; no new evaluator) + **`kata-orchestrate` frontier/async-escalation supersession**
+    (rolling DAG-frontier dispatch, async park/drain/hard-wait; structured escalation payload →
+    `protocol/escalation.md`). Grill converged (GB1…GB10 + HOLD#1/#2/#3; coherence PASSED); decisions D47–D56.
+    Composes with bakeoff (D37/D43).
 - [ ] **Spec B — Bake-off.** N variants → judge → pick → refine up (AgentHub / worktrees). Composes with
   version-up (a baked-off version-up = N candidate feature-impls, judged on adds-feature ∧ no-regression).
 - [ ] **`kata-understand` — post-processing comprehension map (desired state).** Helps the user understand a
