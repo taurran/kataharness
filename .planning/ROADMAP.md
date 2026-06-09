@@ -22,13 +22,25 @@ Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-f
   cost-weight/license/namespaced-tags frontmatter + generated README index + schemas + TAXONOMY). **A2 (tier
   families) DONE+merged** (grill/review/plan → 3 tiers, diagnose → light/full; RUBRIC-per-family; depth-hint
   for design-doc/tdd; validator tier rules; reviewed HOLD→SHIP; **D33** structural-invariants-never-tiered).
-  **A3 (bootstrap + orchestrate config-wiring) remains.**
-  cost-weight metadata on all skills; tier
-  `kata-grill`/`kata-review`/`kata-plan`/`kata-diagnose` (separate files, shared rubric); mode-hint depth for
-  `kata-design-doc`/`kata-tdd`; `kata-evaluate` stays single (floor, D22); `kata.config`; `kata-bootstrap`
-  (selector + cost preview); `docs/TAXONOMY.md`; orchestrate reads config. Fold grill efficiency refactor in.
-- [ ] **Spec B — Bake-off.** N variants → judge → pick → refine up (AgentHub / worktrees).
-- [ ] **Spec C — Version-ups of existing projects.** Improvement-Kata on live repos; consumes `kata.config`.
+  **A3 + A4 remain (grilled 2026-06-08 — see `.planning/specs/modes-A3-bootstrap-wiring/GRILL-LEDGER.md`).**
+  - **A3 — bootstrap brain + greenfield wiring + version-up-aware/configurable.** *(Design grilled + CLOSED
+    2026-06-08, GB1–GB13.)* New skills: **`kata-bootstrap`** (full configurator: **run-shape router** —
+    individual / batch=bakeoff / version-up / advanced, presets *on top of* the mode axis GB1; the D24c ladder;
+    cost preview; run-shape-relevant interview only GB13; write `kata.config`) + **`kata-readiness`** (light,
+    bootstrap-invoked: harness-health + target-readiness + re-entrant config detection, GB11). Wire
+    **`kata-orchestrate`** to read config + resolve family→tier (fallback Standard, D25) **with a fail-closed
+    load-guard** (GB12 — not a bootstrap validation phase). Bootstrap re-entrant (cold-start vs reconfigure —
+    one skill, GB5) and version-up-aware day one (writes a correct version-up config routing to A4). Fold grill
+    efficiency refactor in.
+  - **A4 — version-up execution bundle (absorbs the old standalone Spec C).** `kata-graph` (pre-processing
+    structural map of an existing repo — the ingestion engine, Graphify nod, GB6; agnostic default backend,
+    optional AST/MCP adapter) + existing-file-aware planning + a baseline-green regression contract on
+    `kata-evaluate`. Committed, next-in-line after A3. Composes with bakeoff (GB4).
+- [ ] **Spec B — Bake-off.** N variants → judge → pick → refine up (AgentHub / worktrees). Composes with
+  version-up (a baked-off version-up = N candidate feature-impls, judged on adds-feature ∧ no-regression).
+- [ ] **`kata-understand` — post-processing comprehension map (desired state).** Helps the user understand a
+  **newly-built** codebase (Understand-Anything nod, GB7). Distinct from `kata-report` (build-log synthesis).
+  Own later spec/module, post-v0.1.
 - [ ] **`design` module (own spec).** UI/UX, 2D/3D assets, slides, mobile, image-FM — Claude's design
   blind-spot; built to slot into Advanced; inherently tiered.
 

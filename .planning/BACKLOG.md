@@ -20,16 +20,30 @@ Promote to ROADMAP milestones when ready.
   `kata/tier/<tier>` becomes load-bearing (A2-time).
 - **`kata-report` (D32)** — post-loop, handoff-phase build report: lite-synthesis of loop artifacts (DESIGN,
   DAG, decision ledger, manifest, diffs, evaluate/review verdicts, gate numbers) → durable `BUILD-REPORT.md`
-  with a Mermaid structural diagram (of our own build DAG). Non-goal: from-scratch comprehension. Feeds
-  `kata-improve`; open pointer for a future PM overlay (D30). Baseline near-free (spine-light); visuals tier up.
-- **Optional code-navigation capability (Graphify / MCP graph server)** — the "explore the codebase" step in
-  `kata-grill` Phase 0 / `kata-plan` (closest-analog) / `kata-diagnose` (trace) is an *abstract* capability;
-  bind it to an accelerated backend (Graphify's AST structural graph, or an MCP graph server) WHEN the
-  environment has it AND the codebase is large enough to warrant it. **Optional adapter-bound capability,
-  never a core dep** (agnostic core stays grep/glob/Read by default); pre-staged via D29. Usage discipline if
-  adopted: AST-only in-loop, bounded `--budget` queries, out-of-context oracle, NO always-on hook, no semantic
-  pass in-loop. **Highest value at Spec C (version-ups of large existing codebases) — defer the build to then;
-  the core loop isn't validated yet (D16).** Not worth wiring for v0.1's small dogfood codebases.
+  with a Mermaid structural diagram (of our own build DAG). Non-goal: from-scratch comprehension — that is
+  `kata-understand`'s job (the two are complementary: report = what the loop did, understand = what the code
+  is). Feeds `kata-improve`; open pointer for a future PM overlay (D30). Baseline near-free (spine-light);
+  visuals tier up.
+- **`kata-graph` — pre-processing structural map (PROMOTED to active A4, GB6).** New skill: builds a compact
+  symbol/dependency map of an **existing** codebase so grill/plan/orchestrate ingest a large repo cheaply
+  (token-saving). The version-up ingestion engine (was working-name `kata-map`). **Optional module
+  (`kata/module/graph`, GB10) — the version-up preset bundles it by default. The *skill* ships in A4**;
+  the *accelerated backend* (Graphify's AST graph / an MCP graph server) stays an **optional adapter binding,
+  never a core dep** (agnostic core = grep/glob/Read; pre-staged via D29). Usage discipline for the accelerated
+  backend if adopted: AST-only in-loop, bounded `--budget` queries, out-of-context oracle, NO always-on hook,
+  no semantic pass in-loop. Plan it by evaluating OSS minimal-step examples (GB8). Graphify attributed in
+  `source:` (spine #12).
+- **`kata-understand` — post-processing comprehension map (desired state, GB7).** Post-loop comprehension map
+  of a **newly-built** codebase → helps the *user* navigate/understand what KataHarness created (Understand-
+  Anything nod). **Distinct from `kata-report`:** report = build-log synthesis (comprehension is its non-goal);
+  understand = from-scratch comprehension of the result. **Optional module (`kata/module/understand`, GB10).**
+  Own later spec, post-v0.1. Plan via OSS minimal-step eval (GB8).
+- **`kata-defer` — in-loop deferral / "nice-to-haves" capture (GB9).** Optional module
+  (`kata/module/defer`). During a run, any out-of-scope-but-worth-keeping item (nice-to-have, post-processing
+  candidate, deferred-for-a-reason) is appended to a run-scoped `DEFERRED.md` instead of being dropped or
+  scope-crept into the frozen plan; compiled at HANDOFF; feeds project backlog / `kata-improve` /
+  post-processing. **The structural complement to no-drift** (#1/#2): the pressure-release valve that makes
+  one-shot=no-churn sustainable. Name soft (`kata-park`/`kata-icebox` alt). Post-v0.1 unless pulled forward.
 - **`design` module (own spec)** — UI/UX, 2D/3D assets, slides, mobile, image-FM imagery; slots into Advanced.
 - **`docs/TAXONOMY.md`** — categories + `kata-<verb>` naming + tier-family convention (`kata-<verb>-<tier>`) +
   spine-vs-module. Motivated by the modes tiering work; partially specced in `docs/MODES-DESIGN.md`.
