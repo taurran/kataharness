@@ -232,7 +232,8 @@ def check_readme_sync(skills: list[Skill]) -> list[Finding]:
 
 PROTOCOL_DIR = REPO_ROOT / "protocol"
 REQUIRED_PROTOCOL = {
-    "config.md": ["mode", "modules", "effort", "tiers", "preflight", "bakeoff", "skillVersions"],
+    "config.md": ["mode", "modules", "effort", "tiers", "preflight", "bakeoff", "skillVersions",
+                  "runShape", "target"],
     "dependencies.md": ["classification", "scope", "verify", "install"],
 }
 

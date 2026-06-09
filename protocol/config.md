@@ -18,6 +18,8 @@
 | `preflight` | `object` | Dependency pre-flight policy (D29) — see below. |
 | `bakeoff` | `{ n: int, lineage: string[] }` | N-variant best-of-N (Spec B). `n: 1` ⇒ no bake-off. `lineage` records parent configs for escalation-with-reuse. |
 | `skillVersions` | `{ "<skill>": "<semver>" }` | The exact skill versions this branch was built with (reproducibility). |
+| `runShape` | `"individual" \| "batch" \| "version-up" \| "advanced"` | The preset chosen at bootstrap (GB1) — provenance; presets pre-fill `mode`+`modules`. |
+| `target` | `{ kind: "greenfield" \| "existing", path?: string, baselineGate?: string }` | `greenfield` (default) or `existing` (version-up): `path` = existing repo, `baselineGate` = the command that must be green before *and* after (the regression baseline). |
 
 ### `preflight` block (D29)
 | Field | Type | Meaning |
@@ -32,3 +34,7 @@
 - Tier resolution: `kata-orchestrate` maps a bare family reference (`[[kata-grill]]`) → `tiers["kata-grill"]`
   → e.g. `kata-grill-standard` (D26). Absent config ⇒ Standard (D25).
 - `kata.config` is never tiered or mode-specific in *format* — one schema, all modes (consistency, D18).
+- `runShape` is provenance only: the bootstrap preset (GB1) pre-fills `mode`+`modules`; orchestrate dispatches
+  off `mode`/`modules`/`tiers`, not off `runShape`. `target.kind: "existing"` (version-up) supplies the
+  `baselineGate` that `kata-orchestrate` precondition #2 records as the regression baseline. The version-up
+  *execution* path (kata-graph ingestion) is Spec A4; A3 only writes/validates the config.

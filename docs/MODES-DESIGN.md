@@ -119,3 +119,10 @@ each à-la-carte add. Heaviest: `kata-orchestrate` (5, spawn hub) > `kata-grill`
 - ~~Confirm at spec review: mode=tier unification; `kata-bootstrap` as its own skill.~~ **RESOLVED 2026-06-07
   (D24a/b/c/d):** unified axis; bootstrap is its own skill + an expressive composition ladder; orchestrate
   stays single config-driven.
+- ~~`kata-bootstrap` + `kata-orchestrate`-reads-config items.~~ **IMPLEMENTED in A3 (2026-06-08):**
+  `kata-bootstrap` (pre-loop interview, run-shape router, progressive disclosure, writes `kata.config`)
+  and `kata-readiness` (harness-health + target-readiness, re-entrant detection) are delivered. The
+  load-guard in `kata-orchestrate` (fail-closed read of `kata.config`, GB12/D45) is wired. **A3/A4 cut
+  confirmed (D38/GB5):** version-up *execution* (`kata-graph` ingestion engine + context-aware
+  plan→build→regression-gate) is **Spec A4**; A3 delivered bootstrap + readiness + orchestrate
+  config-wiring.

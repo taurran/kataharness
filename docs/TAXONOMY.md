@@ -38,9 +38,13 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
 ## Spine vs module
 - **Spine** (always runs — the consistency machine): `kata-grill` · `kata-context` · `kata-design-doc` · `kata-plan` ·
   `kata-orchestrate` · `kata-board` · `kata-worktree` · `kata-tdd` · `kata-evaluate` · `kata-handoff` ·
-  `kata-selfhandoff` · (pre-flight, Spec D). Every mode ends at the same `kata-evaluate` default-FAIL gate.
+  `kata-selfhandoff` · `kata-bootstrap` · `kata-readiness` · (pre-flight, Spec D). Every mode ends at the same `kata-evaluate` default-FAIL gate.
+  - `kata-bootstrap` and `kata-readiness` are **spine** (core, always-available; not optional feature modules): `kata-bootstrap` is the mandatory on-ramp that writes `kata.config`; `kata-readiness` is its pre-flight delegate.
 - **Modules** (additive, independent, declare needs/produces/slot — D20): `quality` (`kata-review` +
   `kata-diagnose` + deeper grill/plan) · `design` (own spec) · `bakeoff` (Spec B) · `improve` (`kata-improve`).
+
+## Run-shape preset (GB1)
+A **Run-shape preset** is a named bundle over the mode axis (individual / batch / version-up / advanced) that `kata-bootstrap` pre-fills during composition — e.g. "individual" maps to a single-worker, single-slice run shape — so the user picks a name rather than configuring axes manually.
 
 ## cost-weight (1–5)
 Each skill's `cost-weight` frontmatter (authority: `.planning/SKILL-COST-RATINGS.md`) lets `kata-bootstrap`

@@ -64,3 +64,13 @@ def test_tier_skill_missing_tag_and_rubric_errors():
     findings = v.check_tier_family(_skills_in("bad-tier"))
     assert any("kata/tier/standard" in f.msg for f in findings)
     assert any("RUBRIC.md" in f.msg for f in findings)
+
+
+def test_config_schema_requires_runshape_and_target():
+    from validate_skills import REQUIRED_PROTOCOL, check_protocol_schemas
+    required = REQUIRED_PROTOCOL["config.md"]
+    assert "runShape" in required and "target" in required
+    # the real protocol/config.md must document them; check_protocol_schemas ignores its arg,
+    # so pass []. Match on the stringified finding to avoid assuming the Finding field name.
+    findings = check_protocol_schemas([])
+    assert not any("config.md" in str(f) for f in findings), [str(f) for f in findings]

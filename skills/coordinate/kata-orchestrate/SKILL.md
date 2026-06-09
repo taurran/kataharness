@@ -31,6 +31,17 @@ unknowns ESCALATE to you (via [[kata-board]]) for a *deliberate* decision. This 
 does not drift.**
 
 ## Preconditions (verify before any dispatch)
+0. **Load `kata.config`** (`protocol/config.md`). **Absent ⇒ assume Standard** (D25) and proceed. Present ⇒
+   **fail closed (GB12):** if it is malformed JSON, or names a non-existent `mode`/`effort`, a `tiers[family]`
+   that has no `kata-<family>-<tier>` skill, or a `module` with no provider — **STOP and escalate** (do not
+   guess a default over a *present-but-broken* config; that is the drift the harness exists to prevent). This
+   is the load-guard — bootstrap writes the config by construction, so the real risk is a stale / hand-edited /
+   older-version config on a re-entrant run, which only this consumer-side check catches.
+   - **Resolve tiers (D26):** for each bare family reference `[[kata-grill]]` / `[[kata-review]]` /
+     `[[kata-plan]]` / `[[kata-diagnose]]`, dispatch the concrete `tiers[family]` skill (e.g.
+     `kata-grill-standard`); a family absent from `tiers` ⇒ the mode's default tier.
+   - **Version-up (`target.kind: "existing"`):** use `target.baselineGate` as the precondition-#2 baseline
+     command. (The version-up ingestion DAG — kata-graph — is Spec A4; A3 only consumes the config fields.)
 1. A **frozen** PLAN exists with a wave/ownership DAG (e.g. `ownership:` + `waves:` + `depends_on:` in
    frontmatter). If the plan is not frozen, stop — planning is a different phase.
 2. The target repo is **green at the fork point** (run its test/build gate; record the baseline numbers).

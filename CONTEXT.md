@@ -98,3 +98,31 @@ _Avoid_: wizard, setup
 **Version-up**:
 A one-shot feature-rollout / new version of an *existing* project, driven through the modes (the
 Improvement-Kata applied to live repos). Spec C.
+
+**Run-shape**:
+A named preset over the mode axis (individual / batch / version-up / advanced) that `kata-bootstrap`
+pre-fills; not a new axis (GB1/D34). Sets `(mode, modules[], config-defaults)` before the user drills
+down via the D24c composition ladder.
+_Avoid_: mode (the underlying axis), workflow-type
+
+**Preset**:
+The `(mode, modules, target)` bundle a run-shape pre-fills; the user may then drill down via the ladder
+(D24c). Pre-seeds the bootstrap interview without locking the user in.
+_Avoid_: template, default
+
+**Readiness**:
+The pre-run check (`kata-readiness`) of harness-health + target-readiness + re-entrant config detection,
+invoked by bootstrap (D44/GB11). Distinct from pre-flight (D29), which is the dependency-provisioning
+phase between FREEZE and EXECUTE.
+_Avoid_: pre-flight (that's the dependency-provisioning phase, D29)
+
+**Load-guard**:
+`kata-orchestrate`'s fail-closed `kata.config` check on read: absent ⇒ Standard (D25),
+present-but-broken ⇒ stop (D45/GB12). Bootstrap writes by construction; this is the consumer-side
+guard against stale or hand-edited configs on re-entrant runs.
+_Avoid_: validation (bootstrap writes by construction; this is the consumer-side guard)
+
+**`target`**:
+The run's subject: `greenfield` (new project) or `existing` (version-up — an existing repo `path` +
+a `baselineGate` regression command). Set in `kata.config`; determines which run-shape bundle applies.
+_Avoid_: project, repo

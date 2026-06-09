@@ -8,6 +8,8 @@ Produced by a fresh-context read-only analyzer to inform `docs/MODES-DESIGN.md`.
 | skill | cat | base | amplification | exec | variance | weight | note |
 |---|---|---|---|---|---|---|---|
 | kata-orchestrate | coordinate | M | **spawn** (N workers + evaluate + review) | inline | high | **5** | the cost multiplier of the whole run; ≈ loop + Σ(worker windows) + evaluators. Throttle via plan shape + model pinning, NOT tiers. |
+| kata-bootstrap | coordinate | M | none (guided single pass; invokes readiness) | inline | low | 2 | pre-loop configurator; writes kata.config. |
+| kata-readiness | coordinate | S | none | inline | low | 1 | read-only health/target check; bootstrap-invoked. |
 | kata-grill | plan | **L (largest)** | loop (multi-round) + review spawn | inline | **high** | **4** | biggest body + highest in-loop variance; THE tiering candidate; also the differentiator (L8/L10). |
 | kata-diagnose | execute | M | loop (6-phase) | worker | high | 3 | often zero (only on unexpected failure); hard bug spins cycles. light/full tier candidate (secondary). |
 | kata-tdd | execute | M | loop (red→green/behavior) | worker | med | 3 | per-worker, multiplied across N workers; good fresh-context spend. depth via mode-hint, not file-tier. |

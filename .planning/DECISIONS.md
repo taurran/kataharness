@@ -189,3 +189,64 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   spawn/board/worktree/merge plumbing (duplicated substance) and three subtly different execution engines,
   which destroys cross-mode comparability. *Why:* orchestrate + `kata-evaluate` are the two spine invariants
   that make modes comparable to each other (D18/D22); they must stay singular.
+- **D34 — Run-shapes are named presets ON TOP OF the mode axis, not a new axis. (GB1)** Each run-shape
+  (individual / batch / version-up / advanced) is a bundle `(mode, modules[], config-defaults)` that
+  pre-seeds the D24c composition ladder; the user can still drill down from any preset. **Rejected:**
+  run-shapes as a competing second top-level axis. Keeps the frozen D24a unified axis intact; a preset is
+  data, not a code branch.
+- **D35 — "Batch" preset = bakeoff (best-of-N), NOT a task-queue. (GB2)** Batch maps to the `bakeoff`
+  module (N variants → judge → pick → refine up, Spec B). **Rejected:** a multi-task scheduling queue
+  (new machinery, competes with the single-frozen-plan premise). Provenance: user — "Bake off is what I
+  meant."
+- **D36 — "Review of existing project" run-shape = version-up (Spec C), NOT a read-only audit. (GB3)**
+  The preset = one-shot feature-addition to a live project without regressing the rest (the
+  Improvement-Kata on existing repos). **Rejected:** read-only `kata-review` audit. Provenance: user —
+  "Versioning up a project with [a] feature and being able to one-shot the feature addition without breaking
+  other aspects." Matches Spec C.
+- **D37 — Bakeoff composes with version-up; modules and run-shapes are orthogonal. (GB4)** A baked-off
+  version-up = spawn N candidate feature-implementations, evaluate each for adds-the-feature AND
+  regresses-nothing, pick the winner. Bakeoff is a module (how many variants); run-shape is the target
+  (greenfield vs existing). Orthogonality → composability; reinforces GB1.
+- **D38 — A3 / A4 cut: version-up execution is A4; bootstrap is version-up-aware now. (GB5)** A3 delivers
+  bootstrap + readiness + greenfield wiring + version-up *fully configurable* (writes a correct version-up
+  `kata.config`, routes to A4 bundle). A4 = version-up execution bundle — `kata-graph` ingestion engine +
+  context-aware plan→build→regression-gate on a real existing repo. A4 absorbs the old standalone Spec C
+  and is committed next-in-line, not deferred. Greenfield vs version-up differ in only two places:
+  `kata-graph` (ingestion) and existing-file-aware planning + baseline-green regression contract; everything
+  else is reused as-is.
+- **D39 — `kata-graph` = pre-processing structural map; version-up's A4 ingestion engine. (GB6)** New skill
+  — builds a compact symbol/dependency map of an existing codebase so grill/plan/orchestrate ingest large
+  repos cheaply. Default backend = agnostic grep/glob/Read; accelerated AST/MCP backend stays an optional
+  adapter binding (spine #3 — core never hard-deps on Graphify). Promoted from deferred-optional → active
+  A4 component; accelerated backend stays optional. Supersedes working name `kata-map`.
+- **D40 — `kata-understand` = post-processing comprehension map of newly-built codebases; backlog. (GB7)**
+  Desired-state capability — helps the user understand/navigate what KataHarness created. **Distinct from
+  `kata-report` (D32):** report synthesizes the build log; `kata-understand` provides from-scratch
+  comprehension. Scope: own later spec or module, post-v0.1, not in A3/A4.
+- **D41 — When designing `kata-graph` / `kata-understand`, evaluate OSS repo-mappers and bake in only the
+  necessary stripped-down steps. (GB8)** Evaluate against: Graphify, aider repo-map/tree-sitter, repomix,
+  gitingest, code2prompt, ctags, DeepWiki-class comprehension tools. Extract minimal needed steps; do not
+  over-port.
+- **D42 — `kata-defer`: in-loop deferral capture skill (new optional module). (GB9)** During a run, any
+  out-of-scope item is captured to a run-scoped `DEFERRED.md` instead of being silently dropped or
+  scope-crept into the frozen plan. Artifact compiled at HANDOFF; feeds the backlog / `kata-improve` /
+  post-processing. Structural complement to the no-drift spine (#1/#2) — parks tempting additions
+  sustainably. Needs: none; produces: `DEFERRED.md`.
+- **D43 — `kata-graph`, `kata-understand`, and `kata-defer` are optional modules, not spine. (GB10)**
+  All three are additive, independent, selectable from any mode (`kata/module/<m>`); each declares
+  needs/produces/slot. The version-up preset bundles `kata-graph` by default; otherwise à-la-carte.
+  Advanced default-bundle membership: TBD when mode default-bundles are defined.
+- **D44 — Readiness eval is a separate light skill `kata-readiness`, invoked by bootstrap. (GB11)**
+  Factored out of bootstrap for reuse: ≥3 callers (re-entrant bootstrap every run, orchestrate
+  Standard-fallback D25, pre-flight D29). Two scopes: harness-health (validator green / skills present /
+  tools on PATH) + target-readiness (git repo + clean tree, AGENTS/CONTEXT present, deps installable,
+  existing `kata.config` → re-entrant detection). Keeps bootstrap lean.
+- **D45 — Config validation = fail-closed load-guard in `kata-orchestrate` on READ, not a bootstrap
+  phase. (GB12)** Bootstrap writes `kata.config` by construction — a separate post-write validation step
+  is redundant bloat. `kata-orchestrate` guards on read: fail-closed if `kata.config` is malformed or
+  references a non-existent tier/module/effort. The real risk is a stale/hand-edited/older-version config
+  on a re-entrant run, which only a consumer-side load-guard catches. Consistent with default-FAIL spine.
+- **D46 — Bootstrap interview uses progressive disclosure: surface only run-shape-relevant config fields.
+  (GB13)** Ask only the `kata.config` fields relevant to the chosen run-shape; the default→go floor stays
+  fast, advanced fields appear only when the path needs them. Provenance: user — "Only ones relevant to
+  the run shape."
