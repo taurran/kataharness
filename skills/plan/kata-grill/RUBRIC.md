@@ -39,6 +39,10 @@ options + a free-text prompt. The pattern is host-agnostic; the rendering is the
    backward-compat, security surface. Missing branches are how vague specs ship bugs.
 3. **Answer from the docs/code whatever you can** — if a question is resolvable by exploration, resolve it
    yourself and record it; do NOT spend the user's attention on what you can discover.
+4. When `target.kind == existing` (version-up), invoke [[kata-graph]] FIRST to build/load the cached
+   `kata.graph.json` and ingest its feature-seeded digest — interrogate the feature's design AGAINST the
+   existing architecture and its blast radius, not greenfield. (kata-graph requires tree-sitter; kata-readiness
+   BLOCKs version-up without it.)
 
 ## Phase 1 — Interrogate, dependency-ordered
 

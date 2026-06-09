@@ -37,6 +37,9 @@ each a checklist; report PASS / WARN / BLOCK per item and an overall verdict.
 - Declared dependencies are installable from an allowed registry (defers the actual install to pre-flight, D29).
 - **Re-entrant detection:** if a `kata.config` already exists at the branch root, report it (its `mode`,
   `runShape`, `modules`) so bootstrap offers "same as last / step up / change shape" rather than cold-start.
+- **Version-up gate:** for a version-up run (`target.kind == existing`), **BLOCK if tree-sitter is not
+  available** — the kata-graph ingestion (seeding + blast-radius) needs AST; there is no inert grep-mode
+  fallback for version-up.
 
 ## Verdict
 Return a compact structured verdict (overall PASS/WARN/BLOCK + the per-item findings + the re-entrant

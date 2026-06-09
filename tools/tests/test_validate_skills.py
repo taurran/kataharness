@@ -74,3 +74,12 @@ def test_config_schema_requires_runshape_and_target():
     # so pass []. Match on the stringified finding to avoid assuming the Finding field name.
     findings = check_protocol_schemas([])
     assert not any("config.md" in str(f) for f in findings), [str(f) for f in findings]
+
+
+def test_a4_protocol_schemas_required():
+    from validate_skills import REQUIRED_PROTOCOL, check_protocol_schemas
+    assert {"id", "kind", "rank", "edge", "meta", "symKind"} <= set(REQUIRED_PROTOCOL["graph.md"])
+    assert {"taskId", "decisionNeeded", "status", "kind"} <= set(REQUIRED_PROTOCOL["escalation.md"])
+    assert "graph" in REQUIRED_PROTOCOL["config.md"]
+    findings = [str(f) for f in check_protocol_schemas([])]
+    assert not any("graph.md" in f or "escalation.md" in f for f in findings), findings

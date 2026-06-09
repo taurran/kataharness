@@ -250,3 +250,117 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   (GB13)** Ask only the `kata.config` fields relevant to the chosen run-shape; the default→go floor stays
   fast, advanced fields appear only when the path needs them. Provenance: user — "Only ones relevant to
   the run shape."
+- **D47 — tree-sitter is the hard floor for `kata-graph`; grep-only is a labeled "reduced" fallback for
+  greenfield/exploration only; version-up BLOCKs at readiness if tree-sitter is absent. (GB1/GB1.1)**
+  "Agnostic" = tool-agnostic (Claude/Codex/Kiro), NOT dependency-free. tree-sitter is local, no API,
+  `uv`-installable → a benign build-time dep in the D29 pre-flight manifest. Requiring it does not violate
+  the agnostic core. A grep-only map emits "reduced — no AST" explicitly; it is never the default. Version-up
+  needs AST-ranked seeding + blast-radius — a grep-only map is structurally insufficient, so readiness BLOCKs
+  rather than serving an inert partial capability. *Rejected:* grep-default with tree-sitter as a pure
+  optional accelerator (can't rank by reference-importance → defeats token-optimization premise).
+  *Provenance:* aider, Graphify, Understand-Anything all stand on tree-sitter; proven primitive.
+  *See* `.planning/specs/modes-A4-version-up/` (GRILL-LEDGER GB1/GB1.1, DESIGN L1).
+- **D48 — `kata.graph.json` is the anti-chimera contract; byte-level schema locked. (GB2/GB2.1/GB2.2/GB2.4)**
+  Full schema in `protocol/graph.md`. Nodes: `file` (`id`=path, `kind:"file"`, `path`, `hash`, `rank`[REQ],
+  `lang`[OPT], `community`[OPT]) and `symbol` (`id`=`path::name[~N]`, `kind:"symbol"`, `path`, `name`,
+  `symKind`∈{function,class,method,interface,type,constant,other}, `span`=[startLine,endLine] 1-indexed
+  inclusive[REQ], `hash`, `rank`[REQ], `signature`[OPT], `community`[OPT]). Edges: `src`, `dst`,
+  `kind`∈{def,ref,call,import}, `weight`[REQ, default 1.0]. `def` = file→symbol; `ref`/`call` = symbol→symbol
+  (`call` oracle-only, may be absent); `import` = file→file (symbol-level import is oracle-only). `meta`:
+  `{backend, repoHash, generatedAt}` — **no `seedSymbols`** (see D49). Floor MUST populate def+ref (+import
+  best-effort). Ids are line-independent (span is a property) → incremental-cache-safe. Same-name symbols in
+  one file disambiguated by `~N` ordinal (def order). *Rejected:* line-in-id (cache churn); test-coverage
+  edges (full-suite-green floor makes them unneeded — anti-bloat; user confirmed). *Provenance:* user
+  confirmed the contract + "keep test edges out." *See* `.planning/specs/modes-A4-version-up/`
+  (GRILL-LEDGER GB2/GB2.1–GB2.4, DESIGN L2).
+- **D49 — `kata.graph.json` is feature-agnostic and content-hash cached; seeding + blast-radius are use-time
+  projections, never cached. (GB8/GB8.1/GB8.2/GB2.3)** `seedSymbols` is a per-run projection input (tokenize
+  feature description → identifier-like tokens → case-insensitive match vs symbol `name` → ×10 PageRank boost;
+  user-named files also boosted) — never stored in the cached artifact (fixes the GB2↔GB8 contradiction).
+  The **digest** = top-rank signatures selected until a `[TUNABLE: budget=3000]`-token estimate (chars/4
+  heuristic; no host-specific tokenizer) is hit — selection, not post-truncation. Blast-radius = planner
+  inverting the forward `ref∪call` edge list; no reverse-index in the contract. No ×8 no-scope expansion
+  (version-up always has a feature in scope). *Rejected:* baking the feature seed into the cached artifact
+  (contradicts agnostic cache). *Provenance:* user — "go with your rec" (agnostic cached graph · ~3k default
+  · blast-radius in the planner). *See* `.planning/specs/modes-A4-version-up/`
+  (GRILL-LEDGER GB8/GB8.1/GB8.2/GB2.3, DESIGN L3).
+- **D50 — version-up footprint ownership is bounded to modified-files ∪ depth-1 reverse-dependents; escalate
+  predicate is decidable. (GB9/GB9.1/GB9.2)** Grill Phase 0 invokes `kata-graph` when `target.kind ==
+  existing` → injects the feature-seeded digest into grill + plan so design is resolved against the existing
+  architecture. `kata-plan` scopes disjoint file-ownership = **footprint = modified-files (from frozen DESIGN)
+  ∪ `[TUNABLE: marginDepth=1]`-hop reverse-dependents** over ref∪call; files outside are off-limits, owned by
+  no task. Regression contract: orchestrate precond #2 records baseline via `target.baselineGate` (full suite
+  green at fork); version-up `kata-evaluate` = baseline suite still green + new feature tests green,
+  default-FAIL — **no new evaluator** (reuses rubric #2/#6). **Escalate predicate (decidable):** escalate IFF
+  completing the owned task's acceptance test requires a write to an unowned file; everything else → `kata-defer`
+  (`DEFERRED.md`). Baseline regressions from unowned files caught by the full-suite gate → deliberate re-scope
+  at gate-time by orchestrator, never a worker's silent expansion. *Rejected:* transitive-closure ownership
+  margin (owns half the repo, breaks disjoint partition). *Provenance:* user confirmed escalate-not-silent-
+  expand "as long as there are protections against overuse." *See* `.planning/specs/modes-A4-version-up/`
+  (GRILL-LEDGER GB9/GB9.1/GB9.2, DESIGN L4).
+- **D51 — Rolling DAG-frontier dispatch supersedes wave-gated dispatch; async escalation is the harness-wide
+  protocol. (GB9.3/GB9.3-rev)** A task is dispatchable iff (all `depends_on` integrated) ∧ (owned files
+  disjoint from all in-flight tasks), regardless of original wave. Waves become a derived view, not a hard gate.
+  Supersedes the current synchronous per-wave loop + synchronous escalation paragraph in
+  `skills/coordinate/kata-orchestrate/SKILL.md`. **Async escalation:** park the escalating task + its
+  DAG-dependents; keep dispatching the frontier; checkpoint each completion in integration order (linear
+  history); **hard-wait for the human IFF frontier empty ∧ open escalations remain.** Frontier-blocked IS the
+  criticality test (decidable; operationalizes "truly critical"). Overuse protections: (1) defer-vs-escalate
+  split (GB9.2/D50, the main lever); (2) generous plan-time scoping — blast-radius pre-owns the common caller-
+  update case (escalation frequency is a plan-quality metric, not a runtime constant); (3) escalation telemetry
+  in the drift ledger (crossing threshold = "plan under-scoped" → re-grill, not normal). *Provenance:* user —
+  "when we escalate make sure we aren't interrupting unfinished processes … continue to execute until
+  necessary." *See* `.planning/specs/modes-A4-version-up/` (GRILL-LEDGER GB9.3/GB9.3-rev, DESIGN L5).
+- **D52 — The structured escalation payload is its OWN contract, separate from the board. (GB9.4)** Board
+  stays one-line (append-only, `protocol/board.md` L3 invariant): worker appends `ESCALATE | <task-id> |
+  <summary>` (a pointer). Structured payload = separate artifact `.kata/escalations/<task-id>.json` with schema
+  in `protocol/escalation.md`: `{taskId, kind: "orchestrator-resolvable"|"human-required", decisionNeeded,
+  optionsConsidered[], agentRecommendation, rationale, lockedDecisionInTension?, costOfWaiting,
+  costOfProceeding, status: "open"|"resolved", resolution?}`. Producer = escalating worker; orchestrator
+  reads/classifies/routes; resolver writes `status→resolved`; engram (D56/future) learns from resolved payloads.
+  Structured = fast human decision + forward-compatible engram seam + resumable. *Rejected:* JSON in the
+  one-line board message (breaks the L3 append-only invariant). *Provenance:* GB9.4 — "problem: board locks
+  to a single one-line message; fused payload can't live there." *See* `.planning/specs/modes-A4-version-up/`
+  (GRILL-LEDGER GB9.4, DESIGN L5).
+- **D53 — `kata-graph` is ONE optional module (`kata/module/graph`), name-by-job, compose-not-fork; pluggable
+  backend. (GB6/GB10 + D39 naming/D43 module)** One skill, pluggable backend tiers: grep-glob-Read (reduced
+  fallback) → tree-sitter floor (default) → Graphify-MCP oracle (accelerated). Each backend either fully
+  produces the `kata.graph.json` contract or is not bound — no backend leaks its own format upward. No forked
+  skills per backend. External skills (Graphify-MCP) are composed via the MCP adapter binding; never
+  reimplemented or fork-spliced. Name = `kata-graph` (the job: build the structural graph); never
+  `kata-pagerank` or `kata-map`. `source:` frontmatter names aider (MIT) + Graphify (MIT) per spine #12.
+  Bundled-by-default by the version-up run-shape preset; à-la-carte otherwise (D20/D43). *Provenance:*
+  "no chimera" tenet + GB6 (bootstrap asks KG question) + GB10 (engram composability). *See*
+  `.planning/specs/modes-A4-version-up/` (GRILL-LEDGER GB6/GB10 + RESEARCH, DESIGN L6).
+- **D54 — The Obsidian KG story ships as its OWN next spec under kata-understand; A4 does not add inert hooks.
+  (GB3/GB7)** A4 ships version-up execution + the `kata.graph.json` contract (the durable substrate). The
+  complete Obsidian KG story — emit (contract→vault: node→note, edge→`[[wikilink]]`, community/kind→`#tag`),
+  ingest (vault→contract: note→node, wikilink→edge, folds PortaVault in), bootstrap `knowledgeGraph` config,
+  pluggable `frontmatterProfile` (base + dataview/breadcrumbs/juggl/custom plugin layers), and the
+  comprehension/onboarding layer — ships as a **whole**, under kata-understand, when kata-understand exists.
+  A4 adds NO `knowledgeGraph` config field and NO inert hooks. *Rejected:* a partial emit bolted into A4
+  (creates an ownership seam — "owned by kata-understand" but built before kata-understand exists = a chimera
+  at the spec level). Anti-chimera honored at the spec boundary. PortaVault must exist before emit can target
+  it. *Provenance:* user — "go with your gut recommendation." *See* `.planning/specs/modes-A4-version-up/`
+  (GRILL-LEDGER GB3/GB7, DESIGN §2 out-of-scope block).
+- **D55 — `kata-understand` base capability = Understand-Anything; own later spec. (RESEARCH §5b)**
+  `kata-understand` (D40) targets from-scratch comprehension of a newly-built codebase. The researched
+  primitive is the Understand-Anything framework (grounded in tree-sitter, incremental, multi-language) —
+  the same floor as `kata-graph`, making the two skills a coherent pair (shared tree-sitter dep, shared
+  `kata.graph.json` substrate). `kata-understand` owns the Obsidian KG emit/ingest projection (D54) and the
+  future `kata-engram` feed. Distinct from `kata-report` (D32, build-log synthesis) and from `kata-graph`
+  (pre-processing structural map → token-optimized planning input). Backlog; post-v0.1; own spec.
+  *See* `.planning/specs/modes-A4-version-up/` (RESEARCH §5b, GRILL-LEDGER GB7).
+- **D56 — Engram-mediated escalation is a future harness-wide phase; gated on PortaVault + cognitive-fingerprint
+  synthesis. (GB10)** Every human-in-the-loop escalation should eventually route through the engram / cognitive
+  fingerprint: (a) consult the engram first — if the user's known patterns resolve it, auto-resolve + log; only
+  novel decisions reach the human; (b) feed every human resolution back into the engram so the next identical
+  escalation auto-resolves. Net: as the engram matures, human interrupts asymptotically decrease → the
+  long-running promise strengthens over time. **Not wired in A4** — the A4 async escalation protocol (D51/D52)
+  is designed with a forward-compatible seam (structured payloads feed the engram when ready). Gated on:
+  PortaVault installed + cognitive-fingerprint synthesis built (from `kata-engram`, D9; ties to
+  [[cognitive-twin-architecture]], [[project-framework]] / kiban, [[project-kagami]]). *Provenance:* user —
+  "these escalations no matter where they are should take the engram into consideration … if the user has to
+  enter a human-in-the-loop escalation it should feed into our engram … add it as a future phase after
+  PortaVault + cognitive fingerprint synthesis." *See* `.planning/specs/modes-A4-version-up/`
+  (GRILL-LEDGER GB10, DESIGN §2 out-of-scope block).

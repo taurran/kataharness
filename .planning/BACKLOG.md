@@ -6,6 +6,13 @@ Promote to ROADMAP milestones when ready.
   `kata-*` skill adopts from where (the core bake-in work). *(do before/with v0.1)*
 - **Adapters** — `codex`, `kiro`, `acp-quick`; AGENTS.md→tool-instruction-file normalization; skill-format mapping. *(v0.3/v0.4)*
 - **`kata-engram`** — cognitive-fingerprint/engram injection from kiban/kagami; gated on a mature second brain. *(v0.4)*
+- **Engram-mediated escalation (FUTURE phase, harness-wide — A4-GB10)** — every human-in-the-loop escalation
+  *anywhere* in the harness routes through the engram: (a) consult the cognitive fingerprint first → auto-resolve
+  known patterns, only novel decisions reach the human; (b) feed every human resolution back into the engram so
+  the next identical escalation auto-resolves. Net: human interrupts asymptotically decrease as the engram matures
+  → strengthens the long-running promise. **Gated on PortaVault installed + cognitive-fingerprint synthesis
+  built**; grows from `kata-engram` (D9). Ties to the cognitive-twin arc (kiban/kagami). Prereq for trusting
+  version-up's escalate-not-silent-expand at scale.
 - **Plugin packaging** — package the suite as a Claude Code plugin + a portable bundle; `plugin.json`/suite version.
 - **License selection** — choose an OSS license before public release.
 - **CPP consumption path** — how CryptoPortfolioPlanner installs/pins KataHarness once v0.1 ships.
@@ -42,7 +49,10 @@ Promote to ROADMAP milestones when ready.
   of a **newly-built** codebase → helps the *user* navigate/understand what KataHarness created (Understand-
   Anything nod). **Distinct from `kata-report`:** report = build-log synthesis (comprehension is its non-goal);
   understand = from-scratch comprehension of the result. **Optional module (`kata/module/understand`, GB10).**
-  Own later spec, post-v0.1. Plan via OSS minimal-step eval (GB8).
+  **Base: Understand-Anything** (`Lum1104/Understand-Anything`, MIT — purpose-built for teach-the-human
+  comprehension/onboarding: `/understand-onboard`, `/understand-domain`; "graphs that teach"); Graphify a
+  secondary source (multimodal/infra). Compose pluggable skills, don't fork-splice (A4 RESEARCH §5b). Name by
+  job not vendor (§5c). Own later spec, post-v0.1. Plan via OSS minimal-step eval (GB8).
 - **`kata-defer` — in-loop deferral / "nice-to-haves" capture (GB9).** Optional module
   (`kata/module/defer`). During a run, any out-of-scope-but-worth-keeping item (nice-to-have, post-processing
   candidate, deferred-for-a-reason) is appended to a run-scoped `DEFERRED.md` instead of being dropped or

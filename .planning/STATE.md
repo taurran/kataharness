@@ -33,7 +33,7 @@
   and **`kata-review`** (adversarial/red-team — the EVALUATE leg the A/B exposed as missing, L10).
 - **v0.1 is now skill-complete: 11 skills built** (the 10 + kata-review). README index promoted.
 
-## Active workstream — OPERATING MODES (Spec A1 + A2 + A3 MERGED to master; A3 on 2026-06-08)
+## Active workstream — OPERATING MODES (Spec A1 + A2 + A3 MERGED to master; A4 in progress)
 
 **Spec A1 (foundations) DONE + merged**: skill-conformance validator (`tools/validate_skills.py`), schema-v2
 frontmatter (`cost-weight`+`license`+namespaced `tags`), frontmatter-generated README index,
@@ -49,9 +49,18 @@ interview) + new light **`kata-readiness`** (harness-health + target-readiness +
 load-guard** (GB12). `kata.config` schema gained `runShape`+`target` (version-up). Grilled GB1–GB13 → promoted
 to **D34–D46**; adversarially reviewed **SHIP** (`.../modes-A3-bootstrap-wiring/REVIEW.md`). **24 skills**,
 validator green, 12 tests. Versioning **policy A** (hold all skills at 0.1.0 till v0.1 ships, then bump-on-modify).
-**Next: A4** (version-up execution — `kata-graph` ingestion engine + existing-file-aware planning + baseline-green
-regression contract; absorbs old Spec C). Then Spec B (bake-off), `design` module. Parallel outstanding: the
-D16 planning-varied A/B.
+**A4 (version-up + kata-graph) — DESIGN FROZEN + GRILL CONVERGED (3 gate passes) + IMPLEMENTATION IN PROGRESS
+on branch `phase-2/modes-A4-version-up`**: DESIGN frozen (`.planning/specs/modes-A4-version-up/DESIGN.md`);
+grill ledger fully converged (GB1…GB10 + HOLD#1/#2/#3 resolutions; coherence audit PASSED;
+`.planning/specs/modes-A4-version-up/GRILL-LEDGER.md`); A4-GB decisions promoted to **D47–D56** (this
+session). Scope: **`kata-graph`** (tree-sitter-floor, feature-agnostic cached `kata.graph.json` contract,
+feature-seeded ~3k-token digest, pluggable grep/tree-sitter/Graphify-MCP backend) + **version-up wiring**
+(grill Phase 0 ingest, footprint-scoped disjoint ownership with defer-first + escalate-rare protections,
+full-suite-green regression contract) + **`kata-orchestrate` frontier/async-escalation supersession** (rolling
+DAG-frontier dispatch, async park/drain/hard-wait, structured escalation payload in its own contract
+`protocol/escalation.md`). Deferred clean: Obsidian KG story (own spec under kata-understand, D54);
+engram-mediated escalation (D56). Then Spec B (bake-off), `design` module. Parallel outstanding: D16
+planning-varied A/B.
 
 
 Brainstormed a major new capability: cost/effort/thoroughness **operating modes** (Essential/Standard/Advanced),

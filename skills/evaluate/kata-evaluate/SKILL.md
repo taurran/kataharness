@@ -43,6 +43,9 @@ integration branch to grade.
 4. **Ownership respected.** Each task touched only its owned files; concurrent merges were conflict-free.
 5. **No scope creep.** Nothing built beyond the plan; no speculative features; no unrelated edits.
 6. **Backward-compatibility.** Pre-existing behavior/tests preserved where the plan promised it.
+   **Version-up regression contract:** for an existing-repo feature add, the gate is the **baseline suite still
+   green + new feature tests green** (the existing green-gate and backward-compat criteria applied to the full
+   existing suite). No new evaluator — the conformance floor is unchanged (D22).
 7. **Standards conformance.** The change follows the repo's *documented* standards — `AGENTS.md`, the
    `CONTEXT.md` glossary, ADRs, coding conventions — not only the spec (conformance-to-spec ≠
    conformance-to-house-rules; mattpocock review's Standards axis).
