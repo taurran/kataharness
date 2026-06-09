@@ -56,3 +56,11 @@ price a mode + each à-la-carte add. Dominant axis = amplification (spawn ≫ lo
 `protocol/state.md` · `protocol/handoff.md`. Tracking surfaces (the installed-library registry, a future
 `kata-tasklist` board) expose documented pointers here so an *optional* external PM overlay can attach
 without the core depending on it (D30).
+
+## Optional modules
+
+`kata-graph` (`kata/module/graph`) is an **optional module** — not part of the always-runs spine — that the
+**version-up run-shape preset bundles by default**. `kata-bootstrap` activates it automatically when
+`target.kind == existing`; individual and batch presets do not include it unless the user opts in. It
+produces `kata.graph.json` (schema: `protocol/graph.md`), which the spine consumers (grill, plan) read but
+do not depend on for correctness — only for quality of structural grounding.
