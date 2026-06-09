@@ -1,6 +1,6 @@
 # STATE — KataHarness
 
-**Phase:** v0.1 execution skills built + Arm A run green · **Version:** pre-v0.1 · **Updated:** 2026-06-06
+**Phase:** v0.1 skill-complete · Modes Spec A1+A2+A3 merged · **Version:** pre-v0.1 · **Updated:** 2026-06-08
 
 ## Where we are
 - Project scaffolded at `C:\Dev\Projects\KataHarness` (git, `.gitattributes eol=lf`). Foundation committed.
@@ -33,17 +33,25 @@
   and **`kata-review`** (adversarial/red-team — the EVALUATE leg the A/B exposed as missing, L10).
 - **v0.1 is now skill-complete: 11 skills built** (the 10 + kata-review). README index promoted.
 
-## Active workstream — OPERATING MODES (Spec A1 + A2 MERGED to master 2026-06-07)
+## Active workstream — OPERATING MODES (Spec A1 + A2 + A3 MERGED to master; A3 on 2026-06-08)
 
 **Spec A1 (foundations) DONE + merged**: skill-conformance validator (`tools/validate_skills.py`), schema-v2
 frontmatter (`cost-weight`+`license`+namespaced `tags`), frontmatter-generated README index,
 `protocol/config.md`+`protocol/dependencies.md`, `docs/TAXONOMY.md`, Apache-2.0 `LICENSE`. Reviewed HOLD→SHIP.
 **Spec A2 (tier families) DONE**: `kata-grill`/`kata-review`/`kata-plan` → 3 tiers each, `kata-diagnose` →
 light/full; shared `RUBRIC.md` per family (DRY-by-pointer); `kata-design-doc`/`kata-tdd` got a mode depth-hint;
-validator gained tier-family rules. **22 skills.** Adversarially reviewed (`.../modes-A2-tier-families/REVIEW.md` —
-HOLD→SHIP; surfaced **D33: structural invariants are never tiered**). **Next: A3 (kata-bootstrap +
-kata-orchestrate reads kata.config + family→tier resolution).** Then Spec B (bake-off), Spec C (version-ups),
-`design` module. Parallel outstanding: the D16 planning-varied A/B.
+validator gained tier-family rules. Adversarially reviewed (HOLD→SHIP; surfaced **D33: structural invariants
+are never tiered**).
+**Spec A3 (bootstrap + wiring) DONE + merged 2026-06-08** (merge `27ca76c`): **`kata-bootstrap`** (run-shape
+router — individual/batch/version-up/advanced as PRESETS over the mode axis; D24c ladder; run-shape-relevant
+interview) + new light **`kata-readiness`** (harness-health + target-readiness + re-entrant config detection) +
+**`kata-orchestrate`** reads `kata.config`, resolves family→tier (fallback Standard/D25) with a **fail-closed
+load-guard** (GB12). `kata.config` schema gained `runShape`+`target` (version-up). Grilled GB1–GB13 → promoted
+to **D34–D46**; adversarially reviewed **SHIP** (`.../modes-A3-bootstrap-wiring/REVIEW.md`). **24 skills**,
+validator green, 12 tests. Versioning **policy A** (hold all skills at 0.1.0 till v0.1 ships, then bump-on-modify).
+**Next: A4** (version-up execution — `kata-graph` ingestion engine + existing-file-aware planning + baseline-green
+regression contract; absorbs old Spec C). Then Spec B (bake-off), `design` module. Parallel outstanding: the
+D16 planning-varied A/B.
 
 
 Brainstormed a major new capability: cost/effort/thoroughness **operating modes** (Essential/Standard/Advanced),
@@ -53,11 +61,11 @@ Cursor/AgentHub best-of-N, Claude `effort`, GitHub Spec Kit) — pieces exist; o
 escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
 
 ## Next action (in order)
-1. **Modes: spec review → implement.** On resume: user reviews `docs/MODES-DESIGN.md`; confirm the 2 pending
-   items (mode=tier unification; `kata-bootstrap` as its own skill); then `kata-plan`/writing-plans for
-   **Spec A** (mode/tier/module/`kata.config`/`kata-bootstrap` + bake cost-weights into frontmatter + tier
-   `kata-grill`/`kata-review`/`kata-plan`/`kata-diagnose`; `kata-evaluate` stays single, D22; write `TAXONOMY.md`;
-   fold grill efficiency refactor in). Then Spec B (bake-off), Spec C (version-ups), `design` module (own spec).
+1. **Spec A4 — version-up execution** (absorbs old Spec C): grill→plan→build `kata-graph` (pre-processing
+   structural map / version-up ingestion engine; agnostic grep/glob/Read core + optional AST/MCP adapter;
+   evaluate OSS minimal-step examples per D41) + existing-file-aware planning + the baseline-green regression
+   contract (`kata-evaluate` already *is* the no-regression gate). Carry the A3-review A4 notes (BACKLOG):
+   sharpen `kata-readiness` Scope 1 harness-vs-target wording. Then Spec B (bake-off), `design` module.
 2. **D16 A/B (parallel priority):** planning-VARIED A/B to prove the grill differentiates — still outstanding;
    do before calling v0.1 "validated."
 3. **Backlog:** `kata-tasklist` (reframed → virtual board/PM), `kata-zoom-out`, `kata-engram`; adapters; set a

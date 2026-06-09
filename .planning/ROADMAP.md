@@ -25,9 +25,9 @@ Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-f
   cost-weight/license/namespaced-tags frontmatter + generated README index + schemas + TAXONOMY). **A2 (tier
   families) DONE+merged** (grill/review/plan → 3 tiers, diagnose → light/full; RUBRIC-per-family; depth-hint
   for design-doc/tdd; validator tier rules; reviewed HOLD→SHIP; **D33** structural-invariants-never-tiered).
-  **A3 + A4 remain (grilled 2026-06-08 — see `.planning/specs/modes-A3-bootstrap-wiring/GRILL-LEDGER.md`).**
-  - **A3 — bootstrap brain + greenfield wiring + version-up-aware/configurable.** *(Design grilled + CLOSED
-    2026-06-08, GB1–GB13.)* New skills: **`kata-bootstrap`** (full configurator: **run-shape router** —
+  **A3 DONE + merged 2026-06-08 (merge `27ca76c`, reviewed SHIP); A4 remains.**
+  - **A3 — bootstrap brain + greenfield wiring + version-up-aware/configurable.** ✅ **DONE+merged** (GB1–GB13
+    → D34–D46; 24 skills; validator green). New skills: **`kata-bootstrap`** (full configurator: **run-shape router** —
     individual / batch=bakeoff / version-up / advanced, presets *on top of* the mode axis GB1; the D24c ladder;
     cost preview; run-shape-relevant interview only GB13; write `kata.config`) + **`kata-readiness`** (light,
     bootstrap-invoked: harness-health + target-readiness + re-entrant config detection, GB11). Wire
