@@ -1,6 +1,6 @@
 # STATE — KataHarness
 
-**Phase:** v0.1 skill-complete · Modes Spec A1+A2+A3 merged · **Version:** pre-v0.1 · **Updated:** 2026-06-08
+**Phase:** v0.1 skill-complete · Modes Spec A1+A2+A3+A4 merged · **Version:** pre-v0.1 · **Updated:** 2026-06-08
 
 ## Where we are
 - Project scaffolded at `C:\Dev\Projects\KataHarness` (git, `.gitattributes eol=lf`). Foundation committed.
@@ -49,8 +49,8 @@ interview) + new light **`kata-readiness`** (harness-health + target-readiness +
 load-guard** (GB12). `kata.config` schema gained `runShape`+`target` (version-up). Grilled GB1–GB13 → promoted
 to **D34–D46**; adversarially reviewed **SHIP** (`.../modes-A3-bootstrap-wiring/REVIEW.md`). **24 skills**,
 validator green, 12 tests. Versioning **policy A** (hold all skills at 0.1.0 till v0.1 ships, then bump-on-modify).
-**A4 (version-up + kata-graph) — DESIGN FROZEN + GRILL CONVERGED (3 gate passes) + IMPLEMENTATION IN PROGRESS
-on branch `phase-2/modes-A4-version-up`**: DESIGN frozen (`.planning/specs/modes-A4-version-up/DESIGN.md`);
+**A4 (version-up + kata-graph) — DONE + MERGED to master 2026-06-08 (merge `de4b0ee`, reviewed SHIP; 25 skills,
+validator green, 13 tests)**: DESIGN frozen (`.planning/specs/modes-A4-version-up/DESIGN.md`);
 grill ledger fully converged (GB1…GB10 + HOLD#1/#2/#3 resolutions; coherence audit PASSED;
 `.planning/specs/modes-A4-version-up/GRILL-LEDGER.md`); A4-GB decisions promoted to **D47–D56** (this
 session). Scope: **`kata-graph`** (tree-sitter-floor, feature-agnostic cached `kata.graph.json` contract,

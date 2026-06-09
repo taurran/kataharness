@@ -35,8 +35,8 @@ Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-f
     load-guard** (GB12 — not a bootstrap validation phase). Bootstrap re-entrant (cold-start vs reconfigure —
     one skill, GB5) and version-up-aware day one (writes a correct version-up config routing to A4). Fold grill
     efficiency refactor in.
-  - **A4 — version-up execution bundle (absorbs the old standalone Spec C).** [~] **DESIGN FROZEN + building
-    on `phase-2/modes-A4-version-up`.** Scope: **`kata-graph`** (new skill — tree-sitter-floor, feature-agnostic
+  - **A4 — version-up execution bundle (absorbs the old standalone Spec C).** ✅ **DONE+merged 2026-06-08**
+    (merge `de4b0ee`, reviewed SHIP; 25 skills; D47–D56). Scope: **`kata-graph`** (new skill — tree-sitter-floor, feature-agnostic
     cached `kata.graph.json` contract, ~3k-token feature-seeded digest, pluggable backend; `protocol/graph.md`)
     + **version-up wiring** (grill Phase 0 ingest, footprint-scoped disjoint ownership, full-suite-green
     regression contract; no new evaluator) + **`kata-orchestrate` frontier/async-escalation supersession**
