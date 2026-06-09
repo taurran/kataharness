@@ -66,14 +66,66 @@
   path }, frontmatterProfile }`. Plumb into kata.config schema (+ any manifest). No new dependency.
 - **Provenance:** user — "bootstrap should ask if you want to output a knowledge graph … plumb this in configs/manifests."
 
-## Open branches (next)
-- **Sequencing (next):** does the Obsidian **emit** ship in A4 (thin projection over the contract — complete, not
-  half-baked) with richer ingest + plugin profiles deferred to the kata-understand spec? Or all in kata-understand
-  with A4 only plumbing the bootstrap question + config fields?
-- Token-budget default + feature-seeded PageRank personalization (the token-optimization goal).
-- Blast-radius: a `kata-graph` output, or a separate version-up planning step?
-- Version-up wiring: how grill Phase 0 invokes kata-graph; the regression contract (baseline-green); file
-  ownership over *existing* files.
+### A4-GB7 — Sequencing: A4 = version-up + kata-graph contract; Obsidian KG = its own next spec
+- **Chosen:** clean split. **A4** ships version-up execution + `kata-graph` (the `kata.graph.json` contract is the
+  durable substrate). The **whole Obsidian KG story** (emit + ingest + the bootstrap "emit a KG?" question +
+  `knowledgeGraph` config + frontmatter profiles + the comprehension/onboarding layer) ships as **its own next
+  spec under kata-understand** — shipped *whole*, no "configured-but-inert" seam.
+- **Rejected:** a partial emit bolted into A4 (creates an ownership seam — "owned by kata-understand" but built
+  before kata-understand exists = a chimera at the spec level). Anti-chimera honored at the spec boundary.
+- **Provenance:** user — "go with your gut recommendation." Also: PortaVault must exist before emit can target it.
+
+### A4-GB8 — Task-relevance: agnostic cached graph; seeding + blast-radius are use-time projections
+- **Chosen:** `kata.graph.json` is **feature-agnostic and content-hash cached** (rebuilt incrementally on file
+  change) — never invalidated per-feature. **Seeding** (the budgeted digest) and **blast-radius** are **use-time
+  projections** over that stable graph:
+  - **Digest** = feature-seeded PageRank (aider ×10-boost for symbols matching the feature description + named
+    files) → the feature's neighborhood, not the whole repo. **Default budget ~3k tokens, configurable** (aider
+    uses ~1k for interactive; a one-shot version-up plan wants more grounding).
+  - **Blast-radius** = a reverse-reachability query over `ref`/`call` edges from the seed symbols, **computed in
+    `kata-plan` (version-up), NOT emitted by kata-graph.** kata-graph stays a pure map-builder (provides graph +
+    traversal); the *planner* decides scope. Anti-chimera (planning decisions stay in the planner).
+- **Provenance:** user — "go with your rec" (agnostic cached graph · ~3k default · blast-radius in the planner).
+
+### A4-GB9 — version-up wiring (reuses the spine with version-up-aware inputs)
+- **Chosen:**
+  - **Grill Phase 0** invokes `kata-graph` when `target.kind == existing` → injects the feature-seeded digest
+    into grill + plan, so the design is resolved *against* the existing architecture.
+  - **File-ownership scoped to the feature's footprint** (disjoint, as always); files outside scope are
+    **off-limits — owned by no task** → "don't break other aspects" is structural, not a hope.
+  - **Out-of-scope handling = escalate-not-silent-expand** — but with **overuse protections** (below).
+  - **Regression contract (reuse, GB5):** orchestrate precond #2 records baseline via `target.baselineGate`
+    (full existing suite green at fork); version-up `kata-evaluate` = baseline suite STILL green + new tests
+    green, default-FAIL. No new evaluator.
+- **Overuse protections (designed into A4 — answers the "this kills long-running" risk):**
+  1. **Defer-vs-escalate split** (the main lever): non-blocking discoveries → `kata-defer` (loop keeps running);
+     ONLY hard blockers ("can't complete my task without an unowned file") → escalate. Most cases defer.
+  2. **Generous plan-time scoping:** with the graph digest in view, grill/plan over-include the blast-radius
+     (forward footprint + reverse regression surface + margin) so "I need this file" is mostly pre-owned.
+     Escalation frequency is a *plan-quality* metric, fixed at plan-time not runtime.
+  3. **Escalation telemetry:** orchestrate's drift ledger counts escalations; crossing a threshold = "plan was
+     under-scoped" → signal to re-grill, not normal operation.
+- **Provenance:** user confirmed escalate-not-silent-expand "as long as there are protections against overuse."
+
+### A4-GB10 — Engram-mediated escalation (FUTURE phase, harness-wide — captured, not wired)
+- **Chosen (as future direction, NOT A4):** *every* human-in-the-loop escalation, anywhere in the harness,
+  should eventually route through the engram / cognitive fingerprint: (a) **consult the engram first** — if the
+  user's known patterns resolve it, auto-resolve + log; only novel decisions reach the human; (b) **feed every
+  human resolution back into the engram** so the next identical escalation auto-resolves. Net: as the engram
+  matures, human interrupts **asymptotically decrease** → the long-running promise strengthens over time.
+- **Gated on:** PortaVault installed + cognitive-fingerprint synthesis built → grown from the `kata-engram`
+  cognition skill (backlog/D9). Ties to [[cognitive-twin-architecture]], [[project-framework]] (kiban),
+  [[project-kagami]] (engram sources).
+- **Provenance:** user — "these escalations no matter where they are should take the engram into consideration
+  … if the user has to enter a human-in-the-loop escalation it should feed into our engram … add it as a future
+  phase after PortaVault + cognitive fingerprint synthesis."
+
+## Grill COMPLETE (A4-GB1 … A4-GB10)
+All branches resolved. A4 scope frozen for FREEZE (`kata-design-doc`): **kata-graph** (tree-sitter floor,
+feature-agnostic cached `kata.graph.json` contract, feature-seeded ~3k-token digest, pluggable
+grep/tree-sitter/Graphify-MCP backend) + **version-up wiring** (grill Phase 0 ingest, footprint-scoped ownership
+with defer-first + escalate-rare protections, full-suite-green regression contract). Deferred to later specs:
+the Obsidian KG story (own spec under kata-understand, GB7) and engram-mediated escalation (GB10).
 
 ## Working defaults (confirmed unless overruled)
 - Output artifact = **Option C** (hybrid `kata.graph.json` + budgeted text digest). RESEARCH §4 D-A4-1.
