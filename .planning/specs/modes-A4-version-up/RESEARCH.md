@@ -131,6 +131,35 @@ A skill's name describes its job; the OSS we borrow from lives in `source:` fron
 Distinct one-liner if needed: **kata-graph optimizes tokens for the agent; kata-understand teaches the codebase
 to the human.** (Candidate for `docs/TAXONOMY.md` if we want it formalized.)
 
+## 5d. Obsidian knowledge-graph ingest — how it actually works (research)
+**There is no Obsidian "import API" — ingest is folder-based.** A vault *is* a folder; any markdown inside it is
+auto-indexed as a note. To get an external graph in: (A) write notes into a **subfolder of the vault**, (B)
+drag/drop/move files into the vault, or (C) **symlink** an external project folder into the vault (desktop fine;
+mobile has indexing caveats). So "ingest mechanism" = **emit a folder of Obsidian-compatible markdown to a
+target dir** — the only variable is *which* dir.
+
+**The gotcha — native graph view reads BODY wikilinks, not frontmatter links.** Obsidian's core graph renders
+`[[wikilinks]]` in the note **body**; links in YAML frontmatter are **not** reflected in the native graph
+without the Properties link-type or a plugin (Frontmatter Links), and native frontmatter-graph support "remains
+a sought-after feature." **Design consequence:** emit each edge as a body `[[wikilink]]` (a "References"
+section) so the **native** graph works out of the box; ALSO carry typed links in frontmatter for plugins.
+
+**Plugin expansion surface (the "leave room" requirement):**
+- **Dataview** — inline `key:: [[value]]` fields (e.g. `references:: [[Foo]]`), queryable.
+- **Breadcrumbs** — hierarchical relations via frontmatter/Dataview fields (`up`/`down`/`same`, `hasTopic::`).
+- **Juggl** — interactive stylable graph; reads Breadcrumbs link-types + Dataview inline fields.
+- **Frontmatter Links** — renders frontmatter links as clickable links.
+→ Our emitter carries a **pluggable `frontmatterProfile`**: a base Obsidian-compatible profile (our standard
+taxonomy + body wikilinks) + optional `dataview`/`breadcrumbs`/`juggl`/`custom` profiles that add the typed
+fields those plugins consume. This is the expansion room — analogous to STANDARDS §1.2 reserved extension points.
+
+**Mechanism (decided below as A4-GB5):** emit Obsidian-compatible markdown (one note per node; edges as body
+wikilinks + typed frontmatter), to a **configurable target**: `vault-direct` (write into a vault ingest
+subfolder the user gives) **or** `project-folder` (write to `<project>/.kata/kg/`, user points Obsidian at it via
+open-as-vault/symlink). One mechanism, two target modes. Reverse (ingest) = parse a vault folder's
+frontmatter + body wikilinks → contract nodes/edges (folds PortaVault into the graph). **No new dep** — markdown
+I/O is native; reuses the harness's existing Obsidian-compatible frontmatter taxonomy (STANDARDS §1/§5).
+
 ## 6. Sources
 - Graphify repo — https://github.com/safishamsi/graphify
 - Graphify site — https://graphify.net/
@@ -141,3 +170,8 @@ to the human.** (Candidate for `docs/TAXONOMY.md` if we want it formalized.)
 - aider repository-understanding (DeepWiki) — https://deepwiki.com/Aider-AI/aider/4.1-repository-mapping-system
 - Understand-Anything repo — https://github.com/Lum1104/Understand-Anything
 - Understand-Anything overview — https://dev.to/arshtechpro/understand-anything-turn-any-codebase-into-an-interactive-knowledge-graph-37ed
+- Obsidian — open folder as vault — https://obsidian.md/help/manage-vaults
+- Obsidian — import markdown files — https://obsidian.md/help/import/markdown
+- Obsidian — frontmatter links / graph view (forum) — https://forum.obsidian.md/t/wikilinks-in-yaml-front-matter/10052
+- Frontmatter Links plugin — https://github.com/Trikzon/obsidian-frontmatter-links
+- Juggl (interactive graph) + Breadcrumbs integration — https://juggl.io/ · https://deepwiki.com/HEmile/juggl/6.1-breadcrumbs-integration
