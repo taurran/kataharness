@@ -83,6 +83,13 @@ tags:                            # OPTIONAL but RECOMMENDED. namespaced automati
 
 - **Per-skill semver** in frontmatter, bumped independently: MAJOR = breaking contract change,
   MINOR = new capability, PATCH = fix/wording. Optional `skills/**/CHANGELOG.md` for history.
+- **Pre-release hold (current policy, 2026-06-08):** while the suite is pre-`v0.1` and every skill is
+  `experimental`, **all skills are HELD at `0.1.0`** — the meaningful version number is the *suite* version
+  (README / `v0.1`), and per-skill bumps below a first release are bookkeeping without a consumer. New skills
+  enter at `0.1.0`; modifications do **not** bump. **The moment `v0.1` ships, this hold ends and bump-on-modify
+  (the rule above) becomes mandatory** — flipping it is a v0.1 release-checklist item (`.planning/ROADMAP.md`).
+  The frontmatter `version` field is still REQUIRED and validator-enforced throughout; only the *incrementing*
+  is deferred.
 - **Suite version** lives in `README.md` + a future `package`/`plugin.json`; it is *not* the sum of
   skill versions — it marks compatible bundles.
 - **Per-skill frontmatter is the machine source of truth** (version/category/status/cost-weight — one

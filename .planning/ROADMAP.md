@@ -7,6 +7,9 @@ Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED
   (plan-guardian), `kata-board`, `kata-worktree`, `kata-tdd`, `kata-evaluate`, `kata-handoff`.
   Frontmatter/versioning/naming standard applied. **Dogfood: KataHarness builds itself**, then run it
   on CryptoPortfolioPlanner. No multi-tool adapters yet.
+  - **RELEASE CHECKLIST — on v0.1 ship:** flip the versioning policy from **hold-at-`0.1.0`** to
+    **bump-on-modify** (STANDARDS §3). Until then every skill stays `0.1.0`; after, every skill modification
+    bumps semver. Easy to forget — this is the trigger point.
 - [~] **v0.2 — Self-handoff + concurrency.** PULLED FORWARD into the v0.1 build: `kata-selfhandoff`,
   `kata-diagnose`, `kata-review`, `kata-improve` (+ meta `kata-write-skill`) all built. **Remaining for v0.2:**
   `kata-tasklist` (file-locked self-claim) + the multi-agent self-claim model — deferred until workers
