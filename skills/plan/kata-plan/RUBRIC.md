@@ -37,6 +37,22 @@ depends_on:     { T2: [T1], T3: [T1], T4: [T1, T2] }      # the DAG
 Derive waves from the DAG: a wave is the set of tasks whose dependencies are all satisfied and whose file
 sets are disjoint. Sequential single-task waves are fine; parallel waves are the payoff.
 
+## Version-up ownership (existing-repo runs)
+
+When `target.kind == existing`, the ownership partition's universe is the **footprint**, defined as:
+**footprint = modified-files (the files the frozen DESIGN says the feature changes/adds) ∪ the
+`marginDepth`-hop reverse-dependents of those files** (over `ref ∪ call` edges; default `marginDepth = 1`,
+from `kata.config.graph.marginDepth`). The planner computes the reverse-dependents by inverting the forward
+edge list in `kata.graph.json` (built by [[kata-graph]]).
+
+- Files **outside the footprint are off-limits — owned by no task.** This is the structural form of "don't
+  break other aspects": a worker physically cannot edit beyond the footprint.
+- Pre-owning the depth-1 reverse-dependents puts the common "update a caller of what I changed" case
+  in-lane, so it does not trigger an escalation.
+- Disjoint-ownership, waves, and the DAG rules are otherwise unchanged.
+- The regression contract is enforced at evaluation: the **full baseline suite still green + new feature
+  tests green** (gated by [[kata-evaluate]] — no new evaluator).
+
 ## Per task
 
 - **owns** — its exact file set (a subset of the partition).
