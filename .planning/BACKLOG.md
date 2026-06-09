@@ -42,7 +42,10 @@ Promote to ROADMAP milestones when ready.
   of a **newly-built** codebase → helps the *user* navigate/understand what KataHarness created (Understand-
   Anything nod). **Distinct from `kata-report`:** report = build-log synthesis (comprehension is its non-goal);
   understand = from-scratch comprehension of the result. **Optional module (`kata/module/understand`, GB10).**
-  Own later spec, post-v0.1. Plan via OSS minimal-step eval (GB8).
+  **Base: Understand-Anything** (`Lum1104/Understand-Anything`, MIT — purpose-built for teach-the-human
+  comprehension/onboarding: `/understand-onboard`, `/understand-domain`; "graphs that teach"); Graphify a
+  secondary source (multimodal/infra). Compose pluggable skills, don't fork-splice (A4 RESEARCH §5b). Name by
+  job not vendor (§5c). Own later spec, post-v0.1. Plan via OSS minimal-step eval (GB8).
 - **`kata-defer` — in-loop deferral / "nice-to-haves" capture (GB9).** Optional module
   (`kata/module/defer`). During a run, any out-of-scope-but-worth-keeping item (nice-to-have, post-processing
   candidate, deferred-for-a-reason) is appended to a run-scoped `DEFERRED.md` instead of being dropped or

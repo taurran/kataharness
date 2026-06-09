@@ -111,6 +111,26 @@ Graphify (MIT) and aider in `source:` (spine #12).
 - Where `kata.graph.json` lives + its schema (nodes: file/symbol; edges: def/ref/import; props: path, sig, hash).
 - Whether `get_pr_impact`-style blast-radius is a kata-graph output or a separate version-up planning step.
 
+## 5b. kata-understand base — Understand-Anything vs Graphify (bake-off)
+`kata-understand` (backlog) job = explain a **freshly-built, kata-created** codebase to its **owner**.
+- **Understand-Anything** (`Lum1104/Understand-Anything`, MIT, ~46k★): tree-sitter + LLM → interactive KG,
+  shipped as a Claude Code/Cursor/etc. plugin. Philosophy *"graphs that teach > graphs that impress."*
+  Comprehension/onboarding-first: `/understand-onboard`, `/understand-chat`, `/understand-explain`,
+  `/understand-domain` (code→business processes/flows). Lighter, education-shaped.
+- **Graphify**: heavier, query/oracle-first; multimodal + infra/SQL/Terraform + `get_pr_impact` + Leiden.
+- **Determination:** `kata-understand` → **base on Understand-Anything** (purpose-built for teach-the-human
+  comprehension); Graphify is a *secondary* source (multimodal/infra) and the **oracle backend for `kata-graph`**
+  (blast-radius via `get_pr_impact`). UA and Graphify are near-twins (same primitives), so "merge" = **compose
+  pluggable skills** (pick base by job-fit, bind the other's standout capability via its skill/MCP), **never
+  fork-and-splice internals.** Attribute all bases in `source:` (spine #12).
+
+## 5c. Naming principle (settled) — name by JOB, not by vendor
+A skill's name describes its job; the OSS we borrow from lives in `source:` frontmatter, never the name.
+`kata-graph` = "build a structural graph" (true whether powered by aider's PageRank or Graphify's AST);
+`kata-understand` = "comprehend" (true whether based on Understand-Anything or Graphify). No `kata-pagerank`.
+Distinct one-liner if needed: **kata-graph optimizes tokens for the agent; kata-understand teaches the codebase
+to the human.** (Candidate for `docs/TAXONOMY.md` if we want it formalized.)
+
 ## 6. Sources
 - Graphify repo — https://github.com/safishamsi/graphify
 - Graphify site — https://graphify.net/
@@ -119,3 +139,5 @@ Graphify (MIT) and aider in `source:` (spine #12).
 - aider repo-map (how it works) — https://aider.chat/2023/10/22/repomap.html
 - aider repo-map docs — https://aider.chat/docs/repomap.html
 - aider repository-understanding (DeepWiki) — https://deepwiki.com/Aider-AI/aider/4.1-repository-mapping-system
+- Understand-Anything repo — https://github.com/Lum1104/Understand-Anything
+- Understand-Anything overview — https://dev.to/arshtechpro/understand-anything-turn-any-codebase-into-an-interactive-knowledge-graph-37ed
