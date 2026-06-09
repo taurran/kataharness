@@ -14,6 +14,11 @@ Promote to ROADMAP milestones when ready.
 - **Periodic CPP check-in hook** — lightweight status-eval of KataHarness surfaced into CPP sessions.
 - **`kata-tasklist` reframe (D23)** — virtual task board over GSD structure + backlog, syncing to Jira/Asana
   via MCP (env has `pm-skills`/`atlassian`). Replaces the old file-locked-claim purpose.
+- **A3 REVIEW carry-overs (2026-06-08, non-blocking)** — (a) `tools/` example-`kata.config` coherence check
+  (validate a config's `tiers` keys resolve, `mode`/`effort` valid, modules have providers) — the maintainer-time
+  complement to orchestrate's runtime load-guard (GB12/D45). (b) **A4:** sharpen `kata-readiness` Scope 1 wording
+  so "validator green" clearly means the *harness* install vs the *target* repo when running version-up on an
+  existing codebase. (c) `tiers`-key format (bare-verb vs `kata-<verb>`) is documented-consistent but unenforced.
 - **Validator deeper checks (A1 REVIEW backlog)** — (3.1) `check_protocol_schemas`/`check_taxonomy_present`
   use substring matching → can't detect substantive erasure; add structural checks if it bites. (3.3)
   `check_tags_namespace` allows bogus `kata/...` sub-namespaces; add a `kata/...` prefix allowlist when
