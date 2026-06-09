@@ -49,9 +49,13 @@ does not drift.**
    not executable concurrently; escalate to re-freeze, do not improvise.
 
 ## The loop
-For each **wave** in dependency order:
-1. **Isolate.** Use [[kata-worktree]] to give each task-owner in the wave its own worktree on a per-task
-   branch (sequential single-task waves may run directly on the integration branch).
+**Maintain a rolling frontier.** A task is **dispatchable** iff (all its `depends_on` are integrated) ∧ (its
+owned files are disjoint from every in-flight task). Dispatch every dispatchable task concurrently (each in its
+own [[kata-worktree]]); as each integrates, **recompute the frontier** and dispatch newly-eligible tasks. The
+`waves:` in the plan are a *derived view* of this frontier, not a hard gate — independent work never waits on
+an unrelated wave.
+1. **Isolate.** Use [[kata-worktree]] to give each dispatchable task-owner its own worktree on a per-task
+   branch (a lone sequential task may run directly on the integration branch).
 2. **Dispatch one worker subagent per task** via the host's subagent mechanism *(adapter binding: Claude →
    the `Agent` tool; other hosts → their subagent/ACP call — the capability is abstract, the binding is the
    adapter's job)*. Pin the implementer model to the cheaper workhorse, held constant across any A/B. Each
@@ -62,20 +66,37 @@ For each **wave** in dependency order:
      nothing else);
    - the rule: *"Execute against the frozen plan. Do not re-plan or re-decide any LOCKED decision. If you
      hit an unknown or the plan seems wrong, STOP and ESCALATE via the board — do not improvise."*
+   - the escalate predicate: *"Escalate ONLY if completing your task's acceptance test requires writing a
+     file you do not own; otherwise record out-of-scope discoveries as a deferral note (the kata-defer module,
+     backlog) and keep going."*
    - the per-task verify command (default-FAIL).
-   Parallel tasks in a wave → dispatch concurrently (background); each in its own worktree.
+   Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
    verify (tests + security scan). Not done until evidence is read and passes. Confirm it touched **only its
    owned files** (drift check). 
 4. **Integrate.** Merge each completed task branch into the integration branch ([[kata-worktree]] — disjoint
-   files merge cleanly by construction). Re-run the gate on the integration branch.
+   files merge cleanly by construction). Re-run the gate on the integration branch, then recompute the frontier.
 5. **Commit at the checkpoint** (conventional commit + project trailer) so compaction can't lose work.
+   Completions integrate **in completion order** — a linear integration-branch history, not a wave-batched one.
 
 ## Escalation (the no-re-plan escape valve)
-A subagent escalation (BLOCK/ESCALATE on the board) is an **event**, not a habit. On escalation: read it,
-make a *deliberate* decision yourself (you are the only one allowed to alter the plan), record it, and
-re-dispatch a tightened task. If the escalation reveals a LOCKED decision is wrong, **stop and escalate to
-the human** — do not silently re-decide it (that is the exact drift the harness exists to prevent).
+An escalation is an **async event** — it does **NOT halt the run**. The escalating worker writes the
+**structured payload** (`protocol/escalation.md` → `.kata/escalations/<task-id>.json`) and appends the
+one-line `ESCALATE | <task-id> | <summary>` to [[kata-board]] (the board stays one-line; detail lives in the
+payload). You then **park** the escalating task **and its DAG-dependents** (remove them from the frontier),
+**keep dispatching the rest of the frontier**, and checkpoint completions as they integrate.
+
+**Classify every escalation:**
+- **Orchestrator-resolvable** — e.g. a needed re-scope / re-partition of file-ownership. You decide it
+  yourself and re-dispatch a tightened task; this **never reaches a human**.
+- **Human-required** — a LOCKED-decision conflict. **Only this surfaces to a human.** A LOCKED-decision
+  conflict is escalated to the human, **never silently re-decided** (that is the exact drift the harness
+  exists to prevent). *(Consulting an engram to auto-resolve before a hard-wait is a future capability — not
+  wired here.)*
+
+**Hard-wait for the human IFF the frontier is empty ∧ open human-required escalations remain.** Being
+"frontier-blocked" **is** the criticality test — there is no separate criticality knob. As long as unrelated
+dispatchable work exists, the run keeps moving; it only stalls for a human when nothing else can progress.
 
 ## Final gate
 After the last wave, on the integration branch:
