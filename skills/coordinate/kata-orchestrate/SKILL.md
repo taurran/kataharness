@@ -99,7 +99,7 @@ payload). You then **park** the escalating task **and its DAG-dependents** (remo
 dispatchable work exists, the run keeps moving; it only stalls for a human when nothing else can progress.
 
 ## Final gate
-After the last wave, on the integration branch:
+After the frontier drains (all tasks integrated), on the integration branch:
 1. Full default-FAIL gate green (tests + security + deterministic build).
 2. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK.
 3. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
