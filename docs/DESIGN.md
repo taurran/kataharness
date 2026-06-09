@@ -48,7 +48,7 @@ everything versioned. These are the load-bearing invariants; features serve them
 |---|---|---|
 | **GRILL** | `kata-grill`, `kata-context` | Doc-grounded interrogation; resolve every branch; build ubiquitous language |
 | **FREEZE** | `kata-design-doc`, `kata-plan` | Produce the design doc + a precise, task-level plan; **freeze it** |
-| **COORDINATE** | `kata-orchestrate`, `kata-board`, `kata-tasklist`, `kata-worktree` | Plan-guardian assigns + partitions files; peers claim tasks, message laterally, isolate in worktrees |
+| **COORDINATE** | `kata-orchestrate`, `kata-board`, `kata-tasklist`, `kata-worktree`, `kata-bootstrap`, `kata-readiness` | Plan-guardian assigns + partitions files; peers claim tasks, message laterally, isolate in worktrees |
 | **EXECUTE** | `kata-tdd`, `kata-diagnose` | Build the slice; debug systematically; never re-plan (escalate) |
 | **EVALUATE** | `kata-evaluate`, `kata-review` | Fresh-context, no-write, default-FAIL gate; NEEDS_WORK seeds a targeted fix |
 | **HANDOFF** | `kata-handoff`, `kata-selfhandoff` | Two-way durable handoff; self-handoff at a configurable context threshold |
