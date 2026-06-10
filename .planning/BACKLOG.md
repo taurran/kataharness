@@ -59,6 +59,18 @@ Promote to ROADMAP milestones when ready.
   scope-crept into the frozen plan; compiled at HANDOFF; feeds project backlog / `kata-improve` /
   post-processing. **The structural complement to no-drift** (#1/#2): the pressure-release valve that makes
   one-shot=no-churn sustainable. Name soft (`kata-park`/`kata-icebox` alt). Post-v0.1 unless pulled forward.
+- **Research mode (major post-v0.1 spec — path-forward brief done 2026-06-09, `.planning/specs/research-mode/RESEARCH.md`).**
+  A `research` run-shape + module: `projects/Research/<project>/` roots; a recursive loop of disciplinary
+  **research** + **adversarial-validation** + **evaluation** agents (the Co-Scientist roster). Thesis: the SAME
+  spine with three swaps — work-unit = question/hypothesis, conformance floor = an **evidence floor** (citation
+  integrity + adversarial survival + empirical ratchet; the never-tiered D22 analog), roster = disciplinary
+  researchers. Reuses `kata-review` (adversarial), generalizes the bake-off judge (Elo tournament) and
+  `kata-graph` (→ evidence graph `protocol/evidence.md`), and **shares the KG-emit contract with
+  `kata-understand`** (research-mode is the upstream producer that fills PortaVault). Empirical sub-loop =
+  Karpathy's ratchet = version-up's no-regression gate. Optional backends (GPT Researcher / STORM / Co-Scientist
+  OSS) behind module contracts (the aider/Graphify pattern). **Sequence:** after v0.1 validation (D16) + Spec B
+  (bake-off judge) + the Obsidian-KG/`kata-understand` spec. Coherence-audited (no chimera). Discipline-lens
+  registry + recursion/budget guard (depth×breadth×exploration) are the only genuinely new substrates.
 - **`design` module (own spec)** — UI/UX, 2D/3D assets, slides, mobile, image-FM imagery; slots into Advanced.
 - **`docs/TAXONOMY.md`** — categories + `kata-<verb>` naming + tier-family convention (`kata-<verb>-<tier>`) +
   spine-vs-module. Motivated by the modes tiering work; partially specced in `docs/MODES-DESIGN.md`.
