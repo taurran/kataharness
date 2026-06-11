@@ -8,8 +8,8 @@ conventions, and the routing. Then read `docs/DESIGN.md`, `docs/STANDARDS.md`, a
 
 ## Claude-specific notes (only what differs from AGENTS.md)
 
-- **Model routing:** deep research/planning/grilling → latest **Opus**; build/encode/refactor →
-  **Sonnet**; evaluation → fresh-context **no-write** subagent.
+- **Model routing (D59):** deep research/planning/grilling → **Claude Fable 5** (`claude-fable-5`);
+  build/encode/refactor → **Sonnet**; evaluation → fresh-context **no-write** subagent.
 - **Native features the Claude adapter MAY use** (never depended on by the core): Agent Teams
   (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`), hooks, subagent frontmatter, `/compact`.
 - Everything else: follow `AGENTS.md`.

@@ -11,7 +11,7 @@ status: experimental
 agnostic: true
 cost-weight: 5
 allowed-tools: [Read, Grep, Glob, Write, Edit]
-model: opus
+model: fable
 source: >-
   adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model
 tags:

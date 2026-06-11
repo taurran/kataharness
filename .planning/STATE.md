@@ -87,8 +87,9 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   **set a git remote before public release** (still local-only).
 
 ## Model per stage
-Build KataHarness → latest **Opus**. D16 test arms → **Sonnet** (constant across arms — D14 principle,
-survives D57). I pin subagent models on spawn; operator sets main-session model via `/model`.
+Build KataHarness → **Claude Fable 5** (`claude-fable-5`, D59 — supersedes the Opus routing). D16 test
+arms → **Sonnet** (constant across arms — D14 principle, survives D57/D59). I pin subagent models on
+spawn; operator sets main-session model via `/model`.
 
 ## Open decisions for the user
 - Confirm D16-first sequencing (adversarial review recommends it; Option D "grill-KG-first" was reviewed

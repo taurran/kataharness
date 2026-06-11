@@ -55,7 +55,7 @@ versioning hold policy A §3) · 4. `docs/MODES-DESIGN.md` · 5. `docs/TAXONOMY.
 3. Then freeze DESIGN → PLAN → run arms → verdict → L11 → adversarial REVIEW (D15).
 
 ## 5. Method (keep doing it)
-Subagent-driven; latest Opus on judgment / Sonnet on mechanical; gate every merge on validator + pytest;
+Subagent-driven; Fable 5 on judgment / Sonnet on mechanical (D59); gate every merge on validator + pytest;
 fresh-context adversarial review (D15) before "done"; supersede decisions, never rewrite history.
 
 ## 6. Open decisions for the human

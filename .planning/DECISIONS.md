@@ -377,3 +377,12 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `C:\Users\taurr_nvs748q\PokeVault\PokeVault`, with `toolkit/agent-sops/` present (verified 2026-06-10).
   KataHarness installs into and is field-tested from this vault when ready (under `toolkit/`). The D54
   "PortaVault must exist first" gate is **SATISFIED**. Forward references renamed; history unmodified.
+- **D59 — Model routing: deep/judgment work moves from Opus to Fable 5; Sonnet stays the lightweight
+  workhorse.** Building KataHarness (research, grilling, planning, design, orchestration, adversarial
+  review) → **Claude Fable 5** (`claude-fable-5` — Anthropic's most capable model, the Mythos-class tier
+  above Opus). Mechanical/lightweight work (workers, encode/refactor, evaluators) → **Sonnet**, unchanged.
+  Skill frontmatter `model: opus` pins → `model: fable` (the Claude-adapter binding; the agnostic body is
+  untouched). *Why:* user direction 2026-06-11 — Fable 5 supersedes Opus as the deep-task model.
+  **Supersedes the Opus half of D13's routing**; D13's surviving principle — test arms run the cheaper
+  workhorse model, held constant, so the harness lift isn't masked — carries forward unchanged (the D16
+  arms stay Sonnet, per D14/D57). History (D13 text, L9/L10, REVIEW files, frozen specs) unmodified.
