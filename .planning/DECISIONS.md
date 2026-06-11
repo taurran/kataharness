@@ -373,7 +373,7 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   D14's surviving principles (model constant across arms, fresh context per arm, honest-GSD baseline — no
   strawman) carry into the D16 v2 design unchanged.
 - **D58 — PortaVault is now PokeVault; PokeVault is KataHarness's install/test home.** The vault gating
-  D54/D56 — formerly "PortaVault" — is the **PokeVault** project: `github.com/taurran/pokevault`, local at
+  D54/D56 — formerly "PortaVault" — is the **PokeVault** vault, local at
   `C:\Users\taurr_nvs748q\PokeVault\PokeVault`, with `toolkit/agent-sops/` present (verified 2026-06-10).
-  KataHarness installs into and is field-tested from this vault when ready. The D54 "PortaVault must exist
-  first" gate is **SATISFIED**. Forward-looking references renamed; historical artifacts unmodified.
+  KataHarness installs into and is field-tested from this vault when ready (under `toolkit/`). The D54
+  "PortaVault must exist first" gate is **SATISFIED**. Forward references renamed; history unmodified.

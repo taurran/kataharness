@@ -162,3 +162,18 @@ hard-wait for a human only when the frontier is empty ∧ open human-required es
 The structured artifact (`.kata/escalations/<task-id>.json`, `protocol/escalation.md`) carrying
 decision/options/recommendation/cost — its **own contract**, separate from the one-line board `ESCALATE`
 pointer. The engram learning surface (future, D56). _Avoid_: board message (that's just the pointer).
+
+## Surroundings (D57/D58)
+**PokeVault**:
+The Obsidian vault that is KataHarness's install/test home: `C:\Users\taurr_nvs748q\PokeVault\PokeVault`
+(local). Zones: `daily/ personal/ projects/ research/ scratch/ second-brain/ toolkit/ work/`; KataHarness
+installs under **`toolkit/`** (`agents/ agent-sops/ context/ skills/`). Vault alignment principle (matters
+for the future KG-emit spec): the **wiki layer is universal** — every zone's `wiki/` tree is structurally
+identical (`index/log/review` + `raw/{inbox,notes,media,processed,_archive}` +
+`pages/{sources,entities,concepts,synthesis,references}`) — while the **CRM layer is zone-specific by
+design** (never align it). _Avoid_: PortaVault (superseded name, D58); PocketVault (the upstream vault
+PokeVault replicates — a different vault).
+
+**Test-project target**:
+The D16 A/B's target shape (D57): **small, one-shottable greenfield projects** landing in a dedicated test
+directory — repeated paired measurements instead of one large task. _Avoid_: CPP phase (retired target).

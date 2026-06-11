@@ -15,8 +15,8 @@
   index is the source of truth. (Adversarial-reviewed → `.planning/REVIEW-v0.1.md`; new batch review pending.)
 - **2026-06-10 — CPP decoupled (D57) + PortaVault→PokeVault (D58).** CPP is no longer the test medium or
   consumer (history stands; provenance kept). The D16 A/B target is reshaped to **small one-shottable test
-  projects**. PokeVault vault is READY (`C:\Users\taurr_nvs748q\PokeVault\PokeVault` ·
-  `github.com/taurran/pokevault`, incl. `toolkit/agent-sops/`) — KataHarness's install/test home.
+  projects**. PokeVault vault is READY (`C:\Users\taurr_nvs748q\PokeVault\PokeVault`, incl.
+  `toolkit/agent-sops/`) — KataHarness's install/test home (under `toolkit/`).
 
 ## Done so far (this session, 2026-06-06)
 - Froze the shared control: CPP `03-DESIGN.md` + `03-01-PLAN.md` (4 locked decisions, 4-task disjoint partition).
@@ -95,6 +95,7 @@ survives D57). I pin subagent models on spawn; operator sets main-session model 
   and REJECTED 2026-06-10). Suite/plugin packaging shape. Git remote before public release.
 
 ## Session Continuity
-Last session: 2026-06-10. Stopped at: D57/D58 recorded (CPP decoupled; PokeVault ready + named install
-home); TEST-PLAN v1 marked superseded; adversarial review of sequencing options delivered — awaiting the
-user's path confirmation (recommendation: open the D16 spec grill next).
+Last session: 2026-06-11 (short, docs-only). Stopped at: D57/D58 recorded + committed; CONTEXT gained
+PokeVault + test-target glossary; HANDOFF.md rewritten as the new checkpoint; user restarting fresh.
+Resume file: `.planning/HANDOFF.md` (read it first — next step is the user's D16-first confirmation,
+then open the D16 spec grill).

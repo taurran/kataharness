@@ -16,7 +16,7 @@ drives coding agents via ACP.
 
 **Relationship to other projects:** CPP is **decoupled** (D57) — it was the incubation medium only; skill
 `source:` fields retain the historical attribution. KataHarness's install/test home is the **PokeVault**
-vault (`C:\Users\taurr_nvs748q\PokeVault\PokeVault` · `github.com/taurran/pokevault`) — D58. Cognitive
+vault (`C:\Users\taurr_nvs748q\PokeVault\PokeVault`, under `toolkit/`) — D58. Cognitive
 tie-in to `[[project-framework]]` (kiban) / `[[project-kagami]]` second brain via the backlog `kata-engram`
 extension point. See `[[cognitive-twin-architecture]]`.
 
