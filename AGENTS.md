@@ -62,4 +62,5 @@ long-running-agent harness + the best of mattpocock/skills, GSD, BMAD, and DDD u
 ## Status
 
 Pre-v0.1. See `.planning/ROADMAP.md`. v0.1 = Claude-only one-shot core, dogfooded by building
-KataHarness itself, then applied to CryptoPortfolioPlanner.
+KataHarness itself, then validated via the D16 planning-varied A/B on small one-shottable test
+projects (D57); installs into the PokeVault vault (D58).

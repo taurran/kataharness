@@ -10,15 +10,15 @@ Promote to ROADMAP milestones when ready.
   *anywhere* in the harness routes through the engram: (a) consult the cognitive fingerprint first → auto-resolve
   known patterns, only novel decisions reach the human; (b) feed every human resolution back into the engram so
   the next identical escalation auto-resolves. Net: human interrupts asymptotically decrease as the engram matures
-  → strengthens the long-running promise. **Gated on PortaVault installed + cognitive-fingerprint synthesis
-  built**; grows from `kata-engram` (D9). Ties to the cognitive-twin arc (kiban/kagami). Prereq for trusting
-  version-up's escalate-not-silent-expand at scale.
+  → strengthens the long-running promise. **Gated on PokeVault installed (READY, D58) + cognitive-fingerprint
+  synthesis built**; grows from `kata-engram` (D9). Ties to the cognitive-twin arc (kiban/kagami). Prereq for
+  trusting version-up's escalate-not-silent-expand at scale.
 - **Plugin packaging** — package the suite as a Claude Code plugin + a portable bundle; `plugin.json`/suite version.
 - **License selection** — choose an OSS license before public release.
-- **CPP consumption path** — how CryptoPortfolioPlanner installs/pins KataHarness once v0.1 ships.
+- **PokeVault install path (D58)** — how the PokeVault vault (`C:\Users\taurr_nvs748q\PokeVault\PokeVault`,
+  `toolkit/` area) installs/pins KataHarness once v0.1 ships. (Replaces the retired CPP consumption path, D57.)
 - **Protocol specs** — flesh out `protocol/{board,tasklist,state,handoff}.md` schemas.
 - **Quick/work version** — fork/branch strategy for the AWS-internal variant.
-- **Periodic CPP check-in hook** — lightweight status-eval of KataHarness surfaced into CPP sessions.
 - **`kata-tasklist` reframe (D23)** — virtual task board over GSD structure + backlog, syncing to Jira/Asana
   via MCP (env has `pm-skills`/`atlassian`). Replaces the old file-locked-claim purpose.
 - **A3 REVIEW carry-overs (2026-06-08, non-blocking)** — (a) `tools/` example-`kata.config` coherence check
@@ -66,7 +66,7 @@ Promote to ROADMAP milestones when ready.
   integrity + adversarial survival + empirical ratchet; the never-tiered D22 analog), roster = disciplinary
   researchers. Reuses `kata-review` (adversarial), generalizes the bake-off judge (Elo tournament) and
   `kata-graph` (→ evidence graph `protocol/evidence.md`), and **shares the KG-emit contract with
-  `kata-understand`** (research-mode is the upstream producer that fills PortaVault). Empirical sub-loop =
+  `kata-understand`** (research-mode is the upstream producer that fills the PokeVault vault, D58). Empirical sub-loop =
   Karpathy's ratchet = version-up's no-regression gate. Optional backends (GPT Researcher / STORM / Co-Scientist
   OSS) behind module contracts (the aider/Graphify pattern). **Sequence:** after v0.1 validation (D16) + Spec B
   (bake-off judge) + the Obsidian-KG/`kata-understand` spec. Coherence-audited (no chimera). Discipline-lens

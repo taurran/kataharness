@@ -97,7 +97,8 @@ well-developed engram**; not v0.1.
 ## Milestones
 
 See `.planning/ROADMAP.md`. v0.1 = Claude-only one-shot core, **dogfooded by building KataHarness
-itself**, then proven on CryptoPortfolioPlanner; adapters and concurrency follow.
+itself**, then proven via the D16 planning-varied A/B on small one-shottable test projects (D57);
+installs into the PokeVault vault (D58); adapters and concurrency follow.
 
 ## References
 

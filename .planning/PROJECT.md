@@ -14,9 +14,11 @@ out of CryptoPortfolioPlanner's `cpp-*` harness (the medium). A separate **work 
 adapter are first-class long-term requirements; the orchestrator eventually runs in the desktop app and
 drives coding agents via ACP.
 
-**Relationship to other projects:** CPP will *consume* KataHarness at v0.1 (keeps its `cpp-*` skills until
-then). Cognitive tie-in to `[[project-framework]]` (kiban) / `[[project-kagami]]` second brain via the
-backlog `kata-engram` extension point. See `[[cognitive-twin-architecture]]`.
+**Relationship to other projects:** CPP is **decoupled** (D57) — it was the incubation medium only; skill
+`source:` fields retain the historical attribution. KataHarness's install/test home is the **PokeVault**
+vault (`C:\Users\taurr_nvs748q\PokeVault\PokeVault` · `github.com/taurran/pokevault`) — D58. Cognitive
+tie-in to `[[project-framework]]` (kiban) / `[[project-kagami]]` second brain via the backlog `kata-engram`
+extension point. See `[[cognitive-twin-architecture]]`.
 
 **Principles & decisions:** `AGENTS.md` (spine) + `.planning/DECISIONS.md`. **Standards:** `docs/STANDARDS.md`.
 **Charter:** `docs/DESIGN.md`. **Plan:** `.planning/ROADMAP.md`.

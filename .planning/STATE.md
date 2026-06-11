@@ -1,6 +1,6 @@
 # STATE — KataHarness
 
-**Phase:** v0.1 skill-complete · Modes Spec A1+A2+A3+A4 merged · **Version:** pre-v0.1 · **Updated:** 2026-06-08
+**Phase:** v0.1 skill-complete · Modes Spec A1+A2+A3+A4 merged · **Version:** pre-v0.1 · **Updated:** 2026-06-10
 
 ## Where we are
 - Project scaffolded at `C:\Dev\Projects\KataHarness` (git, `.gitattributes eol=lf`). Foundation committed.
@@ -13,7 +13,10 @@
   unbuilt: `kata-tasklist` (deferred — redundant with state.json + the plan DAG until workers self-select),
   `kata-zoom-out` (deferred — too thin), `kata-engram` (backlog, gated on a mature engram, D9). The README
   index is the source of truth. (Adversarial-reviewed → `.planning/REVIEW-v0.1.md`; new batch review pending.)
-- **CPP baseline frozen** for the test: tag `cpp-phase2-baseline` pushed (220 tests green).
+- **2026-06-10 — CPP decoupled (D57) + PortaVault→PokeVault (D58).** CPP is no longer the test medium or
+  consumer (history stands; provenance kept). The D16 A/B target is reshaped to **small one-shottable test
+  projects**. PokeVault vault is READY (`C:\Users\taurr_nvs748q\PokeVault\PokeVault` ·
+  `github.com/taurran/pokevault`, incl. `toolkit/agent-sops/`) — KataHarness's install/test home.
 
 ## Done so far (this session, 2026-06-06)
 - Froze the shared control: CPP `03-DESIGN.md` + `03-01-PLAN.md` (4 locked decisions, 4-task disjoint partition).
@@ -69,27 +72,29 @@ token-weights in `.planning/SKILL-COST-RATINGS.md`; decisions D17–D23. Prior a
 Cursor/AgentHub best-of-N, Claude `effort`, GitHub Spec Kit) — pieces exist; our synthesis (skill-set tiering +
 escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
 
-## Next action (Spec A — A1–A4 — COMPLETE; pick one)
-1. **Obsidian-KG / kata-understand spec** — the deferred emit+ingest (folder-based, pluggable frontmatter
-   profiles; bootstrap "emit a KG?" question + `knowledgeGraph` config; `kata-understand` base =
-   Understand-Anything) over the `kata.graph.json` contract A4 built. **Wants PortaVault to exist first** (the
-   user is scaffolding it) — natural next build once the vault is stood up. (D54/D55.)
-2. **Spec B — bake-off** (N variants → judge → pick → refine up; composes with version-up, D37).
-3. **D16 planning-varied A/B (the real v0.1 validation gate):** prove the grill differentiates — Arm A plans
-   via `kata-grill`→`kata-design-doc`→`kata-plan` vs a baseline. Still outstanding (L10 was a TIE on frozen-plan
-   execution); do before calling v0.1 "validated."
+## Next action (sequencing decision pending — adversarial review recommends D16 first)
+1. **D16 planning-varied A/B (the v0.1 validation gate; ROADMAP-sequenced FIRST):** prove the grill
+   differentiates — Arm A plans via `kata-grill`→`kata-design-doc`→`kata-plan` vs a GSD baseline. **Target
+   reshaped (D57): small one-shottable greenfield projects in a dedicated test directory** (repeated paired
+   measurements, not one big task). Needs its own spec grill (`.planning/specs/`) — TEST-PLAN v1 is superseded.
+2. **Obsidian-KG / kata-understand spec** — emit+ingest over the `kata.graph.json` contract (D54/D55).
+   **PokeVault gate SATISFIED (D58)** — vault is git-versioned/durable, so no freshness pressure; sequenced
+   AFTER D16 per ROADMAP + the 2026-06-10 adversarial review of the "grill-KG-first" option (REJECTED:
+   premise decay — durable vault; post-v0.1 inversion; rework exposure from an unvalidated grill).
+3. **Spec B — bake-off** (anytime; composes with version-up, D37).
 - **Backlog:** A3-review carry-overs (`kata-readiness` harness-vs-target wording for the KG spec; `tools/`
   example-`kata.config` check) · `kata-defer`/`kata-understand`/`kata-tasklist`/`kata-engram` · adapters ·
   **set a git remote before public release** (still local-only).
 
 ## Model per stage
-Build KataHarness → **Opus 4.8**. CPP test arms → **Sonnet 4.6** (constant across arms). I pin subagent
-models on spawn; operator sets main-session model via `/model`.
-
-## Concurrent
-CPP runs in its own session (Phase 3 next). CPP will consume KataHarness at v0.1; CPP does periodic
-status check-ins on this project.
+Build KataHarness → latest **Opus**. D16 test arms → **Sonnet** (constant across arms — D14 principle,
+survives D57). I pin subagent models on spawn; operator sets main-session model via `/model`.
 
 ## Open decisions for the user
-- License (pre-public). Suite/plugin packaging shape. Whether to do WoZ-first (recommended) or build v0.1
-  straight away.
+- Confirm D16-first sequencing (adversarial review recommends it; Option D "grill-KG-first" was reviewed
+  and REJECTED 2026-06-10). Suite/plugin packaging shape. Git remote before public release.
+
+## Session Continuity
+Last session: 2026-06-10. Stopped at: D57/D58 recorded (CPP decoupled; PokeVault ready + named install
+home); TEST-PLAN v1 marked superseded; adversarial review of sequencing options delivered — awaiting the
+user's path confirmation (recommendation: open the D16 spec grill next).

@@ -1,5 +1,12 @@
 # TEST-PLAN.md — KataHarness v0.1 validation (the A/B test)
 
+> **SUPERSEDED — historical record (2026-06-10).** This v1 A/B was **executed**; verdict **TIE**
+> (`.planning/LESSONS-LEARNED.md` L10) — it froze the plan for both arms, so it only proved the execution
+> half. Per **D16** the real validation gate is a planning-**VARIED** A/B; per **D57** its target is now
+> **small, one-shottable greenfield projects in a dedicated test directory** (CPP decoupled). The v2
+> experimental design will be grilled into `.planning/specs/` when D16 work opens. Kept unmodified below
+> as the executed-v1 record.
+
 > How we prove KataHarness *works* — distinct from *dogfooding* (building it with itself, which is a
 > friction signal, not a correctness test). The test measures the core claim: **does the harness one-shot
 > a complex task better than our current best process?**

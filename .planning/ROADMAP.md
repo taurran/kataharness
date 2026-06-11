@@ -5,8 +5,8 @@ Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED
 - [ ] **v0.1 — Claude-only one-shot core.** Prove the loop one-shots a complex task from a frozen
   design+plan. Skills: `kata-grill`, `kata-context`, `kata-design-doc`, `kata-plan`, `kata-orchestrate`
   (plan-guardian), `kata-board`, `kata-worktree`, `kata-tdd`, `kata-evaluate`, `kata-handoff`.
-  Frontmatter/versioning/naming standard applied. **Dogfood: KataHarness builds itself**, then run it
-  on CryptoPortfolioPlanner. No multi-tool adapters yet.
+  Frontmatter/versioning/naming standard applied. **Dogfood: KataHarness builds itself**, then validate
+  via the D16 planning-varied A/B on small one-shottable test projects (D57). No multi-tool adapters yet.
   - **RELEASE CHECKLIST — on v0.1 ship:** flip the versioning policy from **hold-at-`0.1.0`** to
     **bump-on-modify** (STANDARDS §3). Until then every skill stays `0.1.0`; after, every skill modification
     bumps semver. Easy to forget — this is the trigger point.
@@ -52,13 +52,13 @@ Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-f
   blind-spot; built to slot into Advanced; inherently tiered.
 
 **Pre-v0.1 (now):** **Modes Spec A (A1–A4) COMPLETE + merged.** The remaining v0.1 validation gate is the
-**D16 planning-varied A/B** (prove the grill differentiates). Then the Obsidian-KG/kata-understand spec (wants
-PortaVault) and/or Spec B (bake-off).
+**D16 planning-varied A/B** (prove the grill differentiates) — target = small one-shottable test projects
+(D57). Then the Obsidian-KG/kata-understand spec (PokeVault ready, D58) and/or Spec B (bake-off).
 
 ## Progress
 | Milestone | Status |
 |---|---|
-| v0.1 core | 11 skills built; reviewed; execution half field-proven (A/B **tied**, L10) — planning A/B (D16) still pending |
+| v0.1 core | 11 skills built; reviewed; execution half field-proven (A/B **tied**, L10) — planning A/B (D16) still pending; target reshaped to small one-shot test projects (D57) |
 | Modes Spec A (A1–A4) | **COMPLETE + merged** — validator + tiers + bootstrap/readiness + version-up/kata-graph + frontier/async-escalation; **25 skills**; D1–D56 |
 | v0.2 (pulled fwd) | diagnose/selfhandoff/improve/write-skill built; tasklist deferred (needs worker self-select) |
 | v0.3–v0.4 | Not started (adapters; ACP/Quick + kata-engram) |

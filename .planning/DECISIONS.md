@@ -364,3 +364,16 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   enter a human-in-the-loop escalation it should feed into our engram … add it as a future phase after
   PortaVault + cognitive fingerprint synthesis." *See* `.planning/specs/modes-A4-version-up/`
   (GRILL-LEDGER GB10, DESIGN §2 out-of-scope block).
+- **D57 — CPP is decoupled: no longer the test medium or the v0.1 consumer; the D16 A/B targets small,
+  one-shottable greenfield projects in a dedicated test directory.** Historical records (D10/D13/D14, L9/L10,
+  REVIEW-v0.1, TEST-PLAN v1) stand as history; skill `source:` provenance keeps attributing `cpp-*` origins
+  (D12). *Why:* user direction 2026-06-10. Small repeated one-shots give multiple paired measurements (better
+  signal than one big task), drop the cross-project entanglement, and match the harness's actual purpose
+  (one-shotting). Supersedes the CPP-target half of D14 and D10's "CPP consumes at v0.1" consumption path;
+  D14's surviving principles (model constant across arms, fresh context per arm, honest-GSD baseline — no
+  strawman) carry into the D16 v2 design unchanged.
+- **D58 — PortaVault is now PokeVault; PokeVault is KataHarness's install/test home.** The vault gating
+  D54/D56 — formerly "PortaVault" — is the **PokeVault** project: `github.com/taurran/pokevault`, local at
+  `C:\Users\taurr_nvs748q\PokeVault\PokeVault`, with `toolkit/agent-sops/` present (verified 2026-06-10).
+  KataHarness installs into and is field-tested from this vault when ready. The D54 "PortaVault must exist
+  first" gate is **SATISFIED**. Forward-looking references renamed; historical artifacts unmodified.
