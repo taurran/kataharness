@@ -72,7 +72,21 @@ token-weights in `.planning/SKILL-COST-RATINGS.md`; decisions D17–D23. Prior a
 Cursor/AgentHub best-of-N, Claude `effort`, GitHub Spec Kit) — pieces exist; our synthesis (skill-set tiering +
 escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
 
+## 2026-06-11 (evening session) — D59 + sprint-cadence spec opened
+- **D59 — model routing Opus → Fable 5** for deep/judgment work (`claude-fable-5`); Sonnet stays the
+  lightweight workhorse; 8 skill `model:` pins flipped to `fable`; test arms remain Sonnet (D14/D57).
+- **NEW capability spec opened: sprint-cadence** (`.planning/specs/sprint-cadence/`) — user-requested
+  bootstrap toggle between **one-shot** (current loop) and **sprint** execution (plan partitions the project
+  into GSD-style sprints; run one sprint → gate → output → user course-corrects via grill → re-enter, same
+  or new session). RESEARCH.md maps the plumbing (config `cadence` field, bootstrap question + re-entrancy,
+  kata-plan roadmap layer, boundary handoff/report, delta-grill; orchestrate ideally sprint-blind; sprint
+  N≥2 reuses the A4 version-up regression contract). GRILL-LEDGER.md holds **10 OPEN branches (SC-GB1–10)**
+  with recommendations — **user answers them next session.** Framing rule: each sprint is a one-shot; the
+  boundary is the scheduled re-plan event (spine #2 compatible).
+
 ## Next action (sequencing decision pending — adversarial review recommends D16 first)
+0. **Answer the sprint-cadence grill ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`, SC-GB1–10)
+   — note SC-GB10 proposes: freeze the sprint DESIGN now, build after D16.
 1. **D16 planning-varied A/B (the v0.1 validation gate; ROADMAP-sequenced FIRST):** prove the grill
    differentiates — Arm A plans via `kata-grill`→`kata-design-doc`→`kata-plan` vs a GSD baseline. **Target
    reshaped (D57): small one-shottable greenfield projects in a dedicated test directory** (repeated paired
@@ -96,7 +110,7 @@ spawn; operator sets main-session model via `/model`.
   and REJECTED 2026-06-10). Suite/plugin packaging shape. Git remote before public release.
 
 ## Session Continuity
-Last session: 2026-06-11 (short, docs-only). Stopped at: D57/D58 recorded + committed; CONTEXT gained
-PokeVault + test-target glossary; HANDOFF.md rewritten as the new checkpoint; user restarting fresh.
-Resume file: `.planning/HANDOFF.md` (read it first — next step is the user's D16-first confirmation,
-then open the D16 spec grill).
+Last session: 2026-06-11 evening (docs-only). Stopped at: D59 committed (Opus→Fable 5 routing);
+sprint-cadence spec opened with RESEARCH + a 10-branch OPEN grill ledger awaiting the user's answers
+(morning). Resume file: `.planning/HANDOFF.md` (read it first — next steps are (1) the user's
+sprint-cadence ledger answers, (2) the D16-first sequencing confirmation, then open the D16 spec grill).

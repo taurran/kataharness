@@ -1,9 +1,9 @@
 ---
-date: 2026-06-11
+date: 2026-06-11 (evening update)
 branch: master (local only — no remote yet)
-commit: b02c9fc (D57+D58) + this handoff commit on top
+commit: 178772c (D59 Fable routing) + this checkpoint commit on top
 green: validator 25 skills / 0 errors (exit 0) · pytest 13 passed
-tags: [handoff, D57, D58, cpp-decoupled, pokevault, d16-next, checkpoint]
+tags: [handoff, D57, D58, D59, sprint-cadence, pokevault, d16-next, checkpoint]
 ---
 
 # HANDOFF — KataHarness — 2026-06-11 (CPP decoupled · PokeVault ready · D16 next)
@@ -45,7 +45,17 @@ versioning hold policy A §3) · 4. `docs/MODES-DESIGN.md` · 5. `docs/TAXONOMY.
   recommendation: D16 first**, KG spec after, Spec B anytime. **User confirmation still PENDING** (user
   was tired; restarting fresh).
 
+## 3b. What changed 2026-06-11 evening (docs-only)
+- **D59 — model routing Opus → Fable 5** (`claude-fable-5`) for deep/judgment work; Sonnet unchanged for
+  lightweight; 8 skill `model:` pins → `fable`; D16 arms stay Sonnet (D14/D57 principle survives).
+- **Sprint-cadence spec OPENED** (`.planning/specs/sprint-cadence/`): user-requested bootstrap toggle —
+  `one-shot` (current loop) vs `sprint` (GSD-style sprints: run one → gate → output → course-correct grill →
+  re-enter, same/new session; sprint N≥2 ≈ a version-up against sprint N−1). RESEARCH.md = plumbing map;
+  GRILL-LEDGER.md = **10 OPEN branches (SC-GB1–10) with recommendations, awaiting the user's answers.**
+
 ## 4. NEXT STEP
+0. **User answers the sprint-cadence ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`). SC-GB10's
+   rec: freeze that spec's DESIGN now (docs-only), **build after D16**.
 1. **Get the user's sequencing confirmation** (rec: D16 first — matches ROADMAP).
 2. On confirm → open **`.planning/specs/d16-planning-varied-ab/`** and **grill the experimental design**
    (`kata-grill` ceremony, GRILL-LEDGER like A3/A4). Key questions to grill: which small test projects
@@ -59,8 +69,8 @@ Subagent-driven; Fable 5 on judgment / Sonnet on mechanical (D59); gate every me
 fresh-context adversarial review (D15) before "done"; supersede decisions, never rewrite history.
 
 ## 6. Open decisions for the human
-- **Confirm D16-first sequencing.** · Git remote before public release (still local-only). ·
-  Suite/plugin packaging shape.
+- **Answer SC-GB1–10** (sprint-cadence grill ledger). · **Confirm D16-first sequencing.** · Git remote
+  before public release (still local-only). · Suite/plugin packaging shape.
 
 ## 7. Redaction
 No secrets / keys / PII. Nothing to redact.
