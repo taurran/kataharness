@@ -60,8 +60,13 @@ borrow mechanisms, keep our gates. Freeze-gate audited HOLD→SHIP.
 - [ ] **β — LEARN-only second-brain feed pipeline** (D66, now the **primary** cognitive-fingerprint feed, D72):
   observe-and-emit, **zero CONSULT**, redaction-gated (C3); emits Karpathy-pattern synthesis. (D16-gate framing
   dropped per D70 — just build it; ride a `kata-improve` emit-only sub-mode.)
-- [ ] **D71 Priming-and-Grill wiring** (foundational, new head of the build): grill skip rung + bootstrap
-  grill-depth dial + `kata-readiness` depth recommendation + **`kata-defer` assumption-log** (skip-mode safety net).
+- [x] **D71 Priming-and-Grill wiring** ✅ **DONE 2026-06-18** (spec `priming-and-grill`, DESIGN FROZEN; D73 +
+  micro-picks M1–M3): grill **skip** rung (`tiers["kata-grill"]="skip"`, D73) + `kata-bootstrap` grill-depth
+  dial (Phase 1.5, D46) + `kata-readiness` Scope-3 prompt-richness recommendation + `kata-orchestrate` skip-floor
+  branch + **`kata-defer` built** (new module skill — DEFERRED.md parking + ASSUMPTIONS.md grill-skip log;
+  **25→26 skills**) + grill↔RS spectrum documented (`docs/DESIGN.md`, `protocol/config.md`, RUBRIC). Validator
+  26/0, pytest 15 (+2 D71 seams). **Caveat:** the floor's RS slot is documented/wired-for but lit in the
+  loop-cognition phase. Pending: fresh-context `kata-review` (D15) over the diff.
 - [ ] **RS + AO + ML(skill-distillation/promotion) + injected-knowledge gate + CONSULT + autonomy — UNBLOCKED**
   (D70 dissolved the D16-first lock). **RS is load-bearing** (the autonomous floor's ambiguity resolver, D71).
   Endgame (α–ε): build fully → full tests → **dogfood version-up on KataHarness itself**, CONSULT-enabled once β

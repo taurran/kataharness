@@ -2,6 +2,14 @@
 
 The tier-invariant grill method. The `kata-grill-<tier>` skills set only depth; they all obey this.
 
+> **The grill is optional (D71 — Priming-and-Grill).** The grill-depth dial is `skip | light | standard | full`
+> (→ `tiers["kata-grill"] = skip|essential|standard|advanced`; map in `protocol/config.md`). **`skip` runs none
+> of this** — it freezes the priming prompt as-is and drops to the **autonomous-reliability floor** (default-FAIL
+> + the RS research subagent + a `kata-defer` assumption log surfaced at the gate/handoff). Grill (up-front,
+> with-human) and RS (in-loop, without-human) are **one ambiguity-resolution spectrum**; skipping the grill
+> *shifts* resolution along it, it never removes it. When a grill *does* run (light/standard/full), it adds
+> alignment certainty by construction and its decision ledger feeds the cognitive fingerprint (D72).
+
 ---
 
 ## Purpose

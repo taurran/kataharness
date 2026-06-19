@@ -40,6 +40,23 @@ writes a valid config. For **version-up**, additionally collect `target.path` (t
 `target.baselineGate` (the command that must be green before *and* after — the regression baseline). Describe
 the version-up ingestion engine (kata-graph) in prose only; do **not** wikilink it (A4, unbuilt).
 
+## Phase 1.5 — grill-depth dial (D71)
+Offer the **grill-depth** as a first-class choice: **skip / light / standard / full** (writes
+`tiers["kata-grill"] = skip|essential|standard|advanced` — the dial↔value map lives in `protocol/config.md`).
+**Pre-select [[kata-readiness]]'s Scope-3 recommendation** (from priming-prompt richness) and show its one-line
+rationale, but the human always chooses (choice-or-text). Frame it as *how much up-front certainty the human
+wants*, not a quality knob. The **autonomous-reliability floor is always on** (default-FAIL + the RS research
+subagent *(loop-cognition phase; named, not yet wired)* + a `kata-defer` assumption/ambiguity log surfaced at
+the gate/handoff); the grill adds up-front certainty **on top of** it:
+- **skip** ⇒ *no grill runs* — trust the priming prompt and lean entirely on the floor; ambiguity is resolved
+  in-loop, not up-front.
+- **light** ⇒ a shallow grill (`kata-grill-essential`, top-risk branches only) on top of the floor.
+- **standard / full** ⇒ a fuller grill (`kata-grill-standard`/`-advanced`) to enrich the prompt into the frozen
+  spec before execution.
+This is the *priming-and-grill* control surface; grill ↔ RS are one ambiguity-resolution spectrum. The
+default-FAIL gate runs on **every** rung. (Equivalent to a `tiers["kata-grill"]` cross-tier pick, surfaced
+up-front because it is the highest-leverage certainty dial — Phase-2 step 3 can still override it.)
+
 ## Phase 2 — the composition ladder (D24c), interview = run-shape-relevant only (GB13)
 1. **default → go** — accept the preset's recommended mode and launch. The floor is never punishing.
 2. **add modules** — à-la-carte beyond the preset bundle (D20).

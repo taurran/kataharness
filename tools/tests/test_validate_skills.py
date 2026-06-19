@@ -83,3 +83,19 @@ def test_a4_protocol_schemas_required():
     assert "graph" in REQUIRED_PROTOCOL["config.md"]
     findings = [str(f) for f in check_protocol_schemas([])]
     assert not any("graph.md" in f or "escalation.md" in f for f in findings), findings
+
+
+def test_d71_config_documents_grill_skip_rung():
+    # protocol/config.md must wire the Priming-and-Grill dial incl. the new skip rung (D71).
+    text = (v.REPO_ROOT / "protocol" / "config.md").read_text(encoding="utf-8")
+    assert "Grill-depth dial" in text, "config.md must document the grill-depth dial (D71)"
+    assert '"skip"' in text, "config.md must document the grill-skip rung value (D71)"
+
+
+def test_d71_kata_defer_present_and_handoff_category():
+    # kata-defer is the grill-skip autonomous-floor safety net (D71) + the no-drift parking valve (D42).
+    skills = {s.name: s for s in v.load_skills()}
+    assert "kata-defer" in skills, "kata-defer must exist (D71 floor safety net / D42 parking)"
+    fm = skills["kata-defer"].frontmatter
+    assert fm.get("category") == "handoff", "kata-defer category must be handoff (M3)"
+    assert "kata/module/defer" in (fm.get("tags") or []), "kata-defer must be the optional defer module (D43)"

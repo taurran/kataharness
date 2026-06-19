@@ -480,3 +480,13 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   AND-gate, default-human), so each grill both shores up the current project AND trains the engram for the next
   → human grill-effort asymptotically decreases. *Net-new vs D66:* names grill the *primary* feed + the cycle.
   *Provenance:* user 2026-06-18 ("grilling needs to feed into our cognitive fingerprinting… the agentic learning path").
+- **D73 — Grill-depth `skip` is a value of `tiers["kata-grill"]`, not a separate config field. (2026-06-18 —
+  D71 wiring micro-pick M1)** The Priming-and-Grill dial `skip | light | standard | full` maps to
+  `tiers["kata-grill"] = skip | essential | standard | advanced` — **one source of truth**, no `grillDepth`
+  field to diverge from the tier mechanism. `"skip"` means *dispatch no grill skill; freeze the priming prompt
+  and engage the autonomous-reliability floor* (default-FAIL + RS [loop-cognition phase] + `kata-defer`
+  assumption log); it **never** bypasses the `kata-evaluate` gate (D22/D33). `kata-orchestrate` already resolves
+  `tiers[family]`; skip adds one branch there. Companion micro-picks: **M2** `kata-defer` built once with both
+  the D71 assumption-log and D42 parking roles; **M3** `kata-defer` category = `handoff` (both artifacts surface
+  at the gate/handoff boundary), module `kata/module/defer`. Wired in spec `priming-and-grill` (DESIGN FROZEN
+  2026-06-18). *Provenance:* user-approved plan + micro-picks 2026-06-18.

@@ -40,6 +40,12 @@ does not drift.**
    - **Resolve tiers (D26):** for each bare family reference `[[kata-grill]]` / `[[kata-review]]` /
      `[[kata-plan]]` / `[[kata-diagnose]]`, dispatch the concrete `tiers[family]` skill (e.g.
      `kata-grill-standard`); a family absent from `tiers` ⇒ the mode's default tier.
+   - **Grill-skip rung (D71):** if `tiers["kata-grill"] == "skip"`, dispatch **no grill skill** — freeze the
+     **priming prompt as-is** as the spec input and engage the **autonomous-reliability floor**: default-FAIL
+     stays (it never skips), the in-loop RS research subagent resolves ambiguity *(loop-cognition phase; named,
+     not yet wired)*, and the `kata-defer` assumption/ambiguity log is surfaced at the gate/handoff. Skip
+     **shifts** ambiguity resolution from up-front-with-human to in-loop-without-human (the grill↔RS spectrum);
+     it never bypasses the `kata-evaluate` gate. (`protocol/config.md` → *Grill-depth dial*.)
    - **Version-up (`target.kind: "existing"`):** use `target.baselineGate` as the precondition-#2 baseline
      command. (The version-up ingestion DAG — kata-graph — is Spec A4; A3 only consumes the config fields.)
 1. A **frozen** PLAN exists with a wave/ownership DAG (e.g. `ownership:` + `waves:` + `depends_on:` in
@@ -67,8 +73,9 @@ an unrelated wave.
    - the rule: *"Execute against the frozen plan. Do not re-plan or re-decide any LOCKED decision. If you
      hit an unknown or the plan seems wrong, STOP and ESCALATE via the board — do not improvise."*
    - the escalate predicate: *"Escalate ONLY if completing your task's acceptance test requires writing a
-     file you do not own; otherwise record out-of-scope discoveries as a deferral note (the kata-defer module,
-     backlog) and keep going."*
+     file you do not own; otherwise record out-of-scope discoveries as a deferral note ([[kata-defer]]) and
+     keep going. In a grill-skip run, also log any spec assumption you had to make to [[kata-defer]] so it
+     surfaces at the gate/handoff."*
    - the per-task verify command (default-FAIL).
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
@@ -101,7 +108,9 @@ dispatchable work exists, the run keeps moving; it only stalls for a human when 
 ## Final gate
 After the frontier drains (all tasks integrated), on the integration branch:
 1. Full default-FAIL gate green (tests + security + deterministic build).
-2. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK.
+2. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
+   low-grill run, point it at the priming prompt as the frozen spec and at any [[kata-defer]] `ASSUMPTIONS.md`,
+   so the autonomous floor's assumption log is graded for prompt-contradiction (rubric item 8) — not just asserted.
 3. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
 4. Commit; if a handoff is needed, [[kata-handoff]].
 

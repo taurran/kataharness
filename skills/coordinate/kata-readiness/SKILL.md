@@ -3,7 +3,8 @@ name: kata-readiness
 description: >-
   Fast pre-run readiness check: is the kata harness healthy (validator green, skills present, required tools
   on PATH) and is the target ready (git repo + clean tree, AGENTS/CONTEXT present, deps installable, an
-  existing kata.config = re-entrant run)? Invoke from kata-bootstrap before composing a run, or standalone as
+  existing kata.config = re-entrant run)? Also rates the priming prompt's richness to recommend a grill depth
+  (skip|light|standard|full, D71). Invoke from kata-bootstrap before composing a run, or standalone as
   an "is my kata environment ready?" doctor.
 license: Apache-2.0
 version: 0.1.0
@@ -41,7 +42,22 @@ each a checklist; report PASS / WARN / BLOCK per item and an overall verdict.
   available** — the kata-graph ingestion (seeding + blast-radius) needs AST; there is no inert grep-mode
   fallback for version-up.
 
+## Scope 3 — priming-prompt richness → recommended grill depth (D71)
+Assess the **priming prompt** (the human's original spec for this run) and recommend a starting **grill-depth
+dial** position (`skip | light | standard | full` → `tiers["kata-grill"]` per `protocol/config.md`). This is a
+**recommendation, not a decision** — bootstrap surfaces it and the human always chooses. Read the prompt (and any
+`AGENTS.md`/`CONTEXT.md` it leans on) and rate richness vs ambiguity:
+- **Rich + unambiguous** (concrete acceptance criteria, named interfaces, decided edge behavior, few open
+  branches) ⇒ recommend **skip** or **light** — little for a grill to interrogate; the autonomous floor suffices.
+- **Moderate** (clear goal, several under-specified branches — boundaries/magnitudes/failure behavior) ⇒
+  recommend **standard** (the default).
+- **Thin / high-ambiguity / hard-to-reverse / production-freeze** ⇒ recommend **full**.
+Report the recommendation **with its one-line rationale** (what in the prompt drove it — the open branches you
+counted). Never grade the prompt's *quality*; only its decision-completeness for one-shotting. This scope never
+writes — the recommendation is returned to bootstrap.
+
 ## Verdict
 Return a compact structured verdict (overall PASS/WARN/BLOCK + the per-item findings + the re-entrant
-`kata.config` summary if any). **BLOCK** = a hard stop bootstrap must resolve before composing a run; **WARN**
-= surface to the user but allow proceed. The check never installs, never writes, never mutates the repo.
+`kata.config` summary if any + the **recommended grill depth + rationale**). **BLOCK** = a hard stop bootstrap
+must resolve before composing a run; **WARN** = surface to the user but allow proceed. The grill-depth
+recommendation is advisory (never BLOCK/WARN). The check never installs, never writes, never mutates the repo.

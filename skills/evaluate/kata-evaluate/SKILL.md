@@ -31,7 +31,8 @@ it.** ([[LESSONS-LEARNED]] L5.)
 
 ## Inputs
 The frozen DESIGN + PLAN (acceptance criteria + LOCKED decisions + the file-ownership partition), and the
-integration branch to grade.
+integration branch to grade. **On a grill-skip run, the priming prompt IS the frozen spec** (no grill ran, D71);
+also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor's assumption/ambiguity log).
 
 ## Rubric — score each PASS / NEEDS_WORK + a one-line reason with evidence
 1. **Acceptance criteria met.** Every criterion in the PLAN's tasks and the DESIGN's phase-level acceptance
@@ -49,6 +50,11 @@ integration branch to grade.
 7. **Standards conformance.** The change follows the repo's *documented* standards — `AGENTS.md`, the
    `CONTEXT.md` glossary, ADRs, coding conventions — not only the spec (conformance-to-spec ≠
    conformance-to-house-rules; mattpocock review's Standards axis).
+8. **Assumption log clean (autonomous-floor honesty, D71).** If an `ASSUMPTIONS.md` exists (a grill-skip / low-
+   grill run logged autonomous assumptions via [[kata-defer]]), read every entry: any assumption that
+   **contradicts the priming prompt / frozen spec** — or silently resolved a genuine ambiguity the human should
+   have decided — is **NEEDS_WORK**. This is how the floor's "misalignment caught at the boundary" promise is
+   actually enforced, not merely asserted. (No `ASSUMPTIONS.md` ⇒ this item is N/A, not a failure.)
 
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,

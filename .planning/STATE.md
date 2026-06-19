@@ -119,9 +119,13 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   with an autonomous-reliability floor** (default-FAIL + RS + assumption-log); grill ledgers are a PRIMARY
   cognitive-fingerprint feed. **Autonomous reliability is demonstrated; v0.1 no longer gated on an RCT → the
   D16-first lock is dissolved → the full build is UNBLOCKED.**
-- **NEXT (see HANDOFF §4 THE PLAN):** (1) wire D71 Priming-and-Grill (grill skip rung + bootstrap dial +
-  readiness recommend + `kata-defer` assumption-log); (2) build β (LEARN feed, now primary fingerprint feed);
-  (3) RS→AO→ML; (4) freeze+build sprint-cadence; (5) dogfood version-up on KataHarness itself.
+- **D71 Priming-and-Grill wiring ✅ DONE 2026-06-18** (spec `priming-and-grill`, DESIGN FROZEN; D73 + M1–M3):
+  grill **skip** rung (`tiers["kata-grill"]="skip"`) + bootstrap grill-depth dial (Phase 1.5) + readiness Scope-3
+  prompt-richness recommendation + orchestrate skip-floor branch + **`kata-defer` built** (DEFERRED.md parking +
+  ASSUMPTIONS.md grill-skip log; **25→26 skills**) + grill↔RS spectrum doc'd. Validator 26/0, pytest 15.
+  **Caveat:** RS slot doc'd/wired-for, lit in the loop-cognition phase. **Pending: fresh-context `kata-review`.**
+- **NEXT (see HANDOFF §4 THE PLAN):** (1) ~~wire D71~~ ✅ done; (2) build β (LEARN feed, now primary fingerprint
+  feed); (3) RS→AO→ML; (4) freeze+build sprint-cadence; (5) dogfood version-up on KataHarness itself.
 
 ## Next action (sequencing decision pending — adversarial review recommends D16 first)
 0. **Answer the sprint-cadence grill ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`, SC-GB1–10)

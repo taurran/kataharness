@@ -60,6 +60,26 @@ everything versioned. These are the load-bearing invariants; features serve them
 > **Not yet built:** kata-tasklist (deferred — needs worker self-selection; redundant with state.json + the
 > plan DAG today), kata-zoom-out (deferred — too thin), kata-engram (backlog, D9, gated on a mature engram).
 
+## Priming-and-Grill — the GRILL phase is optional (D71/D72)
+
+Every run starts from a **priming prompt** (the human's original spec). The **grill is an optional human
+certainty layer over that prompt**, not a benchmarked gate (L11): it interrogates the designer to resolve
+ambiguity and enrich the prompt into the frozen spec, adding alignment certainty **by construction**. It is a
+dial — **`skip | light | standard | full`** (→ `tiers["kata-grill"] = skip|essential|standard|advanced`;
+`kata-readiness` recommends a position from prompt richness, `kata-bootstrap` offers it, the human chooses).
+
+- **The autonomous-reliability floor is always on** (default-FAIL + the **RS research subagent** [in-loop
+  ambiguity resolution, loop-cognition phase] + a **`kata-defer` assumption/ambiguity log graded at the gate and
+  surfaced at handoff**). Autonomous reliability is the demonstrated floor (D70); the grill *adds* up-front
+  certainty **on top** of it (D71: "both coexist; grill shores up results on top of a reliable autonomous
+  floor"). **`skip`** leans entirely on the floor (no up-front grill); **light → standard → full** add
+  increasing up-front interrogation, so the floor makes progressively fewer autonomous assumptions.
+- **Grill ↔ RS are one ambiguity-resolution spectrum:** up-front-with-human (grill) ⟷ in-loop-without-human
+  (RS). Skipping the grill **shifts** resolution along the spectrum; it never removes it, and **never** skips the
+  `kata-evaluate` default-FAIL gate (D22/D33).
+- **Grill output trains the engram (D72):** each grill's decision ledger is a primary cognitive-fingerprint
+  feed; a matured fingerprint pre-answers future grills, so human grill-effort decreases over time.
+
 ## Planning engine (the one-shot enabler)
 
 A **portable** synthesis (not a dependency on any one tool's planner): mattpocock's **grill-with-docs +
@@ -97,8 +117,9 @@ well-developed engram**; not v0.1.
 ## Milestones
 
 See `.planning/ROADMAP.md`. v0.1 = Claude-only one-shot core, **dogfooded by building KataHarness
-itself**, then proven via the D16 planning-varied A/B on small one-shottable test projects (D57);
-installs into the PokeVault vault (D58); adapters and concurrency follow.
+itself**. The D16 planning-varied A/B was **retired as an RCT (D70, L11)** — it tested the wrong axis; what it
+proved (autonomous reliability) is the floor, and v0.1 is re-scoped to the **Priming-and-Grill architecture
+(D71/D72)** above. Installs into the PokeVault vault (D58); adapters and concurrency follow.
 
 ## References
 
