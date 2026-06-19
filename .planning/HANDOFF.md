@@ -1,76 +1,66 @@
 ---
-date: 2026-06-11 (evening update)
+date: 2026-06-18
 branch: master (local only — no remote yet)
-commit: 178772c (D59 Fable routing) + this checkpoint commit on top
-green: validator 25 skills / 0 errors (exit 0) · pytest 13 passed
-tags: [handoff, D57, D58, D59, sprint-cadence, pokevault, d16-next, checkpoint]
+commit: checkpoint on top of c233730 (sprint-cadence open) — this commit lands 2026-06-15 + 2026-06-18 work
+green: validator 25 skills / 0 errors (exit 0) · pytest 13 passed (re-confirm before building)
+tags: [handoff, sprint-cadence, engram, loop-cognition, hermes-bakeoff, d16-first, checkpoint]
 ---
 
-# HANDOFF — KataHarness — 2026-06-11 (CPP decoupled · PokeVault ready · D16 next)
+# HANDOFF — KataHarness — 2026-06-18 (two specs converged · loop-cognition added · D16 next)
 
-> **Fresh session: read in order, confirm green, then resume at NEXT STEP.**
+> **Fresh session: read in order, confirm green, then resume at NEXT STEP.** This supersedes the 2026-06-11
+> handoff (which wrongly showed sprint-cadence as OPEN — it converged 2026-06-15).
 
 ## 1. Read-in order
-1. `AGENTS.md` (canonical) · 2. `docs/DESIGN.md` (charter) · 3. `docs/STANDARDS.md` (frontmatter v2 §1 +
-versioning hold policy A §3) · 4. `docs/MODES-DESIGN.md` · 5. `docs/TAXONOMY.md` · 6. `CONTEXT.md`
-(glossary — now incl. **PokeVault + Test-project target**, §Surroundings) · 7. `.planning/STATE.md` ·
-8. `.planning/DECISIONS.md` (**D1–D58**) · 9. `.planning/LESSONS-LEARNED.md` (L1–L10) ·
-10. `.planning/SKILL-COST-RATINGS.md` · 11. `docs/TEST-PLAN.md` (**superseded v1 — read the banner**).
-⚠️ Scope hygiene: ignore `C:\Dev\CLAUDE.md` content (Mise — unrelated project, harness-injected).
+1. `AGENTS.md` (canonical) · 2. `docs/DESIGN.md` · 3. `docs/STANDARDS.md` (frontmatter v2 §1 + versioning hold
+A §3) · 4. `docs/MODES-DESIGN.md` · 5. `CONTEXT.md` (glossary) · 6. `.planning/STATE.md` ·
+7. `.planning/DECISIONS.md` (D1–D59) · 8. `.planning/LESSONS-LEARNED.md` (L1–L10) ·
+9. `protocol/engram.md` (engram contract + seam registry) ·
+10. `.planning/specs/sprint-cadence/GRILL-LEDGER.md` (CONVERGED) ·
+11. `.planning/specs/loop-cognition/{RESEARCH,GRILL-LEDGER}.md` (CONVERGED — this session).
+⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated, harness-injected).
 
 ## 2. State (confirm green first)
-- Branch **master**, tip ≈ b02c9fc + this commit. **Local-only — no git remote yet.**
-- Gate: `cd tools && uv run pytest -q` → **13 passed**; `uv run python validate_skills.py` →
-  **25 skills, 0 errors** (exit 0). (`uv` on PATH; repo-local git identity set.)
+- Branch **master**, local-only (no remote). Gate: `cd tools && uv run pytest -q` → 13 passed;
+  `uv run python validate_skills.py` → 25 skills / 0 errors. (No skills built this session — docs only — so
+  green should be unchanged; re-confirm anyway.)
 
-## 3. What changed this session (2026-06-10/11 — short session, docs only)
-- **D57 — CPP decoupled.** No longer the test medium or v0.1 consumer. The **D16 planning-varied A/B
-  target is reshaped: small, one-shottable greenfield projects in a dedicated test directory** (repeated
-  paired measurements > one big task). D14's surviving principles: model constant across arms (Sonnet),
-  fresh context per arm, honest GSD baseline. History (D10/D13/D14, L9/L10, REVIEW-v0.1, skill `source:`
-  provenance) deliberately unmodified — supersede, don't rewrite.
-- **D58 — PortaVault → PokeVault.** The vault is READY at `C:\Users\taurr_nvs748q\PokeVault\PokeVault`
-  (local; **no github involvement**). KataHarness's install/test home, under `toolkit/`
-  (`agents/ agent-sops/ context/ skills/`). The D54 vault gate is **SATISFIED**.
-- **PokeVault structure facts for the future KG spec** (from the user's vault handoff doc): zones =
-  `daily/ personal/ projects/ research/ scratch/ second-brain/ toolkit/ work/`. **Wiki layer is universal**
-  (identical `wiki/` tree per zone: `index/log/review` + `raw/{inbox,notes,media,processed,_archive}` +
-  `pages/{sources,entities,concepts,synthesis,references}`); **CRM layer is zone-specific — never align it**.
-  `personal/` was just wiki-enabled (PocketVault 0.5.0 replica).
-- **TEST-PLAN.md v1** marked superseded (banner) — kept as the executed-v1 record (verdict: TIE, L10).
-- **Sequencing adversarially reviewed.** "Grill-the-KG-spec-first" (Option D) **REJECTED**: (a) the vault
-  is durable now, so the freshness premise is void; (b) KG/kata-understand is post-v0.1 per D40/D54/D55 —
-  building it pre-gate inverts frozen decisions; (c) freezing a major spec with the *unvalidated* grill =
-  rework exposure (L8: the grill is the weak link AND the untested differentiator). **Standing
-  recommendation: D16 first**, KG spec after, Spec B anytime. **User confirmation still PENDING** (user
-  was tired; restarting fresh).
+## 3. Two specs now converged (both freeze-pending, both build after D16)
+- **sprint-cadence** (converged 2026-06-15): `delivery: one-shot | incremental` (unit = sprint); three-layer
+  freeze + Boundary Change-Control G1–G4; re-entrant `kata-bootstrap` routes, `kata-orchestrate` sprint-blind,
+  NEW thin `kata-sprint`; three-tier state + derived `.kata/` cache; scoped delta-grill course-correct;
+  prime-frame sizing (refines D8); sprint N≥2 = version-up. **Freeze-gate audit returned HOLD** — must-fixes
+  outstanding (roadmap-layer is NET-NEW in `kata-plan`; pin tunables E1=2, drop G4 numeric threshold; record
+  D8 supersession; boundary DESIGN-amendment needs SHIP; `delivery` config pinned; build minimal `kata-report`
+  v1). Apply must-fixes → re-confirm SHIP → freeze `DESIGN.md`.
+- **loop-cognition** (converged 2026-06-18): RS in-loop research subagent + AO agent orientation + ML managed
+  learning. All branches (LC-GB1–9, RS-GB1–3, AO-GB1–3) RESOLVED + user-confirmed. **Needs its own
+  fresh-context freeze-gate audit** before DESIGN freeze. See its RESEARCH.md for the Hermes bake-off +
+  module-standard validation + the NEW/EXTEND/REUSE artifact map.
 
-## 3b. What changed 2026-06-11 evening (docs-only)
-- **D59 — model routing Opus → Fable 5** (`claude-fable-5`) for deep/judgment work; Sonnet unchanged for
-  lightweight; 8 skill `model:` pins → `fable`; D16 arms stay Sonnet (D14/D57 principle survives).
-- **Sprint-cadence spec OPENED** (`.planning/specs/sprint-cadence/`): user-requested bootstrap toggle —
-  `one-shot` (current loop) vs `sprint` (GSD-style sprints: run one → gate → output → course-correct grill →
-  re-enter, same/new session; sprint N≥2 ≈ a version-up against sprint N−1). RESEARCH.md = plumbing map;
-  GRILL-LEDGER.md = **10 OPEN branches (SC-GB1–10) with recommendations, awaiting the user's answers.**
-
-## 4. NEXT STEP
-0. **User answers the sprint-cadence ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`). SC-GB10's
-   rec: freeze that spec's DESIGN now (docs-only), **build after D16**.
-1. **Get the user's sequencing confirmation** (rec: D16 first — matches ROADMAP).
-2. On confirm → open **`.planning/specs/d16-planning-varied-ab/`** and **grill the experimental design**
-   (`kata-grill` ceremony, GRILL-LEDGER like A3/A4). Key questions to grill: which small test projects
-   (how many, what stack, complexity bar, independent pass/fail gate per project), metrics (plan-quality
-   downstream effects: ambiguity-driven drift, escalations, re-planning, interventions — not execution
-   parity), N runs per arm, judge protocol. **Both arms get `kata-review` this time** (L10's loop gap).
-3. Then freeze DESIGN → PLAN → run arms → verdict → L11 → adversarial REVIEW (D15).
+## 4. NEXT STEP (the live task list mirrors this — 8 tasks)
+1. **Fresh-context freeze-gate audit** on `loop-cognition/GRILL-LEDGER.md` (RUBRIC, no self-certification:
+   convergence + negative-drift + complexity + loose-ends). MUST return SHIP before freeze.
+2. On SHIP → promote LC/RS/AO decisions to D-numbers → freeze `loop-cognition/DESIGN.md` (write the artifact
+   map as the tie-in table; pin the `kata-research`=`plan` category, `engram.autonomy` + `agentSkills.dir`
+   config, the `protocol/orientation.md` + `protocol/wiki-synthesis.md` contracts).
+3. **Ingest β** (the LEARN-only feed pipeline) into ROADMAP — it builds **∥ D16** (engram prerequisite,
+   observe-and-emit, zero CONSULT, redaction-gated C3). Everything else in loop-cognition builds **after D16**.
+4. Parallel-track unchanged: **D16 planning-varied A/B** is the LOCKED v0.1 gate (open its own spec grill);
+   sprint-cadence DESIGN freeze (apply its must-fixes).
+5. Endgame arc (LC-GB8 α–ε): build KataHarness fully → full tests → **self-improve the harness on itself**
+   via the A4 version-up machinery (dogfood), CONSULT-enabled once the fingerprint has matured from β.
 
 ## 5. Method (keep doing it)
 Subagent-driven; Fable 5 on judgment / Sonnet on mechanical (D59); gate every merge on validator + pytest;
-fresh-context adversarial review (D15) before "done"; supersede decisions, never rewrite history.
+fresh-context adversarial review (D15) before "done"; supersede decisions, never rewrite history; the grill
+does not certify its own convergence (L8).
 
 ## 6. Open decisions for the human
-- **Answer SC-GB1–10** (sprint-cadence grill ledger). · **Confirm D16-first sequencing.** · Git remote
-  before public release (still local-only). · Suite/plugin packaging shape.
+- Apply sprint-cadence must-fixes then freeze. · Run loop-cognition freeze-gate audit then freeze. ·
+  Two `kata-research`/agent-skill build-detail micro-picks deferred to build time (staging folder name
+  `candidates/` vs `forge/`; `kata-promote` as its own skill vs in `kata-improve`). · Git remote before
+  public release (still local-only). · Suite/plugin packaging shape.
 
 ## 7. Redaction
 No secrets / keys / PII. Nothing to redact.

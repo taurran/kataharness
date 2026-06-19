@@ -1,6 +1,6 @@
 # STATE — KataHarness
 
-**Phase:** v0.1 skill-complete · Modes Spec A1+A2+A3+A4 merged · **Version:** pre-v0.1 · **Updated:** 2026-06-10
+**Phase:** v0.1 skill-complete · Modes A1–A4 merged · 2 specs converging (sprint-cadence, loop-cognition) · **Version:** pre-v0.1 · **Updated:** 2026-06-18
 
 ## Where we are
 - Project scaffolded at `C:\Dev\Projects\KataHarness` (git, `.gitattributes eol=lf`). Foundation committed.
@@ -84,6 +84,35 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   with recommendations — **user answers them next session.** Framing rule: each sprint is a one-shot; the
   boundary is the scheduled re-plan event (spine #2 compatible).
 
+## 2026-06-15 — sprint-cadence grill CONVERGED + engram registry created (uncommitted until 2026-06-18)
+- **Sprint-cadence ledger fully resolved (SC-GB1–10 + engram cross-cut).** Knob = **`delivery: one-shot |
+  incremental`** (unit = sprint); three-layer freeze (DESIGN north-star / ROADMAP boundary-amendable / sprint
+  PLAN immutable) + Boundary Change-Control Protocol G1–G4; sequencing A+C (re-entrant `kata-bootstrap` routes,
+  `kata-orchestrate` stays sprint-blind, NEW thin `kata-sprint`); three-tier state w/ derived `.kata/` cache
+  rebuilt from git; scoped delta-grill course-correct (default always-stop); prime-frame sizing primitive
+  (refines D8); sprint N≥2 = version-up vs most-recent-green baseline; bake-off trimmed; **D16-first LOCKED**.
+- **`protocol/engram.md` CREATED** — engram plugin contract + seam registry (E1–E21, C1–C6, backend binding
+  incl. MindBridge clean-room). Adversarially reviewed (HOLD→hardened). Freeze-gate audit on sprint-cadence
+  returned HOLD with must-fixes (roadmap-layer is NET-NEW in kata-plan; pin tunables; D8 supersession; etc.).
+
+## 2026-06-18 — loop-cognition spec OPENED + CONVERGED (this session)
+- **NEW umbrella spec `loop-cognition`** (`.planning/specs/loop-cognition/{RESEARCH,GRILL-LEDGER}.md`): three
+  entangled loop enhancements — **RS** in-loop research subagent (escalation-routed, grounding-gated,
+  fresh-context no-write `kata-research`), **AO** agent orientation (orchestrator-assembled stable→context→
+  volatile tiers; vertical rollup + `kata-graph` lazy adjacency pointers; `protocol/orientation.md` +
+  `kata-orient`), **ML** managed learning (candidate-skill distillation → 2-stage gate → human promotion
+  `kata-promote`; second-brain LEARN feed as Karpathy-LLM-Wiki-pattern synthesis; progressive autonomy
+  `engram.autonomy` maturity∧config AND-gate, grounding never bypassed).
+- **Hermes Agent (Nous) baked off** — verdict: borrow mechanisms (autonomous distillation, protected
+  head+tail compaction, tiered prompt assembly, `.usage.json` telemetry), keep OUR gates (default-FAIL +
+  human promotion). Their no-gate skills + emergent-plan compaction = the failure modes our spine prevents.
+- **LC-GB1–9 + RS-GB1–3 + AO-GB1–3 all RESOLVED + user-confirmed.** Sequencing = **Path 2**: D16 first, build
+  the LEARN-only feed pipeline (β) in parallel (it's an engram *prerequisite*, low-drift, observe-and-emit,
+  zero CONSULT). Artifact map recorded (NEW: kata-research/kata-orient/kata-promote + protocol/orientation +
+  protocol/wiki-synthesis; EXTEND: evaluate/review/selfhandoff/orchestrate/handoff/improve/graph).
+- **NEXT:** fresh-context freeze-gate audit on loop-cognition (no self-certification) → on SHIP freeze DESIGN
+  → ingest β into ROADMAP → build. Tracked in the live task list (8 tasks).
+
 ## Next action (sequencing decision pending — adversarial review recommends D16 first)
 0. **Answer the sprint-cadence grill ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`, SC-GB1–10)
    — note SC-GB10 proposes: freeze the sprint DESIGN now, build after D16.
@@ -110,7 +139,10 @@ spawn; operator sets main-session model via `/model`.
   and REJECTED 2026-06-10). Suite/plugin packaging shape. Git remote before public release.
 
 ## Session Continuity
-Last session: 2026-06-11 evening (docs-only). Stopped at: D59 committed (Opus→Fable 5 routing);
-sprint-cadence spec opened with RESEARCH + a 10-branch OPEN grill ledger awaiting the user's answers
-(morning). Resume file: `.planning/HANDOFF.md` (read it first — next steps are (1) the user's
-sprint-cadence ledger answers, (2) the D16-first sequencing confirmation, then open the D16 spec grill).
+Last session: 2026-06-18. Stopped at: loop-cognition grill fully converged + user-confirmed (LC-GB1–9,
+RS-GB1–3, AO-GB1–3); STATE/HANDOFF refreshed; checkpoint commit of 2026-06-15 (sprint-cadence converged +
+engram.md) + 2026-06-18 (loop-cognition spec) work. Resume file: `.planning/HANDOFF.md` (read it first).
+**Immediate next:** fresh-context **freeze-gate audit** on `loop-cognition/GRILL-LEDGER.md` (RUBRIC, no
+self-certification) → on SHIP, freeze its `DESIGN.md` → ingest the β feed-pipeline into ROADMAP. Sprint-cadence
+DESIGN freeze also still pending its own must-fixes (2026-06-15 audit HOLD). D16-first remains LOCKED; both
+specs build after D16 (except β, which runs ∥ D16). Live task list carries the 8-step path.
