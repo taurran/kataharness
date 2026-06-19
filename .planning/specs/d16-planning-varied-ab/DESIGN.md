@@ -1,7 +1,7 @@
 ---
 date: 2026-06-18
 spec: d16-planning-varied-ab
-status: FROZEN — pre-registered protocol (changes are deliberate re-freezes)
+status: FROZEN v2 — re-registered post-pilot (2026-06-18); changes are deliberate re-freezes
 source-ledger: ./GRILL-LEDGER.md (D16-GB1–6)
 tags: [design, frozen, d16, ab-test, validation-gate, pre-registered]
 ---
@@ -11,6 +11,13 @@ tags: [design, frozen, d16, ab-test, validation-gate, pre-registered]
 The v0.1 validation gate. **Pre-registered**: this protocol + the verdict rule are fixed *before* any run, so
 the result can't be p-hacked. Supersedes TEST-PLAN v1. Carried principles (D14/D57/D59): model constant
 (Sonnet), fresh context per run, honest GSD baseline, both arms get `kata-review` (L10).
+
+**v2 re-registration (post-pilot, see PILOT-NOTES.md):** the 2026-06-18 pilot (project 1, 1 pair) ran cleanly
+but **tied** — the corpus was too easy to discriminate, and self-judged `first_pass_green` proved unmeasurable.
+Instrument-driven fixes (on a *tied* result, so not p-hacking): **(i)** corpus hardened to be *planning*-hard
+(interacting rules, order-of-operations, subtle edges — still small/one-shottable, D57); **(ii)** metrics fixed
+(§3) — objective `gate_pass` + `fix_iterations` replace `first_pass_green`; **(iii)** verdict rule restated (§4).
+Pilot data retained as history. No counted run had occurred, so re-registration is clean.
 
 ## 1. Hypothesis
 The KataHarness planning chain (`kata-grill`→`kata-design-doc`→`kata-plan`) produces plans that **one-shot with
@@ -29,18 +36,23 @@ plan — on the same small greenfield projects. (L10: execution was tied → the
 - **Isolation:** loop-cognition **β may run ∥ to harvest the decision corpus but MUST NOT feed either arm**
   (D68 — LEARN-only, zero CONSULT).
 
-## 3. Metrics (per run; plan-quality downstream, not execution parity)
-(a) ambiguity-driven **drift events** · (b) **escalations** · (c) **human interventions** · (d) **re-plans** ·
-(e) **first-pass acceptance-gate green** (y/n) · (f) **defects caught at `kata-evaluate`** · (g) **rework
-commits**. Token/wall cost logged as a **covariate**, not part of the verdict.
+## 3. Metrics (v2 — per run; plan-quality downstream, not execution parity)
+- **Objective (experimenter-measured, PRIMARY):** `gate_pass` (held-out `pytest` ∧ `ruff` on the delivered
+  build, y/n) · `gate_fail_count`.
+- **Self-reported (precise, identical defs both arms, SECONDARY):** `drift_events` (deviations from the frozen
+  **functional** plan — a lint auto-fix is NOT drift) · `replans` · `escalations` · `interventions` ·
+  `eval_defects` · `fix_iterations` (failing-test-or-lint→fix cycles to first all-green).
+- **Covariates (not in the verdict):** tokens, tool_uses, wall_min, files, self_tests.
+(Full definitions: `corpus/METRIC-SHEET.md`.)
 
-## 4. Verdict rule (PRE-REGISTERED — fixed before running)
-- **Primary:** objective counts of (a)–(g) per run, aggregated per project.
+## 4. Verdict rule (PRE-REGISTERED v2 — fixed before any counted run)
+- **Primary:** per project per arm, **planning-cost = Σ(drift_events + replans + interventions +
+  fix_iterations)** over the 3 runs; plus each arm's `gate_pass` rate.
 - **Tiebreak:** a fresh-context `kata-review`/LLM-judge plan-quality rating, **arm-blind** where feasible.
-- **Decision:** *the grill differentiates IFF Arm A shows materially fewer (drift + interventions + re-plans)
-  on a **majority of projects (≥2/3)** AND Arm A's first-pass-green rate ≥ Arm B's.*
+- **Decision:** *the grill differentiates IFF Arm A has **lower planning-cost on ≥2/3 projects** AND Arm A's
+  overall `gate_pass` rate ≥ Arm B's.*
 - **On tie/worse:** the grill is **not yet proven** → iterate the grill via the kata (do **not** ship v0.1 on
-  an unproven differentiator — L8). This is a real fail condition, not a formality.
+  an unproven differentiator — L8). A real fail condition, not a formality.
 
 ## 5. Acceptance criteria (of the experiment itself)
 - **A1** All 18 runs executed under the frozen protocol; per-run metric sheet recorded.

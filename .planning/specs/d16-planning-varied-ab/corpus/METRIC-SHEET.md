@@ -1,35 +1,41 @@
-# D16 metric sheet — one row per run (18 rows: 3 projects × 2 arms × 3)
+# D16 metric sheet (v2, post-pilot) — one row per run (18: 3 projects × 2 arms × 3)
 
-Pre-registered metrics (DESIGN §3). Fill exactly; **no metric added or changed after the first run.**
+Pre-registered v2 metrics. **No metric added or changed after the first counted run.** v1's self-judged
+`first_pass_green` was dropped (unmeasurable post-hoc — see PILOT-NOTES.md).
 
-## Per-run record
+## Objective metrics (experimenter-measured, Opus side — PRIMARY)
 | field | meaning |
 |---|---|
-| `run_id` | `<project>-<arm>-<n>` e.g. `01cli-A-2` |
-| `project` | 01cli / 02api / 03expr |
-| `arm` | A (kata-grill→design→plan) / B (GSD) |
-| `n` | 1..3 |
-| **(a) drift_events** | count of build actions that deviated from the frozen plan (scope creep, off-plan files) |
-| **(b) escalations** | count of escalations raised during execution |
-| **(c) interventions** | count of human interventions required to proceed |
-| **(d) replans** | count of re-planning events after freeze |
-| **(e) first_pass_green** | `pytest` ∧ `ruff` both pass on the **first** delivered build — yes/no |
-| **(f) eval_defects** | defects caught at `kata-evaluate` (NEEDS_WORK items) |
-| **(g) rework_commits** | commits whose sole purpose was fixing the arm's own prior output |
-| `kata_review_verdict` | SHIP / HOLD + a one-line plan-quality note (arm-blind where feasible) |
-| _cov_ `tokens` | total tokens (covariate, not verdict) |
-| _cov_ `wall_min` | wall-clock minutes (covariate) |
-| notes | anything notable (free text) |
+| **gate_pass** | held-out `pytest` all-pass ∧ `ruff check .` clean on the **delivered** build — yes/no |
+| **gate_fail_count** | # held-out gate cases failing on the delivered build (0 if gate_pass) |
 
-## Aggregation (for the verdict, DESIGN §4)
-Per project, sum (a)+(c)+(d) for each arm and compare; tally first-pass-green rate per arm.
+## Self-reported metrics (precise, identical definitions both arms — SECONDARY)
+| field | meaning |
+|---|---|
+| **drift_events** | build actions that deviated from the **frozen functional plan**. A lint/style auto-fix is **NOT** drift. |
+| **replans** | revisions to the frozen plan after freeze |
+| **escalations** | escalations raised during the run |
+| **interventions** | times a human was genuinely needed (the run had to stop) |
+| **eval_defects** | NEEDS_WORK items found by the arm's own evaluate/review |
+| **fix_iterations** | count of `failing test or lint → fix` cycles before the build first reached all-green |
 
-| project | A: drift+intv+replan | B: drift+intv+replan | A first-pass-green | B first-pass-green | A<B on (a+c+d)? |
+## Covariates (not part of the verdict)
+`tokens`, `tool_uses`, `wall_min`, `files`, `self_tests`.
+
+## Per-run record key
+`run_id = <project>-<arm>-<n>` (e.g. `01cli-A-2`); `project ∈ {01cli,02api,03expr}`; `arm ∈ {A,B}`; `n ∈ 1..3`.
+Plus `kata_review_verdict` (SHIP/HOLD + one-line plan-quality note, arm-blind where feasible).
+
+## Aggregation + verdict (v2, pre-registered)
+Per project, per arm: **planning-cost = Σ(drift_events + replans + interventions + fix_iterations)** across the
+3 runs; and **gate_pass rate** (/3).
+
+| project | A planning-cost | B planning-cost | A gate_pass | B gate_pass | A < B planning-cost? |
 |---|---|---|---|---|---|
 | 01cli |  |  |  /3 |  /3 |  |
 | 02api |  |  |  /3 |  /3 |  |
 | 03expr |  |  |  /3 |  /3 |  |
 
-**Verdict (pre-registered rule):** grill differentiates IFF Arm A has materially fewer (drift+interventions+
-replans) on **≥2/3 projects** AND Arm A first-pass-green rate ≥ Arm B. Tie/worse → grill not yet proven →
-iterate (do not ship v0.1). Record the computed verdict + write **L11**.
+**Verdict rule (PRE-REGISTERED v2):** the grill differentiates IFF Arm A has **lower planning-cost on ≥2/3
+projects** AND Arm A's gate_pass rate ≥ Arm B's overall. Tie/worse → grill **not yet proven** → iterate the
+grill (do not ship v0.1). Record verdict + write **L11**; adversarial `kata-review` (D15) on the conclusion.
