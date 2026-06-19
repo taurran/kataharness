@@ -23,8 +23,12 @@ bypassed, even at full autonomy.
 
 ## LC-GB1 — Umbrella vs. split + name **(RESOLVED — umbrella `loop-cognition`)**
 One umbrella spec with three prefixed branch-sets (RS/AO/ML); they share the grounding gate + `kata-graph`
-substrate; matches the existing `cognition/` category. Each sub-feature freezes its own DESIGN section.
+substrate. Each sub-feature freezes its own DESIGN section.
 > **RESOLVED 2026-06-18 → A** (user "umbrella is good"). Name `loop-cognition` (negotiable at freeze).
+> **AUDIT MF2 (2026-06-18):** `loop-cognition` is the **spec/theme name, NOT a category** — `cognition/` is a
+> declared-but-empty category whose first tenant is the engram. The umbrella's skills are **category-split by
+> loop phase**: `kata-research`→`plan`, `kata-orient`→`handoff`, `kata-promote`→`meta`; the engram/second-brain
+> extensions land in `cognition/`. The earlier "matches the cognition category" rationale is **withdrawn.**
 
 ## LC-GB2 — One grounding gate for RS-injected AND ML-distilled knowledge **(RESOLVED — unify)**
 A single gate (extension of `kata-evaluate`/`kata-review`, "injected-knowledge" mode), two callers:
@@ -188,11 +192,11 @@ risks lossy encoding) into our **guarantee** — the spine-#5 re-anchor made str
 
 | Class | Surface | Driver |
 |---|---|---|
-| **NEW skill** | `kata-research` (RS, fresh-context no-write) · `kata-orient` (AO) · `kata-promote` (ML, post-D16) | RS-GB3 / AO-GB3 / GB3 |
-| **NEW protocol** | `protocol/orientation.md` (AO contract) · `protocol/wiki-synthesis.md` (GB6 output schema) | AO-GB3 / GB6 |
+| **NEW skill** | `kata-research` (`plan`, fresh-context no-write) · `kata-orient` (`handoff`) · `kata-promote` (`meta`, post-D16) — all `agnostic:true`/`experimental`/`0.1.0`, frontmatter pinned MF1 | RS-GB3 / AO-GB3 / GB3 |
+| **NEW protocol** | `protocol/orientation.md` (AO contract). *(wiki-synthesis schema → a SECTION of `protocol/engram.md`, not a new file — SF3.)* | AO-GB3 / GB6 |
 | **EXTEND skill** | `kata-evaluate`+`kata-review` (injected-knowledge grounding mode) · `kata-selfhandoff` (structured preservation) · `kata-orchestrate` (RS-dispatch + AO-assembly hooks — stays single dispatcher, D24d) · `kata-handoff` (loop-map + orientation pairing) · `kata-improve` (β LEARN feed) · `kata-graph` (adjacency-pointer emit) | LC-GB2 / GB9 / RS+AO / GB9 / GB8-β / AO-GB2 |
 | **EXTEND protocol** | `protocol/handoff.md` (loop map) · `protocol/config.md` (`engram.autonomy`, `agentSkills.dir`) · `protocol/engram.md` (skill-promotion seam row) · `protocol/state.md` (candidate/promotion lifecycle) | GB9 / GB4+GB7 / GB4 / GB3 |
-| **REUSE verbatim** | escalation payload (D51/D52) for RS routing · `kata-evaluate` default-FAIL floor · blast-radius (D50/D51) · `kata-board`/`kata-worktree` · `kata-report` v1 (sprint-cadence) for synthesis-page machinery | — |
+| **REUSE verbatim** | escalation payload (D51/D52) for RS routing · `kata-evaluate` default-FAIL floor · blast-radius (D50/D51) · `kata-board`/`kata-worktree` · `kata-handoff` §7 redaction filter for the β LEARN write (C3, SF1). *(`kata-report` struck — MF3: β emits synthesis pages directly.)* | — |
 
 ---
 
@@ -221,3 +225,63 @@ negative-drift + complexity + loose-ends) runs before freeze. On SHIP → promot
 | AO-GB2 rollup+adjacency | REC — root+nearest vertical; kata-graph adjacency pointers (lazy); prime-frame capped |
 | AO-GB3 home | REC — `protocol/orientation.md` + `kata-orient` skill (mirror of kata-handoff) |
 | LC-GB9 loop map + self-handoff | REC — loop-map in protocol/handoff.md; never-summarized {plan,goals,decisions,escalations} block |
+
+---
+
+## FREEZE-GATE AUDIT (2026-06-18) — fresh-context Opus (Fable 5 unavailable) → **HOLD → resolutions**
+The mandatory pre-freeze adversarial pass (RUBRIC; no self-certification, L8). Verdict: **decisions sound,
+specification fidelity not yet freeze-ready** (same class as the sprint-cadence audit). **CLEARED — do NOT
+reopen:** RS-GB1/GB2 spine-#1 compliance; AO-GB1 vs D24d (orchestrator marshals data it already owns, logic
+lives in `kata-orient`); LC-GB9 self-handoff vs D8/D33; Path-2 A/B isolation (LEARN-only ⇒ no read-back path
+⇒ drift structurally impossible); LC-GB4 autonomy vs C2/C4/D1; cross-spec consistency w/ sprint-cadence;
+LC-GB6 two-producer contract is minimal-not-over-engineered. Resolutions below.
+
+**MUST-FIX (freeze-blocking):**
+- **MF1 — frontmatter stubs for the 3 NEW skills (pin at freeze; validator-enforced, D27/D31/STANDARDS §1):**
+  - `kata-research`: `category: plan`, `agnostic: true`, `status: experimental`, `version: 0.1.0`,
+    `license: Apache-2.0`, `cost-weight: 3`, `allowed-tools: [Read, Grep, Glob, WebFetch, WebSearch]`
+    (**no Write/Edit** — RS-GB3 promoted into frontmatter).
+  - `kata-orient`: `category: handoff` (it is the *receiving half of HANDOFF* — most accurate; see MF2),
+    `agnostic: true`, `status: experimental`, `version: 0.1.0`, `license: Apache-2.0`, `cost-weight: 2`,
+    `allowed-tools: [Read, Grep, Glob]` (read-side, no Write).
+  - `kata-promote`: `category: meta` (skill-management kin to `kata-improve`/`kata-write-skill`; see MF2),
+    `agnostic: true`, `status: experimental`, `version: 0.1.0`, `license: Apache-2.0`, `cost-weight: 2`,
+    `allowed-tools: [Read, Grep, Glob, Edit, Write, AskUserQuestion]` (human-gated write ceremony).
+- **MF2 — drop the "umbrella = the `cognition/` category" rationale (it's factually wrong + self-contradictory).**
+  Verified: `skills/cognition/` is **declared-but-empty** (STANDARDS §2 + DESIGN diagram name it; no skill
+  exists). The spec name `loop-cognition` is a **theme/spec name, NOT a category**; its skills distribute by
+  loop-phase: **`kata-research`→plan · `kata-orient`→handoff · `kata-promote`→meta**, with the engram /
+  second-brain-feed extensions landing in **`cognition/`** (kata-engram territory — the actual first tenant of
+  that category). Correct LC-GB1 wording: umbrella = one *spec*, **category-split** skills. (`kata-research`
+  `category: plan` stays — control-flow-correct — but the "cognition umbrella" framing that justified it is dropped.)
+- **MF3 — strike `kata-report` from REUSE; β emits synthesis pages directly.** `kata-report` is UNBUILT (D32)
+  and owned by sprint-cadence (frozen *after* β, which runs ∥ D16) — an unsatisfiable REUSE at β-build time,
+  and a different job (build-report vs LEARN synthesis). Resolution (auditor's option a): **β emits
+  Karpathy-pattern synthesis pages directly via the LEARN contract + the LC-GB6 wiki-synthesis schema** — the
+  "synthesis-page machinery" IS the schema, not `kata-report`. `kata-report` removed from the artifact map.
+
+**SHOULD-FIX (applied):**
+- **SF1 — name the C3 redaction owner in β scope:** the β LEARN emitter runs the `kata-handoff` §7 redaction
+  filter as a **precondition to any vault write** (C3). Pinned into the β build scope (Task #8).
+- **SF2 — keep LEARN-only *structural*, not procedural:** the β sub-mode of `kata-improve` **emits only**;
+  DESIGN must state nothing reads the fingerprint back into a run during D16 (a structural property of where β
+  sits, beyond the experimenter-neutrality procedure).
+- **SF3 — collapse `protocol/wiki-synthesis.md` into a section of `protocol/engram.md`** (it *is* the LEARN
+  payload shape) unless a concrete second standalone consumer forces a file. Net: **one** new protocol file
+  (`protocol/orientation.md`), not two. Update the artifact map accordingly.
+- **SF4 — `kata-promote` cross-category move constraint:** moving a candidate from `toolkit/skills/candidates/`
+  into `toolkit/skills/<category>/` must preserve `name == dir` + pass the validator (D27) — recorded as a
+  `kata-promote` design constraint. (LC-GB7 micro-picks confirmed genuinely non-blocking for β.)
+
+**Freeze path:** apply MF1–MF3 + SF1–SF4 into `DESIGN.md` (frontmatter stubs as the tie-in table; corrected
+category story; β-emits-directly; one new protocol file) → **re-confirm SHIP** (lightweight fresh-context
+re-check, since all resolutions are direct applications of this audit's own prescriptions) → freeze.
+
+## RE-CONFIRM (2026-06-18) — fresh-context Opus, no-write → **SHIP**
+Focused re-check that MF1–MF3 + SF1–SF4 fully close the HOLD with no new drift. **VERDICT: SHIP.** All 8
+STANDARDS §1 required fields satisfiable per skill; categories valid §2 enum (`plan`/`handoff`/`meta`); no-Write
+correctly pinned (research/orient) and Write legitimately allowed for the human-gated `kata-promote`. Category
+story internally consistent (MF2); `kata-report` cleanly struck with no orphan refs (MF3); SF1–SF4 coherent
+with `protocol/engram.md` (C3 redaction match, wiki-synthesis as LEARN-payload section). No CLEARED item
+reopened; no LOCKED decision rewritten. Lone non-blocking nit (uneven version/license enumeration in two
+stubs) **fixed** 2026-06-18. **The spec is freeze-ready.**
