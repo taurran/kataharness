@@ -39,6 +39,17 @@ Promote to ROADMAP milestones when ready.
   use substring matching → can't detect substantive erasure; add structural checks if it bites. (3.3)
   `check_tags_namespace` allows bogus `kata/...` sub-namespaces; add a `kata/...` prefix allowlist when
   `kata/tier/<tier>` becomes load-bearing (A2-time).
+- **AI-slop / spiraling-session detection in the review process (user 2026-06-18)** — ingest the OSS
+  **ai-slop-detector** (`https://github.com/flamehaven01/ai-slop-detector`) and **deep-eval which of its checks
+  to adopt** to catch **spiraling agents / degraded sessions / AI-slop output** — a common, real risk in
+  long-running loops. **Design decision to make:** *embed* the adopted checks into `kata-review` (a new
+  review axis / mode) **vs.** stand up a *separate* skill that runs as part of the EVALUATE phase (e.g.
+  `kata-slop-check`, dispatched alongside `kata-review`/`kata-evaluate`). Lean on the **minimal-step bake-in
+  discipline** (D41/GB8 — extract only the necessary stripped-down checks; do not over-port). **License + `source:`
+  attribution required** before adopting any code (spine #12 / D12 — verify the repo's license). **Seams:** ties
+  to `kata-review` (adversarial), `kata-diagnose` (bad-session symptoms), and `kata-selfhandoff` (session-health
+  trigger — slop/spiral signal could fire a self-handoff/abort); a slop verdict should be a **default-FAIL gate
+  finding**, never advisory-only. Captured for a later spec; do NOT reopen frozen specs. *(post-v0.1; quality module.)*
 - **`kata-report` (D32)** — post-loop, handoff-phase build report: lite-synthesis of loop artifacts (DESIGN,
   DAG, decision ledger, manifest, diffs, evaluate/review verdicts, gate numbers) → durable `BUILD-REPORT.md`
   with a Mermaid structural diagram (of our own build DAG). Non-goal: from-scratch comprehension — that is
