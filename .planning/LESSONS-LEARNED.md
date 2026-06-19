@@ -87,3 +87,33 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
   lives; (b) building `kata-grill` to the [[L8]] standard is now the load-bearing work, not optional polish;
   (c) we also surfaced a loop gap — only `kata-evaluate` (conformance) ran, not `kata-review` (adversarial);
   **neither arm got adversarial validation at all.** `kata-review` should join v0.1's evaluate phase. See `[[kata-review]]`.
+
+- **L11 — The autonomous grill-vs-baseline A/B tests the wrong axis; the grill is a human-intent alignment aid,
+  not a benchmarkable execution edge. (2026-06-18)** We re-ran the A/B with the planning step *varied* (the
+  [[L10]] fix): Arm A = `kata-grill`→`design-doc`→`plan`, Arm B = GSD, both autonomous on Sonnet, on small
+  Python projects with held-out gates. A pilot (easy `wordfreq`) **tied**; a *hardened* `wordfreq` (interacting
+  pipeline, casefold, apostrophe edges, stopword ordering, top-N tie-group) **also near-tied** — both arms
+  **4/4 → 10/10 held-out gate passes**, every discriminating metric ~0, the only delta a noise-level
+  fix-iteration (A:1, B:2). Arm A's own note: *"no spec ambiguities required human resolution."*
+  1. **A fully-specified task — at any difficulty — is built correctly by a capable agent under either method.**
+     "Harder" added complexity, not ambiguity; complexity is just more to implement, which both nail.
+  2. **The grill's engine is interrogating the *human*. Autonomous mode turns it off** → it degrades to
+     "document assumptions," which GSD does too. The A/B was structurally blind to the grill's actual mechanism —
+     the same blindness [[L10]] flagged, now confirmed from the other side.
+  3. **A deterministic gate cannot hold genuine ambiguity** (one scoreable answer ⇒ subtly-specified, not
+     ambiguous). The Nous/Hermes empirical model (execute→judge outcome→distill, no grill) fits *this*
+     autonomous/specified terrain better — exactly where our own data keeps saying "tie."
+  *Baked in (→ D70/D71/D72):*
+  (a) **Retire the autonomous grill-vs-baseline RCT (D70).** What it DID prove — **autonomous reliability** — is
+     kept (both methods one-shot correct, gated, lint-clean builds). v0.1 is no longer gated on an RCT.
+  (b) **Re-frame grill as an *optional human certainty layer* over the priming prompt (D71)** — depth
+     `skip|light|standard|full`; opt-out → the autonomous-reliability floor (default-FAIL + RS + an
+     assumption-log surfaced at the gate). Grill adds alignment certainty **by construction**, not by benchmark.
+     Grill (up-front, with-human) and **RS** (in-loop, without-human) are the two ends of one ambiguity-resolution
+     spectrum. **Stop benchmarking it — the logic carries it.**
+  (c) **Grill ledgers are a PRIMARY cognitive-fingerprint feed (D72)** — each grill trains the engram; a matured
+     fingerprint pre-answers future grills (D56). Grill earns its keep twice: this project + the learning path.
+  (d) **Don't over-engineer the validation.** The instinct to build a "human/oracle-in-the-loop RCT" (D16 v3)
+     was *more* apparatus to prove something architectural — dropped. One light in-setting check beats eighteen
+     runs. (Anti-pattern: we hardened a corpus + re-registered before realizing the *axis* was wrong — fix the
+     question before scaling the measurement.)

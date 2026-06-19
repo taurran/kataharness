@@ -113,8 +113,15 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
 - **Freeze-gate audited HOLD→SHIP** (fresh-context Opus; MF1–MF3 + SF1–SF4 resolved; re-confirm SHIP).
   **DESIGN FROZEN** (`loop-cognition/DESIGN.md`); decisions promoted **D60–D69**; β ingested into ROADMAP
   (∥ D16), rest post-D16.
-- **NEXT:** build the β feed pipeline (∥ D16) per DESIGN §L7/L9; in parallel open the D16 spec grill (the
-  LOCKED v0.1 gate) and apply sprint-cadence's must-fixes before its own freeze. Tracked in the live task list.
+- **D16 RETIRED as an RCT + Priming-and-Grill resolved (D70/D71/D72, L11).** Two A/B attempts (easy + hardened
+  `wordfreq`) proved the autonomous deterministic-gate A/B can't isolate the grill (4/4→10/10 gate passes; grill's
+  human-engine is off without a human). **Grill is now an OPTIONAL human certainty layer over the priming prompt,
+  with an autonomous-reliability floor** (default-FAIL + RS + assumption-log); grill ledgers are a PRIMARY
+  cognitive-fingerprint feed. **Autonomous reliability is demonstrated; v0.1 no longer gated on an RCT → the
+  D16-first lock is dissolved → the full build is UNBLOCKED.**
+- **NEXT (see HANDOFF §4 THE PLAN):** (1) wire D71 Priming-and-Grill (grill skip rung + bootstrap dial +
+  readiness recommend + `kata-defer` assumption-log); (2) build β (LEARN feed, now primary fingerprint feed);
+  (3) RS→AO→ML; (4) freeze+build sprint-cadence; (5) dogfood version-up on KataHarness itself.
 
 ## Next action (sequencing decision pending — adversarial review recommends D16 first)
 0. **Answer the sprint-cadence grill ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`, SC-GB1–10)
@@ -145,7 +152,8 @@ spawn; operator sets main-session model via `/model`.
 Last session: 2026-06-18. Stopped at: loop-cognition grill fully converged + user-confirmed (LC-GB1–9,
 RS-GB1–3, AO-GB1–3); STATE/HANDOFF refreshed; checkpoint commit of 2026-06-15 (sprint-cadence converged +
 engram.md) + 2026-06-18 (loop-cognition spec) work. Resume file: `.planning/HANDOFF.md` (read it first).
-**Immediate next:** loop-cognition DESIGN is FROZEN (D60–D69; audit HOLD→SHIP) and β is ingested into ROADMAP.
-Next = (1) build the β LEARN-only feed pipeline (∥ D16, observe-and-emit, zero CONSULT, redaction-gated);
-(2) open the D16 spec grill (the LOCKED v0.1 gate); (3) apply sprint-cadence must-fixes before its freeze.
-D16-first remains LOCKED; everything except β builds after D16. Live task list carries the path.
+**Immediate next:** the session resolved the **Priming-and-Grill architecture (D70/D71/D72, L11)** and
+**retired D16 as an RCT** — autonomous reliability is demonstrated, so the full build is UNBLOCKED. Read
+`.planning/HANDOFF.md` (rewritten for this hand-off) — §4 THE PLAN: wire D71 → build β → RS/AO/ML → freeze
+sprint-cadence → dogfood version-up. loop-cognition DESIGN is FROZEN (D60–D69). The user will compact + orient
+a fresh session from the handoff.

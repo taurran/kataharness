@@ -444,3 +444,39 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   skills and opaque (Honcho) user model. Our differentiator: Hermes' learning loop **gated by default-FAIL +
   human promotion + artifact-grounded fingerprint.** Applies to the sister **MindBridge Loop** project too.
   *Provenance:* user-requested deep research + bake-off 2026-06-18.
+
+<!-- D16 resolution + Priming-and-Grill architecture (2026-06-18). See PILOT-NOTES.md, L11,
+     .planning/specs/d16-planning-varied-ab/. -->
+- **D70 — D16 retired as an autonomous grill-vs-baseline RCT; v0.1 is NOT gated on it. (2026-06-18)** Two
+  counted attempts (easy pilot + a hardened pair) plus a structural argument show the autonomous,
+  deterministic-gate A/B **cannot isolate the grill's value:** (a) a fully-specified task — any difficulty — is
+  built correctly by a capable Sonnet agent under either method (**4/4 held-out gate passes**, ~0 on every
+  metric); (b) the grill's engine is *interrogating the human*, which is OFF in autonomous mode (Arm A:
+  "no ambiguities required human resolution"); (c) a deterministic gate cannot encode genuine ambiguity.
+  Empirical confirmation of L8/L10. What the runs DID establish: **autonomous reliability is demonstrated**
+  (both methods one-shot correct, gated, lint-clean builds). Halting the 18-run fan-out is **instrument-
+  invalidity on a near-tie** (not outcome-driven → not p-hacking). Corpus/gates/builds kept as the reliability
+  demonstration. Supersedes the "planning-varied A/B" framing (D16/TEST-PLAN); **v0.1 validation is re-scoped
+  per D71.** *Provenance:* runs + user 2026-06-18; see PILOT-NOTES.md, L11.
+- **D71 — Priming-and-Grill: grill is an OPTIONAL human certainty layer over the priming prompt; autonomous-
+  reliability is the floor. (2026-06-18)** Every project starts from a **priming prompt** (the human's original
+  priming spec). **Grill = an optional, human-facing enrichment dial** — depth `skip | light | standard | full`
+  (reuses the `kata-grill` A2 tier-family + a NEW skip rung; bootstrap-offered, D46; `kata-readiness` recommends
+  depth from prompt richness/ambiguity). Grill interrogates the designer to resolve ambiguity and **enrich the
+  priming prompt into the frozen spec**, adding alignment certainty **by construction** (NOT by benchmark — it is
+  "additional certainty the loop output aligns with the designer's spec/requirements"). **Opt out / light →
+  autonomous-reliability floor:** freeze the prompt and one-shot it on default-FAIL + the RS research subagent
+  (in-loop ambiguity, D62) + **an assumption/ambiguity log surfaced at the gate/handoff** (`kata-defer`) so
+  misalignment is caught at the boundary without grilling. **Grill ↔ RS are one spectrum:** ambiguity resolved
+  up-front-with-human (grill) vs in-loop-without-human (RS); skipping grill *shifts* resolution from the former
+  to the latter — it never removes it. Both coexist; grill shores up results on top of a reliable autonomous
+  floor. *Provenance:* user 2026-06-18 ("keep grill, make it an option… decline/light → fall back on the Nous
+  autonomous-reliability approach… grill shores up the priming prompt… logical approach to rich context, not a
+  bake-off").
+- **D72 — Grill output is a PRIMARY cognitive-fingerprint (engram LEARN) feed; a matured fingerprint pre-answers
+  future grills. (2026-06-18)** Grill ledgers (resolved decisions + the human's choices + rationale) are a
+  **primary** LEARN source for the second brain (reinforces D66; binds engram seams E4 option-biasing + E13
+  convergence-gate). The virtuous cycle: as the fingerprint matures it **pre-answers** grill questions (D56
+  AND-gate, default-human), so each grill both shores up the current project AND trains the engram for the next
+  → human grill-effort asymptotically decreases. *Net-new vs D66:* names grill the *primary* feed + the cycle.
+  *Provenance:* user 2026-06-18 ("grilling needs to feed into our cognitive fingerprinting… the agentic learning path").

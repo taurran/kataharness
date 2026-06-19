@@ -57,16 +57,23 @@ grounding-gated), **AO** agent orientation (`kata-orient`, orchestrator-assemble
 adjacency, the receiving half of handoff), **ML** managed learning (two-stage candidate→human-promotion skills
 via `kata-promote`; second-brain LEARN feed; progressive `engram.autonomy`). Hermes-bake-off verdict (D69):
 borrow mechanisms, keep our gates. Freeze-gate audited HOLD→SHIP.
-- [ ] **β — LEARN-only second-brain feed pipeline. Builds ∥ D16** (D68): observe-and-emit, **zero CONSULT**,
-  redaction-gated (C3); the engram *prerequisite* (D66), low-drift, cannot contaminate the D16 A/B. The one
-  slice pulled forward. Could ride a `kata-improve` sub-mode (emit-only).
-- [ ] **RS + AO + ML(skill-distillation/promotion) + injected-knowledge gate + CONSULT + autonomy — build
-  AFTER D16** (D68). Endgame (α–ε): build KataHarness fully → full tests → **self-improve the harness on itself**
-  via the A4 version-up machinery (dogfood), CONSULT-enabled once β has matured the fingerprint.
+- [ ] **β — LEARN-only second-brain feed pipeline** (D66, now the **primary** cognitive-fingerprint feed, D72):
+  observe-and-emit, **zero CONSULT**, redaction-gated (C3); emits Karpathy-pattern synthesis. (D16-gate framing
+  dropped per D70 — just build it; ride a `kata-improve` emit-only sub-mode.)
+- [ ] **D71 Priming-and-Grill wiring** (foundational, new head of the build): grill skip rung + bootstrap
+  grill-depth dial + `kata-readiness` depth recommendation + **`kata-defer` assumption-log** (skip-mode safety net).
+- [ ] **RS + AO + ML(skill-distillation/promotion) + injected-knowledge gate + CONSULT + autonomy — UNBLOCKED**
+  (D70 dissolved the D16-first lock). **RS is load-bearing** (the autonomous floor's ambiguity resolver, D71).
+  Endgame (α–ε): build fully → full tests → **dogfood version-up on KataHarness itself**, CONSULT-enabled once β
+  has matured the fingerprint.
 
-**Pre-v0.1 (now):** **Modes Spec A (A1–A4) COMPLETE + merged.** The remaining v0.1 validation gate is the
-**D16 planning-varied A/B** (prove the grill differentiates) — target = small one-shottable test projects
-(D57). Then the Obsidian-KG/kata-understand spec (PokeVault ready, D58) and/or Spec B (bake-off).
+**Pre-v0.1 (now):** **Modes Spec A (A1–A4) COMPLETE + merged.** **D16-as-RCT is RETIRED (D70, L11)** — the
+autonomous grill-vs-baseline A/B tests the wrong axis; **autonomous reliability is demonstrated** instead, and
+the v0.1 gate is re-scoped to that + the **Priming-and-Grill architecture (D71/D72):** grill is an *optional*
+human certainty layer over the priming prompt (autonomous-reliability floor when skipped), and grill ledgers
+feed the cognitive fingerprint. **The D16-first lock is dissolved → the full build is unblocked.** Build path
+(HANDOFF §4): wire D71 → build loop-cognition β (LEARN feed) → RS/AO/ML → freeze sprint-cadence → dogfood
+version-up on KataHarness itself.
 
 ## Progress
 | Milestone | Status |

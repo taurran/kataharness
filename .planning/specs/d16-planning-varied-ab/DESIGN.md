@@ -8,6 +8,13 @@ tags: [design, frozen, d16, ab-test, validation-gate, pre-registered]
 
 # D16 — planning-varied A/B — FROZEN DESIGN (pre-registered protocol)
 
+> **⛔ RETIRED as an RCT (D70, 2026-06-18).** Two counted attempts (easy + hardened `wordfreq`) showed the
+> autonomous deterministic-gate A/B **cannot isolate the grill's value** (both methods 4/4→10/10 gate passes;
+> the grill's human-interrogation engine is off without a human — L11). **Kept as the autonomous-reliability
+> demonstration**, not a benchmark. v0.1 validation is re-scoped to *Priming-and-Grill* (D71/D72): grill is an
+> optional human certainty layer over the priming prompt; autonomous reliability is the floor. The protocol
+> below is the executed-and-superseded record. **Do not run the remaining arms.**
+
 The v0.1 validation gate. **Pre-registered**: this protocol + the verdict rule are fixed *before* any run, so
 the result can't be p-hacked. Supersedes TEST-PLAN v1. Carried principles (D14/D57/D59): model constant
 (Sonnet), fresh context per run, honest GSD baseline, both arms get `kata-review` (L10).
