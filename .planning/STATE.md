@@ -110,8 +110,11 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   the LEARN-only feed pipeline (β) in parallel (it's an engram *prerequisite*, low-drift, observe-and-emit,
   zero CONSULT). Artifact map recorded (NEW: kata-research/kata-orient/kata-promote + protocol/orientation +
   protocol/wiki-synthesis; EXTEND: evaluate/review/selfhandoff/orchestrate/handoff/improve/graph).
-- **NEXT:** fresh-context freeze-gate audit on loop-cognition (no self-certification) → on SHIP freeze DESIGN
-  → ingest β into ROADMAP → build. Tracked in the live task list (8 tasks).
+- **Freeze-gate audited HOLD→SHIP** (fresh-context Opus; MF1–MF3 + SF1–SF4 resolved; re-confirm SHIP).
+  **DESIGN FROZEN** (`loop-cognition/DESIGN.md`); decisions promoted **D60–D69**; β ingested into ROADMAP
+  (∥ D16), rest post-D16.
+- **NEXT:** build the β feed pipeline (∥ D16) per DESIGN §L7/L9; in parallel open the D16 spec grill (the
+  LOCKED v0.1 gate) and apply sprint-cadence's must-fixes before its own freeze. Tracked in the live task list.
 
 ## Next action (sequencing decision pending — adversarial review recommends D16 first)
 0. **Answer the sprint-cadence grill ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`, SC-GB1–10)
@@ -142,7 +145,7 @@ spawn; operator sets main-session model via `/model`.
 Last session: 2026-06-18. Stopped at: loop-cognition grill fully converged + user-confirmed (LC-GB1–9,
 RS-GB1–3, AO-GB1–3); STATE/HANDOFF refreshed; checkpoint commit of 2026-06-15 (sprint-cadence converged +
 engram.md) + 2026-06-18 (loop-cognition spec) work. Resume file: `.planning/HANDOFF.md` (read it first).
-**Immediate next:** fresh-context **freeze-gate audit** on `loop-cognition/GRILL-LEDGER.md` (RUBRIC, no
-self-certification) → on SHIP, freeze its `DESIGN.md` → ingest the β feed-pipeline into ROADMAP. Sprint-cadence
-DESIGN freeze also still pending its own must-fixes (2026-06-15 audit HOLD). D16-first remains LOCKED; both
-specs build after D16 (except β, which runs ∥ D16). Live task list carries the 8-step path.
+**Immediate next:** loop-cognition DESIGN is FROZEN (D60–D69; audit HOLD→SHIP) and β is ingested into ROADMAP.
+Next = (1) build the β LEARN-only feed pipeline (∥ D16, observe-and-emit, zero CONSULT, redaction-gated);
+(2) open the D16 spec grill (the LOCKED v0.1 gate); (3) apply sprint-cadence must-fixes before its freeze.
+D16-first remains LOCKED; everything except β builds after D16. Live task list carries the path.

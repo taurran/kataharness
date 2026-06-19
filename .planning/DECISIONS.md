@@ -386,3 +386,61 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   **Supersedes the Opus half of D13's routing**; D13's surviving principle — test arms run the cheaper
   workhorse model, held constant, so the harness lift isn't masked — carries forward unchanged (the D16
   arms stay Sonnet, per D14/D57). History (D13 text, L9/L10, REVIEW files, frozen specs) unmodified.
+
+<!-- loop-cognition spec (FROZEN 2026-06-18; freeze-gate audit HOLD→SHIP). Ledger:
+     .planning/specs/loop-cognition/{GRILL-LEDGER,RESEARCH,DESIGN}.md -->
+- **D60 — loop-cognition: one umbrella spec, three loop enhancements (RS research subagent · AO agent
+  orientation · ML managed learning), spine-compatible. (LC-GB1)** Shared substrate = the grounding gate +
+  `kata-graph`. No-drift (D1) holds within a run; new knowledge influences the build only past the grounding
+  gate; learning persists only through a human gate. The spec name is NOT a category — skills are category-split
+  (research→plan, orient→handoff, promote→meta; engram/second-brain → `cognition/`'s first tenant). *Provenance:*
+  user 2026-06-18; freeze-gate audit MF2.
+- **D61 — ONE grounding gate, two callers; a structural invariant. (LC-GB2)** An "injected-knowledge"
+  assessment mode of `kata-evaluate`/`kata-review` grades both RS findings and ML candidate skills for
+  grounding + drift + adversarial soundness. **Never tiered, never bypassed (D33)** — even at full engram
+  autonomy. The counter-pressure to the research subagent's "negative pressure."
+- **D62 — `kata-research` is escalation-routed, fresh-context, no-write. (RS-GB1/2/3)** Worker → D52 escalation
+  payload → orchestrator dispatches `kata-research` (no Write) → findings → D61 gate → orchestrator folds
+  *grounded* findings via a **deliberate re-plan baked as a superseding decision**, or rejects; can't ground →
+  escalate to human. `category: plan`. *Rejected:* worker-direct research (silent drift, spine #1). Never silent injection.
+- **D63 — `kata-orient` assembles launch orientation: orchestrator-owned, three-tier, prime-frame-budgeted.
+  (AO-GB1/2/3)** Tiers **stable→context→volatile** (Hermes `prompt_builder`). Vertical rollup = root invariants
+  + nearest module file (2026 nearest-along-path standard); lateral = `kata-graph`-derived adjacency **pointers**,
+  lazy (rot-proof, token-safe); capped to the prime frame (SC-GB7). Orchestrate gains **hooks only** (D24d
+  intact). Contract → `protocol/orientation.md`; `kata-orient` = the read-side mirror of `kata-handoff`.
+- **D64 — managed learning: two-stage skill lifecycle, matched-but-marked taxonomy, vault-hosted +
+  configurable. (LC-GB3/5/7)** Stage 1 candidate (`experimental`/`scope:agent`, sandboxed) past the D61
+  grounding gate; Stage 2 **end-of-session human promotion gate** (`kata-promote`) → `experimental→stable` +
+  scope bump. Same taxonomy + discriminators (`provenance:agent-distilled`, `scope`, tag `kata/origin/agent`,
+  ≤60-char `summary`). Home install-seeded + first-run-configured (`agentSkills.dir`):
+  `toolkit/skills/candidates/` → `toolkit/skills/<category>/` (preserve `name==dir`, D27). *Rejected:* Hermes'
+  no-gate instant-universal model (uncontrolled positive feedback — wrong for a one-shot harness).
+- **D65 — progressive promotion autonomy = maturity ∧ config AND-gate; grounding never bypassed. (LC-GB4)**
+  `engram.autonomy: always-human | assisted | auto-when-confident`, default **always-human** (D25-safe),
+  per-seam; **skill-promotion is the first seam.** Autonomy fires only when `opted-in ∧ fingerprint-mature ∧
+  high-confidence ∧ precedented`; novel/low-confidence/LOCKED-adjacent always stop the human (C2/C4). **The
+  engram replaces human judgment, never the grounding gate (D61/D33).** Reuses `auto-continue-while-green` +
+  engram C2/C4/C5/C6.
+- **D66 — second-brain LEARN feed; ONE wiki-synthesis output contract; the feed is an engram PREREQUISITE.
+  (LC-GB6 + RESEARCH §5/§7)** The loop mines decision artifacts into **Karpathy-LLM-Wiki-pattern synthesis
+  pages** (markdown, frontmatter taxonomy, cross-linked, `produced-by: loop|wiki|agent`), emitted via the
+  agnostic LEARN contract, redaction-gated (C3). Two producers, **one schema** (a section of
+  `protocol/engram.md`; the loop contract LEADS the immature vault). **Building the feed is the prerequisite for
+  the engram CONSULT (D9), not gated by it** — this partially reorders the engram backlog. *Confirmed:*
+  "llm-wiki" = Karpathy's LLM Wiki pattern (user 2026-06-18).
+- **D67 — unified loop map + self-handoff structured preservation. (LC-GB9)** `protocol/handoff.md` carries the
+  loop map (every agent × handoff edge × owning skill — no ownerless edges). `kata-selfhandoff` EXTEND with
+  Hermes' protected head+tail + tool-call/response pairing guardrail + a **never-summarized invariant block
+  `{frozen-plan ref, goals, open decisions, open escalations}`** — converting Hermes' "plan emerges organically
+  (lossy)" vulnerability into our structural guarantee. **D33 invariant.**
+- **D68 — Path 2 sequencing: D16-first holds; only the β LEARN-only feed builds ∥ D16. (LC-GB8)** β =
+  observe-and-emit, **zero CONSULT**, redaction-gated — drift into the D16 A/B is structurally impossible
+  (LEARN-only ⇒ no read-back path; arms stay constant, D14/D57). Everything else (RS, AO, ML distillation +
+  `kata-promote`, the D61 injected-knowledge mode, CONSULT, autonomy) builds **after D16**. *Rejected:* build
+  all pre-D16 (the KG-first rework exposure). Closes the standing D16-first confirmation.
+- **D69 — Hermes Agent (Nous) bake-off verdict: borrow mechanisms, keep our gates. (RESEARCH §3)** Adopt
+  Hermes' closed-loop distillation, protected head+tail compaction, tiered prompt assembly, `.usage.json`-style
+  telemetry, stale→archive curation, ≤60-char description discipline; **reject** its no-gate instant-universal
+  skills and opaque (Honcho) user model. Our differentiator: Hermes' learning loop **gated by default-FAIL +
+  human promotion + artifact-grounded fingerprint.** Applies to the sister **MindBridge Loop** project too.
+  *Provenance:* user-requested deep research + bake-off 2026-06-18.

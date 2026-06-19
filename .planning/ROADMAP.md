@@ -51,6 +51,19 @@ Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-f
 - [ ] **`design` module (own spec).** UI/UX, 2D/3D assets, slides, mobile, image-FM — Claude's design
   blind-spot; built to slot into Advanced; inherently tiered.
 
+### loop-cognition track (DESIGN FROZEN 2026-06-18 — `.planning/specs/loop-cognition/`; D60–D69; major new capability)
+Three entangled loop enhancements: **RS** in-loop research subagent (`kata-research`, escalation-routed,
+grounding-gated), **AO** agent orientation (`kata-orient`, orchestrator-assembled three-tier + `kata-graph`
+adjacency, the receiving half of handoff), **ML** managed learning (two-stage candidate→human-promotion skills
+via `kata-promote`; second-brain LEARN feed; progressive `engram.autonomy`). Hermes-bake-off verdict (D69):
+borrow mechanisms, keep our gates. Freeze-gate audited HOLD→SHIP.
+- [ ] **β — LEARN-only second-brain feed pipeline. Builds ∥ D16** (D68): observe-and-emit, **zero CONSULT**,
+  redaction-gated (C3); the engram *prerequisite* (D66), low-drift, cannot contaminate the D16 A/B. The one
+  slice pulled forward. Could ride a `kata-improve` sub-mode (emit-only).
+- [ ] **RS + AO + ML(skill-distillation/promotion) + injected-knowledge gate + CONSULT + autonomy — build
+  AFTER D16** (D68). Endgame (α–ε): build KataHarness fully → full tests → **self-improve the harness on itself**
+  via the A4 version-up machinery (dogfood), CONSULT-enabled once β has matured the fingerprint.
+
 **Pre-v0.1 (now):** **Modes Spec A (A1–A4) COMPLETE + merged.** The remaining v0.1 validation gate is the
 **D16 planning-varied A/B** (prove the grill differentiates) — target = small one-shottable test projects
 (D57). Then the Obsidian-KG/kata-understand spec (PokeVault ready, D58) and/or Spec B (bake-off).
@@ -60,5 +73,7 @@ Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-f
 |---|---|
 | v0.1 core | 11 skills built; reviewed; execution half field-proven (A/B **tied**, L10) — planning A/B (D16) still pending; target reshaped to small one-shot test projects (D57) |
 | Modes Spec A (A1–A4) | **COMPLETE + merged** — validator + tiers + bootstrap/readiness + version-up/kata-graph + frontier/async-escalation; **25 skills**; D1–D56 |
+| sprint-cadence | grill CONVERGED (SC-GB1–10 + engram); freeze-gate audit **HOLD** — must-fixes pending before DESIGN freeze; builds after D16 |
+| loop-cognition | **DESIGN FROZEN 2026-06-18** (D60–D69, audit HOLD→SHIP); 3 new skills (research/orient/promote); β feed builds ∥ D16, rest after D16 |
 | v0.2 (pulled fwd) | diagnose/selfhandoff/improve/write-skill built; tasklist deferred (needs worker self-select) |
 | v0.3–v0.4 | Not started (adapters; ACP/Quick + kata-engram) |
