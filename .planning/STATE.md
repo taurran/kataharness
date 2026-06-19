@@ -131,7 +131,9 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
 - **NEXT (see HANDOFF §4 THE PLAN):** (1) ~~wire D71~~ ✅ done; (2) ~~build β~~ ✅ done; (3) **RS → AO → ML**
   (loop-cognition build-out, the next head); (4) freeze+build sprint-cadence; (5) dogfood version-up on KataHarness itself.
 
-## Next action (sequencing decision pending — adversarial review recommends D16 first)
+## Next action — RS → AO → ML (D16 lock dissolved by D70; D71 + β DONE 2026-06-18)
+> ⚠️ The numbered list below predates D70 and is **superseded** — it described the D16-first sequencing that no
+> longer applies. Authoritative next step: **RS (research subagent), then AO, then ML.** Kept for provenance.
 0. **Answer the sprint-cadence grill ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`, SC-GB1–10)
    — note SC-GB10 proposes: freeze the sprint DESIGN now, build after D16.
 1. **D16 planning-varied A/B (the v0.1 validation gate; ROADMAP-sequenced FIRST):** prove the grill

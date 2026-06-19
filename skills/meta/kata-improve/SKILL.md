@@ -70,7 +70,8 @@ Run it at IMPROVE / handoff time (engram seam E6), never as a per-task hook (kee
   there is no CONSULT call-site. It is purely additive; emitting cannot influence any build (BC2).
 - **Redaction is a HARD pre-write gate (C3).** Every page passes the **`kata-handoff` §7 redaction filter**
   (no secrets / keys / PII) and is **project-scoped** (`scope:`) **before any write**. Redaction failure ⇒ do
-  not emit that page (fail-closed). This is the data-exfiltration / IP-leak surface — never bypass it.
+  not emit that page (fail-closed). This is the data-exfiltration / IP-leak surface — never bypass it. *(Maturity:
+  §7 is a prose contract today; a structural redaction filter + test seam land with β-runtime — see `protocol/engram.md`.)*
 - **No-op if unconfigured (BC1).** Emit only when `engram.learnFeed.dir` is set (`protocol/config.md`); absent
   ⇒ write nothing. Distinct from `engram.backend` (the CONSULT backend, still gated/off).
 - **Output:** N synthesis pages written to `engram.learnFeed.dir` (provenance `produced-by: loop`), plus a

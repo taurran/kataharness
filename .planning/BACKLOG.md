@@ -39,6 +39,12 @@ Promote to ROADMAP milestones when ready.
   use substring matching → can't detect substantive erasure; add structural checks if it bites. (3.3)
   `check_tags_namespace` allows bogus `kata/...` sub-namespaces; add a `kata/...` prefix allowlist when
   `kata/tier/<tier>` becomes load-bearing (A2-time).
+- **β-runtime: structural redaction filter + test seam (D74 follow-up, 2026-06-19)** — today the LEARN-feed
+  redaction (C3) is a **prose contract** (`kata-handoff` §7 "confirm no secrets/keys/PII") the emitting agent
+  honors; "fail-closed" is an instruction, not enforcement. The β feed writes synthesis to an **external dir**
+  (egress surface). **When β goes runtime** (the dogfood/ε arc), add an **automated redaction filter** the emit
+  path must pass + a **pytest seam** that proves a secret/PII-bearing page is blocked. Until then the guarantee
+  rests on agent obedience. *(Security-domain priority before any real second-brain backend is bound.)*
 - **AI-slop / spiraling-session detection in the review process (user 2026-06-18)** — ingest the OSS
   **ai-slop-detector** (`https://github.com/flamehaven01/ai-slop-detector`) and **deep-eval which of its checks
   to adopt** to catch **spiraling agents / degraded sessions / AI-slop output** — a common, real risk in

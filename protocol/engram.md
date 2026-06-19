@@ -125,8 +125,11 @@ cross-linked **synthesis pages** *over* them. Markdown, Obsidian-native, no embe
 - **Body:** a tight synthesis of one coherent pattern (a recurring decision rationale, a preference signal, a
   lesson cluster) with `[[wikilinks]]` to the raw artifacts and to sibling synthesis pages. One page = one
   pattern, not a dump.
-- **Redaction (C3 — HARD pre-write gate):** every page passes the **`kata-handoff` §7 redaction filter** (no
-  secrets / keys / PII) **before any write**. Redaction failure ⇒ the page is not emitted (fail-closed).
+- **Redaction (C3 — pre-write gate, fail-closed by contract):** every page passes the **`kata-handoff` §7
+  redaction filter** (no secrets / keys / PII) **before any write**; redaction failure ⇒ the page is not emitted.
+  **Honest maturity note:** today §7 is a **prose contract** the emitting agent must honor — there is no
+  automated filter yet. A **structural redaction filter + a test seam** land with β-runtime (BACKLOG); until
+  then "fail-closed" is an instruction, not an enforced guarantee. This is the egress surface — treat it as such.
 
 **Emit target + no-op (BC1):** pages are written to **`engram.learnFeed.dir`** (`protocol/config.md`). Absent ⇒
 **no emit** (the no-op path — the feed is purely additive, like every seam). This dir is the LEARN-feed target,
