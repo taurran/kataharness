@@ -124,8 +124,12 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   prompt-richness recommendation + orchestrate skip-floor branch + **`kata-defer` built** (DEFERRED.md parking +
   ASSUMPTIONS.md grill-skip log; **25→26 skills**) + grill↔RS spectrum doc'd. Validator 26/0, pytest 15.
   **Caveat:** RS slot doc'd/wired-for, lit in the loop-cognition phase. **Pending: fresh-context `kata-review`.**
-- **NEXT (see HANDOFF §4 THE PLAN):** (1) ~~wire D71~~ ✅ done; (2) build β (LEARN feed, now primary fingerprint
-  feed); (3) RS→AO→ML; (4) freeze+build sprint-cadence; (5) dogfood version-up on KataHarness itself.
+- **β LEARN feed ✅ DONE 2026-06-18** (D74 + BP1/BP2): `kata-improve` emit-only sub-mode (E6) → Karpathy-LLM-Wiki
+  synthesis pages per the schema in `protocol/engram.md` (`produced-by: loop`); **zero CONSULT** (BC2),
+  **redaction-gated** (C3), no-op without `engram.learnFeed.dir` (BP1/BC1); `engram.md` now validator-enforced
+  (BP2). Validator 26/0, pytest 18. **Pending: fresh-context `kata-review`.**
+- **NEXT (see HANDOFF §4 THE PLAN):** (1) ~~wire D71~~ ✅ done; (2) ~~build β~~ ✅ done; (3) **RS → AO → ML**
+  (loop-cognition build-out, the next head); (4) freeze+build sprint-cadence; (5) dogfood version-up on KataHarness itself.
 
 ## Next action (sequencing decision pending — adversarial review recommends D16 first)
 0. **Answer the sprint-cadence grill ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`, SC-GB1–10)

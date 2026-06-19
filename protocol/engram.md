@@ -101,6 +101,40 @@ clearly it is a human-decision/learning surface (HIGH must be wired; MED plausib
 that vault is what a vault-style backend READS FROM. It is upstream of the contract, not a CONSULT/LEARN
 call-site.
 
+## Wiki-synthesis output schema (the LEARN feed — β)
+
+The **LEARN-only second-brain feed** (`β`, D66; the **primary** cognitive-fingerprint feed, D72) is the
+harness *observing and emitting* its own decision history as synthesis pages, so a future fingerprint has raw
+material to learn from. **It is an engram PREREQUISITE, not gated by the engram** (L7/LC-GB6): the feed builds
+the corpus the CONSULT side will later synthesize against. It is **emit-only — zero CONSULT** (no read-back
+path exists, so it can never influence a build; the structural guarantee, not a procedural one).
+
+**One schema, two producers (the loop contract LEADS):** both the **loop's LEARN feed** and the vault's own
+**llm-wiki** pipeline emit pages in *this* format. Defining it here (a section of this contract, **not** a
+separate `protocol/wiki-synthesis.md`) keeps the immature vault aligned to the loop's lead.
+
+**Karpathy "LLM-Wiki" pattern** — a **raw ↔ synthesis split**: the raw decision artifacts
+(`DECISIONS.md` / `LESSONS-LEARNED.md` / `GRILL-LEDGER.md` / `REVIEW-*.md`) stay as-is; the feed emits compact,
+cross-linked **synthesis pages** *over* them. Markdown, Obsidian-native, no embeddings.
+
+**Page contract (every emitted synthesis page):**
+- **YAML frontmatter:** `produced-by: loop | wiki | agent` (the provenance marker — the loop feed writes
+  `loop`); `source:` (the raw artifact paths it synthesizes); `date:`; `tags:` (namespaced taxonomy, e.g.
+  `kata/synthesis/<topic>`); `scope: project | universal` (C3 project-scoping — a private project's synthesis
+  must not leak into a public run).
+- **Body:** a tight synthesis of one coherent pattern (a recurring decision rationale, a preference signal, a
+  lesson cluster) with `[[wikilinks]]` to the raw artifacts and to sibling synthesis pages. One page = one
+  pattern, not a dump.
+- **Redaction (C3 — HARD pre-write gate):** every page passes the **`kata-handoff` §7 redaction filter** (no
+  secrets / keys / PII) **before any write**. Redaction failure ⇒ the page is not emitted (fail-closed).
+
+**Emit target + no-op (BC1):** pages are written to **`engram.learnFeed.dir`** (`protocol/config.md`). Absent ⇒
+**no emit** (the no-op path — the feed is purely additive, like every seam). This dir is the LEARN-feed target,
+**distinct from `engram.backend`** (the CONSULT backend, still gated/off): the feed is active now; CONSULT is not.
+
+**Producer:** the loop feed rides the `kata-improve` **LEARN-feed emit-only sub-mode** (seam E6), run at
+IMPROVE / handoff time — out of the one-shot loop budget, never a per-task hook.
+
 ## Lifecycle of a seam
 
 1. **Reserved (now):** documented here; the host skill behaves identically with or without the engram.

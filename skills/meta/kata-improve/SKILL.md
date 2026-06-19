@@ -53,3 +53,25 @@ These are durable files; load them when improving, not into the loop.
 ## Output
 A small, cited set of skill/doc edits + version bumps + an index update, and a one-line "expected effect to
 verify next run." The harness is now incrementally better; the loop continues.
+
+## LEARN-feed emit sub-mode (β — emit-only, the primary fingerprint feed; D66/D72)
+A **separate sub-mode** from the kata above (which edits skills). This one **only emits**: it mines the run's
+durable decision artifacts into **synthesis pages** for the second-brain LEARN feed, so a future cognitive
+fingerprint has raw material. It changes **no skill and no product code** — output goes solely to the feed dir.
+Run it at IMPROVE / handoff time (engram seam E6), never as a per-task hook (keep it out of the one-shot budget).
+
+- **Observe → synthesize → emit.** Read `DECISIONS.md`, `LESSONS-LEARNED.md`, the run's `GRILL-LEDGER.md`(s),
+  and any `REVIEW-*.md`. Emit compact, cross-linked **synthesis pages** per the **wiki-synthesis output schema
+  in `protocol/engram.md`** (Karpathy LLM-Wiki raw↔synthesis split;
+  frontmatter `produced-by: loop`, `source:`, `scope:`; `[[wikilinks]]`; one page = one pattern). **Grill
+  ledgers are a primary feed (D72)** — each resolved decision + the human's choice + rationale is fingerprint
+  signal.
+- **Zero CONSULT (structural).** This sub-mode **never reads a fingerprint back into planning or execution** —
+  there is no CONSULT call-site. It is purely additive; emitting cannot influence any build (BC2).
+- **Redaction is a HARD pre-write gate (C3).** Every page passes the **`kata-handoff` §7 redaction filter**
+  (no secrets / keys / PII) and is **project-scoped** (`scope:`) **before any write**. Redaction failure ⇒ do
+  not emit that page (fail-closed). This is the data-exfiltration / IP-leak surface — never bypass it.
+- **No-op if unconfigured (BC1).** Emit only when `engram.learnFeed.dir` is set (`protocol/config.md`); absent
+  ⇒ write nothing. Distinct from `engram.backend` (the CONSULT backend, still gated/off).
+- **Output:** N synthesis pages written to `engram.learnFeed.dir` (provenance `produced-by: loop`), plus a
+  one-line emit summary. No skill edits, no version bumps in this sub-mode.

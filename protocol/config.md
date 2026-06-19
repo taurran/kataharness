@@ -21,6 +21,7 @@
 | `runShape` | `"individual" \| "batch" \| "version-up" \| "advanced"` | The preset chosen at bootstrap (GB1) — provenance; presets pre-fill `mode`+`modules`. |
 | `target` | `{ kind: "greenfield" \| "existing", path?: string, baselineGate?: string }` | `greenfield` (default) or `existing` (version-up): `path` = existing repo, `baselineGate` = the command that must be green before *and* after (the regression baseline). |
 | `graph` | `{ budget: int, marginDepth: int, backend: "tree-sitter"\|"grep-reduced"\|"graphify" }` | `kata-graph` tunables: digest token budget (default 3000), ownership reverse-dependent hop depth (default 1), backend selection. |
+| `engram` | `{ backend?: string, learnFeed?: { dir: string } }` | Optional cognitive-fingerprint config (`protocol/engram.md`). **`learnFeed.dir`** = the **LEARN-only feed** (β) emit target; absent ⇒ **no emit** (no-op, BC1). **`backend`** = the CONSULT backend (gated/off today, D9/D56) — **distinct from `learnFeed`**: the feed is active now, CONSULT is not. |
 
 ### `preflight` block (D29)
 | Field | Type | Meaning |

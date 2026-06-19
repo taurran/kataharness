@@ -490,3 +490,16 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   the D71 assumption-log and D42 parking roles; **M3** `kata-defer` category = `handoff` (both artifacts surface
   at the gate/handoff boundary), module `kata/module/defer`. Wired in spec `priming-and-grill` (DESIGN FROZEN
   2026-06-18). *Provenance:* user-approved plan + micro-picks 2026-06-18.
+- **D74 — β LEARN feed: emit-only, zero CONSULT; `engram.learnFeed.dir` is the emit target, distinct from
+  `engram.backend`; the wiki-synthesis schema lives in `engram.md`. (2026-06-18 — loop-cognition β build, micro-
+  picks BP1/BP2)** Built the LEARN-only second-brain feed (D66; the **primary** fingerprint feed, D72) as a
+  **`kata-improve` emit-only sub-mode** (engram seam E6, run at IMPROVE/handoff — out of the one-shot budget). It
+  mines DECISIONS/LESSONS/GRILL-LEDGERs/REVIEWs into **Karpathy-LLM-Wiki synthesis pages** (raw↔synthesis split,
+  `produced-by: loop`, `scope:`, `[[wikilinks]]`) per a schema documented **in `protocol/engram.md`** (one
+  schema, two producers — loop + vault llm-wiki; NOT a separate `wiki-synthesis.md`, BC5). **Emit-only — zero
+  CONSULT** (no read-back path ⇒ cannot influence a build, BC2/A4e). **Redaction is a HARD pre-write gate**
+  (`kata-handoff` §7, C3 — fail-closed). **BP1:** the emit target is a **dedicated `engram.learnFeed.dir`**
+  (active now; the engram prerequisite), **separate from `engram.backend`** (the CONSULT side, still gated/off
+  D9/D56) — absent ⇒ no emit (no-op, BC1). **BP2:** `engram.md` added to the validator's `REQUIRED_PROTOCOL`
+  (default-FAIL floor on the schema). Held 0.1.0 (policy A; no bump despite kata-improve's general semver rule).
+  *Provenance:* user-approved β plan + BP1/BP2 2026-06-18.

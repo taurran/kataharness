@@ -92,6 +92,29 @@ def test_d71_config_documents_grill_skip_rung():
     assert '"skip"' in text, "config.md must document the grill-skip rung value (D71)"
 
 
+def test_beta_engram_learn_feed_schema_documented():
+    # β: the wiki-synthesis LEARN-feed schema is enforced in engram.md (BP2 default-FAIL floor).
+    from validate_skills import REQUIRED_PROTOCOL, check_protocol_schemas
+    req = set(REQUIRED_PROTOCOL["engram.md"])
+    assert {"wiki-synthesis", "produced-by", "learnFeed", "LEARN", "CONSULT"} <= req
+    findings = [str(f) for f in check_protocol_schemas([])]
+    assert not any("engram.md" in f for f in findings), findings
+
+
+def test_beta_no_separate_wiki_synthesis_file():
+    # BC5/A4f: the wiki-synthesis schema lives IN engram.md, never a separate protocol file.
+    assert not (v.REPO_ROOT / "protocol" / "wiki-synthesis.md").exists()
+
+
+def test_beta_kata_improve_learn_feed_emit_only():
+    # β rides a kata-improve emit-only sub-mode; zero CONSULT (BC2), redaction-gated (C3), no-op unconfigured (BC1).
+    body = (v.SKILLS_DIR / "meta" / "kata-improve" / "SKILL.md").read_text(encoding="utf-8")
+    assert "LEARN-feed emit" in body, "kata-improve must host the β LEARN-feed sub-mode"
+    assert "zero consult" in body.lower(), "β must be emit-only — no CONSULT call-site (BC2)"
+    assert "redaction" in body.lower(), "β must redaction-gate before any write (C3)"
+    assert "engram.learnFeed.dir" in body, "β must no-op without a configured feed dir (BC1)"
+
+
 def test_d71_kata_defer_present_and_handoff_category():
     # kata-defer is the grill-skip autonomous-floor safety net (D71) + the no-drift parking valve (D42).
     skills = {s.name: s for s in v.load_skills()}

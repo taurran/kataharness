@@ -57,9 +57,12 @@ grounding-gated), **AO** agent orientation (`kata-orient`, orchestrator-assemble
 adjacency, the receiving half of handoff), **ML** managed learning (two-stage candidate→human-promotion skills
 via `kata-promote`; second-brain LEARN feed; progressive `engram.autonomy`). Hermes-bake-off verdict (D69):
 borrow mechanisms, keep our gates. Freeze-gate audited HOLD→SHIP.
-- [ ] **β — LEARN-only second-brain feed pipeline** (D66, now the **primary** cognitive-fingerprint feed, D72):
-  observe-and-emit, **zero CONSULT**, redaction-gated (C3); emits Karpathy-pattern synthesis. (D16-gate framing
-  dropped per D70 — just build it; ride a `kata-improve` emit-only sub-mode.)
+- [x] **β — LEARN-only second-brain feed pipeline** ✅ **DONE 2026-06-18** (D66/D72; D74 + BP1/BP2): a
+  `kata-improve` **emit-only sub-mode** (engram seam E6) mines DECISIONS/LESSONS/GRILL-LEDGERs/REVIEWs into
+  Karpathy-LLM-Wiki synthesis pages (`produced-by: loop`), per the **wiki-synthesis schema in `protocol/engram.md`**
+  (BC5 — no separate file). **Zero CONSULT** (BC2), **redaction-gated** (C3, fail-closed), no-op without
+  `engram.learnFeed.dir` (BP1, BC1). Validator 26/0 (engram.md now in `REQUIRED_PROTOCOL`, BP2), pytest 18
+  (+3 β seams). Pending: fresh-context `kata-review` (D15). **Next:** RS → AO → ML.
 - [x] **D71 Priming-and-Grill wiring** ✅ **DONE 2026-06-18** (spec `priming-and-grill`, DESIGN FROZEN; D73 +
   micro-picks M1–M3): grill **skip** rung (`tiers["kata-grill"]="skip"`, D73) + `kata-bootstrap` grill-depth
   dial (Phase 1.5, D46) + `kata-readiness` Scope-3 prompt-richness recommendation + `kata-orchestrate` skip-floor
