@@ -75,7 +75,33 @@ Grade each finding/candidate:
 superseding re-plan) / **REJECT** (ungrounded/unsound → logged, not used) / **ESCALATE** (LOCKED tension or
 can't-ground → human). Default-FAIL: nothing is GROUND until its source is read and proves the claim.
 
+## Machine-readable inputs the gate MUST consume
+
+Before scoring any rubric item, the gate **must** locate and read a `RESULT.json` emitted by the run.
+This file is authoritative — the gate does **not** accept a human-transcribed pass count in its place.
+
+Required fields consumed from `RESULT.json` — **the canonical schema emitted by `tools/run_result.py`
+(`build_result`)**, the single source of truth (producer and consumer agree on this shape):
+
+| Field | Required content |
+|---|---|
+| `gateName` | The gate name that produced this result (string, e.g. `"kata-evaluate"`) |
+| `command` | The exact gate command that was run (string) |
+| `exitCode` | Numeric exit code of the test/build command |
+| `passed` / `failed` / `skipped` | Test-case counts (ints) |
+| `stdoutTail` | Verbatim tail of the run's terminal output (string) |
+| `baselineSha` / `resultSha` | Commit SHAs — the tip *before* the work, and the integration HEAD evaluated |
+| `utc` | ISO-8601 UTC timestamp of the result |
+
+If `RESULT.json` is absent or malformed, the gate verdict is automatically **NEEDS_WORK** — the default-FAIL
+invariant applies here too. Do not attempt to reconstruct the counts from prose.
+
+`baselineSha`/`resultSha` make the run reproducible: the report and any future auditor can recompute the exact
+diff (`git diff <baselineSha>..<resultSha>`).
+
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,
 minimal remediation **targeted at the existing plan** (not a re-plan). Seed the orchestrator's fix loop.
+The output **must** include the consumed `baseline_sha` + `result_sha` and the `RESULT.json` field values
+used for rubric items 1–2 so the record is self-contained.
 *(In injected-knowledge mode, output is the per-finding GROUND/REJECT/ESCALATE verdict + cited evidence instead.)*
