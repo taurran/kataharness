@@ -45,6 +45,29 @@ A durable, Obsidian-native doc (frontmatter + tags), one page, dense:
 5. **Open items** — anything deferred ([[kata-defer]] `DEFERRED.md`), assumptions logged
    (`ASSUMPTIONS.md`), and decisions pending a human.
 
+## Machine-readable artifacts the report MUST embed or reference
+
+The report is the durable synthesis of the run's evidence trail. It **must** embed or point to (by path)
+all three of the following artifact types — prose-only descriptions are not sufficient:
+
+1. **`RESULT.json`** — the machine-readable gate output emitted during the [[kata-evaluate]] run. The
+   report must quote (or path-link) the gate name, exit code, and `counts` (pass / fail / skip) verbatim
+   from this file. Do **not** re-transcribe by hand; copy from the artifact.
+
+2. **Footprint manifest + diff-stat** — the list of files actually touched by the run, plus the diff-stat
+   summary (e.g. `git diff --stat baseline..result`). The report must assert that the set of touched files
+   is a subset of (`⊆`) the plan's declared file-ownership partition. Any file outside that set is an
+   unauthorized deviation and must appear in the drift ledger (item 4 above).
+
+3. **Mutation / non-vacuity proof** — the record confirming that the test suite exercised real behavior
+   (e.g., a mutation-test summary, a before/after snapshot, or a logged probe showing at least one
+   meaningful assertion would fail if the logic were removed). This guards against a green gate achieved
+   purely by disabling or vacuously passing tests.
+
+All three artifacts are referenced by their committed path in the tier-2 durable trail. If any artifact is
+absent, the report notes it explicitly as a gap — the "reports, never gates" principle does not change, but
+absence is surfaced so [[kata-evaluate]] (or the human) can act.
+
 ## Discipline
 - **Read the trail, don't re-derive.** Pull from the committed reports / state / board — the report is a
   synthesis of durable record, not a fresh investigation.
