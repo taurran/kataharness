@@ -60,6 +60,12 @@ the resulting plan against the codebase as it actually is, not as imagined. **Bl
 (reverse-reachability over `ref` ∪ `call`) is computed by the **planner**, not here — kata-graph stays a pure
 map-builder; consumers project from the map.
 
+**Consumers project, kata-graph stays pure.** [[kata-orient]] (AO) projects **lateral adjacency pointers** — the
+modules a task's owned files collaborate with — from the `ref` ∪ `call` edges, the same way the planner projects
+blast-radius. kata-graph emits no orientation-specific output: it remains the single feature-agnostic map; each
+consumer derives its own view. No `kata.graph.json` (greenfield / no tree-sitter) ⇒ consumers degrade (AO uses
+vertical rollup only).
+
 ## Caching
 Content-hash per file: only files whose hash changed are re-parsed and rebuilt; everything else is reused. The
 graph persists across runs, so a version-up loop pays the full build cost once and incremental cost thereafter.

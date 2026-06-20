@@ -38,7 +38,8 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
 ## Spine vs module
 - **Spine** (always runs — the consistency machine): `kata-grill` · `kata-context` · `kata-design-doc` · `kata-plan` ·
   `kata-orchestrate` · `kata-board` · `kata-worktree` · `kata-tdd` · `kata-evaluate` · `kata-handoff` ·
-  `kata-selfhandoff` · `kata-bootstrap` · `kata-readiness` · (pre-flight, Spec D). Every mode ends at the same `kata-evaluate` default-FAIL gate.
+  `kata-orient` · `kata-selfhandoff` · `kata-bootstrap` · `kata-readiness` · (pre-flight, Spec D). Every mode ends at the same `kata-evaluate` default-FAIL gate.
+  - `kata-orient` is **spine** — the *receiving* half of the two-way handoff (spine #5): it assembles launch orientation for every dispatched subagent (`protocol/orientation.md`). The writing half is `kata-handoff`.
   - `kata-bootstrap` and `kata-readiness` are **spine** (core, always-available; not optional feature modules): `kata-bootstrap` is the mandatory on-ramp that writes `kata.config`; `kata-readiness` is its pre-flight delegate.
 - **Modules** (additive, independent, declare needs/produces/slot — D20): `quality` (`kata-review` +
   `kata-diagnose` + deeper grill/plan) · `design` (own spec) · `bakeoff` (Spec B) · `improve` (`kata-improve`) ·

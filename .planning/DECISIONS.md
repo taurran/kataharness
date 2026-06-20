@@ -520,3 +520,24 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   grill/context); **module `kata/module/research`** (fires only on a research-needed escalation — conditional/
   additive, not always-runs spine, though it is the floor's *designated* resolver). cost-weight 3; 26→27 skills.
   *Provenance:* user-approved RS plan (HANDOFF §4) 2026-06-19; frozen loop-cognition DESIGN L2/L3.
+- **D76 — AO: `kata-orient` is a SMART, task-type-aware launch orientation — the read half of the handoff;
+  extends frozen loop-cognition L4. (2026-06-19, user-directed)** New skill `kata-orient` (`category: handoff`,
+  **`kata/spine`** — receiving half of spine #5; **read-only** `[Read, Grep, Glob]`, no Write/Agent — returns the
+  assembled orientation + routed-question flags) + new contract **`protocol/orientation.md`**. Beyond the frozen
+  L4 (three tiers stable→context→volatile; vertical rollup = root + nearest-module `AGENTS.md`; lateral =
+  kata-graph adjacency *pointers*, lazy-loaded; prime-frame cap; orchestrate hook-only), the user directed it be
+  **smart like a good employee's orientation**, adding: **(a) task-type awareness** — classify the dispatched
+  task (implement-feature / fix-bug / refactor|version-up / research / evaluate|review / grill|plan) → tailor
+  which docs to surface + which callouts to raise; **(b) contextually-derived pointers + callouts** — scan the
+  in-scope standard markdown (root + nearest-module `AGENTS.md`/`CLAUDE.md`, `CONTEXT.md`, ADRs, DESIGN/PLAN
+  slice, README) and *derive* task-relevant pointers (by path) + callouts (a relevant LOCKED decision, a
+  drift-magnet glossary term, an applicable LESSONS-LEARNED lesson), never inlined wholesale; **(c) smart
+  questioning + routing** — generate the questions a good hire would ask for this task-type/gaps, then route each
+  **docs-answerable → answer inline · genuinely-ambiguous → pre-flag `research-needed` (hand to RS) ·
+  LOCKED-tension/preference → human/grill** — making AO the launch-time *detector* on the grill↔RS spectrum
+  (D71); **(d) handoff alignment from both sides** — `kata-handoff` gains an *Orientation tie-in* mapping its
+  sections to the orientation tiers, so a handoff loads directly into orientation with no re-derivation.
+  `kata-graph` stays a pure map-builder (AO *projects* adjacency from `ref`∪`call`, like the planner projects
+  blast-radius); graceful degradation when graph/module-files absent. `REQUIRED_PROTOCOL += orientation.md`;
+  27→28 skills. *Provenance:* user 2026-06-19 ("make it smart as a good employee… contextually-derived pointers
+  and callouts from standard markdown… task type should cause relative questions… align handoff from both sides").

@@ -19,6 +19,7 @@ Produced by a fresh-context read-only analyzer to inform `docs/MODES-DESIGN.md`.
 | kata-review | evaluate | S | none (open-ended hunt) | fresh-context | **high** | 2 | depth is discretionary → **tier essential/standard/advanced** (confirmed). |
 | kata-board | coordinate | S | none | inline | low | 2 | cumulative reads per cycle; per-invoke trivial; points to protocol (efficient). |
 | kata-handoff | handoff | S | none | inline | low | 1 | one durable write. |
+| kata-orient | handoff | S-M | none (read-only assembly, per dispatch) | inline | med | 2 | receiving half of handoff; scans standard markdown + projects kata-graph adjacency → three-tier launch orientation; pointers-not-payload keeps it bounded. |
 | kata-defer | handoff | S | none (append-as-you-go) | inline | low | 1 | DEFERRED.md parking (D42) + ASSUMPTIONS.md grill-skip floor log (D71); optional module `kata/module/defer`. |
 | kata-worktree | coordinate | S | none | inline | low | 1 | mostly a git recipe. |
 | kata-selfhandoff | handoff | S | none (delegates) | inline | low | 1 | trigger policy only. |

@@ -45,5 +45,15 @@ Handoffs flow every direction — session↔session, agent↔agent, tool↔tool.
 - **Anchor on the plan.** A resumer must be able to re-enter the loop at the exact task boundary.
 - Keep it dense (caveman-style compression is fine) but lossless on the NEXT STEP and the green numbers.
 
+## Orientation tie-in — author for the read side ([[kata-orient]], `protocol/orientation.md`)
+A handoff is the **write** half; [[kata-orient]] is the **read** half that loads it into a fresh subagent. Author
+the handoff so it maps **directly** into the orientation tiers — no re-derivation at load time:
+- **Read-in order** → orientation **context** pointers (the files to roll up).
+- **State** (branch/commit/green numbers) + **NEXT STEP** → orientation **volatile** (assignment + current state).
+- **Suggested next skills** → the **task-type** hint kata-orient classifies on.
+- **Open decisions for the human** → kata-orient's **human-required** questions (surfaced, not auto-resolved).
+Keep these sections present and labelled so the mapping is mechanical. A handoff that follows this shape is
+**directly loadable** by kata-orient; the two compose without loss (the two-way handoff, spine #5).
+
 Self-handoff at a context threshold (write → compact → resume) is a related capability; prefer a
 **task-boundary** trigger over an arbitrary % so no mid-task state is lost. (Automated by [[kata-selfhandoff]].)

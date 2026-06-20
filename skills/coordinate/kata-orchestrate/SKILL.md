@@ -62,10 +62,17 @@ own [[kata-worktree]]); as each integrates, **recompute the frontier** and dispa
 an unrelated wave.
 1. **Isolate.** Use [[kata-worktree]] to give each dispatchable task-owner its own worktree on a per-task
    branch (a lone sequential task may run directly on the integration branch).
-2. **Dispatch one worker subagent per task** via the host's subagent mechanism *(adapter binding: Claude →
-   the `Agent` tool; other hosts → their subagent/ACP call — the capability is abstract, the binding is the
-   adapter's job)*. Pin the implementer model to the cheaper workhorse, held constant across any A/B. Each
-   worker prompt MUST carry, and ONLY carry, its task:
+2. **Orient, then dispatch one worker subagent per task** via the host's subagent mechanism *(adapter binding:
+   Claude → the `Agent` tool; other hosts → their subagent/ACP call — the capability is abstract, the binding is
+   the adapter's job)*. Pin the implementer model to the cheaper workhorse, held constant across any A/B.
+   - **AO hook (per dispatch):** invoke [[kata-orient]] (read-only) to assemble the worker's **launch
+     orientation** (three-tier, task-type-tailored, prime-frame-budgeted — `protocol/orientation.md`); inject it
+     as the worker's context. Act on the **routed-question flags** it returns: **`research-needed`** → route to
+     [[kata-research]] via the grounding-gate path *before* dispatching (don't launch a worker into a known
+     unresolved gap); **human-required** → escalate. This is a **hook** — the assembly logic lives in
+     `kata-orient`, not here (D24d). No `kata.graph.json` / module files ⇒ kata-orient degrades to the vertical
+     rollup; never blocks a dispatch.
+   Each worker prompt MUST carry, and ONLY carry, its task (the orientation frames it; the task scopes it):
    - an instruction to **execute via [[kata-tdd]]** (the worker's execute-phase discipline — vertical
      red→green, stay in lane, escalate don't re-plan);
    - the task's `<action>`, `<read_first>`, `<acceptance_criteria>`, and its **owned files** (it may edit

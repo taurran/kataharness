@@ -238,6 +238,7 @@ REQUIRED_PROTOCOL = {
     "graph.md": ["id", "kind", "path", "name", "symKind", "span", "rank", "weight", "edge", "meta"],
     "escalation.md": ["taskId", "kind", "decisionNeeded", "optionsConsidered", "agentRecommendation", "status"],
     "engram.md": ["CONSULT", "LEARN", "wiki-synthesis", "produced-by", "redaction", "learnFeed"],
+    "orientation.md": ["stable", "context", "volatile", "adjacency", "task-type", "callout"],
 }
 
 

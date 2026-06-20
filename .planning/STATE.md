@@ -133,9 +133,13 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   `kata-review` RUBRIC (never bypassed, D33); orchestrator folds GROUND findings via deliberate superseding
   re-plan, else REJECT/escalate-to-human. `kata/module/research`; **27 skills**. Validator 27/0, pytest 21.
   **Pending: fresh-context `kata-review`.**
-- **NEXT (see HANDOFF §4 THE PLAN):** (1) ~~wire D71~~ ✅; (2) ~~build β~~ ✅; (3) ~~RS~~ ✅; (4) **AO**
-  (`kata-orient` + `protocol/orientation.md` + `kata-graph` adjacency) **→ ML** (`kata-promote`); (5)
-  freeze+build sprint-cadence; (6) dogfood version-up on KataHarness itself.
+- **AO ✅ DONE 2026-06-19** (D76; AO-GB1/2/3 + user extensions): `kata-orient` (spine, read-only) three-tier
+  launch orientation + `protocol/orientation.md`; **task-type-aware**, contextually-derived **pointers+callouts**
+  from standard markdown, **smart questioning routed** (answer-inline / research-needed→RS / human→grill),
+  `kata-handoff` Orientation tie-in (aligned both sides). **28 skills.** Validator 28/0, pytest 24.
+- **NEXT (see HANDOFF §4 THE PLAN):** (1) ~~D71~~ ✅; (2) ~~β~~ ✅; (3) ~~RS~~ ✅; (4) ~~AO~~ ✅; **(5) full
+  validation stack on RS + AO** (user-requested, do before ML); (6) **ML** (`kata-promote`); (7) freeze+build
+  sprint-cadence; (8) dogfood version-up on KataHarness itself.
 
 ## Next action — RS → AO → ML (D16 lock dissolved by D70; D71 + β DONE 2026-06-18)
 > ⚠️ The numbered list below predates D70 and is **superseded** — it described the D16-first sequencing that no

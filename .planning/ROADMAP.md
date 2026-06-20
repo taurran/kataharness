@@ -76,10 +76,15 @@ borrow mechanisms, keep our gates. Freeze-gate audited HOLD→SHIP.
   `kata-review` RUBRIC (never bypassed, D33); orchestrator folds GROUND findings via a deliberate superseding
   re-plan, else REJECT/escalate. `kata/module/research`; 26→**27 skills**. Validator 27/0, pytest 21 (+3 RS seams).
   Pending: fresh-context `kata-review` (D15).
-- [ ] **AO + ML(skill-distillation/promotion) + CONSULT + autonomy — remaining loop-cognition.** **AO next**
-  (`kata-orient` + `protocol/orientation.md` + `kata-graph` adjacency, L4); then **ML** (`kata-promote`,
-  two-stage gate, `engram.autonomy`, L5/L6). Endgame (α–ε): build fully → full tests → **dogfood version-up on
-  KataHarness itself**, CONSULT-enabled once β has matured the fingerprint.
+- [x] **AO — `kata-orient` + `protocol/orientation.md`** ✅ **DONE 2026-06-19** (D76; AO-GB1/2/3 + user
+  extensions): read-only three-tier launch orientation (stable→context→volatile), vertical rollup + kata-graph
+  lateral adjacency pointers, **task-type-aware**, contextually-derived **pointers + callouts** from standard
+  markdown, **smart questioning routed** (answer-inline / research-needed→RS / human-required→grill), `kata-handoff`
+  **Orientation tie-in** (aligned both sides). `kata/spine`; 27→**28 skills**. Validator 28/0, pytest 24. Pending:
+  full validation stack on RS **and** AO.
+- [ ] **ML + CONSULT + autonomy — remaining loop-cognition.** **ML next** (`kata-promote` two-stage
+  candidate→human-promotion gate; `engram.autonomy` AND-gate; `agentSkills.dir`; L5/L6). Endgame (α–ε): build
+  fully → full tests → **dogfood version-up on KataHarness itself**, CONSULT-enabled once β has matured the fingerprint.
 
 **Pre-v0.1 (now):** **Modes Spec A (A1–A4) COMPLETE + merged.** **D16-as-RCT is RETIRED (D70, L11)** — the
 autonomous grill-vs-baseline A/B tests the wrong axis; **autonomous reliability is demonstrated** instead, and

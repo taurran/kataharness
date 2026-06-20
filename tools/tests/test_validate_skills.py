@@ -115,6 +115,34 @@ def test_beta_kata_improve_learn_feed_emit_only():
     assert "engram.learnFeed.dir" in body, "β must no-op without a configured feed dir (BC1)"
 
 
+def test_ao_orientation_protocol_schema_documented():
+    # AO: the orientation contract is enforced (tiers + adjacency + task-type + callout).
+    from validate_skills import REQUIRED_PROTOCOL, check_protocol_schemas
+    req = set(REQUIRED_PROTOCOL["orientation.md"])
+    assert {"stable", "context", "volatile", "adjacency", "task-type", "callout"} <= req
+    findings = [str(f) for f in check_protocol_schemas([])]
+    assert not any("orientation.md" in f for f in findings), findings
+
+
+def test_ao_kata_orient_present_spine_no_write():
+    # AO: kata-orient is the read-side mirror of kata-handoff — spine, read-only (no Write/Edit/Agent).
+    skills = {s.name: s for s in v.load_skills()}
+    assert "kata-orient" in skills, "kata-orient must exist (loop-cognition AO)"
+    fm = skills["kata-orient"].frontmatter
+    assert fm.get("category") == "handoff", "kata-orient category must be handoff (read half of handoff)"
+    assert "kata/spine" in (fm.get("tags") or []), "kata-orient is spine (receiving half of the two-way handoff)"
+    tools = fm.get("allowed-tools") or []
+    for forbidden in ("Write", "Edit", "Agent"):
+        assert forbidden not in tools, f"kata-orient must be read-only — found {forbidden}"
+
+
+def test_ao_handoff_orientation_tiein():
+    # The write side (kata-handoff) must author for the read side (kata-orient) — aligned from both sides (D76).
+    body = (v.SKILLS_DIR / "handoff" / "kata-handoff" / "SKILL.md").read_text(encoding="utf-8")
+    assert "Orientation tie-in" in body, "kata-handoff must document the orientation tie-in"
+    assert "kata-orient" in body, "kata-handoff must reference the read-side consumer"
+
+
 def test_rs_kata_research_present_no_write():
     # RS: kata-research is the escalation-routed in-loop researcher — fresh-context, NO-WRITE (RS-GB3/L4).
     skills = {s.name: s for s in v.load_skills()}
