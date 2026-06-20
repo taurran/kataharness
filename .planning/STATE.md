@@ -1,6 +1,15 @@
 # STATE — KataHarness
 
-**Phase:** v0.1 skill-complete · Modes A1–A4 merged · loop-cognition COMPLETE · sprint-cadence BUILT+SHIP (D78–D86) · **DOGFOOD #1 done (self version-up, GATE PASS)** · **31 skills / 0 errors · pytest 40 · Snyk 0** · on **private GitHub remote** (taurran/kataharness) · **Version:** pre-v0.1 · **Updated:** 2026-06-19
+**Phase:** v0.1 skill-complete · loop-cognition + sprint-cadence built · **DOGFOOD #1 + #2 done** · **first tagged release `v0.1.0-alpha.1`** · **31 skills / 0 errors · pytest 72 · Snyk 0** · private remote (taurran/kataharness) · **Updated:** 2026-06-19
+
+> **Dogfood #2 — the REAL orchestrated run (2026-06-19, `v0.1.0-alpha.1`):** "evaluation self-sufficiency" built
+> by **4 concurrent worker subagents in isolated git worktrees**, plan-guardian-driven, **zero-conflict merge**,
+> fresh-context default-FAIL eval **PASS** (with its own non-vacuity probes), human version-select. Added
+> `tools/run_result.py` (RESULT.json) · `tools/footprint.py` · `tools/mutation_check.py` + the `kata-tdd`
+> mutation-proof step + `kata-report`/`kata-evaluate` machine-readable-artifact contracts. pytest 40→72.
+> **Honest residual:** the emit/consume path is **not yet wired into a live gate** — the libraries + contracts
+> exist; an integration slice must actually call them (→ BACKLOG ★, next increment). Safety tag `pre-dogfood-2`
+> + `v0.1.0-alpha.1` on the remote. See `.planning/specs/dogfood-selfup-2/`.
 
 > **Dogfood #1 (2026-06-19):** self version-up enforcing `allowed-tools` ran through the full loop (readiness →
 > skip-grill → footprint plan → TDD → fresh-context default-FAIL eval **PASS** → report). **Machinery held**

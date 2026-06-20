@@ -2,6 +2,13 @@
 
 Promote to ROADMAP milestones when ready.
 
+- **★ DOGFOOD #2 RESIDUAL — wire the eval artifacts into a live gate (NEXT increment, 2026-06-19).** Dogfood #2
+  built the *libraries + contracts* for evaluation self-sufficiency (`tools/run_result.py`, `footprint.py`,
+  `mutation_check.py`; `kata-report`/`kata-evaluate` require them) but **nothing yet CALLS them** during a real
+  run — the fresh-context evaluator flagged it as the headline residual. Next slice: make `kata-evaluate`/the
+  gate command actually **emit `RESULT.json`** (via `run_result.run_gate`+`build_result`+`write_result`), compute
+  the **footprint manifest** against the plan, and record the **mutation-proof** result — so depth is delivered
+  end-to-end, not staged as parts. (Cosmetic: `mutation_check.went_red`/`non_vacuous` are always-equal — tidy.)
 - **★ DOGFOOD #1 FINDINGS (2026-06-19, self version-up — see `.planning/specs/dogfood-selfup-1/`).**
   - **★ Evaluation-artifact self-sufficiency (HIGH — the headline).** A live run must be **evaluable in depth
     from its end artifacts alone** — today it is not. Upgrade `kata-report`/`kata-evaluate` to **self-emit**: a

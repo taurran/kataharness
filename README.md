@@ -86,8 +86,10 @@ spiral, doesn't lose your context, fits *how you build*, and *gets better over t
 
 ## Status
 
-**Skill suite complete & green — not yet field-proven end-to-end.** 31 skills, all `0.1.0`/experimental;
-validator 0 errors · tests passing · Snyk clean. The full cognitive architecture is built for the **Claude-only
+**`v0.1.0-alpha.1` (first tagged milestone) — skill suite complete & green, not yet field-proven end-to-end.**
+31 skills, all `0.1.0`/experimental; validator 0 errors · tests passing · Snyk clean. Two self-dogfood runs
+done — the second was a real **orchestrated** version-up (concurrent worker subagents in isolated worktrees,
+fresh-context gate, human version-select). The full cognitive architecture is built for the **Claude-only
 core**, now spanning **one-shot and incremental (sprint) delivery**, plus the learning loop (LEARN feed +
 managed skill promotion). What remains before v0.1 *ships*: the **dogfood** (run the harness against a real
 target — its own next version) to turn "built" into "proven"; a small **install & portability layer** (a
