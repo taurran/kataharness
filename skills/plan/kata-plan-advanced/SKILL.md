@@ -27,7 +27,8 @@ tags:
 
 **Method:** see [`../kata-plan/RUBRIC.md`](../kata-plan/RUBRIC.md) — the tier-invariant method (vertical-slice
 decomposition, disjoint file-ownership, the wave/DAG structure, per-task shape, the quality bar). This file
-sets ONLY the depth.
+sets ONLY the depth. When `delivery.shape == "incremental"`, run the **roadmap layer**
+([`../kata-plan/ROADMAP.md`](../kata-plan/ROADMAP.md)) first, then apply this depth to the active sprint only.
 
 ## Depth contract (Advanced)
 

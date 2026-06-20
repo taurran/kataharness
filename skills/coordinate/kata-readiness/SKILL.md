@@ -41,6 +41,16 @@ each a checklist; report PASS / WARN / BLOCK per item and an overall verdict.
 - **Version-up gate:** for a version-up run (`target.kind == existing`), **BLOCK if tree-sitter is not
   available** — the kata-graph ingestion (seeding + blast-radius) needs AST; there is no inert grep-mode
   fallback for version-up.
+- **Sprint-progression detection (sprint-cadence D81, T5).** For an incremental run
+  (`delivery.shape == "incremental"`, `protocol/config.md`), detect where the run stands: is there an **open
+  roadmap artifact**, what is the **current sprint index**, and is the boundary **dirty** (mid-sprint,
+  uncommitted work ⇒ *resume the sprint*) or **gated** (sprint gate green, awaiting the boundary ⇒
+  *course-correct*)? **Rebuild the tier-3 progression cache from the git-committed tier-2 trail**
+  (`protocol/state.md` §sprint-progression): current sprint = which per-sprint reports exist + are gated. This
+  is what makes a fresh session or clone resumable (R5) — the `.kata/` cache is disposable; the committed trail
+  is authoritative. Report the rebuilt `{sprintIndex, gateStatus, boundary: dirty|gated}` in the verdict.
+  **Read-only:** readiness *computes* the rebuilt state and hands it to the orchestrator (the single writer,
+  L3) — it never writes `.kata/` itself. One-shot runs (no `delivery` / `shape: one-shot`) skip this entirely.
 
 ## Scope 3 — priming-prompt richness → recommended grill depth (D71)
 Assess the **priming prompt** (the human's original spec for this run) and recommend a starting **grill-depth

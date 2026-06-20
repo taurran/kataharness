@@ -27,13 +27,22 @@ This is the active remedy for context rot (spine #5). It owns only the **trigger
 mechanics** — the durable artifact itself is written by [[kata-handoff]] (one format, [[protocol|handoff]]
 schema). Do not duplicate the handoff template here.
 
-## When to fire (configurable, anti-over-conservative — D8)
-- **Trigger at a configurable context threshold**, not a naive fixed %. Default is generous, not timid — the
-  failure mode this skill is explicitly tuned *against* is wrapping up sessions early ([[LESSONS-LEARNED]];
-  user-flagged). Err toward continuing.
+## When to fire (prime-frame trigger — supersedes D8's % clause, B1/D83)
+- **Trigger at the model-resolved prime-frame fraction**, not a user-set naive % (sprint-cadence D83/B1: the
+  threshold moves from D8's user-set percentage → the **prime frame** = the model's recommended effective
+  working band, adapter-resolved to real tokens; see `protocol/config.md` *Prime-frame sizing*). Do **not**
+  hard-code a number here — read the policy.
+- **D8's principles survive.** The default is still **generous, not timid** — the failure mode this skill is
+  explicitly tuned *against* is wrapping up sessions early ([[LESSONS-LEARNED]]; user-flagged). Err toward
+  continuing; the prime frame already reserves headroom, so do not pre-empt it.
 - **Prefer a task boundary.** Fire *between* tasks/waves, never mid-task — mid-task compaction loses the
   in-flight state that's hardest to reconstruct. If the threshold trips mid-task, finish (or cleanly
   checkpoint) the task first.
+- **Intra-sprint refresh (sprint-cadence B1).** In an incremental run, self-handoff also runs **inside** a
+  sprint — a pure context refresh with **no human gate and no drift** (it is not a boundary). The sprint is the
+  one-shot mechanism + a *planned* stop at prime-frame **sprint** boundaries for gate+report+course-correct
+  ([[kata-sprint]]); intra-sprint self-handoff is the *unplanned* refresh that keeps the current sprint going.
+  Same primitive (the prime frame), two policies.
 
 ## The cycle
 1. **Write** the durable handoff via [[kata-handoff]] (read-in order, state + green numbers, NEXT STEP in

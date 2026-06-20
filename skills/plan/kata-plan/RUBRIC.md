@@ -70,3 +70,9 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
 - The DAG is acyclic and every task is reachable.
 
 When these hold, **freeze the plan** and hand to [[kata-orchestrate]].
+
+## Incremental delivery — run the roadmap layer first
+When `delivery.shape == "incremental"` (`protocol/config.md`), **before** applying this tier method, run the
+**roadmap layer** ([`ROADMAP.md`](./ROADMAP.md), sprint-cadence D85): partition the frozen DESIGN into
+prime-frame-sized sprints, emit the roadmap artifact, then apply *this* method at the configured tier to **only
+the active sprint's** slice, just-in-time. One-shot delivery (the default) ignores the roadmap layer entirely.

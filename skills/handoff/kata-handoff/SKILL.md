@@ -57,3 +57,14 @@ Keep these sections present and labelled so the mapping is mechanical. A handoff
 
 Self-handoff at a context threshold (write → compact → resume) is a related capability; prefer a
 **task-boundary** trigger over an arbitrary % so no mid-task state is lost. (Automated by [[kata-selfhandoff]].)
+
+## Boundary handoff — the sprint-cadence variant ([[kata-sprint]], `protocol/handoff.md`)
+At a **sprint boundary**, [[kata-sprint]] composes a handoff that is **this same artifact plus** the sprint
+fields defined in the [[protocol|handoff]] schema's *Boundary handoff* section — do not re-derive the shape,
+point to it:
+- **State** also carries the **sprint gate result** (the green numbers that closed the sprint) + the **sprint
+  index** (what just gated, what is next on the roadmap).
+- **Open decisions** also carries the boundary **drift-labelling** (G2 — each pending course-correction
+  classified by reach), surfaced for the human, never auto-applied.
+- A boundary handoff **supersedes** a coincident self-handoff (T1): at a boundary, write **one** artifact.
+The one-shot/session handoff above is unchanged; this is purely additive for incremental runs.
