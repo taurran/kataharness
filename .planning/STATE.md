@@ -137,9 +137,14 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   launch orientation + `protocol/orientation.md`; **task-type-aware**, contextually-derived **pointers+callouts**
   from standard markdown, **smart questioning routed** (answer-inline / research-needed→RS / human→grill),
   `kata-handoff` Orientation tie-in (aligned both sides). **28 skills.** Validator 28/0, pytest 24.
-- **NEXT (see HANDOFF §4 THE PLAN):** (1) ~~D71~~ ✅; (2) ~~β~~ ✅; (3) ~~RS~~ ✅; (4) ~~AO~~ ✅; **(5) full
-  validation stack on RS + AO** (user-requested, do before ML); (6) **ML** (`kata-promote`); (7) freeze+build
-  sprint-cadence; (8) dogfood version-up on KataHarness itself.
+- **ML ✅ DONE 2026-06-19** (D77; L5/L6): `kata-promote` stage-2 human promotion gate (AskUserQuestion);
+  agent-distilled candidates (STANDARDS §1.3, `<agentSkills.dir>/candidates/`, not universal) → grounding gate →
+  human gate; `engram.autonomy` AND-gate default **always-human**; candidate lifecycle in `state.md`. **29 skills.**
+  Validator 29/0, pytest 27. **⇒ loop-cognition COMPLETE (RS + AO + ML).**
+- **NEXT (see HANDOFF §4 THE PLAN):** (1)–(4) ✅ D71/β/RS/AO; (5) ✅ RS+AO validation; (6) ✅ ML →
+  **loop-cognition done.** **(7) Freeze + build sprint-cadence** (apply its 2026-06-15 must-fixes); **(8) dogfood
+  version-up on KataHarness itself** (the endgame: build fully → full tests → self-improve). CONSULT/full-autonomy
+  stay gated on a mature engram.
 
 ## Next action — RS → AO → ML (D16 lock dissolved by D70; D71 + β DONE 2026-06-18)
 > ⚠️ The numbered list below predates D70 and is **superseded** — it described the D16-first sequencing that no

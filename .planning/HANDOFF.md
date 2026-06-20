@@ -1,7 +1,7 @@
 ---
 date: 2026-06-19 (D71 + β shipped + reviewed; full-session adversarial validation SHIP; handoff for the morning)
 branch: master (local only — no remote yet)
-green: validator 28 skills / 0 errors · pytest 24 passed · Snyk 0 (re-confirm before building)
+green: validator 29 skills / 0 errors · pytest 27 passed · Snyk 0 (re-confirm before building)
 tags: [handoff, D71, D73, D74, priming-and-grill, beta-learn-feed, loop-cognition, next-RS, full-context]
 ---
 
@@ -41,7 +41,14 @@ tags: [handoff, D71, D73, D74, priming-and-grill, beta-learn-feed, loop-cognitio
   gate** (injected-knowledge mode of `kata-evaluate` + `kata-review` RUBRIC, never bypassed D33) grades findings;
   orchestrator folds **GROUND-only** via a deliberate superseding re-plan, else REJECT/escalate. **D75.** Review
   SHIP (no-worker-direct-dispatch is structural — only orchestrate has the Agent tool).
-- **AO BUILT (commit `<this session>`).** `kata-orient` (spine, read-only) — **smart, task-type-aware** launch
+- **ML BUILT (commit `<this session>`) ⇒ loop-cognition COMPLETE.** `kata-promote` (meta) — the **stage-2
+  human promotion gate** for agent-distilled candidate skills. Stage 1: the loop distils a candidate via
+  `kata-write-skill` (`scope:agent`, `<agentSkills.dir>/candidates/`, **not universal**, STANDARDS §1.3
+  discriminators) → grounding gate → Stage 2: **human** gate `kata-promote` (AskUserQuestion) → `stable` + scope
+  bump. **`engram.autonomy` AND-gate** (default **always-human**; grounding never bypassed at any level, D33).
+  Candidate lifecycle in `protocol/state.md`. **D77.** 28→29 skills. Review SHIP (security: no self-promotion
+  path; candidates structurally invisible to the validator). **RS + AO + ML all built + validated.**
+- **AO BUILT (commit `34ee3ab`).** `kata-orient` (spine, read-only) — **smart, task-type-aware** launch
   orientation, the read half of handoff. Three tiers (stable→context→volatile) + vertical rollup + kata-graph
   lateral adjacency pointers; **contextually-derived pointers + callouts** from standard markdown; **smart
   questioning routed** (answer-inline / `research-needed`→RS / human-required→grill — AO is the launch-time
@@ -52,40 +59,38 @@ tags: [handoff, D71, D73, D74, priming-and-grill, beta-learn-feed, loop-cognitio
 ## 3. State of the specs / artifacts
 - **priming-and-grill** — DESIGN FROZEN + SHIPPED (D71/D72/D73; A1–A6 met). RS slot in the floor is documented
   but **not yet wired** — that is the next build.
-- **loop-cognition** — DESIGN FROZEN (D60–D69). **β slice DONE.** Remaining: **RS, AO, ML** (now the head).
+- **loop-cognition** — DESIGN FROZEN (D60–D69). **COMPLETE + validated:** β (D74), RS (D75), AO (D76), ML (D77)
+  all built; full validation stack SHIP. Forward-wired but inert until a mature engram / multi-module target:
+  CONSULT, `engram.autonomy` auto-tiers, AO lateral-adjacency/module-rollup, β redaction-runtime (all BACKLOG).
 - **engram** — `protocol/engram.md` contract + seams E1–E21 + C1–C6 + the NEW wiki-synthesis schema section.
 - **sprint-cadence** — grill CONVERGED; freeze-gate audit **HOLD** (apply must-fixes before freezing): roadmap-layer
   NET-NEW in kata-plan; pin tunables; D8 supersession; minimal kata-report v1.
 - **d16-planning-varied-ab** — RETIRED as an RCT (D70/L11); kept as the autonomous-reliability demonstration.
 
-## 4. THE PLAN (recommended build sequence — ML is the head)
-1. ~~**RS — `kata-research`**~~ ✅ **DONE** (D75; commit `88a964f`).
-2. ~~**AO — `kata-orient`**~~ ✅ **DONE** (D76; see §2). Smart task-type-aware orientation + handoff alignment.
-3. ~~**Full validation stack on RS + AO**~~ ✅ **DONE 2026-06-19** — fresh-context adversarial pass over both
-   features + their seam returned **SHIP**.
-4. **ML — `kata-promote`** (the head; loop-cognition L5/L6/LC-GB3-5). NEEDS A FRESH-CONTEXT PLAN + HUMAN APPROVAL
-   before building. Scope (from loop-cognition DESIGN §2 + L5/L6):
-   - **create `skills/meta/kata-promote/SKILL.md`** — end-of-session **human promotion gate** for candidate
-     skills (`experimental→stable` + `scope` bump); `agnostic`, `cost-weight: 2`, `allowed-tools: [Read, Grep,
-     Glob, Edit, Write, AskUserQuestion]`; must preserve `name==dir` (D27).
-   - **two-stage lifecycle (L5):** stage 1 = agent distils a **candidate** (`status:experimental, scope:agent`,
-     NOT loaded universally) → L2 grounding gate (already built); stage 2 = `kata-promote` human gate. Home =
-     `agentSkills.dir` (first-run-configured; `toolkit/skills/candidates/` → promote into `toolkit/skills/<cat>/`).
-     Discriminators: `provenance: agent-distilled`, `scope: agent|coding-agent|universal`, tag `kata/origin/agent`.
-   - **progressive autonomy (L6):** `engram.autonomy: always-human|assisted|auto-when-confident` (default
-     **always-human**) in `protocol/config.md`; skill-promotion is the first seam; **grounding gate never bypassed**.
-   - validator/tests; register kata-promote (28→**29**); README/cost/taxonomy; planning docs.
-5. **Freeze + build sprint-cadence** (apply its must-fixes). 6. **Dogfood version-up on KataHarness itself.**
+## 4. THE PLAN (loop-cognition COMPLETE — next is sprint-cadence + the dogfood endgame)
+1. ~~**RS — `kata-research`**~~ ✅ (D75, `88a964f`). 2. ~~**AO — `kata-orient`**~~ ✅ (D76, `34ee3ab`).
+3. ~~**Full validation stack on RS + AO**~~ ✅ SHIP. 4. ~~**ML — `kata-promote`**~~ ✅ **DONE** (D77; see §2).
+   **⇒ loop-cognition (RS + AO + ML) is COMPLETE + validated.**
+5. **Freeze + build sprint-cadence** (the head). Its grill CONVERGED but the **freeze-gate audit is HOLD** —
+   apply the 2026-06-15 must-fixes FIRST, then freeze its DESIGN, then build: roadmap-layer is NET-NEW in
+   `kata-plan`; pin tunables; D8 supersession; minimal `kata-report` v1. See
+   `.planning/specs/sprint-cadence/GRILL-LEDGER.md`. NEEDS A FRESH-CONTEXT PLAN + HUMAN APPROVAL before building.
+6. **Dogfood the endgame:** run the A4 **version-up** machinery **on KataHarness itself** — the harness improving
+   the harness (the user's stated goal: "build fully → full tests → self-improve"). This is also where the
+   **deferred-runtime items get exercised** (BACKLOG): β structural redaction filter + test; AO module-rollup +
+   lateral-adjacency on a real multi-module target.
+7. **CONSULT + full autonomy** — gated on a mature engram (D9/D56); the dials are wired + default-safe, lighting
+   them up is post-β-maturity, not now.
 4. **Freeze + build sprint-cadence** (apply its must-fixes).
 5. **Dogfood the endgame:** run the A4 **version-up** machinery **on KataHarness itself** (the user's goal:
    "build fully → full tests → self-improve to version-up"). β's CONSULT side + the redaction-runtime gate
    (BACKLOG) mature here.
 
 ## 5. Open tasks / commits / method
-- **Recent commits (master, local-only):** `808df3f` (D71) · `b4f8ffb` (ai-slop BACKLOG) · `8ac6740` (β) ·
-  `6e77b30` (full-session validation + handoff) · `88a964f` (RS — D75) · **this commit** (AO — D76 + RS/AO
-  validation-stack SHIP).
-- **Live task list:** #14 (D71) ✅, #8 (β) ✅, #15 (RS) ✅, #16 (AO) ✅ — done. Next = ML (`kata-promote`).
+- **Recent commits (master, local-only):** `8ac6740` (β) · `6e77b30` (validation+handoff) · `88a964f` (RS) ·
+  `34ee3ab` (AO — D76) · `7cfe2f5` (RS+AO validation-stack note) · **this commit** (ML — D77, loop-cognition complete).
+- **Live task list:** #14 (D71) ✅, #8 (β) ✅, #15 (RS) ✅, #16 (AO) ✅, #17 (ML) ✅ — **all done.**
+  Next = freeze + build sprint-cadence (§4.5), then the dogfood version-up endgame.
 - **Method:** Fable 5 on judgment (Opus fallback — Fable unavailable all session) / Sonnet on mechanical + test
   arms; gate every merge on validator + pytest; fresh-context adversarial review (D15) before "done"; supersede
   decisions, never rewrite history; no skill self-certifies (L8). Held at 0.1.0 (policy A) until v0.1 ships.

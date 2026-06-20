@@ -26,6 +26,7 @@ Produced by a fresh-context read-only analyzer to inform `docs/MODES-DESIGN.md`.
 | kata-context | plan | S | none | inline | low | 1 | incremental glossary. |
 | kata-improve | meta | S | none | inline (out-of-loop) | med | 1 | cross-run, doesn't tax a one-shot run. |
 | kata-write-skill | meta | S | none | inline (out-of-loop) | low | 1 | authoring; points to STANDARDS. |
+| kata-promote | meta | S | none (human gate, session-end) | inline (out-of-loop) | low | 2 | stage-2 human promotion gate for agent-distilled candidates; AskUserQuestion review; honors engram.autonomy. |
 | kata-graph | plan | M-L | none (single pass, no spawn/loop) | inline | med | 3 | tree-sitter parse + PageRank over a repo; the version-up ingestion engine. |
 | kata-research | plan | M | none (fresh-context, single dispatch) | fresh-context | high | 3 | in-loop research subagent; fires only on a `research-needed` escalation (often zero); web+local grounding spins variable. optional module `kata/module/research`. |
 

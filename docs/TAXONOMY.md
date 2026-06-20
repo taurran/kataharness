@@ -42,7 +42,9 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
   - `kata-orient` is **spine** — the *receiving* half of the two-way handoff (spine #5): it assembles launch orientation for every dispatched subagent (`protocol/orientation.md`). The writing half is `kata-handoff`.
   - `kata-bootstrap` and `kata-readiness` are **spine** (core, always-available; not optional feature modules): `kata-bootstrap` is the mandatory on-ramp that writes `kata.config`; `kata-readiness` is its pre-flight delegate.
 - **Modules** (additive, independent, declare needs/produces/slot — D20): `quality` (`kata-review` +
-  `kata-diagnose` + deeper grill/plan) · `design` (own spec) · `bakeoff` (Spec B) · `improve` (`kata-improve`) ·
+  `kata-diagnose` + deeper grill/plan) · `design` (own spec) · `bakeoff` (Spec B) · `improve` (`kata-improve` +
+  `kata-write-skill` + `kata-promote` — the meta family: improve edits repo skills, promote is the human gate for
+  agent-distilled toolkit skills, L5/L6) ·
   `defer` (`kata-defer` — the no-drift parking valve + grill-skip assumption log, D42/D71) · `graph`
   (`kata-graph`, version-up) · `research` (`kata-research` — escalation-routed in-loop research subagent,
   the autonomous floor's ambiguity resolver, D62/D71; fires only on a `research-needed` escalation).

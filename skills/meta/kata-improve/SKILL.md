@@ -47,6 +47,11 @@ These are durable files; load them when improving, not into the loop.
   and update the **README index** (the source of truth — keep it honest; the v0.1 review caught drift here).
 - If the change is a new skill → [[kata-write-skill]]. If it retires one → `deprecated/` + `supersedes`, never
   silent deletion.
+- **Managed-learning path (loop-cognition L5):** if a recurring lesson is reusable as a skill but the loop
+  (not a human) is distilling it mid-stream, author it as an **agent-distilled candidate** via
+  [[kata-write-skill]] (sandboxed: `scope: agent`, in `<agentSkills.dir>/candidates/`, NOT loaded universally) →
+  grounding gate → the human persistence gate [[kata-promote]] at session end. Repo-skill edits go the normal
+  route above; only *agent-distilled* skills route through the two-stage candidate→promote gate.
 - Record the improvement back into `LESSONS-LEARNED.md`/`DECISIONS.md` so the kata compounds.
 - Keep changes evidence-driven: cite the lesson/finding that motivated each. No speculative gold-plating.
 

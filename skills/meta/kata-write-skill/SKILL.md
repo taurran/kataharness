@@ -46,6 +46,17 @@ live in `docs/STANDARDS.md` — **read it; do not duplicate it here** (DRY). Thi
    source · use. A skill not in the index isn't released.
 4. **Provenance** — add/extend the `research/NOTES.md` adopt/drop/distort row for any external source.
 
+## Authoring an agent-distilled CANDIDATE (stage 1 of managed learning — loop-cognition L5)
+When the loop (not a human) distils a reusable pattern into a skill, author it as a **candidate**, not a core
+skill:
+- Write it to **`<agentSkills.dir>/candidates/<name>/SKILL.md`** (the toolkit, `protocol/config.md`) — **NOT**
+  into this repo's `skills/` tree, and **not loaded universally**.
+- Add the **agent-distilled discriminators** ([[STANDARDS]] §1.3): `provenance: agent-distilled`,
+  `scope: agent`, `summary` (≤60 chars), tag `kata/origin/agent`. `status: experimental`, `version: 0.1.0`.
+- The candidate then passes the **grounding gate** ([[kata-evaluate]] injected-knowledge mode, D33) for
+  soundness, and waits for the **human promotion gate** ([[kata-promote]], stage 2) before it can persist or
+  widen its `scope`. Authoring a candidate never makes it universal — that is [[kata-promote]]'s decision.
+
 ## Review checklist (before done)
 - [ ] `name`==dir, `kata-<verb>`; category in enum; `agnostic: true` honest (no tool-specific deps in body —
       push tool bindings to an adapter note, like kata-grill/kata-orchestrate do)

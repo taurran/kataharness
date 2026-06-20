@@ -68,6 +68,20 @@ tags:                            # OPTIONAL but RECOMMENDED. namespaced automati
   (`kata-evaluate`, `kata-review`). The capability is abstract; this is the binding, documented in the
   Claude adapter, never depended on by the agnostic body.
 
+### 1.3 Agent-distilled discriminators (managed learning — loop-cognition L5/D77)
+A skill the **loop itself distilled** (not a human-authored core skill) carries extra discriminators so it is
+**matched-but-marked** — same `kata-<verb>` name + category + v2 schema, *plus*:
+- `provenance: agent-distilled` — distinguishes it from human-authored skills.
+- `scope: agent | coding-agent | universal` — its reach. A **candidate** is `scope: agent` and **NOT loaded
+  universally**; [[kata-promote]] bumps the scope on promotion.
+- `summary: <≤60 chars>` — a one-line catalog blurb (tighter than `description`).
+- tag `kata/origin/agent` — the automation slice for agent-made skills.
+
+These live on skills in the **agent-skills toolkit** (`agentSkills.dir`, first-run-configured) — **outside this
+repo's `skills/` tree**, so `tools/validate_skills.py` (which scans `skills/`) does not enforce them; they are
+governed by [[kata-promote]] (stage 2) + the grounding gate (stage 1, [[kata-evaluate]] injected-knowledge mode,
+D33). Core repo skills never carry these fields.
+
 ## 2. Naming convention (permeates everything)
 
 - **Skills:** `kata-<verb>` — `kata-grill`, `kata-plan`, `kata-orchestrate`, `kata-board`,

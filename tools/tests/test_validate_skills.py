@@ -143,6 +143,30 @@ def test_ao_handoff_orientation_tiein():
     assert "kata-orient" in body, "kata-handoff must reference the read-side consumer"
 
 
+def test_ml_kata_promote_present_human_gate():
+    # ML: kata-promote is the stage-2 human promotion gate — meta, with AskUserQuestion (the human decision).
+    skills = {s.name: s for s in v.load_skills()}
+    assert "kata-promote" in skills, "kata-promote must exist (loop-cognition ML)"
+    fm = skills["kata-promote"].frontmatter
+    assert fm.get("category") == "meta", "kata-promote category must be meta"
+    assert "AskUserQuestion" in (fm.get("allowed-tools") or []), "kata-promote must gate on a human (AskUserQuestion)"
+
+
+def test_ml_config_autonomy_and_agentskills():
+    # ML: config carries the promotion-autonomy dial (default always-human) + the agent-skills toolkit dir.
+    text = (v.REPO_ROOT / "protocol" / "config.md").read_text(encoding="utf-8")
+    assert "autonomy" in text and "always-human" in text, "config.md must document engram.autonomy (default always-human)"
+    assert "agentSkills" in text, "config.md must document the agentSkills toolkit dir"
+
+
+def test_ml_standards_agent_distilled_discriminators():
+    # ML: the agent-distilled discriminator set is documented (matched-but-marked, L5).
+    text = (v.REPO_ROOT / "docs" / "STANDARDS.md").read_text(encoding="utf-8")
+    assert "agent-distilled" in text, "STANDARDS must document provenance: agent-distilled"
+    assert "kata/origin/agent" in text, "STANDARDS must document the agent-origin tag"
+    assert "scope:" in text or "scope " in text, "STANDARDS must document the scope discriminator"
+
+
 def test_rs_kata_research_present_no_write():
     # RS: kata-research is the escalation-routed in-loop researcher — fresh-context, NO-WRITE (RS-GB3/L4).
     skills = {s.name: s for s in v.load_skills()}

@@ -82,9 +82,16 @@ borrow mechanisms, keep our gates. Freeze-gate audited HOLD→SHIP.
   markdown, **smart questioning routed** (answer-inline / research-needed→RS / human-required→grill), `kata-handoff`
   **Orientation tie-in** (aligned both sides). `kata/spine`; 27→**28 skills**. Validator 28/0, pytest 24. Pending:
   full validation stack on RS **and** AO.
-- [ ] **ML + CONSULT + autonomy — remaining loop-cognition.** **ML next** (`kata-promote` two-stage
-  candidate→human-promotion gate; `engram.autonomy` AND-gate; `agentSkills.dir`; L5/L6). Endgame (α–ε): build
-  fully → full tests → **dogfood version-up on KataHarness itself**, CONSULT-enabled once β has matured the fingerprint.
+- [x] **ML — `kata-promote` two-stage promotion gate + autonomy dial** ✅ **DONE 2026-06-19** (D77; L5/L6,
+  LC-GB3/4/5): stage-1 agent-distilled **candidate** (via `kata-write-skill`, `scope:agent`,
+  `<agentSkills.dir>/candidates/`, not universal) → grounding gate → stage-2 **human** gate `kata-promote`
+  (AskUserQuestion); `engram.autonomy` AND-gate (default **always-human**, grounding never bypassed); STANDARDS
+  §1.3 discriminators; candidate lifecycle in `protocol/state.md`. 28→**29 skills**. Validator 29/0, pytest 27.
+  **⇒ loop-cognition is COMPLETE (RS + AO + ML all built + validated).**
+- [ ] **CONSULT + full autonomy — gated on a mature engram (D9/D56), post-β-maturity.** The dials
+  (`engram.autonomy`, `engram.backend`) are wired + default-safe; lighting them up is the endgame, not now.
+  Endgame (α–ε): build fully → full tests → **dogfood version-up on KataHarness itself**, CONSULT-enabled once β
+  has matured the fingerprint.
 
 **Pre-v0.1 (now):** **Modes Spec A (A1–A4) COMPLETE + merged.** **D16-as-RCT is RETIRED (D70, L11)** — the
 autonomous grill-vs-baseline A/B tests the wrong axis; **autonomous reliability is demonstrated** instead, and

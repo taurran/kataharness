@@ -541,3 +541,23 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   blast-radius); graceful degradation when graph/module-files absent. `REQUIRED_PROTOCOL += orientation.md`;
   27→28 skills. *Provenance:* user 2026-06-19 ("make it smart as a good employee… contextually-derived pointers
   and callouts from standard markdown… task type should cause relative questions… align handoff from both sides").
+- **D77 — ML: two-stage candidate→human-promotion gate (`kata-promote`); agent-distilled skills are
+  matched-but-marked + sandboxed until a human promotes them; `engram.autonomy` is a maturity∧config AND-gate,
+  default `always-human`; the grounding gate is never bypassed. (2026-06-19 — loop-cognition L5/L6, LC-GB3/4/5)**
+  Completes loop-cognition. **Stage 1 (L5):** the loop distils a reusable pattern into an **agent-distilled
+  candidate** via `kata-write-skill` — `provenance: agent-distilled`, `scope: agent`, `summary` ≤60ch, tag
+  `kata/origin/agent` (STANDARDS §1.3), written to `<agentSkills.dir>/candidates/` (**outside the repo
+  `skills/` tree** — validator never scans it), **not loaded universally** → clears the **grounding gate**
+  (`kata-evaluate` injected-knowledge mode, D33). **Stage 2 (L5):** end-of-session **human** gate `kata-promote`
+  (new; `category: meta`, cost-weight 2, `allowed-tools` incl. `AskUserQuestion`) decides
+  promote/keep-sandboxed/reject → on promote: `experimental→stable` + `scope` bump, move into
+  `<agentSkills.dir>/skills/<category>/` preserving `name==dir` (D27). *Rejected:* Hermes' no-gate
+  instant-universal model (uncontrolled positive feedback — wrong for a one-shot harness; RESEARCH bake-off).
+  **Progressive autonomy (L6):** `engram.autonomy: always-human | assisted | auto-when-confident`
+  (`protocol/config.md`; default **always-human**, D25-safe); `auto-when-confident` fires only when opted-in ∧
+  fingerprint-mature ∧ high-confidence ∧ precedented, per-decision; novel/low-confidence/LOCKED-adjacent always
+  stop the human (C2/C4); every auto-promotion logged (C6). **Autonomy replaces human *judgment*, never the
+  grounding gate (D33/L2).** Gated on a mature engram (D9/D56) — today the dial sits at always-human, so
+  kata-promote is a pure human review. `agentSkills.dir` first-run-configured; candidate lifecycle
+  (`distilled→grounded→promoted|sandboxed|rejected`) tracked in `protocol/state.md`. 28→29 skills; loop-cognition
+  COMPLETE (RS+AO+ML all built). *Provenance:* user-approved continue 2026-06-19; frozen loop-cognition DESIGN L5/L6.
