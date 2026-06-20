@@ -70,10 +70,16 @@ borrow mechanisms, keep our gates. Freeze-gate audited HOLD→SHIP.
   **25→26 skills**) + grill↔RS spectrum documented (`docs/DESIGN.md`, `protocol/config.md`, RUBRIC). Validator
   26/0, pytest 15 (+2 D71 seams). **Caveat:** the floor's RS slot is documented/wired-for but lit in the
   loop-cognition phase. Pending: fresh-context `kata-review` (D15) over the diff.
-- [ ] **RS + AO + ML(skill-distillation/promotion) + injected-knowledge gate + CONSULT + autonomy — UNBLOCKED**
-  (D70 dissolved the D16-first lock). **RS is load-bearing** (the autonomous floor's ambiguity resolver, D71).
-  Endgame (α–ε): build fully → full tests → **dogfood version-up on KataHarness itself**, CONSULT-enabled once β
-  has matured the fingerprint.
+- [x] **RS — `kata-research` in-loop research subagent + L2 grounding gate** ✅ **DONE 2026-06-19** (D75;
+  RS-GB1/2/3): escalation-routed (`research-needed` kind), fresh-context **no-write**, returns
+  `{claim, source, confidence, grounds-to-plan?}`; injected-knowledge **grounding gate** in `kata-evaluate` +
+  `kata-review` RUBRIC (never bypassed, D33); orchestrator folds GROUND findings via a deliberate superseding
+  re-plan, else REJECT/escalate. `kata/module/research`; 26→**27 skills**. Validator 27/0, pytest 21 (+3 RS seams).
+  Pending: fresh-context `kata-review` (D15).
+- [ ] **AO + ML(skill-distillation/promotion) + CONSULT + autonomy — remaining loop-cognition.** **AO next**
+  (`kata-orient` + `protocol/orientation.md` + `kata-graph` adjacency, L4); then **ML** (`kata-promote`,
+  two-stage gate, `engram.autonomy`, L5/L6). Endgame (α–ε): build fully → full tests → **dogfood version-up on
+  KataHarness itself**, CONSULT-enabled once β has matured the fingerprint.
 
 **Pre-v0.1 (now):** **Modes Spec A (A1–A4) COMPLETE + merged.** **D16-as-RCT is RETIRED (D70, L11)** — the
 autonomous grill-vs-baseline A/B tests the wrong axis; **autonomous reliability is demonstrated** instead, and

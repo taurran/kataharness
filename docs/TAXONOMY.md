@@ -43,7 +43,8 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
 - **Modules** (additive, independent, declare needs/produces/slot — D20): `quality` (`kata-review` +
   `kata-diagnose` + deeper grill/plan) · `design` (own spec) · `bakeoff` (Spec B) · `improve` (`kata-improve`) ·
   `defer` (`kata-defer` — the no-drift parking valve + grill-skip assumption log, D42/D71) · `graph`
-  (`kata-graph`, version-up).
+  (`kata-graph`, version-up) · `research` (`kata-research` — escalation-routed in-loop research subagent,
+  the autonomous floor's ambiguity resolver, D62/D71; fires only on a `research-needed` escalation).
 
 ## Run-shape preset (GB1)
 A **Run-shape preset** is a named bundle over the mode axis (individual / batch / version-up / advanced) that `kata-bootstrap` pre-fills during composition — e.g. "individual" maps to a single-worker, single-slice run shape — so the user picks a name rather than configuring axes manually.

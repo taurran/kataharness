@@ -56,6 +56,26 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
    have decided — is **NEEDS_WORK**. This is how the floor's "misalignment caught at the boundary" promise is
    actually enforced, not merely asserted. (No `ASSUMPTIONS.md` ⇒ this item is N/A, not a failure.)
 
+## Injected-knowledge grounding mode (the L2 gate — RS findings / ML candidates; D33)
+A distinct invocation: instead of grading a built phase, grade **knowledge about to influence the build** —
+[[kata-research]] findings (loop-cognition RS-GB2) or, later, ML candidate skills. The orchestrator runs this
+**before** folding any injected knowledge. **Structural invariant (D33) — never tiered, never bypassed, even at
+full autonomy** (an engram may replace human *judgment*, never this gate). Fresh-context, no-write, default-FAIL.
+Grade each finding/candidate:
+1. **Grounding.** Open the cited `source` and confirm it **actually supports** the `claim` — verbatim, not
+   paraphrase-drift. An uncited or source-doesn't-say claim ⇒ **REJECT** (a hallucinated source is the failure
+   mode this gate exists to catch).
+2. **No drift.** Folding it in must not contradict a **LOCKED decision** or the frozen plan. `grounds-to-plan?:
+   NO` (a `lockedDecisionInTension`) ⇒ **ESCALATE to the human** — never let injected knowledge silently
+   re-decide a LOCKED decision (D1/C4).
+3. **Adversarial soundness.** The finding must survive a red-team — source authoritative (not a low-quality or
+   stale page), confidence not overstated, no second-order breakage. For depth here, pair with [[kata-review]]'s
+   injected-knowledge soundness surface.
+**Verdict per finding: GROUND** (cited, supported, no LOCKED conflict → orchestrator may fold via a deliberate
+superseding re-plan) / **REJECT** (ungrounded/unsound → logged, not used) / **ESCALATE** (LOCKED tension or
+can't-ground → human). Default-FAIL: nothing is GROUND until its source is read and proves the claim.
+
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,
 minimal remediation **targeted at the existing plan** (not a re-plan). Seed the orchestrator's fix loop.
+*(In injected-knowledge mode, output is the per-finding GROUND/REJECT/ESCALATE verdict + cited evidence instead.)*

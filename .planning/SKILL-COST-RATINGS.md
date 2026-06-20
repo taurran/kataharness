@@ -26,6 +26,7 @@ Produced by a fresh-context read-only analyzer to inform `docs/MODES-DESIGN.md`.
 | kata-improve | meta | S | none | inline (out-of-loop) | med | 1 | cross-run, doesn't tax a one-shot run. |
 | kata-write-skill | meta | S | none | inline (out-of-loop) | low | 1 | authoring; points to STANDARDS. |
 | kata-graph | plan | M-L | none (single pass, no spawn/loop) | inline | med | 3 | tree-sitter parse + PageRank over a repo; the version-up ingestion engine. |
+| kata-research | plan | M | none (fresh-context, single dispatch) | fresh-context | high | 3 | in-loop research subagent; fires only on a `research-needed` escalation (often zero); web+local grounding spins variable. optional module `kata/module/research`. |
 
 **Tier (separate files):** kata-grill, kata-review, kata-plan, kata-diagnose(light/full). **Mode-hint depth:**
 kata-design-doc, kata-tdd. **Never tier:** kata-evaluate (floor) + all weight-1 + kata-orchestrate.

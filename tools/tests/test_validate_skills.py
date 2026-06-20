@@ -115,6 +115,34 @@ def test_beta_kata_improve_learn_feed_emit_only():
     assert "engram.learnFeed.dir" in body, "β must no-op without a configured feed dir (BC1)"
 
 
+def test_rs_kata_research_present_no_write():
+    # RS: kata-research is the escalation-routed in-loop researcher — fresh-context, NO-WRITE (RS-GB3/L4).
+    skills = {s.name: s for s in v.load_skills()}
+    assert "kata-research" in skills, "kata-research must exist (loop-cognition RS)"
+    fm = skills["kata-research"].frontmatter
+    assert fm.get("category") == "plan", "kata-research category must be plan (control-flow, kin to grill/context)"
+    assert "kata/module/research" in (fm.get("tags") or []), "kata-research is the research module"
+    tools = fm.get("allowed-tools") or []
+    for forbidden in ("Write", "Edit", "Agent"):
+        assert forbidden not in tools, f"kata-research must be no-write/no-dispatch — found {forbidden}"
+
+
+def test_rs_escalation_research_needed_kind():
+    # The escalation payload must carry the research-needed routing kind (RS-GB1).
+    text = (v.REPO_ROOT / "protocol" / "escalation.md").read_text(encoding="utf-8")
+    assert "research-needed" in text, "escalation.md must document the research-needed kind"
+
+
+def test_rs_grounding_gate_documented():
+    # The L2 grounding gate (injected-knowledge mode) lives in kata-evaluate + kata-review RUBRIC, never bypassed (D33).
+    ev = (v.SKILLS_DIR / "evaluate" / "kata-evaluate" / "SKILL.md").read_text(encoding="utf-8")
+    assert "njected-knowledge grounding mode" in ev, "kata-evaluate must host the injected-knowledge grounding mode"
+    assert "GROUND" in ev and "REJECT" in ev and "ESCALATE" in ev, "grounding gate verdicts must be defined"
+    assert "D33" in ev, "the grounding gate must be marked the never-tiered structural invariant (D33)"
+    rub = (v.SKILLS_DIR / "evaluate" / "kata-review" / "RUBRIC.md").read_text(encoding="utf-8")
+    assert "njected-knowledge soundness" in rub, "kata-review RUBRIC must host the injected-knowledge soundness surface"
+
+
 def test_d71_kata_defer_present_and_handoff_category():
     # kata-defer is the grill-skip autonomous-floor safety net (D71) + the no-drift parking valve (D42).
     skills = {s.name: s for s in v.load_skills()}

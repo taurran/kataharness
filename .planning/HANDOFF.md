@@ -1,7 +1,7 @@
 ---
 date: 2026-06-19 (D71 + β shipped + reviewed; full-session adversarial validation SHIP; handoff for the morning)
 branch: master (local only — no remote yet)
-green: validator 26 skills / 0 errors · pytest 18 passed · Snyk 0 (re-confirm before building)
+green: validator 27 skills / 0 errors · pytest 21 passed · Snyk 0 (re-confirm before building)
 tags: [handoff, D71, D73, D74, priming-and-grill, beta-learn-feed, loop-cognition, next-RS, full-context]
 ---
 
@@ -36,6 +36,12 @@ tags: [handoff, D71, D73, D74, priming-and-grill, beta-learn-feed, loop-cognitio
   (BP2). **D74.**
 - **Full-session adversarial validation (fresh-context, 2026-06-19): SHIP** — the two builds compose, don't
   collide (deliberate `learnFeed`≠`backend` split; floor framing consistent; spine intact; specs satisfied).
+- **RS BUILT (commit `<this session>`).** `kata-research` — escalation-routed (`research-needed` kind),
+  fresh-context **no-write** in-loop researcher; returns `{claim, source, confidence, grounds-to-plan?}`. The
+  **L2 grounding gate** (injected-knowledge mode of `kata-evaluate` + `kata-review` RUBRIC, never bypassed D33)
+  grades findings; orchestrator folds **GROUND-only** via a deliberate superseding re-plan, else REJECT/escalate.
+  **D75.** 26→27 skills. Fresh-context review SHIP (no-worker-direct-dispatch is structural — only orchestrate
+  has the Agent tool).
 
 ## 3. State of the specs / artifacts
 - **priming-and-grill** — DESIGN FROZEN + SHIPPED (D71/D72/D73; A1–A6 met). RS slot in the floor is documented
@@ -46,28 +52,20 @@ tags: [handoff, D71, D73, D74, priming-and-grill, beta-learn-feed, loop-cognitio
   NET-NEW in kata-plan; pin tunables; D8 supersession; minimal kata-report v1.
 - **d16-planning-varied-ab** — RETIRED as an RCT (D70/L11); kept as the autonomous-reliability demonstration.
 
-## 4. THE PLAN (recommended build sequence — RS is the head)
-1. **RS — `kata-research` in-loop research subagent** (loop-cognition DESIGN L3=RS-GB1/2/3, L2 grounding gate).
-   **Load-bearing** — it's the autonomous floor's in-loop ambiguity resolver that D71 + β both reference as "named,
-   not yet wired." Scope (NEEDS A FRESH-CONTEXT PLAN + HUMAN APPROVAL before building):
-   - **create `skills/plan/kata-research/SKILL.md`** — fresh-context **no-write**; returns
-     `{claim, source, confidence, grounds-to-plan?}`; `category: plan`, `agnostic: true`, `cost-weight: 3`,
-     `allowed-tools: [Read, Grep, Glob, WebFetch, WebSearch]` (no Write/Edit/Agent).
-   - **escalation-routed (RS-GB1):** worker hits a must-deliver feature with no in-plan solution → emits the D52
-     escalation payload (`protocol/escalation.md`) → **orchestrator** dispatches `kata-research` (NOT worker-direct
-     — that would be silent drift) → findings → **L2 grounding gate** → orchestrator folds *grounded* findings via
-     a **deliberate re-plan baked as a superseding decision** (audited), or rejects+logs; can't-ground ⇒ escalate
-     to the human.
-   - **L2 grounding gate (RS-GB2):** an **injected-knowledge assessment mode** of `kata-evaluate`/`kata-review`
-     grades RS findings (and later ML candidates) for grounding + drift + adversarial soundness. **Structural
-     invariant (D33) — never tiered, never bypassed.**
-   - **`kata-orchestrate`:** RS-dispatch hook on escalation + the fold-grounded-findings-via-re-plan path (hooks
-     only, D24d preserved — it stays the single config-driven dispatcher).
-   - Register: validator/tests (26→**27**), README `--write` + Use cell, SKILL-COST-RATINGS, TAXONOMY; planning docs.
-   - Method: build directly (like D71/β) OR subagent-driven; gate on validator+pytest; **fresh-context
-     `kata-review` (D15)** before done; Snyk on any Python.
-2. **AO — `kata-orient`** (handoff; orchestrator-assembled three-tier orientation + `protocol/orientation.md` +
-   `kata-graph` adjacency) — loop-cognition L4/AO-GB1-3.
+## 4. THE PLAN (recommended build sequence — AO is the head)
+1. ~~**RS — `kata-research`**~~ ✅ **DONE 2026-06-19** (D75; see §2). Grounding gate + escalation routing shipped.
+2. **AO — `kata-orient`** (the head; loop-cognition L4/AO-GB1-3). NEEDS A FRESH-CONTEXT PLAN + HUMAN APPROVAL
+   before building. Scope (from loop-cognition DESIGN §2 + L4):
+   - **create `skills/handoff/kata-orient/SKILL.md`** — assemble launch orientation (the read-side mirror of
+     `kata-handoff`); `agnostic: true`, `cost-weight: 2`, `allowed-tools: [Read, Grep, Glob]` (NO Write).
+   - **create `protocol/orientation.md`** — the orientation contract: **three tiers** stable→context→volatile
+     (Hermes `prompt_builder` pattern), **vertical rollup** (root invariants + nearest module `AGENTS.md`/
+     `CLAUDE.md`, 2026 nearest-along-path standard), **lateral adjacency POINTERS** (kata-graph-derived,
+     lazy-loaded, never inlined), whole orientation **capped to the prime frame** (sprint-cadence SC-GB7).
+   - **`kata-orchestrate`:** AO-assembly **hook only** (marshals task + file-ownership it already owns; the
+     *logic* lives in kata-orient — D24d preserved).
+   - **`kata-graph`:** emit adjacency pointers for AO (reuse `kata.graph.json` edges).
+   - **validator:** `REQUIRED_PROTOCOL += orientation.md`; register kata-orient (27→**28**); README/cost/taxonomy.
 3. **ML — `kata-promote`** (meta; two-stage candidate→human-promotion; `engram.autonomy`; `agentSkills.dir`) — L5/L6.
 4. **Freeze + build sprint-cadence** (apply its must-fixes).
 5. **Dogfood the endgame:** run the A4 **version-up** machinery **on KataHarness itself** (the user's goal:
@@ -75,9 +73,9 @@ tags: [handoff, D71, D73, D74, priming-and-grill, beta-learn-feed, loop-cognitio
    (BACKLOG) mature here.
 
 ## 5. Open tasks / commits / method
-- **This session's commits (master, local-only):** `808df3f` (D71 Priming-and-Grill wiring) · `b4f8ffb`
-  (ai-slop-detector BACKLOG note) · `8ac6740` (β LEARN feed) · **this commit** (validation fixes + handoff refresh).
-- **Live task list:** #14 (wire D71) ✅, #8 (build β) ✅ — both done. Next = RS (open a new task).
+- **Recent commits (master, local-only):** `808df3f` (D71 Priming-and-Grill) · `b4f8ffb` (ai-slop BACKLOG) ·
+  `8ac6740` (β LEARN feed) · `6e77b30` (full-session validation SHIP + handoff) · **this commit** (RS — D75).
+- **Live task list:** #14 (D71) ✅, #8 (β) ✅, #15 (RS) ✅ — done. Next = AO (open a new task).
 - **Method:** Fable 5 on judgment (Opus fallback — Fable unavailable all session) / Sonnet on mechanical + test
   arms; gate every merge on validator + pytest; fresh-context adversarial review (D15) before "done"; supersede
   decisions, never rewrite history; no skill self-certifies (L8). Held at 0.1.0 (policy A) until v0.1 ships.

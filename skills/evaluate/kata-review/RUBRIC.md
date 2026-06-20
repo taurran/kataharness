@@ -32,6 +32,18 @@ findings, not fixes; findings seed a deliberate orchestrator decision.
    input. Confirm threats in the plan's model are actually mitigated, not just claimed.
 5. **Second-order effects.** What does this change *downstream* that no one looked at?
 
+## Injected-knowledge soundness mode (the grounding gate's adversarial leg — RS findings / ML candidates; D33)
+When invoked on **injected knowledge** rather than a built phase, run this surface as the adversarial half of the
+**grounding gate** (the conformance/drift half is [[kata-evaluate]]'s injected-knowledge mode). **This surface is
+NOT tiered** — when grading injected knowledge it runs at full depth regardless of the review tier (D33: the
+gate is never tiered, never bypassed). Attack each [[kata-research]] finding (or ML candidate):
+- **Source authority & hallucination.** Is the cited `source` real, authoritative, and current — or a
+  low-quality / stale / fabricated citation? Open it; a source that does not say what the claim asserts is the
+  primary kill.
+- **Confidence calibration.** Is `confidence: HIGH` actually warranted, or optimism? Argue the finding is wrong.
+- **Plan-fit honesty.** Does `grounds-to-plan?: YES` hide a LOCKED-decision tension the researcher glossed?
+A finding that fails here is **HOLD** (→ REJECT or ESCALATE at the gate), never folded into the build.
+
 ---
 
 ## Output format

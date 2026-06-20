@@ -128,8 +128,14 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   synthesis pages per the schema in `protocol/engram.md` (`produced-by: loop`); **zero CONSULT** (BC2),
   **redaction-gated** (C3), no-op without `engram.learnFeed.dir` (BP1/BC1); `engram.md` now validator-enforced
   (BP2). Validator 26/0, pytest 18. **Pending: fresh-context `kata-review`.**
-- **NEXT (see HANDOFF §4 THE PLAN):** (1) ~~wire D71~~ ✅ done; (2) ~~build β~~ ✅ done; (3) **RS → AO → ML**
-  (loop-cognition build-out, the next head); (4) freeze+build sprint-cadence; (5) dogfood version-up on KataHarness itself.
+- **RS ✅ DONE 2026-06-19** (D75; RS-GB1/2/3): `kata-research` escalation-routed fresh-context **no-write**
+  researcher (`research-needed` kind); **L2 grounding gate** = injected-knowledge mode of `kata-evaluate` +
+  `kata-review` RUBRIC (never bypassed, D33); orchestrator folds GROUND findings via deliberate superseding
+  re-plan, else REJECT/escalate-to-human. `kata/module/research`; **27 skills**. Validator 27/0, pytest 21.
+  **Pending: fresh-context `kata-review`.**
+- **NEXT (see HANDOFF §4 THE PLAN):** (1) ~~wire D71~~ ✅; (2) ~~build β~~ ✅; (3) ~~RS~~ ✅; (4) **AO**
+  (`kata-orient` + `protocol/orientation.md` + `kata-graph` adjacency) **→ ML** (`kata-promote`); (5)
+  freeze+build sprint-cadence; (6) dogfood version-up on KataHarness itself.
 
 ## Next action — RS → AO → ML (D16 lock dissolved by D70; D71 + β DONE 2026-06-18)
 > ⚠️ The numbered list below predates D70 and is **superseded** — it described the D16-first sequencing that no

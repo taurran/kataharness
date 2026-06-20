@@ -503,3 +503,20 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   D9/D56) — absent ⇒ no emit (no-op, BC1). **BP2:** `engram.md` added to the validator's `REQUIRED_PROTOCOL`
   (default-FAIL floor on the schema). Held 0.1.0 (policy A; no bump despite kata-improve's general semver rule).
   *Provenance:* user-approved β plan + BP1/BP2 2026-06-18.
+- **D75 — RS: `kata-research` is an escalation-routed, fresh-context, NO-WRITE in-loop research subagent;
+  findings pass a never-bypassed grounding gate before a deliberate superseding re-plan. (2026-06-19 —
+  loop-cognition RS-GB1/2/3 build)** The autonomous floor's in-loop ambiguity resolver (the without-human end of
+  the grill↔RS spectrum, D71). **Routing (RS-GB1):** a worker hits a must-deliver feature with **no in-plan
+  solution** → writes a `kind: "research-needed"` escalation (`protocol/escalation.md`) → the **orchestrator**
+  (never the worker) dispatches `kata-research` (fresh-context, `allowed-tools: [Read,Grep,Glob,WebFetch,
+  WebSearch]` — no Write/Edit/Agent) scoped to the payload. It returns `{claim, source, confidence,
+  grounds-to-plan?}`, grounding every claim in a cited source; it never re-plans, writes, or injects.
+  **Grounding gate (RS-GB2, L2):** findings pass an **injected-knowledge mode** of `kata-evaluate` (grounding +
+  drift → GROUND/REJECT/ESCALATE) paired with `kata-review`'s **injected-knowledge soundness** surface
+  (source-authority/hallucination/confidence). **Structural invariant — never tiered, never bypassed (D33).**
+  **Fold (RS-GB3):** only GROUND findings enter the build, via a **deliberate re-plan baked as a superseding
+  decision** (audited in the drift ledger + escalation `resolution`); REJECT → logged; can't-ground / LOCKED
+  tension → re-classify `human-required` (D1/C4 — never improvise). **Category `plan`** (control-flow, kin to
+  grill/context); **module `kata/module/research`** (fires only on a research-needed escalation — conditional/
+  additive, not always-runs spine, though it is the floor's *designated* resolver). cost-weight 3; 26→27 skills.
+  *Provenance:* user-approved RS plan (HANDOFF §4) 2026-06-19; frozen loop-cognition DESIGN L2/L3.

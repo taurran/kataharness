@@ -72,10 +72,12 @@ an unrelated wave.
      nothing else);
    - the rule: *"Execute against the frozen plan. Do not re-plan or re-decide any LOCKED decision. If you
      hit an unknown or the plan seems wrong, STOP and ESCALATE via the board — do not improvise."*
-   - the escalate predicate: *"Escalate ONLY if completing your task's acceptance test requires writing a
-     file you do not own; otherwise record out-of-scope discoveries as a deferral note ([[kata-defer]]) and
-     keep going. In a grill-skip run, also log any spec assumption you had to make to [[kata-defer]] so it
-     surfaces at the gate/handoff."*
+   - the escalate predicate: *"Escalate if completing your task's acceptance test requires writing a file you
+     do not own (`kind: orchestrator-resolvable`), OR if the frozen plan has no solution for a must-deliver
+     part of your task and you cannot resolve it without improvising (`kind: research-needed` — do NOT guess;
+     the orchestrator will route it to research). Otherwise record out-of-scope discoveries as a deferral note
+     ([[kata-defer]]) and keep going. In a grill-skip run, also log any spec assumption you had to make to
+     [[kata-defer]] so it surfaces at the gate/handoff."*
    - the per-task verify command (default-FAIL).
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
@@ -93,9 +95,21 @@ one-line `ESCALATE | <task-id> | <summary>` to [[kata-board]] (the board stays o
 payload). You then **park** the escalating task **and its DAG-dependents** (remove them from the frontier),
 **keep dispatching the rest of the frontier**, and checkpoint completions as they integrate.
 
-**Classify every escalation:**
+**Classify every escalation** (you make the final routing call; the worker's `kind` is a hint you may re-classify):
 - **Orchestrator-resolvable** — e.g. a needed re-scope / re-partition of file-ownership. You decide it
   yourself and re-dispatch a tightened task; this **never reaches a human**.
+- **Research-needed** — a must-deliver feature with **no in-plan solution** (RS-GB1). Dispatch [[kata-research]]
+  as a **fresh-context, no-write** subagent, scoped to the escalation payload. Its findings
+  (`{claim, source, confidence, grounds-to-plan?}`) are an *input*, never auto-applied — run them through the
+  **grounding gate** ([[kata-evaluate]] injected-knowledge mode + [[kata-review]]'s injected-knowledge soundness
+  surface; **never bypassed, D33**). Then:
+  - **GROUND** → fold the finding via a **deliberate re-plan baked as a superseding decision** (audited in the
+    drift ledger + the escalation `resolution`) — supersede, never silently rewrite the frozen plan; re-dispatch
+    the tightened task. This is the *only* way new knowledge enters the build.
+  - **REJECT** (ungrounded/unsound) → log it in the escalation payload; do **not** fold; if the gap remains,
+    re-classify **human-required**.
+  - **ESCALATE / can't-ground** (LOCKED tension, or no authoritative answer) → re-classify **human-required**.
+  Research that can't ground is **never** improvised into the build.
 - **Human-required** — a LOCKED-decision conflict. **Only this surfaces to a human.** A LOCKED-decision
   conflict is escalated to the human, **never silently re-decided** (that is the exact drift the harness
   exists to prevent). *(Consulting an engram to auto-resolve before a hard-wait is a future capability — not

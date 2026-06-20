@@ -7,7 +7,7 @@ Structured escalation payload produced by an escalating worker. Machine state �
 | Field | Type | Meaning |
 |---|---|---|
 | `taskId` | string | REQUIRED — the task identifier this escalation belongs to |
-| `kind` | `"orchestrator-resolvable" \| "human-required"` | REQUIRED — classification of the escalation |
+| `kind` | `"orchestrator-resolvable" \| "research-needed" \| "human-required"` | REQUIRED — classification of the escalation. `research-needed` = a must-deliver feature with **no in-plan solution** that needs grounded research before a decision (routes to [[kata-research]], loop-cognition RS-GB1). The worker sets its best guess; the **orchestrator** makes the final routing call and may re-classify. |
 | `decisionNeeded` | string | REQUIRED — clear statement of the decision that must be made |
 | `optionsConsidered` | array | REQUIRED — list of options the worker evaluated before escalating |
 | `agentRecommendation` | string | REQUIRED — the worker's recommended option with reasoning |
@@ -22,7 +22,12 @@ Structured escalation payload produced by an escalating worker. Machine state �
 
 **Producer:** the escalating worker writes it (status `open`).
 
-**Lifecycle:** orchestrator classifies/routes (orchestrator-resolvable → re-scope, never reaches a human; human-required → surfaces only when the frontier is blocked); the resolver writes `status: resolved` + `resolution`.
+**Lifecycle:** orchestrator classifies/routes — `orchestrator-resolvable` → re-scope, never reaches a human;
+`research-needed` → dispatch a fresh-context, no-write [[kata-research]]; its findings pass the grounding gate
+([[kata-evaluate]] injected-knowledge mode, never bypassed, D33); **gate-passed** findings are folded via a
+**deliberate superseding re-plan** (audited), rejected findings are logged, can't-ground → re-classify
+`human-required`; `human-required` → surfaces only when the frontier is blocked. The resolver writes
+`status: resolved` + `resolution`.
 
 ## Notes
 
