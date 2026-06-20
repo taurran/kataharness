@@ -636,3 +636,13 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   multi-model. **Execution UX:** orchestrated runs dispatch **foreground-parallel**; a host-agnostic artistic
   ASCII **`subagent-dashboard`** is build-later. (GL-R3a/b/d + UX) · *Provenance for D87–D90:* greater-loop
   interactive grill (3 rounds, 2026-06-20), `GRILL-LEDGER.md`; DESIGN **FROZEN** 2026-06-20.
+- **D91 — Modules are self-contained directories under `modules/<name>/` (own AGENTS.md + own skills).** Phase-1
+  structural resolution (user-chosen 2026-06-20). A module dir holds **both** its `AGENTS.md` (which *drives* it
+  via kata-orient's path-based nested-rollup) **and** its skills (`modules/<name>/<skill>/SKILL.md`) — a true
+  plug-and-play unit a platform (MindBridge) can swap wholesale. The skill-conformance validator is extended to
+  **discover `modules/*/*/SKILL.md`** alongside `skills/*/*/SKILL.md` (index + wikilink-resolution + README-sync
+  apply uniformly); module skills carry their functional `category` + a `kata/module/<module>` tag. Chosen over
+  "skills stay in `skills/`, module = AGENTS.md + tag" because the path-based rollup only drives skills physically
+  under the module path, and the modular/swappable vision (recurring user requirement) needs a self-contained dir.
+  DESIGN §2/§4 "no new plumbing" refers to kata-orient's rollup (genuinely unchanged); the small validator-glob
+  extension is Phase-1 foundational work. Applies to initiation, closeout, and the kata-loop conductor module.
