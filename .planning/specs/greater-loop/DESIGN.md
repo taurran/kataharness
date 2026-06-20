@@ -114,7 +114,7 @@ marginal gain.
 - **Recommendation:** **do NOT build a dedicated testing-model.** Deliver the rigor via **F1**. Keep "route the
   eval/test step to a different model" as a **latent option in the multi-model layer** (not built now). Retire the
   `testing-model` brief to *"assessed → folded into F1; revisit only if multi-model lands and a real need shows."*
-- *Ratify this, or override to "build it" — in which case it aligns with F1 per your earlier pick.*
+- **✅ RATIFIED 2026-06-20** — fold into F1; no separate testing-model. (latent option stays in multi-model.)
 
 ## 8. Alignment with the prior briefs
 - **`install-portability`** → its **config layer folds into `kata-initiate`** (§2, interactive target/platform/
@@ -139,6 +139,13 @@ greater loop on SELF** → then install-portability (external) / multi-model.
 ## 11. Decisions to promote at freeze (GL1–GL?? → D87+)
 See `GRILL-LEDGER.md` for the full rationale; promoted to D-numbers at freeze.
 
-## 12. Open for human ratification (before freeze)
-1. **§7 testing-model recommendation** — ratify "don't build separate; fold into F1," or override.
-2. Anything in the module boundaries / order to adjust before this freezes.
+## 12. Status & open items (before freeze)
+- **✅ §7 testing-model — RATIFIED** (2026-06-20): fold into F1; no separate model.
+- **Execution UX (decided 2026-06-20):** orchestrated runs dispatch workers **foreground-parallel** (Claude
+  Code's native live agent panel). A **cool, host-agnostic KataHarness live dashboard** (artistic ASCII +
+  animated bars, `rich`/`textual`, tails board+state) is captured as `[[subagent-dashboard]]` — **build-later**,
+  orthogonal, does not block the loop.
+- **Per-phase clarification:** the user will ask/clarify details on each item as we walk the ROADMAP (the
+  high-level design freezes; phase specifics are refined just-in-time per phase).
+- **REMAINING TO FREEZE:** just the human "freeze" go — then promote GL1–? → D87+ and start Phase 0 (F1+F2)
+  as a real orchestrated run, foreground-parallel.

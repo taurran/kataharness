@@ -65,6 +65,13 @@ M1 ─┴───────┼─▶ M3 ─▶ Phase4 (self dogfood) ─▶ P
   (M1 independent of F1/F2; M2 needs both F's; M3 needs M1+M2)
 ```
 
+## Execution UX (decided 2026-06-20)
+- Orchestrated runs dispatch workers **foreground-parallel** (Claude Code's native live agent panel) — chosen
+  over background for visibility.
+- A **host-agnostic KataHarness live dashboard** (artistic ASCII + animated bars on board+state) = `[[subagent-dashboard]]`
+  BRIEF — **build-later**, pairs with multi-model (Phase 5) or pulled earlier as a fun standalone. Orthogonal;
+  never blocks the loop.
+
 ## Notes
 - Every NEW skill stays `0.1.0` (Policy A) until v0.1; suite tags continue `v0.1.0-alpha.N` per milestone.
 - Phases 0–3 each end with a fresh-context `kata-review` SHIP + Snyk before merge; Phase 4 is the integration

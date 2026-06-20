@@ -1,15 +1,19 @@
 # STATE — KataHarness
 
-**Phase:** v0.1 skill-complete · loop-cognition + sprint-cadence built · **DOGFOOD #1 + #2 done** · **first tagged release `v0.1.0-alpha.1`** · **31 skills / 0 errors · pytest 72 · Snyk 0** · private remote (taurran/kataharness) · **Updated:** 2026-06-19
+**Phase:** `v0.1.0-alpha.1` released · dogfood #1+#2 done · **GREATER-LOOP DESIGN drafted (grill converged, awaiting FREEZE)** · **31 skills / 0 errors · pytest 72 · Snyk 0** · private remote (taurran/kataharness) · **Updated:** 2026-06-20
 
-> **Dogfood #2 — the REAL orchestrated run (2026-06-19, `v0.1.0-alpha.1`):** "evaluation self-sufficiency" built
-> by **4 concurrent worker subagents in isolated git worktrees**, plan-guardian-driven, **zero-conflict merge**,
-> fresh-context default-FAIL eval **PASS** (with its own non-vacuity probes), human version-select. Added
-> `tools/run_result.py` (RESULT.json) · `tools/footprint.py` · `tools/mutation_check.py` + the `kata-tdd`
-> mutation-proof step + `kata-report`/`kata-evaluate` machine-readable-artifact contracts. pytest 40→72.
-> **Honest residual:** the emit/consume path is **not yet wired into a live gate** — the libraries + contracts
-> exist; an integration slice must actually call them (→ BACKLOG ★, next increment). Safety tag `pre-dogfood-2`
-> + `v0.1.0-alpha.1` on the remote. See `.planning/specs/dogfood-selfup-2/`.
+> **CURRENT (2026-06-20):** Planned the **Greater Loop** — the wrapper around the harness: **INITIATION**
+> (`kata-initiate` + frozen `INTENT.md` + interactive target/platform/vault config) → **HARNESS** (reused) →
+> **CLOSEOUT** (`kata-closeout` + `kata-understand` map), sequenced by a thin **`kata-loop`** conductor with a
+> context-carrying loop-back. Modular dirs w/ own AGENTS.md. **3-round interactive grill converged**
+> (`.planning/specs/greater-loop/{DESIGN,ROADMAP,GRILL-LEDGER}.md`). **testing-model RATIFIED as NOT-needed**
+> (folded into F1, Hermes-grounded). **install-portability config layer folds into initiation.** Execution UX:
+> **foreground-parallel** dispatch; a cool host-agnostic ASCII dashboard captured as `[[subagent-dashboard]]`
+> (build-later). **NEXT = FREEZE the DESIGN (only the go is pending), then Phase 0 foundations** (F1 wire the
+> dogfood-2 eval artifacts into the live gate · F2 make `kata-graph` actually run via tree-sitter) as a real
+> orchestrated run. **Build order:** F1+F2 → initiation → closeout → `kata-loop` → dogfood greater-loop on SELF
+> → external (install/multi-model). Earlier: dogfood #2 shipped eval-self-sufficiency *libraries* (run_result/
+> footprint/mutation) but **unwired** — F1 wires them. Safety tags `pre-dogfood-2` + `v0.1.0-alpha.1` on remote.
 
 > **Dogfood #1 (2026-06-19):** self version-up enforcing `allowed-tools` ran through the full loop (readiness →
 > skip-grill → footprint plan → TDD → fresh-context default-FAIL eval **PASS** → report). **Machinery held**
