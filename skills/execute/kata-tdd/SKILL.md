@@ -40,10 +40,15 @@ constraints layered on.
 Read your task's `<read_first>` and the closest existing code analogs first (match the project's vocabulary
 and patterns). Then, for each behavior in the acceptance criteria:
 ```
-RED:   write ONE test for the next behavior → it fails
-GREEN: minimal code to pass → it passes
+RED:    write ONE test for the next behavior → it fails
+GREEN:  minimal code to pass → it passes
+PROVE:  non-vacuity — remove or negate the single asserted line in the source,
+        re-run the test, confirm it flips green→red, then restore the line.
+        A test that stays green after its asserted line is removed is vacuous
+        and does not count. Do not advance to the next behavior until the
+        current test bites.
 ```
-One test → one implementation → repeat. Don't write all tests up front (that tests imagined behavior). For
+One test → one implementation → prove non-vacuity → repeat. Don't write all tests up front (that tests imagined behavior). For
 pure data/config tasks with no new logic, "test" = the project's structural/validation gate must stay green.
 
 ## Refactor (only while GREEN)
