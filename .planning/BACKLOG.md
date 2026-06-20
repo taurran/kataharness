@@ -24,6 +24,16 @@ Promote to ROADMAP milestones when ready.
   trusting version-up's escalate-not-silent-expand at scale.
 - **Plugin packaging** — package the suite as a Claude Code plugin + a portable bundle; `plugin.json`/suite version.
 - **License selection** — choose an OSS license before public release.
+- **★ FUTURE-GAP BRIEFS (ordered; quick plan docs written 2026-06-19, to grill→freeze→build AFTER the
+  dogfood/improvement passes — except #1's timing is to-confirm).** Each is a `BRIEF.md` (pre-grill, not frozen):
+  1. [[install-portability]] — `.planning/specs/install-portability/BRIEF.md` (workspace config + modular
+     per-platform install: optional PokeVault link · bring-your-own-vault scaffold · aim-each-folder; MindBridge
+     brings its own installer; setup doc cordoned with pointers). **Foundation for #2/#3.**
+  2. [[multi-model-orchestration]] — `.planning/specs/multi-model-orchestration/BRIEF.md` (host-located
+     orchestrator [MindBridge→Quick/ACP · Kiro/Claude→there] · per-component model/tool routing incl.
+     eval+test · cross-model handoff on one filesystem). Depends on #1.
+  3. [[testing-model]] — `.planning/specs/testing-model/BRIEF.md` (**assess** a purpose-specific testing/eval
+     model as a routed quality component; contract unchanged, only the model). Leans on #2.
 - **★ Install & portability layer (NEXT after self-dogfood — the "plug into any vault/project" bridge).**
   Today the harness operates *in its own repo*; getting it to run against an arbitrary user's vault or project
   dir needs two unbuilt layers: **(1) distribution/discovery** — place the skills where the host agent finds
