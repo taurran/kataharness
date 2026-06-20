@@ -8,6 +8,13 @@ tags: [brief, future-gap, install, portability, config, modular, vault, mindbrid
 
 # Install & Portability — workspace config + modular per-platform install
 
+> **ALIGNMENT (2026-06-20, [[greater-loop]] grill GL-R3c):** the **config layer** of this brief (interactive
+> target/platform/vault selection + workspace binding) **folds into the `kata-initiate` initiation module** —
+> configured interactively during initiation, not as a separate "build after." What remains HERE = the heavier
+> **per-platform installer mechanics** (PokeVault link / bring-your-own-vault scaffold / aim-each-folder;
+> MindBridge brings its own), sequenced to **Phase 5** of `greater-loop/ROADMAP.md` (external reach, after the
+> self greater loop). See `greater-loop/DESIGN.md §8`.
+
 > **Quick plan brief.** Captures scope + constraints so we can grill→freeze→build it cleanly later. Sequencing
 > for *this* item is the one open call (see *Build timing* below): the user said "build it before we dogfood,"
 > and also "come back to these after dogfooding" — to be confirmed.

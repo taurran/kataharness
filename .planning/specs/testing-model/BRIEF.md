@@ -8,6 +8,14 @@ tags: [brief, future-gap, testing, evaluation, model-routing, quality]
 
 # Dedicated Testing Model — assessment + quick plan
 
+> **ASSESSED (2026-06-20, [[greater-loop]] grill GL-R3b) — RECOMMEND: do NOT build as a separate model.**
+> Grounded in our Hermes research (`loop-cognition/RESEARCH.md` §2–3): Hermes has **no grounding gate** (weaker
+> than us) and teaches *learning loops*, not a testing model. Our rigor is **process-based** — fresh-context,
+> no-write, **default-FAIL** eval + **mutation/non-vacuity proofs** + machine-readable **RESULT.json** — built or
+> landing in **F1** (wire-eval). A separate testing *model* = complexity for marginal gain. **Folded into F1;**
+> the latent "route the eval/test step to a different model" lives in **multi-model** (Phase 5). *Awaiting human
+> ratification — see `greater-loop/DESIGN.md §7, §12`. If overridden to "build it," it aligns with F1.*
+
 > **Quick plan brief.** This one is genuinely an **assessment first**: should KataHarness route its
 > testing/validation work to a **purpose-specific model**, distinct from the general orchestrator/worker model?
 
