@@ -69,3 +69,20 @@ vertical rollup only).
 ## Caching
 Content-hash per file: only files whose hash changed are re-parsed and rebuilt; everything else is reused. The
 graph persists across runs, so a version-up loop pays the full build cost once and incremental cost thereafter.
+
+## Tree-sitter floor producer
+
+`tools/graph_gen.py` is the **canonical tree-sitter-floor producer** of `kata.graph.json` (Phase 0, F2).
+
+It walks a repo for `*.py` files using tree-sitter (no `exec`/`eval` — AST-only), emits `file` and `symbol`
+nodes (with `symKind ∈ function|class|method`), resolves `def` + `import` edges (best-effort), and computes
+a uniform PageRank `rank` on every build.  Content-hash incremental: pass `prev=<loaded graph>` to reuse
+unchanged files.
+
+**CLI:** `uv run python graph_gen.py --root <repo-root> --out kata.graph.json [--prev <existing-graph>]`
+
+**API:** `from graph_gen import build_graph; g = build_graph(root, files=None, prev=None) -> dict`
+
+The emitted graph validates against `protocol/graph.md` (required fields present on every node/edge).
+`meta.backend` is always `"tree-sitter"` for this producer.  Do NOT commit the generated `kata.graph.json`
+into version control — it is a runtime artifact regenerated per run.
