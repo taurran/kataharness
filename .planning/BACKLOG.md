@@ -24,8 +24,20 @@ Promote to ROADMAP milestones when ready.
   trusting version-up's escalate-not-silent-expand at scale.
 - **Plugin packaging** — package the suite as a Claude Code plugin + a portable bundle; `plugin.json`/suite version.
 - **License selection** — choose an OSS license before public release.
-- **PokeVault install path (D58)** — how the PokeVault vault (`C:\Users\taurr_nvs748q\PokeVault\PokeVault`,
-  `toolkit/` area) installs/pins KataHarness once v0.1 ships. (Replaces the retired CPP consumption path, D57.)
+- **★ Install & portability layer (NEXT after self-dogfood — the "plug into any vault/project" bridge).**
+  Today the harness operates *in its own repo*; getting it to run against an arbitrary user's vault or project
+  dir needs two unbuilt layers: **(1) distribution/discovery** — place the skills where the host agent finds
+  them (Claude Code plugin or `.claude/skills/`; other tools via adapters) — overlaps "Plugin packaging" + the
+  v0.3 adapter layer (spine #3); **(2) a one-time workspace-binding config** — distinct from per-run
+  `kata.config`: user-set **roots** (vault root · project root · where `.planning/`, the LEARN feed
+  `engram.learnFeed.dir`, and candidate skills `agentSkills.dir` live relative to the user's workspace). The
+  config schema already has the *seeds* (those dir fields are path-configurable); what's missing is the init
+  flow + the top-level workspace binding so it is **not PokeVault-shaped**. Likely a small spec → a `kata-install`
+  /init capability. **Sequencing:** self-dogfood (needs none of this) → spec this layer → plugin packaging +
+  adapters. *(Raised 2026-06-19 in the positioning/portability assessment — "control + plugs into your vault".)*
+- **PokeVault install path (D58)** — the *reference* instance of the install & portability layer above: how the
+  PokeVault vault (`C:\Users\taurr_nvs748q\PokeVault\PokeVault`, `toolkit/` area) installs/pins KataHarness.
+  (Replaces the retired CPP consumption path, D57.)
 - **Protocol specs** — flesh out `protocol/{board,tasklist,state,handoff}.md` schemas.
 - **Quick/work version** — fork/branch strategy for the AWS-internal variant.
 - **`kata-tasklist` reframe (D23)** — virtual task board over GSD structure + backlog, syncing to Jira/Asana
