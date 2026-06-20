@@ -312,3 +312,13 @@ def test_sc_orchestrate_stays_sprint_blind():
     body = (v.SKILLS_DIR / "coordinate" / "kata-orchestrate" / "SKILL.md").read_text(encoding="utf-8")
     assert "kata-sprint" not in body, "kata-orchestrate must stay sprint-blind (BC2) — no kata-sprint reference"
     assert "delivery" not in body.lower(), "kata-orchestrate must not gain delivery-awareness (BC2)"
+
+
+def test_sc_bootstrap_is_the_boundary_router():
+    # D86 (review fix): kata-bootstrap is the entry host — it routes a gated boundary to kata-sprint.
+    # Closes the wired-but-not-connected gap (kata-orchestrate is sprint-blind and cannot dispatch).
+    body = (v.SKILLS_DIR / "coordinate" / "kata-bootstrap" / "SKILL.md").read_text(encoding="utf-8")
+    assert "boundary router" in body.lower(), "kata-bootstrap must declare itself the boundary router (D80/D86)"
+    assert "[[kata-sprint]]" in body, "kata-bootstrap must dispatch to kata-sprint on a gated boundary"
+    assert "gated" in body and "dirty" in body, "bootstrap must route gated->kata-sprint vs dirty->resume"
+    assert "delivery" in body, "bootstrap must write the delivery axis (D78)"

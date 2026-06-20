@@ -32,6 +32,17 @@ Invoke [[kata-readiness]]. On **BLOCK**, stop and surface the blocker (don't com
 re-entrant detection (an existing `kata.config`), offer **same-as-last / step a family up a tier / change
 run-shape** instead of cold-start. WARNs are surfaced, not blocking.
 
+### Phase 0b — sprint-boundary routing (sprint-cadence D80 — bootstrap is the boundary router)
+When the re-entered config has `delivery.shape == "incremental"`, read [[kata-readiness]]'s **sprint-progression
+verdict** (`{sprintIndex, gateStatus, boundary}`, rebuilt from the git trail) and **route** — this is the entry
+host for the boundary; `kata-orchestrate` stays sprint-blind (D24d), so the dispatch lives here:
+- **`boundary: gated`** (sprint gate green, awaiting the boundary) ⇒ invoke **[[kata-sprint]]** to run the G1–G4
+  course-correct (the only place steering happens), then proceed to the next sprint plan.
+- **`boundary: dirty`** (mid-sprint, uncommitted work) ⇒ **resume the active sprint** via [[kata-orchestrate]]
+  (no boundary, no steering — the sprint is a one-shot in flight).
+- **no open roadmap** ⇒ normal composition (Phases 1–4 below).
+A **red** sprint is never a boundary — it routes through escalation (`protocol/escalation.md`), not here.
+
 ## Phase 1 — run-shape (the router, GB1)
 Ask the run-shape: **individual / batch / version-up / advanced**. Each is a **preset** (see
 `resources/run-shapes.md`) that pre-fills `mode` + `modules` + `target` — not a new axis. `batch` (Spec B) and
@@ -39,6 +50,11 @@ Ask the run-shape: **individual / batch / version-up / advanced**. Each is a **p
 writes a valid config. For **version-up**, additionally collect `target.path` (the existing repo) and
 `target.baselineGate` (the command that must be green before *and* after — the regression baseline). Describe
 the version-up ingestion engine (kata-graph) in prose only; do **not** wikilink it (A4, unbuilt).
+
+Also pre-fill the **`delivery` axis** (sprint-cadence D78) from the preset: **individual ⇒ one-shot · batch ⇒
+one-shot · version-up ⇒ *ask*** (one-shot or incremental). `delivery.boundary` defaults `always-stop`
+(control-first, GB6). Surface it only when the preset says *ask* or the user opens the advanced path — the
+default→go keystroke stays one-shot.
 
 ## Phase 1.5 — grill-depth dial (D71)
 Offer the **grill-depth** as a first-class choice: **skip / light / standard / full** (writes
@@ -73,6 +89,6 @@ committing, so the user prices the run.
 
 ## Phase 4 — write kata.config + launch
 Write `kata.config` (JSON, branch root) per `protocol/config.md`: `mode`, `modules`, `effort`, `tiers`,
-`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**. Bootstrap writes the config
+`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**. Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;
 a second validation pass here would be redundant bloat). Then hand off to the loop ([[kata-orchestrate]]).

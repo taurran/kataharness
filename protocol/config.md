@@ -87,8 +87,9 @@ self-handoff/refresh threshold** (`kata-selfhandoff`) — same primitive, two po
   Sonnet 4.6 all advertise a **1M-token** window, but reliable retrieval holds to ~200–256K and self-reported
   degradation begins ≈40% / restart-recommended ≈48% utilization. So the effective working band on a 1M model is
   ≈400K. These numbers are **tunable and model-specific**; the architecture is number-independent.
-- **Floor:** a candidate sprint that already fits within **one** prime frame ⇒ refuse to sprint, recommend
-  one-shot. **Ceiling:** a sprint whose context demand **exceeds** one prime frame ⇒ split. Max sprint count =
+- **Floor:** if the **whole project** already fits within **one** prime frame ⇒ refuse to sprint, recommend
+  one-shot (sprinting buys nothing; the boundary ceremony is pure overhead). **Ceiling:** a single sprint whose
+  context demand **exceeds** one prime frame ⇒ split it at the next seam. Max sprint count =
   `⌈project context demand ÷ prime frame⌉`, no arbitrary cap.
 - **B1 (D83):** the one-shot self-handoff/refresh threshold changes from D8's user-set % → this model-resolved
   prime-frame fraction. **D8's principles survive** (anti-over-conservative; task-boundary-preferred).

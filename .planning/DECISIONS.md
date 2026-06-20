@@ -602,3 +602,12 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   (D3); `kata-report` minimal core built here = D32 v1 (not throwaway, D2). NEW skills: `kata-plan` roadmap
   layer · `kata-sprint` · `kata-report` v1. *Provenance for D78–D85:* sprint-cadence grill (2026-06-15) +
   freeze-gate audit HOLD→SHIP (fresh-context, 2026-06-19); frozen DESIGN.
+- **D86 — `kata-bootstrap` is the sprint-boundary ROUTER (build-time gap-closure).** The frozen DESIGN §5
+  wiring table omitted `kata-bootstrap` even though R4/D80 prose names it the router; the build (faithful to the
+  PLAN) shipped `kata-sprint` *wired-but-not-connected* — nothing invoked it at a boundary. Closing the gap
+  (faithful to R4/D80, not a new axis): `kata-bootstrap` Phase 0b reads `kata-readiness`'s sprint-progression
+  verdict and dispatches — **`gated` ⇒ `kata-sprint`** (course-correct), **`dirty` ⇒ resume via
+  `kata-orchestrate`**, red ⇒ escalation. Bootstrap also pre-fills + writes the `delivery` axis (preset:
+  individual/batch ⇒ one-shot, version-up ⇒ ask). `kata-orchestrate` stays sprint-blind (BC2 intact — it never
+  dispatches the boundary). *Provenance:* fresh-context `kata-review` (D15/A5) of the sprint-cadence build,
+  2026-06-19 — Finding 1 (should-fix), accepted + fixed. Makes the feature invocable end-to-end.

@@ -29,6 +29,10 @@ A **thin** coordinator for the boundary between sprints (sprint-cadence D80). Th
 **each sprint is a one-shot (no-drift holds within it); the boundary is the only place steering happens.**
 `kata-sprint` runs **only** when `delivery.shape == "incremental"` (`protocol/config.md`).
 
+> **Invoked by:** re-entrant [[kata-bootstrap]] (Phase 0b) when [[kata-readiness]] reports a **gated** sprint
+> boundary — bootstrap is the boundary router (D80); [[kata-orchestrate]] stays sprint-blind and cannot dispatch
+> here. The resume-side hands the next frozen sprint plan back to [[kata-orchestrate]].
+
 > **Composes, never reimplements (BC2).** It orchestrates existing skills — [[kata-report]], [[kata-handoff]],
 > [[kata-evaluate]], [[kata-review]], [[kata-grill]] (delta-mode), blast-radius — and **never edits or bypasses
 > [[kata-orchestrate]]**, which stays *sprint-blind*. Delivery-awareness lives only in HANDOFF-phase routing.
