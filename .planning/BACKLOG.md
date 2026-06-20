@@ -39,6 +39,14 @@ Promote to ROADMAP milestones when ready.
   use substring matching → can't detect substantive erasure; add structural checks if it bites. (3.3)
   `check_tags_namespace` allows bogus `kata/...` sub-namespaces; add a `kata/...` prefix allowlist when
   `kata/tier/<tier>` becomes load-bearing (A2-time).
+- **AO lateral/module-rollup is unexercised until a multi-module target (D76 follow-up, 2026-06-19)** — the
+  validation stack confirmed `kata-orient`'s **nearest-module `AGENTS.md`/`CLAUDE.md` vertical rollup** + the
+  **kata-graph lateral adjacency pointers** are a **latent no-op in *this* repo** (only root `AGENTS.md`/`CLAUDE.md`
+  exist; no `kata.graph.json` on a greenfield run). It **degrades correctly** to root-only (graceful, triplicated
+  in orientation.md / kata-orient / the AO hook) — forward-wiring for the 2026 nested-AGENTS.md standard, not a
+  bug. **Exercise + test it when the harness orients inside a real multi-module target** (e.g. the dogfood
+  version-up on KataHarness itself, or a consumer repo with per-module instruction files): add an AO test seam
+  that proves rollup picks the nearest module + adjacency pointers resolve. Until then it's correct-but-inert.
 - **β-runtime: structural redaction filter + test seam (D74 follow-up, 2026-06-19)** — today the LEARN-feed
   redaction (C3) is a **prose contract** (`kata-handoff` §7 "confirm no secrets/keys/PII") the emitting agent
   honors; "fail-closed" is an instruction, not enforcement. The β feed writes synthesis to an **external dir**
