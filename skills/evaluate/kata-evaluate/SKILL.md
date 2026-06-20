@@ -80,26 +80,24 @@ can't-ground → human). Default-FAIL: nothing is GROUND until its source is rea
 Before scoring any rubric item, the gate **must** locate and read a `RESULT.json` emitted by the run.
 This file is authoritative — the gate does **not** accept a human-transcribed pass count in its place.
 
-Required fields consumed from `RESULT.json`:
+Required fields consumed from `RESULT.json` — **the canonical schema emitted by `tools/run_result.py`
+(`build_result`)**, the single source of truth (producer and consumer agree on this shape):
 
 | Field | Required content |
 |---|---|
-| `gate` | The gate name that produced this result (string, e.g. `"kata-evaluate"`) |
-| `output` | Verbatim terminal / tool output of the run (string) |
-| `exit_code` | Numeric exit code of the test/build command |
-| `counts.pass` | Number of test cases that passed |
-| `counts.fail` | Number of test cases that failed |
-| `counts.skip` | Number of test cases that were skipped |
+| `gateName` | The gate name that produced this result (string, e.g. `"kata-evaluate"`) |
+| `command` | The exact gate command that was run (string) |
+| `exitCode` | Numeric exit code of the test/build command |
+| `passed` / `failed` / `skipped` | Test-case counts (ints) |
+| `stdoutTail` | Verbatim tail of the run's terminal output (string) |
+| `baselineSha` / `resultSha` | Commit SHAs — the tip *before* the work, and the integration HEAD evaluated |
+| `utc` | ISO-8601 UTC timestamp of the result |
 
 If `RESULT.json` is absent or malformed, the gate verdict is automatically **NEEDS_WORK** — the default-FAIL
 invariant applies here too. Do not attempt to reconstruct the counts from prose.
 
-Additionally, the gate **must** record both:
-- **`baseline_sha`** — the commit SHA of the branch tip *before* the work began (the merge-base with the
-  integration branch, or the explicitly declared baseline).
-- **`result_sha`** — the commit SHA of the integration branch HEAD being evaluated.
-
-Both SHAs appear in the gate's output so the report and any future auditor can reproduce the exact diff.
+`baselineSha`/`resultSha` make the run reproducible: the report and any future auditor can recompute the exact
+diff (`git diff <baselineSha>..<resultSha>`).
 
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,
