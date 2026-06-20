@@ -611,3 +611,28 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   individual/batch ⇒ one-shot, version-up ⇒ ask). `kata-orchestrate` stays sprint-blind (BC2 intact — it never
   dispatches the boundary). *Provenance:* fresh-context `kata-review` (D15/A5) of the sprint-cadence build,
   2026-06-19 — Finding 1 (should-fix), accepted + fixed. Makes the feature invocable end-to-end.
+- **D87 — The Greater Loop (architecture).** A thin NEW `kata-loop` conductor sequences **INITIATION → HARNESS
+  (reused) → CLOSEOUT**, with a **context-carrying loop-back**. The two ends are **plug-and-play modules** =
+  `modules/<name>/` dirs **each with its own `AGENTS.md`** (composed via the nested-AGENTS.md rollup `kata-orient`
+  already supports). The greater loop is **optional/BC** (conductor absent ⇒ today's direct harness run). The
+  conductor composes, never reimplements (kin to `kata-sprint`). (GL-R1a/c/d, R2a)
+- **D88 — Initiation = NEW `kata-initiate` + frozen `INTENT.md`.** Front door: ingest the user's design → classify
+  **kind (project|research|version-up)** → capture the **GOAL** to a frozen `INTENT.md` (goal/fixes[]/features[]/
+  modulesAdded[]/changeSummary/target{kind,path,vault,platform}/grillDepth/readiness). **Interactive
+  target/platform/vault configuration is part of initiation** — the **install-portability config layer folds in
+  here** (installer mechanics stay later). **Dual spec-to-execute control:** the user may say "execute" anytime
+  (hard bail) OR the grill self-judges readiness and **proposes** execute (user confirms); either path freezes
+  `INTENT.md`. Composes readiness/grill/bootstrap/context. (GL-R1a/b, R2b, R3c)
+- **D89 — Closeout = NEW `kata-closeout` + `kata-understand`.** Back-half control flow (composes, never gates —
+  `kata-evaluate` keeps the gate): track the run artifacts → `kata-report` → **offer `kata-understand`** (opt-in,
+  **graph-backed** via the F2 runtime, light git/diff fallback) → human gate (satisfied? / commit·push·merge? /
+  run-again·build-new?). **Loop-back returns to initiation WITH context carried** (new baseline + understand map +
+  lessons). (GL-R1c, R2c, R2d)
+- **D90 — Foundations-first order + scoping.** Build **F1** (wire the dogfood-2 eval artifacts —
+  `run_result`/`footprint`/`mutation_check` — into the live gate; closes the residual) and **F2** (make
+  `kata-graph` operational: tree-sitter + a generator → `kata.graph.json`, **minimal/Python-first**, defer the
+  Graphify oracle) **before** the modules. **testing-model is NOT a separate model** (Hermes has no grounding
+  gate; our rigor is process-based) → **folded into F1**; the "route eval to another model" option stays latent in
+  multi-model. **Execution UX:** orchestrated runs dispatch **foreground-parallel**; a host-agnostic artistic
+  ASCII **`subagent-dashboard`** is build-later. (GL-R3a/b/d + UX) · *Provenance for D87–D90:* greater-loop
+  interactive grill (3 rounds, 2026-06-20), `GRILL-LEDGER.md`; DESIGN **FROZEN** 2026-06-20.

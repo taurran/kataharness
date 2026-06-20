@@ -65,6 +65,14 @@ M1 ─┴───────┼─▶ M3 ─▶ Phase4 (self dogfood) ─▶ P
   (M1 independent of F1/F2; M2 needs both F's; M3 needs M1+M2)
 ```
 
+## ★ Build cadence — BUILD-THROUGH directive (operator, 2026-06-20)
+Deliver **all of Phases 0–3 (F1, F2, initiation, closeout, `kata-loop`) as a continuous build — NO intermediate
+dogfood/version-select ceremony between phases.** Rationale: *"deliver all the features in our plan before we run
+another test; no reason to test until we've built what we know we need."* Per-phase **correctness gates still
+apply** (validator green · pytest · Snyk · fresh-context `kata-review` before each merge — build discipline, not a
+"test"). **The next TEST = Phase 4 self-dogfood of the COMPLETE Greater Loop.** Phase 5 (external) follows.
+(Mirror of the active `.planning/STEERING.md` directive.)
+
 ## Execution UX (decided 2026-06-20)
 - Orchestrated runs dispatch workers **foreground-parallel** (Claude Code's native live agent panel) — chosen
   over background for visibility.

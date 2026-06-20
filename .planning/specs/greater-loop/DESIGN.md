@@ -1,7 +1,7 @@
 ---
 date: 2026-06-20
 spec: greater-loop
-status: DRAFT — grill converged (rounds 1–3, 2026-06-20). Awaiting human ratification of §7 (testing-model) + freeze.
+status: FROZEN 2026-06-20 — grill converged (rounds 1–3) + testing-model RATIFIED; promoted to D87–D90. Changes are deliberate re-freezes.
 source-ledger: ./GRILL-LEDGER.md
 roadmap: ./ROADMAP.md
 locked-inputs: [modular DESIGN + master roadmap, graph-runtime-first, anchor on self-end-to-end]

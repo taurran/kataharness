@@ -1,19 +1,21 @@
 # STATE — KataHarness
 
-**Phase:** `v0.1.0-alpha.1` released · dogfood #1+#2 done · **GREATER-LOOP DESIGN drafted (grill converged, awaiting FREEZE)** · **31 skills / 0 errors · pytest 72 · Snyk 0** · private remote (taurran/kataharness) · **Updated:** 2026-06-20
+**Phase:** `v0.1.0-alpha.1` released · dogfood #1+#2 done · **GREATER-LOOP DESIGN FROZEN (D87–D90)** · **BUILD-THROUGH directive active** · **31 skills / 0 errors · pytest 72 · Snyk 0** · private remote (taurran/kataharness) · **Updated:** 2026-06-20
 
-> **CURRENT (2026-06-20):** Planned the **Greater Loop** — the wrapper around the harness: **INITIATION**
-> (`kata-initiate` + frozen `INTENT.md` + interactive target/platform/vault config) → **HARNESS** (reused) →
-> **CLOSEOUT** (`kata-closeout` + `kata-understand` map), sequenced by a thin **`kata-loop`** conductor with a
-> context-carrying loop-back. Modular dirs w/ own AGENTS.md. **3-round interactive grill converged**
-> (`.planning/specs/greater-loop/{DESIGN,ROADMAP,GRILL-LEDGER}.md`). **testing-model RATIFIED as NOT-needed**
-> (folded into F1, Hermes-grounded). **install-portability config layer folds into initiation.** Execution UX:
-> **foreground-parallel** dispatch; a cool host-agnostic ASCII dashboard captured as `[[subagent-dashboard]]`
-> (build-later). **NEXT = FREEZE the DESIGN (only the go is pending), then Phase 0 foundations** (F1 wire the
-> dogfood-2 eval artifacts into the live gate · F2 make `kata-graph` actually run via tree-sitter) as a real
-> orchestrated run. **Build order:** F1+F2 → initiation → closeout → `kata-loop` → dogfood greater-loop on SELF
-> → external (install/multi-model). Earlier: dogfood #2 shipped eval-self-sufficiency *libraries* (run_result/
-> footprint/mutation) but **unwired** — F1 wires them. Safety tags `pre-dogfood-2` + `v0.1.0-alpha.1` on remote.
+> **CURRENT (2026-06-20):** **Greater Loop DESIGN is FROZEN** (D87–D90; `.planning/specs/greater-loop/`). The
+> wrapper around the harness: **INITIATION** (`kata-initiate` + frozen `INTENT.md` + interactive
+> target/platform/vault config) → **HARNESS** (reused) → **CLOSEOUT** (`kata-closeout` + `kata-understand` map),
+> sequenced by a thin **`kata-loop`** conductor with a context-carrying loop-back. Modules = `modules/<name>/`
+> dirs w/ own AGENTS.md. testing-model folded into F1 (Hermes-grounded); install-portability config layer folds
+> into initiation; execution UX = **foreground-parallel** + `subagent-dashboard` brief (build-later).
+> **★ BUILD-THROUGH directive (operator):** build the WHOLE Greater Loop (Phases 0–3) continuously, **NO
+> intermediate dogfood/test ceremony** — per-phase correctness gates (green/review) still apply; the next TEST is
+> the **Phase 4 self-dogfood of the complete loop.** **NEXT ACTION = `kata-plan` partitions Phase 0 (F1 wire the
+> dogfood-2 eval artifacts into the live gate · F2 make `kata-graph` actually run via tree-sitter) into disjoint
+> slices → orchestrated foreground-parallel build → green+review → CONTINUE straight into Phase 1 (initiation),
+> Phase 2 (closeout), Phase 3 (`kata-loop`) without stopping to test.** Then Phase 4 self-dogfood, then Phase 5
+> external (install/multi-model). dogfood #2's eval libraries (run_result/footprint/mutation) exist but are
+> **unwired** — F1 wires them. Safety tags `pre-dogfood-2` + `v0.1.0-alpha.1` on remote.
 
 > **Dogfood #1 (2026-06-19):** self version-up enforcing `allowed-tools` ran through the full loop (readiness →
 > skip-grill → footprint plan → TDD → fresh-context default-FAIL eval **PASS** → report). **Machinery held**
