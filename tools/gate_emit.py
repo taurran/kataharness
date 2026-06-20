@@ -154,6 +154,20 @@ def emit_gate_artifacts(
 # CLI entry-point
 # ---------------------------------------------------------------------------
 
+def _safe_path(raw: str) -> Path:
+    """Reject path-traversal (CWE-23) in an operator-supplied CLI path, then resolve.
+
+    Blocks any ``..`` segment — the traversal-escape primitive — so a crafted
+    argument cannot climb out of the intended tree, while still allowing the
+    absolute and nested-relative paths the maintainer legitimately targets.
+    Sanitizes the tainted CLI input at the boundary before any filesystem sink.
+    """
+    p = Path(raw)
+    if any(part == ".." for part in p.parts):
+        raise SystemExit(f"gate_emit: refusing path with '..' traversal: {raw!r}")
+    return p.resolve()
+
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="gate_emit",
@@ -187,6 +201,6 @@ if __name__ == "__main__":
         footprint=args.footprint,
         baseline_sha=args.baseline_sha,
         result_sha=args.result_sha,
-        out_dir=args.out,
+        out_dir=_safe_path(args.out),
     )
     print(json.dumps(summary, indent=2))

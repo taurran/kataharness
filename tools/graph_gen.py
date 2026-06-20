@@ -59,18 +59,18 @@ def _is_under_skip_dir(path: Path, root: Path) -> bool:
 # ---------------------------------------------------------------------------
 
 def _file_hash(path: Path) -> str:
-    """SHA-1 hex digest of file contents."""
-    return hashlib.sha1(path.read_bytes()).hexdigest()
+    """SHA-256 hex digest of file contents (content-addressing for the cache)."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _bytes_hash(data: bytes) -> str:
-    return hashlib.sha1(data).hexdigest()
+    return hashlib.sha256(data).hexdigest()
 
 
 def _repo_hash(file_hashes: dict[str, str]) -> str:
     """Stable hash of all file hashes (sorted by path)."""
     combined = "|".join(f"{k}:{v}" for k, v in sorted(file_hashes.items()))
-    return hashlib.sha1(combined.encode()).hexdigest()
+    return hashlib.sha256(combined.encode()).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -593,6 +593,20 @@ def build_graph(
 # CLI
 # ---------------------------------------------------------------------------
 
+def _safe_path(raw: str) -> Path:
+    """Reject path-traversal (CWE-23) in an operator-supplied CLI path, then resolve.
+
+    Blocks any ``..`` segment — the traversal-escape primitive — so a crafted
+    argument cannot climb out of the intended tree, while still allowing the
+    absolute and nested-relative paths the maintainer legitimately targets.
+    Sanitizes the tainted CLI input at the boundary before any filesystem sink.
+    """
+    p = Path(raw)
+    if any(part == ".." for part in p.parts):
+        raise SystemExit(f"graph_gen: refusing path with '..' traversal: {raw!r}")
+    return p.resolve()
+
+
 def _main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Generate kata.graph.json from a Python codebase using tree-sitter."
@@ -606,16 +620,19 @@ def _main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    root_path = _safe_path(args.root)
+    out_path = _safe_path(args.out)
+
     prev = None
     if args.prev:
+        prev_path = _safe_path(args.prev)
         try:
-            prev = json.loads(Path(args.prev).read_text(encoding="utf-8"))
+            prev = json.loads(prev_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             print(f"Warning: could not load prev graph from {args.prev!r}: {exc}", file=sys.stderr)
 
-    graph = build_graph(args.root, prev=prev)
+    graph = build_graph(root_path, prev=prev)
 
-    out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(graph, indent=2), encoding="utf-8")
     n_nodes = len(graph["nodes"])
