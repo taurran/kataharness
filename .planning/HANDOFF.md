@@ -22,9 +22,13 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 
 ## 2. State *(orientation: VOLATILE)*
 - Branch `master`, **pushed to private remote** `github.com/taurran/kataharness`, tree clean. **31 skills / 0
-  errors · pytest 72 · Snyk 0**, tag **`v0.1.0-alpha.1`**. Confirm:
+  errors · pytest 109** (72 + F1 15 + F2 22) · Snyk: 3 real fixed + residual CWE-23 documented FP. Confirm:
   `cd tools && uv run pytest -q  &&  uv run python validate_skills.py`.
-- **Backout safety:** tags `pre-dogfood-2` + `v0.1.0-alpha.1` on remote. Policy A: skills held `0.1.0`.
+- **✅ Phase 0 FOUNDATIONS DONE** (merged `9e1b27c`): F1 `tools/gate_emit.py` (eval artifacts wired into the live
+  gate — closes dogfood-2 residual) + F2 `tools/graph_gen.py` (tree-sitter graph runtime per protocol/graph.md).
+  Real orchestrated run; fresh-context eval PASS 8/8. Plan/security: `specs/greater-loop/{PLAN,SECURITY}-phase0.md`.
+- **Backout safety:** tags `pre-phase0` (before Phase 0 merge) + `pre-dogfood-2` + `v0.1.0-alpha.1` on remote.
+  Policy A: skills held `0.1.0`.
 
 ## 3. What shipped this session *(orientation: CONTEXT)*
 - **sprint-cadence BUILT + SHIP** (D78–D86): `kata-sprint` (G1–G4 boundary), `kata-report` v1, `kata-plan`
@@ -52,18 +56,19 @@ NO intermediate dogfood/test ceremony.** Per-phase correctness gates (validator 
 fresh-context `kata-review` before each merge) **still apply** — they're build discipline, not "the test." **The
 single next TEST = Phase 4 self-dogfood of the COMPLETE loop.**
 
-**NEXT ACTION — start Phase 0 (no freeze pending; DESIGN is frozen):**
-1. **`kata-plan`** partitions **Phase 0 foundations** into disjoint slices:
-   - **F1 — wire the eval artifacts into the live gate** (`kata-evaluate`/gate actually emits `RESULT.json` via
-     `run_result`, computes the `footprint` manifest, records the `mutation_check` proof). Closes dogfood-2's
-     residual; folds in the testing rigor.
-   - **F2 — graph runtime operational** (install **tree-sitter** + a generator → `kata.graph.json` per
-     `protocol/graph.md`, Python first; minimal — defer the Graphify oracle).
-2. **Orchestrated, FOREGROUND-PARALLEL build** (concurrent worker subagents in isolated worktrees; Sonnet
-   workers, Opus/judgment) → green + fresh-context `kata-review` → merge.
-3. **CONTINUE straight into:** Phase 1 **Initiation** (`modules/initiation/` + `kata-initiate` + `INTENT.md`) →
-   Phase 2 **Closeout** (`modules/closeout/` + `kata-closeout` + `kata-understand`, graph-backed) → Phase 3
-   **`kata-loop`** conductor — **without stopping to test.**
+**NEXT ACTION — Phase 1 INITIATION (Phase 0 ✅ done; continue without testing per BUILD-THROUGH):**
+1. **`kata-plan`** partitions **Phase 1 Initiation** into disjoint slices (orchestrated foreground-parallel build):
+   - **`modules/initiation/`** — new module dir with its **own `AGENTS.md`** (nested-rollup; `kata-orient` supports it).
+   - **`kata-initiate`** — front door: ingest intent → classify `kind: project|research|version-up` → capture the
+     **frozen `INTENT.md`** artifact (schema in DESIGN §2: goal/fixes/features/modulesAdded/changeSummary/target/
+     grillDepth/readiness). Composes `kata-readiness`/`kata-grill`/`kata-bootstrap`/`kata-context`.
+   - **Interactive target/platform/vault config** (install-portability config layer, GL-R3c): self · existing repo ·
+     vault (PokeVault link / bring-your-own / aim-each-folder) · platform (Claude/MindBridge/Kiro).
+   - **Dual spec-to-ready control** (GL-R2b): user "execute" anytime (hard bail) OR grill self-proposes execute.
+2. Same rhythm as Phase 0: worktrees + concurrent Sonnet workers → integration green (pytest · validator · Snyk)
+   → fresh-context `kata-evaluate` PASS → merge → **continue straight into Phase 2.**
+3. **Phase 2 CLOSEOUT** (`modules/closeout/` + `kata-closeout` + `kata-understand`, graph-backed by F2) → **Phase 3
+   `kata-loop`** conductor — **without stopping to test.**
 4. **THEN Phase 4** — self-dogfood the complete Greater Loop (the next test). **THEN Phase 5** — external reach
    (install installers / multi-model).
 

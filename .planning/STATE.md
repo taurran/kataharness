@@ -1,6 +1,24 @@
 # STATE — KataHarness
 
-**Phase:** `v0.1.0-alpha.1` released · dogfood #1+#2 done · **GREATER-LOOP DESIGN FROZEN (D87–D90)** · **BUILD-THROUGH directive active** · **31 skills / 0 errors · pytest 72 · Snyk 0** · private remote (taurran/kataharness) · **Updated:** 2026-06-20
+**Phase:** `v0.1.0-alpha.1` released · **GREATER-LOOP BUILD-THROUGH in progress** · **✅ Phase 0 FOUNDATIONS DONE** (F1 gate-emit + F2 tree-sitter graph runtime; merged `9e1b27c`, pushed) · **31 skills / 0 errors · pytest 109 · Snyk: 3 real fixed, residual CWE-23 documented FP** · private remote (taurran/kataharness) · **Updated:** 2026-06-20
+
+> **CURRENT (2026-06-20, Phase 0 closed):** **Phase 0 of the Greater Loop is BUILT + merged.** Real orchestrated
+> foreground-parallel run: 2 worker subagents (Sonnet) in isolated worktrees → octopus-merge (0 conflict) →
+> integration gate → fresh-context `kata-evaluate` **PASS (8/8)** → merged to master `9e1b27c`, pushed.
+> **F1 — eval artifacts wired into the live gate** (closes the dogfood-2 residual): `tools/gate_emit.py` composes
+> run_result/footprint/mutation_check → emits `.kata/{RESULT,footprint,mutation}.json`; dogfooded on the
+> integration gate itself (109 passed, withinFootprint True). Skills wired: kata-evaluate (consumer),
+> kata-orchestrate (emits at integration gate), kata-tdd (records mutation proof). **F2 — graph runtime
+> operational**: `tools/graph_gen.py` tree-sitter floor produces `kata.graph.json` per protocol/graph.md
+> (file/symbol nodes, def/ref/import edges, PageRank, content-hash incremental; `call` omitted = oracle-deferred);
+> kata-graph SKILL names it the floor producer. Security: sha1→sha256 (CWE-916, real, fixed); CWE-23 path-guard
+> added, residual = documented Snyk FP (operator CLI args, non-shipped tool; see `specs/greater-loop/SECURITY-phase0.md`).
+> Plan: `specs/greater-loop/PLAN-phase0.md`. Safety tag `pre-phase0`.
+> **★ NEXT (BUILD-THROUGH, no test until Phase 4) = Phase 1 INITIATION:** `modules/initiation/` (own AGENTS.md) +
+> `kata-initiate` + frozen `INTENT.md` artifact + interactive target/platform/vault config (install-portability
+> config layer folds in) + dual spec-to-ready control (user-says-execute OR grill self-proposes). Then Phase 2
+> CLOSEOUT (`kata-closeout` + `kata-understand`, graph-backed by F2), Phase 3 `kata-loop` conductor — straight
+> through. Then Phase 4 self-dogfood (the next test).
 
 > **CURRENT (2026-06-20):** **Greater Loop DESIGN is FROZEN** (D87–D90; `.planning/specs/greater-loop/`). The
 > wrapper around the harness: **INITIATION** (`kata-initiate` + frozen `INTENT.md` + interactive
