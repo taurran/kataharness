@@ -51,6 +51,36 @@ PROVE:  non-vacuity — remove or negate the single asserted line in the source,
 One test → one implementation → prove non-vacuity → repeat. Don't write all tests up front (that tests imagined behavior). For
 pure data/config tasks with no new logic, "test" = the project's structural/validation gate must stay green.
 
+### Recording mutation/non-vacuity proof for the gate
+
+Each PROVE step produces a verdict via `mutation_check.mutation_verdict(baseline_passed, mutated_passed)`.
+Collect all verdicts across the task's behaviors into a `mutation_records` list and pass them to
+`tools/gate_emit.py` as `mutation_records` so the proof is captured in `.kata/mutation.json`.
+
+Example (Python, called from within the task's verify/report step):
+```python
+from mutation_check import mutation_verdict
+from gate_emit import emit_gate_artifacts
+
+records = []
+# For each behavior proven non-vacuous:
+records.append(mutation_verdict(baseline_passed=True, mutated_passed=False))
+
+summary = emit_gate_artifacts(
+    gate_name="my-task-gate",
+    command="uv run pytest tests/test_my_task.py -q",
+    footprint=["tools/my_task.py", "tools/tests/test_my_task.py"],
+    baseline_sha=baseline_sha,
+    result_sha=result_sha,
+    out_dir=".kata",
+    mutation_records=records,
+)
+# summary["mutationPath"] → .kata/mutation.json (allNonVacuous must be True to pass)
+```
+
+A task whose `mutation.json` shows `allNonVacuous: false` has at least one vacuous test — the task is
+**not done** until every behavior bites. The [[kata-evaluate]] gate reads this field.
+
 ## Refactor (only while GREEN)
 After the task's behaviors pass: extract duplication, deepen modules, run the gate after each step. Never
 refactor while RED. Never add speculative features beyond the task.

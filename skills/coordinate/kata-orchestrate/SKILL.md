@@ -129,11 +129,27 @@ dispatchable work exists, the run keeps moving; it only stalls for a human when 
 ## Final gate
 After the frontier drains (all tasks integrated), on the integration branch:
 1. Full default-FAIL gate green (tests + security + deterministic build).
-2. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
+2. **Emit the gate artifact set** before handing to [[kata-evaluate]]:
+   run `tools/gate_emit.py` (the canonical emitter) to produce `.kata/RESULT.json`,
+   `.kata/footprint.json`, and (when mutation records are available) `.kata/mutation.json`.
+   Example invocation:
+   ```
+   python -m gate_emit \
+     --gate-name integration \
+     --command "uv run pytest -q" \
+     --footprint tools/ skills/ \
+     --baseline <baseline_sha> \
+     --result <integration_head_sha> \
+     --out .kata
+   ```
+   The emitter composes `run_result`, `footprint`, and `mutation_check` — it does not reimplement them.
+   Pass `--out .kata` so [[kata-evaluate]] finds artifacts at the conventional paths.
+3. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
    low-grill run, point it at the priming prompt as the frozen spec and at any [[kata-defer]] `ASSUMPTIONS.md`,
    so the autonomous floor's assumption log is graded for prompt-contradiction (rubric item 8) — not just asserted.
-3. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
-4. Commit; if a handoff is needed, [[kata-handoff]].
+   Point it at `.kata/` so it reads the emitted artifacts directly.
+4. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
+5. Commit; if a handoff is needed, [[kata-handoff]].
 
 ## Drift ledger (for A/B / audit)
 Track, as you go: unauthorized deviations from LOCKED decisions (target **0**), files touched outside

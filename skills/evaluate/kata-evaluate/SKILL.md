@@ -99,6 +99,22 @@ invariant applies here too. Do not attempt to reconstruct the counts from prose.
 `baselineSha`/`resultSha` make the run reproducible: the report and any future auditor can recompute the exact
 diff (`git diff <baselineSha>..<resultSha>`).
 
+### Artifact paths and canonical producer (Phase 0+)
+
+The three gate artifacts are written to the `.kata/` output directory by **`tools/gate_emit.py`**, the
+canonical producer. The gate reads them at these paths (relative to the repo root, or the `--out` path passed
+to the emitter):
+
+| Artifact | Path | Content |
+|---|---|---|
+| Gate result | `.kata/RESULT.json` | The pinned `run_result.build_result` schema (see table above) |
+| Footprint manifest | `.kata/footprint.json` | `footprint`, `changed`, `inFootprint`, `outOfFootprint`, `withinFootprint`, `diffstat` |
+| Mutation proof | `.kata/mutation.json` | `records` (list of `{testWentRed, nonVacuous}`) + `allNonVacuous` (bool) — absent if no mutation step ran |
+
+`tools/gate_emit.py` composes `run_result`, `footprint`, and `mutation_check` without reimplementing them.
+If `.kata/footprint.json` is present, use `withinFootprint` for rubric item 4 (ownership respected).
+If `.kata/mutation.json` is present, use `allNonVacuous` for rubric item 1 (non-vacuous test proof).
+
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,
 minimal remediation **targeted at the existing plan** (not a re-plan). Seed the orchestrator's fix loop.
