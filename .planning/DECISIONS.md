@@ -561,3 +561,44 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   kata-promote is a pure human review. `agentSkills.dir` first-run-configured; candidate lifecycle
   (`distilled→grounded→promoted|sandboxed|rejected`) tracked in `protocol/state.md`. 28→29 skills; loop-cognition
   COMPLETE (RS+AO+ML all built). *Provenance:* user-approved continue 2026-06-19; frozen loop-cognition DESIGN L5/L6.
+
+### sprint-cadence (DESIGN FROZEN 2026-06-19 — `.planning/specs/sprint-cadence/DESIGN.md`; grill SC-GB1–10 + engram, freeze-gate audit HOLD→SHIP). Builds next (D16-first lock dissolved by D70).
+- **D78 — `delivery` is a third orthogonal config axis (`one-shot | incremental`); unit = sprint. (SC-GB1/GB2)**
+  Not a run-shape (would fork the preset table) nor a module (adds no skill — it changes loop topology). Composes
+  with every existing axis. A **sprint** = one gated, demonstrable vertical slice ending at the full quality gate
+  + a human course-correct. `incremental` (not "sprint") names the setting to avoid Scrum-timebox connotations.
+- **D79 — three-layer freeze + Boundary Change-Control Protocol G1–G4. (SC-GB3)** Project DESIGN (north-star,
+  superseding-decision only **+ a DESIGN-amendment at a boundary requires the same fresh-context `kata-review`
+  SHIP as the initial freeze — B5**) · sprint ROADMAP (boundary-amendable) · active PLAN (immutable, D1). G1
+  explicit approval · G2 drift-labelling · G3 post-approval adversarial sweep (`kata-review`, re-approval cap
+  **PINNED=2**, a backstop not a tunable) · G4 snowball guard (**predicate = blast-radius vs remaining-roadmap
+  footprint ONLY**, numeric threshold removed, D18). G1–G4 never tiered (D33). Safety spine: when in doubt, stop.
+- **D80 — sequencing A+C: re-entrant `kata-bootstrap` routes, `kata-orchestrate` stays sprint-blind, NEW thin
+  `kata-sprint` owns the boundary. (SC-GB4)** B (outer loop in orchestrate) rejected on D24d + the D8 pause-mid-
+  skill failure mode. Delivery-awareness lives only in HANDOFF-phase routing (one-shot → `kata-handoff`/
+  `kata-selfhandoff`; incremental → `kata-sprint`). T1–T8 tertiary-drift register LOCKED.
+- **D81 — three-tier state; tier-3 `.kata/` cache is disposable, rebuilt from the git-committed trail. (SC-GB5)**
+  Tier 1 frozen provenance (`kata.config`) · tier 2 durable trail (reports + boundary handoffs + superseding
+  decisions, git) · tier 3 progression cache (`.kata/`, single-writer L3, churns). `kata-readiness` rebuilds
+  tier 3 from tier 2 on re-entry → resume works in a new session/clone; git is the source of truth for "where are we?".
+- **D82 — course-correct = a scoped delta-grill; `delivery.boundary` default `always-stop`. (SC-GB6)** Reuse
+  `kata-grill` delta-mode (interrogate only what sprint N called into question + the user's requests; bake as
+  superseding decisions); droppable to essential (D24c); G1–G4 hold at every tier (D33). `auto-continue-while-green`
+  is opt-in and proceeds ONLY when green ∧ no escalations ∧ no pending corrections ∧ no G3 tertiary drift.
+- **D83 — prime-frame context-budget sizing primitive; SUPERSEDES the threshold half of D8. (SC-GB7/B1)** The
+  *prime frame* (recommended effective working band, agnostic fraction; adapter resolves to per-model tokens,
+  D59) sizes sprints (floor ⇒ refuse sprint; ceiling ⇒ split) AND sets the one-shot self-handoff/refresh
+  threshold — replacing D8's user-set %. D8's surviving principles (anti-over-conservative, task-boundary-
+  preferred) carry forward. `kata-selfhandoff` EXTEND; runs intra-sprint too. ~1M window + fraction are
+  `[TUNABLE]` grounded against real model facts **at build time** (not pinned from memory).
+- **D84 — sprint baseline = the most recent green gate; sprinted version-up first-class, sprinted bake-off
+  trimmed. (SC-GB8/GB9)** A sprint is version-up-shaped whenever a prior green baseline exists (existing repo's
+  gate, else the prior sprint's). Reuses D50 footprint+regression + D51/D52 escalation verbatim; `kata-graph`
+  à-la-carte on prime-frame pressure. Sprinted bake-off has no config path/offer/seam (revisit only on a concrete
+  request once Spec B exists) — not forbidden, just not built.
+- **D85 — the `kata-plan` sprint-roadmap layer is NET-NEW (the feature's largest build surface), not latent.
+  (SC freeze-gate A1)** Roadmap-artifact schema pinned `{ projectDesignRef, frozenAt, sprints:[{ id, goal,
+  gateCommand, demonstrableArtifactType, dagSeamRationale, dependsOn[] }] }`. `delivery` config field pinned
+  (D3); `kata-report` minimal core built here = D32 v1 (not throwaway, D2). NEW skills: `kata-plan` roadmap
+  layer · `kata-sprint` · `kata-report` v1. *Provenance for D78–D85:* sprint-cadence grill (2026-06-15) +
+  freeze-gate audit HOLD→SHIP (fresh-context, 2026-06-19); frozen DESIGN.

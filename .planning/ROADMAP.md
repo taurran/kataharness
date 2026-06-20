@@ -106,7 +106,7 @@ version-up on KataHarness itself.
 |---|---|
 | v0.1 core | 11 skills built; reviewed; execution half field-proven (A/B **tied**, L10) — planning A/B (D16) still pending; target reshaped to small one-shot test projects (D57) |
 | Modes Spec A (A1–A4) | **COMPLETE + merged** — validator + tiers + bootstrap/readiness + version-up/kata-graph + frontier/async-escalation; **25 skills**; D1–D56 |
-| sprint-cadence | grill CONVERGED (SC-GB1–10 + engram); freeze-gate audit **HOLD** — must-fixes pending before DESIGN freeze; builds after D16 |
+| sprint-cadence | **DESIGN FROZEN 2026-06-19** (SC-GB1–10 + engram; freeze-gate audit HOLD→SHIP, 7 must-fixes applied; D78–D85). **Builds NEXT** (D16-first lock dissolved by D70). NEW: `kata-plan` roadmap layer + `kata-sprint` + `kata-report` v1 |
 | loop-cognition | **DESIGN FROZEN 2026-06-18** (D60–D69, audit HOLD→SHIP); 3 new skills (research/orient/promote); β feed builds ∥ D16, rest after D16 |
 | v0.2 (pulled fwd) | diagnose/selfhandoff/improve/write-skill built; tasklist deferred (needs worker self-select) |
 | v0.3–v0.4 | Not started (adapters; ACP/Quick + kata-engram) |

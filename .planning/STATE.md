@@ -142,8 +142,9 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   human gate; `engram.autonomy` AND-gate default **always-human**; candidate lifecycle in `state.md`. **29 skills.**
   Validator 29/0, pytest 27. **⇒ loop-cognition COMPLETE (RS + AO + ML).**
 - **NEXT (see HANDOFF §4 THE PLAN):** (1)–(4) ✅ D71/β/RS/AO; (5) ✅ RS+AO validation; (6) ✅ ML →
-  **loop-cognition done.** **(7) Freeze + build sprint-cadence** (apply its 2026-06-15 must-fixes); **(8) dogfood
-  version-up on KataHarness itself** (the endgame: build fully → full tests → self-improve). CONSULT/full-autonomy
+  **loop-cognition done.** **(7) ✅ sprint-cadence DESIGN FROZEN 2026-06-19** (D78–D85; freeze-gate HOLD→SHIP) →
+  **BUILD it next** (NEW: `kata-plan` roadmap layer + `kata-sprint` + `kata-report` v1; needs PLAN + approval);
+  **(8) dogfood version-up on KataHarness itself** (the endgame: build fully → full tests → self-improve). CONSULT/full-autonomy
   stay gated on a mature engram.
 
 ## Next action — RS → AO → ML (D16 lock dissolved by D70; D71 + β DONE 2026-06-18)
