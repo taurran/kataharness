@@ -25,7 +25,8 @@ CATEGORIES = set(CATEGORY_ORDER)
 STATUSES = {"experimental", "beta", "stable", "deprecated"}
 # Schema v2 (D31): name-regex + description-length enforced here; `license` + `cost-weight` join
 # REQUIRED_KEYS in Task 2 (when all skills gain them in one pass — keeps the real tree green each step).
-REQUIRED_KEYS = ("name", "description", "license", "version", "category", "status", "agnostic", "cost-weight")
+REQUIRED_KEYS = ("name", "description", "license", "version", "category", "status", "agnostic",
+                 "cost-weight", "allowed-tools")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")   # agentskills.io spec
 DESCRIPTION_MAX = 1024
@@ -109,6 +110,20 @@ def check_cost_weight(skills: list[Skill]) -> list[Finding]:
         cw = s.frontmatter.get("cost-weight")
         if not isinstance(cw, int) or isinstance(cw, bool) or not (1 <= cw <= 5):
             out.append(Finding("ERROR", s.dir.name, f"cost-weight '{cw}' must be an int 1-5"))
+    return out
+
+
+@check
+def check_allowed_tools(skills: list[Skill]) -> list[Finding]:
+    """STANDARDS §1: allowed-tools is load-bearing (least-privilege security + cost surface). It must be
+    present (REQUIRED_KEYS handles absence) and, when present, a NON-EMPTY list of strings. (dogfood-selfup-1)"""
+    out: list[Finding] = []
+    for s in skills:
+        at = s.frontmatter.get("allowed-tools")
+        if at is None:
+            continue  # absence is reported by check_frontmatter via REQUIRED_KEYS
+        if not isinstance(at, list) or not at or not all(isinstance(t, str) for t in at):
+            out.append(Finding("ERROR", s.dir.name, "allowed-tools must be a non-empty list of strings"))
     return out
 
 

@@ -23,7 +23,7 @@ category: plan                   # REQUIRED. one of: plan|coordinate|execute|eva
 status: experimental             # REQUIRED. experimental | beta | stable | deprecated
 agnostic: true                   # REQUIRED. true = no tool-specific deps in the skill body
 cost-weight: 4                   # REQUIRED. 1–5 (authority: .planning/SKILL-COST-RATINGS.md) — D27
-allowed-tools: [Read, Grep, Glob, Write]   # OPTIONAL. YAML list (Claude v0.1); adapter normalizes to the open-standard space-separated string (D31b). Evaluators MUST omit Write/Edit.
+allowed-tools: [Read, Grep, Glob, Write]   # REQUIRED. non-empty YAML list (Claude v0.1); adapter normalizes to the open-standard space-separated string (D31b). Evaluators MUST omit Write/Edit. (REQUIRED + shape enforced — dogfood-selfup-1)
 model: opus                      # OPTIONAL. only when the model is fixed for correctness
 compatibility: >-               # OPTIONAL (spec; ≤500). env requirements; doubles as a human-readable pre-flight hint (D29)
   Requires git + a subagent-capable host

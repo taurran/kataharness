@@ -24,6 +24,21 @@ def test_cost_weight_out_of_range_is_an_error():
     assert any(f.level == "ERROR" and "cost-weight" in f.msg for f in findings)
 
 
+def test_allowed_tools_must_be_present_and_nonempty_list():
+    # dogfood-selfup-1: allowed-tools is load-bearing (least privilege + cost) — enforce it structurally.
+    # A string (not a list) must error.
+    findings = v.run_checks(_skills_in("bad-tools"))
+    assert any(f.level == "ERROR" and "allowed-tools" in f.msg for f in findings)
+    # ...and it must be a REQUIRED key (presence enforced for the real tree).
+    assert "allowed-tools" in v.REQUIRED_KEYS
+
+
+def test_real_tree_allowed_tools_all_wellformed():
+    # every shipped skill already carries a valid allowed-tools list — the regression baseline this protects.
+    findings = v.check_allowed_tools(v.load_skills())
+    assert findings == [], f"real skills must all have a non-empty allowed-tools list: {findings}"
+
+
 def test_index_is_idempotent_under_regeneration():
     skills = _skills_in("good")
     use = {"kata-good": "does a good thing"}

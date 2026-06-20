@@ -7,6 +7,7 @@ category: plan
 status: experimental
 agnostic: true
 cost-weight: 2
+allowed-tools: [Read, Grep, Glob]
 tags:
   - kata/plan
   - kata/spine
