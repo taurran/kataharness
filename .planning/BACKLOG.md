@@ -2,6 +2,19 @@
 
 Promote to ROADMAP milestones when ready.
 
+- **★ DOGFOOD #1 FINDINGS (2026-06-19, self version-up — see `.planning/specs/dogfood-selfup-1/`).**
+  - **★ Evaluation-artifact self-sufficiency (HIGH — the headline).** A live run must be **evaluable in depth
+    from its end artifacts alone** — today it is not. Upgrade `kata-report`/`kata-evaluate` to **self-emit**: a
+    `RESULT.json` (gate name + **verbatim** stdout + exit codes + pass/fail counts + timestamp), **baseline +
+    result commit SHAs**, a **footprint manifest + diff-stat** (assert touched ⊆ plan), a **recorded mutation/
+    non-vacuity proof** (bake "would this test fail if its asserted line were removed?" into `kata-tdd`), and a
+    **corpus-wide new-findings delta**. Directly answers the user's "is the writeup enough?" → no. *Strong
+    candidate for dogfood #2.*
+  - **version-up tree-sitter BLOCK too coarse (R1).** `kata-readiness` BLOCKs every version-up when tree-sitter
+    is absent, even changes that need **no** structural graph (docs/validator-only footprints). Scope the BLOCK
+    to runs that actually require `kata-graph` (or make graph optional when the footprint ∌ code structure).
+  - **manual-drive friction (R2).** The loop ran without automated orchestrate/worktree dispatch or an installed
+    host — confirms [[install-portability]] + [[multi-model-orchestration]] are real, not theoretical.
 - **research/NOTES.md deep-eval** — score mattpocock skills, BMAD, GSD; record exactly what each
   `kata-*` skill adopts from where (the core bake-in work). *(do before/with v0.1)*
 - **Adapters** — `codex`, `kiro`, `acp-quick`; AGENTS.md→tool-instruction-file normalization; skill-format mapping. *(v0.3/v0.4)*
