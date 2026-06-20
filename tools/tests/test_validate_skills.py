@@ -337,3 +337,75 @@ def test_sc_bootstrap_is_the_boundary_router():
     assert "[[kata-sprint]]" in body, "kata-bootstrap must dispatch to kata-sprint on a gated boundary"
     assert "gated" in body and "dirty" in body, "bootstrap must route gated->kata-sprint vs dirty->resume"
     assert "delivery" in body, "bootstrap must write the delivery axis (D78)"
+
+
+# ── I1: module discovery plumbing (D91) ──────────────────────────────────────
+
+def test_i1_module_skill_is_discovered(tmp_path):
+    """(a) A fixture module skill at modules/<m>/<skill>/SKILL.md is discovered by load_skills
+    and validated like a normal skill (D91)."""
+    # Build a minimal, conformant module skill fixture
+    skill_dir = tmp_path / "modules" / "initiation" / "kata-initiate"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        "---\n"
+        "name: kata-initiate\n"
+        "description: Front-door initiation skill.\n"
+        "license: Apache-2.0\n"
+        "version: 0.1.0\n"
+        "category: coordinate\n"
+        "status: experimental\n"
+        "agnostic: true\n"
+        "cost-weight: 3\n"
+        "allowed-tools: [Read, Grep, Glob, Write, Edit]\n"
+        "tags:\n"
+        "  - kata/coordinate\n"
+        "  - kata/module/initiation\n"
+        "---\n"
+        "# kata-initiate\nFront door.\n",
+        encoding="utf-8",
+    )
+    skills = v.load_skills(roots=[tmp_path / "skills", tmp_path / "modules"])
+    names = [s.name for s in skills]
+    assert "kata-initiate" in names, f"module skill must be discovered; got {names}"
+    # It should validate cleanly (no errors from frontmatter checks)
+    findings = v.check_frontmatter(skills)
+    errors = [f for f in findings if f.level == "ERROR"]
+    assert errors == [], f"module skill frontmatter must be conformant; errors: {errors}"
+
+
+def test_i1_module_skill_name_is_valid_wikilink_target(tmp_path, monkeypatch):
+    """(b) A module skill name is a valid wikilink target (_valid_skill_targets includes it, D91)."""
+    # Patch MODULES_DIR to point into our tmp tree
+    skill_dir = tmp_path / "modules" / "initiation" / "kata-initiate"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# placeholder", encoding="utf-8")
+    monkeypatch.setattr(v, "MODULES_DIR", tmp_path / "modules")
+    targets = v._valid_skill_targets()
+    assert "kata-initiate" in targets, (
+        f"_valid_skill_targets must include module skill names; got {targets}"
+    )
+
+
+def test_i1_intent_md_missing_required_term_errors(tmp_path, monkeypatch):
+    """(c) check_protocol_schemas emits an ERROR when a fixture intent.md is missing a required term."""
+    # Patch PROTOCOL_DIR and add intent.md to REQUIRED_PROTOCOL for this test
+    proto_dir = tmp_path / "protocol"
+    proto_dir.mkdir()
+    # Write an intent.md that is MISSING the 'readiness' term
+    (proto_dir / "intent.md").write_text(
+        "# intent.md\nkind goal fixes features changeSummary target grillDepth\n",
+        encoding="utf-8",
+    )
+    # Patch the global constants
+    monkeypatch.setattr(v, "PROTOCOL_DIR", proto_dir)
+    # Ensure intent.md is in REQUIRED_PROTOCOL with the full required terms
+    required_terms = ["kind", "goal", "fixes", "features", "changeSummary", "target", "grillDepth", "readiness"]
+    patched = dict(v.REQUIRED_PROTOCOL)
+    patched["intent.md"] = required_terms
+    monkeypatch.setattr(v, "REQUIRED_PROTOCOL", patched)
+    findings = v.check_protocol_schemas([])
+    errors = [f for f in findings if f.level == "ERROR" and "intent.md" in f.where]
+    assert any("readiness" in f.msg for f in errors), (
+        f"check_protocol_schemas must ERROR on missing 'readiness' in intent.md; findings: {findings}"
+    )

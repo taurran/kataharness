@@ -18,6 +18,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
+MODULES_DIR = REPO_ROOT / "modules"
 README = REPO_ROOT / "README.md"
 
 CATEGORY_ORDER = ["plan", "coordinate", "execute", "evaluate", "handoff", "meta", "cognition"]
@@ -60,9 +61,31 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     return fm, parts[2]
 
 
-def load_skills(root: Path = SKILLS_DIR) -> list[Skill]:
+def load_skills(root: Path = None, roots: list[Path] | None = None) -> list[Skill]:
+    """Discover SKILL.md files across one or more root directories.
+
+    Accepts either:
+    - ``root`` (single Path, legacy) — existing tests pass a fixture root this way.
+    - ``roots`` (list of Paths) — used when discovering both skills/ and modules/.
+    - Neither — defaults to [SKILLS_DIR, MODULES_DIR] (the real repo roots).
+
+    Results are sorted stably (by path) so the order is deterministic.
+    """
+    if roots is not None:
+        search_roots = roots
+    elif root is not None:
+        search_roots = [root]
+    else:
+        search_roots = [SKILLS_DIR, MODULES_DIR]
+
+    paths: list[Path] = []
+    for r in search_roots:
+        if r.exists():
+            paths.extend(r.glob("*/*/SKILL.md"))
+    paths.sort()
+
     skills: list[Skill] = []
-    for path in sorted(root.glob("*/*/SKILL.md")):
+    for path in paths:
         fm, body = parse_frontmatter(path.read_text(encoding="utf-8"))
         skills.append(Skill(name=str(fm.get("name", "")), dir=path.parent, frontmatter=fm, body=body))
     return skills
@@ -230,10 +253,17 @@ def regenerate_readme(skills: list[Skill], readme: Path = README) -> None:
     readme.write_text(_splice_index(text, block), encoding="utf-8")
 
 
+def _is_real_repo_skill(s: "Skill") -> bool:
+    """A skill counts as a real repo skill when it lives under SKILLS_DIR or MODULES_DIR (D91).
+    Previously the guard was SKILLS_DIR-only, which silently disabled README-sync enforcement
+    when any module skill was present — a real bug fixed here."""
+    return SKILLS_DIR in s.dir.parents or MODULES_DIR in s.dir.parents
+
+
 @check
 def check_readme_sync(skills: list[Skill]) -> list[Finding]:
     # Only meaningful when running against the real skills tree; skip for fixture-based test calls.
-    if not skills or not all(SKILLS_DIR in s.dir.parents for s in skills):
+    if not skills or not all(_is_real_repo_skill(s) for s in skills):
         return []
     text = README.read_text(encoding="utf-8")
     if INDEX_START not in text or INDEX_END not in text:
@@ -257,6 +287,8 @@ REQUIRED_PROTOCOL = {
     # sprint-cadence (D81/D79): tier-3 sprint state + the boundary-handoff artifact.
     "state.md": ["sprint", "gateStatus", "dirty", "gated", "rebuild"],
     "handoff.md": ["Boundary handoff", "sprint index"],
+    # initiation (D88/DESIGN §2): the PINNED INTENT.md artifact schema.
+    "intent.md": ["kind", "goal", "fixes", "features", "changeSummary", "target", "grillDepth", "readiness"],
 }
 
 
@@ -300,6 +332,10 @@ def _valid_skill_targets() -> set[str]:
     # a family folder = kata-<verb>/ containing RUBRIC.md but no SKILL.md (post-A2)
     for rubric in SKILLS_DIR.glob("*/*/RUBRIC.md"):
         names.add(rubric.parent.name)
+    # D91: also include module skill names so [[kata-initiate]] wikilinks resolve.
+    if MODULES_DIR.exists():
+        for p in MODULES_DIR.glob("*/*/SKILL.md"):
+            names.add(p.parent.name)
     return names | KNOWN_FAMILIES
 
 
