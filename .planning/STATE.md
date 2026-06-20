@@ -1,6 +1,13 @@
 # STATE — KataHarness
 
-**Phase:** v0.1 skill-complete · Modes A1–A4 merged · **loop-cognition COMPLETE (β/RS/AO/ML)** · **sprint-cadence BUILT + reviewed SHIP (D78–D86)** · **31 skills / 0 errors · pytest 38 · Snyk 0** · **Version:** pre-v0.1 · **Updated:** 2026-06-19
+**Phase:** v0.1 skill-complete · Modes A1–A4 merged · loop-cognition COMPLETE · sprint-cadence BUILT+SHIP (D78–D86) · **DOGFOOD #1 done (self version-up, GATE PASS)** · **31 skills / 0 errors · pytest 40 · Snyk 0** · on **private GitHub remote** (taurran/kataharness) · **Version:** pre-v0.1 · **Updated:** 2026-06-19
+
+> **Dogfood #1 (2026-06-19):** self version-up enforcing `allowed-tools` ran through the full loop (readiness →
+> skip-grill → footprint plan → TDD → fresh-context default-FAIL eval **PASS** → report). **Machinery held**
+> (regression contract green end-to-end). **Headline finding:** the end-of-run writeup is **not self-sufficient**
+> for in-depth evaluation — needs self-emitted `RESULT.json` + footprint manifest + recorded mutation proof
+> (→ BACKLOG ★, strong dogfood-#2 candidate). Also: tree-sitter BLOCK too coarse (R1); manual-drive friction
+> (R2). See `.planning/specs/dogfood-selfup-1/`.
 
 > **CURRENT (2026-06-19, top of file — older history below is preserved, not current):** **sprint-cadence is
 > BUILT + reviewed SHIP** (D78–D85; 11 tasks / 5 waves; commits `43e7c2c`→`e0d0610`). NEW `kata-plan` roadmap
