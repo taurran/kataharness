@@ -21,6 +21,7 @@
 | `runShape` | `"individual" \| "batch" \| "version-up" \| "advanced"` | The preset chosen at bootstrap (GB1) — provenance; presets pre-fill `mode`+`modules`. |
 | `target` | `{ kind: "greenfield" \| "existing", path?: string, baselineGate?: string }` | `greenfield` (default) or `existing` (version-up): `path` = existing repo, `baselineGate` = the command that must be green before *and* after (the regression baseline). |
 | `graph` | `{ budget: int, marginDepth: int, backend: "tree-sitter"\|"grep-reduced"\|"graphify" }` | `kata-graph` tunables: digest token budget (default 3000), ownership reverse-dependent hop depth (default 1), backend selection. |
+| `delivery` | `{ shape: "one-shot"\|"incremental", boundary: "always-stop"\|"auto-continue-while-green", backend?: <engram pointer> }` | The **third orthogonal axis** (D78, sprint-cadence): cadence of the build. Default `shape: "one-shot"` (D25 absent ⇒ today's behavior exactly, BC1) · `boundary: "always-stop"` (control-first, GB6). `backend?` = the optional boundary CONSULT seam (E2/E19, no-op if absent). Composes with every other axis; it is **not** a run-shape and **not** a module. See *Delivery axis* + *Prime-frame sizing* below. |
 | `engram` | `{ backend?: string, learnFeed?: { dir: string }, autonomy?: "always-human"\|"assisted"\|"auto-when-confident" }` | Optional cognitive-fingerprint config (`protocol/engram.md`). **`learnFeed.dir`** = the **LEARN-only feed** (β) emit target; absent ⇒ **no emit** (no-op, BC1). **`backend`** = the CONSULT backend (gated/off today, D9/D56) — **distinct from `learnFeed`**: the feed is active now, CONSULT is not. **`autonomy`** = the promotion-autonomy AND-gate (loop-cognition L6); default **`always-human`** (D25-safe); per-seam overridable; gated on a mature engram. Read by `kata-promote`; the grounding gate (D33) is never bypassed at any level. |
 | `agentSkills` | `{ dir: string }` | The **agent-skills toolkit** root (first-run-configured, loop-cognition L5). `<dir>/candidates/` holds sandboxed agent-distilled candidates; `kata-promote` moves promoted skills into `<dir>/skills/<category>/`. **Outside this repo's `skills/` tree** — the validator never scans it. Absent ⇒ no agent-distilled skills persist (no-op). |
 
@@ -58,6 +59,39 @@ certainty *by construction*, it is not benchmarked (L11). It is controlled by `t
   The default-FAIL `kata-evaluate` gate is **never** skipped on any rung (D22/D33).
 - `kata-readiness` recommends a starting dial position from priming-prompt richness/ambiguity; `kata-bootstrap`
   offers it (D46); the human always chooses. Grill ledgers feed the cognitive fingerprint (D72).
+
+## Delivery axis (D78 — sprint-cadence)
+`delivery` selects the build **cadence** — one continuous run, or gated reviewable increments (sprints). It is a
+third orthogonal axis composing with `mode` × `effort` × `modules` (D78); the unit of an incremental run is a
+**sprint** (each sprint is itself a one-shot; the boundary between sprints is the only place steering happens).
+
+| Field | Values | Default | Meaning |
+|---|---|---|---|
+| `delivery.shape` | `one-shot` \| `incremental` | **`one-shot`** | `one-shot` = today's loop, byte-for-byte (D25/BC1). `incremental` = partition into sprints via the `kata-plan` roadmap layer; `kata-sprint` owns the boundary. |
+| `delivery.boundary` | `always-stop` \| `auto-continue-while-green` | **`always-stop`** | Control-first (GB6). `always-stop` = every boundary hard-stops for the human (G1). `auto-continue-while-green` = continue **only** while {green ∧ no escalations ∧ no pending corrections ∧ no G3 tertiary drift} all hold (an AND-gate; the moment any is false ⇒ stop). |
+| `delivery.backend?` | engram pointer | absent | Optional boundary CONSULT seam (E2/E19); no-op when absent (gated like all CONSULT, D9/D56). |
+
+- **Preset pre-fill (GB4/D46):** `individual` ⇒ one-shot · `version-up` ⇒ **ask** · `batch` ⇒ one-shot.
+- **Fail-closed (D45):** the load-guard validates `delivery` strictly — a malformed value ⇒ **stop + escalate,
+  never guess**. Absent ⇒ one-shot (BC1). `kata-orchestrate` stays **sprint-blind** (BC2): delivery-awareness
+  lives only in HANDOFF-phase routing (one-shot → `kata-handoff`/`kata-selfhandoff`; incremental → `kata-sprint`).
+
+## Prime-frame sizing (D83 — supersedes D8's threshold clause)
+The **prime frame** = a model's *recommended effective working band* — the span below the degradation zone, with
+headroom reserved. It is an **agnostic fraction/policy; the adapter resolves it to real tokens per model** (D59).
+It is the *single* primitive that both **sizes sprints** (`kata-plan` roadmap layer) and **sets the one-shot
+self-handoff/refresh threshold** (`kata-selfhandoff`) — same primitive, two policies.
+
+- **Default `[TUNABLE]` fraction ≈ 0.40 of the model's advertised window** (restart ceiling ≈ 0.48). Grounded at
+  build (2026-06-19, WebSearch) against real model facts — **do not pin from memory**: Fable 5 / Opus 4.8 /
+  Sonnet 4.6 all advertise a **1M-token** window, but reliable retrieval holds to ~200–256K and self-reported
+  degradation begins ≈40% / restart-recommended ≈48% utilization. So the effective working band on a 1M model is
+  ≈400K. These numbers are **tunable and model-specific**; the architecture is number-independent.
+- **Floor:** a candidate sprint that already fits within **one** prime frame ⇒ refuse to sprint, recommend
+  one-shot. **Ceiling:** a sprint whose context demand **exceeds** one prime frame ⇒ split. Max sprint count =
+  `⌈project context demand ÷ prime frame⌉`, no arbitrary cap.
+- **B1 (D83):** the one-shot self-handoff/refresh threshold changes from D8's user-set % → this model-resolved
+  prime-frame fraction. **D8's principles survive** (anti-over-conservative; task-boundary-preferred).
 
 ## Notes
 - Tier resolution: `kata-orchestrate` maps a bare family reference (`[[kata-grill]]`) → `tiers["kata-grill"]`

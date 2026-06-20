@@ -17,6 +17,7 @@ kept separate from durable Obsidian docs ([[STANDARDS]] §5).
   "gate": { "tests": "244/0/0", "build": "deterministic 322511", "security": "0" },
   "driftLedger": { "unauthorizedDeviations": 0, "escalations": 0, "interventions": 0 },
   "candidates": [ { "name": "kata-foo", "status": "grounded", "groundingVerdict": "GROUND" } ],
+  "sprint": { "index": 2, "gateStatus": "green", "openCorrection": false, "boundary": "gated" },
   "updatedUtc": "<ISO-8601>"
 }
 ```
@@ -30,3 +31,23 @@ kept separate from durable Obsidian docs ([[STANDARDS]] §5).
   `agentSkills.dir` ⇒ no candidates (no-op).
 - The orchestrator rewrites this atomically at each checkpoint; the board is the append-only event log, this
   is the current-truth snapshot.
+
+## Sprint progression — three tiers (sprint-cadence D81, GB5; git is the source of truth)
+For an incremental run (`delivery.shape == "incremental"`), progression lives in **three tiers** with strictly
+separated authority — **git is authoritative; the live cache is disposable**:
+
+| Tier | Holds | Lives in | Lifecycle |
+|---|---|---|---|
+| 1 frozen provenance | `delivery: {shape, policy}` | `kata.config` (git) | bootstrap-set, append-stable, D45-guarded |
+| 2 durable trail | per-sprint reports + boundary handoffs + superseding decisions / roadmap amendments | `.planning` Obsidian docs (git) | **authoritative, resumable record** |
+| 3 progression cache | `sprint.index`, `gateStatus`, `openCorrection`, `boundary: dirty\|gated` (the fields above) | `.kata/state.json` (gitignored) | single-writer plan-guardian (L3); **churns; rebuilt from tier-2 on re-entry** |
+
+- The `sprint` block above is **tier-3 only** — *disposable and rebuildable*, never authoritative. The
+  authoritative record is the committed tier-2 trail.
+- **Resume / rebuild rule (R5):** on a fresh session or clone, `kata-readiness` rebuilds tier-3 from the
+  git-committed tier-2 trail — **current sprint = which per-sprint reports exist + are gated**;
+  `boundary: dirty` (mid-sprint, uncommitted work) ⇒ resume the sprint; `boundary: gated` (sprint gate green,
+  awaiting the boundary) ⇒ course-correct. **If the cache corrupts, throw it away and rebuild** — losing
+  `.kata/` loses nothing durable.
+- **Single-writer still holds (L3):** only the orchestrator writes `.kata/state.json`; `kata-readiness` computes
+  the rebuilt state and hands it back, it does not write (T6).
