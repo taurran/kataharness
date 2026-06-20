@@ -98,15 +98,16 @@ autonomous grill-vs-baseline A/B tests the wrong axis; **autonomous reliability 
 the v0.1 gate is re-scoped to that + the **Priming-and-Grill architecture (D71/D72):** grill is an *optional*
 human certainty layer over the priming prompt (autonomous-reliability floor when skipped), and grill ledgers
 feed the cognitive fingerprint. **The D16-first lock is dissolved → the full build is unblocked.** Build path
-(HANDOFF §4): wire D71 → build loop-cognition β (LEARN feed) → RS/AO/ML → freeze sprint-cadence → dogfood
-version-up on KataHarness itself.
+(HANDOFF §4): wire D71 ✅ → build loop-cognition β (LEARN feed) ✅ → RS/AO/ML ✅ → **build sprint-cadence ✅
+(D78–D85, 2026-06-19)** → **next: dogfood version-up on KataHarness itself** (the endgame; exercises the
+deferred-runtime BACKLOG). Pending on sprint-cadence: the fresh-context `kata-review` (D15/A5) before "done".
 
 ## Progress
 | Milestone | Status |
 |---|---|
 | v0.1 core | 11 skills built; reviewed; execution half field-proven (A/B **tied**, L10) — planning A/B (D16) still pending; target reshaped to small one-shot test projects (D57) |
 | Modes Spec A (A1–A4) | **COMPLETE + merged** — validator + tiers + bootstrap/readiness + version-up/kata-graph + frontier/async-escalation; **25 skills**; D1–D56 |
-| sprint-cadence | **DESIGN FROZEN 2026-06-19** (SC-GB1–10 + engram; freeze-gate audit HOLD→SHIP, 7 must-fixes applied; D78–D85). **Builds NEXT** (D16-first lock dissolved by D70). NEW: `kata-plan` roadmap layer + `kata-sprint` + `kata-report` v1 |
+| sprint-cadence | **BUILT 2026-06-19** (D78–D85; 11 tasks / 5 waves; validator **31/0**, pytest **37**, Snyk 0). NEW: `kata-plan` roadmap layer (`ROADMAP.md`) + `kata-sprint` (G1–G4 boundary) + `kata-report` v1; EXTEND config/state/handoff/escalation + selfhandoff/readiness/handoff; orchestrate stays sprint-blind (BC2). Pending: fresh-context `kata-review` (D15/A5) |
 | loop-cognition | **DESIGN FROZEN 2026-06-18** (D60–D69, audit HOLD→SHIP); 3 new skills (research/orient/promote); β feed builds ∥ D16, rest after D16 |
 | v0.2 (pulled fwd) | diagnose/selfhandoff/improve/write-skill built; tasklist deferred (needs worker self-select) |
 | v0.3–v0.4 | Not started (adapters; ACP/Quick + kata-engram) |

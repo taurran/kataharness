@@ -1,12 +1,15 @@
 # STATE — KataHarness
 
-**Phase:** v0.1 skill-complete · Modes A1–A4 merged · **loop-cognition COMPLETE (β/RS/AO/ML)** · **sprint-cadence DESIGN FROZEN (builds next)** · **29 skills / 0 errors · pytest 27** · **Version:** pre-v0.1 · **Updated:** 2026-06-19
+**Phase:** v0.1 skill-complete · Modes A1–A4 merged · **loop-cognition COMPLETE (β/RS/AO/ML)** · **sprint-cadence BUILT (D78–D85)** · **31 skills / 0 errors · pytest 37** · **Version:** pre-v0.1 · **Updated:** 2026-06-19
 
-> **CURRENT (2026-06-19, top of file — older history below is preserved, not current):** loop-cognition shipped
-> end-to-end this session — β LEARN feed (D74), RS `kata-research` (D75), AO `kata-orient` (D76), ML
-> `kata-promote` (D77); plus D71 Priming-and-Grill + `kata-defer` (D73). **sprint-cadence DESIGN frozen**
-> (D78–D85, freeze-gate HOLD→SHIP) — **builds next** (D16-first lock dissolved by D70). Everything green +
-> committed (9 commits on `master` this session, local-only). **Next = plan + build sprint-cadence.** See `.planning/HANDOFF.md`.
+> **CURRENT (2026-06-19, top of file — older history below is preserved, not current):** **sprint-cadence is
+> BUILT** (D78–D85; 11 tasks / 5 waves; PLAN `43e7c2c`, waves `5da327b`+`b5884e9`, validator+docs pending the
+> conformance/docs commits). NEW `kata-plan` roadmap layer (`ROADMAP.md`), `kata-sprint` (G1–G4 boundary
+> change-control), `kata-report` v1; the `delivery: one-shot|incremental` axis + prime-frame sizing (grounded:
+> Fable5/Opus4.8/Sonnet4.6 = 1M window, ~0.40 effective). `kata-orchestrate` stays **sprint-blind** (BC2).
+> **31 skills · validator 0 errors · pytest 37 · Snyk pending.** Loop-cognition (β/RS/AO/ML, D74–D77) + D71
+> Priming-and-Grill shipped earlier this session. **Next = fresh-context `kata-review` (D15/A5) over the
+> sprint-cadence diff, then Snyk; after SHIP → dogfood version-up on KataHarness itself.** See `.planning/HANDOFF.md`.
 
 ## Where we are
 - Project scaffolded at `C:\Dev\Projects\KataHarness` (git, `.gitattributes eol=lf`). Foundation committed.

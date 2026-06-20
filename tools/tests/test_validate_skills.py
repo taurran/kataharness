@@ -202,3 +202,113 @@ def test_d71_kata_defer_present_and_handoff_category():
     fm = skills["kata-defer"].frontmatter
     assert fm.get("category") == "handoff", "kata-defer category must be handoff (M3)"
     assert "kata/module/defer" in (fm.get("tags") or []), "kata-defer must be the optional defer module (D43)"
+
+
+# ── sprint-cadence (D78–D85) ──────────────────────────────────────────────────
+
+def test_sc_config_documents_delivery_axis():
+    # T1/D78: config.md must carry the delivery axis with control-first defaults + prime-frame policy.
+    from validate_skills import REQUIRED_PROTOCOL, check_protocol_schemas
+    assert "delivery" in REQUIRED_PROTOCOL["config.md"]
+    text = (v.REPO_ROOT / "protocol" / "config.md").read_text(encoding="utf-8")
+    assert "Delivery axis" in text, "config.md must document the delivery axis (D78)"
+    assert "one-shot" in text and "incremental" in text, "delivery.shape values must be documented"
+    assert "always-stop" in text, "delivery.boundary must default control-first (always-stop, GB6)"
+    assert "Prime-frame sizing" in text, "config.md must document the prime-frame policy (D83)"
+    findings = [str(f) for f in check_protocol_schemas([])]
+    assert not any("config.md" in f for f in findings), findings
+
+
+def test_sc_state_three_tier_sprint_progression():
+    # T2/D81: tier-3 sprint cache documented as disposable + rebuilt from the committed tier-2 trail.
+    from validate_skills import REQUIRED_PROTOCOL, check_protocol_schemas
+    assert {"sprint", "gateStatus", "dirty", "gated", "rebuild"} <= set(REQUIRED_PROTOCOL["state.md"])
+    text = (v.REPO_ROOT / "protocol" / "state.md").read_text(encoding="utf-8")
+    assert "git-committed tier-2 trail" in text, "tier-3 must be rebuildable from the git trail (R5)"
+    assert "disposable" in text.lower(), "tier-3 cache must be marked disposable, never authoritative"
+    findings = [str(f) for f in check_protocol_schemas([])]
+    assert not any("state.md" in f for f in findings), findings
+
+
+def test_sc_handoff_boundary_artifact():
+    # T3/D79: the boundary-handoff variant is documented in the protocol schema.
+    from validate_skills import REQUIRED_PROTOCOL, check_protocol_schemas
+    assert {"Boundary handoff", "sprint index"} <= set(REQUIRED_PROTOCOL["handoff.md"])
+    findings = [str(f) for f in check_protocol_schemas([])]
+    assert not any("handoff.md" in f for f in findings), findings
+
+
+def test_sc_escalation_red_sprint_routing():
+    # T3/T4: a red sprint routes through escalation, never a boundary.
+    text = (v.REPO_ROOT / "protocol" / "escalation.md").read_text(encoding="utf-8")
+    assert "Red-sprint routing" in text, "escalation.md must document red-sprint routing"
+    assert "never a boundary" in text.lower() or "not a boundary" in text.lower(), \
+        "a red gate must NOT become a boundary stop"
+
+
+def test_sc_kata_report_reports_never_gates():
+    # T8/D85/D2: kata-report v1 — evaluate category, reports the gate, never confers one.
+    skills = {s.name: s for s in v.load_skills()}
+    assert "kata-report" in skills, "kata-report must exist (sprint-cadence D85)"
+    fm = skills["kata-report"].frontmatter
+    assert fm.get("category") == "evaluate", "kata-report category must be evaluate (M1)"
+    body = (v.SKILLS_DIR / "evaluate" / "kata-report" / "SKILL.md").read_text(encoding="utf-8")
+    assert "does not gate" in body.lower() or "never gate" in body.lower(), \
+        "kata-report must explicitly NOT gate (kata-evaluate owns the gate, D22)"
+
+
+def test_sc_roadmap_layer_artifact_schema():
+    # T4/D85: the roadmap layer is a method file (not a counted skill) and pins the artifact schema.
+    roadmap = v.SKILLS_DIR / "plan" / "kata-plan" / "ROADMAP.md"
+    assert roadmap.exists(), "the kata-plan roadmap layer (ROADMAP.md) must exist"
+    text = roadmap.read_text(encoding="utf-8")
+    for key in ("projectDesignRef", "gateCommand", "demonstrableArtifactType", "dagSeamRationale", "dependsOn"):
+        assert key in text, f"roadmap artifact schema must pin '{key}' (D85/A1)"
+    # it is a layer, not a skill: no SKILL.md in the family folder.
+    assert not (v.SKILLS_DIR / "plan" / "kata-plan" / "SKILL.md").exists(), \
+        "kata-plan stays a family folder (RUBRIC + ROADMAP), not a counted skill (M2)"
+
+
+def test_sc_selfhandoff_prime_frame_trigger():
+    # T5/B1/D83: the self-handoff trigger is the prime-frame fraction (supersedes D8's %), runs intra-sprint.
+    body = (v.SKILLS_DIR / "handoff" / "kata-selfhandoff" / "SKILL.md").read_text(encoding="utf-8")
+    assert "prime-frame" in body.lower() or "prime frame" in body.lower(), \
+        "self-handoff must trigger on the prime frame (B1/D83)"
+    assert "intra-sprint" in body.lower(), "self-handoff must also run intra-sprint (no gate, no drift)"
+
+
+def test_sc_readiness_sprint_detect_rebuild_readonly():
+    # T6/D81: readiness detects sprint state + rebuilds tier-3 from the trail, but stays read-only (L3).
+    body = (v.SKILLS_DIR / "coordinate" / "kata-readiness" / "SKILL.md").read_text(encoding="utf-8")
+    assert "Sprint-progression detection" in body, "readiness must detect sprint progression (D81)"
+    assert "dirty" in body and "gated" in body, "readiness must distinguish dirty (resume) vs gated (course-correct)"
+    assert "never write" in body.lower() or "read-only" in body.lower(), \
+        "readiness must stay read-only — orchestrator is the single writer (L3)"
+    fm = {s.name: s for s in v.load_skills()}["kata-readiness"].frontmatter
+    for forbidden in ("Write", "Edit"):
+        assert forbidden not in (fm.get("allowed-tools") or []), f"kata-readiness must not gain {forbidden}"
+
+
+def test_sc_kata_sprint_boundary_protocol():
+    # T7/D79/D80: kata-sprint is the spine boundary coordinator with the full G1-G4 protocol.
+    skills = {s.name: s for s in v.load_skills()}
+    assert "kata-sprint" in skills, "kata-sprint must exist (sprint-cadence D80)"
+    fm = skills["kata-sprint"].frontmatter
+    assert fm.get("category") == "coordinate", "kata-sprint category must be coordinate"
+    assert "kata/spine" in (fm.get("tags") or []), "kata-sprint is spine (the boundary is the steering spine)"
+    assert "AskUserQuestion" in (fm.get("allowed-tools") or []), "G1 needs an explicit human approval gate"
+    body = (v.SKILLS_DIR / "coordinate" / "kata-sprint" / "SKILL.md").read_text(encoding="utf-8")
+    for gate in ("G1", "G2", "G3", "G4"):
+        assert gate in body, f"the boundary protocol must encode {gate}"
+    assert "PINNED 2 rounds" in body, "G3 must encode the PINNED 2-round cap (not a tunable)"
+    assert "blast-radius" in body.lower() and "no numeric threshold" in body.lower(), \
+        "G4 must be blast-radius-vs-footprint only — no numeric threshold (D18)"
+    assert "never tiered" in body.lower() or "never be tiered" in body.lower(), \
+        "G1-G4 are structural invariants, never tiered (D33)"
+
+
+def test_sc_orchestrate_stays_sprint_blind():
+    # BC2: delivery-awareness never leaks into the sprint-blind orchestrator.
+    body = (v.SKILLS_DIR / "coordinate" / "kata-orchestrate" / "SKILL.md").read_text(encoding="utf-8")
+    assert "kata-sprint" not in body, "kata-orchestrate must stay sprint-blind (BC2) — no kata-sprint reference"
+    assert "delivery" not in body.lower(), "kata-orchestrate must not gain delivery-awareness (BC2)"

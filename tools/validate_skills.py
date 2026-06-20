@@ -233,12 +233,15 @@ def check_readme_sync(skills: list[Skill]) -> list[Finding]:
 PROTOCOL_DIR = REPO_ROOT / "protocol"
 REQUIRED_PROTOCOL = {
     "config.md": ["mode", "modules", "effort", "tiers", "preflight", "bakeoff", "skillVersions",
-                  "runShape", "target", "graph"],
+                  "runShape", "target", "graph", "delivery"],
     "dependencies.md": ["classification", "scope", "verify", "install"],
     "graph.md": ["id", "kind", "path", "name", "symKind", "span", "rank", "weight", "edge", "meta"],
     "escalation.md": ["taskId", "kind", "decisionNeeded", "optionsConsidered", "agentRecommendation", "status"],
     "engram.md": ["CONSULT", "LEARN", "wiki-synthesis", "produced-by", "redaction", "learnFeed"],
     "orientation.md": ["stable", "context", "volatile", "adjacency", "task-type", "callout"],
+    # sprint-cadence (D81/D79): tier-3 sprint state + the boundary-handoff artifact.
+    "state.md": ["sprint", "gateStatus", "dirty", "gated", "rebuild"],
+    "handoff.md": ["Boundary handoff", "sprint index"],
 }
 
 

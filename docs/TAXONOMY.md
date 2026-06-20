@@ -32,6 +32,10 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
   **Standard**, D25). So cross-skill references stay tier-agnostic by design.
 - **Why peers + shared rubric:** DRY-by-pointer with zero cross-tier bleed of the depth instructions (D21);
   the rubric move is also the grill efficiency refactor.
+- **Shared method files beyond RUBRIC:** a family folder may hold additional tier-invariant method files. The
+  `kata-plan` family carries `RUBRIC.md` (the per-sprint/per-build method) **and** `ROADMAP.md` (the
+  **roadmap layer**, sprint-cadence D85) — the latter runs first only when `delivery.shape == "incremental"`,
+  partitioning the frozen DESIGN into prime-frame-sized sprints. Both are layers, not invocable skills.
 - **Never tiered:** `kata-evaluate` (the conformance floor / consistency invariant, D22), `kata-orchestrate`
   (single config-driven dispatcher, D24d), all weight-1 skills, and the pre-flight gate (a spine floor, D29).
 
@@ -41,13 +45,22 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
   `kata-orient` · `kata-selfhandoff` · `kata-bootstrap` · `kata-readiness` · (pre-flight, Spec D). Every mode ends at the same `kata-evaluate` default-FAIL gate.
   - `kata-orient` is **spine** — the *receiving* half of the two-way handoff (spine #5): it assembles launch orientation for every dispatched subagent (`protocol/orientation.md`). The writing half is `kata-handoff`.
   - `kata-bootstrap` and `kata-readiness` are **spine** (core, always-available; not optional feature modules): `kata-bootstrap` is the mandatory on-ramp that writes `kata.config`; `kata-readiness` is its pre-flight delegate.
+  - `kata-sprint` is **spine** but **delivery-conditional** — the boundary coordinator that runs only when `delivery.shape == "incremental"` (sprint-cadence D80). It owns the G1–G4 boundary change-control protocol (the *one* place steering happens); it **composes** report/handoff/grill-delta/review and never touches the sprint-blind `kata-orchestrate`.
 - **Modules** (additive, independent, declare needs/produces/slot — D20): `quality` (`kata-review` +
   `kata-diagnose` + deeper grill/plan) · `design` (own spec) · `bakeoff` (Spec B) · `improve` (`kata-improve` +
   `kata-write-skill` + `kata-promote` — the meta family: improve edits repo skills, promote is the human gate for
   agent-distilled toolkit skills, L5/L6) ·
   `defer` (`kata-defer` — the no-drift parking valve + grill-skip assumption log, D42/D71) · `graph`
   (`kata-graph`, version-up) · `research` (`kata-research` — escalation-routed in-loop research subagent,
-  the autonomous floor's ambiguity resolver, D62/D71; fires only on a `research-needed` escalation).
+  the autonomous floor's ambiguity resolver, D62/D71; fires only on a `research-needed` escalation) ·
+  `report` (`kata-report` — the one-page report of a gated unit of work; D32 v1, sprint-cadence D85; it
+  *reports* the gate, it never *gates* — `kata-evaluate` keeps that authority).
+
+## Delivery axis (D78 — sprint-cadence)
+A **third orthogonal axis** beside mode × effort × modules (and distinct from the run-shape preset):
+`delivery: one-shot | incremental` (`protocol/config.md`). `one-shot` = today's continuous loop; `incremental`
+= gated sprints with a boundary between each (the unit is a **sprint**). It composes with every other axis,
+defaults to `one-shot` (BC), and routes only at the HANDOFF phase (`kata-orchestrate` stays sprint-blind).
 
 ## Run-shape preset (GB1)
 A **Run-shape preset** is a named bundle over the mode axis (individual / batch / version-up / advanced) that `kata-bootstrap` pre-fills during composition — e.g. "individual" maps to a single-worker, single-slice run shape — so the user picks a name rather than configuring axes manually.
