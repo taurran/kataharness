@@ -35,8 +35,13 @@ integration branch to grade. **On a grill-skip run, the priming prompt IS the fr
 also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor's assumption/ambiguity log).
 
 ## Rubric — score each PASS / NEEDS_WORK + a one-line reason with evidence
-1. **Acceptance criteria met.** Every criterion in the PLAN's tasks and the DESIGN's phase-level acceptance
-   is satisfied — checked against actual files/output, not the builder's say-so.
+1. **Acceptance criteria met + mutation proof present (code-bearing runs).** Every criterion in the PLAN's
+   tasks and the DESIGN's phase-level acceptance is satisfied — checked against actual files/output, not the
+   builder's say-so.  **For any run that introduces or changes executable logic:** `.kata/mutation.json`
+   MUST be present AND its `allNonVacuous` field MUST be `true`; absent or `false` ⇒ **NEEDS_WORK**
+   (default-FAIL — vacuous or unproven tests do not satisfy the acceptance criteria).  A pure
+   data/config/docs task with no new executable logic is exempt; the evaluator states explicitly which
+   applies and why.
 2. **Green gate.** Run it yourself: the project's full test command (count + 0 fail + 0 skip), a deterministic
    build (identical size on re-run where claimed), and the security scan clean. Paste the numbers.
 3. **No drift.** The LOCKED decisions were honored verbatim (e.g. a frozen classification/contract was not
@@ -109,11 +114,12 @@ to the emitter):
 |---|---|---|
 | Gate result | `.kata/RESULT.json` | The pinned `run_result.build_result` schema (see table above) |
 | Footprint manifest | `.kata/footprint.json` | `footprint`, `changed`, `inFootprint`, `outOfFootprint`, `withinFootprint`, `diffstat` |
-| Mutation proof | `.kata/mutation.json` | `records` (list of `{testWentRed, nonVacuous}`) + `allNonVacuous` (bool) — absent if no mutation step ran |
+| Mutation proof | `.kata/mutation.json` | `records` (list of `{testWentRed, nonVacuous}`) + `allNonVacuous` (bool) — **REQUIRED for any run that introduces or changes executable logic** (`allNonVacuous: true` must be present; absent or `false` ⇒ rubric item 1 is NEEDS_WORK); exempt for pure data/config/docs tasks |
 
 `tools/gate_emit.py` composes `run_result`, `footprint`, and `mutation_check` without reimplementing them.
 If `.kata/footprint.json` is present, use `withinFootprint` for rubric item 4 (ownership respected).
-If `.kata/mutation.json` is present, use `allNonVacuous` for rubric item 1 (non-vacuous test proof).
+For rubric item 1 on a code-bearing run: `.kata/mutation.json` MUST be present with `allNonVacuous: true`;
+absent or `allNonVacuous: false` is a **NEEDS_WORK** finding (not a skip).
 
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,

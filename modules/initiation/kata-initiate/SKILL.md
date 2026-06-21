@@ -142,26 +142,84 @@ Record the chosen depth as `grillDepth` in `INTENT.md`.
 
 ---
 
+## STOP — ask, do not infer
+
+> **This gate is a hard structural stop. Do NOT proceed past this point until every item below
+> has been answered via `AskUserQuestion`. Inferring any of these from the priming prompt is a
+> drift failure that the gate will catch and that `kata-evaluate` will score as NEEDS_WORK.**
+
+Before writing any draft `INTENT.md`, use **`AskUserQuestion`** to confirm each of the following
+load-bearing choices directly with the operator. Present them as a structured multi-part prompt
+(one `AskUserQuestion` call is sufficient if the platform supports it; otherwise ask sequentially):
+
+1. **`kind` confirmation** — confirm the classified run kind (`project` / `research` / `version-up`).
+   Do not assume the priming prompt's wording settles this; ask explicitly.
+2. **`target.kind`** — is the target `self` (harness dogfood), `existing` (a repo on disk), or
+   `greenfield` (brand-new repo)?
+3. **`target.path`** — if `target.kind == "existing"`, what is the absolute filesystem path?
+4. **`target.vault`** — vault strategy: `linked` (PokeVault), `scaffolded`, `own:<path>`,
+   `per-folder:<path>`, or absent (no vault for this run)?
+5. **`target.platform`** — which agent host drives this run: `claude`, `kiro`, `mindbridge`, or
+   `quick`?
+6. **`grillDepth`** — confirm the depth the operator wants: `skip`, `light`, `standard`, or `full`.
+7. **Dual-control execute decision** — after the grill (Phase 5) completes, the execute step requires
+   explicit operator confirmation: confirm the operator understands they will be asked to say
+   "execute" (or equivalent) to freeze `INTENT.md` and hand off to the harness.
+
+**Why this gate exists:** the initiation dogfood run (S2 post-mortem) showed that a richly-worded
+priming prompt can appear to settle all of these — but the agent inferred answers the operator had
+not explicitly chosen. Every answer in the `INTENT.md` artifact must trace back to an operator
+response, not an inference. This gate enforces that provenance structurally.
+
+### Gate checklist (for the evaluator)
+
+An evaluator verifying this run MUST confirm all of the following before marking initiation
+as complete:
+
+- [ ] `kind` value was confirmed via `AskUserQuestion` (not inferred from the priming prompt).
+- [ ] `target.kind` was confirmed via `AskUserQuestion`.
+- [ ] `target.path` was provided by the operator when `target.kind == "existing"`.
+- [ ] `target.vault` was confirmed via `AskUserQuestion`.
+- [ ] `target.platform` was confirmed via `AskUserQuestion`.
+- [ ] `grillDepth` was confirmed via `AskUserQuestion`.
+- [ ] The dual-control execute decision was made by the operator (not auto-decided by the agent).
+- [ ] `INTENT.md` frontmatter was written by `tools/intent_scaffold.py` (`write_intent`) from the
+  collected answers — not hand-crafted inline.
+- [ ] `INTENT.md` conforms to `protocol/intent.md` (all required keys present, valid enum values).
+
+---
+
 ## Phase 4 — capture the GOAL and write INTENT.md (draft)
 
-Write a **draft** `INTENT.md` at the repo/project root per the schema in `protocol/intent.md`:
+Collect the operator's goal narrative (one paragraph north star — the outcome, not the
+implementation), and any `fixes`, `features`, `modulesAdded`, `changeSummary` details via
+`AskUserQuestion` if not already captured.
 
-```yaml
----
-kind: project | research | version-up
-goal: <one-paragraph north star — the outcome, not the implementation>
-fixes: []                   # version-up: what is being repaired
-features: []                # what is being added
-modulesAdded: []            # new modules or skills this run introduces
-changeSummary: <what changes in this version>
-target:
-  kind: self | existing | greenfield
-  path: <absolute path or "" for self>
-  vault: <vault path or strategy label>
-  platform: Claude | MindBridge/Quick | Kiro
-grillDepth: skip | light | standard | full
-readiness: ""               # filled after Phase 5
----
+Assemble an `answers` dict from **all** of the operator-supplied values gathered in Phases 1–3 and
+the gate above. Call `tools/intent_scaffold.py :: write_intent(path, answers)` to produce the draft
+`INTENT.md` at the repo/project root. **Do not hand-craft the INTENT.md frontmatter inline** —
+`write_intent` is the only authorised writer; it enforces the `protocol/intent.md` schema and
+validates enum values fail-closed.
+
+The `answers` dict keys match the `build_intent` signature exactly:
+
+```python
+answers = {
+    "kind":          kind,           # operator-confirmed
+    "goal":          goal,           # operator narrative
+    "fixes":         fixes,          # list[str]; empty for project/research
+    "features":      features,       # list[str]
+    "modulesAdded":  modules_added,  # list[str]
+    "changeSummary": change_summary, # one sentence
+    "target": {
+        "kind":     target_kind,     # operator-confirmed
+        "path":     target_path,     # operator-supplied or ""
+        "vault":    vault,           # operator-confirmed
+        "platform": platform,        # operator-confirmed
+    },
+    "grillDepth": grill_depth,       # operator-confirmed
+    "readiness":  "",                # filled after Phase 5
+}
 ```
 
 The `INTENT.md` body (below frontmatter) holds the **north-star narrative**: a human-readable
@@ -212,15 +270,22 @@ Note: the understand-map ([[kata-understand]]) is offered by [[kata-closeout]] a
 
 ## Phase 6 — freeze INTENT.md and hand off
 
-1. **Fill `readiness`** in `INTENT.md` frontmatter: the agent's "enough-to-execute" verdict and its
+1. **Fill `readiness`** in the `answers` dict: the agent's "enough-to-execute" verdict and its
    one-paragraph rationale (which branches were resolved, which were deferred and why, what the
    autonomous floor will handle in-loop via `kata-defer`).
 
-2. **Freeze `INTENT.md`**: write the final content (overwrite the draft). The file is now frozen —
-   it is the contract the harness executes against. Do not modify it after this point; a new
-   initiation session is required to produce a new INTENT.md.
+2. **Freeze `INTENT.md`**: call `tools/intent_scaffold.py :: write_intent(path, answers)` with the
+   complete `answers` dict (including the populated `readiness` field) to overwrite the draft.
+   The file is now frozen — it is the contract the harness executes against. Do not modify it after
+   this point; a new initiation session is required to produce a new `INTENT.md`.
+   `write_intent` enforces the schema and `..`-traversal guard; pass the absolute path of the
+   repo/project root + `"INTENT.md"`.
 
-3. **Hand off**: surface the frozen `INTENT.md` + the written `kata.config` + a summary of the
+3. **Verify the freeze:** confirm the written file's frontmatter round-trips as valid YAML and that
+   all required keys from `protocol/intent.md` are present (parse and spot-check — `build_intent`
+   already validates, but this is the final belt-and-suspenders check before hand-off).
+
+4. **Hand off**: surface the frozen `INTENT.md` + the written `kata.config` + a summary of the
    `CONTEXT.md` additions made during this session. The harness (kata-bootstrap →
    kata-orchestrate) picks up from here.
 
