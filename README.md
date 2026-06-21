@@ -87,7 +87,7 @@ spiral, doesn't lose your context, fits *how you build*, and *gets better over t
 ## Status
 
 **`v0.1.0-alpha.1` (first tagged milestone) — skill suite complete & green, not yet field-proven end-to-end.**
-34 skills, all `0.1.0`/experimental; validator 0 errors · tests passing · Snyk clean. Two self-dogfood runs
+35 skills, all `0.1.0`/experimental; validator 0 errors · tests passing · Snyk clean. Two self-dogfood runs
 done — the second was a real **orchestrated** version-up (concurrent worker subagents in isolated worktrees,
 fresh-context gate, human version-select). The full cognitive architecture is built for the **Claude-only
 core**, now spanning **one-shot and incremental (sprint) delivery**, plus the learning loop (LEARN feed +
@@ -110,7 +110,7 @@ reference one); then the multi-tool **adapters** (Codex, Kiro, ACP). Live state:
 
 ## The skills
 
-34 skills across the six loop phases (plus the Greater-Loop initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
+35 skills across the six loop phases (plus the Greater-Loop initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
 `kata-diagnose`) share one `RUBRIC.md` method and expose depth tiers you dial per run.
 
 ```
@@ -174,6 +174,7 @@ skills/
 | `kata-board` | 0.1.0 | 2 | coordinate | experimental | adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3 | Append-only mailbox/message board for lateral peer comms |
 | `kata-bootstrap` | 0.1.0 | 2 | coordinate | experimental | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
 | `kata-initiate` | 0.1.0 | 3 | coordinate | experimental | new (KataHarness original, Phase 1 Greater Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
+| `kata-loop` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — Phase 3 Greater Loop conductor, D87/DESIGN §1) | — |
 | `kata-orchestrate` | 0.1.0 | 5 | coordinate | experimental | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
 | `kata-readiness` | 0.1.0 | 1 | coordinate | experimental | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
 | `kata-sprint` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C) | Own the sprint boundary (G1–G4 change-control); incremental delivery only |
