@@ -1,7 +1,7 @@
 ---
-date: 2026-06-21 (loop-hardening S1 + S1.5 DONE on master; next = S2 then S3; for a fresh/compacted session)
-branch: master — on private remote github.com/taurran/kataharness, tip e753504 (push pending at write time)
-green: validator 35 skills / 0 errors · pytest 334 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs) · tags pre-s1 + pre-s1.5 + v0.1.0-alpha.1 + v0.1.0-alpha.2
+date: 2026-06-21 (loop-hardening S1 + S1.5 + S2 DONE on master; next = S3 (loop-back); for a fresh/compacted session)
+branch: master — on private remote github.com/taurran/kataharness, tip cddf9ff (push pending at write time)
+green: validator 35 skills / 0 errors · pytest 367 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs) · tags pre-s1 + pre-s1.5 + pre-s2 + v0.1.0-alpha.1 + v0.1.0-alpha.2
 tags: [handoff, loop-hardening, s1-done, next-s2-s3, sprint-cadence, full-context]
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
@@ -48,7 +48,13 @@ authored-for: kata-orient (sections map to the three orientation tiers)
   `kata-loop` wiring. Per-platform reality (research `RESEARCH-s1.5.md`): Claude=in-window statusline now; Codex=no
   surface→web/TUI fallback; Kiro=`.vsix` deferred — documented, no fake bars. Operator demo caught + fixed two render
   bugs (statusline SystemExit fail-soft; web numeric-child). pytest 268→334. **Backout:** tag `pre-s1.5`.
-- **⏸ S1 + S1.5 shipped; at the boundary before S2.** Policy A (skills held 0.1.0). **Backout:** tags `pre-s1`/`pre-s1.5`.
+- **✅ loop-hardening S2 DONE** (`cddf9ff`, fresh-eval PASS 8/8) — **mutation proof (G3) + interactive initiate (G4).**
+  `tools/mutation_run.py` (deterministic restoring mutate→run→restore loop reusing `mutation_check`); `kata-tdd` PROVE
+  points at it; `kata-evaluate` item 1 **requires** `.kata/mutation.json` `allNonVacuous:true` for code-bearing work
+  (silent-skip closed). `tools/intent_scaffold.py` (schema INTENT.md writer); `kata-initiate` hard interview STOP.
+  **G3 demonstrated end-to-end** (real mutation → test green→red → restored → `mutation.json`). pytest 334→367.
+  **Backout:** tag `pre-s2`. (Eval caught a missing RESULT.json regen; fixed via `gate_emit`; re-confirmed PASS.)
+- **⏸ S1 + S1.5 + S2 shipped; at the boundary before S3.** Policy A (skills held 0.1.0). **Backout:** `pre-s1`/`pre-s1.5`/`pre-s2`.
 
 ## 3. The verified gaps loop-hardening closes *(orientation: CONTEXT — why these sprints exist)*
 The Phase-4 dogfood was an honest *first happy-path* run; an accounting (with `ls`/artifact proof) found load-bearing

@@ -1,5 +1,18 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-21, loop-hardening S2 DONE — `cddf9ff`):** **The gate now proves tests bite + initiation is a
+> hard human stop** (closes G3+G4). `tools/mutation_run.py` = deterministic restoring mutate→run→restore loop (reuses
+> `mutation_check`); `kata-tdd` PROVE points at it; `kata-evaluate` rubric item 1 now **requires** `.kata/mutation.json`
+> `allNonVacuous:true` for code-bearing runs (closes the silent-skip hole). `tools/intent_scaffold.py` = schema-conformant
+> `INTENT.md` writer; `kata-initiate` now a **hard structural interview STOP** (must `AskUserQuestion` for kind/target/
+> vault/platform/grillDepth + execute, no inline inference). **G3 demonstrated end-to-end**: the runner mutated a live
+> line → test flipped green→red → file restored byte-for-byte → `mutation.json` (`allNonVacuous:true`) emitted; fresh
+> RESULT.json (`s2-integration`, 367) + footprint (`withinFootprint:true`). **pytest 367, validator 35/0, Snyk 0.**
+> Fresh-context `kata-evaluate` **PASS 8/8** (it caught a missing RESULT.json regen — fixed — then re-confirmed).
+> Backout tag `pre-s2`. **NEXT = S3** — grounding/research (G5) + the **loop-back** (G6): a real version-up re-entry that
+> proves the loop loops, evaluating the handoff as it cycles back through `kata-initiate` Phase 1b (operator's hard
+> requirement). See `.planning/HANDOFF.md` §4.
+
 > **CURRENT (2026-06-21, loop-hardening S1.5 DONE — `e753504`):** **Status-surface adapters shipped** (closes G7) —
 > the live view is now seamless per-platform via the *adapter* pattern applied to OUTPUT. **Seeded `adapters/`** with
 > its first concrete member `adapters/claude/` (statusline command + `settings.snippet.json` w/ `refreshInterval:1` +

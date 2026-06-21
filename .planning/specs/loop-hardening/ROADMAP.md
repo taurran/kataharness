@@ -49,7 +49,13 @@ it cycles back). Each gap below is **grounded in evidence** from the Phase-4 dog
     viewer; the adapter table documents each host's verified surface. (Disjoint from S1.5a by file.)
   - ⚠️ **Honesty caveat:** Claude statusline = verified-feasible, build now. Codex/Kiro surfaces are **unverified** — they
     may have none, in which case those hosts get the rich-viewer fallback, not a native bar. Verify before promising.
-- **S2 — Vet the gate + bring the human into initiation. Closes G3, G4.** Baseline = S1.5 green.
+- **S2 — Vet the gate + bring the human into initiation. ✅ DONE (`cddf9ff`, fresh-eval PASS 8/8).** Closes G3, G4. Baseline was S1.5 green.
+  Built `tools/mutation_run.py` (deterministic restoring mutate→run→restore loop, reuses `mutation_check`); `kata-tdd`
+  PROVE now points at it; `kata-evaluate` rubric item 1 **requires** `.kata/mutation.json` `allNonVacuous:true` for
+  code-bearing work (closes the silent-skip). `tools/intent_scaffold.py` (schema-conformant INTENT.md writer);
+  `kata-initiate` now a **hard structural interview STOP** (AskUserQuestion). **G3 demonstrated end-to-end** (real
+  mutation flipped a test green→red, file restored, `mutation.json` emitted). pytest 334→367, validator 35/0, Snyk 0.
+  Plan: `PLAN-s2.md`.
   - *S2a — mutation/non-vacuity proof in the gate:* wire the `kata-tdd` mutation step (use `tools/mutation_check.py`)
     → emit `.kata/mutation.json` `{records, allNonVacuous}` via `gate_emit`; `kata-evaluate` reads it (NEEDS_WORK if a
     claimed-covered test is vacuous). *Demonstrable:* a `mutation.json` proving tests bite.
