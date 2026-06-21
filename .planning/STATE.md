@@ -1,5 +1,18 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-21, loop-hardening S1.5 DONE — `e753504`):** **Status-surface adapters shipped** (closes G7) —
+> the live view is now seamless per-platform via the *adapter* pattern applied to OUTPUT. **Seeded `adapters/`** with
+> its first concrete member `adapters/claude/` (statusline command + `settings.snippet.json` w/ `refreshInterval:1` +
+> README); `tools/kata_statusline.py` (agnostic `render_statusline` + fail-soft Claude entry); `tools/kata_web.py`
+> (localhost web viewer, stdlib `http.server` bound 127.0.0.1, polls `/api/view` every 1s, renders 改善型 bars/ribbon/
+> feed). Both **pull-consume** `build_view_model` — no push StatusSink, no `kata-loop` wiring. Grounded by
+> `specs/loop-hardening/RESEARCH-s1.5.md`: **Claude** statusline feasible now; **Codex** has no live in-TUI surface
+> (→ web/TUI fallback); **Kiro** only via a VS Code `.vsix` (deferred) — all documented, no fake bars. Fresh-context
+> `kata-evaluate` **PASS**; operator-demo caught two render bugs (statusline SystemExit fail-soft + web numeric-child),
+> both fixed w/ regression tests. **pytest 334, validator 35/0, Snyk 0.** Backout tag `pre-s1.5`. **NEXT = S2**
+> (mutation proof G3 + interactive initiate G4), then **S3** (grounding/research G5 + the **loop-back** G6 — proves the
+> loop loops). See `.planning/HANDOFF.md` §4.
+
 **Phase:** **✅ `v0.1.0-alpha.2` SHIPPED — Greater Loop proven end-to-end (Phase 4 self-dogfood done)** · Phases 0–3 built + adversarial-reviewed + seam-fixed · **35 skills / 0 errors · pytest 205 · Snyk: residual CWE-23 documented FP** · private remote (taurran/kataharness), tip `3ed18d3` · **Updated:** 2026-06-21
 
 > **CURRENT (2026-06-21, alpha.2 shipped):** **The complete Greater Loop ran end-to-end on KataHarness itself for

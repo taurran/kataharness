@@ -1,7 +1,7 @@
 ---
-date: 2026-06-21 (loop-hardening S1 DONE + at the operator-demo boundary; next = S2 then S3; for a fresh/compacted session)
-branch: master — on private remote github.com/taurran/kataharness (pushed), tip 5ed9020
-green: validator 35 skills / 0 errors · pytest 268 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs) · tags pre-s1 + v0.1.0-alpha.1 + v0.1.0-alpha.2
+date: 2026-06-21 (loop-hardening S1 + S1.5 DONE on master; next = S2 then S3; for a fresh/compacted session)
+branch: master — on private remote github.com/taurran/kataharness, tip e753504 (push pending at write time)
+green: validator 35 skills / 0 errors · pytest 334 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs) · tags pre-s1 + pre-s1.5 + v0.1.0-alpha.1 + v0.1.0-alpha.2
 tags: [handoff, loop-hardening, s1-done, next-s2-s3, sprint-cadence, full-context]
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
@@ -41,8 +41,14 @@ authored-for: kata-orient (sections map to the three orientation tiers)
   **PROGRESS heartbeats**, single-writer `.kata/state.json`, **self-creates `.kata/`**) + dashboard heartbeat bars +
   `tools/kata_dash_demo.py` replay driver. Title = **`KATAHARNESS 改善型`** (kaizen-gata; torii+hiragana removed per
   operator — memory `ui-text-japanese-concise`). pytest 244→268.
-- **⏸ STOPPED at the S1 boundary for the operator to watch the live dashboard + give feedback** (sprint-cadence
-  boundary). **Backout:** tag `pre-s1`. Policy A (skills held 0.1.0).
+- **✅ loop-hardening S1.5 DONE** (`e753504`, fresh-eval PASS) — **status-surface adapters (closes G7).** Seeded
+  `adapters/` with `adapters/claude/` (statusline command + `settings.snippet.json` `refreshInterval:1` + README);
+  `tools/kata_statusline.py` (agnostic `render_statusline` + fail-soft Claude entry); `tools/kata_web.py` (localhost
+  web viewer, stdlib `http.server` bound 127.0.0.1, polls `/api/view` 1s). Pull-consumers; no push StatusSink; no
+  `kata-loop` wiring. Per-platform reality (research `RESEARCH-s1.5.md`): Claude=in-window statusline now; Codex=no
+  surface→web/TUI fallback; Kiro=`.vsix` deferred — documented, no fake bars. Operator demo caught + fixed two render
+  bugs (statusline SystemExit fail-soft; web numeric-child). pytest 268→334. **Backout:** tag `pre-s1.5`.
+- **⏸ S1 + S1.5 shipped; at the boundary before S2.** Policy A (skills held 0.1.0). **Backout:** tags `pre-s1`/`pre-s1.5`.
 
 ## 3. The verified gaps loop-hardening closes *(orientation: CONTEXT — why these sprints exist)*
 The Phase-4 dogfood was an honest *first happy-path* run; an accounting (with `ls`/artifact proof) found load-bearing
@@ -60,7 +66,7 @@ mechanisms that never fired. **Grounded, not assumed:**
 **First, when the operator returns:** ask if S1's live dashboard is good / what to change (this is the sprint
 boundary — `kata-sprint` G1–G4 is where steering happens; the roadmap is boundary-amendable). Then proceed.
 
-### S2 — Vet the gate + bring the human into initiation (closes G3, G4). Baseline = S1 green (`5ed9020`).
+### S2 — Vet the gate + bring the human into initiation (closes G3, G4). Baseline = S1.5 green (`e753504`).
 Two disjoint slices, orchestrated foreground-parallel build (recipe in §5):
 - **S2a — mutation/non-vacuity proof in the gate.** Wire the `kata-tdd` mutation step so the gate actually runs it:
   use the existing `tools/mutation_check.py` (`mutation_verdict`, `apply_line_removal`) to mutate a covered line,

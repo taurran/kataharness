@@ -29,7 +29,12 @@ it cycles back). Each gap below is **grounded in evidence** from the Phase-4 dog
   self-creates `.kata/`) + dashboard heartbeat bars + `tools/kata_dash_demo.py` replay driver; title **`KATAHARNESS
   改善型`** (kaizen-gata; torii+hiragana removed per operator). Closes **G1, G2**. pytest 244→268. ⏸ **STOPPED at the
   boundary for the operator demo.** Plan: `PLAN-s1.md`.
-- **S1.5 — Status-surface adapters (agnostic-via-adapters, applied to OUTPUT). Closes G7.** Baseline = S1 green.
+- **S1.5 — Status-surface adapters (agnostic-via-adapters, applied to OUTPUT). ✅ DONE (`e753504`, fresh-eval PASS).** Closes G7. Baseline was S1 green.
+  Built `adapters/claude/` (statusline command + snippet + README — seeds the adapter layer), `tools/kata_statusline.py`
+  (agnostic `render_statusline` + Claude adapter entry, fail-soft), `tools/kata_web.py` (localhost web viewer, stdlib
+  `http.server` bound 127.0.0.1, polls `/api/view` 1s). Pull-consumers; no push StatusSink. Research: `RESEARCH-s1.5.md`
+  (Claude=feasible/refreshInterval:1, Codex=none→fallback, Kiro=`.vsix` deferred). pytest 333→334, validator 35/0, Snyk 0.
+  Demo-caught two render bugs (statusline SystemExit fail-soft; web numeric-child) fixed. Plan: `PLAN-s1.5.md`.
   Operator requirement: the live view must be **seamless into the platform it's running on** — publish to each host's
   *native* status surface, falling back to the rich viewer where a host exposes none. The `.kata/` telemetry core
   (S1) stays canonical; this adds a thin viewer-adapter layer over it (same pattern as the input tool-adapters).
