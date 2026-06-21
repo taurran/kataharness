@@ -1,21 +1,31 @@
 # STATE — KataHarness
 
-**Phase:** `v0.1.0-alpha.1` released · **GREATER-LOOP BUILD-THROUGH in progress** · **✅ Phase 0 FOUNDATIONS** (`9e1b27c`) · **✅ Phase 1 INITIATION** (`157804f`) · **▶ Phase 2 CLOSEOUT next** · **32 skills / 0 errors · pytest 112 · Snyk: residual CWE-23 documented FP** · private remote (taurran/kataharness) · **Updated:** 2026-06-20
+**Phase:** `v0.1.0-alpha.1` released · **✅ GREATER-LOOP BUILD COMPLETE (Phases 0–3)** · **▶ Phase 4 self-dogfood (the TEST) next — operator-driven** · **35 skills / 0 errors · pytest 112 · Snyk: residual CWE-23 documented FP** · private remote (taurran/kataharness), tip `f39f37b` · **Updated:** 2026-06-20
 
-> **CURRENT (2026-06-20, Phase 1 closed):** **Phases 0+1 of the Greater Loop are BUILT + merged + pushed.**
-> **Phase 1 INITIATION** (orchestrated 2-worker run, fresh-context eval PASS 8/8, merged `157804f`): per **D91**,
-> modules are **self-contained dirs** — `modules/<name>/AGENTS.md` + `modules/<name>/<skill>/SKILL.md`; the
-> validator now discovers `modules/*/*/SKILL.md` (index + wikilinks + README-sync uniform). Built:
-> `modules/initiation/` (own AGENTS.md) + **`kata-initiate`** front-door skill (32 skills) + **`protocol/intent.md`**
-> the PINNED INTENT.md contract (kind/goal/fixes/features/modulesAdded/changeSummary/target{kind,path,vault,
-> platform}/grillDepth/readiness). kata-initiate: ingest→classify kind→capture+freeze INTENT.md→interactive
-> target/platform/vault config→dual spec-to-ready control (user "execute" anytime OR grill self-proposes);
-> composes readiness/grill/bootstrap/context; BC honored. Plan: `specs/greater-loop/PLAN-phase1.md`. Tag `pre-phase1`.
-> **★ NEXT (BUILD-THROUGH, no test until Phase 4) = Phase 2 CLOSEOUT:** `modules/closeout/` (own AGENTS.md) +
-> **`kata-closeout`** (back-half control flow; composes kata-report/kata-understand/kata-handoff/git; consumes F1's
-> `.kata/{RESULT,footprint,mutation}.json`; NEVER gates; human gate: satisfied?/commit·push·merge?/run-again·new?)
-> + **`kata-understand`** (NEW understand-anything map; opt-in; graph-backed via F2's graph_gen, light git/diff
-> fallback). Then Phase 3 `kata-loop` conductor. Then Phase 4 self-dogfood (the next test).
+> **CURRENT (2026-06-20, BUILD-THROUGH COMPLETE):** **The entire Greater Loop is BUILT + merged + pushed
+> (Phases 0–3, `f39f37b`).** Each phase = a real orchestrated foreground-parallel run (Sonnet workers in isolated
+> worktrees → octopus-merge → integration gate → **fresh-context `kata-evaluate` PASS 8/8** → merge → push), per
+> the no-inline rule. **What now exists end-to-end:**
+> - **Phase 0 FOUNDATIONS** (`9e1b27c`): **F1** `tools/gate_emit.py` wires the eval artifacts into the live gate
+>   (emits `.kata/{RESULT,footprint,mutation}.json`; dogfooded on the integration gate — closes the dogfood-2
+>   residual). **F2** `tools/graph_gen.py` tree-sitter graph runtime → `kata.graph.json` per protocol/graph.md
+>   (def/ref/import + PageRank, `call` deferred). Security: sha1→sha256 fixed; CWE-23 path-guard + documented FP.
+> - **Phase 1 INITIATION** (`157804f`): **D91** self-contained modules (validator discovers `modules/*/*/SKILL.md`);
+>   `modules/initiation/` + **`kata-initiate`** + **`protocol/intent.md`** (PINNED INTENT.md contract). Ingest →
+>   classify kind → capture+freeze INTENT.md → interactive target/platform/vault config → dual spec-to-ready control.
+> - **Phase 2 CLOSEOUT** (`20dac30`): `modules/closeout/` + **`kata-closeout`** (composes report/understand/handoff/
+>   git; consumes F1 `.kata/` artifacts; NEVER gates; human gate satisfied?/commit·push·merge?/run-again·new?) +
+>   **`kata-understand`** (opt-in graph-backed comprehension map, git/diff fallback).
+> - **Phase 3 CONDUCTOR** (`f39f37b`): **`kata-loop`** thin conductor sequences initiation→harness→closeout, owns
+>   the context-carrying loop-back (baseline · understand-map · lessons · prior INTENT); optional (absent ⇒ today's
+>   direct run). Root `AGENTS.md` gains a "The Greater Loop" entry.
+> Plans: `specs/greater-loop/PLAN-phase{0,1,2,3}.md` + `SECURITY-phase0.md`. Decisions **D87–D91**. Backout tags
+> `pre-phase0..pre-phase3` on remote.
+> **★ NEXT = Phase 4 — the SELF-DOGFOOD TEST of the complete Greater Loop (operator-driven).** Per BUILD-THROUGH
+> this is the single next TEST: run a full greater-loop cycle on KataHarness itself — `kata-initiate` (capture a
+> real version-up INTENT) → harness (orchestrated) → `kata-closeout` (report + understand-map + **human
+> version-select**). Real orchestrated run, never inline (`exercise-harness-for-real`). Likely tags
+> `v0.1.0-alpha.2`. **THEN Phase 5** — external reach (install installers / multi-model / optional dashboard).
 
 > **CURRENT (2026-06-20, Phase 0 closed):** **Phase 0 of the Greater Loop is BUILT + merged.** Real orchestrated
 > foreground-parallel run: 2 worker subagents (Sonnet) in isolated worktrees → octopus-merge (0 conflict) →
