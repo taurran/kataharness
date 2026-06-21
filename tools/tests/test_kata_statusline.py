@@ -386,3 +386,22 @@ class TestStatuslineFromEvent:
             payload = json.dumps({"cwd": d})
             result = kata_statusline.statusline_from_event(payload)
         assert result == ""
+
+    def test_systemexit_in_build_returns_empty(self, monkeypatch):
+        """SystemExit (raised by the shared _safe_path .. guard) must also be
+        caught and degrade to "" — fail-soft aligns with fail-secure so a
+        traversal cwd never crashes Claude's statusline (regression: the bare
+        `except Exception` did not catch SystemExit)."""
+
+        def _exiting_build(kata_dir):
+            raise SystemExit("kata_statusline: refusing path with '..' traversal")
+
+        monkeypatch.setattr(kata_statusline, "build_statusline", _exiting_build)
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            kata_dir = Path(d) / ".kata"
+            kata_dir.mkdir()
+            payload = json.dumps({"cwd": d})
+            result = kata_statusline.statusline_from_event(payload)
+        assert result == ""
