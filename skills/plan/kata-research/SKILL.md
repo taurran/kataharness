@@ -55,12 +55,29 @@ research would be silent drift — the routing is the safeguard.
    the orchestrator decides via a deliberate re-plan.
 
 ## Output (returned to the orchestrator — no writes)
-A findings list; each finding:
+A findings list; each finding conforms to the **canonical finding schema** validated and built by
+`tools/escalation.py` `build_finding`:
+
+```json
+{
+  "claim":        "<specific, actionable answer to the gap>",
+  "source":       "<citation — file+line, URL, or doc; mandatory>",
+  "confidence":   "HIGH | MED | LOW",
+  "groundsToPlan": "YES | NO | PARTIAL"
+}
+```
+
 - **`claim`** — the specific, actionable answer to the gap.
-- **`source`** — the citation grounding it (file+line, URL, doc) — mandatory.
-- **`confidence`** — HIGH / MED / LOW, with one line of why.
-- **`grounds-to-plan?`** — YES (fits the frozen plan, no LOCKED conflict) / NO (`lockedDecisionInTension: …`) /
-  PARTIAL (fits with a named, bounded plan change).
+- **`source`** — the citation grounding it (file+line, URL, doc) — mandatory.  An ungrounded claim is
+  not a finding (`build_finding` enforces this: empty source raises `ValueError`).
+- **`confidence`** — `HIGH` / `MED` / `LOW` (case-sensitive), with one line of why.
+- **`groundsToPlan`** — `YES` (fits the frozen plan, no LOCKED conflict) / `NO` (`lockedDecisionInTension: …`) /
+  `PARTIAL` (fits with a named, bounded plan change).
+
+**You return findings; the orchestrator writes.** The orchestrator calls `build_finding` to validate
+each finding and `write_escalation` (from `tools/escalation.py`) to persist the associated
+`research-needed` escalation at `.kata/escalations/<taskId>.json`.  You do not call these functions —
+the no-write contract is structural (`allowed-tools` carries no Write/Edit).
 
 Plus an overall recommendation. **If nothing grounds** (can't find an authoritative answer, or every answer
 breaks a LOCKED decision): say so explicitly → the orchestrator escalates to the **human**. Never guess to fill
