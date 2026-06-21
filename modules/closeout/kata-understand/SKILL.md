@@ -10,7 +10,7 @@ category: handoff
 status: experimental
 agnostic: true
 cost-weight: 2
-allowed-tools: [Read, Grep, Glob, Bash]
+allowed-tools: [Read, Grep, Glob, Bash, Write]
 model: fable
 source: >-
   new (KataHarness original, Phase 2 GL-R2c / DESIGN §3 / PLAN-phase2 Task C1) — comprehension-map half of the
@@ -145,8 +145,11 @@ footprint / git-diff delta as above.
 
 ## Output shape — the understand-map artifact
 
-Emit the map as a **human-readable Markdown block** (suitable for inline display or a handoff artifact). Sections
-in order:
+Emit the map as a **human-readable Markdown block**, display it inline, AND **write it to `.kata/understand.md`**
+(the conventional path the closeout report and the `[[kata-loop]]` loop-back read — see DESIGN §1/§3). Writing the
+file is what makes the loop-back's "don't re-grill already-mapped territory" real: on a version-up re-entry,
+`[[kata-initiate]]` reads `.kata/understand.md` as prior-run context. (`.kata/` is the gitignored derived-artifact
+cache.) Sections in order:
 
 ```
 ## Understand-map — <run-id or branch> (<date>)
@@ -177,6 +180,7 @@ the `### Changed` heading.
 - **Never hard-fail.** If `kata.graph.json` cannot be generated, fall through to the git/diff fallback. If `git
   diff` also fails, emit what is known and flag the gap.
 - **Read-only toward the codebase.** `Bash` is used only to run the existing graph generator and `git diff`
-  commands. No writes to source files.
+  commands; `Write` is used **only** to emit the `.kata/understand.md` map artifact (gitignored derived cache).
+  No writes to source files.
 - **Graceful degradation chain:** graph-backed (tree-sitter) → fallback (git/diff) → partial (flag and continue).
 - **Opt-in always.** If the human declines, return immediately with no output. Never auto-invoke.

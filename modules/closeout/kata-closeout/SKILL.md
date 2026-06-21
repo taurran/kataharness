@@ -63,8 +63,7 @@ human may skip it. When accepted:
 - `kata-understand` produces a structured comprehension map of what changed + what was built, backed by the
   `kata-graph` runtime (graph-backed primary path; git/diff light fallback when the graph is unavailable).
 - It is a comprehension aid, not a re-evaluation. It never blocks or gates.
-
-Reference: `kata-understand` is built in parallel (slice C1) and resolves at integration.
+- When run, it writes the map to `.kata/understand.md` — the path [[kata-loop]]'s loop-back carries forward.
 
 ## Step 4 — Human decision gate
 
@@ -95,8 +94,8 @@ Carry out **only the actions the human selects**. Never auto-push or auto-merge.
 > *Run again (version-up) or build something else?*
 
 - **Run again (version-up)** — the next cycle re-enters the initiation module with this run's context as
-  baseline: the understand-map, the report, and any lessons. The conductor (to be built in Phase 3 as the
-  `kata-loop` skill; reference in prose only — not yet built) carries this context into the next cycle.
+  baseline: the understand-map (`.kata/understand.md`), the report, and any lessons. The [[kata-loop]] conductor
+  carries this context into the next cycle's [[kata-initiate]] (see kata-loop's loop-back Path A).
 - **Build something else** — a fresh initiation. The conductor starts a new loop cold.
 
 Hand the human's decision to the conductor's loop-back as a durable artifact (written via [[kata-handoff]]).
@@ -115,7 +114,9 @@ Compose [[kata-handoff]] for the session boundary. The handoff MUST include:
 
 - Closeout is **additive**. Absent the closeout module, the harness completes with `kata-evaluate` as today.
 - The default-FAIL gate is **never weakened**: closeout never converts a NEEDS_WORK to a pass.
-- `kata-loop` (the Phase 3 conductor) is referenced in prose only — it is not yet built and must not be
-  wikilinked.
+- The [[kata-loop]] conductor (Phase 3) sequences this skill and owns the loop-back; closeout hands it the human
+  decision and the loop-back context payload.
 - `allowed-tools` includes `Bash` only to read `.kata/` artifacts and carry human-approved git actions.
-  It never executes target code.
+  It never executes target code. **Note (known limitation):** `Bash` cannot be restricted to specific git
+  subcommands in frontmatter, so the "never auto-push/merge" rule is a **behavioral** guard (human-gated above),
+  not a structural one. Treat any push/merge without explicit human approval as a conformance violation.
