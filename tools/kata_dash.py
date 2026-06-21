@@ -55,10 +55,11 @@ def spinner_frame(tick: int) -> str:
 def render_row_text(task, tick: int) -> str:
     """Render one task row as a plain string.
 
-    Format: ▸ <label>  <bar>  <pct>%  <glyph> <status>
+    Format: ▸ <label>  <bar>  <pct>%  <glyph> <status> [<progressLabel>]
 
     task is duck-typed (SimpleNamespace or real TaskRow):
       .label, .percent, .done, .blocked, .active, .status
+      .progressLabel  (optional; shown when non-empty)
     Glyph priority: done → ✓ ; blocked → ✗ ; active → spinner ; else ·
     """
     bar = render_bar(task.percent, width=20)
@@ -72,7 +73,13 @@ def render_row_text(task, tick: int) -> str:
     else:
         glyph = "·"
 
-    return f"▸ {task.label}  {bar}  {task.percent}%  {glyph} {task.status}"
+    # progressLabel is optional; only present on TaskRow from S1b+
+    progress_label = getattr(task, "progressLabel", "")
+    status_text = f"{glyph} {task.status}"
+    if progress_label:
+        status_text = f"{status_text}  {progress_label}"
+
+    return f"▸ {task.label}  {bar}  {task.percent}%  {status_text}"
 
 
 def render_ribbon(phase: str) -> str:
@@ -108,7 +115,7 @@ def build_frame(view_model, tick: int) -> RenderableType:
     if view_model.waiting:
         return Panel(
             Text("⏳ waiting for an orchestrated run…", justify="center"),
-            title="KATAHARNESS ⛩ 道",
+            title="KATAHARNESS ⛩ 改善の型",
             border_style="dim",
         )
 
@@ -116,7 +123,7 @@ def build_frame(view_model, tick: int) -> RenderableType:
     spec = view_model.spec or "—"
     wave = view_model.wave or "—"
     gate = view_model.gate or "—"
-    header_title = f"KATAHARNESS ⛩ 道  ·  {spec}  ·  wave {wave}  ·  {gate}"
+    header_title = f"KATAHARNESS ⛩ 改善の型  ·  {spec}  ·  wave {wave}  ·  {gate}"
 
     # ---- task table ----
     task_table = Table.grid(padding=(0, 1))

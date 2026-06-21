@@ -16,5 +16,7 @@ Machine state — kept separate from durable Obsidian docs ([[STANDARDS]] §5).
   | `ESCALATE` | worker | the frozen plan is unclear/wrong — needs an orchestrator decision (never re-plan) |
   | `NOTE` | worker | lateral info for peers |
   | `DECISION` | orchestrator only | a deliberate ruling resolving a BLOCK/ESCALATE |
+  | `PROGRESS` | worker | granular progress heartbeat; `msg` carries `<step>/<n> <label>` (e.g. `3/5 writing tests`) |
+- **PROGRESS is opt-in, ignored by the coordination logic, and read only by the dashboard** — the DECISION/BLOCK/ESCALATE invariants are unchanged.
 - **Invariants:** workers never author `DECISION`; every `BLOCK`/`ESCALATE` is answered by a `DECISION`
   before the task resumes; the board is the countable audit trail for the drift ledger.
