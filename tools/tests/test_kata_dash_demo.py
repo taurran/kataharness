@@ -29,8 +29,9 @@ def test_kata_dash_demo_importable():
     import kata_dash_demo  # noqa: F401
 
 
-def test_kata_dash_demo_does_not_import_kata_board():
-    """kata_dash_demo must NOT import kata_board (not available in S1b worktree)."""
+def test_kata_dash_demo_uses_kata_board():
+    """Post-integration: the demo writes telemetry via the shared kata_board emitter
+    (single source of truth — the same producer the dashboard consumes)."""
     import inspect
     import sys
 
@@ -40,8 +41,8 @@ def test_kata_dash_demo_does_not_import_kata_board():
     import kata_dash_demo as m
 
     source = inspect.getsource(m)
-    assert "import kata_board" not in source, (
-        "kata_dash_demo must not import kata_board in S1b worktree"
+    assert "import kata_board" in source, (
+        "kata_dash_demo should delegate telemetry writes to kata_board after integration"
     )
 
 

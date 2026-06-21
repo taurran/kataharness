@@ -17,19 +17,19 @@ Usage:
 Security note (from PLAN.md threat model): --kata-dir is operator-supplied;
 reuses _safe_path ..  guard (CWE-23 defence-in-depth, consistent with kata_dash).
 
-NOTE (S1b isolation): This file writes board lines and state.json DIRECTLY using
-the frozen protocol formats — it does NOT use kata_board (not in S1b worktree).
-The integrator will rewire it to call kata_board once S1a merges.
+Telemetry is written via the shared `kata_board` emitter (the single source of truth
+the real harness uses), so the demo exercises the same producer the dashboard consumes.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+
+import kata_board
 
 # ---------------------------------------------------------------------------
 # Security: path-traversal guard (mirrors kata_dash._safe_path)
@@ -65,24 +65,13 @@ def _append_board_line(
     task: str,
     msg: str,
 ) -> None:
-    """Append one protocol/board.md line to board_file.
-
-    Format: <ISO-8601-UTC> | <agent-id> | <TYPE> | <task-id> | <msg>
-    Creates the file if absent.
-    """
-    line = f"{_utc_now()} | {agent} | {typ} | {task} | {msg}\n"
-    with board_file.open("a", encoding="utf-8") as fh:
-        fh.write(line)
+    """Append one protocol/board.md line via the shared kata_board emitter."""
+    kata_board.append_event(board_file.parent, agent, typ, task, msg)
 
 
 def _write_state(state_file: Path, state: dict) -> None:
-    """Atomically write state dict as JSON to state_file.
-
-    Uses write-then-replace for atomicity (mirrors kata_board.write_state).
-    """
-    tmp = state_file.with_suffix(".tmp")
-    tmp.write_text(json.dumps(state, indent=2), encoding="utf-8")
-    tmp.replace(state_file)
+    """Atomically write state.json via the shared kata_board emitter (single-writer)."""
+    kata_board.write_state(state_file.parent, state)
 
 
 # ---------------------------------------------------------------------------

@@ -89,6 +89,7 @@ def append_event(
         One-line human-readable message.  Must not contain a bare newline.
     """
     kata_dir = _safe_path(kata_dir)
+    kata_dir.mkdir(parents=True, exist_ok=True)  # first event of a run creates .kata/
     utc_now = datetime.now(timezone.utc).isoformat()
     line = f"{utc_now} | {agent} | {type} | {task} | {msg}\n"
 
@@ -159,6 +160,7 @@ def write_state(kata_dir: Union[str, Path], state: dict) -> None:
         Full state dict to persist.  Must be JSON-serialisable.
     """
     kata_dir = _safe_path(kata_dir)
+    kata_dir.mkdir(parents=True, exist_ok=True)  # first write of a run creates .kata/
     state_path = kata_dir / "state.json"
 
     # Write to a sibling temp file, then atomically replace.

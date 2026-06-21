@@ -350,3 +350,15 @@ def test_update_task_returns_mutated_state(tmp_path):
     assert isinstance(result, dict)
     assert "tasks" in result
     assert result["tasks"]["T1"] == "gated"
+
+
+def test_emitter_creates_kata_dir_if_absent(tmp_path):
+    """Integration robustness: the first event/state write of a run creates .kata/
+    (the orchestrator should not have to pre-create it)."""
+    import kata_board as kb
+    fresh = tmp_path / "newrun" / ".kata"  # does NOT exist yet
+    assert not fresh.exists()
+    kb.append_event(fresh, "orch", "DECISION", "-", "first event")
+    assert (fresh / "board.md").exists()
+    kb.write_state(fresh, {"tasks": {}, "updatedUtc": "t"})
+    assert (fresh / "state.json").exists()
