@@ -115,7 +115,7 @@ def build_frame(view_model, tick: int) -> RenderableType:
     if view_model.waiting:
         return Panel(
             Text("⏳ waiting for an orchestrated run…", justify="center"),
-            title="KATAHARNESS ⛩ 改善の型",
+            title="KATAHARNESS 改善型",
             border_style="dim",
         )
 
@@ -123,7 +123,7 @@ def build_frame(view_model, tick: int) -> RenderableType:
     spec = view_model.spec or "—"
     wave = view_model.wave or "—"
     gate = view_model.gate or "—"
-    header_title = f"KATAHARNESS ⛩ 改善の型  ·  {spec}  ·  wave {wave}  ·  {gate}"
+    header_title = f"KATAHARNESS 改善型  ·  {spec}  ·  wave {wave}  ·  {gate}"
 
     # ---- task table ----
     task_table = Table.grid(padding=(0, 1))
@@ -208,7 +208,7 @@ def main(argv: Optional[list] = None) -> None:
     import kata_dash_model  # type: ignore[import]
     from rich.live import Live
 
-    # The dashboard renders Unicode glyphs (⛩, braille spinners, block bars). On a
+    # The dashboard renders Unicode glyphs (改善型 kanji, braille spinners, block bars). On a
     # non-UTF-8 Windows stdout (piped/redirected, or a cp1252 console) rich's encode
     # would crash. Force UTF-8 with errors="replace" so glyphs degrade, never crash;
     # and disable the legacy-windows renderer so a single code path drives output.

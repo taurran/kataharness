@@ -356,10 +356,10 @@ def _task_without_progress_label(label="T2", percent=50, active=True):
 
 
 class TestNewTitle:
-    """build_frame must use the new 改善の型 header text."""
+    """build_frame must use the new 改善型 header text."""
 
     def test_build_frame_title_contains_kaizen_no_kata(self):
-        """build_frame output panel title must contain '改善の型'."""
+        """build_frame output panel title must contain '改善型'."""
         from rich.console import Console
         from io import StringIO
 
@@ -370,10 +370,10 @@ class TestNewTitle:
         console = Console(file=buf, width=120, legacy_windows=False, force_terminal=True)
         console.print(frame)
         output = buf.getvalue()
-        assert "改善の型" in output, f"Expected '改善の型' in output but got: {output[:200]}"
+        assert "改善型" in output, f"Expected '改善型' in output but got: {output[:200]}"
 
     def test_waiting_panel_title_contains_kaizen_no_kata(self):
-        """waiting Panel must also use '改善の型' title."""
+        """waiting Panel must also use '改善型' title."""
         from rich.console import Console
         from io import StringIO
 
@@ -383,10 +383,10 @@ class TestNewTitle:
         console = Console(file=buf, width=120, legacy_windows=False, force_terminal=True)
         console.print(frame)
         output = buf.getvalue()
-        assert "改善の型" in output, f"Expected '改善の型' in waiting output but got: {output[:200]}"
+        assert "改善型" in output, f"Expected '改善型' in waiting output but got: {output[:200]}"
 
     def test_build_frame_does_not_contain_old_motif(self):
-        """build_frame must NOT contain the old '⛩ 道' text."""
+        """build_frame must NOT contain the old '道' or the torii '⛩' (removed per operator)."""
         from rich.console import Console
         from io import StringIO
 
@@ -396,10 +396,9 @@ class TestNewTitle:
         console = Console(file=buf, width=120, legacy_windows=False, force_terminal=True)
         console.print(frame)
         output = buf.getvalue()
-        # The old motif had "道" but not "改善の型"
-        # The new title must have 改善の型 (already tested above)
-        # Just ensure the title string uses new kaizen pattern
         assert "KATAHARNESS" in output
+        assert "道" not in output, "old '道' motif must be gone"
+        assert "⛩" not in output, "torii removed per operator — title is just 改善型"
 
 
 class TestProgressLabelInRow:

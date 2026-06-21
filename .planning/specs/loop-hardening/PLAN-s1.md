@@ -12,7 +12,7 @@ tags: [plan, loop-hardening, sprint-s1, telemetry, dashboard, heartbeats, frozen
 
 Make a real orchestrated run **emit** the coordination board + state, with **PROGRESS heartbeats** for smooth
 live bars, and make the dashboard render it **accurately and in real time** — plus a **replay/demo driver** so the
-operator can watch it animate immediately. New title **改善の型**. Two disjoint slices, Sonnet workers in isolated
+operator can watch it animate immediately. New title **改善型**. Two disjoint slices, Sonnet workers in isolated
 worktrees → integration gate → fresh-context `kata-evaluate`. **After S1: STOP for operator demo.**
 
 ## LOCKED decisions (do NOT re-decide)
@@ -24,7 +24,7 @@ worktrees → integration gate → fresh-context `kata-evaluate`. **After S1: ST
 - **Smooth-bar mapping (frozen contract both slices build against):** for an `in-progress` task that has a latest
   `PROGRESS` heartbeat `step/n`, `percent = round(step / n * 100)` (clamp 0–100). With no heartbeat, fall back to
   the existing stepped `status_to_percent`. Other statuses keep their stepped values.
-- **Title:** dashboard header text = `KATAHARNESS ⛩ 改善の型` (kaizen no kata = "the Improvement Kata").
+- **Title:** dashboard header text = `KATAHARNESS 改善型` (kaizen-gata = "improvement kata"; no torii, no hiragana — operator pref).
 - **Observer stays read-only;** the emitter is the only writer to `.kata/`. BC: absent the emitter, the dashboard
   still works on a stepped board (no heartbeats) and the harness behaves as today.
 
@@ -69,7 +69,7 @@ LOCKED section (the PROGRESS format + smooth-bar mapping + title).
 - **`kata_dash_model.py`:** parse `PROGRESS` board lines; in `build_view_model`, for an `in-progress` task with a
   latest PROGRESS heartbeat, set `percent = round(step/n*100)` (clamp); no heartbeat ⇒ existing stepped value.
   Keep a `progressLabel` on the TaskRow if present (e.g. "writing tests") for display. Deterministic; extend tests.
-- **`kata_dash.py`:** change the header text to `KATAHARNESS ⛩ 改善の型`; show the heartbeat `progressLabel` in the
+- **`kata_dash.py`:** change the header text to `KATAHARNESS 改善型`; show the heartbeat `progressLabel` in the
   row status when present. No other behavior change. Update `test_kata_dash_render.py` (assert the new title +
   heartbeat label shows).
 - **`tools/kata_dash_demo.py` (NEW):** a **replay driver** so the operator can watch the dashboard animate without
@@ -87,7 +87,7 @@ tests/test_kata_dash_demo.py -q` (red→green). Cover: heartbeat → smooth perc
 stepped when no heartbeat, the new title string in build_frame, the demo driver emits monotonic PROGRESS +
 parseable board. Full suite + validator stay green.
 **acceptance:** a board containing `PROGRESS | … | 3/5 writing tests` yields a 60% bar with the label; the header
-reads `改善の型`; the demo driver animates a believable run; existing dashboard behavior preserved (BC).
+reads `改善型`; the demo driver animates a believable run; existing dashboard behavior preserved (BC).
 **threat model:** demo writes only under `--kata-dir` (`..`-guard); read-only render otherwise.
 
 ## Integration + the LIVE DEMO (the boundary artifact)
@@ -97,7 +97,7 @@ reads `改善の型`; the demo driver animates a believable run; existing dashbo
 3. **Emit gate artifacts** via `gate_emit` (RESULT.json). **Fresh-context `kata-evaluate`** over this PLAN → PASS.
 4. **Prep the live demo for the operator:** verify `uv run python tools/kata_dash_demo.py --kata-dir .kata` drives
    a board that `uv run python tools/kata_dash.py --kata-dir .kata` renders with **smoothly advancing bars +
-   accurate state + the 改善の型 title**. Capture 2–3 snapshot frames (early/mid/done) in the REPORT so the
+   accurate state + the 改善型 title**. Capture 2–3 snapshot frames (early/mid/done) in the REPORT so the
    transcript shows the progression, and give the operator the exact two-terminal commands to watch it live.
 5. Merge to master only on the operator's S1 boundary nod (this sprint **stops for the demo**). Backout: tag
    `pre-s1` before merge.
