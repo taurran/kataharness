@@ -177,3 +177,34 @@ PokeVault replicates — a different vault).
 **Test-project target**:
 The D16 A/B's target shape (D57): **small, one-shottable greenfield projects** landing in a dedicated test
 directory — repeated paired measurements instead of one large task. _Avoid_: CPP phase (retired target).
+
+## Live telemetry & the dashboard (loop-hardening S1, 2026-06-21)
+**Coordination board** (`.kata/board.md`):
+Append-only event log of an orchestrated run (`protocol/board.md`): `<utc> | <agent> | <TYPE> | <task> | <msg>`.
+Workers append (`CLAIM/DONE/BLOCK/ESCALATE/NOTE/PROGRESS`); only the orchestrator authors `DECISION`. Written by
+`tools/kata_board.py`. _Avoid_: editing prior lines (append-only, L3); confusing it with `state.json`.
+
+**Run state** (`.kata/state.json`):
+Single-writer current-truth snapshot owned by the orchestrator (`protocol/state.md`): tasks/gate/driftLedger/
+wavesDone. Written ONLY via `kata_board.write_state`/`update_task`. _Avoid_: a worker writing it (corruption, L3).
+
+**PROGRESS heartbeat**:
+The opt-in board TYPE added in S1 for smooth dashboard bars — `… | PROGRESS | <task> | <step>/<n> <label>`. Read
+ONLY by the dashboard; ignored by coordination logic. Maps to `percent = round(step/n*100)`. _Avoid_: treating it
+as a coordination signal.
+
+**kata_board**:
+`tools/kata_board.py` — the single telemetry emitter both orchestrator and workers use; self-creates `.kata/`,
+atomic single-writer state, `..`-guarded paths. _Avoid_: duplicating its write logic (the demo delegates to it).
+
+**The dashboard (改善型)**:
+`tools/kata_dash.py` — a `rich` separate-terminal TUI that **tails** board+state and renders workers as artistic
+ASCII (block bars, braille spinners, loop ribbon, board feed). Title `KATAHARNESS 改善型` (kaizen-gata, "improvement
+kata"). Host-agnostic (reads files, not a host UI). Pure model = `kata_dash_model.py`; replay/demo = `kata_dash_demo.py`.
+_Avoid_: expecting it to render inside Claude's own session (append-only transcript — separate terminal only).
+
+**loop-hardening**:
+The sprint-cadence effort (`.planning/specs/loop-hardening/`) closing the verified gaps **G1–G6** the Phase-4
+dogfood accounting exposed (no live board, no mutation proof, no interactive prompt, no grounding/research fire, no
+loop-back). S1 (G1+G2) done; S2 (G3+G4) + S3 (G5+G6, incl. the must-have loop-back) next. _Avoid_: calling the loop
+"fully working" before S3 proves it loops.

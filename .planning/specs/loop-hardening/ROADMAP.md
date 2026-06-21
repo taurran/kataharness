@@ -23,17 +23,27 @@ it cycles back). Each gap below is **grounded in evidence** from the Phase-4 dog
 | G6 Loop-back never exercised | The version-select chose "ship," so the version-up re-entry (Phase 1b) never ran; the handoff-on-re-entry is unproven. |
 
 ## Sprints (one-shot each; boundary = a gated, demonstrable artifact you can SEE)
-- **S1 — Live telemetry → the dashboard tails reality (real-time, accurate).** Build the board+state emitter so a
-  real run writes `.kata/board.md` (incl. **PROGRESS heartbeats**) + `.kata/state.json`; the dashboard renders it
-  smoothly & accurately; new title **改善の型**; a **replay/demo driver** so you can watch it animate live.
-  Closes **G1, G2**. ⛔ **STOP after S1 — hand to the operator to watch + give feedback before S2/S3.**
-- **S2 — Vet the gate + bring the human into initiation.** Make the gate run the **mutation/non-vacuity proof**
-  (emit `mutation.json`); make `kata-initiate` actually **prompt** (the stop-and-ask interview + dual control).
-  Closes **G3, G4**. Demonstrable: a `mutation.json` proving tests bite + an initiation that asks you questions.
-- **S3 — Exercise the cognition + PROVE THE LOOP LOOPS.** Deliberately trigger a research-need → `kata-research`
-  (no-write) → **grounding gate** (GROUND/REJECT/ESCALATE); then run a real **version-up loop-back** re-entry and
-  **evaluate the handoff as it cycles back through** (the must-have). Closes **G5, G6**. Demonstrable: grounding
-  verdicts + a second loop cycle that starts informed from the carried context.
+- **S1 — Live telemetry → the dashboard tails reality (real-time, accurate). ✅ DONE (`fedbb87`, fresh-eval PASS).**
+  Built `tools/kata_board.py` (emits `.kata/board.md` incl. **PROGRESS heartbeats** + single-writer `state.json`,
+  self-creates `.kata/`) + dashboard heartbeat bars + `tools/kata_dash_demo.py` replay driver; title **`KATAHARNESS
+  改善型`** (kaizen-gata; torii+hiragana removed per operator). Closes **G1, G2**. pytest 244→268. ⏸ **STOPPED at the
+  boundary for the operator demo.** Plan: `PLAN-s1.md`.
+- **S2 — Vet the gate + bring the human into initiation. Closes G3, G4.** Baseline = S1 green.
+  - *S2a — mutation/non-vacuity proof in the gate:* wire the `kata-tdd` mutation step (use `tools/mutation_check.py`)
+    → emit `.kata/mutation.json` `{records, allNonVacuous}` via `gate_emit`; `kata-evaluate` reads it (NEEDS_WORK if a
+    claimed-covered test is vacuous). *Demonstrable:* a `mutation.json` proving tests bite.
+  - *S2b — `kata-initiate` actually prompts:* the skill must STOP and use `AskUserQuestion` for kind/target/grill-depth
+    + the dual-control execute decision (not decide inline). *Demonstrable:* an initiation that asks the operator
+    questions and freezes `INTENT.md` from the answers. (Disjoint from S2a by file.)
+- **S3 — Exercise the cognition + PROVE THE LOOP LOOPS. Closes G5, G6.** Baseline = S2 green. **Operator's hard
+  requirement: ≥1 real loop-back iteration with the re-entry handoff evaluated.**
+  - *S3a — grounding + research:* introduce a `research-needed` task → `kata-research` (no-write, fresh-context) →
+    the **grounding gate** (`kata-evaluate` injected-knowledge mode: GROUND/REJECT/ESCALATE, source must support the
+    claim). *Demonstrable:* real GROUND/REJECT verdicts on cited findings.
+  - *S3b — the loop-back:* a real version-up cycle — `kata-closeout` "run again" → `kata-loop` loop-back →
+    `kata-initiate` **Phase 1b** re-entry consuming carried context (`.kata/understand.md`, prior `INTENT.md`,
+    lessons, baseline SHA) → second small build → closeout. **Grade the re-entry handoff** (did Phase 1b ingest the
+    prior context, avoid re-grilling mapped ground?). *Demonstrable:* a second cycle that provably started informed.
 
 ## Cadence & rules (sprint-cadence)
 - Baseline = most-recent-green (S1 baselines on `v0.1.0-alpha.2`; each later sprint baselines on the prior green).
