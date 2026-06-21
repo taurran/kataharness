@@ -329,3 +329,128 @@ class TestBuildFrame:
         vm.wave = None
         result = kata_dash.build_frame(vm, tick=0)
         assert result is not None
+
+
+# ---------------------------------------------------------------------------
+# S1b: new title + progressLabel in row text
+# ---------------------------------------------------------------------------
+
+
+def _task_with_progress_label(label="T1", progressLabel="writing tests",
+                               percent=60, active=True):
+    """Duck-typed TaskRow with progressLabel field."""
+    return types.SimpleNamespace(
+        id=label, label=label, status="in-progress",
+        percent=percent, active=active, blocked=False, done=False,
+        progressLabel=progressLabel,
+    )
+
+
+def _task_without_progress_label(label="T2", percent=50, active=True):
+    """Duck-typed TaskRow WITHOUT progressLabel (no attribute) to test fallback."""
+    return types.SimpleNamespace(
+        id=label, label=label, status="in-progress",
+        percent=percent, active=active, blocked=False, done=False,
+        progressLabel="",
+    )
+
+
+class TestNewTitle:
+    """build_frame must use the new 改善型 header text."""
+
+    def test_build_frame_title_contains_kaizen_no_kata(self):
+        """build_frame output panel title must contain '改善型'."""
+        from rich.console import Console
+        from io import StringIO
+
+        vm = _normal_view_model()
+        frame = kata_dash.build_frame(vm, tick=0)
+        # Render to string and check for the new title
+        buf = StringIO()
+        console = Console(file=buf, width=120, legacy_windows=False, force_terminal=True)
+        console.print(frame)
+        output = buf.getvalue()
+        assert "改善型" in output, f"Expected '改善型' in output but got: {output[:200]}"
+
+    def test_waiting_panel_title_contains_kaizen_no_kata(self):
+        """waiting Panel must also use '改善型' title."""
+        from rich.console import Console
+        from io import StringIO
+
+        vm = _waiting_view_model()
+        frame = kata_dash.build_frame(vm, tick=0)
+        buf = StringIO()
+        console = Console(file=buf, width=120, legacy_windows=False, force_terminal=True)
+        console.print(frame)
+        output = buf.getvalue()
+        assert "改善型" in output, f"Expected '改善型' in waiting output but got: {output[:200]}"
+
+    def test_build_frame_does_not_contain_old_motif(self):
+        """build_frame must NOT contain the old '道' or the torii '⛩' (removed per operator)."""
+        from rich.console import Console
+        from io import StringIO
+
+        vm = _normal_view_model()
+        frame = kata_dash.build_frame(vm, tick=0)
+        buf = StringIO()
+        console = Console(file=buf, width=120, legacy_windows=False, force_terminal=True)
+        console.print(frame)
+        output = buf.getvalue()
+        assert "KATAHARNESS" in output
+        assert "道" not in output, "old '道' motif must be gone"
+        assert "⛩" not in output, "torii removed per operator — title is just 改善型"
+
+
+class TestProgressLabelInRow:
+    """render_row_text must include progressLabel when non-empty."""
+
+    def test_render_row_text_shows_progress_label(self):
+        """render_row_text must include progressLabel in output when set."""
+        task = _task_with_progress_label(progressLabel="writing tests")
+        text = kata_dash.render_row_text(task, tick=0)
+        assert "writing tests" in text
+
+    def test_render_row_text_empty_progress_label_not_appended(self):
+        """render_row_text must not add extra text when progressLabel is empty."""
+        task = _task_without_progress_label()
+        text = kata_dash.render_row_text(task, tick=0)
+        # Just check it renders normally and doesn't crash
+        assert "▸" in text
+        assert "T2" in text
+
+    def test_render_row_text_progress_label_with_step_fraction(self):
+        """progressLabel (just the label part, not the fraction) appears in row."""
+        task = _task_with_progress_label(progressLabel="deploying containers", percent=80)
+        text = kata_dash.render_row_text(task, tick=0)
+        assert "deploying containers" in text
+
+    def test_render_row_text_progress_label_missing_attr_does_not_crash(self):
+        """render_row_text must not crash if task has no progressLabel attribute."""
+        # Old-style task without progressLabel attribute
+        task = types.SimpleNamespace(
+            id="T1", label="old task", status="in-progress",
+            percent=50, active=True, blocked=False, done=False,
+        )
+        try:
+            text = kata_dash.render_row_text(task, tick=0)
+        except Exception as exc:
+            pytest.fail(f"render_row_text crashed without progressLabel attr: {exc}")
+        assert "old task" in text
+
+    def test_build_frame_shows_progress_label_in_task_row(self):
+        """build_frame renders a task row containing the progressLabel text."""
+        from rich.console import Console
+        from io import StringIO
+
+        vm = _normal_view_model()
+        # Add a task with a progressLabel
+        task_with_label = _task_with_progress_label(
+            label="Alpha", progressLabel="running validators", percent=60
+        )
+        vm.tasks = [task_with_label]
+        frame = kata_dash.build_frame(vm, tick=0)
+        buf = StringIO()
+        console = Console(file=buf, width=120, legacy_windows=False, force_terminal=True)
+        console.print(frame)
+        output = buf.getvalue()
+        assert "running validators" in output
