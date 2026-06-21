@@ -50,6 +50,7 @@ class TaskRow:
     active: bool
     blocked: bool
     done: bool
+    progressLabel: str = field(default="")
 
 
 @dataclass
@@ -129,6 +130,51 @@ def status_to_percent(status: str) -> int:
         <unknown>  →   0
     """
     return _STATUS_PERCENT.get(status, 0)
+
+
+# ---------------------------------------------------------------------------
+# PROGRESS heartbeat helpers
+# ---------------------------------------------------------------------------
+
+
+def _parse_progress_msg(msg: str) -> tuple[int, int, str] | None:
+    """Parse a PROGRESS msg in the form '<step>/<n> <label>'.
+
+    Returns (step, n, label) on success, or None if the format doesn't match.
+    The label may be empty if nothing follows the fraction.
+    """
+    # Expected format: "3/5 writing tests" or "3/5" (no label)
+    parts = msg.split(" ", maxsplit=1)
+    fraction = parts[0]
+    label = parts[1].strip() if len(parts) > 1 else ""
+    if "/" not in fraction:
+        return None
+    step_str, n_str = fraction.split("/", maxsplit=1)
+    try:
+        step = int(step_str.strip())
+        n = int(n_str.strip())
+    except ValueError:
+        return None
+    if n <= 0:
+        return None
+    return (step, n, label)
+
+
+def _latest_progress_per_task(events: list[BoardEvent]) -> dict[str, tuple[int, int, str]]:
+    """Scan board events and return the latest PROGRESS heartbeat per task.
+
+    Returns a mapping of task_id -> (step, n, label) for each task that has at
+    least one valid PROGRESS event.  Only the LAST valid PROGRESS per task is kept.
+    """
+    result: dict[str, tuple[int, int, str]] = {}
+    for ev in events:
+        if ev.type != "PROGRESS":
+            continue
+        parsed = _parse_progress_msg(ev.msg)
+        if parsed is None:
+            continue
+        result[ev.task] = parsed  # overwrite with the most recent valid one
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -221,18 +267,33 @@ def build_view_model(
 
     # ----- tasks -----------------------------------------------------------
     tasks_raw: dict[str, str] = state.get("tasks") or {}
-    task_rows: list[TaskRow] = [
-        TaskRow(
+
+    # Build per-task heartbeat map from board events
+    latest_progress = _latest_progress_per_task(events_parsed)
+
+    task_rows: list[TaskRow] = []
+    for task_id, status in tasks_raw.items():
+        # Smooth-bar: in-progress + valid PROGRESS heartbeat → compute percent
+        # Other statuses always use stepped value (frozen contract)
+        heartbeat = latest_progress.get(task_id)
+        if status == "in-progress" and heartbeat is not None:
+            step, n, label = heartbeat
+            pct = max(0, min(100, round(step / n * 100)))
+            progress_label = label
+        else:
+            pct = status_to_percent(status)
+            progress_label = ""
+
+        task_rows.append(TaskRow(
             id=task_id,
             label=task_id,           # v1: label = id
             status=status,
-            percent=status_to_percent(status),
+            percent=pct,
             active=(status == "in-progress"),
             blocked=(status == "blocked"),
             done=(status in _DONE_STATUSES),
-        )
-        for task_id, status in tasks_raw.items()
-    ]
+            progressLabel=progress_label,
+        ))
 
     # ----- gate ------------------------------------------------------------
     gate_raw = state.get("gate")

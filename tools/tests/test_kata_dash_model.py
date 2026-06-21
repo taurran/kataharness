@@ -616,3 +616,242 @@ def test_build_view_model_gated_tasks_are_done():
     vm = build_view_model("", state)
     assert vm.tasks[0].done is True
     assert vm.tasks[0].percent == 95
+
+
+# ---------------------------------------------------------------------------
+# S1b: PROGRESS heartbeat parsing + smooth-bar mapping
+# ---------------------------------------------------------------------------
+
+PROGRESS_BOARD = """\
+2026-06-21T10:00:00Z | worker-A | CLAIM | T1 | starting
+2026-06-21T10:01:00Z | worker-A | PROGRESS | T1 | 1/5 reading spec
+2026-06-21T10:02:00Z | worker-A | PROGRESS | T1 | 2/5 writing code
+2026-06-21T10:03:00Z | worker-A | PROGRESS | T1 | 3/5 writing tests
+2026-06-21T10:04:00Z | worker-B | CLAIM | T2 | starting T2
+2026-06-21T10:05:00Z | worker-B | PROGRESS | T2 | 2/4 half done
+"""
+
+
+def test_parse_board_includes_progress_lines():
+    """parse_board must parse PROGRESS type lines as BoardEvents."""
+    from kata_dash_model import parse_board
+
+    events = parse_board(PROGRESS_BOARD)
+    progress_events = [e for e in events if e.type == "PROGRESS"]
+    assert len(progress_events) == 4
+
+
+def test_parse_board_progress_event_fields():
+    """PROGRESS event must have correct fields including msg with step/n label."""
+    from kata_dash_model import parse_board
+
+    events = parse_board(PROGRESS_BOARD)
+    progress_events = [e for e in events if e.type == "PROGRESS" and e.task == "T1"]
+    # Last PROGRESS for T1 is 3/5 writing tests
+    last = progress_events[-1]
+    assert last.agent == "worker-A"
+    assert last.type == "PROGRESS"
+    assert last.task == "T1"
+    assert last.msg == "3/5 writing tests"
+
+
+def test_task_row_has_progress_label_field():
+    """TaskRow must have a progressLabel field."""
+    from kata_dash_model import TaskRow
+
+    row = TaskRow(
+        id="T1",
+        label="T1",
+        status="in-progress",
+        percent=60,
+        active=True,
+        blocked=False,
+        done=False,
+        progressLabel="writing tests",
+    )
+    assert row.progressLabel == "writing tests"
+
+
+def test_task_row_progress_label_empty_by_default():
+    """TaskRow.progressLabel must default to empty string."""
+    from kata_dash_model import TaskRow
+
+    row = TaskRow(
+        id="T1",
+        label="T1",
+        status="in-progress",
+        percent=50,
+        active=True,
+        blocked=False,
+        done=False,
+    )
+    assert row.progressLabel == ""
+
+
+def test_heartbeat_3_of_5_yields_60_percent():
+    """An in-progress task with latest PROGRESS 3/5 must get percent=60."""
+    from kata_dash_model import build_view_model
+
+    board = """\
+2026-06-21T10:00:00Z | worker-A | CLAIM | T1 | starting
+2026-06-21T10:01:00Z | worker-A | PROGRESS | T1 | 3/5 writing tests
+"""
+    state = {
+        "tasks": {"T1": "in-progress"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    t1 = vm.tasks[0]
+    assert t1.percent == 60
+
+
+def test_heartbeat_percent_uses_latest_progress_event():
+    """When multiple PROGRESS lines exist, the last one wins."""
+    from kata_dash_model import build_view_model
+
+    board = """\
+2026-06-21T10:00:00Z | worker-A | CLAIM | T1 | starting
+2026-06-21T10:01:00Z | worker-A | PROGRESS | T1 | 1/5 reading spec
+2026-06-21T10:02:00Z | worker-A | PROGRESS | T1 | 2/5 writing code
+2026-06-21T10:03:00Z | worker-A | PROGRESS | T1 | 3/5 writing tests
+"""
+    state = {
+        "tasks": {"T1": "in-progress"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    t1 = vm.tasks[0]
+    assert t1.percent == 60  # 3/5 * 100 = 60
+
+
+def test_heartbeat_progress_label_set_from_latest():
+    """progressLabel must come from the label part of the latest PROGRESS msg."""
+    from kata_dash_model import build_view_model
+
+    board = """\
+2026-06-21T10:00:00Z | worker-A | CLAIM | T1 | starting
+2026-06-21T10:01:00Z | worker-A | PROGRESS | T1 | 1/5 reading spec
+2026-06-21T10:02:00Z | worker-A | PROGRESS | T1 | 3/5 writing tests
+"""
+    state = {
+        "tasks": {"T1": "in-progress"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    t1 = vm.tasks[0]
+    assert t1.progressLabel == "writing tests"
+
+
+def test_no_heartbeat_falls_back_to_stepped_percent():
+    """Without a PROGRESS heartbeat, in-progress uses status_to_percent (50)."""
+    from kata_dash_model import build_view_model
+
+    board = "2026-06-21T10:00:00Z | worker-A | CLAIM | T1 | starting\n"
+    state = {
+        "tasks": {"T1": "in-progress"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    t1 = vm.tasks[0]
+    assert t1.percent == 50  # stepped fallback
+
+
+def test_no_heartbeat_progress_label_is_empty():
+    """Without a PROGRESS heartbeat, progressLabel must be empty string."""
+    from kata_dash_model import build_view_model
+
+    board = "2026-06-21T10:00:00Z | worker-A | CLAIM | T1 | starting\n"
+    state = {
+        "tasks": {"T1": "in-progress"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    t1 = vm.tasks[0]
+    assert t1.progressLabel == ""
+
+
+def test_heartbeat_clamp_over_100():
+    """Heartbeat percent must be clamped to 100 even if step > n (defensive)."""
+    from kata_dash_model import build_view_model
+
+    board = "2026-06-21T10:00:00Z | worker-A | PROGRESS | T1 | 6/5 over limit\n"
+    state = {
+        "tasks": {"T1": "in-progress"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    t1 = vm.tasks[0]
+    assert t1.percent == 100
+
+
+def test_heartbeat_clamp_below_0():
+    """Heartbeat percent must be clamped to 0 if round gives negative (e.g. 0/5)."""
+    from kata_dash_model import build_view_model
+
+    board = "2026-06-21T10:00:00Z | worker-A | PROGRESS | T1 | 0/5 just started\n"
+    state = {
+        "tasks": {"T1": "in-progress"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    t1 = vm.tasks[0]
+    assert t1.percent == 0
+
+
+def test_heartbeat_only_applies_to_in_progress_tasks():
+    """PROGRESS heartbeats must NOT override percent for done/gated/assigned tasks."""
+    from kata_dash_model import build_view_model
+
+    board = """\
+2026-06-21T10:00:00Z | worker-A | PROGRESS | T1 | 3/5 late progress
+2026-06-21T10:01:00Z | worker-A | DONE | T1 | verify passed
+"""
+    state = {
+        "tasks": {"T1": "done"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    t1 = vm.tasks[0]
+    assert t1.percent == 90  # done → stepped, not heartbeat
+
+
+def test_heartbeat_per_task_isolated():
+    """Each task uses its own latest PROGRESS, not another task's."""
+    from kata_dash_model import build_view_model
+
+    board = """\
+2026-06-21T10:00:00Z | worker-A | PROGRESS | T1 | 3/5 writing tests
+2026-06-21T10:01:00Z | worker-B | PROGRESS | T2 | 2/4 half done
+"""
+    state = {
+        "tasks": {"T1": "in-progress", "T2": "in-progress"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    by_id = {t.id: t for t in vm.tasks}
+    assert by_id["T1"].percent == 60   # 3/5 * 100
+    assert by_id["T2"].percent == 50   # 2/4 * 100
+
+
+def test_heartbeat_malformed_msg_falls_back_to_stepped():
+    """A PROGRESS line with non-parseable msg must fall back to stepped percent."""
+    from kata_dash_model import build_view_model
+
+    board = "2026-06-21T10:00:00Z | worker-A | PROGRESS | T1 | not a fraction\n"
+    state = {
+        "tasks": {"T1": "in-progress"},
+        "driftLedger": {"unauthorizedDeviations": 0, "escalations": 0},
+        "updatedUtc": "2026-06-21T10:00:00Z",
+    }
+    vm = build_view_model(board, state)
+    t1 = vm.tasks[0]
+    assert t1.percent == 50  # fallback to stepped
