@@ -18,6 +18,28 @@ The name is the method: **Kata = the Improvement Kata** — continuous, delibera
 Every loop run is a kata; the harness improves *itself* via kata. We stand on Anthropic's
 long-running-agent harness + the best of mattpocock/skills, GSD, BMAD, and DDD ubiquitous language.
 
+## The Greater Loop
+
+The **full loop** wraps the harness with a front half and back half, sequenced by the thin `kata-loop`
+conductor. It is **optional** — absent the conductor, the direct one-shot harness run is unchanged (BC).
+
+```
+INITIATION          THE HARNESS              CLOSEOUT
+kata-initiate  ──▶  kata-orchestrate    ──▶  kata-closeout ──┐
+(intent→           (grill→freeze→exec→       (report+          │
+frozen INTENT.md)   evaluate→handoff)         understand+      │
+                                              human decision)  │
+                                                               │
+◀──────── loop-back (version-up: carry context) ◀─────────────┘
+          build-new: fresh initiation (cold)
+```
+
+`kata-loop` composes three self-contained modules (each a `modules/<name>/` dir with its own `AGENTS.md`,
+D91): **initiation** (`kata-initiate`), the **reused harness** (`kata-orchestrate` + the built loop),
+and **closeout** (`kata-closeout` + `kata-understand`). On a "run again (version-up)" decision, the
+loop-back re-enters `kata-initiate` carrying the prior run's context — new baseline SHA, understand-map,
+lessons, and prior `INTENT.md` — so the next cycle starts informed. A platform may swap any module.
+
 ## The spine (non-negotiable principles)
 
 1. **The plan does not drift.** The orchestrator is the **plan-guardian**: it owns the frozen
