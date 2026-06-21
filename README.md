@@ -87,7 +87,7 @@ spiral, doesn't lose your context, fits *how you build*, and *gets better over t
 ## Status
 
 **`v0.1.0-alpha.1` (first tagged milestone) — skill suite complete & green, not yet field-proven end-to-end.**
-31 skills, all `0.1.0`/experimental; validator 0 errors · tests passing · Snyk clean. Two self-dogfood runs
+34 skills, all `0.1.0`/experimental; validator 0 errors · tests passing · Snyk clean. Two self-dogfood runs
 done — the second was a real **orchestrated** version-up (concurrent worker subagents in isolated worktrees,
 fresh-context gate, human version-select). The full cognitive architecture is built for the **Claude-only
 core**, now spanning **one-shot and incremental (sprint) delivery**, plus the learning loop (LEARN feed +
@@ -110,7 +110,7 @@ reference one); then the multi-tool **adapters** (Codex, Kiro, ACP). Live state:
 
 ## The skills
 
-31 skills across the six loop phases. Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
+34 skills across the six loop phases (plus the Greater-Loop initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
 `kata-diagnose`) share one `RUBRIC.md` method and expose depth tiers you dial per run.
 
 ```
@@ -186,10 +186,12 @@ skills/
 | `kata-review-advanced` | 0.1.0 | 3 | evaluate | experimental | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
 | `kata-review-essential` | 0.1.0 | 1 | evaluate | experimental | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
 | `kata-review-standard` | 0.1.0 | 2 | evaluate | experimental | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
+| `kata-closeout` | 0.1.0 | 2 | handoff | experimental | new (KataHarness original — Phase 2 Greater Loop back-half, D89/DESIGN §3) | — |
 | `kata-defer` | 0.1.0 | 1 | handoff | experimental | new (KataHarness original, D42/D43 GB9) — the structural complement to the no-drift spine; assumption-log role added by D71 (Priming-and-Grill autonomous floor) | Park off-plan items + log grill-skip assumptions at the boundary, never drift the frozen plan |
 | `kata-handoff` | 0.1.0 | 1 | handoff | experimental | adapted-from mattpocock/skills {handoff} + Anthropic reset-with-handoff / compaction guidance | Two-way durable handoff (session/agent/tool) |
 | `kata-orient` | 0.1.0 | 2 | handoff | experimental | new (KataHarness original, loop-cognition AO-GB1/2/3 + D76) — receiving half of the two-way handoff (spine #5); three-tier assembly echoes Hermes prompt_builder (stable/context/volatile); nested-AGENTS.md rollup standard | Assemble a subagent's launch orientation: three-tier, task-type-tailored, derived pointers+callouts, routed questions — the read half of handoff |
 | `kata-selfhandoff` | 0.1.0 | 1 | handoff | experimental | adapted-from Anthropic compaction guidance + mattpocock caveman compression | Configurable context-threshold self-handoff (delegates artifact to kata-handoff) |
+| `kata-understand` | 0.1.0 | 2 | handoff | experimental | new (KataHarness original, Phase 2 GL-R2c / DESIGN §3 / PLAN-phase2 Task C1) — comprehension-map half of the closeout back-half; backed by the F2 graph runtime (tools/graph_gen.py → kata.graph.json) | — |
 | `kata-improve` | 0.1.0 | 1 | meta | experimental | adapted-from the Improvement Kata (Toyota Kata) + mattpocock/skills engineering/improve-codebase-architecture | Fold cross-run lessons back into the skills/ tree; calls kata-write-skill |
 | `kata-promote` | 0.1.0 | 2 | meta | experimental | new (KataHarness original, loop-cognition ML / LC-GB3/GB4/GB5, D60-D69) — two-stage gate vs Hermes' no-gate instant-universal model (RESEARCH.md bake-off: borrow the closed loop, keep our human gate) | Stage-2 human gate: promote a grounded agent-distilled candidate skill (experimental→stable + scope bump) into the toolkit; honors engram.autonomy |
 | `kata-write-skill` | 0.1.0 | 1 | meta | experimental | adapted-from mattpocock/skills productivity/write-a-skill | Author new skills to STANDARDS (points, not restates); kata-improve calls it |
