@@ -1,12 +1,12 @@
 ---
-date: 2026-06-20 (Greater-Loop BUILD COMPLETE [Phases 0–3, D87–D91]; next = Phase 4 self-dogfood test; for a fresh/compacted session)
-branch: master — on private remote github.com/taurran/kataharness (pushed), tip f39f37b
-green: validator 35 skills / 0 errors · pytest 112 passed · Snyk residual-CWE23-FP-documented · tags pre-phase0..pre-phase3 + v0.1.0-alpha.1
-tags: [handoff, v0.1.0-alpha.1, greater-loop-BUILT, build-through-complete, next-phase4-self-dogfood, full-context]
+date: 2026-06-21 (v0.1.0-alpha.2 SHIPPED — Greater Loop proven end-to-end via Phase 4 self-dogfood; next = Phase 5 external; for a fresh/compacted session)
+branch: master — on private remote github.com/taurran/kataharness (pushed), tip 3ed18d3
+green: validator 35 skills / 0 errors · pytest 205 passed · Snyk residual-CWE23-FP-documented · tags pre-phase0..3 + pre-dash + v0.1.0-alpha.1 + v0.1.0-alpha.2
+tags: [handoff, v0.1.0-alpha.2, greater-loop-PROVEN, phase4-dogfood-done, next-phase5-external, full-context]
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
-# HANDOFF — KataHarness — 2026-06-20 (Greater Loop BUILT [Phases 0–3] · next = Phase 4 self-dogfood TEST)
+# HANDOFF — KataHarness — 2026-06-21 (v0.1.0-alpha.2 SHIPPED · Greater Loop proven end-to-end · next = Phase 5 external)
 
 > **Fresh/compacted session: read in order, confirm green, resume at §4.** Everything below is durable +
 > committed + **pushed to the private remote**. Maps to `kata-orient` tiers: §1 → context · §2+§4 → volatile ·
@@ -64,19 +64,24 @@ NO intermediate dogfood/test ceremony.** Per-phase correctness gates (validator 
 fresh-context `kata-review` before each merge) **still apply** — they're build discipline, not "the test." **The
 single next TEST = Phase 4 self-dogfood of the COMPLETE loop.**
 
-**NEXT ACTION — Phase 4: the SELF-DOGFOOD TEST of the complete Greater Loop (operator-driven).**
-The build-through is DONE (Phases 0–3). Per BUILD-THROUGH this is **the single next TEST** — and per
-`exercise-harness-for-real` it must be a **real orchestrated run, never inline**, ending in a **human
-version-select.** Run a full greater-loop cycle on KataHarness ITSELF:
-1. **`kata-initiate`** — capture a real **version-up `INTENT.md`** (what's the ACTUAL goal of this version-up?
-   pick a genuine next improvement — e.g. wire `kata-loop`/`kata-closeout` into `kata-bootstrap` as the live
-   entry, or exercise install-portability). Interactive target=self; grill-to-ready or "execute".
-2. **Harness** — orchestrated foreground-parallel build (worktrees + concurrent Sonnet workers + plan-guardian).
-3. **`kata-closeout`** — consume the `.kata/` artifacts → `kata-report` → offer `kata-understand` (now graph-backed
-   by F2) → **human gate: satisfied? / commit·push·merge? / run-again or build-new?** → if version-up, the
-   loop-back re-enters `kata-initiate` with context. Likely tag `v0.1.0-alpha.2`.
-4. **THEN Phase 5** — external reach (install installers / multi-model / optional `subagent-dashboard`).
-*This is the first true end-to-end exercise of the WHOLE wrapped loop — it will surface the next findings.*
+**✅ Phase 4 self-dogfood DONE — `v0.1.0-alpha.2` shipped.** The complete Greater Loop ran end-to-end on
+KataHarness itself and shipped the **subagent-dashboard** (`tools/kata_dash.py` + `kata_dash_model.py`):
+`kata-initiate` → orchestrated harness (2 workers/worktrees, `gate_emit` RESULT.json, fresh-context `kata-evaluate`
+PASS 8/8) → `kata-closeout` (graph-backed `.kata/understand.md`, human version-select). The dogfood caught + fixed
+a real Windows UTF-8 render crash via the smoke test. Record: `specs/subagent-dashboard/{INTENT,PLAN,SECURITY,REPORT}.md`.
+pytest 205, validator 35/0.
+
+**NEXT ACTION — Phase 5 EXTERNAL reach (operator's call when ready; no active build in flight):**
+1. **install-portability mechanics** — the per-platform installer + workspace binding behind `kata-initiate`'s
+   config layer (PokeVault link / bring-your-own-vault scaffold / aim-each-folder; MindBridge brings its own).
+   Unlocks running on external targets / your vault. Spec: `.planning/specs/install-portability/BRIEF.md`.
+2. **multi-model-orchestration** — host-located orchestrator + per-component model/tool routing (incl. the latent
+   route-eval-to-another-model option). Spec: `.planning/specs/multi-model-orchestration/BRIEF.md`. *(deps: install.)*
+3. **Optional follow-ons:** dashboard **v2** (worker progress-heartbeats → smooth bars; a small `protocol/board.md`
+   addition) + an **auto-launch wire-in** (kata-orchestrate convenience hook to open `kata_dash` beside a run).
+Each Phase-5 item is a normal Greater-Loop version-up: `kata-initiate` (freeze INTENT) → orchestrated harness →
+`kata-closeout` (version-select). Grill these before building — they touch external surfaces. v0.1 release-checklist
+(flip Policy A → bump-on-modify) is the eventual milestone after Phase 5 proves out.
 
 ## 5. Suggested next skills *(orientation: task-type hint)*
 Confirm green → `kata-plan` (Phase 0 slices) → **orchestrated foreground-parallel build** (worktrees + concurrent

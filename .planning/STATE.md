@@ -1,6 +1,20 @@
 # STATE — KataHarness
 
-**Phase:** `v0.1.0-alpha.1` released · **✅ GREATER-LOOP BUILD COMPLETE (Phases 0–3)** · **▶ Phase 4 self-dogfood (the TEST) next — operator-driven** · **35 skills / 0 errors · pytest 112 · Snyk: residual CWE-23 documented FP** · private remote (taurran/kataharness), tip `f39f37b` · **Updated:** 2026-06-20
+**Phase:** **✅ `v0.1.0-alpha.2` SHIPPED — Greater Loop proven end-to-end (Phase 4 self-dogfood done)** · Phases 0–3 built + adversarial-reviewed + seam-fixed · **35 skills / 0 errors · pytest 205 · Snyk: residual CWE-23 documented FP** · private remote (taurran/kataharness), tip `3ed18d3` · **Updated:** 2026-06-21
+
+> **CURRENT (2026-06-21, alpha.2 shipped):** **The complete Greater Loop ran end-to-end on KataHarness itself for
+> the first time and shipped a real feature** — the **subagent-dashboard** (`tools/kata_dash.py` + `kata_dash_model.py`):
+> a `rich` live TUI that tails `.kata/board.md`+`state.json` and renders worker subagents as artistic ASCII
+> (`⛩ 道`, block bars, braille spinners, `GRILL▸…▸IMPROVE` ribbon). The run: `kata-initiate` (froze INTENT/PLAN) →
+> orchestrated harness (DASH-model ∥ DASH-render, 2 workers/worktrees, octopus-merge, `gate_emit` RESULT.json,
+> fresh-context `kata-evaluate` **PASS 8/8**) → `kata-closeout` (graph-backed `.kata/understand.md` via F2 — 107
+> dashboard symbols mapped; human **version-select** → ship+tag). **The dogfood caught + fixed a real Windows
+> UTF-8 render crash via the integration smoke test** (the gate doing its job). pytest 112→205. Record:
+> `specs/subagent-dashboard/{INTENT,PLAN,SECURITY,REPORT}.md`. Backout tags `pre-dash` + `pre-phase0..3`.
+> **★ NEXT = Phase 5 EXTERNAL reach (operator's call when ready):** install-portability mechanics (per-platform
+> installer + vault binding behind kata-initiate's config) · multi-model-orchestration (host-located orchestrator +
+> per-component model routing; holds the latent route-eval-to-another-model option). Optional follow-ons: dashboard
+> v2 (worker progress-heartbeats → smooth bars) + an auto-launch wire-in. No active build in flight.
 
 > **CURRENT (2026-06-20, BUILD-THROUGH COMPLETE):** **The entire Greater Loop is BUILT + merged + pushed
 > (Phases 0–3, `f39f37b`).** Each phase = a real orchestrated foreground-parallel run (Sonnet workers in isolated
