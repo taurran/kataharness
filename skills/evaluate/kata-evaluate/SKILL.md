@@ -76,9 +76,28 @@ Grade each finding/candidate:
 3. **Adversarial soundness.** The finding must survive a red-team — source authoritative (not a low-quality or
    stale page), confidence not overstated, no second-order breakage. For depth here, pair with [[kata-review]]'s
    injected-knowledge soundness surface.
-**Verdict per finding: GROUND** (cited, supported, no LOCKED conflict → orchestrator may fold via a deliberate
-superseding re-plan) / **REJECT** (ungrounded/unsound → logged, not used) / **ESCALATE** (LOCKED tension or
-can't-ground → human). Default-FAIL: nothing is GROUND until its source is read and proves the claim.
+**Verdict per finding: GROUND** (cited, source-supported, no LOCKED conflict → orchestrator may fold via a
+deliberate superseding re-plan) / **REJECT** (source does not support the claim — ungrounded/unsound → logged,
+not used) / **ESCALATE** (LOCKED decision in tension OR `groundsToPlan == "NO"` OR can't-ground → human).
+Default-FAIL: nothing is GROUND until its source is read and proves the claim.
+
+**Deterministic verdict emitter (S3a-2):** After this gate completes its evaluation, the **orchestrator** runs
+`tools/grounding_gate.py` to derive and persist the machine-readable verdict for each finding. The gate skill
+itself remains no-write — it returns per-finding scores; the orchestrator calls `grounding_gate.build_verdict`
+(one per finding) and `grounding_gate.write_grounding(kata_dir, verdicts)` to emit `.kata/grounding.json`:
+
+```json
+{
+  "verdicts": [{ "finding": {...}, "verdict": "GROUND|REJECT|ESCALATE", "evidence": "..." }],
+  "allGrounded": true
+}
+```
+
+The verdict logic in `grounding_gate.grounding_verdict` is the authoritative implementation of the three rules
+above — locked in priority order: (1) `locked_conflict OR groundsToPlan == "NO"` ⇒ `ESCALATE`; (2)
+`not source_supports` ⇒ `REJECT`; (3) otherwise ⇒ `GROUND`. `allGrounded: true` only when every finding
+is `GROUND`. This module is stdlib-only, path-traversal-guarded (CWE-23), and produces the auditable artifact
+that closes G5.
 
 ## Machine-readable inputs the gate MUST consume
 
