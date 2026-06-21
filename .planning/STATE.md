@@ -21,6 +21,14 @@
 >   direct run). Root `AGENTS.md` gains a "The Greater Loop" entry.
 > Plans: `specs/greater-loop/PLAN-phase{0,1,2,3}.md` + `SECURITY-phase0.md`. Decisions **D87–D91**. Backout tags
 > `pre-phase0..pre-phase3` on remote.
+> **Adversarial review (2026-06-20, post-build):** a fresh-context red-team found the loop was "skills authored,
+> wired by docs, with broken seams" — the sprint-cadence *wired-but-not-connected* anti-pattern partially
+> repeating at the Phase-2/3 seam. **All findings fixed (`2d71f2e`):** kata-understand now WRITES `.kata/understand.md`
+> (loop-back was reading a never-written file); kata-initiate gained a loop-back-context Phase 1b + `AskUserQuestion`;
+> kata-closeout dropped stale "kata-loop not yet built" drift and wikilinks it; kata-orchestrate gained an explicit
+> RESULT.json precondition; kata-bootstrap points to kata-loop; D40 marked superseded; INTENT.md/kata.config
+> authority pinned. Validator 35/0, pytest 112. **Loop seams now consistent end-to-end (still documentation-wired
+> — the Phase 4 dogfood is what proves the live run).**
 > **★ NEXT = Phase 4 — the SELF-DOGFOOD TEST of the complete Greater Loop (operator-driven).** Per BUILD-THROUGH
 > this is the single next TEST: run a full greater-loop cycle on KataHarness itself — `kata-initiate` (capture a
 > real version-up INTENT) → harness (orchestrated) → `kata-closeout` (report + understand-map + **human
