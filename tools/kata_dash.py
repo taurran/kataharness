@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 from pathlib import Path
 from typing import Optional
@@ -199,7 +200,17 @@ def main(argv: Optional[list] = None) -> None:
     # kata_dash_model does not exist.
     import kata_dash_model  # type: ignore[import]
     from rich.live import Live
+
+    # The dashboard renders Unicode glyphs (⛩, braille spinners, block bars). On a
+    # non-UTF-8 Windows stdout (piped/redirected, or a cp1252 console) rich's encode
+    # would crash. Force UTF-8 with errors="replace" so glyphs degrade, never crash;
+    # and disable the legacy-windows renderer so a single code path drives output.
     from rich.console import Console
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+    except (AttributeError, ValueError, OSError):
+        pass
+    console = Console(legacy_windows=False)
 
     kata_dir = _safe_path(args.kata_dir)
     board_file = kata_dir / "board.md"
@@ -228,14 +239,13 @@ def main(argv: Optional[list] = None) -> None:
         # Single render and exit
         board_text, state = _read_sources()
         view_model = kata_dash_model.build_view_model(board_text, state)
-        console = Console()
         frame = build_frame(view_model, tick=0)
         console.print(frame)
         return
 
     # Live tail loop
     tick = 0
-    with Live(refresh_per_second=int(1 / args.refresh) if args.refresh > 0 else 7) as live:
+    with Live(console=console, refresh_per_second=int(1 / args.refresh) if args.refresh > 0 else 7) as live:
         while True:
             board_text, state = _read_sources()
             view_model = kata_dash_model.build_view_model(board_text, state)
