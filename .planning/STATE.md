@@ -11,10 +11,16 @@
 > dashboard symbols mapped; human **version-select** → ship+tag). **The dogfood caught + fixed a real Windows
 > UTF-8 render crash via the integration smoke test** (the gate doing its job). pytest 112→205. Record:
 > `specs/subagent-dashboard/{INTENT,PLAN,SECURITY,REPORT}.md`. Backout tags `pre-dash` + `pre-phase0..3`.
-> **★ NEXT = Phase 5 EXTERNAL reach (operator's call when ready):** install-portability mechanics (per-platform
-> installer + vault binding behind kata-initiate's config) · multi-model-orchestration (host-located orchestrator +
-> per-component model routing; holds the latent route-eval-to-another-model option). Optional follow-ons: dashboard
-> v2 (worker progress-heartbeats → smooth bars) + an auto-launch wire-in. No active build in flight.
+> **loop-hardening sprint-cadence IN PROGRESS (closes the verified Phase-4 gaps).** Roadmap+grounding:
+> `specs/loop-hardening/{ROADMAP,PLAN-s1}.md`. **✅ S1 DONE (`fedbb87`, fresh-eval PASS 8/8):** `tools/kata_board.py`
+> emits the live coordination board (`.kata/board.md` incl. **PROGRESS heartbeats**) + single-writer `state.json`
+> (self-creates `.kata/`); dashboard renders smooth heartbeat bars + progressLabel; title **`KATAHARNESS 改善型`**
+> (kaizen-gata; torii+hiragana removed per operator, see [[ui-text-japanese-concise]]); `tools/kata_dash_demo.py`
+> replay driver (delegates to kata_board). Closes **G1+G2**. pytest 244→268, validator 35/0, Snyk med+ 0.
+> **⏸ STOPPED at the S1 boundary for the operator to WATCH the live dashboard + give feedback before S2/S3.**
+> **S2** (mutation proof + interactive initiation; G3+G4) and **S3** (grounding/research + **loop-back iteration**
+> proving the loop loops; G5+G6) are queued, not started. Backout tag `pre-s1`.
+> **Then Phase 5 EXTERNAL reach** (install-portability · multi-model) remains after loop-hardening.
 
 > **CURRENT (2026-06-20, BUILD-THROUGH COMPLETE):** **The entire Greater Loop is BUILT + merged + pushed
 > (Phases 0–3, `f39f37b`).** Each phase = a real orchestrated foreground-parallel run (Sonnet workers in isolated
