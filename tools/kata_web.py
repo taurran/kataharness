@@ -379,8 +379,13 @@ PAGE_HTML = """\
       }
       children.forEach(function(c) {
         if (c == null) return;
-        if (typeof c === "string") e.appendChild(document.createTextNode(c));
-        else e.appendChild(c);
+        // Coerce primitives (string AND number) to text nodes — a numeric child
+        // like driftEscalations[0]=0 must not reach appendChild(0) (TypeError).
+        if (typeof c === "string" || typeof c === "number") {
+          e.appendChild(document.createTextNode(String(c)));
+        } else {
+          e.appendChild(c);
+        }
       });
       return e;
     }

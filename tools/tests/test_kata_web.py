@@ -79,6 +79,18 @@ class TestPageHTML:
         assert isinstance(html, str)
         assert "<html" in html.lower() or "<!doctype" in html.lower()
 
+    def test_el_helper_coerces_numeric_children(self):
+        """Regression: the el() DOM helper must coerce NUMBER children to text
+        nodes, not pass them to appendChild (driftEscalations[0]=0 is numeric;
+        appendChild(0) throws TypeError and aborts renderView before the body
+        swaps in — the 'stuck on Loading…' bug caught in the operator demo)."""
+        import kata_web
+        html = kata_web.PAGE_HTML
+        assert 'typeof c === "number"' in html, (
+            "el() must handle numeric children (typeof c === 'number') so a "
+            "numeric drift value does not reach appendChild()"
+        )
+
 
 # ---------------------------------------------------------------------------
 # view_to_dict — pure serialisation
