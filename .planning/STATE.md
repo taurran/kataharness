@@ -1,5 +1,16 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-21, loop-hardening S3a DONE — `4391deb`):** **Grounding + research now have a concrete,
+> testable substrate** (closes G5). `tools/escalation.py` = `research-needed` escalation payload + research-finding
+> builders/writer (`.kata/escalations/<id>.json`); `tools/grounding_gate.py` = deterministic GROUND/REJECT/ESCALATE
+> verdict + `.kata/grounding.json` (`allGrounded`); wired into `kata-research` (finding schema) + `kata-evaluate`
+> injected-knowledge mode (both stay no-write). **G5 demonstrated end-to-end**: a real escalation + three findings
+> graded GROUND·REJECT·ESCALATE (`allGrounded:false` correctly). Grounding is **conditional** (fires only on a
+> `research-needed` escalation, not per-run). **pytest 420, validator 35/0, Snyk 0.** Fresh-context `kata-evaluate`
+> **PASS 8/8**. Backout tag `pre-s3a`. **6 of 7 verified gaps closed (G1–G5, G7).** **ONLY G6 REMAINS = S3b, the
+> live loop-back** — a real version-up re-entry that proves the loop loops (operator-driven: the human "run again"
+> decision can't be simulated, `exercise-harness-for-real`). That is the next session, done WITH the operator.
+
 > **CURRENT (2026-06-21, loop-hardening S2 DONE — `cddf9ff`):** **The gate now proves tests bite + initiation is a
 > hard human stop** (closes G3+G4). `tools/mutation_run.py` = deterministic restoring mutate→run→restore loop (reuses
 > `mutation_check`); `kata-tdd` PROVE points at it; `kata-evaluate` rubric item 1 now **requires** `.kata/mutation.json`

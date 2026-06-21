@@ -64,9 +64,12 @@ it cycles back). Each gap below is **grounded in evidence** from the Phase-4 dog
     questions and freezes `INTENT.md` from the answers. (Disjoint from S2a by file.)
 - **S3 — Exercise the cognition + PROVE THE LOOP LOOPS. Closes G5, G6.** Baseline = S2 green. **Operator's hard
   requirement: ≥1 real loop-back iteration with the re-entry handoff evaluated.**
-  - *S3a — grounding + research:* introduce a `research-needed` task → `kata-research` (no-write, fresh-context) →
-    the **grounding gate** (`kata-evaluate` injected-knowledge mode: GROUND/REJECT/ESCALATE, source must support the
-    claim). *Demonstrable:* real GROUND/REJECT verdicts on cited findings.
+  - *S3a — grounding + research:* **✅ DONE (`4391deb`, fresh-eval PASS 8/8).** Built `tools/escalation.py`
+    (`research-needed` payload + research-finding builders/writer → `.kata/escalations/<id>.json`) +
+    `tools/grounding_gate.py` (deterministic GROUND/REJECT/ESCALATE verdict + `.kata/grounding.json`), wired into
+    `kata-research` (finding schema) + `kata-evaluate` injected-knowledge mode. **G5 demonstrated end-to-end** (real
+    escalation + all three verdicts; `allGrounded:false` correctly). pytest 367→420, validator 35/0, Snyk 0. Plan:
+    `PLAN-s3a.md`. *(Grounding is conditional — fires only on a `research-needed` escalation, not per-run.)*
   - *S3b — the loop-back:* a real version-up cycle — `kata-closeout` "run again" → `kata-loop` loop-back →
     `kata-initiate` **Phase 1b** re-entry consuming carried context (`.kata/understand.md`, prior `INTENT.md`,
     lessons, baseline SHA) → second small build → closeout. **Grade the re-entry handoff** (did Phase 1b ingest the

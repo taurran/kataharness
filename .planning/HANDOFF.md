@@ -1,7 +1,7 @@
 ---
-date: 2026-06-21 (loop-hardening S1 + S1.5 + S2 DONE on master; next = S3 (loop-back); for a fresh/compacted session)
-branch: master — on private remote github.com/taurran/kataharness, tip cddf9ff (push pending at write time)
-green: validator 35 skills / 0 errors · pytest 367 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs) · tags pre-s1 + pre-s1.5 + pre-s2 + v0.1.0-alpha.1 + v0.1.0-alpha.2
+date: 2026-06-21 (loop-hardening S1+S1.5+S2+S3a DONE; ONLY G6 left = S3b live loop-back, operator-driven; for a fresh/compacted session)
+branch: master — on private remote github.com/taurran/kataharness, tip 4391deb (push pending at write time)
+green: validator 35 skills / 0 errors · pytest 420 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs) · tags pre-s1 + pre-s1.5 + pre-s2 + pre-s3a + v0.1.0-alpha.1 + v0.1.0-alpha.2
 tags: [handoff, loop-hardening, s1-done, next-s2-s3, sprint-cadence, full-context]
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
@@ -54,7 +54,14 @@ authored-for: kata-orient (sections map to the three orientation tiers)
   (silent-skip closed). `tools/intent_scaffold.py` (schema INTENT.md writer); `kata-initiate` hard interview STOP.
   **G3 demonstrated end-to-end** (real mutation → test green→red → restored → `mutation.json`). pytest 334→367.
   **Backout:** tag `pre-s2`. (Eval caught a missing RESULT.json regen; fixed via `gate_emit`; re-confirmed PASS.)
-- **⏸ S1 + S1.5 + S2 shipped; at the boundary before S3.** Policy A (skills held 0.1.0). **Backout:** `pre-s1`/`pre-s1.5`/`pre-s2`.
+- **✅ loop-hardening S3a DONE** (`4391deb`, fresh-eval PASS 8/8) — **grounding + research substrate (G5).**
+  `tools/escalation.py` (`research-needed` payload + research-finding builders/writer → `.kata/escalations/<id>.json`)
+  + `tools/grounding_gate.py` (deterministic GROUND/REJECT/ESCALATE + `.kata/grounding.json` `allGrounded`), wired
+  into `kata-research` + `kata-evaluate` injected-knowledge mode (both stay no-write). **G5 demonstrated** (real
+  escalation + all three verdicts). Grounding is **conditional** (fires only on a `research-needed` escalation).
+  pytest 367→420. **Backout:** tag `pre-s3a`.
+- **⏸ 6 of 7 gaps closed (G1–G5, G7). ONLY G6 = S3b (live loop-back) remains — operator-driven next session.** The
+  human "run again" decision can't be simulated (`exercise-harness-for-real`). Policy A. **Backout:** `pre-s1`…`pre-s3a`.
 
 ## 3. The verified gaps loop-hardening closes *(orientation: CONTEXT — why these sprints exist)*
 The Phase-4 dogfood was an honest *first happy-path* run; an accounting (with `ls`/artifact proof) found load-bearing
