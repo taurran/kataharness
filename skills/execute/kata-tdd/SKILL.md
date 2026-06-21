@@ -42,29 +42,47 @@ and patterns). Then, for each behavior in the acceptance criteria:
 ```
 RED:    write ONE test for the next behavior → it fails
 GREEN:  minimal code to pass → it passes
-PROVE:  non-vacuity — remove or negate the single asserted line in the source,
-        re-run the test, confirm it flips green→red, then restore the line.
-        A test that stays green after its asserted line is removed is vacuous
-        and does not count. Do not advance to the next behavior until the
-        current test bites.
+PROVE:  non-vacuity — run tools/mutation_run.py prove_non_vacuous(...) to automate
+        the PROVE step: it reads the pristine source, runs the test (baseline), removes
+        the asserted line, runs the test again (mutated), and ALWAYS restores the file.
+        A test that stays green after its asserted line is removed is vacuous and does
+        not count. Do not advance to the next behavior until the current test bites.
 ```
 One test → one implementation → prove non-vacuity → repeat. Don't write all tests up front (that tests imagined behavior). For
 pure data/config tasks with no new logic, "test" = the project's structural/validation gate must stay green.
 
-### Recording mutation/non-vacuity proof for the gate
+**A code-bearing task is not done until `.kata/mutation.json` exists with `allNonVacuous: true`.**
+Pure data/config/docs tasks with no new executable logic are exempt from this requirement.
 
-Each PROVE step produces a verdict via `mutation_check.mutation_verdict(baseline_passed, mutated_passed)`.
-Collect all verdicts across the task's behaviors into a `mutation_records` list and pass them to
-`tools/gate_emit.py` as `mutation_records` so the proof is captured in `.kata/mutation.json`.
+### Running the PROVE step with mutation_run
+
+Use `tools/mutation_run.prove_non_vacuous(source_path, asserted_line, test_cmd)` as the **runnable**
+mechanism for the PROVE step — not a manual hand-edit.  It automates the full loop:
+(1) runs `test_cmd` on pristine source → `baseline_passed`; (2) applies
+`mutation_check.apply_line_removal`, writes the mutated file; (3) runs `test_cmd` again →
+`mutated_passed`; (4) **always restores** the original bytes in a `try/finally`; (5) returns the
+`mutation_check.mutation_verdict` dict `{testWentRed, nonVacuous}`.
 
 Example (Python, called from within the task's verify/report step):
 ```python
-from mutation_check import mutation_verdict
+from mutation_run import prove_non_vacuous, prove_many
 from gate_emit import emit_gate_artifacts
 
+# Option A — one behavior at a time:
 records = []
-# For each behavior proven non-vacuous:
-records.append(mutation_verdict(baseline_passed=True, mutated_passed=False))
+verdict = prove_non_vacuous(
+    source_path="tools/my_task.py",
+    asserted_line="    return computed_value",
+    test_cmd="uv run pytest tests/test_my_task.py -q",
+)
+records.append(verdict)
+
+# Option B — collect all behaviors at once:
+specs = [
+    {"source_path": "tools/my_task.py", "asserted_line": "    return computed_value",
+     "test_cmd": "uv run pytest tests/test_my_task.py -q"},
+]
+records = prove_many(specs)
 
 summary = emit_gate_artifacts(
     gate_name="my-task-gate",
@@ -73,13 +91,14 @@ summary = emit_gate_artifacts(
     baseline_sha=baseline_sha,
     result_sha=result_sha,
     out_dir=".kata",
-    mutation_records=records,
+    mutation_records=records,   # ← the verdicts prove_* returned
 )
 # summary["mutationPath"] → .kata/mutation.json (allNonVacuous must be True to pass)
 ```
 
 A task whose `mutation.json` shows `allNonVacuous: false` has at least one vacuous test — the task is
-**not done** until every behavior bites. The [[kata-evaluate]] gate reads this field.
+**not done** until every behavior bites. The [[kata-evaluate]] gate reads this field and treats
+absent or `allNonVacuous: false` as **NEEDS_WORK** for any code-bearing run.
 
 ## Refactor (only while GREEN)
 After the task's behaviors pass: extract duplication, deepen modules, run the gate after each step. Never
