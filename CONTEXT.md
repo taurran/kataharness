@@ -4,6 +4,23 @@ The project glossary (per `kata-context` / STANDARDS §5). One canonical term pe
 the synonyms we don't use. Glossary only — no implementation detail.
 
 ## Core loop
+**Kata Loop**:
+The **full outer cycle** — `INITIATION (kata-initiate) → the Harness → CLOSEOUT (kata-closeout)`, sequenced by the
+thin `kata-loop` conductor, repeatable via loop-back. The branded name for what early docs called the "Greater
+Loop" (D92). It *is* the Improvement Kata: run a build, evaluate, and loop back for the next version-up.
+_Avoid_: Greater Loop (superseded placeholder, D92); outer loop.
+
+**the Harness**:
+Both **the tool** (KataHarness) and **the inner one-shot loop** it runs — `GRILL → FREEZE → EXECUTE → EVALUATE →
+HANDOFF → IMPROVE` (`kata-orchestrate` drives it). One pass through the Harness is one build; the Kata Loop wraps
+and repeats it. (Operator kept the shared name; context disambiguates, D92.)
+_Avoid_: the inner loop (use "the Harness").
+
+**Loop-back**:
+The version-up **re-entry**: on a closeout "run again" decision, `kata-loop` re-enters `kata-initiate` Phase 1b
+carrying the prior run's context (baseline SHA · `.kata/understand.md` · lessons · prior `INTENT.md`). The turn of
+the Kata Loop that makes it iterate. _Avoid_: restart, re-run (those imply cold starts).
+
 **Spine**:
 The skills that run in **every** mode — the one-shot machine (grill→…→evaluate→handoff). Always present; the
 source of consistency.

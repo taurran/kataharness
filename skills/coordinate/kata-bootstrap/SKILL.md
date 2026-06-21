@@ -27,8 +27,8 @@ frozen `kata.config` (schema: `protocol/config.md`) that [[kata-orchestrate]] di
 uses **structured choice-or-text questions** (offer 2–4 options, recommendation first, always a free-text
 escape) — *(adapter binding: Claude → `AskUserQuestion`; a plain CLI → numbered options + a free-text prompt)*.
 
-> **Full Greater Loop?** `kata-bootstrap` is the on-ramp for the **harness middle** (compose → orchestrate). For
-> a complete **Greater Loop** run — a real initiation that captures a frozen `INTENT.md` first, and a closeout
+> **Full Kata Loop?** `kata-bootstrap` is the on-ramp for the **harness middle** (compose → orchestrate). For
+> a complete **Kata Loop** run — a real initiation that captures a frozen `INTENT.md` first, and a closeout
 > with the understand-map + human decision + loop-back after — start from the [[kata-loop]] conductor instead
 > (`initiation → harness → closeout`). `kata-loop` calls this skill for the middle. Direct `kata-bootstrap` use
 > stays valid and unchanged (BC: the loop is optional).

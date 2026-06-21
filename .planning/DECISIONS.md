@@ -650,3 +650,19 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   under the module path, and the modular/swappable vision (recurring user requirement) needs a self-contained dir.
   DESIGN §2/§4 "no new plumbing" refers to kata-orient's rollup (genuinely unchanged); the small validator-glob
   extension is Phase-1 foundational work. Applies to initiation, closeout, and the kata-loop conductor module.
+
+- **D92 — "Greater Loop" rebranded → "the Kata Loop" (loop vocabulary).** (User 2026-06-21.) "Greater Loop" was a
+  generic first-draft placeholder; the full outer cycle is now **the Kata Loop** (it *is* the Improvement Kata —
+  ties to KataHarness + 改善型, easy to identify in-tool). The **inner one-shot stays "the Harness"** (operator's
+  call — kept despite the product-name overlap; context disambiguates) and the version-up re-entry stays
+  **"loop-back."** Glossary in `CONTEXT.md`. **Scope (supersede-never-rewrite):** the term is updated in the
+  *active/canonical* surfaces only — `AGENTS.md`, `README.md`, `protocol/intent.md`, the `kata-loop`/`kata-bootstrap`/
+  `kata-initiate`/`kata-closeout` skills + the two module `AGENTS.md`. The **frozen `.planning/specs/greater-loop/`
+  spec dir + historical decisions/session-logs keep "Greater Loop" as provenance** (the dir slug is unchanged).
+  Two **adversarial-surfaced seam fixes** shipped alongside (red-team of S2+S3a, 2026-06-21): `kata-orchestrate` now
+  explicitly persists the grounding verdict via `tools/grounding_gate.py` → `.kata/grounding.json` (MAJOR-1: it was
+  named only in the no-write `kata-evaluate`, so a real cycle would silently skip it) and collects per-task
+  `prove_non_vacuous` records into the integration `gate_emit` mutation set (MAJOR-2). Deferred to BACKLOG: a
+  machine `codeBearing` flag in `footprint.json` so rubric item 1 keys off evidence not evaluator discretion
+  (MAJOR-3); a validator assertion that evaluator skills exclude Write/Edit (NIT-2); `_safe_path` SystemExit-vs-
+  ValueError consistency across the tools (nit).

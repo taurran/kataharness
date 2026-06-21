@@ -106,10 +106,15 @@ payload). You then **park** the escalating task **and its DAG-dependents** (remo
 - **Orchestrator-resolvable** — e.g. a needed re-scope / re-partition of file-ownership. You decide it
   yourself and re-dispatch a tightened task; this **never reaches a human**.
 - **Research-needed** — a must-deliver feature with **no in-plan solution** (RS-GB1). Dispatch [[kata-research]]
-  as a **fresh-context, no-write** subagent, scoped to the escalation payload. Its findings
-  (`{claim, source, confidence, grounds-to-plan?}`) are an *input*, never auto-applied — run them through the
+  as a **fresh-context, no-write** subagent, scoped to the escalation payload *(build + persist the payload via
+  `tools/escalation.py` — `build_escalation(...)` → `write_escalation(kata_dir, payload)` →
+  `.kata/escalations/<task-id>.json`)*. Its findings (`{claim, source, confidence, groundsToPlan}` — the
+  `tools/escalation.py` `build_finding` shape) are an *input*, never auto-applied — run them through the
   **grounding gate** ([[kata-evaluate]] injected-knowledge mode + [[kata-review]]'s injected-knowledge soundness
-  surface; **never bypassed, D33**). Then:
+  surface; **never bypassed, D33**). **You — the orchestrator — persist the verdict** (the no-write
+  [[kata-evaluate]] grades but cannot write): for each finding call `tools/grounding_gate.py`
+  `build_verdict(finding, source_supports, locked_conflict, evidence)`, then `write_grounding(kata_dir, verdicts)`
+  → `.kata/grounding.json` (carries `allGrounded`). Then route per verdict:
   - **GROUND** → fold the finding via a **deliberate re-plan baked as a superseding decision** (audited in the
     drift ledger + the escalation `resolution`) — supersede, never silently rewrite the frozen plan; re-dispatch
     the tightened task. This is the *only* way new knowledge enters the build.
@@ -131,8 +136,13 @@ After the frontier drains (all tasks integrated), on the integration branch:
 1. Full default-FAIL gate green (tests + security + deterministic build).
 2. **Emit the gate artifact set** before handing to [[kata-evaluate]]:
    run `tools/gate_emit.py` (the canonical emitter) to produce `.kata/RESULT.json`,
-   `.kata/footprint.json`, and (when mutation records are available) `.kata/mutation.json`.
-   Example invocation:
+   `.kata/footprint.json`, and — **for any code-bearing run** — `.kata/mutation.json`.
+   **Collect the mutation records first:** gather each task's `prove_non_vacuous` verdicts (workers run them per
+   [[kata-tdd]] and report them with their `DONE`); take their **union** and pass it as `mutation_records` so the
+   integration `.kata/mutation.json` carries the proof the gate ([[kata-evaluate]] rubric item 1) requires for
+   code-bearing work. The `python -m gate_emit` CLI emits RESULT+footprint; **to include mutation records call the
+   Python API** `gate_emit.emit_gate_artifacts(..., mutation_records=<union>)` (the CLI form omits mutation).
+   Example invocation (RESULT + footprint):
    ```
    python -m gate_emit \
      --gate-name integration \

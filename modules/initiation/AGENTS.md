@@ -6,7 +6,7 @@
 
 ## Module responsibility (front half only)
 
-The initiation module owns the **front half of the Greater Loop**:
+The initiation module owns the **front half of the Kata Loop**:
 
 ```
 user intent + design/brief

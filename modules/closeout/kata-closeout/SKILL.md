@@ -12,7 +12,7 @@ agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Bash]
 model: fable
-source: new (KataHarness original — Phase 2 Greater Loop back-half, D89/DESIGN §3)
+source: new (KataHarness original — Phase 2 Kata Loop back-half, D89/DESIGN §3)
 tags:
   - kata/handoff
   - kata/module/closeout
@@ -23,7 +23,7 @@ tags:
 
 # kata-closeout — the back-half closeout skill
 
-`kata-closeout` owns the **back half of the Greater Loop**: it runs **after** the [[kata-evaluate]]
+`kata-closeout` owns the **back half of the Kata Loop**: it runs **after** the [[kata-evaluate]]
 default-FAIL gate, tracks the run's machine artifacts, reports, offers the comprehension map, runs the
 human decision gate, and hands the decision to the conductor's loop-back. It **never gates** — gating
 stays with [[kata-evaluate]] (spine principle #4, DESIGN §3).
@@ -44,7 +44,7 @@ Consume the three F1 machine artifacts written to `.kata/` by `tools/gate_emit.p
 |---|---|---|
 | Gate result | `.kata/RESULT.json` | `gateName`, `exitCode`, `passed`/`failed`/`skipped`, `stdoutTail`, `baselineSha`, `resultSha`, `utc` |
 | Footprint manifest | `.kata/footprint.json` | `footprint`, `changed`, `inFootprint`, `outOfFootprint`, `withinFootprint`, `diffstat` |
-| Mutation proof | `.kata/mutation.json` | `records`, `allNonVacuous` — absent if no mutation step ran |
+| Mutation proof | `.kata/mutation.json` | `records`, `allNonVacuous` — **required for a code-bearing run** (its absence makes [[kata-evaluate]] rubric item 1 NEEDS_WORK); legitimately absent only for a pure data/config/docs run |
 
 Read all three with `Read` (or `Bash` for `cat` / `jq` formatting). Do **not** reconstruct counts from
 prose — the artifacts are the record. If any artifact is absent, note it explicitly as a gap in the report;

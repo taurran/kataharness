@@ -1,10 +1,10 @@
 ---
 name: kata-initiate
 description: >-
-  Front door of the Greater Loop: ingest the user's design/brief, classify intent kind
+  Front door of the Kata Loop: ingest the user's design/brief, classify intent kind
   (project|research|version-up), lead interactive target/platform/vault configuration, drive the grill
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
-  and hand full context to the harness. Invoke to start any Greater Loop run.
+  and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
 version: 0.1.0
 category: coordinate
@@ -14,7 +14,7 @@ cost-weight: 3
 allowed-tools: [Read, Grep, Glob, Write, Edit, AskUserQuestion]
 model: fable
 source: >-
-  new (KataHarness original, Phase 1 Greater Loop — D88/D91); composes kata-readiness, kata-grill,
+  new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill,
   kata-bootstrap, kata-context
 tags:
   - kata/coordinate
@@ -24,7 +24,7 @@ tags:
   - front-door
 ---
 
-# kata-initiate — front door of the Greater Loop
+# kata-initiate — front door of the Kata Loop
 
 The entry point of the **initiation module** (`modules/initiation/`). It transforms the user's raw
 intent into a frozen `INTENT.md` artifact and hands full context to the harness. It **composes** —

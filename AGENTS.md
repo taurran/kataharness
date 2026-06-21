@@ -18,7 +18,7 @@ The name is the method: **Kata = the Improvement Kata** — continuous, delibera
 Every loop run is a kata; the harness improves *itself* via kata. We stand on Anthropic's
 long-running-agent harness + the best of mattpocock/skills, GSD, BMAD, and DDD ubiquitous language.
 
-## The Greater Loop
+## The Kata Loop
 
 The **full loop** wraps the harness with a front half and back half, sequenced by the thin `kata-loop`
 conductor. It is **optional** — absent the conductor, the direct one-shot harness run is unchanged (BC).

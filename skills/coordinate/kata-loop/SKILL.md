@@ -1,7 +1,7 @@
 ---
 name: kata-loop
 description: >-
-  The thin top-level conductor that sequences the Greater Loop end-to-end — INITIATION (kata-initiate
+  The thin top-level conductor that sequences the Kata Loop end-to-end — INITIATION (kata-initiate
   → frozen INTENT.md) → HARNESS (kata-orchestrate + the built loop) → CLOSEOUT (kata-closeout +
   kata-understand) — and owns the context-carrying loop-back that re-enters initiation on version-up.
 license: Apache-2.0
@@ -12,7 +12,7 @@ agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob]
 model: fable
-source: new (KataHarness original — Phase 3 Greater Loop conductor, D87/DESIGN §1)
+source: new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1)
 tags:
   - kata/coordinate
   - kata/spine
@@ -21,9 +21,9 @@ tags:
   - loop-back
 ---
 
-# kata-loop — the Greater Loop conductor
+# kata-loop — the Kata Loop conductor
 
-The **thin top-level conductor** for the Greater Loop (DESIGN §1, D87). It **sequences** three existing
+The **thin top-level conductor** for the Kata Loop (DESIGN §1, D87). It **sequences** three existing
 modules and never reimplements, re-plans, or re-evaluates anything — it composes. The greater loop is
 **optional**: absent this conductor, a direct one-shot harness run behaves exactly as today (BC, DESIGN §9).
 

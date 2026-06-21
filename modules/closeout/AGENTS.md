@@ -6,7 +6,7 @@
 
 ## Module responsibility (back half only)
 
-The closeout module owns the **back half of the Greater Loop**:
+The closeout module owns the **back half of the Kata Loop**:
 
 ```
   harness (the built loop — RESULT.json + .kata/ artifacts emitted)
