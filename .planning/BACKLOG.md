@@ -2,6 +2,17 @@
 
 Promote to ROADMAP milestones when ready.
 
+- **★ Planning-approach ↔ delivery-mode alignment (FUTURE assessment, user 2026-06-21).** Assess the **planning
+  approach** (`kata-plan` essential/standard/advanced tiers + the roadmap layer `kata-plan/ROADMAP.md`) and confirm
+  it **aligns coherently with each delivery mode in place**: **one-shot**, **sprint (incremental)**, and
+  **version-up**. For each: is the plan *shape* right? (one-shot = a single frozen `PLAN`; sprint = `ROADMAP`
+  boundary-amendable → per-sprint immutable `PLAN-s<n>`; version-up = footprint-scoped plan vs the most-recent-green
+  baseline). Verify `kata-bootstrap`/`kata-orchestrate` route to the correct planning depth **and** shape per mode,
+  and surface any mismatch/gap (e.g. does the roadmap layer fire only when `delivery.shape == incremental`? does
+  version-up reuse the right planning tier?). *(Non-blocking; post-loop-hardening; raised right before the S3b
+  loop-back test. This sprint cadence — `ROADMAP` → `PLAN-s<n>` → freeze → orchestrate — is itself live evidence to
+  audit against.)*
+
 - **★ DOGFOOD #2 RESIDUAL — wire the eval artifacts into a live gate (NEXT increment, 2026-06-19).** Dogfood #2
   built the *libraries + contracts* for evaluation self-sufficiency (`tools/run_result.py`, `footprint.py`,
   `mutation_check.py`; `kata-report`/`kata-evaluate` require them) but **nothing yet CALLS them** during a real
