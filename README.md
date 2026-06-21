@@ -87,7 +87,7 @@ spiral, doesn't lose your context, fits *how you build*, and *gets better over t
 ## Status
 
 **`v0.1.0-alpha.1` (first tagged milestone) — skill suite complete & green, not yet field-proven end-to-end.**
-34 skills, all `0.1.0`/experimental; validator 0 errors · tests passing · Snyk clean. Two self-dogfood runs
+35 skills, all `0.1.0`/experimental; validator 0 errors · tests passing · Snyk clean. Two self-dogfood runs
 done — the second was a real **orchestrated** version-up (concurrent worker subagents in isolated worktrees,
 fresh-context gate, human version-select). The full cognitive architecture is built for the **Claude-only
 core**, now spanning **one-shot and incremental (sprint) delivery**, plus the learning loop (LEARN feed +
@@ -110,7 +110,7 @@ reference one); then the multi-tool **adapters** (Codex, Kiro, ACP). Live state:
 
 ## The skills
 
-34 skills across the six loop phases (plus the Greater-Loop initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
+35 skills across the six loop phases (plus the Greater-Loop initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
 `kata-diagnose`) share one `RUBRIC.md` method and expose depth tiers you dial per run.
 
 ```
