@@ -21,6 +21,7 @@ it cycles back). Each gap below is **grounded in evidence** from the Phase-4 dog
 | G4 Interactive initiation never prompted | The run made initiation decisions inline; the human got one prompt (version-select), not the `kata-initiate` interview. |
 | G5 Grounding gate / `kata-research` never fired | No research-need escalation occurred; the gate was never invoked in injected-knowledge mode. |
 | G6 Loop-back never exercised | The version-select chose "ship," so the version-up re-entry (Phase 1b) never ran; the handoff-on-re-entry is unproven. |
+| G7 Viewer not seamless per-platform | S1's viewer is a separate-window TUI only; no host-native status surface (e.g. Claude statusline) is used, so the live view isn't "seamless into the platform it's running on" (operator requirement). |
 
 ## Sprints (one-shot each; boundary = a gated, demonstrable artifact you can SEE)
 - **S1 — Live telemetry → the dashboard tails reality (real-time, accurate). ✅ DONE (`fedbb87`, fresh-eval PASS).**
@@ -28,7 +29,22 @@ it cycles back). Each gap below is **grounded in evidence** from the Phase-4 dog
   self-creates `.kata/`) + dashboard heartbeat bars + `tools/kata_dash_demo.py` replay driver; title **`KATAHARNESS
   改善型`** (kaizen-gata; torii+hiragana removed per operator). Closes **G1, G2**. pytest 244→268. ⏸ **STOPPED at the
   boundary for the operator demo.** Plan: `PLAN-s1.md`.
-- **S2 — Vet the gate + bring the human into initiation. Closes G3, G4.** Baseline = S1 green.
+- **S1.5 — Status-surface adapters (agnostic-via-adapters, applied to OUTPUT). Closes G7.** Baseline = S1 green.
+  Operator requirement: the live view must be **seamless into the platform it's running on** — publish to each host's
+  *native* status surface, falling back to the rich viewer where a host exposes none. The `.kata/` telemetry core
+  (S1) stays canonical; this adds a thin viewer-adapter layer over it (same pattern as the input tool-adapters).
+  - *S1.5a — `StatusSink` interface + capability detection + Claude statusline adapter:* define `StatusSink.publish(view_model)`;
+    detect the host from env signals; ship `ClaudeStatuslineSink` (one live line — `改善型 ▰▰▰▱▱ 3/5 EXECUTE · 2 workers
+    · gate:pending`) wired into `kata-loop`/`kata-orchestrate` so a real run shows live state **in Claude's own window**.
+    *Demonstrable:* an orchestrated run whose state updates in the Claude statusline. (Owns: `tools/status_sink.py` + tests
+    + the statusline command + SKILL wiring.)
+  - *S1.5b — host fallback + documented Codex/Kiro stubs:* `NullSink`/`TuiSink` fallback selection so a host with no
+    native bar auto-points to the rich TUI; **stub** `CodexSink`/`KiroSink` behind capability flags **only after their
+    real surfaces are verified** (no pretend bars). *Demonstrable:* on a no-native-bar host the run selects the rich
+    viewer; the adapter table documents each host's verified surface. (Disjoint from S1.5a by file.)
+  - ⚠️ **Honesty caveat:** Claude statusline = verified-feasible, build now. Codex/Kiro surfaces are **unverified** — they
+    may have none, in which case those hosts get the rich-viewer fallback, not a native bar. Verify before promising.
+- **S2 — Vet the gate + bring the human into initiation. Closes G3, G4.** Baseline = S1.5 green.
   - *S2a — mutation/non-vacuity proof in the gate:* wire the `kata-tdd` mutation step (use `tools/mutation_check.py`)
     → emit `.kata/mutation.json` `{records, allNonVacuous}` via `gate_emit`; `kata-evaluate` reads it (NEEDS_WORK if a
     claimed-covered test is vacuous). *Demonstrable:* a `mutation.json` proving tests bite.
