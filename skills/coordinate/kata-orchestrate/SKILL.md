@@ -144,6 +144,9 @@ After the frontier drains (all tasks integrated), on the integration branch:
    ```
    The emitter composes `run_result`, `footprint`, and `mutation_check` — it does not reimplement them.
    Pass `--out .kata` so [[kata-evaluate]] finds artifacts at the conventional paths.
+   **Precondition (do not skip):** `.kata/RESULT.json` MUST exist before step 3. If it is absent, run
+   `gate_emit.py` first — never dispatch [[kata-evaluate]] with no artifacts to read (it would default-FAIL to
+   NEEDS_WORK anyway; emit first so the gate grades real evidence, not a missing file).
 3. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
    low-grill run, point it at the priming prompt as the frozen spec and at any [[kata-defer]] `ASSUMPTIONS.md`,
    so the autonomous floor's assumption log is graded for prompt-contradiction (rubric item 8) — not just asserted.

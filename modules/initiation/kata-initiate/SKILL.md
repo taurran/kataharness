@@ -11,7 +11,7 @@ category: coordinate
 status: experimental
 agnostic: true
 cost-weight: 3
-allowed-tools: [Read, Grep, Glob, Write, Edit]
+allowed-tools: [Read, Grep, Glob, Write, Edit, AskUserQuestion]
 model: fable
 source: >-
   new (KataHarness original, Phase 1 Greater Loop — D88/D91); composes kata-readiness, kata-grill,
@@ -62,6 +62,26 @@ Capture that gap as the `goal` field. This is what D88 names as the most common 
 version-up goals stated as code changes rather than outcomes.
 
 Confirm classification with the user (one-line, non-blocking) before proceeding. If ambiguous, ask.
+
+---
+
+## Phase 1b — loop-back context (version-up re-entry from [[kata-loop]])
+
+**Detect a loop-back run:** this initiation was re-entered by the [[kata-loop]] conductor's loop-back Path A if a
+prior frozen `INTENT.md` **and** `.kata/understand.md` are present at the target. When detected, this is **not a
+cold start** — consume the four named inputs the conductor carries (kata-loop's loop-back Path A is the
+authoritative contract for this payload):
+
+| Input | Read from | How to use it here |
+|---|---|---|
+| New green baseline SHA | `.kata/RESULT.json` → `resultSha` | The fork point; record as the version-up baseline. |
+| Understand-map | `.kata/understand.md` | Surface during Phase 1 ingest — it already says what changed; do not re-derive it. |
+| Lessons | `.planning/LESSONS-LEARNED.md` | Feed into Phase 5 as **known-resolved** grill branches — do not re-argue them. |
+| Prior `INTENT.md` | the frozen prior `INTENT.md` | The starting frame: prior goal/kind/target/grillDepth. The new `goal` is the *next* gap, set against this. |
+
+A loop-back run pre-classifies as `version-up` (the prior INTENT proves a prior harness run). Carry the prior
+`target` config forward as the default (the user may change it). If no prior `INTENT.md`/understand-map exist,
+this is a fresh start — skip this phase.
 
 ---
 
@@ -178,8 +198,15 @@ During the grill, use [[kata-context]] to pin every resolved term into `CONTEXT.
 batched). Use [[kata-bootstrap]] to write or update `kata.config` when run-shape or composition
 decisions are resolved in the grill (so the config is ready at Phase 6).
 
-Note: kata-understand (the understand-anything map) and kata-loop (the conductor) are planned for
-later phases and are not composed here.
+**Config authority (avoid divergence):** the frozen `INTENT.md` `target` block (kind/path/vault/platform) is the
+**authoritative** record of *what* this run targets; `kata.config` is the *executable* projection
+`kata-bootstrap` derives from it for `kata-orchestrate`. If they ever disagree (e.g. the user changed target
+mid-grill), **`INTENT.md` wins** — it is frozen; regenerate `kata.config` from it. Never let a stale `kata.config`
+override the frozen intent.
+
+Note: the understand-map ([[kata-understand]]) is offered by [[kata-closeout]] at run end, not here; the
+[[kata-loop]] conductor sequences this skill and, on a version-up re-entry, feeds it the prior run's context
+(see Phase 1b).
 
 ---
 

@@ -223,6 +223,10 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   Desired-state capability — helps the user understand/navigate what KataHarness created. **Distinct from
   `kata-report` (D32):** report synthesizes the build log; `kata-understand` provides from-scratch
   comprehension. Scope: own later spec or module, post-v0.1, not in A3/A4.
+  **↑ SUPERSEDED by D89 (2026-06-20):** `kata-understand` is now BUILT (Phase 2 of the Greater Loop) as
+  `modules/closeout/kata-understand/` — opt-in, graph-backed (F2 runtime), git/diff fallback, writes
+  `.kata/understand.md`. The "backlog / post-v0.1 / own later spec" framing here (and the deferred framing in
+  D54/D55) no longer holds; the capability shipped as part of closeout.
 - **D41 — When designing `kata-graph` / `kata-understand`, evaluate OSS repo-mappers and bake in only the
   necessary stripped-down steps. (GB8)** Evaluate against: Graphify, aider repo-map/tree-sitter, repomix,
   gitingest, code2prompt, ctags, DeepWiki-class comprehension tools. Extract minimal needed steps; do not
