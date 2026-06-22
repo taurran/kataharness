@@ -2,6 +2,61 @@
 
 Promote to ROADMAP milestones when ready.
 
+## ★★ PRE-PUBLIC PRIORITIES (operator notes, 2026-06-21 — post-S3b review) ★★
+These are the operator's own end-of-S3b notes; several gate going public. Captured verbatim-in-intent.
+
+- **WS-1 — Separation / IP hygiene (do first; pre-public, security-driven).** Remove **all** references to
+  **MindBridge** from the code AND the project docs — it must not appear anywhere before this goes public (it is
+  the work-related project this gets imported into later; keep it fully separated). **Remove "Quick"** as a
+  first-class platform too — it should only manifest once imported to the work project. Public targets are **major
+  public FMs only: Claude + Codex to start.** A vague **"other"** is acceptable, and **Amazon Quick may be named as
+  a *potential* target**, but no MindBridge anywhere and no first-class Quick. *Touch points to sweep:* the
+  `platform` enum (`claude|kiro|mindbridge|quick`) in `protocol/intent.md`, `tools/intent_scaffold.py`,
+  `modules/initiation/kata-initiate/SKILL.md` (Phase 2c), `protocol/config.md`, `modules/initiation/AGENTS.md`,
+  and any DECISIONS/CONTEXT/BACKLOG/spec mentions (grep `MindBridge`/`Quick`). History/provenance may keep prior
+  mentions, but active/canonical surfaces must be clean (supersede-never-rewrite).
+
+- **WS-2 — Validate the INNER (harness) loop's autonomy + parallelism (the operator's confidence gap).**
+  The operator is NOT confident the harness loop genuinely runs autonomously for long stretches. Validate, with
+  evidence: **(a) parallelism** — are we using subagents properly? Is the orchestrator actually running concurrent
+  workers that check/communicate laterally (board), per Anthropic's long-running-agent best practice — and is it
+  *better than Hermes*? Build a way to **evaluate** that parallel processes are used properly (not just dispatched
+  serially). **(b) in-loop autonomy** — the harness loop should run **internally for long periods with no human**:
+  LEARN between internal iterations, run **research internally** (RS), and **self-grade/QC within the loop**. NOTE
+  the real gap: the β LEARN feed is **emit-only, zero CONSULT** (D74) and engram CONSULT is gated off (D9/D56), so
+  "learn between loops" is **not happening today by design** — decide whether to light a bounded in-loop learning
+  path. The greater (kata) loop is fine requiring human interaction; the *harness* loop's autonomous endurance is
+  what needs proving. **Deliverable:** an honest audit + a validation harness, not a claim.
+
+- **WS-3 — User-friendliness, front-to-end (must precede public launch).** The whole system is technical, not
+  intuitive. Likely a **combination** of a **persona/voice context file** AND **explicit voice in the skills**.
+  Sub-items:
+  - **Decision tree must be human-readable, not machine-oriented.** Speak in terms of the **modes** we set and
+    *infer* behavior from mode selection, rather than exposing machinery.
+  - **Goal-centric intake.** Be far more intuitive about understanding the **GOAL** — what is the user actually
+    trying to achieve — and feed that to the loop true to the user's desired changes (the synthesis of the initial
+    **system prompt + brainstorming + research + grill results**), not a mechanical form.
+  - **In-loop narration.** While the loop runs, **don't call out stage names** (GRILL/FREEZE/…); **talk through
+    what the agent is actually doing**, in human terms.
+  - **Strategic progress display.** Show enough that the user trusts it's working and making progress, **without**
+    spamming useless model internals or inviting them to butt in. Inspire confidence; surface **critical
+    errors/alerts** prominently. Trust-building, not log-dumping.
+  - **Verbose, goal-anchored closeout.** At the end: **restate/recall the goal**, focus on **what changes the loop
+    made to achieve it**, **assess progress toward the goal**, and **call out uncertainties + risks** so the user
+    can decide to iterate the kata loop again or go back and re-prompt/re-grill. **Link to the findings files** so
+    the user can open and review them.
+  - **Research Hermes's UX** (people are happy with how it guides users) for both the in-loop narration and the
+    closeout — borrow the guidance pattern (keep our gates, D69).
+
+- **WS-4 — Backout / rollback as a first-class option (safety).** There MUST be a surfaced way to **back out the
+  loop's changes** if a run goes off the rails. We have `pre-s<n>` backout tags, but rollback must be an explicit,
+  offered option at the human gate — not a buried git incantation.
+
+- **WS-5 — Change transparency at closeout (the acute miss this session).** The closeout must make **exactly what
+  changed** legible to a non-expert owner ("I had no idea what changes were made"). Overlaps WS-3's closeout item;
+  call it out as a hard requirement: every closeout leads with a plain-language "what changed and why it matters to
+  you," with links, before any machine detail.
+
 - **Gate-enforcement hardening (loop-hardening red-team residue, 2026-06-21 — non-blocking).** The S2/S3a
   adversarial review left three deferrable items. **(a) MAJOR-3 — machine `codeBearing` flag: ✅ DONE (S3b Cycle 2,
   `222cc7e`)** — `footprint.py` `code_bearing()` derives the flag from changed-file globs → `footprint.json`
