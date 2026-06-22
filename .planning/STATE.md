@@ -1,5 +1,19 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-21, red-team seam-fixes + Kata Loop rename — `94539dd`; AT THE S3b BOUNDARY):** An adversarial
+> red-team of S2+S3a confirmed the project's known **documentation-only seam** failure mode had partially recurred and
+> we **fixed it inline (D92):** `kata-orchestrate` now explicitly **persists the grounding verdict** via
+> `tools/grounding_gate.py` → `.kata/grounding.json` (MAJOR-1 — it was named only in the no-write `kata-evaluate`, so a
+> real cycle would have silently skipped it) and **collects per-task `prove_non_vacuous` records** into the integration
+> `gate_emit` mutation set (MAJOR-2). `kata-closeout` mutation row aligned to the strengthened S2 rule (MINOR-1).
+> **Branding (D92, user):** "Greater Loop" → **"the Kata Loop"** across active/canonical surfaces; inner one-shot
+> stays **"the Harness"**; **loop-back** unchanged; frozen `specs/greater-loop/` + history keep the old term as
+> provenance; `CONTEXT.md` glossary added. **Deferred to BACKLOG:** machine `codeBearing` flag (MAJOR-3), validator
+> no-write assertion (NIT-2), `_safe_path` guard consistency; plus the planning-approach↔delivery-mode alignment
+> assessment. **validator 35/0, pytest 420, Snyk 0.** **6 of 7 gaps closed (G1–G5, G7).** **NEXT = S3b, the live
+> loop-back (G6)** — operator-driven; the MAJOR-1/MAJOR-2 prose fixes get **live-proven** by it. Full S3b plan in
+> `.planning/HANDOFF.md` §4.
+
 > **CURRENT (2026-06-21, loop-hardening S3a DONE — `4391deb`):** **Grounding + research now have a concrete,
 > testable substrate** (closes G5). `tools/escalation.py` = `research-needed` escalation payload + research-finding
 > builders/writer (`.kata/escalations/<id>.json`); `tools/grounding_gate.py` = deterministic GROUND/REJECT/ESCALATE
