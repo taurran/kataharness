@@ -69,6 +69,41 @@ def is_within_footprint(changed_files: list[str], footprint: list[str]) -> bool:
     return len(partition(changed_files, footprint)["out_of_footprint"]) == 0
 
 
+# Code-file extensions that indicate executable logic (conservative set).
+_CODE_EXTENSIONS: frozenset[str] = frozenset(
+    {".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java"}
+)
+
+
+def code_bearing(changed_files: list[str]) -> bool:
+    """Return True iff any changed path has a code-file extension.
+
+    "Code-bearing" means the change introduces or modifies executable logic.
+    A run with only documentation, configuration, or data files (e.g. ``.md``,
+    ``.json``, ``.txt``, ``.yml``) returns ``False``.  An empty list returns
+    ``False``.
+
+    Extension matching is case-insensitive; path separators are normalized via
+    :func:`_normalize` before the suffix is extracted.
+
+    Args:
+        changed_files: Paths that changed in the current run (any separator).
+
+    Returns:
+        ``True`` if any file's extension (lowercased) is in
+        ``_CODE_EXTENSIONS``; ``False`` otherwise.
+    """
+    for raw in changed_files:
+        normalized = _normalize(raw)
+        # Use posixpath-style suffix extraction: everything after the last dot.
+        dot_idx = normalized.rfind(".")
+        if dot_idx != -1:
+            ext = normalized[dot_idx:].lower()
+            if ext in _CODE_EXTENSIONS:
+                return True
+    return False
+
+
 def manifest(
     changed_files: list[str],
     footprint: list[str],
@@ -83,7 +118,8 @@ def manifest(
 
     Returns:
         Dictionary with keys ``footprint``, ``changed``, ``inFootprint``,
-        ``outOfFootprint``, ``withinFootprint``, and ``diffstat``.
+        ``outOfFootprint``, ``withinFootprint``, ``diffstat``, and
+        ``codeBearing``.
     """
     parts = partition(changed_files, footprint)
     return {
@@ -93,6 +129,7 @@ def manifest(
         "outOfFootprint": parts["out_of_footprint"],
         "withinFootprint": is_within_footprint(changed_files, footprint),
         "diffstat": diffstat,
+        "codeBearing": code_bearing(changed_files),
     }
 
 

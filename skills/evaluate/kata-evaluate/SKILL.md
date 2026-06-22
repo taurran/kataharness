@@ -42,6 +42,11 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
    (default-FAIL — vacuous or unproven tests do not satisfy the acceptance criteria).  A pure
    data/config/docs task with no new executable logic is exempt; the evaluator states explicitly which
    applies and why.
+   **Evidence-driven (MAJOR-3):** when `.kata/footprint.json` contains a `codeBearing` field, key the
+   "is this run code-bearing?" decision off **that flag** (`true` ⇒ mutation proof required; `false` ⇒
+   exempt) — do not apply evaluator discretion to override it.  When the field is **absent** (older runs
+   or a gate_emit that pre-dates MAJOR-3), fall back to the explicit-statement behavior above (backward-
+   compatible).
 2. **Green gate.** Run it yourself: the project's full test command (count + 0 fail + 0 skip), a deterministic
    build (identical size on re-run where claimed), and the security scan clean. Paste the numbers.
 3. **No drift.** The LOCKED decisions were honored verbatim (e.g. a frozen classification/contract was not
@@ -132,7 +137,7 @@ to the emitter):
 | Artifact | Path | Content |
 |---|---|---|
 | Gate result | `.kata/RESULT.json` | The pinned `run_result.build_result` schema (see table above) |
-| Footprint manifest | `.kata/footprint.json` | `footprint`, `changed`, `inFootprint`, `outOfFootprint`, `withinFootprint`, `diffstat` |
+| Footprint manifest | `.kata/footprint.json` | `footprint`, `changed`, `inFootprint`, `outOfFootprint`, `withinFootprint`, `diffstat`, `codeBearing` (bool — present when produced by MAJOR-3+; absent in older artifacts) |
 | Mutation proof | `.kata/mutation.json` | `records` (list of `{testWentRed, nonVacuous}`) + `allNonVacuous` (bool) — **REQUIRED for any run that introduces or changes executable logic** (`allNonVacuous: true` must be present; absent or `false` ⇒ rubric item 1 is NEEDS_WORK); exempt for pure data/config/docs tasks |
 
 `tools/gate_emit.py` composes `run_result`, `footprint`, and `mutation_check` without reimplementing them.
