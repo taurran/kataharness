@@ -221,7 +221,26 @@ kata"). Host-agnostic (reads files, not a host UI). Pure model = `kata_dash_mode
 _Avoid_: expecting it to render inside Claude's own session (append-only transcript — separate terminal only).
 
 **loop-hardening**:
-The sprint-cadence effort (`.planning/specs/loop-hardening/`) closing the verified gaps **G1–G6** the Phase-4
+The sprint-cadence effort (`.planning/specs/loop-hardening/`) closing the verified gaps **G1–G7** the Phase-4
 dogfood accounting exposed (no live board, no mutation proof, no interactive prompt, no grounding/research fire, no
-loop-back). S1 (G1+G2) done; S2 (G3+G4) + S3 (G5+G6, incl. the must-have loop-back) next. _Avoid_: calling the loop
-"fully working" before S3 proves it loops.
+loop-back, no per-platform status surface). **COMPLETE** — all 7 closed; **G6 proven** by the S3b live loop-back
+(`222cc7e`, D93). The loop is "vetted, and demonstrably loops." _Avoid_: re-opening it as the active milestone.
+
+## Platform targets & separation (WS-1, 2026-06-21)
+**Platform target** (`target.platform`):
+The agent host that drives a run — enum `claude | codex | kiro | quick | other`. **`claude` + `codex`** are the
+v0.1 **public-FM** targets; **`kiro`** is the planned v0.3 adapter (public Amazon product); **`other`** is the
+catch-all. _Avoid_: naming any work-internal host on a public surface.
+
+**Quick (the plumbing seam)**:
+The named **ACP desktop-host target** (`platform: quick`, the `acp-quick` adapter) and the **integration seam** the
+separate work version plumbs its backend in behind — kept first-class *on purpose* (with explicit pointers) so the
+future plumb-in is low-friction. Quick (Amazon Quick) is public and OK to name; the **work backend binds behind it
+and is never named on a public surface**. _Avoid_: stripping Quick (it is the seam, not the secret).
+
+**code-bearing** (`footprint.json.codeBearing`):
+A run that **introduces or changes executable logic** (derived from changed-file extensions, `footprint.py`
+`code_bearing()`, MAJOR-3). `kata-evaluate` rubric item 1 requires the mutation proof **only** for code-bearing
+runs; pure docs/config runs are exempt. The flag makes that "is this code?" call evidence-driven, not the
+evaluator's opinion. _Caveat:_ the extension set is conservative ⇒ `false` means "probably not code-bearing per the
+heuristic," not "definitely not." _Avoid_: treating `codeBearing:false` as a guarantee on out-of-set languages.
