@@ -99,3 +99,100 @@ def test_manifest_within_footprint_true():
 def test_manifest_default_diffstat_empty():
     result = footprint.manifest([], [])
     assert result["diffstat"] == ""
+
+
+# ---------------------------------------------------------------------------
+# code_bearing — new pure function (MAJOR-3)
+# ---------------------------------------------------------------------------
+
+def test_code_bearing_py_file():
+    assert footprint.code_bearing(["tools/x.py"]) is True
+
+
+def test_code_bearing_js_file():
+    assert footprint.code_bearing(["src/app.js"]) is True
+
+
+def test_code_bearing_ts_file():
+    assert footprint.code_bearing(["src/index.ts"]) is True
+
+
+def test_code_bearing_tsx_file():
+    assert footprint.code_bearing(["components/App.tsx"]) is True
+
+
+def test_code_bearing_jsx_file():
+    assert footprint.code_bearing(["components/Button.jsx"]) is True
+
+
+def test_code_bearing_go_file():
+    assert footprint.code_bearing(["cmd/main.go"]) is True
+
+
+def test_code_bearing_rs_file():
+    assert footprint.code_bearing(["src/lib.rs"]) is True
+
+
+def test_code_bearing_java_file():
+    assert footprint.code_bearing(["Main.java"]) is True
+
+
+def test_code_bearing_md_only_false():
+    assert footprint.code_bearing(["docs/x.md"]) is False
+
+
+def test_code_bearing_json_only_false():
+    assert footprint.code_bearing(["config.json"]) is False
+
+
+def test_code_bearing_mixed_docs_only_false():
+    assert footprint.code_bearing(["docs/x.md", "a.json"]) is False
+
+
+def test_code_bearing_empty_false():
+    assert footprint.code_bearing([]) is False
+
+
+def test_code_bearing_mixed_code_and_docs_true():
+    # A mix of code and docs is still code-bearing
+    assert footprint.code_bearing(["docs/README.md", "tools/footprint.py"]) is True
+
+
+def test_code_bearing_case_insensitive():
+    # Extensions are matched case-insensitively
+    assert footprint.code_bearing(["tools/X.PY"]) is True
+
+
+def test_code_bearing_txt_only_false():
+    assert footprint.code_bearing(["notes.txt"]) is False
+
+
+def test_code_bearing_yml_only_false():
+    assert footprint.code_bearing([".github/ci.yml"]) is False
+
+
+def test_code_bearing_backslash_path():
+    # Windows-style separators are handled via _normalize
+    assert footprint.code_bearing(["tools\\footprint.py"]) is True
+
+
+# ---------------------------------------------------------------------------
+# manifest — codeBearing field (MAJOR-3)
+# ---------------------------------------------------------------------------
+
+def test_manifest_code_bearing_true_for_py_change():
+    result = footprint.manifest(["tools/footprint.py"], ["tools/"])
+    assert "codeBearing" in result
+    assert result["codeBearing"] is True
+
+
+def test_manifest_code_bearing_false_for_docs_only():
+    result = footprint.manifest(["docs/README.md", "config.json"], ["docs/"])
+    assert "codeBearing" in result
+    assert result["codeBearing"] is False
+
+
+def test_manifest_code_bearing_false_for_empty():
+    result = footprint.manifest([], [])
+    assert "codeBearing" in result
+    assert result["codeBearing"] is False
