@@ -136,6 +136,28 @@ def check_cost_weight(skills: list[Skill]) -> list[Finding]:
     return out
 
 
+# The two no-write graders (L4 / STANDARDS §1): fresh-context evaluators that must never author artifacts.
+NO_WRITE_EVALUATORS: frozenset[str] = frozenset({"kata-evaluate", "kata-research"})
+
+
+@check
+def check_evaluator_no_write(skills: list[Skill]) -> list[Finding]:
+    """STANDARDS §1: evaluator skills MUST omit Write/Edit (no-write contract, L4).
+    Asserted structurally for the locked no-write grader set so the rule cannot regress silently."""
+    out: list[Finding] = []
+    for s in skills:
+        if s.name not in NO_WRITE_EVALUATORS:
+            continue
+        at = s.frontmatter.get("allowed-tools") or []
+        forbidden = {t for t in at if t in ("Write", "Edit")}
+        if forbidden:
+            out.append(Finding(
+                "ERROR", s.dir.name,
+                f"evaluator skill must omit Write/Edit (no-write contract); found: {forbidden}",
+            ))
+    return out
+
+
 @check
 def check_allowed_tools(skills: list[Skill]) -> list[Finding]:
     """STANDARDS §1: allowed-tools is load-bearing (least-privilege security + cost surface). It must be

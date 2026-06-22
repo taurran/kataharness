@@ -387,6 +387,73 @@ def test_i1_module_skill_name_is_valid_wikilink_target(tmp_path, monkeypatch):
     )
 
 
+
+# ── NIT-2: evaluator no-write contract (STANDARDS §1 / D92) ──────────────────
+
+def _make_skill(name: str, category: str, allowed_tools: list, tmp_path) -> "v.Skill":
+    """Build a minimal Skill object for unit-testing individual checks."""
+    from pathlib import Path
+    skill_dir = tmp_path / category / name
+    skill_dir.mkdir(parents=True)
+    fm = {
+        "name": name,
+        "description": "Fixture skill for NIT-2 evaluator no-write test.",
+        "license": "Apache-2.0",
+        "version": "0.1.0",
+        "category": category,
+        "status": "experimental",
+        "agnostic": True,
+        "cost-weight": 2,
+        "allowed-tools": allowed_tools,
+        "tags": [f"kata/{category}", "kata/spine"],
+    }
+    return v.Skill(name=name, dir=skill_dir, frontmatter=fm, body="")
+
+
+def test_nit2_evaluator_with_write_in_allowed_tools_is_an_error(tmp_path):
+    """An evaluator skill (kata-evaluate or kata-research) carrying Write in allowed-tools
+    must produce an ERROR finding (NIT-2 / STANDARDS §1 no-write contract)."""
+    skill = _make_skill("kata-evaluate", "evaluate", ["Read", "Grep", "Write"], tmp_path)
+    findings = v.check_evaluator_no_write([skill])
+    assert any(
+        f.level == "ERROR" and "Write" in f.msg
+        for f in findings
+    ), f"expected ERROR for evaluator with Write in allowed-tools; got {findings}"
+
+
+def test_nit2_evaluator_with_edit_in_allowed_tools_is_an_error(tmp_path):
+    """An evaluator skill carrying Edit in allowed-tools must produce an ERROR finding."""
+    skill = _make_skill("kata-research", "plan", ["Read", "Grep", "Edit"], tmp_path)
+    findings = v.check_evaluator_no_write([skill])
+    assert any(
+        f.level == "ERROR" and "Edit" in f.msg
+        for f in findings
+    ), f"expected ERROR for evaluator with Edit in allowed-tools; got {findings}"
+
+
+def test_nit2_evaluator_clean_allowed_tools_passes(tmp_path):
+    """An evaluator skill with no Write or Edit in allowed-tools must yield no finding."""
+    skill = _make_skill("kata-evaluate", "evaluate", ["Read", "Grep", "Glob", "Bash"], tmp_path)
+    findings = v.check_evaluator_no_write([skill])
+    assert findings == [], f"expected no findings for clean evaluator; got {findings}"
+
+
+def test_nit2_non_evaluator_skill_with_write_is_not_flagged(tmp_path):
+    """A non-evaluator skill carrying Write must NOT be flagged by check_evaluator_no_write."""
+    skill = _make_skill("kata-execute", "execute", ["Read", "Write", "Edit"], tmp_path)
+    findings = v.check_evaluator_no_write([skill])
+    assert findings == [], f"check_evaluator_no_write must not flag non-evaluator skills; got {findings}"
+
+
+def test_nit2_real_tree_evaluator_skills_pass():
+    """The real kata-evaluate and kata-research must pass the no-write contract check (real tree stays 35/0)."""
+    skills = {s.name: s for s in v.load_skills()}
+    evaluators = [s for name, s in skills.items() if name in {"kata-evaluate", "kata-research"}]
+    assert len(evaluators) == 2, f"both no-write evaluators must exist in real tree; found {[s.name for s in evaluators]}"
+    findings = v.check_evaluator_no_write(evaluators)
+    assert findings == [], f"real evaluator skills must pass the no-write contract; got {findings}"
+
+
 def test_i1_intent_md_missing_required_term_errors(tmp_path, monkeypatch):
     """(c) check_protocol_schemas emits an ERROR when a fixture intent.md is missing a required term."""
     # Patch PROTOCOL_DIR and add intent.md to REQUIRED_PROTOCOL for this test
