@@ -3,16 +3,14 @@
 Promote to ROADMAP milestones when ready.
 
 - **Gate-enforcement hardening (loop-hardening red-team residue, 2026-06-21 — non-blocking).** The S2/S3a
-  adversarial review left three deferrable items where enforcement still rests on agent discretion: **(a) MAJOR-3 —
-  machine `codeBearing` flag:** `kata-evaluate` rubric item 1 requires `mutation.json` for "code-bearing" runs, but
-  "code-bearing" is self-judged — derive a `codeBearing` boolean in `footprint.json`/`gate_emit` from changed-file
-  globs (any `*.py` etc.) and key the rule off that, not evaluator discretion. **(b) NIT-2 — validator no-write
-  assertion:** `tools/validate_skills.py` checks `allowed-tools` is a non-empty list but does NOT assert evaluator
-  skills (`kata-evaluate`, `kata-research`) exclude `Write`/`Edit`; add the structural check so the no-write
-  contract can't regress undetected. **(c) NIT — guard consistency:** `mutation_run`/`grounding_gate`/`escalation`
-  raise `SystemExit` on `..` traversal while `intent_scaffold` raises `ValueError`; pick one (ValueError is the
-  more catchable/consistent choice) across the `_safe_path` guards. *(MAJOR-1/MAJOR-2 from the same review were
-  fixed inline — D92. These three are the tolerable residue; do before an unattended/fully-agentic cycle.)*
+  adversarial review left three deferrable items. **(a) MAJOR-3 — machine `codeBearing` flag: ✅ DONE (S3b Cycle 2,
+  `222cc7e`)** — `footprint.py` `code_bearing()` derives the flag from changed-file globs → `footprint.json`
+  `codeBearing`; `kata-evaluate` rubric item 1 keys off it (BC fallback). **(b) NIT-2 — validator no-write
+  assertion: ✅ DONE (S3b Cycle 1, `f72a3bb`)** — `validate_skills.py` `check_evaluator_no_write` asserts
+  `{kata-evaluate, kata-research}` omit `Write`/`Edit`. **(c) NIT — guard consistency (REMAINING):**
+  `mutation_run`/`grounding_gate`/`escalation` raise `SystemExit` on `..` traversal while `intent_scaffold` raises
+  `ValueError`; pick one (ValueError is the more catchable/consistent choice) across the `_safe_path` guards.
+  *(MAJOR-1/MAJOR-2 were fixed inline — D92; MAJOR-2 live-proven in S3b. Only the guard-consistency nit remains.)*
 - **★ Planning-approach ↔ delivery-mode alignment (FUTURE assessment, user 2026-06-21).** Assess the **planning
   approach** (`kata-plan` essential/standard/advanced tiers + the roadmap layer `kata-plan/ROADMAP.md`) and confirm
   it **aligns coherently with each delivery mode in place**: **one-shot**, **sprint (incremental)**, and

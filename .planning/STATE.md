@@ -1,5 +1,20 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-21, S3b DONE — G6 PROVEN; loop-hardening COMPLETE — `222cc7e`):** The live loop-back ran:
+> KataHarness ran its own **Kata Loop twice**, operator-driven, and a fresh-context grade returned **G6 PROVEN**
+> (7/7, corroborated against independent evidence — the Cycle-2 goal is a near-literal instantiation of the
+> Cycle-1 understand-map's named adjacent gap, baseline SHA matched `RESULT.json`). **Cycle 1** = NIT-2 (validator
+> asserts evaluators `kata-evaluate`/`kata-research` omit Write/Edit; `f72a3bb`); **Cycle 2** (loop-back, Phase 1b
+> consumed the carried context) = MAJOR-3 (machine `codeBearing` flag in `footprint.py`; `kata-evaluate` rubric
+> item 1 keys off it; `222cc7e`). Both cycles: real `kata-initiate` interview (G4 live), orchestrated Sonnet-worker
+> build in a worktree, `prove_non_vacuous` → `mutation.json allNonVacuous:true` (**MAJOR-2 live-proven**),
+> fresh-context `kata-evaluate` PASS, operator git/version-select gates. **MAJOR-1 (grounding) correctly did not
+> fire** (no research-needed escalation — as PLAN-s3b predicted; stays unit-proven). **ALL 7 GAPS CLOSED
+> (G1–G7).** pytest **445**, validator **35/0**, Snyk 0. Tag `pre-s3b`; closes BACKLOG NIT-2 + MAJOR-3. Record:
+> `specs/loop-hardening/{PLAN-s3b,REPORT-s3b}.md`. **loop-hardening is DONE — "vetted, and demonstrably loops."**
+> **NEXT:** remaining BACKLOG hardening (`_safe_path` guard consistency; planning-approach↔delivery-mode alignment)
+> → **Phase 5 EXTERNAL** (install-portability · multi-model-orchestration) → v0.1 release-checklist.
+
 > **CURRENT (2026-06-21, red-team seam-fixes + Kata Loop rename — `94539dd`; AT THE S3b BOUNDARY):** An adversarial
 > red-team of S2+S3a confirmed the project's known **documentation-only seam** failure mode had partially recurred and
 > we **fixed it inline (D92):** `kata-orchestrate` now explicitly **persists the grounding verdict** via

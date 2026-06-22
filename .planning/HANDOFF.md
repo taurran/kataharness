@@ -1,15 +1,16 @@
 ---
-date: 2026-06-21 (loop-hardening S1+S1.5+S2+S3a DONE + red-team seam-fixes + Kata Loop rename; ONLY G6 left = S3b live loop-back, operator-driven)
-branch: master — private remote github.com/taurran/kataharness, tip 94539dd (pushed)
-green: validator 35 skills / 0 errors · pytest 420 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
-tags: pre-s1 · pre-s1.5 · pre-s2 · pre-s3a · v0.1.0-alpha.1 · v0.1.0-alpha.2
+date: 2026-06-21 (loop-hardening COMPLETE — all 7 gaps closed; G6 PROVEN via the S3b live loop-back)
+branch: master — private remote github.com/taurran/kataharness, tip 222cc7e (push at S3b close)
+green: validator 35 skills / 0 errors · pytest 445 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
+tags: pre-s1 · pre-s1.5 · pre-s2 · pre-s3a · pre-s3b · v0.1.0-alpha.1 · v0.1.0-alpha.2 · v0.1.0-alpha.3 · loop-hardening-complete
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
-# HANDOFF — KataHarness — 2026-06-21 (loop-hardening 6/7 gaps closed · next = S3b loop-back, the finale)
+# HANDOFF — KataHarness — 2026-06-21 (loop-hardening COMPLETE · 7/7 gaps · next = backlog hardening → Phase 5 EXTERNAL)
 
-> **Fresh/compacted session: read §1 in order, confirm green (§2), resume at §4 (S3b).** Everything below is
-> durable + committed + **pushed**. Maps to `kata-orient` tiers: §1 → CONTEXT · §2+§4 → VOLATILE · §6 → human-required.
+> **✅ loop-hardening is DONE — the Kata Loop is "vetted, and demonstrably loops" (G6 proven, S3b).** Fresh/compacted
+> session: read §1 in order, confirm green (§2), resume at §4 (the next milestone). Everything below is durable +
+> committed + **pushed**. Maps to `kata-orient` tiers: §1 → CONTEXT · §2+§4 → VOLATILE · §6 → human-required.
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
 1. `AGENTS.md` (spine + conventions; the **"The Kata Loop"** entry) · 2. `docs/STANDARDS.md` §1 (frontmatter —
@@ -60,51 +61,33 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 | G3 mutation/non-vacuity proof never ran | `mutation.json` absent; no runner | **S2 ✅** |
 | G4 interactive initiation never prompted | run decided inline; human got one prompt | **S2 ✅** |
 | G5 grounding gate / `kata-research` never fired | no machine artifact/emitter; chain never invoked | **S3a ✅** |
-| **G6 loop-back never exercised** | version-select chose "ship"; re-entry/handoff unproven | **S3b ← NEXT** |
+| **G6 loop-back never exercised** | version-select chose "ship"; re-entry/handoff unproven | **S3b ✅ (G6 PROVEN, `222cc7e`)** |
 
-## 4. NEXT ACTION — S3b, the live loop-back (closes G6; proves the Kata Loop loops) *(VOLATILE — the immediate work)*
-**This is the operator's hard requirement and the finale of loop-hardening.** It is NOT a tooling-build sprint — it
-**RUNS the live Kata Loop on KataHarness itself, twice**, with the operator making the un-simulatable calls, and then
-**grades the re-entry handoff**. It also live-proves the MAJOR-1/MAJOR-2 orchestrator seam fixes.
+## 4. NEXT ACTION — backlog hardening → Phase 5 EXTERNAL *(VOLATILE — the immediate work)*
+**loop-hardening is COMPLETE (D93).** S3b ran the live Kata Loop on KataHarness twice (Cycle 1 NIT-2 `f72a3bb` →
+loop-back → Cycle 2 MAJOR-3 `222cc7e`); a fresh-context re-entry grade returned **G6 PROVEN (7/7)**, corroborated
+(the Cycle-2 goal is a near-literal instantiation of the gap the Cycle-1 understand-map named; baseline SHA matched
+`RESULT.json`). All 7 gaps closed; the Kata Loop is "vetted, and demonstrably loops." MAJOR-2 live-proven both
+cycles; MAJOR-1 correctly did not fire. Record: `specs/loop-hardening/{PLAN-s3b,REPORT-s3b}.md`.
 
-**Step 0 — Freeze `PLAN-s3b.md`** (recipe §5 step 1) defining: the two small **code-bearing** version-up targets
-(so each cycle also exercises the S2 mutation requirement), and the **re-entry-handoff grading rubric**.
-*Recommended targets (close real backlog items as we go):* **Cycle-1 = NIT-2** (add a `validate_skills.py` check that
-evaluator skills `kata-evaluate`/`kata-research` exclude `Write`/`Edit`); **Cycle-2 = MAJOR-3** (derive a
-`codeBearing` boolean in `footprint.json`/`gate_emit` so rubric item 1 keys off evidence, not evaluator discretion).
-Both are small, testable, and Cycle-2 naturally builds on Cycle-1's context. (Operator may pick different targets.)
+**The next work, in order:**
+1. **Remaining backlog hardening (small, non-blocking — `.planning/BACKLOG.md`):**
+   - **`_safe_path` guard consistency** (the last gate-enforcement-hardening nit): `mutation_run`/`grounding_gate`/
+     `escalation` raise `SystemExit` on `..` traversal while `intent_scaffold` raises `ValueError` — unify on
+     `ValueError`. (MAJOR-3 + NIT-2 are now DONE via S3b.)
+   - **★ Planning-approach ↔ delivery-mode alignment** (FUTURE assessment, raised 2026-06-21): confirm `kata-plan`
+     tiers + the roadmap layer align coherently with one-shot / sprint / version-up. Non-blocking; this S3b sprint
+     cadence is itself live evidence to audit against.
+2. **Phase 5 EXTERNAL** — the reach work: **install-portability** + **multi-model-orchestration** (BRIEFs under
+   `.planning/specs/{install-portability,multi-model-orchestration,testing-model}/`). Where the harness stops
+   operating only in its own repo.
+3. **v0.1 release-checklist** — flip Policy A (hold-at-`0.1.0`) → bump-on-modify (STANDARDS §3); the eventual milestone.
 
-**Step 1 — Cycle 1 (a real version-up through the Kata Loop):**
-- `kata-initiate` — run the **real interview** (`AskUserQuestion`; exercises G4): kind=version-up · target=self ·
-  vault · platform · grillDepth · the execute decision → freeze `INTENT.md` via `tools/intent_scaffold.py`.
-- The Harness — orchestrated build of Cycle-1's target per recipe §5 (worktree + Sonnet worker + TDD). Because it's
-  code-bearing, the worker runs `mutation_run.prove_non_vacuous` and the orchestrator collects records into
-  `.kata/mutation.json` (exercises G3 + live-proves MAJOR-2).
-- `kata-evaluate` (fresh-context, no-write) → PASS.
-- `kata-closeout` — report + **offer the understand-map** (writes `.kata/understand.md`) → **human decision gate**.
-  **➜ Operator picks "Run again (version-up)"** — the un-simulatable version-select that triggers the loop-back.
-
-**Step 2 — The loop-back:** `kata-loop` carries the context forward — new **baseline SHA** (`.kata/RESULT.json`
-`resultSha`), **`.kata/understand.md`**, **`LESSONS-LEARNED.md`**, and the **prior `INTENT.md`** — into Cycle 2.
-
-**Step 3 — Cycle 2 (re-entry, the actual G6 proof):** `kata-initiate` **Phase 1b** MUST detect the loop-back and
-consume the carried context (NOT cold-start): pre-classify version-up, surface the understand-map instead of
-re-deriving it, treat prior lessons as known-resolved grill branches (no re-grilling mapped ground), set the new
-`goal` as the *next* gap against the prior INTENT. Then freeze a new `INTENT.md` → build Cycle-2's target → evaluate
-→ closeout.
-
-**Step 4 — GRADE THE RE-ENTRY HANDOFF (the deliverable):** a fresh-context evaluation that specifically checks —
-*did Phase 1b actually ingest `.kata/understand.md` + the prior `INTENT.md` + the baseline SHA? did it avoid
-re-grilling resolved vocabulary? did Cycle 2 provably start **informed**?* Document the verdict. **If yes → the Kata
-Loop demonstrably loops → loop-hardening is DONE.**
-
-**Step 5 — Close out S3b:** checkpoint STATE/HANDOFF/ROADMAP, push, tag (e.g. `v0.1.0-alpha.3` or
-`loop-hardening-complete`). Mark G6 ✅ and all 7 gaps closed.
-
-**After S3b:** loop-hardening complete → "vetted, demonstrably loops." Remaining backlog hardening (the rest of the
-red-team residue + planning-modes alignment — `.planning/BACKLOG.md`), then **Phase 5 EXTERNAL** (install-portability ·
-multi-model-orchestration; `BRIEF.md`s under `.planning/specs/`). v0.1 release-checklist (flip Policy A →
-bump-on-modify) is the eventual milestone.
+**A carried lesson from the S3b live run (for whoever drives the next live loop):** `INTENT.md` + the `.kata/`
+artifacts live at the **target repo root**, not in the per-task worktree — point a fresh-context evaluator at the
+worktree for the *diff* but at the main root for `INTENT.md`/the understand-map. Emit gate artifacts to the
+**worktree-root `.kata/`** (run `gate_emit` from `tools/` with an absolute `out_dir` so pytest still runs from
+`tools/`). The loop-back payload (`RESULT.json` + `understand.md`) must sit at the main root for Phase 1b to find it.
 
 ## 5. The orchestration recipe (each cycle's *inner* build follows this — never inline) *(task-type hint)*
 The **vetted, never-inline** loop (memory `exercise-harness-for-real`). S3b uses it **once per cycle** for the inner build:

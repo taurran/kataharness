@@ -666,3 +666,18 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   machine `codeBearing` flag in `footprint.json` so rubric item 1 keys off evidence not evaluator discretion
   (MAJOR-3); a validator assertion that evaluator skills exclude Write/Edit (NIT-2); `_safe_path` SystemExit-vs-
   ValueError consistency across the tools (nit).
+
+- **D93 — loop-hardening COMPLETE: the Kata Loop demonstrably loops (G6 proven via the S3b live loop-back).**
+  (2026-06-21.) S3b ran the live Kata Loop on KataHarness itself **twice**, operator-driven (the un-simulatable
+  `kata-initiate` interview answers + the Cycle-1 "run again (version-up)" version-select), and a **fresh-context
+  re-entry grade returned G6 PROVEN (7/7)** — corroborated against independent evidence, not the self-written
+  `readiness` prose: the Cycle-2 `INTENT.md` goal is a near-literal instantiation of the gap the **Cycle-1
+  understand-map** named, and the carried baseline SHA matched `RESULT.json.resultSha`. Cycle 1 = **NIT-2**
+  (validator asserts `kata-evaluate`/`kata-research` omit Write/Edit, `f72a3bb`); Cycle 2 (Phase-1b loop-back
+  re-entry) = **MAJOR-3** (machine `codeBearing` flag in `footprint.py`; `kata-evaluate` rubric item 1 keys off it,
+  `222cc7e`). Both BACKLOG items closed. **MAJOR-2** (D92 orchestrator collects per-task `prove_non_vacuous` →
+  integration `mutation.json`) was **live-proven** both cycles; **MAJOR-1** (grounding-verdict persistence)
+  correctly did **not** fire — a small, well-specified change produces no `research-needed` escalation (as
+  PLAN-s3b predicted), and we did not manufacture one; it stays unit-proven. **All 7 loop-hardening gaps (G1–G7)
+  are closed** — the Kata Loop is now "vetted, and demonstrably loops." pytest 445, validator 35/0, Snyk 0.
+  *Provenance:* operator-driven S3b session 2026-06-21; record `specs/loop-hardening/{PLAN-s3b,REPORT-s3b}.md`.

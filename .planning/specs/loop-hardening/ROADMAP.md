@@ -70,10 +70,14 @@ it cycles back). Each gap below is **grounded in evidence** from the Phase-4 dog
     `kata-research` (finding schema) + `kata-evaluate` injected-knowledge mode. **G5 demonstrated end-to-end** (real
     escalation + all three verdicts; `allGrounded:false` correctly). pytest 367→420, validator 35/0, Snyk 0. Plan:
     `PLAN-s3a.md`. *(Grounding is conditional — fires only on a `research-needed` escalation, not per-run.)*
-  - *S3b — the loop-back:* a real version-up cycle — `kata-closeout` "run again" → `kata-loop` loop-back →
-    `kata-initiate` **Phase 1b** re-entry consuming carried context (`.kata/understand.md`, prior `INTENT.md`,
-    lessons, baseline SHA) → second small build → closeout. **Grade the re-entry handoff** (did Phase 1b ingest the
-    prior context, avoid re-grilling mapped ground?). *Demonstrable:* a second cycle that provably started informed.
+  - *S3b — the loop-back:* **✅ DONE (`222cc7e`, G6 PROVEN).** Two operator-driven cycles through the live Kata
+    Loop — Cycle 1 NIT-2 (`f72a3bb`) → `kata-closeout` "run again" → `kata-loop` loop-back → `kata-initiate`
+    **Phase 1b** consumed the carried context (baseline SHA · `.kata/understand.md` · prior `INTENT.md` · lessons)
+    → Cycle 2 MAJOR-3 (`222cc7e`). A fresh-context re-entry grade scored 7/7, corroborated (Cycle-2 goal = a
+    near-literal instantiation of the Cycle-1 understand-map's named adjacent gap). G4 + MAJOR-2 live-proven;
+    MAJOR-1 correctly did not fire. pytest 445, validator 35/0, Snyk 0. Plan/record: `PLAN-s3b.md` / `REPORT-s3b.md`.
+
+> **✅ loop-hardening COMPLETE — all 7 gaps (G1–G7) closed. The Kata Loop is "vetted, and demonstrably loops."**
 
 ## Cadence & rules (sprint-cadence)
 - Baseline = most-recent-green (S1 baselines on `v0.1.0-alpha.2`; each later sprint baselines on the prior green).
