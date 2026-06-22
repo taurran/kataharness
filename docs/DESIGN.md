@@ -12,8 +12,9 @@ and stitched by two-way, file-based handoff. It is an **iteration on Anthropic's
 harness**, with industry best practices baked in (mattpocock/skills, GSD, BMAD, DDD ubiquitous
 language). The name is the method: the **Improvement Kata** — every run improves the harness.
 
-Endgame: the **orchestrator runs in a desktop app (e.g. Quick, AWS BI desktop with MCP/ACP/skills/tasks)**
-driving coding agents via **ACP** or a local coding agent — and a parallel work-specific version exists.
+Endgame: the **orchestrator runs in a desktop app (an ACP host — e.g. Amazon Quick — with MCP/skills/tasks)**
+driving coding agents via **ACP** or a local coding agent — and a parallel work-specific version exists (kept
+separate until import). **Quick is the integration seam** for that ACP host; the work backend binds behind it.
 
 ## The spine (see AGENTS.md §spine)
 

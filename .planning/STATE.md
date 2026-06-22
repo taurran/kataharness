@@ -262,7 +262,7 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   rebuilt from git; scoped delta-grill course-correct (default always-stop); prime-frame sizing primitive
   (refines D8); sprint N≥2 = version-up vs most-recent-green baseline; bake-off trimmed; **D16-first LOCKED**.
 - **`protocol/engram.md` CREATED** — engram plugin contract + seam registry (E1–E21, C1–C6, backend binding
-  incl. MindBridge clean-room). Adversarially reviewed (HOLD→hardened). Freeze-gate audit on sprint-cadence
+  incl. external-backend clean-room). Adversarially reviewed (HOLD→hardened). Freeze-gate audit on sprint-cadence
   returned HOLD with must-fixes (roadmap-layer is NET-NEW in kata-plan; pin tunables; D8 supersession; etc.).
 
 ## 2026-06-18 — loop-cognition spec OPENED + CONVERGED (this session)

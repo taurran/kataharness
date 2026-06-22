@@ -75,7 +75,7 @@ rows (adopts Hermes' machine-readable discipline as a *second* field, not a repl
 > **RESOLVED 2026-06-18 → A** (user "Yes, align, but the PokeVault llm-wiki synthesis may be underdeveloped…
 > needs to be grown more"). Schema home: a new `protocol/wiki-synthesis.md` (or a section of
 > `protocol/engram.md`) — pin at freeze. Targets the vault `pages/synthesis/` layer via the agnostic LEARN
-> contract (PokeVault one backend; MindBridge another — D30).
+> contract (PokeVault one backend; the work host another — D30).
 
 ## LC-GB7 — Agent-skills directory: install-seeding + first-run location config **(RESOLVED — rec A; two specifics flagged)**
 KataHarness install seeds the agent-skills section under the toolkit; on first invocation `kata-bootstrap`
@@ -126,7 +126,7 @@ is the rework-exposure that killed KG-first.
 > | **C3 redaction (engram invariant)** | Writing artifacts to a vault could leak secrets/PII | Redaction gate (same as `kata-handoff` §7) is **in the minimal scope from day one** — non-negotiable. |
 > | **Versioning hold** | New-skill versioning | Any new surface enters `0.1.0/experimental`; no bump (policy A). |
 > | **GB6 two-producer contract** | Loop output vs immature vault schema | Define the output contract **now**; the loop conforms and **leads**; the vault grows toward it. |
-> | **D30 clean-room (MindBridge)** | Hard-coding PokeVault | Emits via the **agnostic LEARN contract**; PokeVault one backend, MindBridge another. |
+> | **D30 clean-room (the work host)** | Hard-coding PokeVault | Emits via the **agnostic LEARN contract**; PokeVault one backend, the work host another. |
 > | **D16 experimenter neutrality** | Human consulting fresh fingerprint biases D16 judgments | Procedural rule: during D16 the feed runs but its output is **not consulted** for any arm decision (preserves D14 honesty). |
 >
 > **Build arc toward the user's endgame (records the path, not yet a frozen PLAN):**

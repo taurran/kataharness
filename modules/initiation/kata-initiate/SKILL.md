@@ -118,10 +118,12 @@ Which agent host will execute the harness:
 | Option | Meaning |
 |---|---|
 | `Claude` | Claude Code (current default). |
-| `MindBridge/Quick` | ACP Quick — platform may bring its own `AGENTS.md`/installer. |
-| `Kiro` | Amazon Kiro — uses the Kiro adapter. |
+| `Codex` | OpenAI Codex — uses the Codex adapter. |
+| `Kiro` | Amazon Kiro — uses the Kiro adapter (planned v0.3). |
+| `Quick` | ACP desktop host — the **integration seam for an external/work ACP host** (brings its own `AGENTS.md`/installer). |
+| `Other` | Any additional host. The platform may bring its own `AGENTS.md`/installer. |
 
-Collect `target.platform`. If `MindBridge/Quick` or `Kiro`, note that the platform's module-swap
+Collect `target.platform`. If `Kiro`, `Quick`, or `Other`, note that the platform's module-swap
 mechanism applies (see `modules/initiation/AGENTS.md`).
 
 ---
@@ -159,8 +161,8 @@ load-bearing choices directly with the operator. Present them as a structured mu
 3. **`target.path`** — if `target.kind == "existing"`, what is the absolute filesystem path?
 4. **`target.vault`** — vault strategy: `linked` (PokeVault), `scaffolded`, `own:<path>`,
    `per-folder:<path>`, or absent (no vault for this run)?
-5. **`target.platform`** — which agent host drives this run: `claude`, `kiro`, `mindbridge`, or
-   `quick`?
+5. **`target.platform`** — which agent host drives this run: `claude`, `codex`, `kiro`, `quick`, or
+   `other`?
 6. **`grillDepth`** — confirm the depth the operator wants: `skip`, `light`, `standard`, or `full`.
 7. **Dual-control execute decision** — after the grill (Phase 5) completes, the execute step requires
    explicit operator confirmation: confirm the operator understands they will be asked to say

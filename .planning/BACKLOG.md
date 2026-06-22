@@ -5,16 +5,19 @@ Promote to ROADMAP milestones when ready.
 ## ★★ PRE-PUBLIC PRIORITIES (operator notes, 2026-06-21 — post-S3b review) ★★
 These are the operator's own end-of-S3b notes; several gate going public. Captured verbatim-in-intent.
 
-- **WS-1 — Separation / IP hygiene (do first; pre-public, security-driven).** Remove **all** references to
-  **MindBridge** from the code AND the project docs — it must not appear anywhere before this goes public (it is
-  the work-related project this gets imported into later; keep it fully separated). **Remove "Quick"** as a
-  first-class platform too — it should only manifest once imported to the work project. Public targets are **major
-  public FMs only: Claude + Codex to start.** A vague **"other"** is acceptable, and **Amazon Quick may be named as
-  a *potential* target**, but no MindBridge anywhere and no first-class Quick. *Touch points to sweep:* the
-  `platform` enum (`claude|kiro|mindbridge|quick`) in `protocol/intent.md`, `tools/intent_scaffold.py`,
-  `modules/initiation/kata-initiate/SKILL.md` (Phase 2c), `protocol/config.md`, `modules/initiation/AGENTS.md`,
-  and any DECISIONS/CONTEXT/BACKLOG/spec mentions (grep `MindBridge`/`Quick`). History/provenance may keep prior
-  mentions, but active/canonical surfaces must be clean (supersede-never-rewrite).
+- **WS-1 — Separation / IP hygiene (IN PROGRESS, 2026-06-21; pre-public).** The work-internal sister project's
+  **proper name must not appear on any surface** — scrub it everywhere, replacing with indirect terms ("the work
+  host", "an external/work ACP host", "the work backend"). **Quick is deliberately KEPT** as the named **ACP-host
+  target** — it is the **integration seam** for plumbing the work backend in later, and the docs/skills carry
+  explicit **pointers** marking that seam (without naming the work project), so the future plumb-in is low-friction.
+  Public FM targets to start: **Claude + Codex**; **Kiro** public (v0.3 adapter); **`quick`** = the ACP-host
+  plumbing anchor; **`other`** = catch-all. The platform enum is now `claude | codex | kiro | quick | other`
+  (Codex added; the work proper-noun removed). **Done so far:** `protocol/intent.md` enum, `kata-initiate`
+  Phase 2c + STOP gate, `AGENTS.md`, `docs/DESIGN.md`, `README.md`, `.planning/PROJECT.md`, `protocol/engram.md`,
+  the two module `AGENTS.md`, DECISIONS/STATE, and the frozen-spec proper-noun mentions. **Remaining:** a final
+  **public-sanitization pass** right before launch — re-grep the work-project name across *all* surfaces, confirm
+  only the Quick/ACP plumbing seam + pointers remain. *(Kiro kept — it is a public Amazon product, not the
+  internal work host; flag if it should also be gated.)*
 
 - **WS-2 — Validate the INNER (harness) loop's autonomy + parallelism (the operator's confidence gap).**
   The operator is NOT confident the harness loop genuinely runs autonomously for long stretches. Validate, with
@@ -122,10 +125,10 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
 - **★ FUTURE-GAP BRIEFS (ordered; quick plan docs written 2026-06-19, to grill→freeze→build AFTER the
   dogfood/improvement passes — except #1's timing is to-confirm).** Each is a `BRIEF.md` (pre-grill, not frozen):
   1. [[install-portability]] — `.planning/specs/install-portability/BRIEF.md` (workspace config + modular
-     per-platform install: optional PokeVault link · bring-your-own-vault scaffold · aim-each-folder; MindBridge
-     brings its own installer; setup doc cordoned with pointers). **Foundation for #2/#3.**
+     per-platform install: optional PokeVault link · bring-your-own-vault scaffold · aim-each-folder; the work/ACP
+     host brings its own installer; setup doc cordoned with pointers). **Foundation for #2/#3.**
   2. [[multi-model-orchestration]] — `.planning/specs/multi-model-orchestration/BRIEF.md` (host-located
-     orchestrator [MindBridge→Quick/ACP · Kiro/Claude→there] · per-component model/tool routing incl.
+     orchestrator [work host→Quick/ACP · Kiro/Claude→there] · per-component model/tool routing incl.
      eval+test · cross-model handoff on one filesystem). Depends on #1.
   3. [[testing-model]] — `.planning/specs/testing-model/BRIEF.md` (**assess** a purpose-specific testing/eval
      model as a routed quality component; contract unchanged, only the model). Leans on #2.

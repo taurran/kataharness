@@ -446,7 +446,7 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   Hermes' closed-loop distillation, protected head+tail compaction, tiered prompt assembly, `.usage.json`-style
   telemetry, stale→archive curation, ≤60-char description discipline; **reject** its no-gate instant-universal
   skills and opaque (Honcho) user model. Our differentiator: Hermes' learning loop **gated by default-FAIL +
-  human promotion + artifact-grounded fingerprint.** Applies to the sister **MindBridge Loop** project too.
+  human promotion + artifact-grounded fingerprint.** Applies to the sister **work-loop** project too.
   *Provenance:* user-requested deep research + bake-off 2026-06-18.
 
 <!-- D16 resolution + Priming-and-Grill architecture (2026-06-18). See PILOT-NOTES.md, L11,
@@ -643,7 +643,7 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
 - **D91 — Modules are self-contained directories under `modules/<name>/` (own AGENTS.md + own skills).** Phase-1
   structural resolution (user-chosen 2026-06-20). A module dir holds **both** its `AGENTS.md` (which *drives* it
   via kata-orient's path-based nested-rollup) **and** its skills (`modules/<name>/<skill>/SKILL.md`) — a true
-  plug-and-play unit a platform (MindBridge) can swap wholesale. The skill-conformance validator is extended to
+  plug-and-play unit a host platform can swap wholesale. The skill-conformance validator is extended to
   **discover `modules/*/*/SKILL.md`** alongside `skills/*/*/SKILL.md` (index + wikilink-resolution + README-sync
   apply uniformly); module skills carry their functional `category` + a `kata/module/<module>` tag. Chosen over
   "skills stay in `skills/`, module = AGENTS.md + tag" because the path-based rollup only drives skills physically

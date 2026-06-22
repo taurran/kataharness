@@ -40,7 +40,7 @@ gate** — gating remains `kata-evaluate`'s responsibility.
 
 ## Platform swap
 
-A platform (e.g. MindBridge) may **replace this entire directory** with its own `modules/initiation/`
+A host platform may **replace this entire directory** with its own `modules/initiation/`
 — its own `AGENTS.md` + installer. The conductor (`kata-loop`, planned) depends only on the
 **contract** above (`INTENT.md` in → context out), not on this implementation. Spine #3
 (agnostic-via-adapters) applies at module granularity.

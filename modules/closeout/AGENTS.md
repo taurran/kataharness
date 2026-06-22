@@ -54,7 +54,7 @@ confers a pass/fail verdict.
 
 ## Platform swap
 
-A platform (e.g. MindBridge) may **replace this entire directory** with its own `modules/closeout/`
+A host platform may **replace this entire directory** with its own `modules/closeout/`
 — its own `AGENTS.md` + skills. The conductor (planned; reference in prose only — not yet built) depends
 only on the **contract** above (`.kata/` artifacts + post-gate verdict in → report + human decision out),
 not on this implementation. Spine #3 (agnostic-via-adapters) applies at module granularity.

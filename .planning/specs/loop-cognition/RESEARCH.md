@@ -26,7 +26,7 @@
   execution and, at session end, presents them for a **human promotion gate**; promoted skills become
   long-term coding-agent skills. The same loop **feeds the second brain** — mining the run's decision
   artifacts into wiki-style synthesis that grows the user's cognitive fingerprint over time, behind the
-  agnostic engram contract (so PokeVault *and* MindBridge consume it identically).
+  agnostic engram contract (so PokeVault *and* the work host consume it identically).
 
 These share two substrates and that is why they are one umbrella: **the grounding gate** (RS-injected
 knowledge and ML-distilled skills pass the *same* check) and **`kata-graph`** (AO adjacency pointers and ML
@@ -66,7 +66,7 @@ grounding gate on what gets learned** — a bad skill can be distilled, reinforc
 | Personal-assistant fit | excellent | overkill | Hermes |
 | **Coding-harness fit** | **dangerous** (uncontrolled positive feedback) | **native** | **Ours** |
 
-**Verdict (drives both KataHarness and the sister MindBridge Loop): borrow Hermes' *mechanisms*, keep our
+**Verdict (drives both KataHarness and the sister work loop): borrow Hermes' *mechanisms*, keep our
 *gates*.**
 - **Borrow:** autonomous distillation; `.usage.json`-style telemetry; mid-flight patch; `stale → archive
   (never delete)` curation; the ≤60-char description discipline.
@@ -120,11 +120,11 @@ into **wiki-style synthesis pages** → emit through the agnostic engram **LEARN
 - **Differentiator vs Hermes:** our fingerprint is mined from **auditable, versioned artifacts**, not opaque
   chat state — so it is supersede-able and no-drift-compatible.
 
-## 6. MindBridge / clean-room alignment
+## 6. the work host / clean-room alignment
 
-MindBridge Loop (sister project) is a first-class consumer. Therefore **everything above emits through the
+work loop (sister project) is a first-class consumer. Therefore **everything above emits through the
 agnostic CONSULT/LEARN contract** (`protocol/engram.md`), never hard-coding PokeVault. PokeVault is one
-backend; MindBridge binds externally and answers the same contract → **zero IP coupling** (D30 clean-room).
+backend; the work host binds externally and answers the same contract → **zero IP coupling** (D30 clean-room).
 These features become the first real consumers of that documented extension point.
 
 ## 7. Spine compatibility + the one sequencing nuance

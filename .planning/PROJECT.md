@@ -9,10 +9,11 @@ faithfully (no drift), across tools, with durable two-way handoff. Reusable acro
 than re-derived per repo.
 
 **Who / where:** Personal open-source project at `C:\Dev\Projects\KataHarness` (public-intended). Incubated
-out of CryptoPortfolioPlanner's `cpp-*` harness (the medium). A separate **work version** will target
-**Quick** (AWS BI desktop app with MCP/ACP/skills/tasks) — so cross-tool agnosticism and an **ACP**
-adapter are first-class long-term requirements; the orchestrator eventually runs in the desktop app and
-drives coding agents via ACP.
+out of CryptoPortfolioPlanner's `cpp-*` harness (the medium). A separate **work version** (kept separate
+until import) will target an **ACP desktop host — Amazon Quick** (MCP/ACP/skills/tasks) — so cross-tool
+agnosticism and an **ACP** adapter are first-class long-term requirements; the orchestrator eventually runs
+in that desktop app and drives coding agents via ACP. ***Quick is the integration seam*** for the work host
+(which binds its own backend behind that seam — kept unnamed on public surfaces).
 
 **Relationship to other projects:** CPP is **decoupled** (D57) — it was the incubation medium only; skill
 `source:` fields retain the historical attribution. KataHarness's install/test home is the **PokeVault**

@@ -32,7 +32,7 @@ frozen at the end of the initiation session, never mutated mid-run.
 | `kind` | `"self" \| "existing" \| "greenfield"` | `self` = the harness dogfoods itself; `existing` = version-up on an existing repo (path required); `greenfield` = new repo, no prior baseline. |
 | `path` | `string?` | Filesystem path to the target repo. Required when `kind == "existing"`. |
 | `vault` | `string?` | PokeVault binding — one of: `"linked"` (existing PokeVault), `"scaffolded"` (kata-initiate set one up), `"own:<path>"` (user-supplied vault), or `"per-folder:<path>"` (aim-each-folder mode). Absent ⇒ no vault configured for this run. |
-| `platform` | `"claude" \| "kiro" \| "mindbridge" \| "quick"` | The agent platform driving this run. Set during the interactive config session (GL-R3c). Governs which adapter `AGENTS.md`/installer is activated. |
+| `platform` | `"claude" \| "codex" \| "kiro" \| "quick" \| "other"` | The agent platform driving this run. Set during the interactive config session (GL-R3c). Governs which adapter `AGENTS.md`/installer is activated. **`claude` + `codex` are the v0.1 public targets**; **`kiro`** is the planned v0.3 adapter; **`quick`** is the **ACP desktop-host target — the integration seam for an external/work ACP host** (that host brings its own installer); **`other`** is the catch-all. |
 
 ## Notes
 

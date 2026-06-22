@@ -3,7 +3,7 @@ date: 2026-06-19
 spec: install-portability
 status: BRIEF — pre-grill, not frozen. A captured gap; the build needs its own grill → DESIGN → PLAN.
 order: 1 of 3 (future-gap sequence — the foundation the other two lean on)
-tags: [brief, future-gap, install, portability, config, modular, vault, mindbridge]
+tags: [brief, future-gap, install, portability, config, modular, vault]
 ---
 
 # Install & Portability — workspace config + modular per-platform install
@@ -12,7 +12,7 @@ tags: [brief, future-gap, install, portability, config, modular, vault, mindbrid
 > target/platform/vault selection + workspace binding) **folds into the `kata-initiate` initiation module** —
 > configured interactively during initiation, not as a separate "build after." What remains HERE = the heavier
 > **per-platform installer mechanics** (PokeVault link / bring-your-own-vault scaffold / aim-each-folder;
-> MindBridge brings its own), sequenced to **Phase 5** of `greater-loop/ROADMAP.md` (external reach, after the
+> the work host brings its own), sequenced to **Phase 5** of `greater-loop/ROADMAP.md` (external reach, after the
 > self greater loop). See `greater-loop/DESIGN.md §8`.
 
 > **Quick plan brief.** Captures scope + constraints so we can grill→freeze→build it cleanly later. Sequencing
@@ -38,9 +38,9 @@ shaped. See [[BACKLOG]] "Install & portability layer".
      present.
   3. **Aim-each-folder** — power-user path: let the user target **each defined folder individually** (skills
      dir · planning dir · learn-feed dir · candidate-skills dir · state/`.kata` dir).
-- **Modular per-platform install components.** The install step is **pluggable**: PokeVault, **MindBridge**, and
-  **MindBridge Vault** each can ship their **own custom setup/install component**. MindBridge's ties into the
-  **install/config agents in Quick** (so MindBridge brings its own installer; the core just defines the
+- **Modular per-platform install components.** The install step is **pluggable**: PokeVault, **the work host**, and
+  **work vault** each can ship their **own custom setup/install component**. the work host's ties into the
+  **install/config agents in Quick** (so the work host brings its own installer; the core just defines the
   contract the installer satisfies). Core stays platform-agnostic; installers are adapters.
 - **Doc cordoning (explicit requirement).** The setup/install material is **cordoned into its own document**
   (e.g. `docs/SETUP.md` / `INSTALL.md`), **not** mixed into the main README/AGENTS narrative. The main docs
@@ -49,9 +49,9 @@ shaped. See [[BACKLOG]] "Install & portability layer".
 
 ## Modularity / key constraints
 - A **stable install contract** (what any installer must produce: discoverable skills + a valid workspace
-  binding) so PokeVault / MindBridge / a plain dir each satisfy it differently. This is spine #3 (agnostic via
+  binding) so PokeVault / the work host / a plain dir each satisfy it differently. This is spine #3 (agnostic via
   adapters) applied to *install*, not just to runtime.
-- Discovery is host-specific (Claude Code plugin or `.claude/skills/`; Quick/MindBridge via its own agents;
+- Discovery is host-specific (Claude Code plugin or `.claude/skills/`; Quick/the work host via its own agents;
   Kiro/Codex via their adapters) — overlaps the deferred "Plugin packaging" backlog item.
 - Never assume PokeVault. Absent any binding ⇒ the harness still runs in-repo (today's behavior, BC-style).
 
@@ -72,5 +72,5 @@ the install/portability layer **before** the self-dogfood, or **self-dogfood fir
 self-dogfood does *not* require it — KataHarness's own repo is its workspace.)
 
 ## Out of scope (for now)
-Full plugin-marketplace publishing; non-Obsidian vault formats; the MindBridge installer internals (MindBridge
+Full plugin-marketplace publishing; non-Obsidian vault formats; the the work host installer internals (the work host
 owns those — we own the contract).

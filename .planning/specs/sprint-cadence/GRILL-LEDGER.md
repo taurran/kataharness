@@ -307,8 +307,8 @@ it's enabled, so we know where to wire it in." Arose at GB6 (the D56 auto-contin
   CONSULT may never auto-resolve a LOCKED-decision conflict (D1 no-drift), C5 supersession/decay
   (D57/58/59), C6 audit every auto-resolution to the drift ledger.
 - **Backend binding (differentiator — user 2026-06-15):** ships with NO backend; agnostic CONSULT/LEARN
-  contract + `engram.backend` config. Pluggable: kiban / kagami / **MindBridge** / plain vault / custom.
-  **Clean-room (D30):** MindBridge binds *externally* and answers the contract → **zero AWS-internal IP
+  contract + `engram.backend` config. Pluggable: kiban / kagami / **the work host** / plain vault / custom.
+  **Clean-room (D30):** the work host binds *externally* and answers the contract → **zero AWS-internal IP
   imported into KataHarness**; public harness + AWS-internal second brain interoperate without coupling.
   "Bring your own cognitive fingerprint."
 - **Gating:** PokeVault installed (SATISFIED D58) + cognitive-fingerprint synthesis built (kata-engram, D9).

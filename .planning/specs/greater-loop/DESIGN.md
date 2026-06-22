@@ -63,7 +63,7 @@ a direct one-shot harness run behaves exactly as today (BC).
   ```
 - **Configure WHERE/ON WHAT it runs, interactively (GL-R3c — folds in install-portability).** The initiation
   session leads the user through **target + platform + workspace binding**: self · an existing repo · a vault
-  (link/scaffold PokeVault, point at your own, or aim each folder) · platform (Claude · MindBridge/Quick · Kiro).
+  (link/scaffold PokeVault, point at your own, or aim each folder) · platform (Claude · the work host/Quick · Kiro).
   This is the **install-portability config layer woven into initiation** — the heavier per-platform *installer
   mechanics* remain a sub-component the initiation session triggers (a platform brings its own installer +
   `AGENTS.md`).
@@ -87,7 +87,7 @@ a direct one-shot harness run behaves exactly as today (BC).
 ## 4. Modularity / `AGENTS.md` (GL-R1d)
 Each module is `modules/<name>/` with its **own `AGENTS.md`** + its skills, composed via the **nested-AGENTS.md
 rollup** `kata-orient` already supports — no new plumbing. The conductor depends only on the module **contracts**
-(`INTENT.md` in; report + decision out), so a platform (MindBridge) can **swap a module** and bring its own
+(`INTENT.md` in; report + decision out), so a platform (the work host) can **swap a module** and bring its own
 `AGENTS.md`/installer. Spine #3 (agnostic-via-adapters) applied to whole stages, not just tools.
 
 ## 5. Foundations (prerequisites — build FIRST, GL-R3a)

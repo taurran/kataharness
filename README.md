@@ -17,7 +17,7 @@ not a black box. The name is the method — the **Improvement Kata**: each loop 
 >
 > **Setting up / don't have a vault?** Install & workspace setup will live in its own cordoned doc
 > (`docs/SETUP.md`, in progress) — it lets you link [PokeVault], point at your own vault, or aim each folder
-> yourself, with modular per-platform installers (e.g. MindBridge). Scope: [`.planning/specs/install-portability/BRIEF.md`](./.planning/specs/install-portability/BRIEF.md).
+> yourself, with modular per-platform installers. Scope: [`.planning/specs/install-portability/BRIEF.md`](./.planning/specs/install-portability/BRIEF.md).
 > Until it ships, the harness runs in-repo.
 
 [PokeVault]: # "PokeVault — the reference vault/toolkit home (install link to be added)"

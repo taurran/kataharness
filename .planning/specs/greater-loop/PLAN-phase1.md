@@ -116,7 +116,7 @@ nested-AGENTS rollup that this module's AGENTS.md plugs into), and the skills it
      evaluate what the *actual goal* of the version-up is — the gap D88 names).
    - **Interactive target/platform/vault configuration** (GL-R3c): lead the user through target
      (`self | existing | greenfield`) · vault (link/scaffold PokeVault, point at own, or aim-each-folder) ·
-     platform (Claude | MindBridge/Quick | Kiro). Note: installer *mechanics* are deferred to Phase 5; this is the
+     platform (Claude | the work host/Quick | Kiro). Note: installer *mechanics* are deferred to Phase 5; this is the
      config layer only.
    - **Dual spec-to-ready control** (GL-R2b): drive `kata-grill` at the chosen depth; the user may say **"execute"
      at any time** (hard bail) OR the grill **self-judges readiness and proposes execute** (user confirms). Either

@@ -23,7 +23,7 @@ branch. Promoted to **D60–D69**. **Build after D16 — except β (the LEARN-on
 - **R4 (ML)** Learn across runs (skills + a second-brain fingerprint) under a **human gate**, conservatively —
   Hermes' closed loop, our default-FAIL + promotion gate.
 - **R5 (clean-room)** Everything emits through the agnostic engram CONSULT/LEARN contract so PokeVault *and*
-  MindBridge Loop consume identically (D30); zero IP coupling.
+  work loop consume identically (D30); zero IP coupling.
 
 ## 2. Where it lives (components / insertion points)
 | Path | Change | Responsibility |

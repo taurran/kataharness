@@ -3,7 +3,7 @@ date: 2026-06-19
 spec: multi-model-orchestration
 status: BRIEF — pre-grill, not frozen. A captured gap; the build needs its own grill → DESIGN → PLAN.
 order: 2 of 3 (future-gap sequence — the cross-tool/model layer; builds on install-portability)
-tags: [brief, future-gap, multi-model, adapters, acp, mindbridge, quick, orchestrator, handoff]
+tags: [brief, future-gap, multi-model, adapters, acp, quick, orchestrator, handoff]
 ---
 
 # Multi-Model & Cross-Tool Loop Orchestration
@@ -20,7 +20,7 @@ component*, and *where the orchestrator itself lives*.
 
 ## Scope / what it must do
 - **Host-located orchestrator.** The orchestrator runs **where the host dictates**:
-  - **MindBridge** ⇒ orchestrator runs in **Quick** (Quick-based executions via **ACP**).
+  - **the work host** ⇒ orchestrator runs in **Quick** (Quick-based executions via **ACP**).
   - **Kiro / Claude** ⇒ the orchestrator runs **there** — the harness must *know* its host and place the
     orchestrator accordingly (not hard-code one).
 - **Per-component model/tool routing.** Each loop component (grill · plan · execute · **evaluate** · **test** ·
@@ -33,7 +33,7 @@ component*, and *where the orchestrator itself lives*.
 
 ## Modularity / key constraints
 - **Adapters own host specifics**; the agnostic core only defines the contracts (where the orchestrator binds,
-  how a component is dispatched, the handoff/board/state schemas). MindBridge brings its **ACP/Quick** adapter;
+  how a component is dispatched, the handoff/board/state schemas). the work host brings its **ACP/Quick** adapter;
   Kiro/Codex bring theirs.
 - The orchestrator stays the **plan-guardian** regardless of where it runs (spine #1 — no drift). Sprint-blind
   orchestration (BC2) and the boundary router (D86) must survive cross-host placement.
@@ -56,5 +56,5 @@ component*, and *where the orchestrator itself lives*.
 - Realizes spine #3; supersedes/expands the v0.3 "adapters" roadmap milestone (Codex/Kiro + ACP/Quick).
 
 ## Out of scope (for now)
-Building any specific non-Claude adapter end-to-end; the MindBridge/Quick internals (MindBridge owns those);
+Building any specific non-Claude adapter end-to-end; the the work host/Quick internals (the work host owns those);
 true multimodal media pipelines (revisit as its own brief if needed).

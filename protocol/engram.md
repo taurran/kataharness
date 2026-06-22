@@ -40,7 +40,7 @@ adapter** binds a specific second brain to that contract:
 |---|---|---|
 | **kiban** (foundation/synthesis) | MCP / file export | the cognitive-twin base |
 | **kagami** (advanced/Socratic) | MCP | deeper twin |
-| **MindBridge** (user's AWS-internal second brain) | external MCP/API the user points at | **clean-room — see below** |
+| **external work/private second brain** (e.g. bound via an ACP/Quick host) | external MCP/API the user points at | **clean-room — see below** |
 | **plain vault** (PokeVault) | file read/write | minimal substrate |
 | **custom** | MCP conforming to the contract | open extension |
 
@@ -50,10 +50,10 @@ adapter** binds a specific second brain to that contract:
   accepts LEARN writes (store resolution). KataHarness speaks **only the contract** — it never reaches into a
   backend's internals.
 - **Clean-room (D30) — the load-bearing seam:** because the contract is agnostic and the backend binds
-  *externally*, pointing KataHarness at **MindBridge's** second brain imports **zero MindBridge/AWS-internal
-  IP into KataHarness** — MindBridge implements the backend side on its own infrastructure and merely answers
-  the contract. This is the documented `protocol/` extension point D30 promised: the public KataHarness and
-  the AWS-internal harness interoperate **without coupling or IP leakage**. The differentiator is "bring your
+  *externally*, pointing KataHarness at an **external/private second brain** imports **zero external IP into
+  KataHarness** — that backend implements its side on its own infrastructure and merely answers the contract.
+  This is the documented `protocol/` extension point D30 promised: the public KataHarness and any private/work
+  harness interoperate **without coupling or IP leakage**. The differentiator is "bring your
   own cognitive fingerprint" — the harness personalizes to whatever second brain you already run, rather than
   locking you into one.
 

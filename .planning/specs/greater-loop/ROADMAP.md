@@ -45,9 +45,9 @@ into the next; foundations parallelize.
 
 ## Phase 5 — EXTERNAL reach  *(deps: Phase 4 green)*
 - **install-portability (installer mechanics).** The modular per-platform installers + workspace binding beyond
-  the initiation config layer (PokeVault link / bring-your-own-vault scaffold / aim-each-folder; MindBridge
+  the initiation config layer (PokeVault link / bring-your-own-vault scaffold / aim-each-folder; the work host
   brings its own). Unlocks running on external targets / your vault. *(Config layer already in M1.)*
-- **multi-model-orchestration.** Host-located orchestrator (MindBridge→Quick/ACP · Kiro/Claude→there) +
+- **multi-model-orchestration.** Host-located orchestrator (the work host→Quick/ACP · Kiro/Claude→there) +
   per-component model/tool routing — including the **latent testing-model option** (route eval to another model
   if a real need shows). *Deps: install-portability.*
 
