@@ -256,12 +256,17 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   GRILL→…→EVALUATE on its own frozen sub-plan) rather than a single worker — **DAG-within-DAG**, recursive. Sub-loops
   run **concurrently** (each owning a disjoint file-subtree, its own default-FAIL gate intact), and the parent
   integrates only **green, independently-evaluated module artifacts** — two levels of parallelism = more parallel
-  surface area, the speed win. **The crux = the separability/cut-point decision** (disjoint ownership + no shared
-  LOCKED decisions + a clean inter-module interface contract); a bad cut yields coupled sub-loops that fight at
-  integration. **Open questions:** recurse-vs-flatten heuristic + overhead break-even (each sub-loop has fixed
-  grill/freeze/evaluate cost — only worth it for substantial modules; the [[#benchmark]] measures whether it actually
-  wins); cross-level escalation bubbling (a sub-loop's human-required surfaces to parent/human); hierarchical
-  ownership-disjointness invariant. **Survey prior art:** Hermes (recursive subagent trees) + Anthropic managed/
+  surface area, the speed win. **The load-bearing piece = a HARDENED separability test** — the thing that makes the
+  orchestrator *smarter*: it recurses **only when decomposition is a provable win**, never an overcomplication or
+  collision (handle more at once, at high judgment + high efficacy). Design it as a **conservative gate:
+  default-FLATTEN unless proven separable** (mirrors default-FAIL — burden of proof is on recursion). Criteria:
+  **transitive disjoint file-ownership** across the whole sub-tree (kata-graph-checkable → no collisions) · **no
+  shared LOCKED decisions** · a **clean declared inter-module interface** (the only coupling allowed) · module size
+  **above the overhead break-even** (small ⇒ flatten; the benchmark above sets the threshold) · module-level acyclic
+  deps. The cut is **checked by a fresh-context evaluator, not self-certified** (no-self-cert spine), with
+  **cross-level escalation bubbling** (a sub-loop's human-required surfaces to parent/human) and a future **engram
+  learning surface** (learn which cuts paid off). A bad cut yields coupled sub-loops that fight at integration — so
+  strictness is the whole game. **Survey prior art:** Hermes (recursive subagent trees) + Anthropic managed/
   orchestrator-worker + classical HTN/hierarchical planning. `kata-graph` could *propose* the module cut from the
   structural map. Research-grade → own BRIEF → grill → spec; post-v0.1. Composes with the loop-optimization benchmark
   above + [[multi-model-orchestration]] (sub-loops route to different models).
