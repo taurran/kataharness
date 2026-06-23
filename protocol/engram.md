@@ -96,6 +96,7 @@ clearly it is a human-decision/learning surface (HIGH must be wired; MED plausib
 | **E19** | `kata-sprint` re-entry routing `(planned)` | CONSULT | Learn continue / course-correct / change-cadence / abort routing (T3). | MED | GB4, T3 |
 | **E20** | G4 snowball "tweak-vs-re-scope" + E1→A capped approval loop `(planned)` | CONSULT + LEARN | The re-scope judgment when blast-radius exceeds the remaining roadmap footprint. | MED | GB3 G4 |
 | **E21** | `kata-handoff` "open decisions for the human" | LEARN | A handoff's parked open-decisions list is a learning surface. | LOW-MED | handoff SKILL |
+| **E22** | `kata-slop-check` SLOP-DETECTED verdict + fix-loop | LEARN (+ latent CONSULT) | Learn which slop classes the user accepts vs forces a fix; latent CONSULT pre-weights by the user's tolerance. A SLOP-DETECTED verdict is a default-FAIL EVALUATE gate finding. | MED | kata-slop-check, D41/GB8 |
 
 **Substrate dependency (not a seam):** `kata-understand` / research-mode emit into PokeVault (D54/D55/D58);
 that vault is what a vault-style backend READS FROM. It is upstream of the contract, not a CONSULT/LEARN
