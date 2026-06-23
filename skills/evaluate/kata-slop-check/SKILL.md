@@ -40,9 +40,9 @@ Remediation belongs to the producing agent or the orchestrator's fix loop.
   modules. If absent, this skill is a **silent no-op** (zero invocation cost; do not run it, do not
   report it).
 - **Seam pointers for escalation (never self-remediate):**
-  - Unresolvable contradictions between plan and output → [`kata-diagnose`](../../cognition/kata-diagnose/SKILL.md)
-  - Session coherence collapse (context window poisoning, identity drift) → [`kata-selfhandoff`](../../handoff/kata-selfhandoff/SKILL.md)
-  - General quality findings unrelated to slop → [`kata-review`](../kata-review/SKILL.md)
+  - Unresolvable contradictions between plan and output → [[kata-diagnose]]
+  - Session coherence collapse (context window poisoning, identity drift) → [[kata-selfhandoff]]
+  - General quality findings unrelated to slop → [[kata-review]]
 
 ---
 
