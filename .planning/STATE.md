@@ -1,14 +1,14 @@
 # STATE — KataHarness
 
-> **CURRENT (2026-06-22, WS-2 PROVEN + `kata-slop-check` shipped — `ece872e`):** Built **`kata-slop-check`** (optional
+> **CURRENT (2026-06-22, WS-2 EXERCISED + `kata-slop-check` shipped — `ece872e`):** Built **`kata-slop-check`** (optional
 > EVALUATE module `kata/module/slop`: fresh-context no-write, default-FAIL slop verdict, **in-context heuristics** —
 > general G1–G6 + 3 MIT-attributed checks adopted from `ai-slop-detector`, no code copied) via a **real version-up
-> dogfood** that doubled as the **WS-2 validation**. A fresh-context auditor graded the run **7/7**: genuine 3-worker
+> dogfood** that doubled as the **WS-2 validation**. A fresh-context auditor graded the run **7/7**: 3-worker
 > concurrency → a **live `research-needed` escalation** → orchestrator **parked the sub-tree** (S1+S4+S5) while S2/S3
-> integrated → **`kata-research`** grounded the gap → **grounding gate independently re-verified MIT** (GROUND×6) →
-> **superseding re-plan** fold → frontier recompute → **mutation-proven** code slice. The feature **caught a defect in
+> integrated → **`kata-research`** grounded the gap → **grounding gate GROUND×6** → **superseding re-plan** fold →
+> frontier recompute → **mutation-proven** slice. The feature **caught a defect in
 > its own build** (dangling seam pointer → NEEDS_WORK → fixed → CLEAN). **Parallelism + the in-loop RS path
-> (audit-flagged "unexercised") are now proven end-to-end.** Feature gate `kata-evaluate` **PASS**; pytest **447**,
+> (audit-flagged "unexercised") are now exercised end-to-end (n=1).** Feature gate `kata-evaluate` **PASS**; pytest **447**,
 > validator **36/0**. **Caveat:** board timestamps are orchestrator-written (live-vs-replay not artifact-distinguishable)
 > → follow-up = **worker self-timestamping** (BACKLOG). Record: `specs/kata-slop-check/PLAN.md` +
 > `specs/ws2-loop-autonomy/AUDIT.md`; audit trail `.kata/board.md`. Backout `pre-ws2-slopcheck`. **NEXT:** **WS-3**

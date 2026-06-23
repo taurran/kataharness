@@ -179,19 +179,19 @@ approved.
 
 ---
 
-## 7. Validation result (2026-06-22, D94) — the deficit is closed for parallelism + RS
+## 7. Validation result (2026-06-22, D94) — parallelism + RS exercised end-to-end (deficit n=1→n=2; not yet automated-test-proven)
 
 The audit's two headline deficits were **(a)** parallelism exercised once with no test, and **(b)** the in-loop
 RS research path never exercised. Both were addressed by building a real feature (`kata-slop-check`) as the
 validation vehicle — a 5-slice version-up dogfood with a genuine `research-needed` escalation. A **fresh-context,
 no-write auditor graded the run 7/7** from `.kata/board.md` + git history:
 
-1. **Concurrency real** — 3 workers (S1/S2/S3) genuinely concurrent in wave 1. ✅
+1. **Concurrency** — 3 workers (S1/S2/S3) concurrent in wave 1 (recorded; see live-vs-replay caveat below). ✅
 2. **Park-a-sub-tree** — S1's escalation parked S1+S4+S5 while S2/S3 integrated. ✅ *(the branch dogfood #2
    never hit.)*
 3. **Frontier recompute** — S4 dispatched after S1; S5 after S1+S3. ✅
 4. **RS path end-to-end** — `research-needed` → `kata-research` (fresh-context no-write) → grounding gate
-   (independently re-verified MIT) → GROUND×6 → superseding re-plan fold. ✅ *(first ever live exercise.)*
+   → GROUND×6 (MIT re-confirmed) → superseding re-plan fold. ✅ *(first ever live exercise.)*
 5. **Completion-ordered integration** — linear merge history. ✅
 6. **Mutation proof** — code-bearing slice S4 non-vacuous. ✅
 7. **No drift** — every slice touched only its owned files. ✅

@@ -240,3 +240,13 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
 - **Skill efficiency refactors** (`.planning/SKILL-COST-RATINGS.md`) — grill L8-narrative + convergence
   checklist → `resources/` (~30% lighter); orchestrate worker-prompt → `protocol/`; tdd supporting-depth → pointer.
   Fold the grill one into Spec A (we restructure grill for tiering anyway).
+- **★★ FINAL-PHASE — Deep loop optimization + an agentic-loop benchmark module (mid/long-term, user 2026-06-22).**
+  Do **near the end** of building KataHarness, once the feature set is implemented: **tune the loop** for **context
+  economy AND speed/latency** (not just token cost). Build a **`kata-loop-benchmark` development module** that runs
+  the loop on a **fixed reference task** (same content each time) and scores the output on **accuracy · quality ·
+  speed** — a repeatable harness to measure tuning gains. Survey GitHub for an existing **agentic-loop / AI-process
+  optimization benchmark**; adopt or borrow pieces (license + `source:` per D12). **Goal:** offset KataHarness's
+  rigor with **speed** so output is balanced — *more controlled than Hermes (including the learning portions) at
+  similar performance*, but with our controlled, high-quality output. Sequenced **after** WS-3/4/5 + Phase-5
+  EXTERNAL. Ties to: WS-2 worker-self-timestamping (real timing data feeds the benchmark), the [[testing-model]]
+  brief, and [[multi-model-orchestration]] (per-component model/speed routing).
