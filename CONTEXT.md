@@ -244,3 +244,17 @@ A run that **introduces or changes executable logic** (derived from changed-file
 runs; pure docs/config runs are exempt. The flag makes that "is this code?" call evidence-driven, not the
 evaluator's opinion. _Caveat:_ the extension set is conservative ⇒ `false` means "probably not code-bearing per the
 heuristic," not "definitely not." _Avoid_: treating `codeBearing:false` as a guarantee on out-of-set languages.
+
+**kata-slop-check / `kata/module/slop`** (D94, 2026-06-22):
+An **optional EVALUATE-phase module** — a fresh-context, **no-write** check that grades a run for **AI-slop /
+spiraling-session** signals (general checks G1–G6 + 3 MIT-attributed checks adopted from `ai-slop-detector`,
+re-implemented as in-context heuristics, no Python). **Default-FAIL:** `SLOP-DETECTED ⇒ NEEDS_WORK`, never
+advisory. **Off by default**; dispatched alongside `kata-evaluate` only when `kata/module/slop` is in the run's
+modules (silent no-op otherwise). Built via the WS-2 version-up dogfood that also **exercised** rolling-frontier
+parallelism + the in-loop RS research path (D94).
+
+**exercised vs proven** (honesty convention, 2026-06-22):
+A capability run live **once** end-to-end = **"exercised" (n=1)**, not **"proven"** — the latter implies an
+automated regression test. WS-2's parallelism + RS path are *exercised*, not *proven* (board timestamps are
+orchestrator-written → can't distinguish live from replay). Calling exercised work "proven/genuine" is itself an
+**inflation** slop signal (the very thing `kata-slop-check` catches) — keep the words honest.

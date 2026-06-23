@@ -1,16 +1,17 @@
 ---
-date: 2026-06-21 (loop-hardening COMPLETE — all 7 gaps; G6 PROVEN; + WS-1 separation done; next = operator's 5 workstreams)
-branch: master — private remote github.com/taurran/kataharness, tip 42e884b (PUSH PENDING — push at session end)
-green: validator 35 skills / 0 errors · pytest 445 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
-tags: pre-s1 · pre-s1.5 · pre-s2 · pre-s3a · pre-s3b · v0.1.0-alpha.1 · v0.1.0-alpha.2 · v0.1.0-alpha.3 · loop-hardening-complete
+date: 2026-06-22 (WS-1 ✅ + WS-2 ✅ — kata-slop-check shipped, WS-2 exercised end-to-end n=1; next = WS-3 user-friendliness)
+branch: master — private remote github.com/taurran/kataharness, tip b9ca7b1 (PUSHED)
+green: validator 36 skills / 0 errors · pytest 447 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
+tags: pre-ws2-slopcheck · v0.1.0-alpha.3 · loop-hardening-complete (earlier: pre-s1/1.5/2/3a/3b · v0.1.0-alpha.1/.2/.3)
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
-# HANDOFF — KataHarness — 2026-06-21 (loop-hardening COMPLETE · 7/7 gaps · next = backlog hardening → Phase 5 EXTERNAL)
+# HANDOFF — KataHarness — 2026-06-22 (WS-1 + WS-2 DONE · kata-slop-check shipped · next = WS-3 user-friendliness)
 
-> **✅ loop-hardening is DONE — the Kata Loop is "vetted, and demonstrably loops" (G6 proven, S3b).** Fresh/compacted
-> session: read §1 in order, confirm green (§2), resume at §4 (the next milestone). Everything below is durable +
-> committed + **pushed**. Maps to `kata-orient` tiers: §1 → CONTEXT · §2+§4 → VOLATILE · §6 → human-required.
+> **✅ loop-hardening DONE (G6 proven) · WS-1 separation DONE · WS-2 DONE — `kata-slop-check` shipped + parallelism /
+> in-loop-RS exercised end-to-end (n=1, D94).** Fresh/compacted session: read §1, confirm green (§2), resume at §4
+> (**NEXT = WS-3**). Everything below is durable + committed + **pushed** (tip `b9ca7b1`). Maps to `kata-orient`
+> tiers: §1 → CONTEXT · §2+§4 → VOLATILE · §6 → human-required.
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
 1. `AGENTS.md` (spine + conventions; the **"The Kata Loop"** entry) · 2. `docs/STANDARDS.md` §1 (frontmatter —
@@ -23,7 +24,7 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 ⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated, harness-injected).
 
 ## 2. State *(orientation: VOLATILE)*
-- Branch `master`, tip `42e884b` (loop-hardening DONE + WS-1 separation; **push pending** — see end of §4). **35 skills / 0 errors · pytest 445 · Snyk med+ 0.**
+- Branch `master`, tip `b9ca7b1` (**pushed**; loop-hardening + WS-1 + WS-2 done). **36 skills / 0 errors · pytest 447 · Snyk med+ 0.**
   Confirm: `cd tools && uv run pytest -q && uv run python validate_skills.py`. **Windows gotcha:** git-bash mangles
   `/tmp/...` args to native python — use `C:/...` paths, a `.kata`-relative path, or `MSYS_NO_PATHCONV=1`. Also: a
   `..` segment in any operator-supplied path is rejected by the `_safe_path` guards by design (CWE-23) — use
@@ -58,8 +59,21 @@ authored-for: kata-orient (sections map to the three orientation tiers)
   (active + frozen specs); replaced with indirect terms. **`Quick` is KEPT** as the named **ACP-host target / plumbing
   seam** (+ pointers, so the future plumb-in is low-friction); **Codex added** to the platform enum (`claude | codex |
   kiro | quick | other`). Kiro kept (public Amazon product). Policy A (skills @ 0.1.0).
-- **⏸ Operator notes captured as 5 workstreams (`f5f33eb`, `.planning/BACKLOG.md` top) — these are the new priorities,
-  see §4.** WS-1 done; WS-2 (autonomy + parallelism + Hermes), WS-3 (UX), WS-4 (backout), WS-5 (transparency) open.
+- **✅ WS-2 done (`d01cc11`, D94) — `kata-slop-check` shipped + parallelism/in-loop-RS exercised end-to-end.** A real
+  version-up dogfood built **`kata-slop-check`** (optional EVALUATE module `kata/module/slop`: fresh-context no-write,
+  default-FAIL slop verdict, in-context heuristics — general G1–G6 + 3 MIT-attributed checks from `ai-slop-detector`)
+  AND served as the WS-2 validation: a fresh-context auditor graded it **7/7** (genuine wave-1 concurrency · a live
+  `research-needed` escalation → park-sub-tree → `kata-research` grounded it → grounding gate → superseding re-plan →
+  frontier recompute · mutation-proven code slice). The feature **caught a defect in its own build** (→ NEEDS_WORK →
+  fixed → CLEAN). An **adversarial pass** confirmed SHIP (no errors) but flagged the writeup overclaimed — **de-inflated**
+  "proven/genuine" → "exercised end-to-end (n=1)". Honest gap: board timestamps are orchestrator-written (live-vs-replay
+  not artifact-distinguishable) → follow-up = **worker self-timestamping**. Record: `specs/kata-slop-check/PLAN.md` +
+  `specs/ws2-loop-autonomy/AUDIT.md`. Backout tag `pre-ws2-slopcheck`.
+- **⏸ Remaining operator workstreams (`.planning/BACKLOG.md` top):** WS-1 ✅ · WS-2 ✅; **WS-3 (UX — the big pre-public
+  one) · WS-4 (backout) · WS-5 (transparency) OPEN** — see §4. Plus **two new far-future optimization items** (user
+  2026-06-22, BACKLOG end): a loop-tuning + **agentic-loop benchmark** module (context economy + speed), and
+  **recursive parallelism ("DAG-within-DAG" nested sub-loops)** gated on a hardened **separability test** (default-flatten,
+  checked-not-self-certified) — the "smarter orchestrator." Sequenced after WS-3/4/5 + Phase 5.
 
 ## 3. The verified gaps loop-hardening closes *(orientation: CONTEXT — grounded in the Phase-4 dogfood accounting)*
 | Gap | Verified-broken evidence | Closed by |
@@ -79,14 +93,13 @@ near-term agenda. Status + the operator's own words:
 1. **WS-1 — Separation / IP hygiene. ✅ DONE (`42e884b`).** Work-project proper-noun scrubbed from every surface;
    **Quick kept** as the named ACP-host / plumbing seam (+ pointers); **Codex added** to the platform enum. A final
    **public-sanitization re-grep** remains as a pre-launch checklist item (BACKLOG WS-1).
-2. **WS-2 — Validate the INNER (harness) loop's autonomy + parallelism (RECOMMENDED NEXT).** The operator is **not
-   confident** the harness loop runs autonomously for long. Two honest truths to confront: (a) **parallelism is
-   shallow so far** — S3b's cycles were *single*-worker, so concurrent multi-worker + lateral board comms is built
-   but **unexercised/unvalidated**; (b) **"learn between loops" is NOT happening** — the β LEARN feed is emit-only
-   (D74) and engram CONSULT is gated off (D9/D56), so internal cross-iteration learning is absent **by design**.
-   Deliverable: an **honest audit + a real validation harness** of (i) subagent/orchestrator/lateral-comms use vs
-   Anthropic's long-running-agent best practice, (ii) "are we better than Hermes," (iii) long autonomous in-loop
-   running with internal research (RS) + self-grade/QC. **Research Hermes** here (serves WS-3 too).
+2. **WS-2 — Validate the INNER loop's autonomy + parallelism. ✅ DONE (`d01cc11`, D94).** An audit + a real validation
+   dogfood (`kata-slop-check`): **parallelism (rolling frontier) + the in-loop RS research path are now exercised
+   end-to-end** (7/7 fresh-context grade — live escalation → `kata-research` → grounding gate → superseding re-plan).
+   Confronted honestly: **"learn between loops" is still NOT happening by design** (β emit-only D74; engram CONSULT
+   gated D9/D56) — WS-2 proved *in-loop research*, not *learning*. **Hermes comparison done** (`AUDIT.md` §4: we lead
+   on rigor — default-FAIL, no-self-cert, no-drift; behind on lived autonomy + UX). **Open WS-2 polish:** worker
+   self-timestamping so concurrency is provable from artifacts, not just the orchestrator-written board.
 3. **WS-3 — User-friendliness, front-to-end (the big one; must precede public).** Persona/voice (context md **+**
    in-skill); **human-readable decision tree** spoken in **modes** (infer behavior, hide machinery); **goal-centric
    intake** (system-prompt + brainstorm + research + grill → true-to-user goal); **in-loop narration** of *what the
@@ -98,8 +111,11 @@ near-term agenda. Status + the operator's own words:
 5. **WS-5 — Change transparency at closeout** (the acute miss this session): every closeout **leads with plain-language
    "what changed + why it matters to you"** before any machinery. Folds into WS-3's closeout.
 
-**Recommended order:** WS-2 (audit + Hermes research — diagnostic, shapes WS-3) → WS-3+4+5 (the UX/safety/transparency
-push, brainstormed into a spec). Small carry-along: the `codeBearing` doc-fix the adversarial review recommended
+**Recommended order (NEXT = WS-3):** WS-3 + WS-4 + WS-5 — the UX/safety/transparency push (brainstorm → spec → build;
+the **Hermes UX research** in `AUDIT.md` §4 + `kata-slop-check`'s closeout-by-topic idea feed it). **Far-future
+(BACKLOG end, user 2026-06-22):** loop-tuning + an **agentic-loop benchmark** (context economy + speed) → **recursive
+parallelism (DAG-within-DAG)** gated on a hardened separability test — both **after** WS-3/4/5 + Phase 5; the benchmark
+sequences first (it measures whether each recursive cut actually wins). Small carry-along: the `codeBearing` doc-fix the adversarial review recommended
 (note in `footprint.py` + a DECISIONS line that `codeBearing:false` = "probably not code-bearing per the extension
 heuristic, not definitely") — fold into whatever touches that area. The older agenda (`_safe_path` guard-consistency
 nit · planning↔delivery alignment · **Phase 5 EXTERNAL** install-portability/multi-model · v0.1 release-checklist =
@@ -130,10 +146,13 @@ The **vetted, never-inline** loop (memory `exercise-harness-for-real`). S3b uses
 Model routing: **judgment/eval = Opus** (Fable 5 has been unavailable), **workers = Sonnet**. Supersede-never-rewrite.
 
 ## 6. Open decisions for the human *(orientation: human-required)*
-- **S3b is operator-driven:** the `kata-initiate` interview answers (both cycles) + the **"run again (version-up)"
-  version-select** at Cycle-1 closeout are yours — do not simulate them. Confirm/choose the two cycle targets at Step 0.
-- **S3b must include a real loop-back** (your explicit requirement) — do not collapse it to a single cycle.
-- Future: v0.1 release-checklist (flip Policy A → bump-on-modify) after loop-hardening + Phase 5 prove out.
+- **WS-3 needs the operator's UX taste** — persona/voice direction, the mode-oriented human-readable decision tree,
+  and the goal-anchored closeout style. Use Hermes UX (AUDIT.md §4) as a reference, but the voice is the operator's call.
+- **Platform targets are settled (user 2026-06-22):** **Kiro AND Quick both stay compatible — do NOT gate either**;
+  the work-internal project's proper name must **never** appear on any surface. For Quick, the orchestrator lives inside
+  Quick and ACP drives the per-task coding with file handoff (capture in `multi-model-orchestration` when built).
+- **Pre-launch:** the public-sanitization re-grep (WS-1 tail) is still owed before going public.
+- Future: v0.1 release-checklist (flip Policy A → bump-on-modify) after WS-3/4/5 + Phase 5 prove out.
 
 ## 7. Redaction
 No secrets / keys / PII in any artifact this session. Repo is PRIVATE. Nothing to redact.
