@@ -94,6 +94,16 @@ self-handoff/refresh threshold** (`kata-selfhandoff`) — same primitive, two po
 - **B1 (D83):** the one-shot self-handoff/refresh threshold changes from D8's user-set % → this model-resolved
   prime-frame fraction. **D8's principles survive** (anti-over-conservative; task-boundary-preferred).
 
+## Optional modules
+
+Optional modules are à-la-carte additions to the `modules` array in `kata.config`. Each module has a
+**provider skill** and is **off by default unless noted** (opt-in, control-first, GB6). A module key in
+`modules` with no matching provider ⇒ `kata-orchestrate` load-guard STOP + escalate (fail-closed, D45).
+
+| Module key | Provider skill | Default | Description |
+|---|---|---|---|
+| `kata/module/slop` | `kata-slop-check` | **off** (opt-in) | AI-slop / spiraling-session detection; dispatched in EVALUATE alongside kata-evaluate; a SLOP-DETECTED verdict is default-FAIL. |
+
 ## Notes
 - Tier resolution: `kata-orchestrate` maps a bare family reference (`[[kata-grill]]`) → `tiers["kata-grill"]`
   → e.g. `kata-grill-standard` (D26). `tiers["kata-grill"] == "skip"` ⇒ no grill dispatch + engage the floor

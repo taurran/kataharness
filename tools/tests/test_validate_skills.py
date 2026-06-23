@@ -454,6 +454,25 @@ def test_nit2_real_tree_evaluator_skills_pass():
     assert findings == [], f"real evaluator skills must pass the no-write contract; got {findings}"
 
 
+# ── kata-slop-check: no-write evaluator registration ─────────────────────────
+
+def test_kata_slop_check_is_in_no_write_evaluators():
+    """kata-slop-check must be in NO_WRITE_EVALUATORS (S4 / kata-slop-check v0.1)."""
+    assert "kata-slop-check" in v.NO_WRITE_EVALUATORS, (
+        "kata-slop-check must be registered in NO_WRITE_EVALUATORS (fresh-context no-write contract)"
+    )
+
+
+def test_kata_slop_check_with_write_in_allowed_tools_is_an_error(tmp_path):
+    """check_evaluator_no_write must flag a hypothetical kata-slop-check skill carrying Write."""
+    skill = _make_skill("kata-slop-check", "evaluate", ["Read", "Grep", "Glob", "Bash", "Write"], tmp_path)
+    findings = v.check_evaluator_no_write([skill])
+    assert any(
+        f.level == "ERROR" and "Write" in f.msg
+        for f in findings
+    ), f"expected ERROR for kata-slop-check with Write in allowed-tools; got {findings}"
+
+
 def test_i1_intent_md_missing_required_term_errors(tmp_path, monkeypatch):
     """(c) check_protocol_schemas emits an ERROR when a fixture intent.md is missing a required term."""
     # Patch PROTOCOL_DIR and add intent.md to REQUIRED_PROTOCOL for this test

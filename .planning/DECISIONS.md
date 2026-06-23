@@ -681,3 +681,24 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   PLAN-s3b predicted), and we did not manufacture one; it stays unit-proven. **All 7 loop-hardening gaps (G1–G7)
   are closed** — the Kata Loop is now "vetted, and demonstrably loops." pytest 445, validator 35/0, Snyk 0.
   *Provenance:* operator-driven S3b session 2026-06-21; record `specs/loop-hardening/{PLAN-s3b,REPORT-s3b}.md`.
+
+- **D94 — WS-2 PROVEN (rolling-frontier parallelism + the in-loop RS research path, live-exercised) — and the
+  `kata-slop-check` quality module shipped, both via one version-up dogfood.** (2026-06-22.) The WS-2 audit
+  (`specs/ws2-loop-autonomy/AUDIT.md`) found concurrency well-designed but exercised once (dogfood #2, n=1) with
+  **no automated test**, and in-loop learning/research autonomy largely **unwired**. Operator chose **in-context
+  grading (zero new Python)** and to **wire the in-loop RS researcher now**. Vehicle = a real selected feature:
+  **`kata-slop-check`** — standalone optional EVALUATE module (`kata/module/slop`), fresh-context no-write,
+  default-FAIL slop verdict, **in-context heuristics** (general G1–G6 + 3 checks adopted from the MIT-licensed
+  `ai-slop-detector`, attributed + re-implemented, no code copied). The 5-slice disjoint DAG carried a **genuine
+  `research-needed` escalation** on S1 (which external checks + license). A fresh-context auditor graded the run
+  **7/7**: 3 workers genuinely concurrent → S1 escalated → orchestrator **parked S1+S4+S5** while S2/S3 integrated
+  → **`kata-research`** (fresh-context no-write) grounded the gap → **grounding gate independently re-verified MIT**
+  (GROUND×6, `.kata/grounding.json`) → **superseding re-plan** folded the 3 checks → frontier recomputed (S4 after
+  S1; S5 after S1+S3) → **mutation-proven** code-bearing slice S4. The feature **smoke-tested itself**: run on its
+  own build it caught a real dangling seam-pointer (SLOP-DETECTED→NEEDS_WORK), forced the fix, re-ran **CLEAN**.
+  Feature gate `kata-evaluate` **PASS**. **So the parallelism + in-loop RS path the audit flagged "unexercised" are
+  now exercised end-to-end.** pytest **447**, validator **36/0**. **Honest caveat:** the durable `board.md`
+  timestamps are orchestrator-written, so they can't by themselves distinguish *live* concurrency from a faithful
+  replay — the genuine evidence was subagent wall-clock overlap; follow-up = **worker self-stamped start/end**
+  (BACKLOG). Record: `specs/kata-slop-check/PLAN.md`, `specs/ws2-loop-autonomy/AUDIT.md`, `.kata/board.md`. Backout
+  tag `pre-ws2-slopcheck`.

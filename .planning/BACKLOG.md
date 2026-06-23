@@ -20,6 +20,11 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   internal work host; flag if it should also be gated.)*
 
 - **WS-2 — Validate the INNER (harness) loop's autonomy + parallelism (the operator's confidence gap).**
+  **[STATUS 2026-06-22 (D94): rolling-frontier PARALLELISM + the in-loop RS RESEARCH PATH are now LIVE-PROVEN 7/7
+  via the `kata-slop-check` version-up dogfood (`specs/kata-slop-check/PLAN.md` + `specs/ws2-loop-autonomy/AUDIT.md`).
+  Still deferred BY DESIGN: in-loop LEARN-between-iterations (β emit-only, D74) + engram CONSULT (D9/D56). Open
+  follow-up: worker self-timestamping so concurrency is provable from artifacts alone (board timestamps are
+  orchestrator-written → can't distinguish live vs replay).]**
   The operator is NOT confident the harness loop genuinely runs autonomously for long stretches. Validate, with
   evidence: **(a) parallelism** — are we using subagents properly? Is the orchestrator actually running concurrent
   workers that check/communicate laterally (board), per Anthropic's long-running-agent best practice — and is it
@@ -173,7 +178,11 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   (egress surface). **When β goes runtime** (the dogfood/ε arc), add an **automated redaction filter** the emit
   path must pass + a **pytest seam** that proves a secret/PII-bearing page is blocked. Until then the guarantee
   rests on agent obedience. *(Security-domain priority before any real second-brain backend is bound.)*
-- **AI-slop / spiraling-session detection in the review process (user 2026-06-18)** — ingest the OSS
+- **AI-slop / spiraling-session detection — ✅ BUILT 2026-06-22 (D94) as `kata-slop-check`** (standalone optional
+  module `kata/module/slop`; general checks G1–G6 + 3 MIT-attributed checks from ai-slop-detector; fresh-context
+  no-write; default-FAIL `SLOP-DETECTED ⇒ NEEDS_WORK`; dispatched in EVALUATE alongside `kata-evaluate`). The design
+  fork below (**embed in `kata-review` vs separate skill**) was RESOLVED → **separate skill**. Original note kept for
+  provenance:* ingest the OSS
   **ai-slop-detector** (`https://github.com/flamehaven01/ai-slop-detector`) and **deep-eval which of its checks
   to adopt** to catch **spiraling agents / degraded sessions / AI-slop output** — a common, real risk in
   long-running loops. **Design decision to make:** *embed* the adopted checks into `kata-review` (a new
