@@ -250,3 +250,18 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   similar performance*, but with our controlled, high-quality output. Sequenced **after** WS-3/4/5 + Phase-5
   EXTERNAL. Ties to: WS-2 worker-self-timestamping (real timing data feeds the benchmark), the [[testing-model]]
   brief, and [[multi-model-orchestration]] (per-component model/speed routing).
+- **★★ FINAL-PHASE — Recursive parallelism: "DAG within DAG" (advanced orchestration research, user 2026-06-22).**
+  Today `kata-orchestrate` is **flat**: one orchestrator → leaf workers over a single frontier. Investigate letting
+  the orchestrator, when it detects a **truly separable module**, spawn a **nested sub-loop** (a full Harness
+  GRILL→…→EVALUATE on its own frozen sub-plan) rather than a single worker — **DAG-within-DAG**, recursive. Sub-loops
+  run **concurrently** (each owning a disjoint file-subtree, its own default-FAIL gate intact), and the parent
+  integrates only **green, independently-evaluated module artifacts** — two levels of parallelism = more parallel
+  surface area, the speed win. **The crux = the separability/cut-point decision** (disjoint ownership + no shared
+  LOCKED decisions + a clean inter-module interface contract); a bad cut yields coupled sub-loops that fight at
+  integration. **Open questions:** recurse-vs-flatten heuristic + overhead break-even (each sub-loop has fixed
+  grill/freeze/evaluate cost — only worth it for substantial modules; the [[#benchmark]] measures whether it actually
+  wins); cross-level escalation bubbling (a sub-loop's human-required surfaces to parent/human); hierarchical
+  ownership-disjointness invariant. **Survey prior art:** Hermes (recursive subagent trees) + Anthropic managed/
+  orchestrator-worker + classical HTN/hierarchical planning. `kata-graph` could *propose* the module cut from the
+  structural map. Research-grade → own BRIEF → grill → spec; post-v0.1. Composes with the loop-optimization benchmark
+  above + [[multi-model-orchestration]] (sub-loops route to different models).
