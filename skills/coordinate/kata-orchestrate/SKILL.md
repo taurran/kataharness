@@ -161,6 +161,10 @@ After the frontier drains (all tasks integrated), on the integration branch:
    low-grill run, point it at the priming prompt as the frozen spec and at any [[kata-defer]] `ASSUMPTIONS.md`,
    so the autonomous floor's assumption log is graded for prompt-contradiction (rubric item 8) — not just asserted.
    Point it at `.kata/` so it reads the emitted artifacts directly.
+   **If `kata/module/slop` is configured** (`protocol/config.md`), also dispatch [[kata-slop-check]] as a
+   fresh-context, no-write check **alongside** [[kata-evaluate]] (concurrent). A `SLOP-DETECTED` verdict is
+   **default-FAIL** (treated as NEEDS_WORK) — never advisory-only. When `kata/module/slop` is absent this is a
+   silent no-op (the module degrades gracefully, like every optional module).
 4. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
 5. Commit; if a handoff is needed, [[kata-handoff]].
 
