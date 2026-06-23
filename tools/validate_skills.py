@@ -137,7 +137,7 @@ def check_cost_weight(skills: list[Skill]) -> list[Finding]:
 
 
 # The two no-write graders (L4 / STANDARDS §1): fresh-context evaluators that must never author artifacts.
-NO_WRITE_EVALUATORS: frozenset[str] = frozenset({"kata-evaluate", "kata-research"})
+NO_WRITE_EVALUATORS: frozenset[str] = frozenset({"kata-evaluate", "kata-research", "kata-slop-check"})
 
 
 @check
