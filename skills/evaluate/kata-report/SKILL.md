@@ -134,8 +134,9 @@ Example: `"Two-tier closeout report — 2026-06-24"`
 Two parts consumed by the template:
 - **Text:** the `kata-evaluate` verdict string verbatim from `.kata/RESULT.json` (`PASS`, `PARTIAL`, or
   `NEEDS_WORK`).
-- **State class:** one of `verdict-pass` / `verdict-partial` / `verdict-needs-work` — used by the
-  template's inline CSS to color the badge (green / amber / terracotta per the brand system).
+- **State class:** one of `badge--pass` / `badge--partial` / `badge--needs-work` — the exact classes the
+  template's inline CSS defines (kata-closeout emits `<span class="badge badge--{STATE}">`, STATE ∈
+  `pass`/`partial`/`needs-work`), coloring the badge green / amber / terracotta per the brand system.
 
 Source: `.kata/RESULT.json` → field `verdict`. Never re-derived; always quoted from the artifact.
 
