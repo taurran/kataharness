@@ -174,10 +174,18 @@ verbatim; adds the plain-language reading for a non-expert. Source: `.kata/RESUL
 
 ### `{{RISKS}}`
 
-A plain-language bullet list of risks and uncertainties. Drawn from the run evidence — what is not fully
-certain, what is exercised-not-proven, what could bite. In the honesty register of `protocol/persona.md`:
-"exercised, not proven" is never upgraded. Typically 3–5 bullets; link to the full evaluation report for
-detail.
+Risks and uncertainties — what is not fully certain, what is exercised-not-proven, what could bite. In the
+honesty register of `protocol/persona.md`: "exercised, not proven" is never upgraded. Typically 3–5 items.
+
+**Render each as a warning tile** (the template defines `.tile--warning`, ochre) so the section is scannable:
+
+```html
+<div class="tile tile--warning"><div class="tile-label">Watch</div><p>{the risk, plain language}</p></div>
+```
+
+For any **critical error / NEEDS_WORK** item, use `<div class="tile tile--error">…</div>` (rust) instead so it
+stands out. A plain `<ul>` is an accepted fallback, but tiles are the standing design — they break the report
+up and make it easy to read.
 
 ### `{{EVIDENCE}}`
 
@@ -204,6 +212,9 @@ Two elements:
 A PLAN may additionally have set a convenience tag (e.g. `pre-<run>`), but the **guaranteed** anchor is
 the emitted baseline SHA. The backout is destructive; it executes only on explicit human approval. Never
 auto-run. This surfaces the L9 option foregrounded for a dissatisfied operator.
+
+The template wraps this content in a **fixed error tile** (`.tile--error`, rust) — provide only the
+plain-language sentence + the `<code>command</code>`, not the wrapping `<div>`.
 
 ### `{{GATE_NUMBERS}}`
 
