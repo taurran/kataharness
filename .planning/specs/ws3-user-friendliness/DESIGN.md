@@ -1,6 +1,6 @@
 ---
 title: "WS-3 — User-friendliness (front-to-end UX): frozen DESIGN"
-status: DESIGN — freeze-gate kata-review returned HOLD; MF-1/MF-2/SF-1..4 fixes folded 2026-06-24; re-confirm pending before FROZEN/PLAN
+status: FROZEN 2026-06-24 — freeze-gate kata-review HOLD→SHIP (MF-1/MF-2/SF-1..4 folded; fresh re-confirm = SHIP, no new defects); operator review done. PLAN next.
 date: 2026-06-24
 scope: project
 supersedes-framing: >-
@@ -205,7 +205,8 @@ offered `git` rollback (human-gated) and slice D's writing of *existing* `kata.c
 - **Config wiring → reuse, no new field.** The moderate register is a static default in `protocol/persona.md`;
   adaptation is the gated engram seam (§4.3). The "how careful" dial sets **existing** `kata.config` fields
   (`mode` + `tiers["kata-grill"]` + `delivery.boundary`) — no new UX config field (folded into L5/§4.3).
-  Consequence: the whole spec is non-code-bearing (§6).
+  Consequence: no new Python / config field / validator change; the two command surfaces (L9 git rollback,
+  L5 config writes) are flagged honestly in L11/§6.
 - **Dial mapping → confirmed.** "how careful / how often should I check with you" maps to
   mode + grill-depth + `delivery.boundary` (folded into L5); the advanced drawer exposes the real ladder. The
   exact threshold detail (which dial position → which mode/grill tier) is a PLAN-time tuning, not a DESIGN fork.
