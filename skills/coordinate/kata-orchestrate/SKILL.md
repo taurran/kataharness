@@ -168,6 +168,69 @@ After the frontier drains (all tasks integrated), on the integration branch:
 4. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
 5. Commit; if a handoff is needed, [[kata-handoff]].
 
+## Milestone narration (WS-3 — ADDITIVE; does not alter dispatch, frontier, or gate logic)
+
+> **Contracts:** `protocol/narration.md` (the phase→plain-language map + cadence + breakthrough + honesty guard)
+> and `protocol/persona.md` (the voice). Read both before emitting any narration. This section wires
+> them into the orchestrator's conversation output; the `改善型` dashboard, statusline, and board
+> (`protocol/board.md`) remain the granular firehose and are **unchanged** by this section.
+
+### When to narrate
+
+Narrate **in the conversation** at the meaningful boundaries listed in `protocol/narration.md §1`
+(the phase→plain-language map). Stay quiet between. The milestone-cadence rule (`narration.md §2`):
+**narrate at phase transitions and significant parallel-work events; do not narrate routine forward motion,
+individual PROGRESS heartbeats, or internal state updates the user has no action on.**
+
+Use the plain-language phrasings from `protocol/narration.md §1` — never the internal stage names
+(GRILL / FREEZE / PREFLIGHT / EXECUTE / EVALUATE / HANDOFF). The internal labels are the
+orchestrator's reference vocabulary; the user receives the plain-language account. Voice per
+`protocol/persona.md`.
+
+**Orchestrator narration points** (mapped to this skill's own loop):
+
+| Orchestrator event | Narration action |
+|---|---|
+| All wave-1 tasks dispatched (or first-wave workers running) | "Building the pieces — N in parallel." (substitute real count per `narration.md §1`) |
+| All tasks integrated; frontier drains | Narrate the transition to the evaluation step: "Checking the work honestly against a fresh pair of eyes." |
+| `kata-evaluate` returns a verdict | State the verdict plainly ("The evaluation passed." or "The evaluation found issues — here is what needs to be addressed."). A NEEDS_WORK is stated plainly, never softened or delayed. |
+| Handoff complete (durable artifacts committed, ready for owner review) | "Wrapping up and handing the result back to you." |
+
+Between these points: silence. The dashboard carries the live view.
+
+### Breakthrough-alert invariant (never tiered — `narration.md §3`)
+
+**Decisions, escalations, and critical failures surface in the conversation immediately and unmissably,
+regardless of routine quiet.** This invariant is **never tiered** (D33-class) — no mode, cadence setting,
+or run configuration can suppress a breakthrough alert.
+
+| Trigger | Narration action |
+|---|---|
+| An escalation reaches `human-required` classification (a fork the orchestrator cannot resolve alone) | Deliver the escalation payload in the conversation immediately. Do not wait for a phase boundary; do not let it queue behind routine narration. |
+| A critical failure (run cannot proceed; a spine invariant is at risk; a security-relevant finding) | Surface it in the conversation immediately, with the finding and the path forward. |
+| `kata-evaluate` returns NEEDS_WORK | State the verdict plainly in the first message after the result is known. |
+
+This is additive and independent of the board signal: the board's `ESCALATE`/`BLOCK` entries and the
+conversation breakthrough alert are **both** required — neither substitutes for the other.
+
+### Honesty guard (`narration.md §4`)
+
+Narration describes **only what is actually happening**. Before writing a narration phrase, ask:
+"Is the thing I am describing actually happening right now in this run?" If the answer is "it might
+happen later when a gated capability is enabled," do not write the phrase.
+
+**Explicitly forbidden today:**
+
+- Any phrasing implying a standing in-loop research call-site is active ("I'm researching this
+  myself") when research-mode RS is not a standing call-site in the current run.
+- Any phrasing implying live engram CONSULT is active ("I'm learning from this" / "I'll remember
+  your preference") — engram CONSULT is gated off (D9/D56/D74); the LEARN feed emits only.
+
+Narrating un-wired autonomy recreates the L8-class overclaim `kata-slop-check` catches in other
+contexts. The harness's own narration channel must be free of it.
+
+---
+
 ## Drift ledger (for A/B / audit)
 Track, as you go: unauthorized deviations from LOCKED decisions (target **0**), files touched outside
 ownership, human interventions, escalations, and whether the gate caught real issues. This is the evidence
