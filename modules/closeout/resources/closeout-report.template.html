@@ -1,0 +1,496 @@
+<!--
+  KataHarness 改善型 — Closeout Report Template
+  ================================================
+  Self-contained HTML · inline CSS only · no external refs · opens offline anywhere.
+
+  PLACEHOLDER TOKEN CONTRACT
+  --------------------------
+  S2 (kata-report) fills content; S3 (kata-closeout) substitutes these tokens at run end.
+  Every token MUST be replaced before writing .kata/closeout.html — no token should remain
+  in the final rendered artifact.
+
+  TOKEN LIST (in section order):
+
+  {{RUN_TITLE}}
+      Type: plain text string
+      Where: <title> and the report <h1> card header
+      Content: a short human-readable title for this run, e.g. "WS-3R wave-1 — closeout report template"
+               Typically: "{spec-name} — {brief goal phrase}"
+
+  {{VERDICT_BADGE}}
+      Type: text label for the badge display and a CSS state class selector
+      Where: the verdict badge element — rendered as:
+             <span class="badge badge--{STATE}">{LABEL}</span>
+             where STATE is one of: pass | partial | needs-work
+             and LABEL is the human-readable verdict text, e.g. "GOAL HIT", "PARTIAL", "NEEDS WORK"
+      Format for substitution: the token is replaced with the full <span> element string, e.g.:
+             <span class="badge badge--pass">GOAL HIT</span>
+             <span class="badge badge--partial">PARTIAL</span>
+             <span class="badge badge--needs-work">NEEDS WORK</span>
+
+  {{GOAL}}
+      Type: plain-language paragraph (HTML allowed)
+      Where: §1 Goal section body
+      Content: the restated goal in plain language, from frozen INTENT.md — e.g.
+               "You wanted a self-contained, on-brand HTML closeout report template that S3 can fill
+               in-context at run end, with no external dependencies."
+
+  {{CHANGED_BY_ASPECT}}
+      Type: REPEATABLE BLOCK — one block per goal-aspect; concatenated/inserted as a group
+      Where: §2 "What changed & why" section body
+      Each block structure (repeat for each aspect served by this run):
+        <div class="aspect-block">
+          <h3 class="aspect-heading">{ASPECT HEADING}</h3>
+          <p>{Plain-language what changed + why it matters to the user for this aspect.
+              No file paths or gate numbers here. 1–3 sentences per aspect.}</p>
+        </div>
+      Example aspects: "The report template", "The brand system", "Offline safety",
+                       "Token contract for downstream slices"
+      S2 authors one <div class="aspect-block">…</div> per goal-aspect and concatenates them.
+
+  {{HIT_ASSESSMENT}}
+      Type: plain-language paragraph or short list (HTML allowed)
+      Where: §3 "Did it hit the goal?" section body
+      Content: honest assessment — fully / partially / here's the gap.
+               Reference the {{VERDICT_BADGE}} verdict. E.g.:
+               "The template fully implements the §Brand system and token contract. The validator
+               confirms no drift. Goal: HIT."
+
+  {{RISKS}}
+      Type: HTML unordered list <ul>…</ul>
+      Where: §4 Risks & uncertainties section body
+      Content: risks, open uncertainties, and exercised-not-proven caveats. At minimum one item.
+               Example: <ul><li>Brand not yet operator-reviewed (gate-review point).</li>
+                             <li>Token fill is exercised-not-proven until S3 dogfood run.</li></ul>
+
+  {{EVIDENCE}}
+      Type: HTML list of links/references (HTML allowed, use <a> or plain paths)
+      Where: §5 Evidence section body
+      Content: gate result path, diffstat summary, validator output, relevant file paths.
+               Keep it linked-not-dumped. Example:
+               <ul>
+                 <li>Gate result: <code>.kata/RESULT.json</code></li>
+                 <li>Validator: 36 skills checked, 0 error(s)</li>
+                 <li>Diffstat: 2 files created, 0 modified, 0 deleted</li>
+               </ul>
+
+  {{BACKOUT}}
+      Type: plain-language sentence + command block (HTML allowed)
+      Where: §6 Your options / Backout section body
+      Content: the L9 offered backout in plain language + the exact command. Example:
+               "I can cleanly roll this entire run back, as if it never happened:
+               <code>git reset --hard pre-ws3-report</code>
+               (anchored to <code>.kata/RESULT.json baselineSha</code> — always present).
+               This is a destructive reset and requires your explicit approval."
+
+  {{GATE_NUMBERS}}
+      Type: plain text or short HTML
+      Where: footer, "gate numbers" slot
+      Content: pytest result (e.g. "pytest: 447 passed") + validator result
+               (e.g. "validate_skills: 36/0") — the numbers from the gate run.
+
+  {{SHAS}}
+      Type: plain text or short HTML
+      Where: footer, "SHAs" slot
+      Content: baseline SHA → result SHA, e.g. "00e6e7c → c0ffee1"
+
+  {{TIMESTAMP}}
+      Type: UTC datetime string
+      Where: footer, "generated" slot
+      Content: ISO-8601 UTC, e.g. "2026-06-24T21:00:00Z"
+
+  END TOKEN CONTRACT
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>改善型 · KATAHARNESS — {{RUN_TITLE}}</title>
+  <style>
+    /* ── Reset & base ────────────────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Brand palette ───────────────────────────────────────────────── */
+    :root {
+      --ground:       #14141B;   /* page background */
+      --card:         #1C1C26;   /* report card surface */
+      --border:       #2E2E3C;   /* card border + dividers */
+      --text:         #EAEAF2;   /* primary text */
+      --muted:        #9AA0B4;   /* secondary / metadata text */
+      --accent:       #5BD6A6;   /* kaizen green — headings, left-border accents */
+      --gold:         #D4A843;   /* wordmark dot / gate-pass highlight (sparingly) */
+      --alert:        #E0764A;   /* needs-work / alert state */
+      --badge-pass-bg:    rgba(91, 214, 166, 0.15);
+      --badge-pass-fg:    #5BD6A6;
+      --badge-partial-bg: rgba(212, 168, 67, 0.15);
+      --badge-partial-fg: #D4A843;
+      --badge-nw-bg:      rgba(224, 118, 74, 0.15);
+      --badge-nw-fg:      #E0764A;
+    }
+
+    /* ── Typography ──────────────────────────────────────────────────── */
+    body {
+      background: var(--ground);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    code, pre, .mono {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.875em;
+    }
+
+    /* ── Centered card layout ────────────────────────────────────────── */
+    .report-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-width: 720px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    /* ── Card header ─────────────────────────────────────────────────── */
+    .card-header {
+      padding: 1.75rem 2rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .wordmark {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .wordmark .dot {
+      color: var(--gold);
+    }
+
+    .report-title {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+
+    /* ── Loop ribbon band ────────────────────────────────────────────── */
+    .ribbon-band {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      align-items: center;
+      padding: 0.55rem 2rem;
+      background: var(--ground);
+      border-bottom: 1px solid var(--border);
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      user-select: none;
+    }
+
+    .ribbon-band .phase {
+      padding: 0 0.1rem;
+      white-space: nowrap;
+    }
+
+    .ribbon-band .arrow {
+      color: var(--border);
+      padding: 0 0.3rem;
+    }
+
+    /* ── Verdict badge ───────────────────────────────────────────────── */
+    .verdict-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .badge {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge--pass {
+      background: var(--badge-pass-bg);
+      color: var(--badge-pass-fg);
+      border: 1px solid rgba(91, 214, 166, 0.35);
+    }
+
+    .badge--partial {
+      background: var(--badge-partial-bg);
+      color: var(--badge-partial-fg);
+      border: 1px solid rgba(212, 168, 67, 0.35);
+    }
+
+    .badge--needs-work {
+      background: var(--badge-nw-bg);
+      color: var(--badge-nw-fg);
+      border: 1px solid rgba(224, 118, 74, 0.35);
+    }
+
+    /* ── Card body ───────────────────────────────────────────────────── */
+    .card-body {
+      padding: 0 2rem;
+    }
+
+    /* ── Section headings ────────────────────────────────────────────── */
+    .section {
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section-heading {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      padding-left: 0.75rem;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* ── Body text elements ──────────────────────────────────────────── */
+    p {
+      color: var(--text);
+      margin-bottom: 0.6rem;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    ul li {
+      padding: 0.2rem 0 0.2rem 1.1rem;
+      position: relative;
+      color: var(--text);
+    }
+
+    ul li::before {
+      content: "▸";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 0.75em;
+      top: 0.35em;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.1em 0.35em;
+      color: var(--text);
+    }
+
+    /* ── Aspect blocks (§2 what-changed) ────────────────────────────── */
+    .aspect-block {
+      margin-bottom: 1rem;
+    }
+
+    .aspect-block:last-child {
+      margin-bottom: 0;
+    }
+
+    .aspect-heading {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+
+    /* ── Options / backout section ───────────────────────────────────── */
+    .backout-block {
+      background: rgba(224, 118, 74, 0.06);
+      border: 1px solid rgba(224, 118, 74, 0.2);
+      border-radius: 4px;
+      padding: 0.85rem 1rem;
+      margin-top: 0.75rem;
+    }
+
+    .backout-label {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--alert);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────── */
+    .card-footer {
+      background: var(--ground);
+      border-top: 1px solid var(--border);
+      padding: 0.85rem 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .footer-item {
+      display: flex;
+      gap: 0.4rem;
+      align-items: baseline;
+      white-space: nowrap;
+    }
+
+    .footer-label {
+      color: var(--border);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .footer-value {
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="report-card">
+
+    <!-- ── Header ──────────────────────────────────────────────────────── -->
+    <div class="card-header">
+      <div class="wordmark">改善型 <span class="dot">·</span> KATAHARNESS</div>
+      <div class="report-title">{{RUN_TITLE}}</div>
+      <div class="verdict-row">
+        {{VERDICT_BADGE}}
+      </div>
+    </div>
+
+    <!-- ── Loop ribbon band ─────────────────────────────────────────────── -->
+    <div class="ribbon-band" aria-label="Kata loop phases">
+      <span class="phase">GRILL</span>
+      <span class="arrow">▸</span>
+      <span class="phase">FREEZE</span>
+      <span class="arrow">▸</span>
+      <span class="phase">EXECUTE</span>
+      <span class="arrow">▸</span>
+      <span class="phase">EVALUATE</span>
+      <span class="arrow">▸</span>
+      <span class="phase">HANDOFF</span>
+      <span class="arrow">▸</span>
+      <span class="phase">IMPROVE</span>
+    </div>
+
+    <!-- ── Report body ──────────────────────────────────────────────────── -->
+    <div class="card-body">
+
+      <!-- §1 Goal, restated -->
+      <div class="section">
+        <div class="section-heading">Goal, restated</div>
+        {{GOAL}}
+      </div>
+
+      <!-- §2 What changed & why — by goal-aspect -->
+      <div class="section">
+        <div class="section-heading">What changed &amp; why it matters to you</div>
+        {{CHANGED_BY_ASPECT}}
+      </div>
+
+      <!-- §3 Did it hit the goal? -->
+      <div class="section">
+        <div class="section-heading">Did it hit the goal?</div>
+        {{HIT_ASSESSMENT}}
+      </div>
+
+      <!-- §4 Risks & uncertainties -->
+      <div class="section">
+        <div class="section-heading">Risks &amp; uncertainties</div>
+        {{RISKS}}
+      </div>
+
+      <!-- §5 Evidence, linked not dumped -->
+      <div class="section">
+        <div class="section-heading">Evidence</div>
+        {{EVIDENCE}}
+      </div>
+
+      <!-- §6 Your options — keep / iterate / backout -->
+      <div class="section">
+        <div class="section-heading">Your options</div>
+        <p>
+          <strong>Keep it</strong> — commit, push, and merge (human-gated git actions, as usual).<br />
+          <strong>Iterate</strong> — run again or version-up to refine.
+        </p>
+        <div class="backout-block">
+          <div class="backout-label">Clean undo (L9 backout)</div>
+          {{BACKOUT}}
+        </div>
+      </div>
+
+    </div><!-- /.card-body -->
+
+    <!-- ── Footer ───────────────────────────────────────────────────────── -->
+    <div class="card-footer">
+      <div class="footer-item">
+        <span class="footer-label">gate</span>
+        <span class="footer-value">{{GATE_NUMBERS}}</span>
+      </div>
+      <div class="footer-item">
+        <span class="footer-label">shas</span>
+        <span class="footer-value">{{SHAS}}</span>
+      </div>
+      <div class="footer-item">
+        <span class="footer-label">generated</span>
+        <span class="footer-value">{{TIMESTAMP}}</span>
+      </div>
+    </div>
+
+  </div><!-- /.report-card -->
+
+</body>
+</html>
