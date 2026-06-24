@@ -104,6 +104,18 @@ resume from it, **re-anchoring on the frozen plan**. Prefer **task-boundary** ha
 to avoid lossy mid-task compression. Uses caveman-style compression. Tuned explicitly *not* to wrap up
 sessions early (the failure mode the user flagged).
 
+## User-facing UX (WS-3 — built 2026-06-24, D95)
+
+The human-facing surfaces are designed to be **friendly to a non-expert owner by default**, carried by one agnostic
+voice — a **nameless calm kata-craftsperson who translates** (`protocol/persona.md`). Intake is a **reflective goal
+mirror** (infer-then-confirm, refining the anti-drift STOP gate); the decision tree collapses to **one "how careful"
+dial** (machinery inferred, hidden behind an advanced drawer); in-loop **milestone narration** speaks in human terms
+(never stage names; `protocol/narration.md`) with a **never-tiered breakthrough alert** for anything needing the human;
+and the **closeout is goal-anchored** — it leads with plain-language what-changed-and-why and **offers a clean backout**
+(WS-4) at the human gate. Register adaptation toward the user's sophistication is a **gated engram seam, not live**
+(D9/D56). Built + gate-PASS + fresh-eval-PASS, **not yet field-exercised**. Full contract:
+`.planning/specs/ws3-user-friendliness/DESIGN.md` (L1–L11).
+
 ## Standards
 
 Per-skill semver in frontmatter; README index is the source of truth; `kata-<verb>` naming; AGENTS.md

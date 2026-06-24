@@ -258,3 +258,53 @@ A capability run live **once** end-to-end = **"exercised" (n=1)**, not **"proven
 automated regression test. WS-2's parallelism + RS path are *exercised*, not *proven* (board timestamps are
 orchestrator-written → can't distinguish live from replay). Calling exercised work "proven/genuine" is itself an
 **inflation** slop signal (the very thing `kata-slop-check` catches) — keep the words honest.
+
+## User-facing UX (WS-3, 2026-06-24)
+**Persona / SOUL** (`protocol/persona.md`):
+The harness's single agnostic voice contract — Identity / Style / Avoid / Defaults (Hermes `SOUL.md` shape). The
+voice is the **calm kata-craftsperson who translates** (改善型 patience + always "what I did and why it matters to
+you"), **nameless** (the harness's own voice, not a mascot). Skills reference it **by path**, never `[[wikilink]]`
+(wikilinks resolve to *skills*). _Avoid_: named character/mascot; per-skill bespoke voice.
+
+**Register**:
+The language-sophistication level the voice speaks at. v0.1 default = **moderate non-expert** (static, in
+`persona.md` Defaults). _Avoid_: claiming it adapts live (see **register-adaptation seam**).
+
+**Register-adaptation seam** (engram **E23**):
+The gated, **not-live** path by which a matured fingerprint would dial the register toward the user's real
+sophistication (LEARN surface = comprehension/correction signals + grill-ledger choices, D72). Emit/observe-only,
+zero CONSULT (D9/D56/D74). _Avoid_: treating register adaptation as an active v0.1 feature (inflation slop).
+
+**Reflective goal mirror** (`kata-initiate`):
+The intake front: the agent synthesizes inputs into a plain-language *"here's what you want / what success looks
+like / how I'd set it up"* and the human edits it conversationally before `INTENT.md` freezes — **infer-then-confirm**,
+which **refines (not reverses)** the S2 anti-drift STOP gate (every frozen value still traces to an explicit human
+confirmation, verified per-value, blanket "looks good" fails). _Avoid_: "config form" / "intake interview" (the thing
+it replaced).
+
+**"How careful" dial** (`kata-bootstrap`):
+The single plain question surfaced to the user ("how thorough / how often should I check with you"); the agent infers
+the rest and maps the dial to **existing** `kata.config` fields (`mode` + `tiers["kata-grill"]` + `delivery.boundary`).
+The full composition ladder lives behind an **advanced drawer**. _Avoid_: exposing run-shape/mode/tier/cost machinery
+to a non-expert; a new config field.
+
+**Narration map** (`protocol/narration.md`):
+The contract translating internal phases into human-action phrasing for the **conversation** channel (milestone
+cadence, quiet between). **Internal stage names (GRILL/FREEZE/…) are never surfaced.** The `改善型` dashboard/board
+stay the granular **firehose**. _Avoid_: streaming every action; reciting stage names.
+
+**Breakthrough alert**:
+The **never-tiered** (D33-class) invariant that anything needing the human — a decision/escalation or a critical
+failure — surfaces in the conversation immediately and unmissably, regardless of routine narration quiet. _Avoid_:
+burying an alert; gating it behind a verbosity setting.
+
+**Goal-anchored closeout** (`kata-closeout` + `kata-report`):
+The fixed closeout shape: restate the goal → **lead with what-changed-and-why in plain language, by goal-aspect**
+(before any path/gate number) → did-it-hit-the-goal → risks/uncertainties → linked evidence → offered options
+(incl. **backout**). Adapts Hermes by-topic synthesis; closeout still **never gates** (`kata-evaluate` owns the gate).
+_Avoid_: leading with machine detail; a file-by-file dump.
+
+**Offered backout** (WS-4):
+The first-class, plain-language "I can cleanly roll this entire run back" option at the human gate, anchored on the
+emitted `.kata/RESULT.json.baselineSha` (`git reset --hard`), **human-gated & never autonomous** (diff shown first).
+_Avoid_: a buried git incantation; anchoring on a `pre-<run>` tag no surface guarantees.

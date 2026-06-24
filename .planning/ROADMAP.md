@@ -102,6 +102,15 @@ feed the cognitive fingerprint. **The D16-first lock is dissolved → the full b
 (D78–D85, 2026-06-19)** → **next: dogfood version-up on KataHarness itself** (the endgame; exercises the
 deferred-runtime BACKLOG). Pending on sprint-cadence: the fresh-context `kata-review` (D15/A5) before "done".
 
+**Pre-public workstreams (post-loop-hardening, 2026-06-21 → 06-24) — COMPLETE:** **WS-1** IP separation (`42e884b`;
+work-project name scrubbed, Quick kept as ACP seam, Codex added) · **WS-2** inner-loop autonomy + parallelism
+*exercised* (n=1) + `kata-slop-check` shipped (D94) · **WS-3** user-friendliness (D95; persona + narration +
+goal-mirror intake + one-dial mode surface + milestone narration + goal-anchored closeout; **WS-4** backout + **WS-5**
+transparency folded in). **Built; WS-3 not yet field-exercised (n=0 live UX runs).** Remaining pre-public:
+field-exercise WS-3 · WS-1 re-grep · WS-2 worker-self-timestamp polish · then **Phase 5 EXTERNAL**
+(install-portability · multi-model) + the **v0.1 release-checklist** (flip Policy A). Far-future: agentic-loop
+benchmark → recursive parallelism (DAG-within-DAG).
+
 ## Progress
 | Milestone | Status |
 |---|---|
