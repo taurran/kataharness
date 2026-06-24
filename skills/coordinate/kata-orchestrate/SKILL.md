@@ -86,6 +86,12 @@ an unrelated wave.
      ([[kata-defer]]) and keep going. In a grill-skip run, also log any spec assumption you had to make to
      [[kata-defer]] so it surfaces at the gate/handoff."*
    - the per-task verify command (default-FAIL).
+   - self-stamp `CLAIM` (start) to the **shared** `.kata/board.md` at the **integration/target-repo root**
+     (not the per-task worktree's `.kata/`) via `kata_board.append_event` with your **own process clock**
+     when you begin, and `DONE` (end) when your verify passes — so concurrency is provable from artifacts
+     (see `protocol/board.md` → Concurrency evidence). The shared root is the integration/target-repo root,
+     not the per-task worktree (S3b lesson: per-task worktrees have their own `.kata/` paths; only the
+     integration root's `.kata/board.md` is the shared board the orchestrator and evaluator read).
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
    verify (tests + security scan). Not done until evidence is read and passes. Confirm it touched **only its
@@ -154,10 +160,16 @@ After the frontier drains (all tasks integrated), on the integration branch:
    ```
    The emitter composes `run_result`, `footprint`, and `mutation_check` — it does not reimplement them.
    Pass `--out .kata` so [[kata-evaluate]] finds artifacts at the conventional paths.
-   **Precondition (do not skip):** `.kata/RESULT.json` MUST exist before step 3. If it is absent, run
+   **Precondition (do not skip):** `.kata/RESULT.json` MUST exist before step 4. If it is absent, run
    `gate_emit.py` first — never dispatch [[kata-evaluate]] with no artifacts to read (it would default-FAIL to
    NEEDS_WORK anyway; emit first so the gate grades real evidence, not a missing file).
-3. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
+3. **Emit the concurrency evidence** — run the canonical snippet from `protocol/board.md`
+   (section: "Concurrency evidence (`.kata/concurrency.json`)") against the run's `.kata/` to produce
+   `.kata/concurrency.json`. The snippet body lives only in `protocol/board.md` (K3 — do not duplicate it
+   here). This is parallelism evidence the evaluator reads to corroborate rubric item 4; a legitimately
+   single-worker run producing `maxInFlight:1`/`genuinelyParallel:false` is **not** a failure — this step
+   never fails a sequential run (K6).
+4. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
    low-grill run, point it at the priming prompt as the frozen spec and at any [[kata-defer]] `ASSUMPTIONS.md`,
    so the autonomous floor's assumption log is graded for prompt-contradiction (rubric item 8) — not just asserted.
    Point it at `.kata/` so it reads the emitted artifacts directly.
@@ -165,8 +177,8 @@ After the frontier drains (all tasks integrated), on the integration branch:
    fresh-context, no-write check **alongside** [[kata-evaluate]] (concurrent). A `SLOP-DETECTED` verdict is
    **default-FAIL** (treated as NEEDS_WORK) — never advisory-only. When `kata/module/slop` is absent this is a
    silent no-op (the module degrades gracefully, like every optional module).
-4. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
-5. Commit; if a handoff is needed, [[kata-handoff]].
+5. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
+6. Commit; if a handoff is needed, [[kata-handoff]].
 
 ## Milestone narration (WS-3 — ADDITIVE; does not alter dispatch, frontier, or gate logic)
 
