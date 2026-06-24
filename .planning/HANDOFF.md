@@ -1,24 +1,25 @@
 ---
-date: 2026-06-24 (WS-1 ✅ + WS-2 ✅ + WS-3 ✅ BUILT — user-friendliness shipped, D95; next = field-exercise WS-3 + Phase 5)
-branch: master — private remote github.com/taurran/kataharness, tip d08908d (PUSHED)
+date: 2026-06-24 (WS-1 ✅ + WS-2 ✅ + WS-3 ✅ + WS-3 FIELD-EXERCISED; two-tier closeout shipped, D96; next = WS-1 re-grep + Phase 5)
+branch: master — private remote github.com/taurran/kataharness, tip c265c42 (PUSHED, in sync — `git log --oneline -3` for latest)
 green: validator 36 skills / 0 errors · pytest 447 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
 tags: pre-ws3 · pre-ws2-slopcheck · v0.1.0-alpha.3 · loop-hardening-complete (earlier: pre-s1/1.5/2/3a/3b · v0.1.0-alpha.1/.2/.3)
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
-# HANDOFF — KataHarness — 2026-06-24 (WS-1 + WS-2 + WS-3 DONE · user-friendliness shipped · next = field-exercise WS-3 + Phase 5)
+# HANDOFF — KataHarness — 2026-06-24 (WS-1/2/3 DONE + WS-3 field-exercised · two-tier closeout shipped · next = WS-1 re-grep + Phase 5)
 
-> **✅ loop-hardening · WS-1 · WS-2 · WS-3 ALL DONE.** WS-3 user-friendliness **BUILT** (D95, merge `d08908d`):
-> `protocol/persona.md` (nameless calm kata-craftsperson SOUL) + `protocol/narration.md` (phase→plain map) +
-> reflective **goal-mirror** intake + one **"how careful"** dial mode surface + milestone narration +
-> **goal-anchored by-aspect closeout** with offered backout; **WS-4 + WS-5 folded in.** Freeze-gate `kata-review`
-> HOLD→SHIP; orchestrated dogfood; fresh-context Opus `kata-evaluate` **PASS 10/10**. **Honest status: built +
-> gate-PASS + fresh-eval PASS, NOT yet field-exercised (n=0 live UX runs)** — the next real Kata Loop run is the
-> first UX test; adaptive register is a gated seam, not live. Fresh/compacted session: read §1, confirm green
-> (§2). **NEXT = (a) field-exercise WS-3 on a real friendly Kata Loop run · (b) WS-1 pre-launch re-grep · then
-> Phase 5 EXTERNAL (install-portability · multi-model) + v0.1 release-checklist; far-future = loop benchmark →
-> DAG-in-DAG.** Everything below is durable + committed + **pushed** (tip `d08908d`). Live picture:
-> `.planning/STATE.md` (top box) + `.planning/DECISIONS.md` **D95**. (§4 below predates WS-3 — WS-3/4/5 are now ✅.)
+> **✅ loop-hardening · WS-1 · WS-2 · WS-3 ALL DONE; WS-3 now FIELD-EXERCISED (n=1).** WS-3 user-friendliness
+> shipped (D95): persona + narration + reflective **goal-mirror** intake + one **"how careful"** dial + milestone
+> narration + **goal-anchored closeout** with offered backout (WS-4/WS-5 folded in). Then **field-exercised
+> (D96, merge `c265c42`)** by building a real feature through it: the closeout is now **two-tier** — a concise
+> CLI/GUI summary linking to a durable, on-brand, self-contained **HTML report** (`.kata/closeout.html` +
+> Markdown `.kata/CLOSEOUT.md`); the operator refined the brand live at the gate (the first **KataHarness logo**;
+> Hokusai palette; readable serif headings; error/warning tiles). Fresh-context Opus `kata-evaluate` caught +
+> fixed a cross-slice defect → PASS. Fresh/compacted session: read §1, confirm green (§2). **NEXT = (a) WS-1
+> pre-launch re-grep · (b) WS-2 worker-self-timestamp polish · then Phase 5 EXTERNAL (install-portability ·
+> multi-model) + v0.1 release-checklist; far-future = loop benchmark → DAG-in-DAG.** Durable + committed +
+> **pushed** (tip `c265c42`, in sync). Live picture: `.planning/STATE.md` (top box) + `.planning/DECISIONS.md`
+> **D95–D96**. (§4 below predates this — see the NEXT line here for the current agenda.)
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
 1. `AGENTS.md` (spine + conventions; the **"The Kata Loop"** entry) · 2. `docs/STANDARDS.md` §1 (frontmatter —
@@ -84,7 +85,7 @@ authored-for: kata-orient (sections map to the three orientation tiers)
   dogfood (2 waves, concurrent Sonnet workers, self-stamped); fresh-context Opus `kata-evaluate` **PASS 10/10**.
   **Built, NOT yet field-exercised (n=0 live UX runs).** Backout tag `pre-ws3`.
 - **⏸ Remaining (`.planning/BACKLOG.md` top):** WS-1/2/3 ✅ (WS-4/5 folded into WS-3). **OPEN, in order:** (a)
-  **field-exercise WS-3** (first real friendly run, n=0→1) · (b) **WS-1 pre-launch re-grep** · (c) **WS-2 polish** —
+  **field-exercise WS-3 ✅ DONE** (D96 — two-tier closeout, n=0→1) · (b) **WS-1 pre-launch re-grep** · (c) **WS-2 polish** —
   wire worker self-timestamping into the board. Then **Phase 5 EXTERNAL** (install-portability · multi-model) +
   **v0.1 release-checklist**. **Far-future:** loop-tuning + an **agentic-loop benchmark** → **recursive parallelism
   (DAG-within-DAG)** gated on a hardened separability test (benchmark first). See §4.
@@ -103,11 +104,12 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 **WS-1, WS-2, WS-3 are all DONE** (the pre-public workstreams; WS-4 offered-backout + WS-5 closeout-transparency
 folded into WS-3). loop-hardening + the Kata Loop are complete. The immediate agenda, in order:
 
-1. **Field-exercise WS-3 (highest value, recommended next).** WS-3 is built + gate-PASS + fresh-eval PASS but
-   **n=0 live UX runs** — no real person has yet walked through the new **goal-mirror intake / one-dial mode surface /
-   milestone narration / goal-anchored closeout**. **Do a real Kata Loop run that USES them** (a genuine version-up, or
-   a small greenfield via `kata-loop` → `kata-initiate`) and judge the friendliness for real (n=0 → n=1). First true UX
-   test; may surface persona/narration tone refinements to fold back.
+1. **Field-exercise WS-3 — ✅ DONE (n=0→1, D96).** Built a real feature (the **two-tier closeout**, merge `c265c42`)
+   THROUGH the friendly loop — the first live use of the goal-mirror intake / milestone narration / goal-anchored
+   closeout; the operator refined the brand live at the gate (first KataHarness logo · Hokusai palette · tiles).
+   **Follow-up (M8, deferred adapter work) — recommended when adapters are touched:** native in-tool rendering of the
+   closeout — a Claude `Stop`/`SessionEnd` hook that surfaces `.kata/closeout.html` + a statusline verdict line;
+   other tools per their adapter. Spec: `specs/ws3-closeout-report/PLAN.md`.
 2. **WS-1 pre-launch public-sanitization re-grep** — re-grep the work-project proper noun across *all* surfaces; confirm
    only the Quick/ACP plumbing seam + pointers remain (BACKLOG WS-1). Pre-public gate.
 3. **WS-2 polish — worker self-timestamping.** The WS-3 build had workers self-stamp start/end (proving concurrency) but

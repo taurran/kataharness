@@ -730,3 +730,27 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   pytest **447**, validator **36/0**. Backout tag `pre-ws3`; merge `d08908d`. *Provenance:* operator UX decisions
   Q1–Q6 + open-items (2026-06-24); freeze-gate + re-confirm; orchestrated build. Record:
   `specs/ws3-user-friendliness/{DESIGN,PLAN}.md`.
+
+<!-- WS-3 follow-up — two-tier closeout (PLAN FROZEN + built 2026-06-24).
+     Spec: .planning/specs/ws3-closeout-report/PLAN.md (LOCKED M1–M10). -->
+- **D96 — WS-3 follow-up: the closeout is now TWO-TIER — a concise CLI/GUI summary that links to a durable,
+  on-brand, self-contained HTML report; and this build WAS the WS-3 field-exercise (n=0→1). First KataHarness
+  logo defined.** (2026-06-24, merge `c265c42`.) Operator direction: emit a summary closeout in the CLI/GUI + a
+  link to an in-depth report, "ideally a high-quality templatized clean/on-brand HTML report." Built as a
+  3-slice non-code-bearing version-up dogfood (concurrent Sonnet workers, self-stamped): **(S1)**
+  `modules/closeout/resources/closeout-report.template.html` — a **self-contained** (inline CSS+SVG, no external
+  refs, offline) branded report template with a placeholder-token contract + `BRAND.md`; **(S2)** `kata-report`
+  composes **both tiers** (concise summary ending in the report link + the tokenized full report; risks→warning
+  tiles, backout→error tile); **(S3)** `kata-closeout` **emits `.kata/CLOSEOUT.md`** (Markdown source-of-truth)
+  + **renders `.kata/closeout.html`** by filling the template **in-context** (no new Python; `.html`/`.css` are
+  not in `footprint._CODE_EXTENSIONS` ⇒ `codeBearing:false`) + presents the CLI summary ending with the link.
+  Never-gates (L7) + offered backout (L9) preserved. Gate PASS; a fresh-context Opus `kata-evaluate` **caught a
+  cross-slice defect** (verdict-badge CSS class mismatch) → fixed → PASS. **Field-exercise (the point):** the
+  build's own closeout was the **first live run of the friendly closeout** (WS-3 n=0→1), and the **operator
+  refined the brand live at the gate** — dropped a tried inline-SVG wave motif + a tab-like loop ribbon; landed
+  a subtle **KataHarness logo** (the project's first — kaizen ascending-bars + a rising ochre arrow), readable
+  **serif Title-Case** section headings, and **error/warning/note/ok callout tiles**, on a **Hokusai-derived**
+  palette (aged paper · Prussian blue · ochre · rust). **Carry-outs:** native in-tool rendering (Claude
+  `Stop`/`SessionEnd` hook + statusline verdict line; other tools per adapter) is **deferred adapter work**
+  (M8); WS-2 worker-self-timestamp polish returns to the queue. pytest **447**, validator **36/0**. Backout tag
+  `pre-ws3-report`. Record: `specs/ws3-closeout-report/PLAN.md`.

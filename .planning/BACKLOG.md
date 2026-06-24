@@ -39,8 +39,9 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
 - **WS-3 — User-friendliness, front-to-end (must precede public launch).**
   **[✅ BUILT 2026-06-24 (D95; merge `d08908d`; spec `specs/ws3-user-friendliness/{DESIGN,PLAN}.md`) — persona
   (`protocol/persona.md`) · narration map (`protocol/narration.md`) · reflective goal-mirror intake · one-dial
-  mode surface · milestone narration · goal-anchored by-aspect closeout. Built + gate-PASS + fresh-eval PASS 10/10,
-  but NOT yet field-exercised (n=0 live UX runs) — the next real Kata Loop run is the first UX test. Adaptive
+  mode surface · milestone narration · goal-anchored by-aspect closeout. Built + gate-PASS + fresh-eval PASS 10/10;
+  **field-exercised (n=1) via the two-tier-closeout build (D96, `c265c42`)** — first live use of the friendly
+  surfaces; operator refined the brand at the gate (first KataHarness logo · Hokusai palette · tiles). Adaptive
   register is a gated seam, not live.]** The whole system is technical, not
   intuitive. Likely a **combination** of a **persona/voice context file** AND **explicit voice in the skills**.
   Sub-items:
@@ -64,17 +65,24 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
 - **WS-4 — Backout / rollback as a first-class option (safety).**
   **[✅ BUILT into WS-3 slice F (D95) — `kata-closeout` offers backout in plain language, anchored on the emitted
   `.kata/RESULT.json.baselineSha` (`git reset --hard`), human-gated & never autonomous, surfaced at the human
-  gate. Field-exercise pending.]** There MUST be a surfaced way to **back out the
+  gate. Field-exercised (n=1) via the two-tier closeout build, D96.]** There MUST be a surfaced way to **back out the
   loop's changes** if a run goes off the rails. We have `pre-s<n>` backout tags, but rollback must be an explicit,
   offered option at the human gate — not a buried git incantation.
 
 - **WS-5 — Change transparency at closeout (the acute miss this session).**
   **[✅ BUILT into WS-3 slice F (D95) — `kata-closeout` + `kata-report` lead with plain-language what-changed-why,
-  organized by goal-aspect, before any path or gate number. Field-exercise pending.]** The closeout must make **exactly what
+  organized by goal-aspect, before any path or gate number. Field-exercised (n=1) via the two-tier closeout build, D96.]** The closeout must make **exactly what
   changed** legible to a non-expert owner ("I had no idea what changes were made"). Overlaps WS-3's closeout item;
   call it out as a hard requirement: every closeout leads with a plain-language "what changed and why it matters to
   you," with links, before any machine detail.
 
+- **Two-tier closeout — native in-tool rendering (M8 follow-up, 2026-06-24; adapter work).** The two-tier closeout
+  shipped (D96): a concise CLI/GUI summary + a self-contained branded HTML report (`.kata/closeout.html`) +
+  Markdown source. **Open:** surface the report *natively per host* — a Claude **`Stop`/`SessionEnd` hook** that
+  opens/links `.kata/closeout.html` + a **statusline** verdict line (`✅ goal hit · backout: …`); Codex/Kiro/Quick
+  via their adapters. Today the link is a clickable file path in the summary. Folds into the v0.3 adapter layer.
+  Spec: `specs/ws3-closeout-report/PLAN.md` (Carry-outs). Also reusable: the **first KataHarness logo** (inline SVG
+  in the template / `BRAND.md`) for favicon / docs / statusline glyph.
 - **Gate-enforcement hardening (loop-hardening red-team residue, 2026-06-21 — non-blocking).** The S2/S3a
   adversarial review left three deferrable items. **(a) MAJOR-3 — machine `codeBearing` flag: ✅ DONE (S3b Cycle 2,
   `222cc7e`)** — `footprint.py` `code_bearing()` derives the flag from changed-file globs → `footprint.json`

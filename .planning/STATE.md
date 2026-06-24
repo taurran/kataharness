@@ -1,5 +1,19 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-24, WS-3 field-exercised + two-tier closeout shipped — `c265c42`, D96):** Ran the **first
+> live use** of the WS-3 friendly closeout (n=0→1) by building a real feature through it: the closeout is now
+> **two-tier** — a concise CLI/GUI summary that **links to a durable, on-brand, self-contained HTML report**
+> (`.kata/closeout.html`) with a Markdown source (`.kata/CLOSEOUT.md`). 3-slice non-code-bearing dogfood
+> (concurrent Sonnet workers, self-stamped): template+`BRAND.md` (S1), `kata-report` two-tier content (S2),
+> `kata-closeout` emit+render-in-context+link (S3). Fresh-context Opus `kata-evaluate` **caught a cross-slice
+> badge-class defect → fixed → PASS**. **Operator refined the brand live at the gate** (M4): dropped a wave
+> motif + tab-like loop ribbon; landed the **first KataHarness logo** (kaizen ascending-bars + rising ochre
+> arrow), readable **serif** section titles, and **error/warning/ok callout tiles**, on a **Hokusai-derived**
+> palette. Non-code-bearing (`codeBearing:false`, 0 drift); pytest **447**, validator **36/0**. **Carry-out:**
+> native in-tool rendering (hooks/statusline) deferred to adapters (M8). Backout `pre-ws3-report`. Record:
+> `specs/ws3-closeout-report/PLAN.md`. **NEXT:** WS-1 pre-launch re-grep · WS-2 worker-self-timestamp polish ·
+> then Phase 5 EXTERNAL + v0.1 release-checklist (far-future: loop benchmark → DAG-in-DAG).
+
 > **CURRENT (2026-06-24, WS-3 user-friendliness BUILT — `d08908d`, D95):** The last pre-public workstream shipped.
 > Brainstorm (Hermes/Devin/Claude-Code UX research) → frozen DESIGN (L1–L11) → freeze-gate `kata-review`
 > **HOLD→SHIP** (caught a real backout seam — re-anchored to `.kata/RESULT.json.baselineSha`) → frozen PLAN
