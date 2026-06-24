@@ -1,5 +1,13 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-24, WS-1 pre-launch re-grep CLEAN):** Ran the final pre-public sanitization pass — the
+> work-internal proper noun + variants return **0 matches** across all tracked files, frozen specs, and the
+> working tree (incl. untracked artifacts); the `Quick`/ACP plumbing seam is intact (20 files) and the scrub is
+> consistent indirection, not bare deletion; light secret/key sweep clean. Hardened `.gitignore` (`/INTENT.md`
+> root run-artifact + `.claude/`). **WS-1 is DONE** — the last pre-public sanitization gate. validator **36/0**,
+> pytest **447**. **NEXT:** WS-2 worker-self-timestamp polish (code-bearing orchestrated build) → Phase 5 EXTERNAL
+> + v0.1 release-checklist.
+
 > **CURRENT (2026-06-24, WS-3 field-exercised + two-tier closeout shipped — `c265c42`, D96):** Ran the **first
 > live use** of the WS-3 friendly closeout (n=0→1) by building a real feature through it: the closeout is now
 > **two-tier** — a concise CLI/GUI summary that **links to a durable, on-brand, self-contained HTML report**

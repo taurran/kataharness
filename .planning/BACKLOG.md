@@ -5,7 +5,7 @@ Promote to ROADMAP milestones when ready.
 ## ★★ PRE-PUBLIC PRIORITIES (operator notes, 2026-06-21 — post-S3b review) ★★
 These are the operator's own end-of-S3b notes; several gate going public. Captured verbatim-in-intent.
 
-- **WS-1 — Separation / IP hygiene (IN PROGRESS, 2026-06-21; pre-public).** The work-internal sister project's
+- **WS-1 — Separation / IP hygiene (✅ DONE 2026-06-24; pre-public re-grep CLEAN).** The work-internal sister project's
   **proper name must not appear on any surface** — scrub it everywhere, replacing with indirect terms ("the work
   host", "an external/work ACP host", "the work backend"). **Quick is deliberately KEPT** as the named **ACP-host
   target** — it is the **integration seam** for plumbing the work backend in later, and the docs/skills carry
@@ -14,10 +14,12 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   plumbing anchor; **`other`** = catch-all. The platform enum is now `claude | codex | kiro | quick | other`
   (Codex added; the work proper-noun removed). **Done so far:** `protocol/intent.md` enum, `kata-initiate`
   Phase 2c + STOP gate, `AGENTS.md`, `docs/DESIGN.md`, `README.md`, `.planning/PROJECT.md`, `protocol/engram.md`,
-  the two module `AGENTS.md`, DECISIONS/STATE, and the frozen-spec proper-noun mentions. **Remaining:** a final
-  **public-sanitization pass** right before launch — re-grep the work-project name across *all* surfaces, confirm
-  only the Quick/ACP plumbing seam + pointers remain. *(Kiro kept — it is a public Amazon product, not the
-  internal work host; flag if it should also be gated.)*
+  the two module `AGENTS.md`, DECISIONS/STATE, and the frozen-spec proper-noun mentions. **✅ Final
+  public-sanitization re-grep DONE 2026-06-24:** name + variants returned **0 matches** across all tracked files,
+  frozen specs, and the working tree (incl. untracked artifacts); the Quick/ACP plumbing seam is intact (20 files);
+  scrub is consistent indirection (not bare deletion); light secret/key sweep clean. Also hardened `.gitignore`
+  (`/INTENT.md` root run-artifact + `.claude/`) so stray artifacts can't leak. *(Kiro kept — it is a public Amazon
+  product, not the internal work host; flag if it should also be gated.)*
 
 - **WS-2 — Validate the INNER (harness) loop's autonomy + parallelism (the operator's confidence gap).**
   **[STATUS 2026-06-22 (D94): rolling-frontier PARALLELISM + the in-loop RS RESEARCH PATH are now LIVE-PROVEN 7/7

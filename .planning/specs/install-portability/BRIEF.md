@@ -72,5 +72,5 @@ the install/portability layer **before** the self-dogfood, or **self-dogfood fir
 self-dogfood does *not* require it — KataHarness's own repo is its workspace.)
 
 ## Out of scope (for now)
-Full plugin-marketplace publishing; non-Obsidian vault formats; the the work host installer internals (the work host
+Full plugin-marketplace publishing; non-Obsidian vault formats; the work host installer internals (the work host
 owns those — we own the contract).

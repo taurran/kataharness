@@ -119,8 +119,9 @@ folded into WS-3). loop-hardening + the Kata Loop are complete. The immediate ag
    **Follow-up (M8, deferred adapter work) — recommended when adapters are touched:** native in-tool rendering of the
    closeout — a Claude `Stop`/`SessionEnd` hook that surfaces `.kata/closeout.html` + a statusline verdict line;
    other tools per their adapter. Spec: `specs/ws3-closeout-report/PLAN.md`.
-2. **WS-1 pre-launch public-sanitization re-grep** — re-grep the work-project proper noun across *all* surfaces; confirm
-   only the Quick/ACP plumbing seam + pointers remain (BACKLOG WS-1). Pre-public gate.
+2. **WS-1 pre-launch public-sanitization re-grep — ✅ DONE 2026-06-24.** Name + variants = **0 matches** across all
+   tracked files, frozen specs, and the working tree; Quick/ACP seam intact; scrub is consistent indirection; secret
+   sweep clean. Hardened `.gitignore` (`/INTENT.md` + `.claude/`). The last pre-public sanitization gate is closed.
 3. **WS-2 polish — worker self-timestamping.** The WS-3 build had workers self-stamp start/end (proving concurrency) but
    ad-hoc in the dispatch; wire it into `tools/kata_board.py`/the board so concurrency is provable from artifacts on
    every run.
