@@ -12,7 +12,7 @@ category: handoff
 status: experimental
 agnostic: true
 cost-weight: 2
-allowed-tools: [Read, Grep, Glob, Bash]
+allowed-tools: [Read, Grep, Glob, Bash, Write]
 model: fable
 source: new (KataHarness original — Phase 2 Kata Loop back-half, D89/DESIGN §3)
 tags:
@@ -59,9 +59,78 @@ Also read the frozen `INTENT.md` to retrieve the plain-language goal statement f
 
 ## Step 2 — Report (§5 skeleton — in order, always)
 
-Compose [[kata-report]] over the consumed artifacts, passing the three artifact paths. Then present the
-report to the human **in the fixed §5 order** below. Do **not** re-arrange this order; do not lead with
-paths or gate numbers.
+Compose `kata-report` over the consumed artifacts, passing the three artifact paths. `kata-report`
+produces **both tiers** (defined in `skills/evaluate/kata-report/SKILL.md`):
+
+1. **The concise CLI summary** (Tier 1) — persona voice, goal-anchored essentials.
+2. **The full report content** (Tier 2) — the complete M5 skeleton keyed to the `{{TOKEN}}` contract.
+
+After composing report content via `kata-report`, carry out the following emit/render/link sequence
+**before** presenting anything to the human.
+
+### Step 2a — Emit `.kata/CLOSEOUT.md` (source-of-truth)
+
+Write the full Markdown report to `.kata/CLOSEOUT.md`. This is the durable source-of-truth artifact.
+It carries the complete M5 skeleton in plain text: goal restated · what-changed-by-aspect · did-it-hit ·
+risks/uncertainties · evidence links + diffstat + gate numbers + SHAs · offered backout. The file is
+written to `.kata/` (gitignored, like `RESULT.json`), making it a run artifact, not a committed skill.
+
+### Step 2b — Render `.kata/closeout.html` (in-context token fill — no Python)
+
+Load the committed HTML template at `modules/closeout/resources/closeout-report.template.html` by
+reading it in-context with the `Read` tool. Then **substitute every `{{TOKEN}}`** from the report
+content assembled in Tier 2:
+
+1. Read `modules/closeout/resources/closeout-report.template.html` in full.
+2. For each token listed in the template's leading HTML comment (reproduced here for reference):
+   - `{{RUN_TITLE}}` — short human-readable title (goal phrase + run date; from `INTENT.md` + `RESULT.json`).
+   - `{{VERDICT_BADGE}}` — the full `<span class="badge badge--{STATE}">{LABEL}</span>` element, where
+     STATE is one of `pass` / `partial` / `needs-work` and LABEL is the `kata-evaluate` verdict string
+     verbatim (from `.kata/RESULT.json`). Never re-derived; always quoted from the artifact.
+   - `{{GOAL}}` — the restated goal in 1–2 plain-language sentences (from frozen `INTENT.md`), persona
+     voice (`protocol/persona.md`): "You wanted X."
+   - `{{CHANGED_BY_ASPECT}}` — **repeatable block**: one `<div class="aspect-block">…</div>` per
+     goal-aspect. Each block contains an `<h3 class="aspect-heading">` heading and a `<p>` body in
+     plain language (no file paths, no gate numbers). Concatenate all aspect blocks and substitute the
+     full concatenation for this single token. The template's HTML comment documents the repeatable-block
+     pattern; follow it exactly.
+   - `{{HIT_ASSESSMENT}}` — honest 1–3 sentence assessment; quotes the `kata-evaluate` verdict verbatim.
+   - `{{RISKS}}` — an HTML `<ul>…</ul>` of risks and exercised-not-proven caveats (≥1 item).
+   - `{{EVIDENCE}}` — an HTML linked list of evidence artifacts (gate result path, diffstat, footprint
+     manifest, mutation-proof if present, findings files). Linked-not-dumped.
+   - `{{BACKOUT}}` — plain-language backout offer + literal `git reset --hard <baselineSha>` command,
+     anchored on `.kata/RESULT.json.baselineSha`. Destructive; executes only on explicit human approval.
+   - `{{GATE_NUMBERS}}` — pytest result + validator result quoted verbatim from `.kata/RESULT.json`.
+   - `{{SHAS}}` — `<baselineSha> → <resultSha>` pair from `.kata/RESULT.json`.
+   - `{{TIMESTAMP}}` — UTC ISO-8601 timestamp of the closeout moment (system clock at emit time).
+3. Perform the substitutions **in-context** — the agent holds the template text and replaces each
+   `{{TOKEN}}` with its resolved value. No Python, no shell script, no external rendering tool.
+4. Write the fully-substituted HTML to `.kata/closeout.html` with the `Write` tool. Every `{{TOKEN}}`
+   must be replaced; none may remain in the final rendered artifact.
+
+The `Write` tool (added to `allowed-tools` in the frontmatter) is used only for Step 2a/2b. The
+behavioral guard — "never write files outside `.kata/`" — applies here; `Write` is scoped to `.kata/`
+run artifacts only.
+
+### Step 2c — Present the concise CLI summary (Tier 1), ending with the link
+
+Present the **Tier 1 concise CLI summary** in-conversation, in the persona voice defined in
+`protocol/persona.md`. The summary covers the §5 skeleton essentials (goal · what-changed-by-aspect
+in 1–2 lines · did-it-hit · top risks · backout offer) and **must end with a clear link line**:
+
+```
+Full report: .kata/closeout.html
+Markdown:    .kata/CLOSEOUT.md
+```
+
+This ending link line is a hard requirement (PLAN M1). It makes the durable artifact discoverable to
+any operator or tool that can open a file path. Do not omit it.
+
+### Step 2d — Carry forward to §5 order (below)
+
+The §5 sections below remain in order for the full in-conversation report when the operator asks for
+detail. In a two-tier run, the concise summary (Step 2c) is the default in-conversation account;
+the §5 detail is available on request and is fully captured in `.kata/CLOSEOUT.md`.
 
 ### §5.1 — Goal, restated
 
@@ -99,7 +168,8 @@ regression), and what could bite. Follow the `protocol/persona.md` honesty norms
 
 For whoever wants to dig — list by path, do not re-transcribe:
 - `.kata/RESULT.json` (gate result)
-- The [[kata-report]] file (the full synthesis)
+- `.kata/CLOSEOUT.md` (the full Markdown report — source-of-truth)
+- `.kata/closeout.html` (the rendered HTML report)
 - `.kata/understand.md` — **only if** the understand-map was generated (Step 3 is opt-in)
 - Any findings files (DEFERRED.md, ASSUMPTIONS.md, etc.)
 
@@ -113,6 +183,13 @@ Present the options in plain language as explicit choices:
    (See Decision 4 — Backout, below.)
 
 **Foreground option 3 when the human is not satisfied** with the result.
+
+### Note on richer native rendering (M8 — deferred adapter work)
+
+The CLI summary names the clickable `.kata/closeout.html` path; terminals and GUI shells make file
+paths openable. Richer native rendering — a Claude `Stop`/`SessionEnd` hook that surfaces the report
+automatically, a statusline verdict line, or per-tool equivalents for Codex/Kiro/Quick via their
+adapters — is **out of scope here** and captured as a follow-up (PLAN M8).
 
 ## Step 3 — Offer the understand-map (opt-in)
 
@@ -207,7 +284,9 @@ Compose [[kata-handoff]] for the session boundary. The handoff MUST include:
 - The [[kata-loop]] conductor (Phase 3) sequences this skill and owns the loop-back; closeout hands it the
   human decision and the loop-back context payload.
 - `allowed-tools` includes `Bash` only to read `.kata/` artifacts and carry human-approved git actions
-  (including the backout `git reset --hard`). It never executes target code. **Note (known limitation):**
-  `Bash` cannot be restricted to specific git subcommands in frontmatter, so the "never auto-push/merge/
-  rollback" rule is a **behavioral** guard (human-gated above), not a structural one. Treat any push/merge/
-  reset without explicit human approval as a conformance violation.
+  (including the backout `git reset --hard`). It never executes target code. `Write` is included only to
+  emit `.kata/CLOSEOUT.md` and `.kata/closeout.html` (Step 2a/2b); it is scoped to `.kata/` run
+  artifacts. **Note (known limitation):** `Bash` cannot be restricted to specific git subcommands in
+  frontmatter, so the "never auto-push/merge/rollback" rule is a **behavioral** guard (human-gated
+  above), not a structural one. Treat any push/merge/reset without explicit human approval as a
+  conformance violation.
