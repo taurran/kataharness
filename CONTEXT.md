@@ -308,3 +308,37 @@ _Avoid_: leading with machine detail; a file-by-file dump.
 The first-class, plain-language "I can cleanly roll this entire run back" option at the human gate, anchored on the
 emitted `.kata/RESULT.json.baselineSha` (`git reset --hard`), **human-gated & never autonomous** (diff shown first).
 _Avoid_: a buried git incantation; anchoring on a `pre-<run>` tag no surface guarantees.
+
+## Closeout report (WS-3R, 2026-06-24)
+**Two-tier closeout**:
+The closeout's output shape — a **concise CLI/GUI summary** (persona voice, goal-anchored essentials) that **ends
+with a link** to a **durable in-depth report**. The summary is glanceable; the report is keepable. _Avoid_: a wall
+of chat text; a single dense dump.
+
+**Closeout report** (`.kata/closeout.html` + `.kata/CLOSEOUT.md`):
+The durable in-depth artifact `kata-closeout` writes each run. `.kata/CLOSEOUT.md` is the **Markdown
+source-of-truth**; `.kata/closeout.html` is the **self-contained, on-brand HTML** (rendered by filling the
+template **in-context** — no new Python; `.html`/`.css` aren't code-bearing). Both are run artifacts in `.kata/`
+(gitignored). _Avoid_: committing the rendered artifacts; a server-rendered or external-asset report.
+
+**Closeout report template** (`modules/closeout/resources/closeout-report.template.html`):
+The committed, **self-contained** (inline CSS + inline SVG, no external/CDN/font refs — opens offline) report
+skeleton with a **placeholder-token contract** (`{{GOAL}}`, `{{CHANGED_BY_ASPECT}}`, `{{VERDICT_BADGE}}`, …). `kata-report`
+authors the content keyed to the tokens; `kata-closeout` substitutes them. _Avoid_: external refs; renaming tokens
+out of sync with `kata-report`/`kata-closeout`.
+
+**KataHarness logo**:
+The project's first logo (defined 2026-06-24 in the report template + `BRAND.md`): an inline-SVG mark of **three
+ascending Prussian-blue bars with a thin ochre arrow rising over them** — the Improvement-Kata "raise the bar"
+idea. Subtle; reusable (favicon / docs / statusline glyph). _Avoid_: a mascot; making it loud.
+
+**Report brand** (`BRAND.md`):
+The closeout report's visual system — a **Hokusai-derived** palette (aged paper · Prussian blue · ochre · rust),
+readable **serif** Title-Case section headings, the logo, and **callout tiles**. Recorded in
+`modules/closeout/resources/BRAND.md`. _Avoid_: the dropped experiments (an SVG wave motif; a loop-phase ribbon
+that read as broken tabs).
+
+**Callout tiles**:
+The report's scannability system — severity blocks: `.tile--warning` (ochre, risks), `.tile--error` (rust,
+critical / backout), `.tile--note` (blue), `.tile--ok` (deep). Risks render as warning tiles; the backout as an
+error tile. _Avoid_: a flat undifferentiated list for risks/alerts.

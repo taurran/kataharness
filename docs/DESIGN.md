@@ -113,8 +113,13 @@ dial** (machinery inferred, hidden behind an advanced drawer); in-loop **milesto
 (never stage names; `protocol/narration.md`) with a **never-tiered breakthrough alert** for anything needing the human;
 and the **closeout is goal-anchored** — it leads with plain-language what-changed-and-why and **offers a clean backout**
 (WS-4) at the human gate. Register adaptation toward the user's sophistication is a **gated engram seam, not live**
-(D9/D56). Built + gate-PASS + fresh-eval-PASS, **not yet field-exercised**. Full contract:
-`.planning/specs/ws3-user-friendliness/DESIGN.md` (L1–L11).
+(D9/D56). Full contract: `.planning/specs/ws3-user-friendliness/DESIGN.md` (L1–L11).
+
+The closeout is **two-tier** (WS-3R, D96): a concise CLI/GUI summary that links to a durable, self-contained,
+on-brand **HTML report** (`.kata/closeout.html`) with a Markdown source (`.kata/CLOSEOUT.md`), rendered by filling
+a committed template in-context. Carries the first **KataHarness logo** (`modules/closeout/resources/`). Per-host
+native rendering of that report (hooks/statusline) is deferred adapter work (M8). WS-3 was field-exercised (n=1)
+by building this through the friendly loop.
 
 ## Standards
 

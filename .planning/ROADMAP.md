@@ -106,8 +106,9 @@ deferred-runtime BACKLOG). Pending on sprint-cadence: the fresh-context `kata-re
 work-project name scrubbed, Quick kept as ACP seam, Codex added) · **WS-2** inner-loop autonomy + parallelism
 *exercised* (n=1) + `kata-slop-check` shipped (D94) · **WS-3** user-friendliness (D95; persona + narration +
 goal-mirror intake + one-dial mode surface + milestone narration + goal-anchored closeout; **WS-4** backout + **WS-5**
-transparency folded in). **Built; WS-3 not yet field-exercised (n=0 live UX runs).** Remaining pre-public:
-field-exercise WS-3 · WS-1 re-grep · WS-2 worker-self-timestamp polish · then **Phase 5 EXTERNAL**
+transparency folded in) · **WS-3 field-exercised (n=1)** by building **WS-3R** (D96): the two-tier closeout —
+concise CLI summary + a self-contained on-brand HTML report + the first KataHarness logo. Remaining pre-public:
+WS-1 re-grep · WS-2 worker-self-timestamp polish · (M8 native-in-tool closeout rendering = adapter work) · then **Phase 5 EXTERNAL**
 (install-portability · multi-model) + the **v0.1 release-checklist** (flip Policy A). Far-future: agentic-loop
 benchmark → recursive parallelism (DAG-within-DAG).
 

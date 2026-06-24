@@ -83,8 +83,17 @@ authored-for: kata-orient (sections map to the three orientation tiers)
   dial (`kata-bootstrap`) + milestone narration (`kata-orchestrate`) + **goal-anchored by-aspect closeout** with offered
   backout (`kata-closeout`+`kata-report`); **WS-4 + WS-5 folded in.** Freeze-gate `kata-review` HOLD→SHIP; orchestrated
   dogfood (2 waves, concurrent Sonnet workers, self-stamped); fresh-context Opus `kata-evaluate` **PASS 10/10**.
-  **Built, NOT yet field-exercised (n=0 live UX runs).** Backout tag `pre-ws3`.
-- **⏸ Remaining (`.planning/BACKLOG.md` top):** WS-1/2/3 ✅ (WS-4/5 folded into WS-3). **OPEN, in order:** (a)
+  **Built; now field-exercised (n=1) via WS-3R below.** Backout tag `pre-ws3`.
+- **✅ WS-3R two-tier closeout done (`c265c42`, D96) — this WAS the WS-3 field-exercise (n=0→1).** The closeout is
+  now two-tier: a concise CLI/GUI summary + a **self-contained, on-brand HTML report** (`.kata/closeout.html`) +
+  Markdown source (`.kata/CLOSEOUT.md`), rendered by filling a committed template **in-context** (no new Python;
+  `.html`/`.css` not code-bearing). 3-slice non-code-bearing dogfood; fresh-context `kata-evaluate` caught + fixed
+  a cross-slice defect → PASS. Operator refined the brand live at the gate: the first **KataHarness logo** (kaizen
+  ascending-bars + rising ochre arrow) · Hokusai palette · readable serif headings · error/warning tiles. Files:
+  `modules/closeout/resources/{closeout-report.template.html,BRAND.md}` + `kata-report`/`kata-closeout`. Backout
+  `pre-ws3-report`. **Follow-up (M8, BACKLOG):** native in-tool rendering (Claude `Stop`/`SessionEnd` hook +
+  statusline; other tools per adapter).
+- **⏸ Remaining (`.planning/BACKLOG.md` top):** WS-1/2/3 ✅ + WS-3 field-exercised. **OPEN, in order:** (a)
   **field-exercise WS-3 ✅ DONE** (D96 — two-tier closeout, n=0→1) · (b) **WS-1 pre-launch re-grep** · (c) **WS-2 polish** —
   wire worker self-timestamping into the board. Then **Phase 5 EXTERNAL** (install-portability · multi-model) +
   **v0.1 release-checklist**. **Far-future:** loop-tuning + an **agentic-loop benchmark** → **recursive parallelism
