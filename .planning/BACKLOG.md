@@ -36,7 +36,12 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   path. The greater (kata) loop is fine requiring human interaction; the *harness* loop's autonomous endurance is
   what needs proving. **Deliverable:** an honest audit + a validation harness, not a claim.
 
-- **WS-3 — User-friendliness, front-to-end (must precede public launch).** The whole system is technical, not
+- **WS-3 — User-friendliness, front-to-end (must precede public launch).**
+  **[✅ BUILT 2026-06-24 (D95; merge `d08908d`; spec `specs/ws3-user-friendliness/{DESIGN,PLAN}.md`) — persona
+  (`protocol/persona.md`) · narration map (`protocol/narration.md`) · reflective goal-mirror intake · one-dial
+  mode surface · milestone narration · goal-anchored by-aspect closeout. Built + gate-PASS + fresh-eval PASS 10/10,
+  but NOT yet field-exercised (n=0 live UX runs) — the next real Kata Loop run is the first UX test. Adaptive
+  register is a gated seam, not live.]** The whole system is technical, not
   intuitive. Likely a **combination** of a **persona/voice context file** AND **explicit voice in the skills**.
   Sub-items:
   - **Decision tree must be human-readable, not machine-oriented.** Speak in terms of the **modes** we set and
@@ -56,11 +61,16 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   - **Research Hermes's UX** (people are happy with how it guides users) for both the in-loop narration and the
     closeout — borrow the guidance pattern (keep our gates, D69).
 
-- **WS-4 — Backout / rollback as a first-class option (safety).** There MUST be a surfaced way to **back out the
+- **WS-4 — Backout / rollback as a first-class option (safety).**
+  **[✅ BUILT into WS-3 slice F (D95) — `kata-closeout` offers backout in plain language, anchored on the emitted
+  `.kata/RESULT.json.baselineSha` (`git reset --hard`), human-gated & never autonomous, surfaced at the human
+  gate. Field-exercise pending.]** There MUST be a surfaced way to **back out the
   loop's changes** if a run goes off the rails. We have `pre-s<n>` backout tags, but rollback must be an explicit,
   offered option at the human gate — not a buried git incantation.
 
-- **WS-5 — Change transparency at closeout (the acute miss this session).** The closeout must make **exactly what
+- **WS-5 — Change transparency at closeout (the acute miss this session).**
+  **[✅ BUILT into WS-3 slice F (D95) — `kata-closeout` + `kata-report` lead with plain-language what-changed-why,
+  organized by goal-aspect, before any path or gate number. Field-exercise pending.]** The closeout must make **exactly what
   changed** legible to a non-expert owner ("I had no idea what changes were made"). Overlaps WS-3's closeout item;
   call it out as a hard requirement: every closeout leads with a plain-language "what changed and why it matters to
   you," with links, before any machine detail.

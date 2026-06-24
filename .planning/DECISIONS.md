@@ -702,3 +702,31 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   replay — the genuine evidence was subagent wall-clock overlap; follow-up = **worker self-stamped start/end**
   (BACKLOG). Record: `specs/kata-slop-check/PLAN.md`, `specs/ws2-loop-autonomy/AUDIT.md`, `.kata/board.md`. Backout
   tag `pre-ws2-slopcheck`.
+
+<!-- WS-3 user-friendliness (DESIGN+PLAN FROZEN, freeze-gate kata-review HOLD→SHIP; built 2026-06-24).
+     Spec: .planning/specs/ws3-user-friendliness/{DESIGN,PLAN}.md (LOCKED L1–L11 / K1–K11). -->
+- **D95 — WS-3 user-friendliness BUILT: the human-facing surfaces are friendly, goal-anchored, and honest; WS-4
+  (offered backout) + WS-5 (closeout change-transparency) folded in. Built + gate-PASS + fresh-eval PASS, NOT yet
+  field-exercised (n=0 live UX runs).** (2026-06-24.) The last pre-public workstream. A brainstorm (grounded in
+  Hermes/Devin/Claude-Code UX research) → frozen DESIGN (L1–L11) → freeze-gate `kata-review` (**HOLD→SHIP** — it
+  caught a real documentation-only seam: backout was wired to a `pre-<run>` tag no surface creates; re-anchored to
+  the emitted `.kata/RESULT.json.baselineSha`) → frozen PLAN (6-slice disjoint DAG) → an **orchestrated version-up
+  dogfood** (2 waves, concurrent Sonnet workers in worktrees, self-stamped overlapping wall-clock = provable
+  concurrency) → fresh-context Opus `kata-evaluate` **PASS (10/10 build-acceptance)**. **Shipped (8 files,
+  non-code-bearing, `codeBearing:false`, 0 drift):** **(a)** `protocol/persona.md` — a **nameless calm
+  kata-craftsperson-who-translates** SOUL (Identity/Style/Avoid/Defaults; moderate-non-expert default register);
+  **(b)** `protocol/narration.md` — a phase→plain-language map, milestone cadence, a **never-tiered**
+  breakthrough-alert invariant, and an honesty guard; **(c)** `protocol/engram.md` **E23** register-adaptation
+  seam (gated, zero CONSULT); **(d)** `kata-initiate` reflective **goal-mirror** (infer-then-confirm) that
+  **refines, not reverses, the S2 anti-drift gate** — per-value mirror-visibility + INTENT-survival teeth, blanket
+  approval FAILS; **(e)** `kata-bootstrap` one **"how careful"** dial mapping to *existing*
+  `mode`/`tiers["kata-grill"]`/`delivery.boundary` (no new config field), the composition ladder behind an advanced
+  drawer; **(f)** `kata-orchestrate` additive **milestone narration** (dispatch logic untouched); **(g)**
+  `kata-closeout` + `kata-report` **goal-anchored by-aspect closeout** leading with plain-language what-changed-why,
+  plus a **first-class offered backout** (`git reset --hard <baselineSha>`, human-gated, never autonomous).
+  **Honesty (exercised-vs-proven):** this is an authored UX *verified by the validator + a fresh-context
+  evaluator* — **not yet exercised in a live user-facing run**; the next real Kata Loop run is the first true UX
+  test. **Adaptive register is a gated seam, not live** (D9/D56/D74). The build's own closeout dogfooded slice F.
+  pytest **447**, validator **36/0**. Backout tag `pre-ws3`; merge `d08908d`. *Provenance:* operator UX decisions
+  Q1–Q6 + open-items (2026-06-24); freeze-gate + re-confirm; orchestrated build. Record:
+  `specs/ws3-user-friendliness/{DESIGN,PLAN}.md`.

@@ -1,5 +1,21 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-24, WS-3 user-friendliness BUILT — `d08908d`, D95):** The last pre-public workstream shipped.
+> Brainstorm (Hermes/Devin/Claude-Code UX research) → frozen DESIGN (L1–L11) → freeze-gate `kata-review`
+> **HOLD→SHIP** (caught a real backout seam — re-anchored to `.kata/RESULT.json.baselineSha`) → frozen PLAN
+> (6-slice DAG) → **orchestrated version-up dogfood** (2 waves, concurrent Sonnet workers in worktrees,
+> self-stamped overlapping wall-clock) → fresh-context Opus `kata-evaluate` **PASS 10/10**. **Shipped (8 files,
+> non-code-bearing, `codeBearing:false`, 0 drift):** `protocol/persona.md` (nameless calm kata-craftsperson SOUL,
+> moderate-non-expert default), `protocol/narration.md` (phase→plain map + never-tiered breakthrough + honesty
+> guard), `engram.md` E23 register seam (gated), `kata-initiate` reflective **goal-mirror** (S2 gate refined-not-
+> reversed, with teeth), `kata-bootstrap` one **"how careful"** dial (existing fields, advanced drawer),
+> `kata-orchestrate` additive milestone narration, `kata-closeout`+`kata-report` **goal-anchored by-aspect
+> closeout** + offered backout. **WS-4 + WS-5 folded in.** The build's own closeout dogfooded slice F. pytest
+> **447**, validator **36/0**. **Honesty:** built + gate-PASS + fresh-eval PASS, **NOT yet field-exercised (n=0
+> live UX runs)** — the next real Kata Loop run is the first UX test; adaptive register is a gated seam, not live.
+> Backout `pre-ws3`. **NEXT:** field-exercise WS-3 on a real friendly run · WS-1 pre-launch re-grep · then Phase 5
+> EXTERNAL (install-portability · multi-model) + v0.1 release-checklist; far-future = loop benchmark → DAG-in-DAG.
+
 > **CURRENT (2026-06-22, WS-2 EXERCISED + `kata-slop-check` shipped — `ece872e`):** Built **`kata-slop-check`** (optional
 > EVALUATE module `kata/module/slop`: fresh-context no-write, default-FAIL slop verdict, **in-context heuristics** —
 > general G1–G6 + 3 MIT-attributed checks adopted from `ai-slop-detector`, no code copied) via a **real version-up
