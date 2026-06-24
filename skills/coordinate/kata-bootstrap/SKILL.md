@@ -1,10 +1,10 @@
 ---
 name: kata-bootstrap
 description: >-
-  Pre-loop configurator and on-ramp: evaluate readiness (via kata-readiness), route by run-shape
-  (individual / batch / version-up / advanced — presets over the mode axis), compose mode+modules+tiers via
-  the ladder, preview cost, then write kata.config and launch the loop. Re-entrant — reads an existing config
-  to reconfigure. Invoke to start or reconfigure any kata run.
+  Pre-loop configurator and on-ramp: evaluate readiness (via kata-readiness), infer run-shape + mode +
+  grill-depth + delivery from the goal, state the plan in plain language, surface one dial for how careful
+  and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
+  config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
 version: 0.1.0
 category: coordinate
@@ -22,10 +22,10 @@ tags:
 ---
 # kata-bootstrap — compose a run, write kata.config, launch
 
-The on-ramp. Turns a one-keystroke "default → go" into an expressive composition ladder, then writes the
-frozen `kata.config` (schema: `protocol/config.md`) that [[kata-orchestrate]] dispatches off. Interaction
-uses **structured choice-or-text questions** (offer 2–4 options, recommendation first, always a free-text
-escape) — *(adapter binding: Claude → `AskUserQuestion`; a plain CLI → numbered options + a free-text prompt)*.
+The on-ramp. Reads the goal, **infers** the right run shape, and states the plan in plain language before asking
+anything. Interaction uses **structured choice-or-text questions** (offer 2–4 options, recommendation first,
+always a free-text escape) — *(adapter binding: Claude → `AskUserQuestion`; a plain CLI → numbered options + a
+free-text prompt)*. Voice per `protocol/persona.md`.
 
 > **Full Kata Loop?** `kata-bootstrap` is the on-ramp for the **harness middle** (compose → orchestrate). For
 > a complete **Kata Loop** run — a real initiation that captures a frozen `INTENT.md` first, and a closeout
@@ -49,51 +49,92 @@ host for the boundary; `kata-orchestrate` stays sprint-blind (D24d), so the disp
 - **no open roadmap** ⇒ normal composition (Phases 1–4 below).
 A **red** sprint is never a boundary — it routes through escalation (`protocol/escalation.md`), not here.
 
-## Phase 1 — run-shape (the router, GB1)
-Ask the run-shape: **individual / batch / version-up / advanced**. Each is a **preset** (see
-`resources/run-shapes.md`) that pre-fills `mode` + `modules` + `target` — not a new axis. `batch` (Spec B) and
-`version-up` (Spec A4) are configurable now but flagged **execution-pending** by readiness; bootstrap still
-writes a valid config. For **version-up**, additionally collect `target.path` (the existing repo) and
-`target.baselineGate` (the command that must be green before *and* after — the regression baseline). Describe
-the version-up ingestion engine (kata-graph) in prose only; do **not** wikilink it (A4, unbuilt).
+## Phase 1 — infer + plain-language statement (WS-3 L5)
 
-Also pre-fill the **`delivery` axis** (sprint-cadence D78) from the preset: **individual ⇒ one-shot · batch ⇒
-one-shot · version-up ⇒ *ask*** (one-shot or incremental). `delivery.boundary` defaults `always-stop`
-(control-first, GB6). Surface it only when the preset says *ask* or the user opens the advanced path — the
-default→go keystroke stays one-shot.
+**Before asking anything**, read the goal and infer the full run plan. State it in plain outcome language:
 
-## Phase 1.5 — grill-depth dial (D71)
-Offer the **grill-depth** as a first-class choice: **skip / light / standard / full** (writes
-`tiers["kata-grill"] = skip|essential|standard|advanced` — the dial↔value map lives in `protocol/config.md`).
-**Pre-select [[kata-readiness]]'s Scope-3 recommendation** (from priming-prompt richness) and show its one-line
-rationale, but the human always chooses (choice-or-text). Frame it as *how much up-front certainty the human
-wants*, not a quality knob. The **autonomous-reliability floor is always on** (default-FAIL + the RS research
+> *"I'll do a thorough build and check with you at the end."*
+> *"I'll work through this step-by-step and pause for your sign-off at each stage."*
+> *"This looks like a light update — I'll run a quick pass and show you the result."*
+
+The statement covers what the run will do, how careful it will be, and when you will hear from it. The human
+confirms, corrects, or continues — not reads a config form.
+
+**What is inferred:**
+- **Run-shape** (`individual / batch / version-up / advanced`) from the goal's character — is it a new build, a
+  change to an existing repo, a batch job? Each is a **preset** (see `resources/run-shapes.md`) that pre-fills
+  `mode` + `modules` + `target`. `batch` (Spec B) and `version-up` (Spec A4) are configurable now but flagged
+  **execution-pending** by readiness; bootstrap still writes a valid config. For **version-up**, additionally
+  collect `target.path` (the existing repo) and `target.baselineGate` (the command that must be green before
+  *and* after). Describe the version-up ingestion engine (kata-graph) in prose only; do **not** wikilink it
+  (A4, unbuilt).
+- **Mode** (`essential / standard / advanced`) from goal complexity and stated urgency.
+- **Grill-depth** (`skip / light / standard / full`) from priming-prompt richness and ambiguity — [[kata-readiness]]'s
+  Scope-3 recommendation is the starting point.
+- **Delivery** (`one-shot` vs. `incremental`, `always-stop` vs. `auto-continue-while-green`) from whether the
+  goal implies a long multi-phase build or a single run. `individual` ⇒ one-shot · `batch` ⇒ one-shot ·
+  `version-up` ⇒ ask. `delivery.boundary` defaults `always-stop` (control-first, GB6).
+
+**Do not present a config form.** State the inferred plan as outcomes. The human edits it in plain language;
+the configuration follows from the edit.
+
+## Phase 1.5 — the one dial: how careful / how often (WS-3 L5)
+
+Surface **exactly one** plain question:
+
+> *"How careful and how often should I check in with you?"*
+
+Offer **three named positions** (recommendation highlighted based on the inferred plan):
+
+| Position | Plain meaning | `mode` | `tiers["kata-grill"]` | `delivery.boundary` |
+|---|---|---|---|---|
+| **Lighter** | Move fast, check only at the end | `essential` | `skip` or `essential` | `auto-continue-while-green` |
+| **Standard** *(default)* | Steady build, check at the end | `standard` | `standard` | `always-stop` |
+| **More careful** | Thorough + check in more often | `advanced` | `standard` or `advanced` | `always-stop` |
+
+**Dial → config field mapping (K5 — no new field):**
+- **More careful** ⇒ higher `mode` (`advanced`) + deeper grill (`tiers["kata-grill"]` = `standard` or `advanced`)
+  + `delivery.boundary = "always-stop"`.
+- **Standard** ⇒ `mode = "standard"` + `tiers["kata-grill"] = "standard"` + `delivery.boundary = "always-stop"`.
+- **Lighter** ⇒ lower `mode` (`essential`) + lighter or skipped grill (`tiers["kata-grill"]` = `essential` or
+  `"skip"`) + `delivery.boundary = "auto-continue-while-green"`.
+
+This is the only question the default path asks. A free-text escape is always available (the human can say
+"somewhere between careful and standard" and bootstrap resolves it). The mapping above is the authoritative
+translation: whatever the human says in plain language, it maps onto these three existing `kata.config` fields
+and no others. (K5: no new config field is ever introduced here.)
+
+The **autonomous-reliability floor is always on regardless of dial position** (default-FAIL + the RS research
 subagent *(loop-cognition phase; named, not yet wired)* + a `kata-defer` assumption/ambiguity log surfaced at
-the gate/handoff); the grill adds up-front certainty **on top of** it:
-- **skip** ⇒ *no grill runs* — trust the priming prompt and lean entirely on the floor; ambiguity is resolved
-  in-loop, not up-front.
-- **light** ⇒ a shallow grill (`kata-grill-essential`, top-risk branches only) on top of the floor.
-- **standard / full** ⇒ a fuller grill (`kata-grill-standard`/`-advanced`) to enrich the prompt into the frozen
-  spec before execution.
-This is the *priming-and-grill* control surface; grill ↔ RS are one ambiguity-resolution spectrum. The
-default-FAIL gate runs on **every** rung. (Equivalent to a `tiers["kata-grill"]` cross-tier pick, surfaced
-up-front because it is the highest-leverage certainty dial — Phase-2 step 3 can still override it.)
+the gate/handoff). The dial controls *up-front certainty* and *check-in frequency*, not the quality gate.
 
-## Phase 2 — the composition ladder (D24c), interview = run-shape-relevant only (GB13)
+Frame grill-depth as *how much up-front certainty you want before work starts*, not a quality knob. Grill ↔ RS
+are one ambiguity-resolution spectrum: the lighter the grill, the more ambiguity is resolved in-loop rather
+than up-front. The default-FAIL `kata-evaluate` gate runs on **every** rung. (Equivalent to a
+`tiers["kata-grill"]` cross-tier pick, surfaced here because it is the highest-leverage certainty dial — the
+advanced drawer can still override it individually.)
+
+## Phase 2 — advanced settings drawer (D24c, available not default)
+
+> **Advanced settings** — available if you want them. Most runs don't need this.
+
+The full composition ladder (D24c) is here, behind this drawer. Open it only if needed:
+
 1. **default → go** — accept the preset's recommended mode and launch. The floor is never punishing.
 2. **add modules** — à-la-carte beyond the preset bundle (D20).
 3. **cross-tier pick** — override a single family's tier (`tiers[family]`) without changing `mode`
    (e.g. pull `kata-grill-advanced` into a Standard run for one cycle).
 4. **external/custom ingest** — name a skill + declare its slot (`needs`/`produces`/`slot`) → `ingested[]`.
+
 Surface ONLY the `kata.config` fields the chosen run-shape needs (progressive disclosure) — the default→go path
-stays one keystroke; advanced fields appear only when the path opens them.
+stays one keystroke; advanced fields appear only when this drawer is opened.
 
-## Phase 3 — cost preview
-Sum the `cost-weight` of every skill the composed run will invoke (authority:
-`.planning/SKILL-COST-RATINGS.md` / each skill's frontmatter). Show the total + the per-skill breakdown before
-committing, so the user prices the run.
+**Cost preview** (also in the drawer): sum the `cost-weight` of every skill the composed run will invoke
+(authority: `.planning/SKILL-COST-RATINGS.md` / each skill's frontmatter). Show the total + per-skill breakdown.
+The cost preview is shown here for runs opened via the drawer; on the default path it is surfaced as a single
+line in the plain-language statement ("this is a medium-cost run").
 
-## Phase 4 — write kata.config + launch
+## Phase 3 — write kata.config + launch
 Write `kata.config` (JSON, branch root) per `protocol/config.md`: `mode`, `modules`, `effort`, `tiers`,
 `ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**. Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;

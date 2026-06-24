@@ -30,6 +30,9 @@ The entry point of the **initiation module** (`modules/initiation/`). It transfo
 intent into a frozen `INTENT.md` artifact and hands full context to the harness. It **composes** —
 never reimplements — the spine's existing skills.
 
+Voice throughout: read `protocol/persona.md`. Plain-language, warm through clarity, outcome-first.
+Never surface internal stage names. Never overclaim gated capabilities.
+
 ---
 
 ## Phase 0 — readiness check (always first)
@@ -61,7 +64,9 @@ change. Ask: "What is missing or broken in the prior run's output that this vers
 Capture that gap as the `goal` field. This is what D88 names as the most common INTENT failure mode:
 version-up goals stated as code changes rather than outcomes.
 
-Confirm classification with the user (one-line, non-blocking) before proceeding. If ambiguous, ask.
+Do not ask yet — carry the classification forward into the mirror (Phase 2). If the signal is
+genuinely ambiguous (two kinds equally plausible), note the ambiguity in the mirror for the human to
+resolve.
 
 ---
 
@@ -85,52 +90,93 @@ this is a fresh start — skip this phase.
 
 ---
 
-## Phase 2 — interactive target / platform / vault configuration
+## Phase 2 — the reflective goal mirror
 
-Lead the user through three configuration choices (structured choice-or-text; offer 2–4 options,
-always a free-text escape):
+After ingesting the inputs (system prompt + any brief + light research + Phase 0 readiness verdict),
+**synthesize** everything into a plain-language mirror and reflect it back to the human. Do not
+present a form. Do not ask a list of questions. Propose a complete picture and invite editing.
 
-### 2a. Target
+### 2a. Build the mirror
 
-| target.kind | Meaning |
+Infer a complete candidate setup from everything available. Then write a short, warm mirror in
+plain language covering two things:
+
+**What you want and what success looks like** — restate the goal in the human's own words, sharpen
+where the inputs allow. Name the outcome, not the implementation. For a `version-up`, name the gap
+being closed, not the code change.
+
+**Here is how I would set it up** — include the proposed config in human terms:
+
+| Config value | What to say in the mirror |
+|---|---|
+| `kind` | "This looks like a [new build / structured research / improvement run]." |
+| `target.kind` + `target.path` | "I'd run it [on this project / on a new repo / on the harness itself] — [path if known]." |
+| `target.vault` | "I'd link your PokeVault / I'd skip the vault for this run / I'd aim at [path]." |
+| `target.platform` | "We're running on [Claude / Codex / …]." |
+| `grillDepth` | "I'd suggest [skip / light / standard / full] planning depth, because [one-line rationale from Phase 0]." |
+| Dual-control execute | "After planning, you confirm before anything runs. That stays in your hands." |
+
+Write the mirror as a short paragraph or two — not a table. The goal is a human reading it and
+recognising their own intent, reflected back clearly with a sensible starting setup.
+
+### 2b. Invite conversational editing
+
+After reflecting the mirror, ask one open question via `AskUserQuestion`:
+
+> "Does this capture what you're after? Change anything you'd like — the goal, the setup, or the
+> planning depth — and I'll adjust."
+
+The human edits conversationally. You update the inferred values in response. Continue until the
+human signals confirmation (agreement, "looks good", "yes", "go", etc.).
+
+**What counts as confirmation:** an explicit signal from the human that the mirror is accurate —
+including its load-bearing values. Silence or a generic approval that leaves specific values
+uninspected does not count (see the gate checklist below).
+
+### 2c. Reference tables (for your inference, not shown to the user as a form)
+
+**target.kind:**
+
+| target.kind | When to infer it |
 |---|---|
 | `self` | KataHarness is improving itself (dogfood run). |
-| `existing` | An existing repo/project on disk. Collect `target.path`. |
+| `existing` | An existing repo/project on disk. Collect `target.path` from the brief or ask. |
 | `greenfield` | A brand-new repo to be created. Collect name + destination. |
 
-### 2b. Vault
+**Vault:**
 
-How the skills and harness artifacts land relative to the user's knowledge workspace:
-
-| Option | Meaning |
+| Option | When to infer it |
 |---|---|
-| Link/scaffold PokeVault | Use the user's configured PokeVault (preferred default if configured). |
-| Point at own vault | User names an existing Obsidian vault or notes directory. |
-| Aim each folder | Manual per-artifact path configuration (advanced). |
+| `linked` (PokeVault) | User's PokeVault is configured — prefer this. |
+| `own:<path>` | User names an existing Obsidian vault or notes directory. |
+| `per-folder:<path>` | Manual per-artifact path configuration (advanced — surface only if asked). |
+| absent | No vault configured for this run. |
 
-Collect `target.vault`. Record which approach was chosen; do not trigger installer mechanics — those
-are deferred to Phase 5.
+Collect `target.vault` from the mirror conversation. Do not trigger installer mechanics — those are
+deferred to Phase 5.
 
-### 2c. Platform
+**Platform:**
 
-Which agent host will execute the harness:
-
-| Option | Meaning |
+| Option | When to infer it |
 |---|---|
-| `Claude` | Claude Code (current default). |
-| `Codex` | OpenAI Codex — uses the Codex adapter. |
-| `Kiro` | Amazon Kiro — uses the Kiro adapter (planned v0.3). |
-| `Quick` | ACP desktop host — the **integration seam for an external/work ACP host** (brings its own `AGENTS.md`/installer). |
-| `Other` | Any additional host. The platform may bring its own `AGENTS.md`/installer. |
+| `claude` | Claude Code (current default — infer unless told otherwise). |
+| `codex` | OpenAI Codex — uses the Codex adapter. |
+| `kiro` | Amazon Kiro — uses the Kiro adapter (planned v0.3). |
+| `quick` | ACP desktop host — the integration seam for an external/work ACP host. |
+| `other` | Any additional host. |
 
-Collect `target.platform`. If `Kiro`, `Quick`, or `Other`, note that the platform's module-swap
-mechanism applies (see `modules/initiation/AGENTS.md`).
+If `Kiro`, `Quick`, or `Other`, note that the platform's module-swap mechanism applies (see
+`modules/initiation/AGENTS.md`).
 
 ---
 
 ## Phase 3 — grill depth
 
-Present the grill-depth dial (from [[kata-readiness]]'s Scope-3 recommendation, pre-selected):
+The grill-depth is surfaced inside the mirror (Phase 2) as part of the proposed setup. The
+pre-selection comes from [[kata-readiness]]'s Scope-3 recommendation, carried forward with a
+one-line rationale. The human confirms or changes it during the mirror conversation.
+
+For reference — the depth options and their meanings:
 
 | grillDepth | Meaning |
 |---|---|
@@ -139,52 +185,75 @@ Present the grill-depth dial (from [[kata-readiness]]'s Scope-3 recommendation, 
 | `standard` | Full method, full decision tree. **Default for non-trivial work.** |
 | `full` | Standard + adversarial stress-test + convergence gate. High-stakes / hard-to-reverse. |
 
-Show the readiness verdict's one-line rationale for the pre-selected depth. The human always chooses.
-Record the chosen depth as `grillDepth` in `INTENT.md`.
+Record the confirmed depth as `grillDepth` in `INTENT.md`. The human always chooses; the pre-selection
+is a proposal inside the mirror, not a default that is silently carried forward.
 
 ---
 
-## STOP — ask, do not infer
+## Infer-then-confirm gate
 
-> **This gate is a hard structural stop. Do NOT proceed past this point until every item below
-> has been answered via `AskUserQuestion`. Inferring any of these from the priming prompt is a
-> drift failure that the gate will catch and that `kata-evaluate` will score as NEEDS_WORK.**
+> **This gate is a hard structural stop. Do NOT freeze `INTENT.md` until the human has
+> confirmed each load-bearing value by name, inside the mirror conversation. Inferring a value
+> and proceeding without surfacing it to the human is a drift failure. The gate measures
+> confirmation, not form-asking — but a blanket "looks good" over un-itemized inferred values
+> is not confirmation.**
 
-Before writing any draft `INTENT.md`, use **`AskUserQuestion`** to confirm each of the following
-load-bearing choices directly with the operator. Present them as a structured multi-part prompt
-(one `AskUserQuestion` call is sufficient if the platform supports it; otherwise ask sequentially):
+The mirror (Phase 2) is the confirmation surface. Each load-bearing value must have been **individually
+named and visible** in the reflected-back mirror, and must have **received either an explicit approval
+or a correction** from the human. Values that were inferred internally but not named in the mirror
+are not confirmed, regardless of any overall approval.
 
-1. **`kind` confirmation** — confirm the classified run kind (`project` / `research` / `version-up`).
-   Do not assume the priming prompt's wording settles this; ask explicitly.
-2. **`target.kind`** — is the target `self` (harness dogfood), `existing` (a repo on disk), or
-   `greenfield` (brand-new repo)?
-3. **`target.path`** — if `target.kind == "existing"`, what is the absolute filesystem path?
-4. **`target.vault`** — vault strategy: `linked` (PokeVault), `scaffolded`, `own:<path>`,
-   `per-folder:<path>`, or absent (no vault for this run)?
-5. **`target.platform`** — which agent host drives this run: `claude`, `codex`, `kiro`, `quick`, or
-   `other`?
-6. **`grillDepth`** — confirm the depth the operator wants: `skip`, `light`, `standard`, or `full`.
-7. **Dual-control execute decision** — after the grill (Phase 5) completes, the execute step requires
-   explicit operator confirmation: confirm the operator understands they will be asked to say
-   "execute" (or equivalent) to freeze `INTENT.md` and hand off to the harness.
+**Requirement (unchanged from S2):** every answer in `INTENT.md` must trace back to a human
+confirmation — either the human said it first, or the agent proposed it in the mirror and the human
+approved or corrected it by name.
 
-**Why this gate exists:** the initiation dogfood run (S2 post-mortem) showed that a richly-worded
-priming prompt can appear to settle all of these — but the agent inferred answers the operator had
-not explicitly chosen. Every answer in the `INTENT.md` artifact must trace back to an operator
-response, not an inference. This gate enforces that provenance structurally.
+**What changed (presentation only):** the gate now accepts confirmation via the mirror conversation
+rather than requiring a naked form. The requirement — every frozen value traces to an explicit human
+confirmation — is identical. This is a recorded, audited refinement of the S2 anti-drift fix, not a
+weakening of it.
 
-### Gate checklist (for the evaluator)
+**The load-bearing values** that must each be individually visible in the mirror and confirmed:
 
-An evaluator verifying this run MUST confirm all of the following before marking initiation
-as complete:
+1. `kind` — the classified run kind (project / research / version-up).
+2. `target.kind` — self / existing / greenfield.
+3. `target.path` — required when `target.kind == "existing"`.
+4. `target.vault` — vault strategy (linked / own:path / per-folder:path / absent).
+5. `target.platform` — the agent host driving this run.
+6. `grillDepth` — the planning depth (skip / light / standard / full).
+7. Dual-control execute — the human's understanding that they confirm before anything runs.
 
-- [ ] `kind` value was confirmed via `AskUserQuestion` (not inferred from the priming prompt).
-- [ ] `target.kind` was confirmed via `AskUserQuestion`.
-- [ ] `target.path` was provided by the operator when `target.kind == "existing"`.
-- [ ] `target.vault` was confirmed via `AskUserQuestion`.
-- [ ] `target.platform` was confirmed via `AskUserQuestion`.
-- [ ] `grillDepth` was confirmed via `AskUserQuestion`.
-- [ ] The dual-control execute decision was made by the operator (not auto-decided by the agent).
+If any value was not named in the mirror — or the human's response was ambiguous on that value
+specifically — surface it explicitly via `AskUserQuestion` before proceeding.
+
+### Gate checklist (for the evaluator — with teeth)
+
+An evaluator verifying this run MUST confirm ALL of the following before marking initiation as
+complete. A blanket finding of "looks good" is not sufficient — each item below must be checked
+individually against the mirror transcript and the frozen `INTENT.md`.
+
+**Mirror visibility — each load-bearing value was individually visible in the reflected-back mirror:**
+- [ ] `kind` was named in the mirror (not only inferred internally).
+- [ ] `target.kind` was named in the mirror.
+- [ ] `target.path` was named in the mirror when `target.kind == "existing"`.
+- [ ] `target.vault` was named in the mirror (the vault strategy was stated, not assumed).
+- [ ] `target.platform` was named in the mirror.
+- [ ] `grillDepth` was named in the mirror, with its rationale.
+- [ ] Dual-control execute was named in the mirror (the human was told they confirm before anything runs).
+
+**Human confirmation — each value survived into the frozen `INTENT.md` unchanged or was explicitly corrected:**
+- [ ] `kind` in `INTENT.md` matches what the human confirmed (approved or corrected in the mirror).
+- [ ] `target.kind` in `INTENT.md` matches the human-confirmed value.
+- [ ] `target.path` in `INTENT.md` matches the human-supplied path (when applicable).
+- [ ] `target.vault` in `INTENT.md` matches the human-confirmed vault strategy.
+- [ ] `target.platform` in `INTENT.md` matches the human-confirmed platform.
+- [ ] `grillDepth` in `INTENT.md` matches the human-confirmed depth.
+- [ ] The dual-control execute decision was made by the human (not auto-decided by the agent).
+
+**A value that was inferred, not named in the mirror, and passed through with a blanket approval
+FAILS this gate — even if the value happens to be correct.** The confirmation must be traceable
+to that value specifically.
+
+**Writer and schema:**
 - [ ] `INTENT.md` frontmatter was written by `tools/intent_scaffold.py` (`write_intent`) from the
   collected answers — not hand-crafted inline.
 - [ ] `INTENT.md` conforms to `protocol/intent.md` (all required keys present, valid enum values).
