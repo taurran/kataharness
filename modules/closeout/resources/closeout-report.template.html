@@ -1,0 +1,236 @@
+<!--
+  KataHarness 改善型 — Closeout Report Template  ·  theme: Hokusai-derived palette (no wave motif)
+  ================================================================================
+  Self-contained HTML · inline CSS + inline SVG logo only · no external refs · opens offline anywhere.
+
+  PLACEHOLDER TOKEN CONTRACT
+  --------------------------
+  S2 (kata-report) fills content; S3 (kata-closeout) substitutes these tokens at run end.
+  Every token MUST be replaced before writing .kata/closeout.html — no token should remain.
+
+  TOKEN LIST (in section order):
+
+  {{RUN_TITLE}}        plain text — <title> + the report <h1> card header.
+  {{VERDICT_BADGE}}    full <span> element: <span class="badge badge--{STATE}">{LABEL}</span>,
+                       STATE ∈ pass | partial | needs-work. e.g. <span class="badge badge--pass">GOAL HIT</span>
+  {{GOAL}}             plain-language paragraph(s) (HTML allowed) — §1, restated goal from INTENT.md.
+  {{CHANGED_BY_ASPECT}}  REPEATABLE block group — §2. One block per goal-aspect:
+                         <div class="aspect-block">
+                           <h3 class="aspect-heading">{ASPECT HEADING}</h3>
+                           <p>{plain-language what changed + why; no paths/gate numbers; 1–3 sentences}</p>
+                         </div>
+  {{HIT_ASSESSMENT}}   plain-language paragraph (HTML allowed) — §3, honest fully/partially/gap; references verdict.
+  {{RISKS}}            §4 — render each risk as a WARNING TILE (recommended), or a <ul>. Tile form:
+                         <div class="tile tile--warning"><div class="tile-label">Watch</div><p>{risk}</p></div>
+                       Use <div class="tile tile--error">…</div> for any CRITICAL error / NEEDS_WORK item.
+  {{EVIDENCE}}         §5 — HTML list of links/paths (linked-not-dumped).
+  {{BACKOUT}}          §6 — plain-language L9 backout sentence + command. It is rendered INSIDE a fixed
+                       error tile by the template; provide just the sentence + <code>command</code>.
+  {{GATE_NUMBERS}}     footer "gate" slot — pytest + validator results.
+  {{SHAS}}             footer "shas" slot — baseline → result SHA.
+  {{TIMESTAMP}}        footer "generated" slot — ISO-8601 UTC.
+
+  END TOKEN CONTRACT
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>改善型 · KataHarness — {{RUN_TITLE}}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Palette (Hokusai-derived: aged paper · Prussian ink · ochre · rust) ── */
+    :root {
+      --paper:     #E9DFC8;
+      --card:      #F5EEDD;
+      --border:    #CDBE9B;
+      --ink:       #1A2C3B;   /* primary text — deep Prussian near-black */
+      --muted:     #756A52;   /* metadata */
+      --deep:      #163A57;   /* deepest Prussian — titles, accents */
+      --blue:      #2E6389;   /* mid blue */
+      --foam:      #F7F2E6;
+      --ochre:     #B5894B;   /* warning / accent */
+      --ochre-ink: #856231;
+      --rust:      #A6532B;   /* error / destructive */
+    }
+
+    /* ── Type ───────────────────────────────────────────────────────────── */
+    body {
+      background: var(--paper); color: var(--ink);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15.5px; line-height: 1.72; min-height: 100vh; padding: 2.5rem 1rem;
+      -webkit-font-smoothing: antialiased;
+    }
+    .serif { font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif; }
+    .mono, code, .footer-item { font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace; }
+
+    /* ── Card ───────────────────────────────────────────────────────────── */
+    .report-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      max-width: 700px; margin: 0 auto; overflow: hidden; box-shadow: 0 8px 34px rgba(22, 44, 62, 0.16);
+    }
+
+    /* ── Brand splash (subtle: logo + name; replaces the old hero + ribbon) ── */
+    .brandbar {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 1.1rem 2rem; border-bottom: 1px solid var(--border); background: var(--card);
+    }
+    .brandbar svg { display: block; flex: none; }
+    .brandname {
+      font-weight: 700; font-size: 1.02rem; letter-spacing: 0.01em; color: var(--deep);
+    }
+    .brandkanji {
+      font-size: 0.85rem; color: var(--muted); letter-spacing: 0.04em; padding-left: 0.1rem;
+    }
+    .brandbar .spacer { flex: 1; }
+    .brandbar .tagline {
+      font-size: 0.72rem; color: var(--muted); letter-spacing: 0.02em; font-style: italic;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    .card-header { padding: 1.5rem 2rem 1.35rem; }
+    .report-title { font-size: 1.6rem; font-weight: 700; color: var(--ink); line-height: 1.25; margin-bottom: 0.85rem; }
+    .verdict-row { display: flex; align-items: center; gap: 0.75rem; }
+    .badge {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+      padding: 0.3rem 0.85rem; border-radius: 999px; text-transform: uppercase; white-space: nowrap;
+    }
+    .badge--pass { background: rgba(22,58,87,0.10); color: var(--deep); border: 1px solid rgba(22,58,87,0.4); }
+    .badge--partial { background: rgba(181,137,75,0.16); color: var(--ochre-ink); border: 1px solid rgba(181,137,75,0.5); }
+    .badge--needs-work { background: rgba(166,83,43,0.13); color: var(--rust); border: 1px solid rgba(166,83,43,0.45); }
+
+    /* ── Body & sections ────────────────────────────────────────────────── */
+    .card-body { padding: 0 2rem; }
+    .section { padding: 1.6rem 0; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+    .section-heading {
+      font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+      font-size: 1.18rem; font-weight: 700; color: var(--deep);
+      margin-bottom: 0.7rem; padding-left: 0.7rem; border-left: 3px solid var(--blue);
+    }
+    p { color: var(--ink); margin-bottom: 0.6rem; }
+    p:last-child { margin-bottom: 0; }
+    ul { list-style: none; padding-left: 0; margin: 0; }
+    ul li { padding: 0.22rem 0 0.22rem 1.15rem; position: relative; color: var(--ink); }
+    ul li::before { content: "·"; position: absolute; left: 0.2rem; color: var(--blue); font-weight: 700; }
+    a { color: var(--blue); text-decoration: underline; text-decoration-color: var(--ochre); text-underline-offset: 2px; }
+    a:hover { color: var(--deep); }
+    code { background: rgba(22,44,62,0.06); border: 1px solid var(--border); border-radius: 3px; padding: 0.1em 0.35em; font-size: 0.85em; color: var(--ink); }
+    strong { color: var(--deep); }
+
+    /* ── Aspect blocks (§2) ─────────────────────────────────────────────── */
+    .aspect-block { margin-bottom: 1.1rem; }
+    .aspect-block:last-child { margin-bottom: 0; }
+    .aspect-heading { font-size: 0.95rem; font-weight: 700; color: var(--blue); margin-bottom: 0.25rem; letter-spacing: 0.005em; }
+
+    /* ── Callout tiles (error / warning / note / ok) ────────────────────── */
+    .tile { border: 1px solid; border-left-width: 4px; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.55rem 0; }
+    .tile:first-child { margin-top: 0; }
+    .tile:last-child { margin-bottom: 0; }
+    .tile p { margin: 0; }
+    .tile-label {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.3rem;
+    }
+    .tile--warning { background: rgba(181,137,75,0.10); border-color: rgba(181,137,75,0.45); }
+    .tile--warning .tile-label { color: var(--ochre-ink); }
+    .tile--error { background: rgba(166,83,43,0.08); border-color: rgba(166,83,43,0.45); }
+    .tile--error .tile-label { color: var(--rust); }
+    .tile--note { background: rgba(46,99,137,0.09); border-color: rgba(46,99,137,0.4); }
+    .tile--note .tile-label { color: var(--deep); }
+    .tile--ok { background: rgba(22,58,87,0.06); border-color: rgba(22,58,87,0.32); }
+    .tile--ok .tile-label { color: var(--deep); }
+
+    /* ── Footer ─────────────────────────────────────────────────────────── */
+    .card-footer {
+      background: var(--deep); padding: 0.85rem 2rem; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem;
+      font-size: 0.68rem; color: var(--foam);
+    }
+    .footer-item { display: flex; gap: 0.4rem; align-items: baseline; white-space: nowrap; }
+    .footer-label { color: var(--blue); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+    .footer-value { color: var(--foam); opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+  <div class="report-card">
+
+    <!-- ── Brand splash: KataHarness logo (kaizen ascending-steps + rising arrow) + name ── -->
+    <div class="brandbar">
+      <svg width="26" height="26" viewBox="0 0 32 32" role="img" aria-label="KataHarness logo">
+        <rect x="4"  y="20" width="6" height="8"  rx="1.5" fill="#163A57"/>
+        <rect x="13" y="15" width="6" height="13" rx="1.5" fill="#2E6389"/>
+        <rect x="22" y="9"  width="6" height="19" rx="1.5" fill="#163A57"/>
+        <path d="M5 19 L25 7.5" fill="none" stroke="#B5894B" stroke-width="2" stroke-linecap="round"/>
+        <path d="M25 7.5 l-5.4 0.5 l2.7 4.2 z" fill="#B5894B"/>
+      </svg>
+      <span class="brandname">KataHarness</span>
+      <span class="brandkanji">改善型</span>
+      <span class="spacer"></span>
+      <span class="tagline">closeout report</span>
+    </div>
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="card-header">
+      <div class="report-title serif">{{RUN_TITLE}}</div>
+      <div class="verdict-row">
+        {{VERDICT_BADGE}}
+      </div>
+    </div>
+
+    <!-- ── Report body ──────────────────────────────────────────────────────── -->
+    <div class="card-body">
+
+      <div class="section">
+        <div class="section-heading">Goal, restated</div>
+        {{GOAL}}
+      </div>
+
+      <div class="section">
+        <div class="section-heading">What changed &amp; why it matters to you</div>
+        {{CHANGED_BY_ASPECT}}
+      </div>
+
+      <div class="section">
+        <div class="section-heading">Did it hit the goal?</div>
+        {{HIT_ASSESSMENT}}
+      </div>
+
+      <div class="section">
+        <div class="section-heading">Risks &amp; uncertainties</div>
+        {{RISKS}}
+      </div>
+
+      <div class="section">
+        <div class="section-heading">Evidence</div>
+        {{EVIDENCE}}
+      </div>
+
+      <div class="section">
+        <div class="section-heading">Your options</div>
+        <p>
+          <strong>Keep it</strong> — commit, push, and merge (human-gated git actions, as usual).<br />
+          <strong>Iterate</strong> — run again or version-up to refine.
+        </p>
+        <div class="tile tile--error">
+          <div class="tile-label">Clean undo · L9 backout</div>
+          {{BACKOUT}}
+        </div>
+      </div>
+
+    </div><!-- /.card-body -->
+
+    <!-- ── Footer ───────────────────────────────────────────────────────────── -->
+    <div class="card-footer">
+      <div class="footer-item"><span class="footer-label">gate</span><span class="footer-value">{{GATE_NUMBERS}}</span></div>
+      <div class="footer-item"><span class="footer-label">shas</span><span class="footer-value">{{SHAS}}</span></div>
+      <div class="footer-item"><span class="footer-label">generated</span><span class="footer-value">{{TIMESTAMP}}</span></div>
+    </div>
+
+  </div><!-- /.report-card -->
+
+</body>
+</html>
