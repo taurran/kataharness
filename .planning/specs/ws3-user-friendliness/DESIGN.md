@@ -1,6 +1,6 @@
 ---
 title: "WS-3 — User-friendliness (front-to-end UX): frozen DESIGN"
-status: DESIGN (brainstormed 2026-06-24; freeze-gate kata-review + operator review pending before PLAN)
+status: DESIGN — freeze-gate kata-review returned HOLD; MF-1/MF-2/SF-1..4 fixes folded 2026-06-24; re-confirm pending before FROZEN/PLAN
 date: 2026-06-24
 scope: project
 supersedes-framing: >-
@@ -32,9 +32,10 @@ no-self-cert, two-way handoff) and **without** faking capabilities that are gate
 
 - **Primary audience (L1):** a **moderate non-expert owner** by default — someone who owns the *goal* but
   can't read the diff. Plain-language, warm, legible by default.
-- **Adaptation (L1):** the persona + the learning path **progressively dial the register** toward the user's
-  real sophistication *as it learns them* — **but see L8 (honesty): this ships as a default + a named seam,
-  not wired adaptivity in v0.1.**
+- **Adaptation (L1):** **v0.1 ships only the moderate default — register adaptation is a named, gated seam, not
+  a live capability** (see L8). The *intent* is that the persona + learning path progressively dial the register
+  toward the user's real sophistication as it learns them; that light turns on later when engram CONSULT matures
+  (D9/D56), never in v0.1.
 - **Success:** a non-expert can (a) state a goal and recognize it in the agent's reflected-back understanding;
   (b) trust a long run is progressing without watching logs; (c) read the closeout and know **what changed and
   why it matters to them**, what's uncertain, and how to **undo it** — in one screen, in plain language.
@@ -57,7 +58,11 @@ no-self-cert, two-way handoff) and **without** faking capabilities that are gate
   confirmation, never a silent inference** — is **preserved**. Only its *presentation* changes: from a naked
   config form to **infer-then-confirm** (the agent proposes config in human terms inside the mirror; the human
   confirms/corrects). The evaluator gate-checklist in `kata-initiate` is rewritten to verify *confirmation*, not
-  *form-asking*. This is a deliberate, audited refinement of the S2 anti-drift fix — recorded, not silent.
+  *form-asking* — but with teeth, so the bulk mirror cannot launder silent inferences: **the evaluator confirms
+  each load-bearing value (kind / target.kind / target.path / vault / platform / grillDepth / dual-control
+  execute) was individually visible in the reflected-back mirror AND survived into the frozen `INTENT.md`
+  unchanged-or-corrected. A blanket "looks good" over un-itemized inferred values FAILS the gate.** This is a
+  deliberate, audited refinement of the S2 anti-drift fix — recorded, not silent.
 - **L5 — Mode surface = infer + state-in-plain-language + one dial + advanced drawer.** `kata-bootstrap`'s
   surface is re-framed: infer run-shape + mode + grill-depth + delivery from the goal, state it in plain outcome
   language, surface **exactly one** plain dial ("how careful / how often should I check with you"), and hide the
@@ -71,7 +76,10 @@ no-self-cert, two-way handoff) and **without** faking capabilities that are gate
   dashboard/statusline/web viewer remain the granular live view for whoever wants to watch. **Invariant:**
   anything needing the human — a decision/escalation or a critical failure — **breaks through into the
   conversation immediately and unmissably**, regardless of routine quiet (the Hermes floating-alert backstop,
-  adapted). This breakthrough invariant is **never tiered** (D33-class).
+  adapted). This breakthrough invariant is **never tiered** (D33-class). **Honesty guard:** `narration.md`
+  describes only what is actually happening — it MUST NOT narrate un-wired autonomy (e.g. "researching this
+  myself" implying a standing RS call-site that is not on, or "learning from this" implying live CONSULT), or it
+  re-creates an L8-class overclaim in the narration channel.
 - **L7 — Closeout = goal-anchored, by-goal-aspect topic synthesis.** `kata-closeout` + `kata-report` re-framed to
   a fixed skeleton (§5). It **leads with plain-language what-changed-and-why** (before any path or gate number —
   the WS-5 hard requirement), organizes the change story **by the goal-aspect each change served** (adapting
@@ -87,15 +95,24 @@ no-self-cert, two-way handoff) and **without** faking capabilities that are gate
   is live when it is a default + a seam is itself an inflation slop signal (the thing `kata-slop-check` catches)
   — forbidden.**
 - **L9 — Backout (WS-4) is a first-class, offered, plain-language option at the human gate.** Every run's
-  closeout names — in plain words — "I can cleanly roll this entire run back, as if it never happened," wired to
-  the existing `pre-<run>` backout tag. Always present and named; foregrounded when the human is not satisfied.
-  Never a buried git incantation.
+  closeout names — in plain words — "I can cleanly roll this entire run back, as if it never happened." The
+  rollback **anchors on the run's already-emitted baseline: `.kata/RESULT.json.baselineSha`** (which
+  `kata-closeout` already reads — so the anchor genuinely exists at closeout, not a tag some PLAN may or may not
+  have set). A PLAN may *additionally* set a `pre-<run>` convenience tag, but the **guaranteed** anchor is the
+  emitted baseline SHA. Always present and named; foregrounded when the human is not satisfied. **Security /
+  safety:** the rollback is a destructive `git reset --hard` to the baseline — it inherits `kata-closeout`'s
+  human-gated, never-autonomous git guard (executed ONLY on explicit human approval, with the diff shown first),
+  exactly like commit/push/merge. Never a buried git incantation; never auto-run.
 - **L10 — Spine invariants are untouched.** default-FAIL (`kata-evaluate` still gates; closeout never gates),
   no-drift, no-self-certification (L8), two-way file handoff, everything-versioned all hold. WS-3 changes
   *presentation and voice*, not the quality machinery.
-- **L11 — Mostly-markdown, low code surface.** The change is predominantly skill-authoring + two new markdown
-  contracts + one light config field/engram row. No new detection/UX Python engine (prefer-in-context; keeps the
-  agnostic-core bias). Any code is confined to a config-field addition + its validator/test if needed.
+- **L11 — Markdown-first, no new Python, no new config field.** The change is predominantly skill-authoring +
+  two new markdown contracts (`persona.md`, `narration.md`) + one engram seam row (markdown). **No new
+  detection/UX Python engine, no new config field, no validator change** (prefer-in-context; keeps the
+  agnostic-core bias). Two surfaces reach past prose and the spec is honest about them: **L9** adds an *offered*
+  `git reset --hard` rollback at the human gate (a destructive, security-relevant command surface — human-gated
+  per L9), and **L5** writes *existing* `kata.config` fields via `kata-bootstrap` (which already writes config).
+  So "non-code" means "no new Python/field/validator," not "no commands at all."
 
 ## 4. Architecture
 
@@ -134,8 +151,8 @@ coherent.
    you X, I built… / To handle Y, I changed…". No file paths or gate numbers in this section.
 3. **Did it hit the goal?** — honest assessment against the restated goal: fully / partially / here's the gap.
 4. **Risks & uncertainties** — what's not fully sure, what is *exercised-not-proven*, what could bite.
-5. **Evidence, linked not dumped** — gate result (`.kata/RESULT.json`), the report, the understand-map,
-   findings files — for whoever wants to dig.
+5. **Evidence, linked not dumped** — gate result (`.kata/RESULT.json`), the report, the understand-map
+   *(if generated — it is opt-in, `kata-closeout` Step 3)*, findings files — for whoever wants to dig.
 6. **Your options, as plain choices** — keep it (commit/push/merge, the existing human-gated git actions),
    iterate (run again / version-up), or **cleanly undo the whole run** (L9 backout). Foregrounded when the human
    is not satisfied.
@@ -155,9 +172,10 @@ NEEDS_WORK is reported plainly, never overridden.
 | **F — goal-anchored closeout** | `modules/closeout/kata-closeout/SKILL.md`, `skills/evaluate/kata-report/SKILL.md` | A | no |
 
 Ownership is disjoint (A is the only slice touching `persona.md`/`engram.md`; D is the only one touching
-`kata-bootstrap`, etc.). Wave 1 = {A, B}; wave 2 = {C, D, E, F} once A (and B for E) integrate. **The whole
-spec is non-code-bearing** (contract + skill authoring; no new config field, no validator change — L11). The
-build is a **later orchestrated dogfood** (per `exercise-harness-for-real`), not part of this DESIGN.
+`kata-bootstrap`, etc.). Wave 1 = {A, B}; wave 2 = {C, D, E, F} once A (and B for E) integrate. **No new Python, no new config field, no validator change** (L11) —
+the slices are contract + skill authoring. The two non-prose surfaces are honest exceptions (L11): slice F's
+offered `git` rollback (human-gated) and slice D's writing of *existing* `kata.config` fields. The build is a
+**later orchestrated dogfood** (per `exercise-harness-for-real`), not part of this DESIGN.
 
 ## 7. Seams to existing decisions (coherence — no chimera)
 - **D71/D88 (Priming-and-Grill + INTENT):** the mirror is the human-facing front of the *same* grill→freeze
