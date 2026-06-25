@@ -1,6 +1,6 @@
 ---
 title: "Fix-loop hardening — PLAN"
-status: FROZEN (PLAN) — freeze-gate HOLD→resolved; re-confirm pending
+status: FROZEN (PLAN) — freeze-gate SHIP (HOLD→resolved, re-confirmed)
 date: 2026-06-24
 spec: fix-loop-hardening
 ownership:

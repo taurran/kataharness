@@ -1,6 +1,6 @@
 ---
 title: "Fix-loop hardening — material re-verification + thrash→re-plan budget"
-status: FROZEN (DESIGN) — freeze-gate HOLD→resolved; re-confirm pending
+status: FROZEN (DESIGN) — freeze-gate SHIP (HOLD→resolved, re-confirmed)
 date: 2026-06-24
 spec: fix-loop-hardening
 decision: D100 (on merge)
@@ -72,7 +72,7 @@ After a targeted fix:
 ## Why this is the right shape (not "full stack every time", not "fix-one-rerun-all")
 The efficient topology is a **staged cascade**: cheap deterministic gates gate the expensive fresh-context
 judges (already the order); within each judge, **all findings at once → one batch fix → re-verify by
-blast-radius**; the thrash budget makes the loop **terminate by escalating**, not by giving up or churning.
+footprint intersection** (L1); the thrash budget makes the loop **terminate by escalating**, not by giving up or churning.
 "Full-stack-every-time" is cleaner to reason about but pays for doomed builds; "fix-one-rerun-all" is the
 churn trap. This spec is the middle, and it is **the spine's own conclusion** — forbidding silent re-planning
 *and* unbounded fixing forces an explicit bridge between them.
