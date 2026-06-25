@@ -72,3 +72,26 @@ Phase-1 loop on the original (un-minimised) scenario.
 
 Then ask **"what would have prevented this?"** — if the answer is architectural, hand the specifics to
 [[kata-improve]] *after* the fix lands (you know more now than at the start).
+
+### Phase 6 → Verdict: fix-problem vs plan-problem (fix-loop-hardening — NEW capability)
+
+> **When dispatched by the orchestrator's thrash budget** (the fix loop hit N=2 on one area, or the run-level
+> ceiling), Phase 6's post-mortem question is the root of a **returnable verdict**. This is a NEW capability
+> formalized from the existing Phase-6 seam — `kata-diagnose` did not previously return this verdict.
+
+After the Phase-6 post-mortem, return **one** of:
+
+| Verdict | Meaning | Orchestrator action |
+|---|---|---|
+| **`fix-problem`** | The failure is a legitimate implementation difficulty — hard, but solvable within the current plan (e.g. wrong approach, missing precondition, transient environment issue). | Resume fixing; use the diagnosis context. No human escalation. |
+| **`plan-problem`** | The failure reveals a structural defect in the plan itself — the plan cannot reach a passing state without a plan-level change (e.g. wrong acceptance criteria, unresolvable constraint, architectural mismatch the plan baked in). | Orchestrator escalates a re-plan candidate via `kind: "human-required"` (L3). |
+
+**How to decide:** apply Phase-6's "what would have prevented this?" reasoning:
+- *A different implementation* (better algorithm, correct precondition, right tool) → **`fix-problem`**
+- *A different plan* (different acceptance criteria, different architecture, a LOCKED decision that is wrong) → **`plan-problem`**
+- *Uncertain:* lean `fix-problem` if at least one credible fix path exists; lean `plan-problem` if every
+  credible fix path requires changing something the plan treats as fixed.
+
+**Standing constraints (unchanged):** the skill **returns the verdict to the orchestrator and does NOT itself
+re-plan** — consistent with the "Don't re-plan — escalate" rule. Both `kata-diagnose-full` and
+`kata-diagnose-light` inherit this verdict (shared RUBRIC, tier-invariant).
