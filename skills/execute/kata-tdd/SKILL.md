@@ -38,7 +38,10 @@ constraints layered on.
 
 ## Loop (vertical slices — never horizontal)
 Read your task's `<read_first>` and the closest existing code analogs first (match the project's vocabulary
-and patterns). Then, for each behavior in the acceptance criteria:
+and patterns). **Reuse-claims worker note:** Before claiming a reuse in code — "this already implements X" or
+"I'll call the existing Y" — confirm the surface exists per `protocol/reuse-claims.md` (grep/read, cite
+`file:line`). If the surface is absent, **ESCALATE** rather than improvise.
+Then, for each behavior in the acceptance criteria:
 ```
 RED:    write ONE test for the next behavior → it fails
 GREEN:  minimal code to pass → it passes
