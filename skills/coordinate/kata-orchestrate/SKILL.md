@@ -187,6 +187,64 @@ After the frontier drains (all tasks integrated), on the integration branch:
    **default-FAIL** (treated as NEEDS_WORK) — never advisory-only. When `kata/module/slop` is absent this is a
    silent no-op (the module degrades gracefully, like every optional module).
 5. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
+
+   ### Fix-loop — material re-verification + thrash budget (fix-loop-hardening L1/L2/L3/L5)
+
+   **Staged cascade (L5 / reaffirmed):** within each judge's findings, collect **all** findings → fix in **one
+   batch** → re-verify that judge. The cheap deterministic gate (tests / validator / lint / scan) always runs
+   first; a red cheap gate never reaches a fresh-context judge (the cascade ordering is invariant).
+
+   **Material re-verification after each fix (L1 — LOCKED):**
+   - **Always re-run the cheap deterministic gate** — fast, idempotent, required on every fix cycle.
+   - **Re-run a fresh-context judge** (`kata-evaluate` / `kata-review`) **iff the fix's footprint** (the files
+     it changed, per `.kata/footprint.json.changed`) **intersects a file that judge's findings cited.** This is a
+     *files-cited* intersection — **not** the code-symbol "blast-radius" relation (which does not range over a
+     judge's prose findings; keep the two terms distinct).
+   - **Indeterminate ⇒ re-run (fail-safe, LOCKED).** If the intersection cannot be determined, treat the fix as
+     material and re-run the judge.
+   - **After the *final* batch of fixes, run exactly ONE confirmation pass:** cheap gate **+ a re-run of
+     `kata-evaluate`** (cross-fix interaction is a conformance question). Do **not** run multiple confirmation
+     passes. The D98 `kata-review` (step 6 below) runs **once, after the confirmation pass settles, on the final
+     post-fix artifact — never inside the fix loop.** A fix made in response to the red-team re-enters at the
+     confirmation pass (so what was attacked is what ships), governed by the thrash budget.
+
+   **Thrash budget — orchestrator-transient in-context counts (L2/L3 — LOCKED):**
+
+   Track **two counters** as transient in-context bookkeeping **while running the fix loop** — the orchestrator
+   counts its own eval→fix iterations as it goes:
+   - **Per-area count** — keyed on the task being fixed; tracks how many consecutive fix cycles that area has
+     failed. The orchestrator **writes a `DECISION` board line per fix-cycle** (`NEEDS_WORK fix: <area> cycle <n>`)
+     — these are the durable recount trail on resume. (The `DECISION` TYPE already exists; this specifies the
+     per-fix-cycle *cadence*, not a new TYPE — L6.)
+   - **Run-level ceiling** — a total fix-cycle count across all areas, so A↔B oscillation (area A passes after
+     breaking area B, which passes after re-breaking A) cannot evade a per-area reset. Provisional value:
+     **`2 × (number of plan tasks) + 2` total fix-cycles** `[TUNABLE — provisional, pending dogfood
+     calibration]` — large enough that a healthy build (each task needing ≤ 2 fixes) never trips it, small
+     enough that unbounded oscillation does. (A bare "ceiling" with no number is unenforceable; this is the
+     operative value until the benchmark recalibrates it.)
+   - A confirmation-pass regression **counts against the budget**. A later-invalidated PASS does **not** zero
+     the count.
+
+   > **L3 (verbatim):** *"At budget, `kata-diagnose` (resolved tier) returns fix-problem vs plan-problem; the
+   > human valve fires only on plan-problem, via the existing `human-required` kind (no enum change — distinction
+   > in `decisionNeeded`/`rationale`), async-parked per the existing contract, supersede-not-rewrite, never
+   > silent. Spine #1/#2 preserved."*
+
+   These counts are **NOT** a `state.json` field, **NOT** a board event TYPE, **NOT** written via
+   `kata_board.update_task`, and introduce **no new Python** (L4). They are the orchestrator's own fix-loop
+   bookkeeping; the `DECISION` board lines are the recount trail.
+
+   **At N=2 (3rd failure of one area) OR the run-level ceiling:**
+   1. STOP the fix loop on that area.
+   2. Dispatch **`kata-diagnose`** (resolved tier) as a fresh-context root-cause pass — cheap, no human.
+      It returns a **fix-problem vs plan-problem** verdict (see `kata-diagnose/RUBRIC.md` Phase 6 → Verdict).
+   3. **Fix-problem verdict:** the area is legitimately hard but fixable — this is **not** a human interrupt.
+      Resume fixing with the diagnosis context.
+   4. **Plan-problem verdict:** escalate a **re-plan candidate** via the existing `kind: "human-required"`
+      (no enum change — L6). Carry the thrash distinction in `decisionNeeded`/`rationale` (note that
+      `kata-diagnose` ran first and returned plan-problem). Park the task + DAG-dependents; frontier keeps
+      draining. Deliberate, human-gated, supersede-not-rewrite, never silent.
+
 6. **Adversarial red-team before merge — on a code/contract-bearing build (L12).** After [[kata-evaluate]]
    returns PASS, and **before merge-to-master**, dispatch [[kata-review]] (**≥ standard tier** — a merge-gate
    warrants depth; do not red-team a contract change at `essential`) as a **separate fresh-context, no-write**
