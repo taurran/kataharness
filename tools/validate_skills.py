@@ -311,6 +311,11 @@ REQUIRED_PROTOCOL = {
     "handoff.md": ["Boundary handoff", "sprint index"],
     # initiation (D88/DESIGN §2): the PINNED INTENT.md artifact schema.
     "intent.md": ["kind", "goal", "fixes", "features", "changeSummary", "target", "grillDepth", "readiness"],
+    # recurrence-hardening (LD3/LD5b): the three load-bearing guard terms must remain in the contract body.
+    # Note: the LD3 phrase "claim to verify, not an assumption" wraps across a Markdown blockquote line break
+    # in protocol/reuse-claims.md (raw bytes: "not an\n> assumption"), so the check uses the longest
+    # continuous on-line match: "claim to verify, not an" (guards the same text; still bites on removal).
+    "reuse-claims.md": ["claim to verify, not an", "NEW capability", "documentation-only seam"],
 }
 
 
@@ -382,6 +387,36 @@ def check_rubric_wikilinks(_skills: list[Skill]) -> list[Finding]:
             if ref not in targets:
                 out.append(Finding("ERROR", f"{rubric.parent.name}/RUBRIC.md", f"unresolved skill wikilink [[{ref}]]"))
     return out
+
+
+@check
+def check_reuse_claims_pointers(skills: list[Skill]) -> list[Finding]:
+    """LD5(a): assert protocol/reuse-claims.md is referenced in all three concrete paths.
+
+    Dual mechanism (mirrors check_rubric_wikilinks pattern):
+    - kata-design-doc, kata-tdd: checked via loaded-skill bodies (skills arg).
+    - kata-plan/RUBRIC.md:       checked via separate file read (not a loaded skill).
+    Any missing reference is an ERROR (default-FAIL, LD5 / D33 never-tiered).
+    """
+    errors: list[Finding] = []
+    pointer = "protocol/reuse-claims.md"
+
+    # Part 1 — skill bodies: kata-design-doc and kata-tdd are loaded skills; check their bodies.
+    skill_map = {s.name: s for s in skills}
+    for name in ("kata-design-doc", "kata-tdd"):
+        s = skill_map.get(name)
+        if s is None:
+            continue
+        if pointer not in s.body:
+            errors.append(Finding("ERROR", s.dir.name, f"skill body must reference '{pointer}' (LD4 pointer, never-tiered)"))
+
+    # Part 2 — kata-plan/RUBRIC.md: NOT a loaded skill; read separately (mirrors check_rubric_wikilinks).
+    rubric = SKILLS_DIR / "plan" / "kata-plan" / "RUBRIC.md"
+    if rubric.exists():
+        if pointer not in rubric.read_text(encoding="utf-8"):
+            errors.append(Finding("ERROR", "kata-plan/RUBRIC.md", f"RUBRIC must reference '{pointer}' (LD4 pointer, never-tiered)"))
+
+    return errors
 
 
 def run_checks(skills: list[Skill]) -> list[Finding]:
