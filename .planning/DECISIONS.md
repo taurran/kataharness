@@ -861,7 +861,35 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   A-hardening (the thrash guard).** Record: `specs/second-brain-learning/BRIEF.md` (pre-grill; gets the freeze-gate
   adversarial review before any build).
 
-<!-- (D100 reserved for fix-loop-hardening, recorded on its merge.) -->
+<!-- Approach-A hardening (D99). Spec: specs/fix-loop-hardening/. Lesson context: D98/L12. -->
+- **D100 — Fix-loop hardening: the orchestrator's fix-loop is now bounded (thrash budget) and its
+  re-verification scoped (material re-verification).** (2026-06-24, merge `fc7f4f7`; the Approach-A hardening
+  from D99.) Closes the "shorten-on-fail / does it churn?" gap: the fix-loop (`NEEDS_WORK → targeted fix → loop
+  to PASS`) was unscoped (re-running the full expensive stack after each fix) and unbounded (no stop signal —
+  the churn the spine fears). **Rule 1 (material re-verification):** after a fix, always re-run the cheap
+  deterministic gate; re-run a fresh-context judge **iff** the fix footprint (`.kata/footprint.json.changed`)
+  intersects a file that judge's findings cited — **indeterminate ⇒ re-run (fail-safe, LOCKED)**; one
+  confirmation pass after the final fix batch = cheap gate + `kata-evaluate`, with the D98 `kata-review`
+  running **once after, never inside the loop.** **Rule 2 (thrash budget):** a **per-area** count (N=2 → 3rd
+  failure) **+ a run-level ceiling** (`2×tasks+2` `[TUNABLE]`) so A↔B oscillation can't hide, both
+  **orchestrator-in-context** (it counts its own eval→fix iterations; it **writes a `DECISION` line per
+  fix-cycle** as the durable recount trail — no `state.json` field, no new board TYPE, no `update_task`, no
+  Python, L4); at budget → **`kata-diagnose`** (resolved tier) returns a **NEW fix-problem vs plan-problem
+  verdict** (shared `RUBRIC.md`, from its Phase-6 seam) → the **human valve fires only on plan-problem**, via
+  the existing `human-required` kind (**no enum change**, L6), async-parked, supersede-not-rewrite, never
+  silent. The missing **bridge** between "fix loop exhausted" and "deliberate re-plan" (spine #2:
+  re-planning is an event, not a habit). **Also the C-arc safety rail (D99):** every future `Reason`-approved
+  re-plan counts against the same budget. **Process:** built through the **main orchestrated loop** (S1
+  contract → S2 wiring, sequential), with the full freeze-gate discipline that paid off repeatedly — freeze-gate
+  **HOLD** (4 blockers + 4 majors, all on phantom/contradictory machinery) → resolved → re-confirm **HOLD** (B4
+  regressed into a new phantom seam + 2 stale) → resolved → build `kata-evaluate` **PASS 7/7** + standing D98
+  `kata-review` **SHIP-WITH-FIXES** (2 degrade-safe: ceiling had no number; "already writes" overstatement →
+  instruction). pytest **447**, validator **36/0**, `codeBearing:false`. Backout `pre-fix-loop-hardening`.
+  Record: `specs/fix-loop-hardening/{DESIGN,PLAN}.md`. **Honest scope:** **wired + two-lens-PASSed, but
+  exercised by ZERO real thrash events** — N=2 + the ceiling are provisional pending dogfood calibration; the
+  `kata-diagnose` verdict is a new, untested-in-anger capability. **Meta:** the freeze-gate/re-confirm/red-team
+  caught the **phantom-machinery / over-claimed-reuse class FOUR times** across this spec — the live case for
+  D101's recurrence-hardening (and the memory `verify-primitives-before-claiming-reuse`).
 <!-- Recurrence hardening — the harness hardens its own agents. BRIEF: specs/recurrence-hardening/. -->
 - **D101 — Recurrence hardening: when a failure-class recurs across runs, the loop hardens the responsible
   agent — automatically detected, deliberately gated. The harness-facing sibling of Reason/C (D99).**

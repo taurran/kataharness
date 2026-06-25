@@ -2,6 +2,18 @@
 
 Promote to ROADMAP milestones when ready.
 
+## ⟳ 2026-06-24 strategy + hardening session (D98–D101) — pointers
+- **D98** standing adversarial red-team wired + `kata-evaluate` item 9 (reproduce-don't-trust). **DONE.**
+- **D99** loop-learning strategy: A-now / C-destination / B-trap; **Second brain + Recall + Reason** model
+  ("engram" retired, rename pending); `kata-loop-benchmark` promoted to keystone. BRIEF:
+  `specs/second-brain-learning/` — **grill → freeze → build (the Recall *contract* is the load-bearing design).**
+- **D100** fix-loop hardening (thrash budget + material re-verification) — **BUILT through the main loop** (`fc7f4f7`).
+  Honest: wired, exercised by **zero real thrash events**; N=2 + ceiling provisional pending dogfood calibration.
+- **D101** recurrence hardening — when a failure-class recurs, harden the responsible agent (gated). BRIEF:
+  `specs/recurrence-hardening/`. **★ FIRST INSTANCE = the immediate next work:** harden the planning skill against
+  the **phantom-machinery / over-claimed-reuse** class (caught 4× this session) — document the guard + place it in
+  `kata-plan`/`kata-design-doc`, **then test it** (HANDOFF §4 item 1; memory `verify-primitives-before-claiming-reuse`).
+
 ## ★★ PRE-PUBLIC PRIORITIES (operator notes, 2026-06-21 — post-S3b review) ★★
 These are the operator's own end-of-S3b notes; several gate going public. Captured verbatim-in-intent.
 

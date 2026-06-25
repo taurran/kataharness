@@ -1,26 +1,33 @@
 ---
-date: 2026-06-24 (WS-1 ✅ + WS-2 ✅ + WS-3 ✅ + WS-3 FIELD-EXERCISED; two-tier closeout shipped, D96; next = WS-1 re-grep + Phase 5)
-branch: master — private remote github.com/taurran/kataharness, tip c265c42 (PUSHED, in sync — `git log --oneline -3` for latest)
+date: 2026-06-24 (loop-learning strategy locked + fix-loop hardening BUILT; D98–D101; next = phantom-machinery hardening → Phase 5)
+branch: master — private remote github.com/taurran/kataharness, tip fc7f4f7 (PUSHED, in sync — `git log --oneline -3` for latest)
 green: validator 36 skills / 0 errors · pytest 447 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
-tags: pre-ws3 · pre-ws2-slopcheck · v0.1.0-alpha.3 · loop-hardening-complete (earlier: pre-s1/1.5/2/3a/3b · v0.1.0-alpha.1/.2/.3)
+tags: pre-fix-loop-hardening · pre-ws3 · pre-ws2-slopcheck · v0.1.0-alpha.3 · loop-hardening-complete (earlier: pre-s1/1.5/2/3a/3b · v0.1.0-alpha.1/.2/.3)
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
-# HANDOFF — KataHarness — 2026-06-24 (WS-1/2/3 DONE + WS-3 field-exercised · two-tier closeout shipped · next = WS-1 re-grep + Phase 5)
+# HANDOFF — KataHarness — 2026-06-24 (loop-learning strategy locked · fix-loop hardening built · next = phantom-machinery hardening → Phase 5)
 
-> **✅ loop-hardening · WS-1 · WS-2 · WS-3 ALL DONE; WS-3 now FIELD-EXERCISED (n=1).** WS-3 user-friendliness
-> shipped (D95): persona + narration + reflective **goal-mirror** intake + one **"how careful"** dial + milestone
-> narration + **goal-anchored closeout** with offered backout (WS-4/WS-5 folded in). Then **field-exercised
-> (D96, merge `c265c42`)** by building a real feature through it: the closeout is now **two-tier** — a concise
-> CLI/GUI summary linking to a durable, on-brand, self-contained **HTML report** (`.kata/closeout.html` +
-> Markdown `.kata/CLOSEOUT.md`); the operator refined the brand live at the gate (the first **KataHarness logo**;
-> Hokusai palette; readable serif headings; error/warning tiles). Fresh-context Opus `kata-evaluate` caught +
-> fixed a cross-slice defect → PASS. **Since then: WS-1 pre-launch re-grep CLEAN + WS-2 polish DONE** (D97,
-> `4d8f01b` — workers self-stamp `CLAIM`/`DONE`, gate derives `.kata/concurrency.json` via an in-context snippet,
-> no new Python). Fresh/compacted session: read §1, confirm green (§2). **NEXT = Phase 5 EXTERNAL
-> (install-portability → multi-model → testing-model) + v0.1 release-checklist (flip Policy A); M8 native-in-tool
-> closeout rendering = adapter work; far-future = loop benchmark → DAG-in-DAG.** Durable + committed + **pushed**
-> (run `git log --oneline -3` for the tip). Live picture: `.planning/STATE.md` (top box) + `.planning/DECISIONS.md`
+> **This session: a deep strategy + hardening arc on top of the (already-done) WS-1/2/3 + two-tier closeout.** Four
+> decisions, D98–D101: **(D98)** the **standing adversarial red-team** is now wired — `kata-review` runs after
+> `kata-evaluate` PASS, before merge, on every code/contract-bearing build; `kata-evaluate` gained rubric **item 9
+> "reproduce, don't trust"** (regenerate derived artifacts; execute claimed seams). This baked in L10c, a lesson
+> the project recorded a month ago but never wired, so it kept recurring (L12). **(D99)** the **loop-learning
+> strategy** is locked — ship **Controlled (A)** now, **Gated-learning (C)** is the destination, **Hermes-fluid (B)**
+> is a trap; the learning subsystem is re-modeled **Second brain + Recall + Reason** (`kata-reason`; "engram"
+> retired, rename pending), C gated by a **four-tumbler unlock** + the **C/B invariant**; `kata-loop-benchmark`
+> promoted to keystone. Spec `specs/second-brain-learning/BRIEF.md`. **(D101)** **recurrence hardening** captured —
+> when a failure-class recurs, the loop hardens the responsible agent (gated, never auto-mutate); the harness-facing
+> sibling of Reason. Spec `specs/recurrence-hardening/BRIEF.md`. **(D100)** the **fix-loop hardening** was **built
+> through the main orchestrated loop** — material (footprint-scoped) re-verification + a per-area (N=2) + run-level
+> (`2×tasks+2` `[TUNABLE]`) thrash budget → `kata-diagnose` fix-vs-plan verdict → human only on a plan-problem;
+> freeze-gate HOLD→resolved, re-confirm HOLD→resolved, build `kata-evaluate` PASS 7/7 + standing D98 red-team
+> SHIP-WITH-FIXES (fixed). **The adversarial lens caught the phantom-machinery / over-claimed-reuse class FOUR times
+> this session** → memory `verify-primitives-before-claiming-reuse`. Fresh/compacted session: read §1, confirm green
+> (§2). **NEXT = the phantom-machinery FIRST HARDENING (the worked example of D101): document the fix-guide + place
+> the guard in the responsible planning skill, then test it — see §4.** Then Phase 5 EXTERNAL + grill/freeze the two
+> new BRIEFs + v0.1 release-checklist. Durable + committed + **pushed** (tip `fc7f4f7`). Live picture:
+> `.planning/STATE.md` (top box) + `.planning/DECISIONS.md` **D87–D101**.
 > **D95–D97**.
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
@@ -112,29 +119,42 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 | **G6 loop-back never exercised** | version-select chose "ship"; re-entry/handoff unproven | **S3b ✅ (G6 PROVEN, `222cc7e`)** |
 
 ## 4. NEXT ACTION — resume here *(VOLATILE — the immediate work)*
-**WS-1, WS-2, WS-3 are all DONE** (the pre-public workstreams; WS-4 offered-backout + WS-5 closeout-transparency
-folded into WS-3). loop-hardening + the Kata Loop are complete. The immediate agenda, in order:
+Pre-public WS-1/2/3 + loop-hardening + the Kata Loop are all DONE. This session added D98–D101 (see the banner).
+The immediate agenda, in order:
 
-1. **Field-exercise WS-3 — ✅ DONE (n=0→1, D96).** Built a real feature (the **two-tier closeout**, merge `c265c42`)
-   THROUGH the friendly loop — the first live use of the goal-mirror intake / milestone narration / goal-anchored
-   closeout; the operator refined the brand live at the gate (first KataHarness logo · Hokusai palette · tiles).
-   **Follow-up (M8, deferred adapter work) — recommended when adapters are touched:** native in-tool rendering of the
-   closeout — a Claude `Stop`/`SessionEnd` hook that surfaces `.kata/closeout.html` + a statusline verdict line;
-   other tools per their adapter. Spec: `specs/ws3-closeout-report/PLAN.md`.
-2. **WS-1 pre-launch public-sanitization re-grep — ✅ DONE 2026-06-24.** Name + variants = **0 matches** across all
-   tracked files, frozen specs, and the working tree; Quick/ACP seam intact; scrub is consistent indirection; secret
-   sweep clean. Hardened `.gitignore` (`/INTENT.md` + `.claude/`). The last pre-public sanitization gate is closed.
-3. **WS-2 polish — worker self-timestamping — ✅ DONE 2026-06-24 (D97, merge `4d8f01b`).** Workers now self-stamp
-   `CLAIM`/`DONE` (own clock) to the shared board; the gate derives `.kata/concurrency.json` (maxInFlight · per-task
-   wall-clock · overlap windows) via an **embedded in-context snippet in `protocol/board.md`** — **no new committed
-   Python**. Non-code-bearing; self-proven (this build's wave-2 B+C overlap → `maxInFlight:2`). Fresh-context Opus
-   `kata-evaluate` PASS 7/7. Record: `specs/ws2-polish/PLAN.md`. Backout `pre-ws2-polish`.
-4. **Phase 5 EXTERNAL + v0.1 release-checklist — ◀ NEXT.** install-portability + multi-model-orchestration (BRIEFs exist:
-   `specs/{install-portability,multi-model-orchestration,testing-model}/`); then the v0.1 release-checklist — flip
-   **Policy A** (hold-at-0.1.0 → bump-on-modify, STANDARDS §3 / ROADMAP).
-5. **Far-future (after the above).** loop-tuning + an **agentic-loop benchmark** module (context economy + speed) →
-   **recursive parallelism (DAG-within-DAG)** gated on a hardened **separability test** (default-flatten,
-   checked-not-self-certified). Benchmark sequences first (it measures whether each recursive cut wins). BACKLOG end.
+1. **★ THE PHANTOM-MACHINERY FIRST HARDENING (the worked example of D101 — DO THIS FIRST; operator-requested).**
+   The adversarial lens caught the **same failure-class FOUR times this session**: spec/planning agents
+   **over-claiming that machinery exists** ("composes existing primitives / reuses X / the orchestrator already
+   writes Y" when the primitive doesn't expose the needed surface — the signature documentation-only-seam). Rather
+   than rely on the red-team to catch it every time, **harden the responsible skill** — the manual first instance
+   of recurrence-hardening (D101):
+   - **Decide the responsible skill + where the guard lands.** Candidates: `kata-plan` (and its tier files
+     `kata-plan-*`) and/or `kata-design-doc` — the spec/planning agents that write "reuses X." The guard likely
+     belongs as a **pre-flight / checklist step** in the planning skill (or its RUBRIC) that the planner must run
+     before freezing a spec. (Cross-check `kata-tdd`/the worker-dispatch prompt too — coders over-claim as well.)
+   - **Document the fix-guide** (the actual guard): *before writing "reuses / composes / via the existing <thing>",
+     grep/read the thing and confirm it exposes exactly the field/event/output/path the design assumes — cite the
+     concrete file:line; treat "this already exists" as a claim to verify, not an assumption; if it isn't there, say
+     "this is a NEW capability" and scope it.* (This is the memory `verify-primitives-before-claiming-reuse`,
+     promoted into a skill guard.)
+   - **Then TEST the fix** (operator's explicit ask): prove the guard actually catches/prevents the pattern — e.g.
+     a deliberate "reuses X" claim against a non-existent surface should be flagged by the hardened skill's
+     pre-flight. (Per D98/L12 *reproduce-don't-trust*: prove the guard fires, don't just document it.)
+   - This is a **contract-bearing skill change** → run it through the loop: freeze → freeze-gate review → build →
+     `kata-evaluate` + the standing D98 `kata-review` → merge. It is also the proof-of-concept that makes the full
+     `recurrence-hardening` spec (D101) concrete.
+2. **Phase 5 EXTERNAL + grill the two new BRIEFs.** install-portability (the BYO-second-brain pointer the C-arc
+   needs) → multi-model-orchestration → testing-model (BRIEFs exist). In parallel, **grill → freeze → freeze-gate**
+   the two strategy BRIEFs: `specs/second-brain-learning/BRIEF.md` (Recall/Reason; the Recall *contract* is the
+   load-bearing design) and `specs/recurrence-hardening/BRIEF.md`. Then the v0.1 release-checklist — flip **Policy A**
+   (hold-at-0.1.0 → bump-on-modify, STANDARDS §3 / ROADMAP).
+3. **Far-future.** `kata-loop-benchmark` (now the **keystone** that defines the C-arc unlock + measures whether
+   learning/hardening pays off — D99) → recursive parallelism (DAG-within-DAG) gated on a hardened separability test.
+
+> **Process reminder (the discipline that paid off ~6× this session):** every contract/code-bearing build is
+> freeze → freeze-gate adversarial review (HOLD/SHIP) → build → `kata-evaluate` PASS → **standing D98 `kata-review`**
+> → operator gate → merge. The red-team is NOT optional on contract-bearing work (D98). And **verify primitives
+> before claiming reuse** (the memory) — that is the exact failure the next task hardens away.
 
 **Small carry-alongs (fold into whatever touches the area):** `codeBearing` doc-fix (`footprint.py` note + a DECISIONS
 line that `codeBearing:false` = "probably not, per the extension heuristic, not definitely"); `_safe_path`

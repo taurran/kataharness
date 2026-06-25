@@ -1,5 +1,31 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-24, loop-learning strategy locked + fix-loop hardening BUILT — `fc7f4f7`, D98–D101):** A long
+> strategy + hardening session. **(1) The standing adversarial red-team is now wired (D98/L12):** `kata-review`
+> runs after `kata-evaluate` PASS, before merge, on every code/contract-bearing build; `kata-evaluate` gained
+> rubric **item 9 "reproduce, don't trust"** (regenerate derived artifacts; execute claimed seams). This wired a
+> lesson the project had recorded (L10c) but never baked in — so it kept recurring. **(2) Loop-learning strategy
+> locked (D99):** ship **Controlled (A)** now, **Gated-learning (C)** is the destination, **Hermes-fluid (B)** is a
+> trap; the learning subsystem is re-modeled as **Second brain (data, BYO) + Recall (per-vault Librarian/adapter,
+> downstream) + Reason (`kata-reason`, the Advisor/decider, core)** — *"Recall what you know · Reason what you'd
+> do"*; "engram" retired (rename pending). C unlocks via a **four-tumbler** gate (BYO backend · a **readiness exam**
+> = the measurable maturity def · **inline triage** red-team · **outcome benchmark** — `kata-loop-benchmark`
+> promoted to keystone), bounded by the **C/B invariant** (*every Reason decision stays a frozen, gated,
+> thrash-bounded, audited event toward a human-frozen goal — protect the process, not the decider*). Spec:
+> `specs/second-brain-learning/BRIEF.md`. **(3) Recurrence hardening captured (D101):** when a failure-class recurs,
+> the loop hardens the responsible agent (auto-detect → propose → gated human-approve, never auto-mutate) — the
+> harness-facing sibling of Reason. Spec: `specs/recurrence-hardening/BRIEF.md`. **(4) Fix-loop hardening BUILT
+> through the main loop (D100, `fc7f4f7`):** the Approach-A thrash guard — material (footprint-scoped)
+> re-verification + a per-area (N=2) + run-level (`2×tasks+2` `[TUNABLE]`) thrash budget → `kata-diagnose`
+> fix-vs-plan verdict → human only on a plan-problem. Freeze-gate **HOLD→resolved**, re-confirm **HOLD→resolved**,
+> build `kata-evaluate` **PASS 7/7** + standing D98 red-team **SHIP-WITH-FIXES** (2 degrade-safe, fixed). pytest
+> **447**, validator **36/0**, `codeBearing:false`. **Honest:** wired, exercised by **zero real thrash events**;
+> N=2+ceiling provisional. **The adversarial lens caught the phantom-machinery / over-claimed-reuse class FOUR
+> times** this session → memory `verify-primitives-before-claiming-reuse` + the live case for D101. **NEXT:** the
+> **phantom-machinery first hardening** (document the fix-guide + place the guard in the responsible planning skill,
+> then test it — D101's worked example) · then Phase 5 EXTERNAL (install-portability → multi-model → testing-model)
+> + grill/freeze the second-brain-learning + recurrence-hardening BRIEFs + v0.1 release-checklist.
+
 > **CURRENT (2026-06-24, WS-2 polish DONE — worker concurrency now artifact-provable — `4d8f01b`, D97):** Closed
 > the last WS-2 honest gap (AUDIT §7): durable board timestamps were orchestrator-written (couldn't distinguish
 > live concurrency from replay). Now **workers self-stamp `CLAIM`/`DONE` with their own clock** to the shared

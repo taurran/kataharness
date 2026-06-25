@@ -90,7 +90,8 @@ human** instead of compounding. Building it now **pre-builds a C-arc safety** an
   **+ `kata-evaluate`**; the D98 `kata-review` runs **once after it settles, never inside the loop.** A
   *files-cited* intersection, **not** the code-symbol "blast-radius" relation.
 - **L2 — Thrash budget (two counters, orchestrator-in-context).** A **per-area** count (keyed on task, **default
-  N=2** → 3rd failure) **and** a **run-level** fix-cycle ceiling so cross-area oscillation can't hide. Both are
+  N=2** → 3rd failure) **and** a **run-level** fix-cycle ceiling (provisional **`2×tasks+2`** `[TUNABLE]`, set in
+  `kata-orchestrate` — a bare ceiling with no number is unenforceable) so cross-area oscillation can't hide. Both are
   **transient in-context counts** the orchestrator keeps while running the fix loop (it counts its own
   iterations); the existing `DECISION` board lines are the durable recount trail — **not** a `state.json` field,
   **no new board TYPE.** A confirmation-pass regression counts against the budget (a later-invalidated PASS does
