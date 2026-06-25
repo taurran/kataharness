@@ -39,6 +39,21 @@ park/drain/hard-wait path (D51/D52) applies. **Never** present a red sprint as a
 boundary protocol assumes a green gate as its precondition (sprint-cadence §10 T4). Only once the sprint is
 green does `kata-sprint` compose the report + boundary handoff and stop.
 
+## Thrash → re-plan-candidate routing (fix-loop-hardening, L3/L6)
+
+When the orchestrator's final-gate fix loop hits the thrash budget (per-area N=2 — the 3rd failure of one area —
+or the run-level ceiling), it dispatches **`kata-diagnose` first** (cheap, no human) for a root-cause pass that
+returns a **fix-problem vs plan-problem** verdict. This routing **reuses the existing `kind: "human-required"`**
+— **no enum change** (L6). The thrash distinction is carried entirely in the `decisionNeeded` and `rationale`
+fields of the escalation payload (e.g. `decisionNeeded: "re-plan candidate: area X oscillated N times after
+kata-diagnose returned plan-problem — operator decision needed"` and `rationale` quoting the diagnose verdict).
+A note that `kata-diagnose` ran first, and that only a **plan-problem verdict** surfaces to the human, belongs
+in `rationale` (a fix-problem verdict means the loop was legitimately stuck, not that the plan is defective —
+it is **not** a human interrupt). The escalation is **async-parked** per the existing contract — the task and
+its DAG-dependents are parked; the frontier keeps draining. The resolver writes `status: resolved` +
+`resolution` as usual. The `kind` enum values, payload schema, and async park/drain contract are otherwise
+**unchanged** (L3/L6 — additive only; supersede-not-rewrite; never silent).
+
 ## Notes
 
 Resolved payloads are the engram learning surface (future, GB10).
