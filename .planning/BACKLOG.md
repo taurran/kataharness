@@ -140,6 +140,10 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
     files**, not per-folder tree-walk files. Verify current Copilot AGENTS.md adoption + Kiro steering details at
     build time (facts may have moved past the Jan-2026 cutoff). Captured for design later; do NOT reopen frozen specs.
 - **`kata-engram`** — cognitive-fingerprint/engram injection from kiban/kagami; gated on a mature second brain. *(v0.4)*
+  **[RE-MODELED 2026-06-24 (D99): "engram" is retired → Second brain (data) + Recall (per-vault Librarian/adapter) +
+  Reason (`kata-reason`, the Advisor/decider). The whole C-arc + four-tumbler unlock + the C/B invariant are specced
+  in `specs/second-brain-learning/BRIEF.md`. The engram→second-brain rename across `protocol/engram.md`/E1–E23/
+  D9/D56/D74/D65/CONTEXT is a PENDING migration (own contract pass). This item folds into that BRIEF.]**
 - **Engram-mediated escalation (FUTURE phase, harness-wide — A4-GB10)** — every human-in-the-loop escalation
   *anywhere* in the harness routes through the engram: (a) consult the cognitive fingerprint first → auto-resolve
   known patterns, only novel decisions reach the human; (b) feed every human resolution back into the engram so
@@ -263,6 +267,10 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   checklist → `resources/` (~30% lighter); orchestrate worker-prompt → `protocol/`; tdd supporting-depth → pointer.
   Fold the grill one into Spec A (we restructure grill for tiering anyway).
 - **★★ FINAL-PHASE — Deep loop optimization + an agentic-loop benchmark module (mid/long-term, user 2026-06-22).**
+  **[PROMOTED 2026-06-24 (D99): `kata-loop-benchmark` is no longer just speed-garnish — it is the KEYSTONE that
+  *defines* the C-arc unlock. It proves "C-on beats C-off" on a fixed reference task, which is what makes the
+  second-brain readiness gate falsifiable. Build it alongside the C-arc, not strictly last. See
+  `specs/second-brain-learning/BRIEF.md`.]**
   Do **near the end** of building KataHarness, once the feature set is implemented: **tune the loop** for **context
   economy AND speed/latency** (not just token cost). Build a **`kata-loop-benchmark` development module** that runs
   the loop on a **fixed reference task** (same content each time) and scores the output on **accuracy · quality ·

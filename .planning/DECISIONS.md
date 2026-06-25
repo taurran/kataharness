@@ -808,3 +808,55 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   map to a surface; the scope clause now states "contract-bearing" is *judged* (covers `protocol/**` +
   `skills/**/SKILL.md|RUBRIC.md`), not flag-derived; merge-gate red-team pinned to **≥ standard tier**. (The new
   lens proving its worth on its own introduction is the cleanest possible validation of L12.)
+
+<!-- Strategy: the second-brain learning arc (Recall · Reason). Supersedes the "engram" framing.
+     BRIEF: .planning/specs/second-brain-learning/BRIEF.md (pre-grill). -->
+- **D99 — Loop-learning strategy locked: ship Controlled (A) now, Gated-learning (C) is the destination,
+  Hermes-fluid (B) is a trap; and the learning subsystem is re-modeled as Second brain + Recall + Reason
+  (drop "engram").** (2026-06-24, operator strategy session; adversarially validated by a fresh-context
+  red-team.) Three approaches to the loop's failure/learning topology were assessed and attacked:
+  - **A — Controlled (NEXT):** staged gate cascade + a thrash-budget that escalates an oscillating fix-loop to a
+    deliberate RE-PLAN; churn = defect signal; no in-loop learning. Ship the *honest* version: + wire the live RS
+    researcher harder, + log churn into the β feed so cold-starts still feed the corpus. "Harden what exists, add
+    nothing" — also the answer to the live "is the loop bloated?" question.
+  - **B — Hermes-fluid (TRAP):** ungated distill→retry, plan emerges organically. Deletes KataHarness's reason to
+    exist — kills reproducibility (the north star) and poisons memory with no gate (D64/D67/D69). **Borrow its
+    mechanisms (D69), never its philosophy.**
+  - **C — Gated-learning hybrid (DESTINATION):** A's spine + a bounded, gated in-loop learning layer — the only
+    approach that captures Hermes's compounding without surrendering the spine; the project's stated endgame.
+
+  **Corrected model (supersedes "engram", which conflated three things into one word/file):**
+  **Second brain** = the data (BYO, agnostic). **Recall** (the *Librarian*) = a per-vault fetcher/adapter that
+  serves a standard contract and **lives with each second brain** (PokeVault / the work repo build their own),
+  never decides — the adapter pattern (spine #3) applied to the second brain; it **is** the D30 clean-room backend
+  binding, named. **Reason** (the *Advisor*, `kata-reason`) = KataHarness's decider — asks Recall to surface
+  material, fuses it with research (RS + grounding gate), returns a **calibrated recommendation that mirrors the
+  user**; advisory, not authoritative (the CONSULT path, finally named + skilled). KataHarness ships the **Recall
+  contract + `kata-reason` + the exam + the triage**; Librarians are downstream. *Recall serves; Reason decides.*
+  Names collision-checked (both clean; "Reason" has 0 concept-uses). Tagline: **Recall what you know · Reason what
+  you'd do.**
+
+  **C's unlock — four tumblers (no hand-waved "maturity"):** (1) a pointed-at second brain + a Recall
+  implementing the contract (install-portability dependency); (2) **readiness exam** — `kata-reason` predicts the
+  user's **held-out** past decisions (with research context) at **calibrated confidence** (high-confidence-wrong
+  fails hard); fresh-context, no-self-cert, standing+cached (project-start / on-request / corpus-growth — NOT every
+  loop); pass → C unlocks, fail → graceful fallback to A — *the measurable definition of "mature" the red-team said
+  was missing*; (3) **inline triage red-team** per Reason decision — structured, fail-toward-escalation, auto-clears
+  only low-stakes ∧ high-confidence, else escalates to fresh-context `kata-review`/human (cheap cascade stage on
+  judgment; authoritative gate stays fresh-context); (4) **outcome benchmark** (`kata-loop-benchmark`, **promoted
+  from far-future garnish to keystone**) — proves C-on beats C-off, sets the unlock threshold. Autonomy opens
+  **progressively, risk-tiered** (D65 dial): low-stakes first; **scope/drift/feature last, recommend-before-auto.**
+
+  **C/B invariant (LOCKED-class — getting it wrong IS sliding into B):** every Reason decision stays a
+  **deliberate, frozen, gated, thrash-bounded, audited event toward a human-frozen goal.** *Protect the process,
+  not the decider.* Reason may re-plan *toward* the frozen INTENT/goal; it may **never expand the goal** (that
+  re-freezes with the human); `kata-defer` parks nice-to-haves. **Test:** *did the decision produce a discrete
+  frozen artifact the gates judged, or did the plan just quietly become something else?* First = C; second = B.
+
+  **Security/egress** descoped per operator (their second brain, their responsibility); re-enters only at
+  public-release/multi-user, localized to **each Librarian's egress boundary** (per-vault, in its own repo), never
+  the core. **Re-sequences the backlog:** promotes `kata-loop-benchmark` to the keystone that *defines* C's unlock;
+  the **engram→second-brain/Recall/Reason rename is a pending migration** (`protocol/engram.md`, E1–E23, D9/D56/
+  D74/D65, CONTEXT) — its own deliberate contract pass, NOT half-done now. **Immediate buildable work stays
+  A-hardening (the thrash guard).** Record: `specs/second-brain-learning/BRIEF.md` (pre-grill; gets the freeze-gate
+  adversarial review before any build).

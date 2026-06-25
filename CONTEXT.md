@@ -342,3 +342,37 @@ that read as broken tabs).
 The report's scannability system — severity blocks: `.tile--warning` (ochre, risks), `.tile--error` (rust,
 critical / backout), `.tile--note` (blue), `.tile--ok` (deep). Risks render as warning tiles; the backout as an
 error tile. _Avoid_: a flat undifferentiated list for risks/alerts.
+
+## Second-brain learning — Recall · Reason (the C-arc, D99, 2026-06-24)
+**Second brain**:
+The **data** layer of the learning subsystem — a **bring-your-own, agnostic** vault (PokeVault, the work repo, …)
+holding raw knowledge + the user's decision history + (over time) synthesized decision-pattern pages. **Supersedes
+"engram"** (which conflated data + a synthesized layer + a controller into one word — rename pending, D99).
+_Avoid_: engram (being retired); assuming PokeVault (it is one backend among many).
+
+**Recall** (the *Librarian*):
+The **per-vault fetcher/adapter** that knows *its own* second brain's structure and serves KataHarness's standard
+**Recall contract** — **lives with each second brain** (downstream repos build their own), **never decides**. The
+adapter pattern (spine #3) applied to the second brain; it *is* the D30 clean-room backend binding, named. You point
+KataHarness at the Recall, not the raw folder. _Avoid_: putting decision logic in a Librarian (kills cross-vault
+consistency); pointing the core at a raw vault structure.
+
+**Reason** (the *Advisor*, `kata-reason`):
+KataHarness's **decider** — asks Recall to surface material, fuses it with research (RS + the grounding gate),
+returns a **calibrated recommendation that mirrors the user**. **Advisory, not authoritative** (it pre-fills; the
+gates/human dispose). The CONSULT read-path, finally named + skilled. _Recall serves; Reason decides._ _Avoid_:
+treating Reason as authoritative; letting it expand the frozen goal (it re-plans *toward* the goal only).
+
+**C/B invariant**:
+The LOCKED-class line that keeps gated-learning (C) from sliding into Hermes-fluid (B): **every Reason decision
+stays a deliberate, frozen, gated, thrash-bounded, audited event toward a human-frozen goal** — *protect the
+process, not the decider.* Test: *did it produce a discrete frozen artifact the gates judged, or did the plan just
+quietly become something else?* First = C; second = B. _Avoid_: equating "who decides" with the boundary (it's
+"is it still a gated event").
+
+**Readiness exam**:
+The measurable gate that unlocks C — `kata-reason` must predict the user's **held-out** past decisions (with
+research context) at **calibrated confidence** (high-confidence-wrong fails hard); fresh-context, no-self-cert,
+standing + cached (project-start / on-request / corpus-growth — **not** every loop). Pass → C unlocks; fail →
+graceful fallback to A. The measurable definition of "mature." _Avoid_: scoring raw confidence (must be
+calibration vs held-out truth); running it every loop.
