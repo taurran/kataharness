@@ -213,10 +213,15 @@ After the frontier drains (all tasks integrated), on the integration branch:
    Track **two counters** as transient in-context bookkeeping **while running the fix loop** — the orchestrator
    counts its own eval→fix iterations as it goes:
    - **Per-area count** — keyed on the task being fixed; tracks how many consecutive fix cycles that area has
-     failed. The orchestrator's existing `DECISION` board lines (one per gate decision, e.g. `NEEDS_WORK fix: …`)
-     are the durable recount trail on resume.
+     failed. The orchestrator **writes a `DECISION` board line per fix-cycle** (`NEEDS_WORK fix: <area> cycle <n>`)
+     — these are the durable recount trail on resume. (The `DECISION` TYPE already exists; this specifies the
+     per-fix-cycle *cadence*, not a new TYPE — L6.)
    - **Run-level ceiling** — a total fix-cycle count across all areas, so A↔B oscillation (area A passes after
-     breaking area B, which passes after re-breaking A) cannot evade a per-area reset.
+     breaking area B, which passes after re-breaking A) cannot evade a per-area reset. Provisional value:
+     **`2 × (number of plan tasks) + 2` total fix-cycles** `[TUNABLE — provisional, pending dogfood
+     calibration]` — large enough that a healthy build (each task needing ≤ 2 fixes) never trips it, small
+     enough that unbounded oscillation does. (A bare "ceiling" with no number is unenforceable; this is the
+     operative value until the benchmark recalibrates it.)
    - A confirmation-pass regression **counts against the budget**. A later-invalidated PASS does **not** zero
      the count.
 

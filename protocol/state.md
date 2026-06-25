@@ -55,6 +55,7 @@ separated authority — **git is authoritative; the live cache is disposable**:
   the final-gate fix loop are **orchestrator-transient in-context control state** — deliberately **NOT** persisted
   in `state.json`, **NOT** a board event TYPE, and **NOT** written via `kata_board.update_task`. They are the
   orchestrator's own loop bookkeeping while it runs eval→fix iterations; they are recountable on resume from the
-  existing `DECISION` board lines (the orchestrator already writes one per gate decision). A confirmation-pass
+  `DECISION` board lines the orchestrator **writes per fix-cycle** (`NEEDS_WORK fix: <area> cycle <n>`; the
+  `DECISION` TYPE already exists — this is the per-fix-cycle cadence, not a new TYPE). A confirmation-pass
   regression counts against the budget; a later-invalidated PASS does **not** zero the count. *(Do not add a
   `state.json` field or a new board TYPE for these counts — that would contradict L2/L4.)*
