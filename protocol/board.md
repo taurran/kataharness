@@ -34,6 +34,18 @@ runs the canonical snippet below against the shared `.kata/board.md` to emit `.k
 machine-readable concurrency evidence artifact the evaluator can read independently. (See
 `.planning/specs/ws2-loop-autonomy/AUDIT.md` §7.)
 
+**Per-run board (run-isolation — required for the artifact to be honest).** The snippet computes over the
+whole board, so `.kata/board.md` MUST contain **only the current run's events**. The orchestrator therefore
+**rotates any pre-existing board at run start** — move `.kata/board.md` to `.kata/board.<utc>.archive.md` (or
+truncate it) before the first `CLAIM` — so prior-run `CLAIM`/`DONE` pairs cannot contaminate this run's
+`maxInFlight`/`overlaps`. Without this, stale rows (including older orchestrator-stamped ones) would be folded
+in and the `worker-clock` provenance claim would be false for those rows.
+
+**Clock-trust assumption.** The proof rests on worker process clocks. It assumes all workers **share a
+synchronized clock** (true for same-host subagents today). Cross-host clock skew — the multi-machine /
+multi-model direction of Phase 5 — invalidates `overlaps` and can yield negative `sec`; **revisit this snippet
+before any multi-machine run** (a skew-tolerant or orchestrator-issued monotonic stamp).
+
 **Schema (K5):**
 
 ```json
@@ -43,7 +55,7 @@ machine-readable concurrency evidence artifact the evaluator can read independen
   "workerCount": 4,
   "workers": { "<task-id>": { "agent": "<id>", "start": "<iso>", "end": "<iso>", "sec": 39.0 } },
   "overlaps": [ ["<iso-start>", "<iso-end>"] ],
-  "source": "board.md CLAIM/DONE self-stamps (worker-clock)"
+  "source": "board.md CLAIM/DONE self-stamps (worker-clock); per-run board + synchronized clocks assumed"
 }
 ```
 
@@ -57,25 +69,37 @@ from pathlib import Path
 kata = Path(sys.argv[1])                       # the run's .kata/ dir (integration root)
 board = (kata / "board.md").read_text(encoding="utf-8")
 
-# Pair CLAIM(start)/DONE(end) per task from the self-stamped board.
+# Pair earliest CLAIM (start) / latest DONE (end) per task from the self-stamped board.
+# - earliest CLAIM / latest DONE => a re-dispatched task's full in-flight span is kept
+#   (a naive last-write CLAIM would erase a real overlap and undercount concurrency).
+# - a row whose timestamp is not ISO-8601 is skipped, never crashes the emit.
+# Assumes a per-run board (the orchestrator rotates .kata/board.md at run start) and a
+# synchronized worker clock (see the run-isolation + clock-trust notes above).
 starts, ends, owner = {}, {}, {}
 for raw in board.splitlines():
     parts = [p.strip() for p in raw.split("|")]
     if len(parts) < 5:
         continue
     ts, agent, typ, task, _msg = parts[:5]
+    try:
+        when = datetime.fromisoformat(ts)
+    except ValueError:
+        continue                               # non-ISO / corrupted row — skip, don't abort
     if typ == "CLAIM":
-        starts[task] = ts; owner[task] = agent
+        if task not in starts or when < starts[task]:
+            starts[task] = when                # earliest CLAIM = true in-flight start
+        owner.setdefault(task, agent)
     elif typ == "DONE":
-        ends[task] = ts
+        if task not in ends or when > ends[task]:
+            ends[task] = when                  # latest DONE = true in-flight end
 
 workers, intervals = {}, []
 for task in sorted(starts):
     if task not in ends:
         continue                               # still in-flight / unterminated; skip
-    s = datetime.fromisoformat(starts[task]); e = datetime.fromisoformat(ends[task])
-    workers[task] = {"agent": owner[task], "start": starts[task], "end": ends[task],
-                     "sec": round((e - s).total_seconds(), 1)}
+    s, e = starts[task], ends[task]
+    workers[task] = {"agent": owner[task], "start": s.isoformat(), "end": e.isoformat(),
+                     "sec": round((e - s).total_seconds(), 1)}  # negative => clock skew (see note)
     intervals.append((s, e, task))
 
 # Sweep interval endpoints for max concurrent in-flight + overlap windows (>=2).
@@ -91,7 +115,7 @@ for ts, delta in events:
 
 out = {"maxInFlight": max_in_flight, "genuinelyParallel": max_in_flight >= 2,
        "workerCount": len(workers), "workers": workers, "overlaps": overlaps,
-       "source": "board.md CLAIM/DONE self-stamps (worker-clock)"}
+       "source": "board.md CLAIM/DONE self-stamps (worker-clock); per-run board + synchronized clocks assumed"}
 (kata / "concurrency.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
 print(json.dumps(out, indent=2))
 ```

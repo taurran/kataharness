@@ -60,6 +60,13 @@ owned files are disjoint from every in-flight task). Dispatch every dispatchable
 own [[kata-worktree]]); as each integrates, **recompute the frontier** and dispatch newly-eligible tasks. The
 `waves:` in the plan are a *derived view* of this frontier, not a hard gate — independent work never waits on
 an unrelated wave.
+
+**Run-start board hygiene (run-isolation).** Before the first dispatch, **rotate any pre-existing
+`.kata/board.md`** to `.kata/board.<utc>.archive.md` (or truncate it) so the board holds **only this run's**
+events. The concurrency evidence (`protocol/board.md` → Concurrency evidence) computes over the whole board;
+stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`overlaps` and falsify the
+`worker-clock` provenance. A per-run board is the precondition for honest concurrency evidence.
+
 1. **Isolate.** Use [[kata-worktree]] to give each dispatchable task-owner its own worktree on a per-task
    branch (a lone sequential task may run directly on the integration branch).
 2. **Orient, then dispatch one worker subagent per task** via the host's subagent mechanism *(adapter binding:
@@ -168,7 +175,9 @@ After the frontier drains (all tasks integrated), on the integration branch:
    `.kata/concurrency.json`. The snippet body lives only in `protocol/board.md` (K3 — do not duplicate it
    here). This is parallelism evidence the evaluator reads to corroborate rubric item 4; a legitimately
    single-worker run producing `maxInFlight:1`/`genuinelyParallel:false` is **not** a failure — this step
-   never fails a sequential run (K6).
+   never fails a sequential run (K6). Preconditions the snippet relies on (see `protocol/board.md`): the board
+   was rotated to be **per-run** (run-start hygiene above), and workers **share a synchronized clock** — flag
+   the latter as a known limitation for any future multi-host run before trusting `overlaps`.
 4. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
    low-grill run, point it at the priming prompt as the frozen spec and at any [[kata-defer]] `ASSUMPTIONS.md`,
    so the autonomous floor's assumption log is graded for prompt-contradiction (rubric item 8) — not just asserted.
