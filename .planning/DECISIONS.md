@@ -754,3 +754,31 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `Stop`/`SessionEnd` hook + statusline verdict line; other tools per adapter) is **deferred adapter work**
   (M8); WS-2 worker-self-timestamp polish returns to the queue. pytest **447**, validator **36/0**. Backout tag
   `pre-ws3-report`. Record: `specs/ws3-closeout-report/PLAN.md`.
+
+<!-- WS-2 polish — worker self-timestamping + artifact-provable concurrency (built 2026-06-24).
+     Spec: .planning/specs/ws2-polish/PLAN.md (LOCKED K1–K7). -->
+- **D97 — WS-2 polish: worker concurrency is now provable from artifacts (`.kata/concurrency.json`) via worker
+  self-stamping + an in-context snippet — NO new committed Python.** (2026-06-24, merge `4d8f01b`.) Closes the
+  WS-2 honest gap surfaced by `specs/ws2-loop-autonomy/AUDIT.md` §7: the durable `.kata/board.md` timestamps were
+  **orchestrator-written**, so they recorded concurrency but could not, on their own, distinguish a live run from
+  a faithful replay (D94 caveat). Fix = a **worker self-stamp contract** (each worker appends `CLAIM`(start)/
+  `DONE`(end) to the **shared** integration-root board via `kata_board.append_event` with its **own** process
+  clock) + a **concurrency-evidence artifact** (`.kata/concurrency.json`: `maxInFlight`, `genuinelyParallel`,
+  per-task wall-clock, overlap windows) the gate derives and a fresh-context evaluator reads. **Operator
+  direction (this session):** keep the rich evidence artifact but produce it **in-context, not as a new tool** —
+  so the concurrency computation is an **embedded snippet stored in `protocol/board.md`** (the single source of
+  truth, K3), run by the orchestrator at the gate; **no `tools/` module** added ([[prefer-in-context-over-new-python]],
+  K1). That keeps the whole run **non-code-bearing** (`codeBearing:false`, K2 — `.md` only ⇒ mutation-proof N/A).
+  3-slice / 2-wave orchestrated dogfood (concurrent Sonnet workers in worktrees): **(A)** `protocol/board.md` —
+  CLAIM/DONE self-stamp framing + the "Concurrency evidence" section (schema + canonical snippet); **(B)**
+  `kata-orchestrate` — worker-prompt self-stamp requirement + a Final-gate concurrency-emit step (pointer to A,
+  never duplicating the snippet); **(C)** `kata-evaluate` reads `concurrency.json` as **evidence, never a
+  stand-alone default-FAIL trigger** (K6 — a legitimately single-worker run is not a failure) + HANDOFF §5 recipe.
+  **Self-proving:** the build's own wave-2 workers (B+C) ran genuinely concurrently and this run's
+  `concurrency.json` shows **`maxInFlight:2`** with a ~75s overlap window — the feature demonstrated on its own
+  construction. Fresh-context Opus `kata-evaluate` **PASS 7/7** (snippet byte-for-byte vs PLAN; no `.py` touched;
+  `withinFootprint:true`). pytest **447**, validator **36/0**. Backout tag `pre-ws2-polish`. Record:
+  `specs/ws2-polish/PLAN.md`. **Honest scope:** this proves a run *recorded* concurrency from worker clocks; it
+  is not a forgery-proof attestation, and the snippet is recipe text validated in-context (not a committed unit
+  test). **Still deferred BY DESIGN:** in-loop LEARN-between-iterations (β emit-only, D74) + engram CONSULT
+  (D9/D56) — WS-2's autonomy posture remains *bounded, human-gated autonomy + now-provable parallelism*.

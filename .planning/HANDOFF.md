@@ -15,11 +15,13 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 > CLI/GUI summary linking to a durable, on-brand, self-contained **HTML report** (`.kata/closeout.html` +
 > Markdown `.kata/CLOSEOUT.md`); the operator refined the brand live at the gate (the first **KataHarness logo**;
 > Hokusai palette; readable serif headings; error/warning tiles). Fresh-context Opus `kata-evaluate` caught +
-> fixed a cross-slice defect → PASS. Fresh/compacted session: read §1, confirm green (§2). **NEXT = (a) WS-1
-> pre-launch re-grep · (b) WS-2 worker-self-timestamp polish · then Phase 5 EXTERNAL (install-portability ·
-> multi-model) + v0.1 release-checklist; far-future = loop benchmark → DAG-in-DAG.** Durable + committed +
-> **pushed** (tip `c265c42`, in sync). Live picture: `.planning/STATE.md` (top box) + `.planning/DECISIONS.md`
-> **D95–D96**. (§4 below predates this — see the NEXT line here for the current agenda.)
+> fixed a cross-slice defect → PASS. **Since then: WS-1 pre-launch re-grep CLEAN + WS-2 polish DONE** (D97,
+> `4d8f01b` — workers self-stamp `CLAIM`/`DONE`, gate derives `.kata/concurrency.json` via an in-context snippet,
+> no new Python). Fresh/compacted session: read §1, confirm green (§2). **NEXT = Phase 5 EXTERNAL
+> (install-portability → multi-model → testing-model) + v0.1 release-checklist (flip Policy A); M8 native-in-tool
+> closeout rendering = adapter work; far-future = loop benchmark → DAG-in-DAG.** Durable + committed + **pushed**
+> (run `git log --oneline -3` for the tip). Live picture: `.planning/STATE.md` (top box) + `.planning/DECISIONS.md`
+> **D95–D97**.
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
 1. `AGENTS.md` (spine + conventions; the **"The Kata Loop"** entry) · 2. `docs/STANDARDS.md` §1 (frontmatter —
@@ -122,10 +124,12 @@ folded into WS-3). loop-hardening + the Kata Loop are complete. The immediate ag
 2. **WS-1 pre-launch public-sanitization re-grep — ✅ DONE 2026-06-24.** Name + variants = **0 matches** across all
    tracked files, frozen specs, and the working tree; Quick/ACP seam intact; scrub is consistent indirection; secret
    sweep clean. Hardened `.gitignore` (`/INTENT.md` + `.claude/`). The last pre-public sanitization gate is closed.
-3. **WS-2 polish — worker self-timestamping.** The WS-3 build had workers self-stamp start/end (proving concurrency) but
-   ad-hoc in the dispatch; wire it into `tools/kata_board.py`/the board so concurrency is provable from artifacts on
-   every run.
-4. **Phase 5 EXTERNAL + v0.1 release-checklist.** install-portability + multi-model-orchestration (BRIEFs exist:
+3. **WS-2 polish — worker self-timestamping — ✅ DONE 2026-06-24 (D97, merge `4d8f01b`).** Workers now self-stamp
+   `CLAIM`/`DONE` (own clock) to the shared board; the gate derives `.kata/concurrency.json` (maxInFlight · per-task
+   wall-clock · overlap windows) via an **embedded in-context snippet in `protocol/board.md`** — **no new committed
+   Python**. Non-code-bearing; self-proven (this build's wave-2 B+C overlap → `maxInFlight:2`). Fresh-context Opus
+   `kata-evaluate` PASS 7/7. Record: `specs/ws2-polish/PLAN.md`. Backout `pre-ws2-polish`.
+4. **Phase 5 EXTERNAL + v0.1 release-checklist — ◀ NEXT.** install-portability + multi-model-orchestration (BRIEFs exist:
    `specs/{install-portability,multi-model-orchestration,testing-model}/`); then the v0.1 release-checklist — flip
    **Policy A** (hold-at-0.1.0 → bump-on-modify, STANDARDS §3 / ROADMAP).
 5. **Far-future (after the above).** loop-tuning + an **agentic-loop benchmark** module (context economy + speed) →

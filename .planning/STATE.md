@@ -1,5 +1,18 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-24, WS-2 polish DONE — worker concurrency now artifact-provable — `4d8f01b`, D97):** Closed
+> the last WS-2 honest gap (AUDIT §7): durable board timestamps were orchestrator-written (couldn't distinguish
+> live concurrency from replay). Now **workers self-stamp `CLAIM`/`DONE` with their own clock** to the shared
+> board, and the gate derives **`.kata/concurrency.json`** (maxInFlight · per-task wall-clock · overlap windows).
+> Per operator direction, the evidence is produced by an **embedded in-context snippet in `protocol/board.md`** —
+> **NO new committed Python** ([[prefer-in-context-over-new-python]]) — keeping the run **non-code-bearing**
+> (`codeBearing:false`). 3-slice/2-wave orchestrated dogfood; **self-proving** — the build's own wave-2 workers
+> (B+C) overlapped and this run's `concurrency.json` shows **`maxInFlight:2`** (~75s overlap). Fresh-context Opus
+> `kata-evaluate` **PASS 7/7**; pytest **447**, validator **36/0**. Backout `pre-ws2-polish`. Record:
+> `specs/ws2-polish/PLAN.md`. **NEXT:** Phase 5 EXTERNAL (install-portability → multi-model → testing-model) +
+> v0.1 release-checklist (flip Policy A); M8 native-in-tool closeout rendering = adapter work; far-future = loop
+> benchmark → DAG-in-DAG.
+
 > **CURRENT (2026-06-24, WS-1 pre-launch re-grep CLEAN):** Ran the final pre-public sanitization pass — the
 > work-internal proper noun + variants return **0 matches** across all tracked files, frozen specs, and the
 > working tree (incl. untracked artifacts); the `Quick`/ACP plumbing seam is intact (20 files) and the scrub is

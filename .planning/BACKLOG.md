@@ -24,9 +24,11 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
 - **WS-2 — Validate the INNER (harness) loop's autonomy + parallelism (the operator's confidence gap).**
   **[STATUS 2026-06-22 (D94): rolling-frontier PARALLELISM + the in-loop RS RESEARCH PATH are now LIVE-PROVEN 7/7
   via the `kata-slop-check` version-up dogfood (`specs/kata-slop-check/PLAN.md` + `specs/ws2-loop-autonomy/AUDIT.md`).
-  Still deferred BY DESIGN: in-loop LEARN-between-iterations (β emit-only, D74) + engram CONSULT (D9/D56). Open
-  follow-up: worker self-timestamping so concurrency is provable from artifacts alone (board timestamps are
-  orchestrator-written → can't distinguish live vs replay).]**
+  ✅ WS-2 polish DONE 2026-06-24 (D97, `4d8f01b`): worker self-timestamping wired — workers self-stamp `CLAIM`/`DONE`
+  with their own clock to the shared board; the gate derives `.kata/concurrency.json` (maxInFlight · per-task
+  wall-clock · overlap windows) via an in-context snippet in `protocol/board.md` (NO new Python). Concurrency is
+  now provable from artifacts alone, closing the orchestrator-written-timestamp caveat. Record: `specs/ws2-polish/PLAN.md`.
+  Still deferred BY DESIGN: in-loop LEARN-between-iterations (β emit-only, D74) + engram CONSULT (D9/D56).]**
   The operator is NOT confident the harness loop genuinely runs autonomously for long stretches. Validate, with
   evidence: **(a) parallelism** — are we using subagents properly? Is the orchestrator actually running concurrent
   workers that check/communicate laterally (board), per Anthropic's long-running-agent best practice — and is it
