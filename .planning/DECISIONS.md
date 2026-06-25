@@ -860,3 +860,25 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   D74/D65, CONTEXT) — its own deliberate contract pass, NOT half-done now. **Immediate buildable work stays
   A-hardening (the thrash guard).** Record: `specs/second-brain-learning/BRIEF.md` (pre-grill; gets the freeze-gate
   adversarial review before any build).
+
+<!-- (D100 reserved for fix-loop-hardening, recorded on its merge.) -->
+<!-- Recurrence hardening — the harness hardens its own agents. BRIEF: specs/recurrence-hardening/. -->
+- **D101 — Recurrence hardening: when a failure-class recurs across runs, the loop hardens the responsible
+  agent — automatically detected, deliberately gated. The harness-facing sibling of Reason/C (D99).**
+  (2026-06-24, operator directive: *"when it happens over and over we need to harden the tool — that's how
+  learning should work; I feel like it should be doing this."*) Today, hardening the harness's own agents
+  (planner/coder/evaluator) against recurring failure-classes is **human-driven and per-instance** — a human
+  notices and writes a lesson/memory. That is repeated manual patching, not learning. **Decision:** make it
+  systematic in the **IMPROVE phase** — a **recurrence detector** clusters `kata-evaluate`/`kata-review`
+  findings by (responsible-skill × failure-class) across runs (corpus = the β LEARN feed, D74); a class crossing
+  a threshold triggers `kata-improve` to **propose a permanent guard in the responsible skill** (pre-flight /
+  rubric / checklist item); the proposal is **fresh-context reviewed (no-self-cert) AND human-approved** (the
+  `kata-promote` gate pattern + D98) before it modifies the skill — **never an auto-mutation** (a loop rewriting
+  its own skills ungated is the **B-trap**; the **C/B invariant holds** — a hardening is a deliberate, frozen,
+  gated, audited skill change). **First concrete instance (in hand):** the class caught **3× this session** —
+  spec/planning agents **over-claiming that machinery exists** — becomes the first hardening (a
+  `kata-plan`/`kata-design-doc` pre-flight to verify a primitive exposes the needed surface before claiming
+  reuse; cf. memory `verify-primitives-before-claiming-reuse`). Its value is benchmark-measurable (did the
+  class's recurrence drop?), tying it to the `kata-loop-benchmark` keystone (D99). **Gets its own
+  grill → freeze → freeze-gate review → build** (the discipline that paid off 3× this session); **not** bundled
+  into any other frozen build. Record: `specs/recurrence-hardening/BRIEF.md` (pre-grill).
