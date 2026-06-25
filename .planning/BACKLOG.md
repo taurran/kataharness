@@ -119,6 +119,23 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   loop-back test. This sprint cadence — `ROADMAP` → `PLAN-s<n>` → freeze → orchestrate — is itself live evidence to
   audit against.)*
 
+- **★ NEW — "Debug Mode" delivery mode (capture only, 2026-06-24; operator to detail later).** A new run-shape
+  **sibling to Version-Up mode**, but with the opposite intent: where version-up advances the code with an
+  **iterative feature add + version bump**, Debug Mode **holds the feature set and structure fixed** and does a
+  **deep-dive debugging pass** to find and resolve issues in the existing code (no new features, no structural
+  drift — bugs out, behavior preserved). **Specialized debug agents** trained per **major coding language** (plus
+  agents specialized on **contextual/config files**), routed by the footprint's language mix. **Hard constraint
+  from the operator: reuse as many existing loop skills/agents as possible** — this is a new *mode/preset over the
+  existing Harness*, not a parallel stack. Likely reuse: `kata-diagnose` (root-cause — the obvious core),
+  `kata-graph` (structural map of the existing repo), the version-up **footprint-scoped + no-regression gate**
+  discipline (changes ⊆ touched, behavior/tests stay green minus the fixed bug), `kata-evaluate`/`kata-review`
+  (default-FAIL + adversarial), `kata-tdd` (regression test that pins each fix), and the closeout/backout surfaces.
+  **Open design questions for the later session:** the "fixed structure, bugs-out" gate (how to assert *no* feature/
+  structure drift while allowing the fix) · the language-specialist agent roster + routing (per `prefer-in-context`
+  — are these prompt-specializations, not new Python?) · entry point (a `delivery.shape == debug` preset in
+  `kata-bootstrap`/`kata-orchestrate`, paralleling version-up) · relation to the planning-approach↔delivery-mode
+  alignment item below (Debug Mode becomes a 4th mode to align). **Status: idea captured; do NOT build/brainstorm
+  yet — operator will return to detail it.**
 - **★ DOGFOOD #2 RESIDUAL — wire the eval artifacts into a live gate (NEXT increment, 2026-06-19).** Dogfood #2
   built the *libraries + contracts* for evaluation self-sufficiency (`tools/run_result.py`, `footprint.py`,
   `mutation_check.py`; `kata-report`/`kata-evaluate` require them) but **nothing yet CALLS them** during a real
