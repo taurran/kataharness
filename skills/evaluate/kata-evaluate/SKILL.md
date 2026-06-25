@@ -139,6 +139,9 @@ to the emitter):
 | Gate result | `.kata/RESULT.json` | The pinned `run_result.build_result` schema (see table above) |
 | Footprint manifest | `.kata/footprint.json` | `footprint`, `changed`, `inFootprint`, `outOfFootprint`, `withinFootprint`, `diffstat`, `codeBearing` (bool — present when produced by MAJOR-3+; absent in older artifacts) |
 | Mutation proof | `.kata/mutation.json` | `records` (list of `{testWentRed, nonVacuous}`) + `allNonVacuous` (bool) — **REQUIRED for any run that introduces or changes executable logic** (`allNonVacuous: true` must be present; absent or `false` ⇒ rubric item 1 is NEEDS_WORK); exempt for pure data/config/docs tasks |
+| Concurrency evidence | `.kata/concurrency.json` | `maxInFlight` (int), `genuinelyParallel` (bool), `workerCount` (int), `workers` (map of task-id → `{agent, start, end, sec}`), `overlaps` (list of `[iso-start, iso-end]` windows where ≥2 workers were in-flight), `source` (string); emitted by the canonical snippet in `protocol/board.md` (Concurrency evidence) |
+
+Optional parallelism evidence — for a run that claims concurrent work, read it to corroborate rubric item 4 (ownership / conflict-free concurrent merges); `genuinelyParallel:false` on a legitimately single-worker run is **not** a finding (it is expected). Never a stand-alone default-FAIL trigger.
 
 `tools/gate_emit.py` composes `run_result`, `footprint`, and `mutation_check` without reimplementing them.
 If `.kata/footprint.json` is present, use `withinFootprint` for rubric item 4 (ownership respected).

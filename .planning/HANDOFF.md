@@ -148,12 +148,14 @@ The **vetted, never-inline** loop (memory `exercise-harness-for-real`). S3b uses
    `verify`). Commit. `git tag -f pre-s<n>`.
 2. **Worktrees:** `git worktree add -b s<n>/<slice> C:/Dev/_kata_s<n>/<slice> master` per slice.
 3. **Dispatch concurrent worker subagents** (Agent tool, **model: sonnet**) — one per slice, scoped to its worktree +
-   owned files, TDD (red→green), **code-bearing tasks run `mutation_run.prove_non_vacuous`**, commit in-worktree.
+   owned files, TDD (red→green), **code-bearing tasks run `mutation_run.prove_non_vacuous`**, commit in-worktree. Workers
+   self-stamp `CLAIM` (start) and `DONE` (end) to the shared `.kata/board.md` at the integration root via `kata_board.append_event` with their own clock.
 4. **Integrate:** branch off master, `git merge --no-ff` the slices (octopus; disjoint = no conflict), `cd tools && uv sync`.
 5. **Gate:** `uv run pytest -q` + `validate_skills.py` (36/0) + `mcp__Snyk__snyk_code_scan` on new Python (CWE-23
    CLI/stdin-path FPs are documented). **Emit `.kata/RESULT.json` via `gate_emit`** — and for a code-bearing run pass
    `mutation_records` so `.kata/mutation.json` exists with `allNonVacuous:true` (rubric item 1 requires it). If a
-   `research-needed` escalation arises, persist the grounding verdict via `grounding_gate.write_grounding`.
+   `research-needed` escalation arises, persist the grounding verdict via `grounding_gate.write_grounding` — and emit
+   `.kata/concurrency.json` via the `protocol/board.md` snippet (Concurrency evidence).
 6. **Fresh-context `kata-evaluate`** — SEPARATE no-write Agent subagent (sonnet), 8-rubric, default-FAIL. **No
    self-cert (L8).** Must PASS. (It pre-emptively regenerates RESULT.json for the integration if needed — S2 lesson.)
 7. **Merge to master**, push, `git worktree remove` + `git branch -D` the slices, checkpoint STATE/HANDOFF, push.
