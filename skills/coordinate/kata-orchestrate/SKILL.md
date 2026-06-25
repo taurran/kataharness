@@ -187,7 +187,24 @@ After the frontier drains (all tasks integrated), on the integration branch:
    **default-FAIL** (treated as NEEDS_WORK) — never advisory-only. When `kata/module/slop` is absent this is a
    silent no-op (the module degrades gracefully, like every optional module).
 5. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
-6. Commit; if a handoff is needed, [[kata-handoff]].
+6. **Adversarial red-team before merge — on a code/contract-bearing build (L12).** After [[kata-evaluate]]
+   returns PASS, and **before merge-to-master**, dispatch [[kata-review]] (**≥ standard tier** — a merge-gate
+   warrants depth; do not red-team a contract change at `essential`) as a **separate fresh-context, no-write**
+   adversarial subagent whose job is to *break* the result — not re-grade conformance, but hunt the failure modes
+   the default-FAIL gate structurally misses: documentation-only seams (wired-in-prose, dead-in-a-real-run),
+   derived artifacts that don't reproduce from source, and overclaim/slop (RUBRIC surface 6). This is the **second
+   lens** the project learned it needs ([[LESSONS-LEARNED]] L10c, recurred as L12) — `kata-evaluate` grades against
+   the plan; this actively attacks. **SHIP-WITH-FIXES / HOLD → targeted fixes against the same plan, then
+   re-confirm.** It is *additive* to the [[kata-evaluate]] gate (item 9 *reproduces* artifacts; this *attacks* the
+   whole build), never a replacement.
+   - **Scope — "code/contract-bearing" is an evaluator/operator judgment, NOT the `codeBearing` footprint flag.**
+     `footprint.codeBearing` keys off *code* extensions only (`tools/footprint.py`), so a pure **protocol/skill
+     `.md` contract edit is `codeBearing:false` yet IS contract-bearing** (this very loop-hardening change was —
+     and a naïve `codeBearing` gate would have skipped its own red-team). Trigger the red-team when the build
+     changes **executable logic (`codeBearing:true`) OR a contract/protocol/skill surface** (`protocol/**`,
+     `skills/**/SKILL.md` or `RUBRIC.md`, a frozen spec contract) — the latter judged, not flag-derived. Only a
+     genuinely trivial docs/prose run (planning notes, READMEs, comments) may skip, at the operator's call.
+7. Commit; if a handoff is needed, [[kata-handoff]].
 
 ## Milestone narration (WS-3 — ADDITIVE; does not alter dispatch, frontier, or gate logic)
 

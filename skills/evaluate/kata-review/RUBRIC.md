@@ -31,6 +31,14 @@ findings, not fixes; findings seed a deliberate orchestrator decision.
 4. **Security & failure surface.** Attacker-reachable inputs, escaping, and what happens on malformed/edge
    input. Confirm threats in the plan's model are actually mitigated, not just claimed.
 5. **Second-order effects.** What does this change *downstream* that no one looked at?
+6. **Reproduction & seam-liveness (L12 — the signature failure mode).** Do not trust that a thing *exists*
+   because a doc says so. (a) **Derived artifacts:** for anything the run *computed or rendered* (a board-derived
+   `concurrency.json`, a token-filled report, a generated manifest), **regenerate it from its stated source and
+   diff** — a presented copy that disagrees with the freshly-reproduced one was hand-massaged (a real defect this
+   surface caught on WS-2). (b) **Claimed seams (documentation-only-seam hunt):** for any wiring the build asserts
+   ("the orchestrator runs X", "the gate emits Y"), **execute the seam once** against real inputs — confirm it
+   actually fires in a real run, not just that the prose describes it. This is the conformance gate's structural
+   blind spot ([[kata-evaluate]] grades the artifact *as presented*); this surface attacks the gap.
 
 ## Injected-knowledge soundness mode (the grounding gate's adversarial leg — RS findings / ML candidates; D33)
 When invoked on **injected knowledge** rather than a built phase, run this surface as the adversarial half of the

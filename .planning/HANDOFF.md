@@ -160,10 +160,17 @@ The **vetted, never-inline** loop (memory `exercise-harness-for-real`). S3b uses
    `mutation_records` so `.kata/mutation.json` exists with `allNonVacuous:true` (rubric item 1 requires it). If a
    `research-needed` escalation arises, persist the grounding verdict via `grounding_gate.write_grounding` — and emit
    `.kata/concurrency.json` via the `protocol/board.md` snippet (Concurrency evidence).
-6. **Fresh-context `kata-evaluate`** — SEPARATE no-write Agent subagent (sonnet), 8-rubric, default-FAIL. **No
-   self-cert (L8).** Must PASS. (It pre-emptively regenerates RESULT.json for the integration if needed — S2 lesson.)
-7. **Merge to master**, push, `git worktree remove` + `git branch -D` the slices, checkpoint STATE/HANDOFF, push.
-8. **At an operator-decision boundary** (S3b's version-select; any demo): STOP and ask via `AskUserQuestion`.
+6. **Fresh-context `kata-evaluate`** — SEPARATE no-write Agent subagent, 9-rubric, default-FAIL. **No self-cert
+   (L8).** Must PASS. (It pre-emptively regenerates RESULT.json for the integration if needed — S2 lesson; rubric
+   item 9 = *reproduce derived artifacts, don't trust them* — L12.)
+7. **Adversarial `kata-review` before merge — on a code/contract-bearing build (L12).** SEPARATE fresh-context
+   no-write subagent (opus, **≥ standard tier**) that tries to **break** it — documentation-only seams, derived
+   artifacts that don't reproduce from source, overclaim/slop (RUBRIC surface 6) — not re-grade conformance.
+   SHIP-WITH-FIXES/HOLD → targeted fixes → re-confirm. The second lens the project kept re-learning it needs
+   (L10c → L12). **"Contract-bearing" is judged, not the `codeBearing` flag** (a protocol/skill `.md` edit is
+   `codeBearing:false` yet contract-bearing); only a trivially-prose docs run may skip.
+8. **Merge to master**, push, `git worktree remove` + `git branch -D` the slices, checkpoint STATE/HANDOFF, push.
+9. **At an operator-decision boundary** (S3b's version-select; any demo): STOP and ask via `AskUserQuestion`.
 Model routing: **judgment/eval = Opus** (Fable 5 has been unavailable), **workers = Sonnet**. Supersede-never-rewrite.
 
 ## 6. Open decisions for the human *(orientation: human-required)*

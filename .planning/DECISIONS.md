@@ -782,3 +782,29 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   is not a forgery-proof attestation, and the snippet is recipe text validated in-context (not a committed unit
   test). **Still deferred BY DESIGN:** in-loop LEARN-between-iterations (β emit-only, D74) + engram CONSULT
   (D9/D56) — WS-2's autonomy posture remains *bounded, human-gated autonomy + now-provable parallelism*.
+
+<!-- Loop-hardening fold-back from the WS-2 red-team (kata-improve). Lesson: L12. -->
+- **D98 — The adversarial red-team (`kata-review`) is now a STANDING loop step on code/contract-bearing builds,
+  and `kata-evaluate` must reproduce derived artifacts rather than trust them.** (2026-06-24, operator-prompted
+  Improvement-Kata fold-back.) Trigger: the WS-2 polish build passed `kata-evaluate` 7/7, but a separate
+  adversarial `kata-review` — run only because the operator asked — caught a real correctness defect (the
+  concurrency artifact was computed over an un-cleared board; the committed copy disagreed with what the snippet
+  actually emits → it had been hand-filtered). The default-FAIL gate **graded the artifact as-presented** instead
+  of regenerating it from source — the project's signature "recorded-not-reproduced" failure mode (L12). Operator's
+  framing: *"if code is coming out of our loop and an external red-team is still catching problems, we should
+  improve the loop."* Decision: **(1)** `kata-evaluate` gains **rubric item 9 — "reproduce, don't trust"**: any
+  *derived* artifact is regenerated from its stated source and reconciled (mismatch ⇒ NEEDS_WORK), and any *claimed
+  seam* is executed once, not accepted as prose. **(2)** A fresh-context no-write `kata-review` becomes a **standing
+  Final-gate step** (`kata-orchestrate` step 6 + recipe HANDOFF §5 step 7) that runs **after `kata-evaluate` PASS,
+  before merge**, on a **code/contract-bearing** build (a trivial docs-only run may skip — operator cadence choice,
+  "merge-gate on substantive builds"). The two lenses are complementary, not redundant: `kata-evaluate` grades
+  against the frozen plan; `kata-review` actively attacks (seams, reproduction, slop). This **wires** a lesson the
+  project had already recorded once (**L10c**) but never baked into a skill, so it recurred — the meta-lesson being
+  *fold lessons into the skills, not just the ledger.* Non-code-bearing change (skill/doc edits). validator 36/0.
+  **Dogfooded immediately:** this fold-back is itself contract-bearing, so it was run through the *new* standing
+  red-team before commit — `kata-review` caught a duplicate HANDOFF step number AND the irony that "contract-bearing"
+  had no machine signal (`.md` ⇒ `codeBearing:false`), so the rule would have skipped its own gate. Both fixed:
+  `kata-review` RUBRIC gains **surface 6 (reproduction & seam-liveness)** so the orchestrator's named deliverables
+  map to a surface; the scope clause now states "contract-bearing" is *judged* (covers `protocol/**` +
+  `skills/**/SKILL.md|RUBRIC.md`), not flag-derived; merge-gate red-team pinned to **≥ standard tier**. (The new
+  lens proving its worth on its own introduction is the cleanest possible validation of L12.)

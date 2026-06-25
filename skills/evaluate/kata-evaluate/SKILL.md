@@ -65,6 +65,16 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
    **contradicts the priming prompt / frozen spec** — or silently resolved a genuine ambiguity the human should
    have decided — is **NEEDS_WORK**. This is how the floor's "misalignment caught at the boundary" promise is
    actually enforced, not merely asserted. (No `ASSUMPTIONS.md` ⇒ this item is N/A, not a failure.)
+9. **Reproduce, don't trust (derived artifacts + claimed seams) (L12).** Do **not** accept a *derived* artifact
+   or a *claimed wiring* at face value — this is the project's signature failure mode (recorded/documented but
+   not independently reproduced). For any artifact the run **computed or rendered** from other inputs (e.g.
+   `.kata/concurrency.json` from the board, a generated report from a template + tokens, a computed manifest):
+   **regenerate it yourself from its stated source and reconcile** — a material mismatch between the presented
+   artifact and the freshly-reproduced one is **NEEDS_WORK** (the presented copy may have been hand-massaged).
+   For any **seam the build claims is wired** ("the orchestrator runs X", "the gate emits Y"): **execute it once**
+   against real inputs rather than confirming the prose describes it. (Raw test/build output captured by
+   `gate_emit` is *primary*, not derived — item 2 already re-runs it; this item targets *second-order* artifacts
+   and wiring claims. A run with no derived artifacts and no new seam ⇒ N/A, not a failure.)
 
 ## Injected-knowledge grounding mode (the L2 gate — RS findings / ML candidates; D33)
 A distinct invocation: instead of grading a built phase, grade **knowledge about to influence the build** —

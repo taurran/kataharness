@@ -117,3 +117,23 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
      was *more* apparatus to prove something architectural — dropped. One light in-setting check beats eighteen
      runs. (Anti-pattern: we hardened a corpus + re-registered before realizing the *axis* was wrong — fix the
      question before scaling the measurement.)
+
+- **L12 — The default-FAIL gate trusts derived artifacts; an adversarial second lens that *reproduces* them is
+  required, and it must be WIRED, not remembered. (2026-06-24)** WS-2 polish passed `kata-evaluate` 7/7, but a
+  separate adversarial `kata-review` (run only because the operator asked) found a real correctness defect: the
+  concurrency snippet computed over an un-cleared board, so the committed `concurrency.json` (3 workers) silently
+  disagreed with what the snippet actually produces from the on-disk board (8 workers — a prior run folded in).
+  The evaluator had **graded the artifact as-presented** — confirmed it was well-formed and matched the plan — but
+  never **regenerated it from source and reconciled.** This is the project's **signature failure mode** ("recorded/
+  documented but not independently reproduced/executed"), the same class as the D92 documentation-only seams.
+  **Sharpest part:** [[L10]](c) had *already recorded this exact lesson* — "only `kata-evaluate` ran, not
+  `kata-review`; adversarial validation should join the evaluate phase" — but it was never wired into the loop, so
+  it **recurred**. A lesson that lives only in a doc is not baked in. *Baked in (→ D98):*
+  (a) **`kata-evaluate` rubric item 9 — "reproduce, don't trust"**: for any *derived* artifact, regenerate it from
+     its stated source and reconcile (mismatch ⇒ NEEDS_WORK); for any *claimed seam*, execute it once, don't accept
+     the prose. (Primary captured test output stays item 2; this targets second-order artifacts + wiring claims.)
+  (b) **The adversarial red-team is now a STANDING loop step** (`kata-orchestrate` Final gate step 6 + recipe
+     HANDOFF §5 step 7): on a **code/contract-bearing** build, a fresh-context no-write `kata-review` runs after
+     `kata-evaluate` PASS and **before merge** (operator-chosen cadence, 2026-06-24). Two lenses: one grades against
+     the plan, one attacks the result. (c) **Meta-lesson: fold lessons into the SKILLS, not just the ledger** — an
+     unwired lesson (L10c) is latent debt that resurfaces; `kata-improve` must close the loop to a skill edit.
