@@ -48,10 +48,13 @@ After a targeted fix:
   thrash budget.
 
 ### Rule 2 — Thrash budget → diagnose-first, then deliberate re-plan
-- Track **fix-cycles two ways**, both **derived in-context from the durable board** (`.kata/board.md` logs every
-  NEEDS_WORK→fix cycle) at each checkpoint — **tier-3 disposable state rebuilt from tier-2** (`protocol/state.md`
-  R5), **not** a `state.json` field (it cannot be one — see L4): a **per-area** count (keyed on the task) and a
-  **run-level** count (all fix-cycles in the final-gate loop).
+- Track **fix-cycles two ways** — a **per-area** count (keyed on the task) and a **run-level** count — as
+  **transient orchestrator in-context bookkeeping during the final-gate fix loop.** The orchestrator *runs* the
+  eval→fix→re-verify loop, so it **counts its own iterations as it goes** — the live escalate-at-N decision
+  needs no persistence. The orchestrator's **existing `DECISION` board lines** (it already writes one per gate
+  decision, e.g. `NEEDS_WORK fix: …`) are the **durable recount trail** for a mid-loop resume. **No new board
+  TYPE, no `state.json` field, no new Python** (see L4). *(The board records no "NEEDS_WORK→fix" event TYPE; the
+  count is the orchestrator's own loop state, audit-traceable via its DECISION lines — not a parsed board event.)*
 - **Per-area:** when the **same area** hits **N=2** (the **3rd** failure of one area), STOP looping on it.
 - **Run-level ceiling:** a total fix-cycle ceiling catches **A-breaks-B oscillation** that a per-area count
   (which resets on that task's PASS) would never trip. A confirmation-pass regression (Rule 1) **counts against
@@ -86,20 +89,21 @@ human** instead of compounding. Building it now **pre-builds a C-arc safety** an
   **indeterminate ⇒ re-run (fail-safe, LOCKED).** One confirmation pass after the final fix batch = cheap gate
   **+ `kata-evaluate`**; the D98 `kata-review` runs **once after it settles, never inside the loop.** A
   *files-cited* intersection, **not** the code-symbol "blast-radius" relation.
-- **L2 — Thrash budget (two counters, board-derived).** A **per-area** count (keyed on task, **default N=2** →
-  3rd failure) **and** a **run-level** fix-cycle ceiling so cross-area oscillation can't hide. Both **derived
-  in-context from the durable board** (tier-3 disposable, rebuilt from tier-2, state.md R5) — **not** a
-  `state.json` field. A confirmation-pass regression counts against the budget (a later-invalidated PASS does
+- **L2 — Thrash budget (two counters, orchestrator-in-context).** A **per-area** count (keyed on task, **default
+  N=2** → 3rd failure) **and** a **run-level** fix-cycle ceiling so cross-area oscillation can't hide. Both are
+  **transient in-context counts** the orchestrator keeps while running the fix loop (it counts its own
+  iterations); the existing `DECISION` board lines are the durable recount trail — **not** a `state.json` field,
+  **no new board TYPE.** A confirmation-pass regression counts against the budget (a later-invalidated PASS does
   not zero it). **N=2 + the ceiling are provisional defaults pending dogfood calibration** (no evidence yet —
   stated honestly; not hard-trusted).
 - **L3 — Thrash → diagnose-first → deliberate human-gated re-plan.** At budget, `kata-diagnose` (resolved tier)
   returns **fix-problem vs plan-problem**; **the human valve fires only on plan-problem**, via the existing
   `human-required` kind (**no enum change** — distinction in `decisionNeeded`/`rationale`), **async-parked** per
   the existing contract, **supersede-not-rewrite, never silent.** Spine #1/#2 preserved.
-- **L4 — No new committed Python; counter is board-derived in-context.** The fix-cycle counts are reconstructed
-  from `.kata/board.md` at each checkpoint (the tier-3-cache-rebuilt-from-tier-2 pattern, state.md R5) — **no
-  `tools/` change, no `update_task`/state-schema change.** **Non-code-bearing** (`.md` only).
-  (`prefer-in-context-over-new-python`.)
+- **L4 — No new committed Python; counter is orchestrator in-context.** The fix-cycle counts are the
+  orchestrator's own loop bookkeeping during the final-gate fix loop (it counts its eval→fix iterations);
+  the existing `DECISION` board lines provide a recount on resume — **no `tools/` change, no `update_task`/
+  state-schema change, no new board TYPE.** **Non-code-bearing** (`.md` only). (`prefer-in-context-over-new-python`.)
 - **L5 — Batch-fix + staged-cascade (made explicit).** Within one judge's findings: collect **all** → fix in
   **one batch** → re-verify that judge (never fix-one-rerun-one). The cheap→expensive gate *ordering* (a red
   test never reaches a fresh-context judge) is reaffirmed.
@@ -117,7 +121,10 @@ A fresh-context adversarial freeze-gate returned **HOLD** and caught four real d
   `kata-diagnose/RUBRIC.md`** (both tiers inherit); it is acknowledged as a **NEW** capability formalized from
   the RUBRIC's existing Phase-6 "if architectural → kata-improve" seam (not "already does this").
 - **B4 (`fixAttempts` can't persist via `update_task`; L4 contradictory)** → operator chose **(b)**: the counter
-  is **board-derived in-context** (tier-3, rebuilt from tier-2), **not** a `state.json` field. L4 now honest.
+  is the orchestrator's **own in-context fix-loop bookkeeping** (it counts its own iterations), with the existing
+  `DECISION` board lines as the durable recount trail — **not** a `state.json` field, **no new board TYPE.** L4
+  now honest. *(Re-confirm H1: an earlier draft wrongly claimed the board logs a "NEEDS_WORK→fix" event — it
+  does not; corrected to orchestrator-in-context + DECISION-line audit trail.)*
 - **M1 (per-task counter evadable by A↔B oscillation)** → added the **run-level ceiling** + count
   confirmation-pass regressions (L2).
 - **M2/M3/M4** → N=2 marked provisional + human-valve-on-verdict-not-N (L3); `kind` stays `human-required`, no
