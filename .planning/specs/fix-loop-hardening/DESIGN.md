@@ -1,6 +1,6 @@
 ---
 title: "Fix-loop hardening — material re-verification + thrash→re-plan budget"
-status: FROZEN (DESIGN) — pending freeze-gate adversarial review
+status: FROZEN (DESIGN) — freeze-gate HOLD→resolved; re-confirm pending
 date: 2026-06-24
 spec: fix-loop-hardening
 decision: D100 (on merge)
@@ -32,28 +32,39 @@ footprint/blast-radius reasoning **already exist**. This spec *wires a rule and 
 
 ## The two rules
 
-### Rule 1 — Material re-verification (blast-radius-scoped)
+### Rule 1 — Material re-verification (conservative, footprint-cited)
 After a targeted fix:
-- **Always re-run the cheap deterministic gate** (pytest / validator / lint / scan) — fast, idempotent, no reason to skip.
-- **Re-run a *fresh-context* judge** (`kata-evaluate` / `kata-review`) **only if the fix is *material* to its
-  verdict** — i.e. the fix's **footprint intersects that judge's evidence basis** (the files/concerns its
-  findings rested on). A docs-only fix to a red-team nit does not require re-running the full `kata-evaluate`;
-  a fix that changes executable logic does. ("Material" = footprint intersection, computed with the existing
-  blast-radius reasoning — not evaluator vibes.)
+- **Always re-run the cheap deterministic gate** (pytest / validator / lint / scan) — fast, idempotent.
+- **Re-run a *fresh-context* judge** (`kata-evaluate` / `kata-review`) **iff the fix's footprint** (the files
+  it changed, per `.kata/footprint.json.changed`) **intersects a file that judge's findings cited.** **If the
+  intersection cannot be determined, the fix is treated as material and the judge is re-run** (indeterminate ⇒
+  re-run — **fail-safe**). This is a *files-cited* intersection, **not** the code-symbol "blast-radius" relation
+  (which does not range over a judge's prose findings) — keep the two terms distinct.
 - **After the *final* batch of fixes, run exactly ONE full-stack confirmation pass** to catch cross-fix
-  interaction (fixing X broke Y). **One** — never per-fix.
+  interaction. The confirmation pass = the cheap gate **+ a re-run of `kata-evaluate`** (cross-fix breakage is a
+  conformance question). The standing adversarial `kata-review` (D98, Final-gate step 6) runs **once, after the
+  confirmation pass settles, on the final post-fix artifact — never inside the loop.** A fix made *in response
+  to* the red-team re-enters at the confirmation pass (so what was attacked is what ships), governed by the
+  thrash budget.
 
-### Rule 2 — Thrash budget → escalate as a deliberate re-plan
-- Track **`fixAttempts` per task/area** in the **drift ledger** (`state.json`, orchestrator-owned — it already
-  maintains the ledger; this adds one counter).
-- When the **same area** fails → fixes → fails for **N cycles** (default **N=2**, i.e. the **3rd** failure on
-  one area), **STOP looping on it.**
-- Route it to **`kata-diagnose`** for a systematic root-cause pass: *is this a fix problem or a **plan**
-  problem?*
-- If the frozen plan has **no clean fix**, escalate it as a **re-plan candidate** through the **existing
-  escalation valve** — a **deliberate, human-gated re-plan event, supersede-not-rewrite**, never a silent
-  re-plan. This is the missing **bridge** between "fix loop exhausted" and "deliberate re-plan" (spine #1/#2:
-  *re-planning is an event, not a habit*).
+### Rule 2 — Thrash budget → diagnose-first, then deliberate re-plan
+- Track **fix-cycles two ways**, both **derived in-context from the durable board** (`.kata/board.md` logs every
+  NEEDS_WORK→fix cycle) at each checkpoint — **tier-3 disposable state rebuilt from tier-2** (`protocol/state.md`
+  R5), **not** a `state.json` field (it cannot be one — see L4): a **per-area** count (keyed on the task) and a
+  **run-level** count (all fix-cycles in the final-gate loop).
+- **Per-area:** when the **same area** hits **N=2** (the **3rd** failure of one area), STOP looping on it.
+- **Run-level ceiling:** a total fix-cycle ceiling catches **A-breaks-B oscillation** that a per-area count
+  (which resets on that task's PASS) would never trip. A confirmation-pass regression (Rule 1) **counts against
+  the budget** — a PASS later invalidated does **not** zero the count.
+- On hitting **either** budget, **dispatch `kata-diagnose` FIRST** (cheap, no human) for a root-cause pass that
+  returns a **fix-problem vs plan-problem** verdict. **The human valve fires only on a *plan-problem* verdict** —
+  a legitimately-hard-but-fixable area is **not** a human interrupt; only a genuine plan defect is.
+- A plan-problem escalates as a **re-plan candidate** through the **existing `human-required` escalation kind**
+  (no enum change — the thrash distinction lives in the payload's `decisionNeeded`/`rationale` + a routing note
+  that `kata-diagnose` ran first), **async-parked** per the existing async-escalation contract (park task +
+  DAG-dependents; frontier keeps draining). **Deliberate, human-gated, supersede-not-rewrite; never silent**
+  (spine #2: *re-planning is an event, not a habit*). The missing **bridge** between "fix loop exhausted" and
+  "deliberate re-plan."
 
 ## Why this is the right shape (not "full stack every time", not "fix-one-rerun-all")
 The efficient topology is a **staged cascade**: cheap deterministic gates gate the expensive fresh-context
@@ -70,17 +81,25 @@ human** instead of compounding. Building it now **pre-builds a C-arc safety** an
 `Reason`'s lowest-risk decisions first plug in.
 
 ## LOCKED decisions
-- **L1 — Material re-verification.** Always re-run the cheap gate; re-run a fresh-context judge **only** if the
-  fix's footprint intersects its evidence basis; **one** bounded full-stack confirmation pass after the final
-  fix batch. Computed with existing blast-radius reasoning.
-- **L2 — Thrash budget.** Per-task `fixAttempts` counter in the drift ledger (`state.json`); **default N=2**
-  (escalate on the 3rd failure of one area). The default is conservative and **documented**; a `kata.config`
-  override is a future option, **not** in this spec.
-- **L3 — Thrash → deliberate re-plan event.** Route via `kata-diagnose` → the existing escalation valve →
-  **human-gated** re-plan, **supersede-not-rewrite**. **Never a silent re-plan.** Spine #1/#2 preserved.
-- **L4 — No new committed Python.** The counter lives in the **existing** drift ledger the orchestrator
-  maintains (`state.json` via `kata_board.update_task` / the ledger). **Non-code-bearing** (`.md` + a state
-  field). (`prefer-in-context-over-new-python`.)
+- **L1 — Material re-verification (conservative).** Always re-run the cheap gate; re-run a fresh-context judge
+  **iff** the fix footprint (`.kata/footprint.json.changed`) intersects a file that judge's findings cited;
+  **indeterminate ⇒ re-run (fail-safe, LOCKED).** One confirmation pass after the final fix batch = cheap gate
+  **+ `kata-evaluate`**; the D98 `kata-review` runs **once after it settles, never inside the loop.** A
+  *files-cited* intersection, **not** the code-symbol "blast-radius" relation.
+- **L2 — Thrash budget (two counters, board-derived).** A **per-area** count (keyed on task, **default N=2** →
+  3rd failure) **and** a **run-level** fix-cycle ceiling so cross-area oscillation can't hide. Both **derived
+  in-context from the durable board** (tier-3 disposable, rebuilt from tier-2, state.md R5) — **not** a
+  `state.json` field. A confirmation-pass regression counts against the budget (a later-invalidated PASS does
+  not zero it). **N=2 + the ceiling are provisional defaults pending dogfood calibration** (no evidence yet —
+  stated honestly; not hard-trusted).
+- **L3 — Thrash → diagnose-first → deliberate human-gated re-plan.** At budget, `kata-diagnose` (resolved tier)
+  returns **fix-problem vs plan-problem**; **the human valve fires only on plan-problem**, via the existing
+  `human-required` kind (**no enum change** — distinction in `decisionNeeded`/`rationale`), **async-parked** per
+  the existing contract, **supersede-not-rewrite, never silent.** Spine #1/#2 preserved.
+- **L4 — No new committed Python; counter is board-derived in-context.** The fix-cycle counts are reconstructed
+  from `.kata/board.md` at each checkpoint (the tier-3-cache-rebuilt-from-tier-2 pattern, state.md R5) — **no
+  `tools/` change, no `update_task`/state-schema change.** **Non-code-bearing** (`.md` only).
+  (`prefer-in-context-over-new-python`.)
 - **L5 — Batch-fix + staged-cascade (made explicit).** Within one judge's findings: collect **all** → fix in
   **one batch** → re-verify that judge (never fix-one-rerun-one). The cheap→expensive gate *ordering* (a red
   test never reaches a fresh-context judge) is reaffirmed.
@@ -88,13 +107,24 @@ human** instead of compounding. Building it now **pre-builds a C-arc safety** an
   **nor** the escalation contract — it **bounds and scopes** the loop *between* them. The conformance floor is
   untouched (D22).
 
-## Open questions for the freeze-gate to attack
-- **Is N=2 right?** Too trigger-happy → premature re-plans on legitimately-hard-but-fixable areas; too high →
-  still churns. What's the evidence for the default?
-- **"Material" definability.** Is "footprint intersects the judge's evidence basis" crisp enough to act on, or
-  subjective mush? What's the fallback when blast-radius is unknown (re-run, fail-safe)?
-- **"Area" granularity.** Per-task? per-file? per-finding-cluster? — what does `fixAttempts` key on, and can a
-  fix to area A that breaks area B evade the counter?
-- **Async-escalation interaction.** Does a thrash-escalation **park the sub-tree** like other escalations
-  (frontier keeps draining), or hard-stop? (Should match the existing async-escalation contract.)
-- **Does the confirmation pass (L1) re-trigger the standing red-team (D98)?** Or only the cheap gate?
+## Freeze-gate review (2026-06-24) — HOLD → resolved
+A fresh-context adversarial freeze-gate returned **HOLD** and caught four real design holes; all resolved above:
+- **B1 ("material" referenced non-existent machinery)** → L1 re-scoped to a *files-cited* footprint intersection
+  (no judge "evidence basis" exists; "blast-radius" is the code-symbol relation — kept distinct). Operator chose
+  the **conservative rule** (b): when in doubt, re-run.
+- **B2 (unsafe default)** → **indeterminate ⇒ re-run** is now LOCKED in L1.
+- **B3 (`kata-diagnose` tie-in: wrong path + invented capability)** → the verdict lands in the **shared
+  `kata-diagnose/RUBRIC.md`** (both tiers inherit); it is acknowledged as a **NEW** capability formalized from
+  the RUBRIC's existing Phase-6 "if architectural → kata-improve" seam (not "already does this").
+- **B4 (`fixAttempts` can't persist via `update_task`; L4 contradictory)** → operator chose **(b)**: the counter
+  is **board-derived in-context** (tier-3, rebuilt from tier-2), **not** a `state.json` field. L4 now honest.
+- **M1 (per-task counter evadable by A↔B oscillation)** → added the **run-level ceiling** + count
+  confirmation-pass regressions (L2).
+- **M2/M3/M4** → N=2 marked provisional + human-valve-on-verdict-not-N (L3); `kind` stays `human-required`, no
+  enum change (L6); confirmation-pass ↔ red-team interaction locked (L1).
+
+## Remaining open (build-eval + future calibration)
+- **N=2 + the run-level ceiling are provisional** — the first multi-fix dogfood that exercises them is the
+  calibration data; revisit both numbers then.
+- **The `kata-diagnose` fix-vs-plan verdict is a NEW capability** — its acceptance test must **prove it
+  actually returns the verdict** (the D98/L12 *reproduce-don't-trust* rule applies), not merely document it.
