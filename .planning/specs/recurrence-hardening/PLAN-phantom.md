@@ -1,6 +1,6 @@
 ---
 title: "Phantom-machinery first hardening — verify-before-reuse guard (FROZEN PLAN)"
-status: FROZEN (freeze step done; pending freeze-gate kata-review → build)
+status: FROZEN (freeze-gate HOLD→resolved: must-fix #1/#2 + should-fix #3/#4 folded in; pending re-confirm → build)
 date: 2026-06-25
 spec: recurrence-hardening
 decision: D101 (worked example) · D98/L12 (fold lessons into skills) · D33 (structural invariants never tiered)
@@ -50,16 +50,27 @@ primary), the re-assert site (plan RUBRIC — inherited by all three tier files)
 gains a short pre-flight/quality-bar line pointing at `protocol/reuse-claims.md`.
 
 **LD5 — Two tests, both required (D98/L12 "reproduce, don't trust"):**
-- **T-regression (wired, not remembered):** a `validate_skills.py` rule asserts each of the three responsible
-  skills references `protocol/reuse-claims.md`. Catches silent removal/drift forever (the L12c lesson —
-  unwired lessons recur).
-- **T-fire (proof-of-fire, n=1, operator's explicit ask):** a one-shot live adversarial probe — a
-  fresh-context planning agent is given a deliberate *"reuses `X.foo()`"* claim against a surface that does
-  not exist; the hardened skill's pre-flight must **flag it / label it NEW** instead of freezing the claim.
-  Recorded in `REPORT-phantom.md`.
+- **T-regression (wired, not remembered):** a `validate_skills.py` rule with **two parts** —
+  (a) **pointer presence** across all three concrete paths, using the **dual mechanism** the validator already
+  uses (loaded-skill bodies for `kata-design-doc` + `kata-tdd`; a **separate file read/glob** for
+  `kata-plan/RUBRIC.md`, mirroring `check_rubric_wikilinks` which globs `*/*/RUBRIC.md` apart from
+  `load_skills()`); and (b) **contract-body integrity** — `protocol/reuse-claims.md` itself must still contain
+  the LD3 load-bearing terms, added to `REQUIRED_PROTOCOL` / `check_protocol_schemas` (precedent:
+  escalation.md/orientation.md are content-guarded there). Part (b) closes the seam where the contract body is
+  gutted while pointers + validator stay green. Catches silent removal/drift of *both* the pointers and the
+  guard text forever (the L12c lesson — unwired lessons recur).
+- **T-fire (proof-of-fire, n=1, operator's explicit ask) — PINNED probe + BINARY criterion:** dispatch a
+  fresh-context planning agent (running `kata-design-doc`) given the **verbatim** phantom claim:
+  *"composes the existing `kata-orient` lateral-pointer writer via `orient.emit_pointers()`"* — a surface that
+  **does not exist** (no such function/module). **PASS iff** the output either labels it a **NEW capability**
+  or **refuses to freeze**, citing the missing `file:line`. **FAIL** if it emits any "reuses/composes X" line
+  with no cited surface. The raw transcript + verbatim verdict are **copy-pasted** (not summarized) into
+  `REPORT-phantom.md`.
 
 **LD6 — This run is code-bearing** (it adds a `validate_skills.py` rule). `kata-evaluate` rubric item 1
-requires `.kata/mutation.json` `allNonVacuous:true` for the validator-rule task (T3).
+requires `.kata/mutation.json` `allNonVacuous:true` for the validator-rule task (T3). The asserted line the
+mutation removes is the rule's error-append branch (`if "protocol/reuse-claims.md" not in <text>: errors.append(...)`),
+chosen so removing it makes a deliberately-broken fixture stop failing — a non-vacuous bite.
 
 ## Task partition (disjoint file ownership)
 
@@ -97,24 +108,40 @@ Sequential by necessity (each task references the prior's artifact); ownership i
   contract; no other skill content changed.
 
 ### T3 — the regression rule + test  *(owns `validate_skills.py` + a new test)*
-- **read_first:** `tools/validate_skills.py` structure; `protocol/reuse-claims.md`.
-- **action:** add a validator rule: the three LD4 skills MUST reference `protocol/reuse-claims.md`; missing →
-  error (default-FAIL). Add `tools/tests/test_reuse_claims_guard.py` covering present-passes / removed-fails.
-  Run `prove_non_vacuous` on the rule (code-bearing, LD6).
+- **read_first:** `tools/validate_skills.py` — specifically `load_skills()` (globs `*/*/SKILL.md` only, so
+  `kata-plan` is NOT a loaded skill — only `kata-plan-{essential,standard,advanced}` are), `check_rubric_wikilinks`
+  (the precedent for reading `*/*/RUBRIC.md` separately), the `@check` registry, and `REQUIRED_PROTOCOL` /
+  `check_protocol_schemas` (the content-guard precedent); `protocol/reuse-claims.md`.
+- **action:** add a validator rule enforcing **both** LD5 parts:
+  (a) **pointer presence** at the three CONCRETE paths — `skills/plan/kata-design-doc/SKILL.md` and
+  `skills/execute/kata-tdd/SKILL.md` via the loaded-skill bodies, **and `skills/plan/kata-plan/RUBRIC.md` via a
+  separate file read/glob** (NOT via the `skills` list — it is not a skill); any missing reference → error
+  (default-FAIL).
+  (b) **contract-body integrity** — add `reuse-claims.md` to `REQUIRED_PROTOCOL` with LD3 load-bearing terms
+  (`"claim to verify, not an assumption"`, `"NEW capability"`, `"documentation-only seam"`); missing → error.
+  Add `tools/tests/test_reuse_claims_guard.py` that exercises the **validator function itself** (import +
+  fixture skill tree / monkeypatched paths, NOT a reimplementation), covering: present-passes; each of the
+  **three** pointers removed → errors (incl. the RUBRIC); contract body term removed → errors. Run
+  `prove_non_vacuous` on the rule's error-append branch (code-bearing, LD6).
 - **verify:** `cd tools && uv run pytest -q` (new tests pass) + `uv run python validate_skills.py` (36/0) +
   `.kata/mutation.json allNonVacuous:true`.
-- **acceptance:** removing any one pointer makes the validator error (the test proves it); mutation proof present.
+- **acceptance:** removing **any one of the three** pointers (incl. `kata-plan/RUBRIC.md`) makes the validator
+  error; gutting the LD3 contract body makes the validator error; the test proves each bite; mutation proof present.
 
 ### Integration / proof-of-fire (orchestrator + human, not a worker task)
-- Run **T-fire** (LD5): dispatch a fresh-context planning agent with a deliberate phantom-reuse claim; confirm
-  the hardened design-doc pre-flight flags it / labels it NEW. Record the transcript verdict in
-  `REPORT-phantom.md`. (Per L12 — prove the guard fires; don't just document it.)
+- Run **T-fire** (LD5, PINNED): dispatch a fresh-context `kata-design-doc` agent given the verbatim phantom
+  claim *"composes the existing `kata-orient` lateral-pointer writer via `orient.emit_pointers()`"* (a
+  non-existent surface). **PASS iff** it labels the capability NEW or refuses to freeze citing the missing
+  `file:line`; **FAIL** if it emits any "reuses/composes X" line with no cited surface. Copy-paste the raw
+  transcript + verbatim verdict into `REPORT-phantom.md`. (Per L12 — prove the guard fires; don't just document it.)
 
 ## Acceptance criteria (phase-level, default-FAIL)
-- `validate_skills.py` → **36 skills / 0 errors** (the new rule passes with pointers present).
+- `validate_skills.py` → **36 skills / 0 errors** (the new rule passes with all three pointers + the contract body present).
 - `pytest -q` → all pass incl. `test_reuse_claims_guard.py`; `.kata/mutation.json allNonVacuous:true`.
-- Removing any LD4 pointer → validator **errors** (T-regression bites — demonstrated by the test).
-- The T-fire probe: the hardened skill **flags a phantom reuse claim** (proof-of-fire, n=1).
+- Removing **any one of the three** pointers — `kata-design-doc/SKILL.md`, `kata-plan/RUBRIC.md` (separate
+  glob), `kata-tdd/SKILL.md` — → validator **errors**; gutting the LD3 contract body → validator **errors**
+  (T-regression bites both, demonstrated by the test).
+- The T-fire probe meets its **binary PASS criterion** (proof-of-fire, n=1), transcript pasted in the report.
 - No unrelated skill/contract content changed; no `[[wikilink]]` used for the path reference.
 
 ## Sequencing (the recipe — HANDOFF §5)
