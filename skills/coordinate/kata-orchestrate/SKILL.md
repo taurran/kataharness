@@ -48,6 +48,7 @@ does not drift.**
      it never bypasses the `kata-evaluate` gate. (`protocol/config.md` → *Grill-depth dial*.)
    - **Version-up (`target.kind: "existing"`):** use `target.baselineGate` as the precondition-#2 baseline
      command. (The version-up ingestion DAG — kata-graph — is Spec A4; A3 only consumes the config fields.)
+   - **Roles load-guard (N4/L-A):** read confirmed platforms via `kata_settings.confirmed_platforms()` (`tools/kata_settings.py:109`) and resolve `kata.config.roles` via `kata_roles.resolve_roles(roles_block, confirmed, host_platform)` (`tools/kata_roles.py:28`). **`host_platform` is the orchestrator's runtime adapter identity** — in v1 this is `"claude"` (the only shipped dispatch adapter; see `SKILL.md:14`, where the `Agent` tool is documented as the Claude-adapter binding of the abstract "dispatch worker" capability, and v0.1 ships only the Claude adapter; `"claude"` is also the resolver's default at `tools/kata_roles.py:31`). This is an adapter binding, not a `kata.config` field — there is no `target.platform`. A non-Claude orchestrator host is DEFERRED (LD11); a future fast-follow swaps only this binding. A `ValueError` from `resolve_roles` (unknown role name, or a platform ∉ `confirmedPlatforms`) ⇒ **STOP + escalate at preflight** (same fail-closed posture as the mode/effort/tiers/modules guard above). **BC1:** `roles` absent ⇒ `resolve_roles` returns every role assigned to the host ⇒ today's single-host loop byte-for-byte (DESIGN R5/LD3).
 1. A **frozen** PLAN exists with a wave/ownership DAG (e.g. `ownership:` + `waves:` + `depends_on:` in
    frontmatter). If the plan is not frozen, stop — planning is a different phase.
 2. The target repo is **green at the fork point** (run its test/build gate; record the baseline numbers).
@@ -107,6 +108,32 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    files merge cleanly by construction). Re-run the gate on the integration branch, then recompute the frontier.
 5. **Commit at the checkpoint** (conventional commit + project trailer) so compaction can't lose work.
    Completions integrate **in completion order** — a linear integration-branch history, not a wave-batched one.
+
+## Cross-model dispatch (multi-model routing)
+
+This section is **additive** — the host/`Agent`-tool path (step 2 of the loop above) is the default branch. When a role's resolved platform equals the host platform, the existing `Agent`-tool subagent dispatch applies unchanged. When it differs, the procedure below replaces the subagent call at that role-group dispatch site.
+
+**At each role-group dispatch site**, if `resolved_roles[role]["platform"] ≠ host_platform`:
+
+1. Build a task-brief via `kata_dispatch.build_brief(task_id, role, platform, model=..., objective=..., result_path=..., ...)` (`tools/kata_dispatch.py:42`). Use `sandbox="read-only"` for read-only roles (validator, researcher); `sandbox="write"` for coder.
+2. Call `kata_dispatch.dispatch(brief, worktree)` (`tools/kata_dispatch.py:149`) — this launches the platform's headless CLI in the worktree (N2 adapter) and captures a normalized RESULT envelope (N3).
+3. Read the RESULT envelope; fold the role's `payload` per the per-role contract: validator → `{verdict, findings}`; researcher → `{claim, source, confidence, groundsToPlan}`; coder → the gate RESULT shape.
+
+**Role-group → dispatch-site map (L-MP5):**
+
+| Role | Dispatch site in this skill | Notes |
+|---|---|---|
+| `validator` | D98 adversarial red-team (`SKILL.md:248`) + grounding-gate review (`SKILL.md:126-130`) | Read-only; **proven v1 path** (validator→codex). |
+| `researcher` | `kata-research` on a research-needed escalation (`SKILL.md:122-137`) | Read-only; **proven v1 path** (researcher→kiro). |
+| `coder` | Per-task worker dispatch (`SKILL.md:72`, sandbox=write) | Supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`); **NOT the proven v1 path** this build ships (honest scope). |
+| `evaluator` | Host only | The accept/send-back/reroll mechanism is **DEFERRED** (DESIGN §8.5). |
+| `orchestrator` | Host only in v1 | Non-Claude orchestrator host is **DEFERRED** (LD11). |
+
+**LD6 — Concurrency:** Off-host dispatches run as **concurrent background subprocesses** reconciled with the rolling frontier and `.kata/concurrency.json`. Disjoint file-ownership ensures no races; the same frontier invariants (dispatchable iff `depends_on` drained + owned files disjoint from in-flight tasks) apply equally to cross-model tasks.
+
+**LD7 — Host fallback:** When the RESULT envelope carries `status ∈ {failed, timeout, fallback}`, **fall back to the host's `Agent`-tool path** (the existing subagent dispatch), **log the failure** (a board `ESCALATE` or `BLOCK` event), and **surface it** in the conversation. A routed platform failing repeatedly within a run is **flagged unconfirmed for that run** — all subsequent dispatch sites for that platform revert to the host path, and the incident is recorded in the drift ledger. The next run's preflight re-evaluates `confirmedPlatforms`.
+
+**Honest scope (v1):** The **read-only roles** (validator→codex, researcher→kiro) are the **proven v1 paths** this build ships. Coder-routing (write sandbox) is architecturally described and supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`) but is **not** the proven path this build ships. Evaluator injection-point thresholds are deferred (DESIGN §8.5). Orchestrator-host reassignment is deferred (LD11).
 
 ## Escalation (the no-re-plan escape valve)
 An escalation is an **async event** — it does **NOT halt the run**. The escalating worker writes the

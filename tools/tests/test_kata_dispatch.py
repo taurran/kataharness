@@ -139,7 +139,8 @@ def test_safe_result_path_rejects_escape(tmp_path):
 
 def test_dispatch_unroutable_platform_fails_gracefully():
     # a confirmed-but-undispatchable platform must FAIL, not crash the loop (red-team F3)
-    b = kd.build_brief("t1", "validator", "kiro", model="m", objective="o", result_path="R")
+    # "cursor" is deferred (L-MP1 / PLAN.md); "kiro" is now routable so is no longer the example
+    b = kd.build_brief("t1", "validator", "cursor", model="m", objective="o", result_path="R")
     res = kd.dispatch(b, "/wt", runner=_stub_runner({}))
     assert res["status"] == "failed"
     assert "no dispatch adapter" in res["payload"]["error"]
@@ -188,6 +189,78 @@ def test_brief_prompt_conveys_inputs_and_ownership():
     prompt = kd._brief_prompt(b)
     assert "a.py" in prompt and "b.py" in prompt
     assert "do not write files" in prompt.casefold()
+
+
+# ----- Slice C: kiro dispatch adapter (MAJOR-1 + kiro_command) -----
+
+def test_brief_prompt_capture_emit_unchanged():
+    """codex path (capture="emit"): unchanged wording — still says 'do not write files'."""
+    b = kd.build_brief("t", "researcher", "codex", model="m", objective="research it",
+                       result_path="RESULT.json")
+    prompt = kd._brief_prompt(b, capture="emit")
+    assert "do not write files" in prompt.casefold()
+    assert "RESULT.json" not in prompt or "Write" not in prompt  # no write-to-file instruction
+
+
+def test_brief_prompt_capture_write_contains_result_path():
+    """kiro path (capture="write"): prompt instructs the worker to WRITE resultPath itself.
+
+    MAJOR-1 regression guard: kiro has no -o capture (DESIGN §4 N2); the worker must write.
+    """
+    b = kd.build_brief("t", "researcher", "kiro", model="m", objective="research it",
+                       result_path="RESULT.json")
+    prompt = kd._brief_prompt(b, capture="write")
+    # must contain the file-write instruction …
+    assert "Write" in prompt
+    assert "RESULT.json" in prompt
+    # … and must NOT contain the emit/no-write instruction
+    assert "do not write files" not in prompt.casefold()
+    assert "emit" not in prompt.casefold()
+
+
+def test_kiro_command_argv_shape():
+    """kiro_command returns the documented kiro-cli headless argv (DESIGN §4 N2)."""
+    b = kd.build_brief("t", "researcher", "kiro", model="m", objective="research it",
+                       result_path="RESULT.json")
+    cmd = kd.kiro_command(b, "/wt")
+    assert isinstance(cmd, list)
+    assert cmd[0] == "kiro-cli"
+    assert cmd[1] == "chat"
+    assert "--no-interactive" in cmd
+    assert "--agent" in cmd
+    assert cmd[cmd.index("--agent") + 1] == "researcher"
+    # prompt (last arg) must contain the write-to-file instruction, not the emit instruction
+    prompt = cmd[-1]
+    assert "Write" in prompt and "RESULT.json" in prompt
+    assert "do not write files" not in prompt.casefold()
+
+
+def test_dispatch_researcher_on_kiro_returns_completed_envelope(tmp_path):
+    """End-to-end: kiro brief → dispatch(stub) → completed envelope with researcher payload.
+
+    Mirrors test_end_to_end_validator_on_codex for the kiro/researcher path (Slice C acceptance).
+    The stub runner simulates a kiro worker that wrote resultPath itself (no -o capture).
+    """
+    b = kd.build_brief(
+        "t-kiro-1", "researcher", "kiro", model="m",
+        objective="Research the topic.",
+        result_path="RESULT.json",
+        acceptance="Return claim + groundsToPlan.",
+    )
+    kiro_output = {
+        "claim": "kiro proved it",
+        "source": "https://example.com",
+        "confidence": 0.9,
+        "groundsToPlan": "Use approach X.",
+    }
+    result = kd.dispatch(b, str(tmp_path), runner=_stub_runner(kiro_output, stdout="kiro done"))
+    assert result["status"] == "completed"
+    assert result["platform"] == "kiro"
+    # normalized researcher payload shape
+    assert result["payload"]["claim"] == "kiro proved it"
+    assert result["payload"]["source"] == "https://example.com"
+    assert result["payload"]["confidence"] == 0.9
+    assert result["payload"]["groundsToPlan"] == "Use approach X."
 
 
 # ----- THE END-TO-END PROOF: roles -> brief -> dispatch(stub) -> normalized verdict -----
