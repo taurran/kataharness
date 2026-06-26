@@ -44,7 +44,10 @@ component*, and *where the orchestrator itself lives*.
 - How does a run *declare* per-component routing (a `routing`/`models` block in the workspace binding or
   `kata.config`)? Default = single-host.
 - "Multi-modal" proper (image/audio/vision components, e.g. a design step) — adjacent; in scope or a separate
-  brief? (Flag, don't assume.)
+  brief? (Flag, don't assume.) **RESOLVED (2026-06-25): the operator's "multi-modal assignment by detected stack"
+  = capability/specialist routing → its own brief `specs/capability-aware-assignment/BRIEF.md`** (an orthogonal
+  axis: that routes *which specialist* builds a task; this routes *which model/host*). Literal media-modality
+  pipelines remain parked here, out of scope unless pulled in.
 - How does the orchestrator supervise an agent it cannot directly spawn (a different tool's process) — poll the
   board, or an ACP control channel?
 - Determinism/reproducibility (`kata.config.skillVersions`, effort) across heterogeneous models.
