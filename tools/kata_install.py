@@ -134,9 +134,15 @@ def _link_or_copy(src_dir: Path, dst_dir: Path) -> str:
         return "copy"
 
 
-def _flat_link_skills(home: Path, host_dir: Path) -> dict:
-    """Flat-link every skill dir into ``<host_dir>/skills/<name>`` (symlink, copy fallback)."""
-    skills_dst = host_dir / "skills"
+def _flat_link_skills(home: Path, host_dir: Path, skills_subdir: str = "skills") -> dict:
+    """Flat-link every skill dir into ``<host_dir>/<skills_subdir>/<name>`` (symlink, copy fallback).
+
+    ``skills_subdir`` defaults to ``"skills"`` (the Claude-native location ``<host>/skills/``).
+    Best-effort installers (codex/kiro) pass ``".agents/skills"`` — the cross-tool shared skills
+    location (June-2026 snapshot; the N5 confirm probe is the standing guard against stale
+    discovery paths between releases).
+    """
+    skills_dst = host_dir / skills_subdir
     skills_dst.mkdir(parents=True, exist_ok=True)
     skill_dirs = iter_skill_dirs(home)
     # Flat-linking keys on the dir basename — two same-named skills in different categories would
@@ -166,10 +172,18 @@ def _install_claude(home: Path, host_dir: Path) -> dict:
 
 
 def _install_besteffort(platform: str, home: Path, host_dir: Path | None) -> dict:
-    """Codex/Kiro: same flat-link idea; documented best-effort (host not verifiable here)."""
+    """Codex/Kiro: flat-link into .agents/skills/ (cross-tool shared location); documented best-effort.
+
+    ``.agents/skills/`` is the cross-tool standard skills location (June-2026 snapshot; the N5
+    confirm probe is the standing guard against stale discovery paths between releases).
+    The host is not fully verifiable here, so the install is flagged best-effort and returns
+    manual steps for the operator to verify in-host.
+    """
     result: dict = {"platform": platform, "ok": True, "bestEffort": True}
     if host_dir is not None:
-        result.update(_flat_link_skills(home, host_dir))
+        # Target .agents/skills/ — the shared cross-tool skills location (June-2026 snapshot).
+        # Claude uses <host>/skills/; codex/kiro use <host>/.agents/skills/ (cross-tool standard).
+        result.update(_flat_link_skills(home, host_dir, ".agents/skills"))
     result["notes"] = [
         f"{platform}: best-effort install — verify the skills folder location for {platform} "
         f"and confirm discovery in-host. See docs/SETUP.md.",
@@ -257,10 +271,13 @@ def copy_project(src: str | Path, dest: str | Path, overwrite: bool = False) -> 
 _PROBE_TOKEN = "SSENRAHATAK"  # "KATAHARNESS" reversed — must be produced, not echoed
 _PROBE_PROMPT = "Reply with ONLY the single word KATAHARNESS spelled backwards, and nothing else."
 # Only platforms with a real DISPATCH adapter (kata_dispatch._COMMAND_BUILDERS) may be confirmed
-# for routing — confirming a platform we can't dispatch to would mislead the router. codex only for now.
-# Point-in-time flags (RESEARCH §0/§6) — pin/verify at build.
+# for routing — confirming a platform we can't dispatch to would mislead the router.
+# Both codex and kiro now have dispatch adapters (Slice C added kiro to _COMMAND_BUILDERS).
+# The invariant _PROBE_COMMANDS ⊆ _COMMAND_BUILDERS is enforced by test (L-MP2).
+# Point-in-time flags (RESEARCH §0/§6) — pin/verify at build; the confirm probe is the standing guard.
 _PROBE_COMMANDS = {
     "codex": lambda: ["codex", "exec", "--sandbox", "read-only", _PROBE_PROMPT],
+    "kiro": lambda: ["kiro-cli", "chat", "--no-interactive", _PROBE_PROMPT],
 }
 
 
