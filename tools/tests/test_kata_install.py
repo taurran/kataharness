@@ -132,6 +132,42 @@ def test_unknown_platform(fake_home):
     assert any("copy" in n for n in res["notes"])
 
 
+def test_confirm_claude_is_host(tmp_path):
+    res = ki.confirm_platform("claude", home=tmp_path)
+    assert res["confirmed"] is True and res["detail"] == "host"
+    assert "claude" in res["confirmedPlatforms"]
+
+
+def test_confirm_codex_probe_ok(tmp_path):
+    def good_runner(cmd):
+        return 0, f"sure: {ki._PROBE_TOKEN}"
+    res = ki.confirm_platform("codex", runner=good_runner, home=tmp_path)
+    assert res["confirmed"] is True
+    import kata_settings as ks
+    assert "codex" in ks.confirmed_platforms(home=tmp_path)
+
+
+def test_confirm_codex_probe_no_token(tmp_path):
+    def bad_runner(cmd):
+        return 0, "hello"
+    res = ki.confirm_platform("codex", runner=bad_runner, home=tmp_path)
+    assert res["confirmed"] is False
+    import kata_settings as ks
+    assert "codex" not in ks.confirmed_platforms(home=tmp_path)
+
+
+def test_confirm_codex_cli_absent(tmp_path):
+    def absent_runner(cmd):
+        raise FileNotFoundError("codex not found")
+    res = ki.confirm_platform("codex", runner=absent_runner, home=tmp_path)
+    assert res["confirmed"] is False and "launch" in res["detail"]
+
+
+def test_confirm_unknown_platform(tmp_path):
+    res = ki.confirm_platform("banana", home=tmp_path)
+    assert res["confirmed"] is False
+
+
 def test_copy_project(tmp_path):
     src = tmp_path / "proj"
     (src / "sub").mkdir(parents=True)

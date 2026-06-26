@@ -238,6 +238,63 @@ def copy_project(src: str | Path, dest: str | Path, overwrite: bool = False) -> 
 
 
 # ---------------------------------------------------------------------------
+# Confirm probe (N5) — verify a platform can run the harness headlessly
+# ---------------------------------------------------------------------------
+
+_PROBE_TOKEN = "KATA_OK"
+# Per-platform headless probe command (a trivial run that should echo the token).
+# Point-in-time flags (RESEARCH §0/§6) — pin/verify at build.
+_PROBE_COMMANDS = {
+    "codex": lambda: ["codex", "exec", "--sandbox", "read-only", f"Reply with exactly: {_PROBE_TOKEN}"],
+    "kiro": lambda: ["kiro-cli", "chat", "--no-interactive", "--trust-tools=read", f"Reply with exactly: {_PROBE_TOKEN}"],
+    "copilot": lambda: ["copilot", "-p", f"Reply with exactly: {_PROBE_TOKEN}", "-s"],
+    "cursor": lambda: ["cursor", "agent", "-p", f"Reply with exactly: {_PROBE_TOKEN}"],
+}
+
+
+def confirm_platform(platform: str, runner=None, home: str | Path | None = None) -> dict:
+    """Confirm a platform can run the harness headlessly; record it on success (N5).
+
+    ``runner(cmd) -> (exit_code, stdout)`` is injectable (a stub in tests; a real subprocess
+    by default). The host platform ``claude`` is trivially confirmed (it's where we run).
+    On success the platform is appended to ``confirmedPlatforms`` in the settings file.
+    """
+    p = (platform or "").strip().casefold()
+    if p == "claude":
+        confirmed = _record(p, home)
+        return {"platform": p, "confirmed": True, "detail": "host", "confirmedPlatforms": confirmed}
+
+    builder = _PROBE_COMMANDS.get(p)
+    if builder is None:
+        return {"platform": p, "confirmed": False, "detail": f"no probe command for {p!r}"}
+
+    runner = runner or _real_probe_runner
+    try:
+        exit_code, stdout = runner(builder())
+    except Exception as e:  # CLI absent / any launch error  # noqa: BLE001
+        return {"platform": p, "confirmed": False, "detail": f"probe failed to launch: {e}"}
+
+    ok = exit_code == 0 and _PROBE_TOKEN in (stdout or "")
+    if ok:
+        confirmed = _record(p, home)
+        return {"platform": p, "confirmed": True, "detail": "probe ok", "confirmedPlatforms": confirmed}
+    return {"platform": p, "confirmed": False, "detail": f"probe did not return {_PROBE_TOKEN} (exit {exit_code})"}
+
+
+def _record(platform: str, home) -> list[str]:
+    import kata_settings
+
+    return kata_settings.add_confirmed_platform(platform, home=home)
+
+
+def _real_probe_runner(cmd: list[str]):
+    import subprocess  # noqa: S404 — default real runner; tests inject a stub
+
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)  # noqa: S603
+    return proc.returncode, proc.stdout
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 

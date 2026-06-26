@@ -81,6 +81,19 @@ def test_write_rejects_nonexistent_vault(tmp_path):
         ks.write_settings(proj, vault_dir=tmp_path / "no-vault", home=tmp_path)
 
 
+def test_confirmed_platforms_add_and_read(tmp_path):
+    assert ks.confirmed_platforms(home=tmp_path) == []
+    ks.add_confirmed_platform("codex", home=tmp_path)
+    ks.add_confirmed_platform("codex", home=tmp_path)  # idempotent
+    ks.add_confirmed_platform("kiro", home=tmp_path)
+    assert ks.confirmed_platforms(home=tmp_path) == ["codex", "kiro"]
+
+
+def test_add_confirmed_blank_rejected(tmp_path):
+    with pytest.raises(ValueError):
+        ks.add_confirmed_platform("  ", home=tmp_path)
+
+
 def test_harness_home_env_override(tmp_path, monkeypatch):
     monkeypatch.setenv("KATA_HOME", str(tmp_path))
     assert ks.harness_home() == tmp_path.resolve()

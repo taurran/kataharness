@@ -84,6 +84,30 @@ def read_settings(home: str | Path | None = None) -> dict:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
+def add_confirmed_platform(platform: str, home: str | Path | None = None) -> list[str]:
+    """Append ``platform`` to the settings' ``confirmedPlatforms`` list (idempotent); return the list.
+
+    Written by the install confirm-probe (N5); read by the multi-model roles resolver to gate
+    routing a role to a non-host platform.
+    """
+    if not platform or not platform.strip():
+        raise ValueError("kata_settings: platform is required")
+    p = settings_path(home)
+    data = read_settings(home)
+    confirmed = list(data.get("confirmedPlatforms", []))
+    if platform not in confirmed:
+        confirmed.append(platform)
+    data["confirmedPlatforms"] = confirmed
+    data.setdefault("settingsVersion", SETTINGS_VERSION)
+    p.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    return confirmed
+
+
+def confirmed_platforms(home: str | Path | None = None) -> list[str]:
+    """The platforms confirmed on this machine (empty if none)."""
+    return list(read_settings(home).get("confirmedPlatforms", []))
+
+
 def write_settings(
     parent_dir: str | Path,
     vault_dir: str | Path | None = None,
