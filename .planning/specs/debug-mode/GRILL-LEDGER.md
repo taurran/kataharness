@@ -1,6 +1,6 @@
 ---
 title: "Debug Mode — grill decision ledger"
-status: H1-H7 REMEDIATED (research-grounded) — pending RE-RUN of convergence gate, then FREEZE
+status: H1-H7 remediated + R1 (design-summary sync) fixed — pending convergence re-confirm, then FREEZE
 date: 2026-06-25
 spec: debug-mode
 method: skills/plan/kata-grill (standard→advanced depth)
@@ -158,30 +158,48 @@ no contradictions + two-builders-can't-diverge, then a fresh-context `kata-revie
 ## ✅ Decision tree COMPLETE (all branches resolved, 2026-06-25)
 Every DG branch has a chosen option + rationale + provenance. **Next per RUBRIC: fresh-context `kata-review`
 convergence gate** ("could two independent builders still diverge?") — the griller does NOT self-certify (L8).
-On SHIP → hand to `kata-design-doc` (FREEZE) to compile the DESIGN contract; glossary terms (function-model ·
-intended-function oracle · function deviation · characterization suite · confidence map · debug run-shape ·
-in-mode specialist · recommendations handoff · convert-to-loop) bake into CONTEXT.md at freeze.
+On SHIP → hand to `kata-design-doc` (FREEZE) to compile the DESIGN contract; glossary terms (`kata-comprehend` ·
+function-model · intended-function oracle · function deviation · 7-step deviation pipeline · characterization suite ·
+confidence map (MSAS) · drift gate · debug run-shape · in-mode specialist · recommendations handoff · convert-to-loop)
+bake into CONTEXT.md at freeze. **FREEZE note:** the H4 v1 caveat (structural drift only loosely guarded until the
+surface/AST fast-follow) MUST surface in the DESIGN's backward-compat/limitations section (F3 is frozen framing).
 
-## Design summary (for the convergence reviewer + the future design-doc)
+## Design summary (FREEZE handoff — SYNCED to round 7; supersedes the original-HOLD text above as history)
 Debug Mode = a **run-shape `debug`** (peer of version-up, `target.kind==existing`), self-contained, selected at
 bootstrap, pointed at a whole codebase. Pipeline:
-1. **Comprehend** (whole-repo): `kata-graph`/Graphify + all context (docs/comments/types/config + commit history +
-   cross-module contract inference) → **reuse `kata-understand`** to build a **function-model** (intended function
-   per module), confidence-tiered; thin areas → `kata-research`, low-confidence flagged.
-2. **Discover** (graph + churn-risk ordered sweep): function-model **deviation detector** (semantic) + cross-module
-   tie-in/contract mismatch + Snyk + run existing tests + static/types/lint + `kata-diagnose` + dynamic (stack-gated).
+1. **Comprehend** (whole-repo): **`kata-comprehend` — a NEW in-mode capability** (H2; NOT `kata-understand`, which is
+   post-run/map-only) — ingests `kata-graph`/Graphify + all context (docs/comments/types/config + commit history +
+   cross-module contract inference) and builds a **`function_model`** per module: **executable pre/postcondition
+   assertions + NL `intent_summary` + behavioral examples + `derivation_sources` + `confidence`** (H1, full form),
+   checkable via a spec-wrapper; every FM is a hypothesis to corroborate. **Confidence-tiering (H3, v1 heuristic):** a
+   composite `C = w1·MSAS + w2·(1−self-consistency-entropy) + w3·StructuralPrior` (NOT verbalized confidence);
+   **force-LOW** for sparse-signal modules; formal isotonic calibration = fast-follow. In-mode comprehension/idiom
+   research lives in `kata-comprehend` (H5) — distinct from escalation-routed `kata-research`.
+2. **Discover** (graph + churn-risk ordered sweep) via the **full 7-step deviation pipeline** (H2): multi-signal
+   candidates (function-model **deviation detector** + cross-module tie-in/contract mismatch + Snyk + run existing
+   tests/SBFL + static/types/lint + `kata-diagnose` + dynamic stack-gated) → semantic LLM comparison →
+   **self-consistency ≥2/3** → **objective-corroboration HARD gate** (≥1 tool/test/type/Snyk co-locates, else
+   LLM-only→human) → **adversarial refute-or-promote**.
 3. **Fix** (per-fix, footprint-scoped, in worktrees): bug+security only, behavior-preserving; **generate scoped
-   characterization tests** pinning behavior except the fixed deviation; pre-flight establishes the runnable env
-   (else snapshot/report-only). Low-confidence-intent bugs → research → defer if still unclear. Objective defects
-   (test/type/Snyk) fixed regardless. Can't-fix-without-drift → **defer to recommendations**.
-4. **Gate**: `kata-evaluate` + standing D98 `kata-review`; apply through the loop, **human gate at closeout +
-   one-command backout**. Specialists = in-mode prompt-profiles by detected stack.
+   characterization tests** (a NEW capability, H7) pinning behavior except the fixed deviation; **`kata-preflight`
+   (forward dep, H6) establishes the runnable env**, else snapshot/report-only. Routing: high-confidence intent →
+   auto-fix; low-confidence → research(≤2) → **defer to recommendations** if still unclear; objective defects
+   (test/type/Snyk) fixed regardless; can't-fix-without-drift → **defer**.
+4. **Gate**: the **v1 drift gate = BEHAVIORAL** (H4) — characterization/golden-master + baseline-suite-green EXCEPT an
+   **Allowed Exception List** (the nominated buggy test[s]); any previously-green test→RED = BLOCK. *(Surface/API-diff
+   + AST-edit-script structural layer = fast-follow; v1 structural-drift exposure noted.)* Then `kata-evaluate` +
+   standing D98 `kata-review`; apply through the loop, **human gate at closeout + one-command backout**. Specialists =
+   in-mode prompt-profiles by detected stack.
 5. **Closeout**: confidence report (per-module confidence map · each deviation→fix→pinning test · regression+security
    proof · recommendations list) + **offered handoff** to `version-up`/`sprint` for the behavior/feature recs.
-6. **Onboarding (v1)**: dedicated first-run path — depends on **full `install-portability` built first**;
-   convert-to-loop writes kata.config + `.planning/` + commits the characterization suite + vault binding.
-Pass model (one graph-ordered resumable pass | loop-until-dry) and execution locus (in-place worktrees | import)
-are **bootstrap config choices**.
+6. **Onboarding (v1)**: dedicated first-run path — **forward dep on full `install-portability` built first** (H6;
+   convert-to-loop surface pinned by the install-portability DESIGN, referenced not invented here); convert-to-loop
+   writes kata.config + `.planning/` + commits the characterization suite + vault binding.
+**NEW capabilities to build:** `kata-comprehend` · the 7-step deviation pipeline · characterization-suite generation ·
+the behavioral drift gate. **Forward deps:** full `install-portability` · `kata-preflight`. **Reused (verified real):**
+worktrees · version-up footprint discipline · `kata-diagnose` · `kata-evaluate` · D98 `kata-review` · run-shape
+mechanism · gate/backout/closeout · Snyk. Pass model (one graph-ordered resumable pass | loop-until-dry) and execution
+locus (in-place worktrees | import) are **bootstrap config choices**.
 
 ## Convergence gate — HOLD (fresh-context kata-review, 2026-06-25)
 The griller resolved *which* decisions exist but stopped at **labels, not mechanisms** for the hardest semantic
