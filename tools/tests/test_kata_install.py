@@ -86,13 +86,46 @@ def test_refuses_to_clobber_non_kata_dir(fake_home, tmp_path):
     assert (victim / "USER_DATA.txt").read_text(encoding="utf-8") == "precious"  # survived
 
 
-def test_replaces_own_managed_copy(fake_home, tmp_path):
-    # a prior kata-managed copy IS replaced on re-install (marker present)
+def _deny_symlink(*a, **k):
+    raise OSError("symlinks denied (forced copy branch)")
+
+
+def test_replaces_own_managed_copy(fake_home, tmp_path, monkeypatch):
+    # Force the COPY branch (marker only exists for copies) so the test is FS-independent
+    # rather than passing only where symlinks are denied.
+    monkeypatch.setattr(ki.os, "symlink", _deny_symlink)
     host = tmp_path / "dot-claude"
-    ki.install("claude", harness_home=fake_home, host_dir=host)  # drops .kata-managed in each
+    res = ki.install("claude", harness_home=fake_home, host_dir=host)
+    assert res["method"] == ["copy"]
     assert (host / "skills" / "kata-bootstrap" / ki._MARKER).exists()
-    ki.install("claude", harness_home=fake_home, host_dir=host)  # re-run: replaces cleanly
+    ki.install("claude", harness_home=fake_home, host_dir=host)  # re-run: replaces the managed copy cleanly
     assert (host / "skills" / "kata-bootstrap" / "SKILL.md").exists()
+
+
+def test_flat_link_rejects_duplicate_skill_names(tmp_path):
+    home = tmp_path / "home"
+    for cat in ("a", "b"):
+        d = home / "skills" / cat / "dup"
+        d.mkdir(parents=True)
+        (d / "SKILL.md").write_text("---\nname: dup\n---\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="duplicate skill names"):
+        ki.install("claude", harness_home=home, host_dir=tmp_path / "host")
+
+
+def test_copy_project_rejects_ancestor_dest(tmp_path):
+    # dest is an ANCESTOR of src → would rmtree the source; must be refused (red-team MAJOR-1)
+    work = tmp_path / "work"
+    src = work / "proj"
+    src.mkdir(parents=True)
+    (src / "keep.txt").write_text("precious", encoding="utf-8")
+    with pytest.raises(ValueError, match="overlap"):
+        ki.copy_project(src, work, overwrite=True)
+    assert (src / "keep.txt").exists()  # source survived
+
+
+def test_probe_token_not_in_prompt():
+    # the expected answer must NOT appear in the prompt, else a prompt-echo false-positives (red-team F2)
+    assert ki._PROBE_TOKEN not in ki._PROBE_PROMPT
 
 
 def test_cli_with_parent_dir_writes_settings(fake_home, tmp_path):
@@ -112,6 +145,13 @@ def test_cli_with_parent_dir_writes_settings(fake_home, tmp_path):
     assert rc == 0
     saved = ks.read_settings(home=fake_home)
     assert Path(saved["parentDir"]) == parent.resolve()
+
+
+def test_cli_confirm_claude(fake_home, tmp_path):
+    rc = ki.main(["--platform", "claude", "--home", str(fake_home), "--confirm"])
+    assert rc == 0
+    import kata_settings as ks
+    assert "claude" in ks.confirmed_platforms(home=fake_home)
 
 
 def test_codex_best_effort(fake_home, tmp_path):

@@ -23,8 +23,8 @@ uv run python tools/kata_install.py --platform claude \
 | Platform | Status | What it does |
 |----------|--------|--------------|
 | **Claude Code** | ✅ Built + verified | Flat-links every skill into `~/.claude/skills/<name>` so Claude discovers them; writes `.claude-plugin/plugin.json` (so the suite is also plugin-distributable). |
-| **Codex** | ⚠️ Best-effort | Same flat-link idea into the Codex skills location. Verify discovery in-host. |
-| **Kiro** | ⚠️ Best-effort | Same flat-link idea. A native VS Code surface is a later adapter. |
+| **Codex** | ⚠️ Best-effort | Flat-links into the host skills dir you pass. The correct Codex target is `.agents/skills/` (or `~/.codex/skills/` on older versions) — **verify discovery in-host**; the default link dir is not yet Codex-specific. |
+| **Kiro** | ⚠️ Best-effort | Flat-links into the host skills dir you pass; the Kiro target is `.kiro/skills/`. **Verify in-host.** A native VS Code surface is a later adapter. |
 | **Quick / ACP** | Brings its own | The work/ACP host ships its own installer; KataHarness defines only the contract. |
 | _other_ | Manual | The installer prints where to copy `skills/*/<name>/` + `modules/*/<name>/`. |
 

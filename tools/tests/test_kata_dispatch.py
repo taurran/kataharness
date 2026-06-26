@@ -137,10 +137,57 @@ def test_safe_result_path_rejects_escape(tmp_path):
         kd._safe_result_path("../escape.json", str(tmp_path))
 
 
-def test_dispatch_unknown_platform_raises():
+def test_dispatch_unroutable_platform_fails_gracefully():
+    # a confirmed-but-undispatchable platform must FAIL, not crash the loop (red-team F3)
     b = kd.build_brief("t1", "validator", "kiro", model="m", objective="o", result_path="R")
-    with pytest.raises(ValueError, match="no dispatch adapter"):
-        kd.dispatch(b, "/wt", runner=_stub_runner({}))
+    res = kd.dispatch(b, "/wt", runner=_stub_runner({}))
+    assert res["status"] == "failed"
+    assert "no dispatch adapter" in res["payload"]["error"]
+
+
+def test_dispatch_empty_result_researcher_is_failed():
+    # empty result must default-FAIL for researcher (red-team F1), not report a None-filled "completed"
+    def empty_runner(cmd, cwd, result_path, timeout):
+        return 0, "ok", ""
+    b = kd.build_brief("t1", "researcher", "codex", model="m", objective="o", result_path="R")
+    res = kd.dispatch(b, "/wt", runner=empty_runner)
+    assert res["status"] == "failed"
+
+
+def test_dispatch_empty_result_coder_is_failed():
+    def empty_runner(cmd, cwd, result_path, timeout):
+        return 0, "ok", "{}"
+    b = kd.build_brief("t1", "coder", "codex", model="m", objective="o", result_path="R", sandbox="write")
+    res = kd.dispatch(b, "/wt", runner=empty_runner)
+    assert res["status"] == "failed"
+
+
+def test_normalize_researcher_requires_claim():
+    payload = kd.normalize("researcher", json.dumps({"claim": "x", "groundsToPlan": "y"}))
+    assert payload["claim"] == "x"
+    with pytest.raises(ValueError, match="claim"):
+        kd.normalize("researcher", json.dumps({"source": "s"}))
+
+
+def test_normalize_evaluator_score_range():
+    kd.normalize("evaluator", json.dumps({"score": 0.5, "decision": "accept"}))  # ok
+    with pytest.raises(ValueError, match="score"):
+        kd.normalize("evaluator", json.dumps({"score": "banana", "decision": "accept"}))
+    with pytest.raises(ValueError, match="score"):
+        kd.normalize("evaluator", json.dumps({"score": 1.5, "decision": "accept"}))
+
+
+def test_build_brief_rejects_absolute_result_path():
+    with pytest.raises(ValueError, match="worktree-relative"):
+        kd.build_brief("t", "validator", "codex", model="m", objective="o", result_path="/etc/evil.json")
+
+
+def test_brief_prompt_conveys_inputs_and_ownership():
+    b = kd.build_brief("t", "coder", "codex", model="m", objective="do it", result_path="R",
+                       inputs=["a.py"], owned_files=["b.py"], sandbox="write")
+    prompt = kd._brief_prompt(b)
+    assert "a.py" in prompt and "b.py" in prompt
+    assert "do not write files" in prompt.casefold()
 
 
 # ----- THE END-TO-END PROOF: roles -> brief -> dispatch(stub) -> normalized verdict -----

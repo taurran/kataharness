@@ -77,11 +77,14 @@ def build_settings(parent_dir: str | Path, vault_dir: str | Path | None = None) 
 
 
 def read_settings(home: str | Path | None = None) -> dict:
-    """Read the settings file; return ``{}`` when it does not exist."""
+    """Read the settings file; return ``{}`` when it is absent OR unreadable/corrupt (degrade to BC1)."""
     p = settings_path(home)
     if not p.exists():
         return {}
-    return json.loads(p.read_text(encoding="utf-8"))
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}  # corrupt/unreadable ⇒ treat as absent, fall back to in-repo defaults
 
 
 def add_confirmed_platform(platform: str, home: str | Path | None = None) -> list[str]:

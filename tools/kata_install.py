@@ -138,8 +138,15 @@ def _flat_link_skills(home: Path, host_dir: Path) -> dict:
     """Flat-link every skill dir into ``<host_dir>/skills/<name>`` (symlink, copy fallback)."""
     skills_dst = host_dir / "skills"
     skills_dst.mkdir(parents=True, exist_ok=True)
+    skill_dirs = iter_skill_dirs(home)
+    # Flat-linking keys on the dir basename — two same-named skills in different categories would
+    # collide (the second silently clobbering the first). Refuse rather than lose a skill.
+    names = [d.name for d in skill_dirs]
+    dupes = sorted({n for n in names if names.count(n) > 1})
+    if dupes:
+        raise ValueError(f"kata_install: duplicate skill names collide on flat-link: {dupes}")
     linked, methods = [], set()
-    for skill_dir in iter_skill_dirs(home):
+    for skill_dir in skill_dirs:
         method = _link_or_copy(skill_dir, skills_dst / skill_dir.name)
         linked.append(skill_dir.name)
         methods.add(method)
@@ -227,8 +234,12 @@ def copy_project(src: str | Path, dest: str | Path, overwrite: bool = False) -> 
     d = _safe_abs(dest)
     if not s.is_dir():
         raise ValueError(f"kata_install.copy_project: source is not a directory: {s}")
-    if s == d:
-        raise ValueError("kata_install.copy_project: destination equals source")
+    # Reject ANY overlap: equal, dest-is-ancestor-of-source (rmtree would delete the source!),
+    # or source-is-ancestor-of-dest (copy into itself). Copy mode's whole promise is "original untouched".
+    if s == d or d in s.parents or s in d.parents:
+        raise ValueError(
+            f"kata_install.copy_project: source and destination overlap (ancestor/descendant): {s} <-> {d}"
+        )
     if d.exists():
         if not overwrite:
             raise ValueError(f"kata_install.copy_project: destination exists: {d} (pass overwrite=True)")
@@ -241,14 +252,15 @@ def copy_project(src: str | Path, dest: str | Path, overwrite: bool = False) -> 
 # Confirm probe (N5) — verify a platform can run the harness headlessly
 # ---------------------------------------------------------------------------
 
-_PROBE_TOKEN = "KATA_OK"
-# Per-platform headless probe command (a trivial run that should echo the token).
+# The probe asks the model to GENERATE a transformed token (not present verbatim in the prompt),
+# so a CLI that merely echoes the prompt to stdout cannot false-positive the substring check.
+_PROBE_TOKEN = "SSENRAHATAK"  # "KATAHARNESS" reversed — must be produced, not echoed
+_PROBE_PROMPT = "Reply with ONLY the single word KATAHARNESS spelled backwards, and nothing else."
+# Only platforms with a real DISPATCH adapter (kata_dispatch._COMMAND_BUILDERS) may be confirmed
+# for routing — confirming a platform we can't dispatch to would mislead the router. codex only for now.
 # Point-in-time flags (RESEARCH §0/§6) — pin/verify at build.
 _PROBE_COMMANDS = {
-    "codex": lambda: ["codex", "exec", "--sandbox", "read-only", f"Reply with exactly: {_PROBE_TOKEN}"],
-    "kiro": lambda: ["kiro-cli", "chat", "--no-interactive", "--trust-tools=read", f"Reply with exactly: {_PROBE_TOKEN}"],
-    "copilot": lambda: ["copilot", "-p", f"Reply with exactly: {_PROBE_TOKEN}", "-s"],
-    "cursor": lambda: ["cursor", "agent", "-p", f"Reply with exactly: {_PROBE_TOKEN}"],
+    "codex": lambda: ["codex", "exec", "--sandbox", "read-only", _PROBE_PROMPT],
 }
 
 
@@ -312,6 +324,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--host-dir", default=None, help="host config root (default: ~/.claude for claude)")
     parser.add_argument("--parent-dir", default=None, help="default parent project folder (also writes settings)")
     parser.add_argument("--vault-dir", default=None, help="vault / second-brain location (optional)")
+    parser.add_argument("--confirm", action="store_true",
+                        help="run the headless confirm-probe for --platform and record it in confirmedPlatforms")
     args = parser.parse_args(argv)
 
     if args.parent_dir:
@@ -319,6 +333,11 @@ def main(argv: list[str] | None = None) -> int:
 
         sp = kata_settings.write_settings(args.parent_dir, args.vault_dir, home=args.home)
         print(f"settings: wrote {sp}")
+
+    if args.confirm:
+        probe = confirm_platform(args.platform, home=args.home)
+        print(json.dumps(probe, indent=2))
+        return 0 if probe.get("confirmed") else 1
 
     result = install(args.platform, harness_home=args.home, host_dir=args.host_dir)
     print(json.dumps(result, indent=2))

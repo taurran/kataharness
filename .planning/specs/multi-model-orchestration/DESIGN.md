@@ -83,8 +83,10 @@ Assembled FROM the `kata-orient` orientation + the plan's task assignment. The b
 
 ### N4 — config + settings surfaces
 - `kata.config` (NEW block): `roles?: { "<role>": { "platform": string, "model": string, "effort"?: string } }`.
-  Absent ⇒ all roles on host (BC1). Validated by the fail-closed load-guard (`kata-orchestrate/SKILL.md:34-39`):
-  unknown role/platform or a platform ∉ `confirmedPlatforms` → STOP + escalate at preflight.
+  Absent ⇒ all roles on host (BC1). **To-build:** a `roles` validation case is to be ADDED to the fail-closed
+  load-guard (`kata-orchestrate/SKILL.md:34-39` currently validates mode/effort/tiers/modules only, NOT roles) so
+  that an unknown role/platform or a platform ∉ `confirmedPlatforms` → STOP + escalate at preflight. The pure
+  resolver `tools/kata_roles.py` already enforces this; wiring it into the orchestrator preflight is PARKED.
 - `.kata-settings.json` (NEW key, D104): `confirmedPlatforms: ["claude", "codex", …]` (written by the N5 probe).
 - **Minor #3 resolved:** per-run reproducibility = the **top-level `config.md:20` `skillVersions`** (skill versions,
   unchanged) **+** the per-role `roles` record `{platform, model, effort}`. The `roles` block does NOT duplicate
@@ -104,12 +106,19 @@ Extend `tools/kata_install.py` per-platform: flat-link skills into `.agents/skil
 fallbacks. **Confirm probe:** install a sentinel skill → run the platform's headless CLI → assert it (a) discovered the
 skill and (b) returned a parseable result → append the platform to `confirmedPlatforms`.
 
+> **Implementation status (proof-slice, 2026-06-26):** the codex command builder + dispatch live in
+> `tools/kata_dispatch.py` (not yet split into `adapters/<platform>/`); install flat-links into `<host>/skills/`
+> (not yet `.agents/skills/`); the confirm probe verifies a generated token (not yet a sentinel-skill round-trip)
+> and is restricted to **codex** (the only platform with a dispatch adapter). These are the DESIGN's target end-state;
+> the slice proves the chain. The full-layer build closes the gaps (see §8).
+
 ## 5. Edges / integrity (resolved)
 - **Preflight vs runtime (LD3/LD7):** role on an unconfirmed platform → **hard block** at preflight; a confirmed
   platform failing at dispatch → **host fallback + log + surface**. Repeated fallbacks → flag the platform unconfirmed for the run.
 - **Missing/invalid RESULT.json** → task fails (default-FAIL preserved). **CLI timeout/nonzero** → `status:"failed"|"timeout"` → LD7.
 - **Concurrency:** background subprocess per task in its worktree; orchestrator joins on exit; disjoint file-ownership = no races.
-- **BC1:** `roles` absent ⇒ single-host Claude loop unchanged; the load-guard defaults to host on absent.
+- **BC1:** `roles` absent ⇒ single-host Claude loop unchanged. The resolver (`kata_roles.resolve_roles`) defaults
+  every role to host on absent; the orchestrator load-guard's `roles` validation is to-build (PARKED).
 
 ## 6. Acceptance criteria (default-FAIL, runnable) — for the eventual build
 - `roles` absent ⇒ a run is byte-for-byte today's single-host loop (BC1 test).

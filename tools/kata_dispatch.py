@@ -3,9 +3,14 @@
 The multi-model loop routes a ROLE to a platform/model (kata_roles) and dispatches a
 worker on that platform over the shared filesystem (DESIGN multi-model-orchestration):
 
-  build_brief()  ->  BRIEF.json   (N1, the cross-model task contract)
+  build_brief()  ->  the cross-model task-contract dict (N1; persisted as BRIEF.json by the caller)
   dispatch()     ->  runs the platform's headless CLI in a worktree (N2)
-  normalize()    ->  RESULT.json  (N3, per-role payload + envelope)
+  normalize()    ->  the per-role result payload (N3); build_result() wraps it in the envelope
+                     a caller persists as RESULT.json
+
+These functions RETURN dicts; they do not themselves write BRIEF.json / RESULT.json (the
+orchestrator owns persistence). `"fallback"` status is reserved for the LD7 host-fallback
+path, produced once dispatch is wired into kata-orchestrate (PARKED).
 
 The CLI launch is behind an **injectable runner** so the whole chain is testable with a
 stub CLI (no live host). The default runner shells out for real (gated on the CLI being
@@ -25,7 +30,7 @@ from __future__ import annotations
 
 import json
 import subprocess  # noqa: S404 — used only by the default real runner; tests inject a stub
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from kata_roles import ROLE_GROUPS
 
@@ -55,8 +60,11 @@ def build_brief(
         raise ValueError(f"kata_dispatch: sandbox must be one of {sorted(_SANDBOX)}, got {sandbox!r}")
     if not objective or not result_path:
         raise ValueError("kata_dispatch: objective and result_path are required")
-    if any(part == ".." for part in Path(result_path).parts):
-        raise ValueError(f"kata_dispatch: resultPath may not contain '..': {result_path!r}")
+    # Absolute under EITHER OS convention (Windows treats a leading "/" as drive-relative, not absolute),
+    # or containing "..", is rejected — resultPath must stay inside the worktree.
+    if (PurePosixPath(result_path).is_absolute() or PureWindowsPath(result_path).is_absolute()
+            or any(part == ".." for part in Path(result_path).parts)):
+        raise ValueError(f"kata_dispatch: resultPath must be worktree-relative, no '..': {result_path!r}")
     return {
         "taskId": task_id,
         "role": role,
@@ -72,12 +80,22 @@ def build_brief(
 
 
 def _brief_prompt(brief: dict) -> str:
-    """The prompt text handed to the worker: objective + acceptance + the result-file contract."""
-    return (
-        f"{brief['objective']}\n\n"
-        f"Acceptance: {brief['acceptanceCriteria']}\n"
-        f"Write your result as JSON for role '{brief['role']}' to: {brief['resultPath']}"
-    )
+    """The prompt handed to the worker: objective + inputs + boundaries + the result contract.
+
+    Conveys every load-bearing brief field (inputs, owned files, output contract) and states the
+    result is captured from the final message (via the adapter's ``-o``), so the worker emits — it
+    does NOT write the result file itself (read-only roles can't, and a self-write would collide).
+    """
+    parts = [brief["objective"]]
+    if brief.get("inputs"):
+        parts.append("Inputs: " + ", ".join(brief["inputs"]))
+    owned = brief.get("boundaries", {}).get("ownedFiles") or []
+    if owned:
+        parts.append("You may only modify: " + ", ".join(owned))
+    parts.append(f"Acceptance: {brief['acceptanceCriteria']}")
+    parts.append(f"Output contract: a single JSON object for role '{brief['role']}' ({brief['outputContract']}).")
+    parts.append("Emit that JSON object as your FINAL message — it is captured automatically; do not write files.")
+    return "\n".join(parts)
 
 
 # --------------------------------------------------------------------------- N2
@@ -137,7 +155,12 @@ def dispatch(brief: dict, worktree: str, runner=None, timeout: int = 600) -> dic
     platform = brief["platform"]
     builder = _COMMAND_BUILDERS.get(platform)
     if builder is None:
-        raise ValueError(f"kata_dispatch: no dispatch adapter for platform {platform!r}")
+        # No adapter for this platform → fail gracefully (LD7 surfaces it / host-fallback),
+        # never crash the loop. (A confirmed-but-undispatchable platform must not raise.)
+        return build_result(
+            brief["taskId"], brief["role"], platform, brief.get("model"), "failed",
+            {"error": f"no dispatch adapter for platform {platform!r}"}, raw="",
+        )
     cmd = builder(brief, worktree)
     runner = runner or _subprocess_runner
 
@@ -181,7 +204,9 @@ def normalize(role: str, raw_text: str) -> dict:
     - researcher -> {claim, source, confidence, groundsToPlan}
     - coder      -> {resultJson?, diffPath?}  (the gate RESULT.json is produced separately)
     """
-    data = json.loads(raw_text) if raw_text.strip() else {}
+    if not raw_text.strip():
+        raise ValueError(f"empty worker result for role {role!r} (default-FAIL)")
+    data = json.loads(raw_text)
     if not isinstance(data, dict):
         raise ValueError(f"worker result must be a JSON object, got {type(data).__name__}")
     if role == "validator":
@@ -193,11 +218,18 @@ def normalize(role: str, raw_text: str) -> dict:
         decision = data.get("decision")
         if decision not in {"accept", "send-back", "reroll"}:
             raise ValueError(f"evaluator result missing decision accept|send-back|reroll (got {decision!r})")
-        return {"score": data.get("score"), "decision": decision, "reason": data.get("reason", "")}
+        score = data.get("score")
+        if score is not None and (isinstance(score, bool) or not isinstance(score, (int, float)) or not 0.0 <= score <= 1.0):
+            raise ValueError(f"evaluator score must be a number in [0.0, 1.0] (got {score!r})")
+        return {"score": score, "decision": decision, "reason": data.get("reason", "")}
     if role == "researcher":
+        if not (data.get("claim") or data.get("groundsToPlan")):
+            raise ValueError("researcher result missing both claim and groundsToPlan (default-FAIL)")
         return {
             "claim": data.get("claim"), "source": data.get("source"),
             "confidence": data.get("confidence"), "groundsToPlan": data.get("groundsToPlan"),
         }
-    # coder / orchestrator: pass through the worker's reported object
+    # coder / orchestrator: pass through the worker's reported object, but reject an empty one
+    if not data:
+        raise ValueError(f"empty payload for role {role!r} (default-FAIL)")
     return data

@@ -29,7 +29,8 @@ supersedes: the jargon-cathedral binding/contract framing in early GRILL-LEDGER 
   with the host per platform. (Settings are recorded by the CLI when `--parent-dir` is passed, else by `kata-initiate`
   on first run — `install()` itself does not write settings.) Dispatch by platform: `claude` (real),
   `codex`/`kiro` (best-effort, documented), `quick` (no-op — brings its own installer), unknown (generic: print
-  manual steps + copy SKILL.md location). Per-platform logic lives in `adapters/<platform>/` (mirrors existing layout).
+  manual steps + copy SKILL.md location). Per-platform logic currently lives in `tools/kata_install.py`
+  (`_install_claude`/`_install_besteffort`); splitting it into `adapters/<platform>/` is the target layout, not yet done.
 - **`.claude-plugin/plugin.json`** — Claude plugin manifest at repo root (name `kata`, description, version) so the
   harness entry is discoverable; the Claude installer links the repo into `~/.claude/` (symlink, copy fallback on Windows).
 - **`docs/SETUP.md`** — cordoned setup doc (the three install paths + per-platform + `$KATA_HOME`); README carries a pointer only.
@@ -58,8 +59,10 @@ supersedes: the jargon-cathedral binding/contract framing in early GRILL-LEDGER 
   **Scope note:** the `..`-guard rejects *traversal*, not destructive overwrite of a named absolute dir — so the
   destructive paths carry their own guards: skill-linking **refuses to clobber a non-kata directory** (a
   `.kata-managed` marker gates replacement), and `copy_project(overwrite=True)` is an **explicit opt-in**.
-- **PokeVault is LOCAL-ONLY — the installer NEVER runs git** (structural: no `subprocess`/git import anywhere), so
-  it can never git-touch a vault.
+- **PokeVault is LOCAL-ONLY — the installer NEVER invokes git.** No git command is ever run; `copy_project` uses
+  `shutil` only. (The multi-model confirm-probe added later DOES use `subprocess` to launch a platform's headless
+  CLI — pinned argv list, no `shell=True`, no git — so the *never-git* guarantee holds, but the older "no subprocess
+  import anywhere" phrasing no longer does.)
 - Out-of-repo writes (`~/.claude/`, settings file): explicit, path-guarded, idempotent, non-clobbering.
 
 ## 6. Acceptance (default-FAIL, runnable)
