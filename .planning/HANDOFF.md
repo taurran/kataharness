@@ -1,5 +1,5 @@
 ---
-date: 2026-06-25 (phantom-machinery first hardening BUILT + MERGED, D102; next = Phase 5 + grill the two strategy BRIEFs)
+date: 2026-06-25 (D102 phantom-hardening MERGED · Debug Mode GRILLED + DESIGN FROZEN + PARKED behind install-portability · next = Phase 5 / install-portability is now critical-path)
 branch: master — private remote github.com/taurran/kataharness, tip 47648bf (PUSHED, in sync — `git log --oneline -3` for latest)
 green: validator 36 skills / 0 errors · pytest 456 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
 tags: pre-phantom-hardening · pre-fix-loop-hardening · pre-ws3 · pre-ws2-slopcheck · v0.1.0-alpha.3 · loop-hardening-complete (earlier: pre-s1/1.5/2/3a/3b · v0.1.0-alpha.1/.2/.3)
@@ -135,7 +135,16 @@ The immediate agenda, in order:
    not causal — the mutation-bitten regression rule is the durable proof). Backout `pre-phantom-hardening`. Record:
    `specs/recurrence-hardening/{PLAN-phantom,REPORT-phantom}.md`. **This makes the general `recurrence-hardening`
    spec (D101) concrete** — the detector + `kata-improve` proposal loop + `kata-promote` gate remain to grill→build.
-2. **★ NEXT: Phase 5 EXTERNAL + grill the two new BRIEFs.** install-portability (the BYO-second-brain pointer the C-arc
+1a. **✅ Debug Mode GRILLED + DESIGN FROZEN + PARKED (2026-06-25, `d010434`).** A self-contained run-shape `debug`
+   (peer of version-up, debug-in-confidence, the onboarding killer-app). 7 grill rounds + a 4-thread research pass +
+   3 repo assessments; two convergence-gate HOLDs → SHIP; freeze-gate `kata-review` SHIP. NEW `kata-comprehend`
+   function-model oracle + 7-step corroboration-gated deviation pipeline + behavioral drift gate (surface/AST +
+   calibration = fast-follows). LD1–LD13. **Build PARKED behind `install-portability` (built first) + `kata-preflight`**
+   → **install-portability is now the critical-path predecessor.** Also captured: `capability-aware-assignment` BRIEF
+   (the "multi-modal assignment" item). Artifacts: `specs/debug-mode/{BRIEF,GRILL-LEDGER,RESEARCH,DESIGN}.md`.
+2. **★ NEXT: Phase 5 EXTERNAL + grill the new BRIEFs.** **install-portability is now critical-path** (unblocks Debug
+   Mode) — grill→freeze→build it first. Then multi-model · capability-aware-assignment · the strategy BRIEFs
+   (the BYO-second-brain pointer the C-arc
    needs) → multi-model-orchestration → testing-model (BRIEFs exist). In parallel, **grill → freeze → freeze-gate**
    the two strategy BRIEFs: `specs/second-brain-learning/BRIEF.md` (Recall/Reason; the Recall *contract* is the
    load-bearing design) and `specs/recurrence-hardening/BRIEF.md`. Then the v0.1 release-checklist — flip **Policy A**

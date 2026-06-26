@@ -1,5 +1,22 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-25, Debug Mode GRILLED + DESIGN FROZEN + PARKED — `d010434`):** Roadmap session. Captured two
+> big Phase-5 items as pre-grill BRIEFs — **capability-aware (multi-modal) assignment** (loop-wide stack-detection →
+> specialist routing; resolves multi-model-orchestration's flagged "multi-modal?" question) and **Debug Mode** — then
+> **fully grilled Debug Mode** to a frozen DESIGN. **Debug Mode** = a self-contained **run-shape `debug`** (peer of
+> version-up), pointed at a whole codebase, **debug-in-confidence** (bugs out, behavior preserved); the
+> onboarding/conversion killer-app. Design (7 grill rounds + a 4-thread research pass + 3 repo assessments, two
+> convergence-gate HOLDs → SHIP): a NEW **`kata-comprehend`** builds an executable **`function_model`** oracle of
+> intent; a **7-step deviation pipeline** (self-consistency → objective-corroboration HARD gate → adversarial
+> refute-or-promote) gates on corroboration, not oracle accuracy; **behavioral drift gate** v1 (surface/AST +
+> confidence-calibration = honest fast-follows, H4 caveat in backward-compat). LOCKED LD1–LD13; reuse claims
+> verified (the D102 guard caught a phantom `kata-understand` reuse mid-grill — recurrence-hardening working). **Build
+> PARKED** behind **`install-portability` (built first, DG-10b) + `kata-preflight`**. Artifacts:
+> `specs/debug-mode/{BRIEF,GRILL-LEDGER,RESEARCH,DESIGN}.md`; the 3 assessed repos (debug-skill/claude-devtools/
+> pointbreak-claude) = all BORROW-PATTERN, takeaways parked. **NEXT:** Phase 5 — **`install-portability`** (now the
+> critical-path predecessor for Debug Mode) → multi-model → grill the strategy BRIEFs + capability-aware-assignment +
+> v0.1 release-checklist.
+
 > **CURRENT (2026-06-25, phantom-machinery first hardening BUILT + MERGED — `47648bf`, D102):** D101's worked
 > example shipped — the **verify-before-reuse guard**. `protocol/reuse-claims.md` (cross-skill contract: *before
 > claiming "reuses/composes X", grep/read X + cite `file:line`, else label NEW*) + by-path pointers in

@@ -1,6 +1,6 @@
 ---
 title: "Debug Mode — FROZEN DESIGN contract"
-status: FROZEN (compiled from GRILL-LEDGER round-1..7 + RESEARCH; convergence gate SHIP 2026-06-25)
+status: FROZEN + freeze-gate kata-review SHIP (2026-06-25). Build PARKED behind install-portability + kata-preflight.
 date: 2026-06-25
 spec: debug-mode
 compiled-by: kata-design-doc (from GRILL-LEDGER.md + RESEARCH.md)
