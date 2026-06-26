@@ -9,8 +9,8 @@ worker on that platform over the shared filesystem (DESIGN multi-model-orchestra
                      a caller persists as RESULT.json
 
 These functions RETURN dicts; they do not themselves write BRIEF.json / RESULT.json (the
-orchestrator owns persistence). `"fallback"` status is reserved for the LD7 host-fallback
-path, produced once dispatch is wired into kata-orchestrate (PARKED).
+orchestrator owns persistence). `"fallback"` status covers the LD7 host-fallback path;
+dispatch is wired into kata-orchestrate (Slice A of the multi-model layer build).
 
 The CLI launch is behind an **injectable runner** so the whole chain is testable with a
 stub CLI (no live host). The default runner shells out for real (gated on the CLI being
@@ -79,12 +79,14 @@ def build_brief(
     }
 
 
-def _brief_prompt(brief: dict) -> str:
+def _brief_prompt(brief: dict, capture: str = "emit") -> str:
     """The prompt handed to the worker: objective + inputs + boundaries + the result contract.
 
-    Conveys every load-bearing brief field (inputs, owned files, output contract) and states the
-    result is captured from the final message (via the adapter's ``-o``), so the worker emits — it
-    does NOT write the result file itself (read-only roles can't, and a self-write would collide).
+    ``capture="emit"`` (codex/default): the result is captured by the adapter's ``-o`` flag from
+    the worker's FINAL message — the worker emits and does NOT write the result file itself.
+    ``capture="write"`` (kiro): kiro has no ``-o`` capture (DESIGN §4 N2); the prompt instructs
+    the worker to write the result JSON to ``resultPath`` directly.  ``_subprocess_runner`` reads
+    ``resultPath`` after the run in both cases, so both paths converge at the same read point.
     """
     parts = [brief["objective"]]
     if brief.get("inputs"):
@@ -94,7 +96,10 @@ def _brief_prompt(brief: dict) -> str:
         parts.append("You may only modify: " + ", ".join(owned))
     parts.append(f"Acceptance: {brief['acceptanceCriteria']}")
     parts.append(f"Output contract: a single JSON object for role '{brief['role']}' ({brief['outputContract']}).")
-    parts.append("Emit that JSON object as your FINAL message — it is captured automatically; do not write files.")
+    if capture == "write":
+        parts.append(f"Write that JSON object to the file `{brief['resultPath']}`.")
+    else:
+        parts.append("Emit that JSON object as your FINAL message — it is captured automatically; do not write files.")
     return "\n".join(parts)
 
 
@@ -114,13 +119,35 @@ def codex_command(brief: dict, worktree: str) -> list[str]:
         "--sandbox", sandbox,
         "--model", brief["model"],
         "-o", brief["resultPath"],
-        _brief_prompt(brief),
+        _brief_prompt(brief, capture="emit"),
+    ]
+
+
+def kiro_command(brief: dict, worktree: str) -> list[str]:
+    """Build the ``kiro-cli chat`` command for a brief (the kiro dispatch adapter).
+
+    Launches kiro in headless mode with the assigned role as the agent.  Because kiro has no
+    ``-o`` capture flag (DESIGN §4 N2), ``_brief_prompt`` is called with ``capture="write"``
+    so the prompt instructs the worker to write the result JSON to ``resultPath`` itself.
+    ``_subprocess_runner`` then reads ``resultPath`` after the run — the same read point as
+    the codex path, so both adapters converge at N3 normalize.
+
+    Command shape (DESIGN §4 N2, June-2026 point-in-time snapshot — RESEARCH §0/§6):
+        kiro-cli chat --no-interactive --agent <role> <prompt>
+    ⚠ Pin/verify these flags at build; the N5 confirm-probe is the standing guard against
+    stale flag names between kiro-cli releases.
+    """
+    return [
+        "kiro-cli", "chat",
+        "--no-interactive",
+        "--agent", brief["role"],
+        _brief_prompt(brief, capture="write"),
     ]
 
 
 # adapter registry: platform -> command builder. Claude uses the in-process Agent path
 # (no external CLI) and is handled by the orchestrator, not here.
-_COMMAND_BUILDERS = {"codex": codex_command}
+_COMMAND_BUILDERS = {"codex": codex_command, "kiro": kiro_command}
 
 
 def _safe_result_path(result_path: str, cwd: str) -> Path:
