@@ -136,6 +136,13 @@ line in the plain-language statement ("this is a medium-cost run").
 
 ## Phase 3 — write kata.config + launch
 Write `kata.config` (JSON, branch root) per `protocol/config.md`: `mode`, `modules`, `effort`, `tiers`,
-`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**. Bootstrap writes the config
+`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**. Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;
 a second validation pass here would be redundant bloat). Then hand off to the loop ([[kata-orchestrate]]).
+
+**Multi-model routing (`roles`):** if the mirror conversation (via `kata-initiate` Phase 2e or the grill)
+produced a confirmed per-role platform assignment, write it as the `roles` block per `protocol/config.md:27`:
+`{ "<role>": { "platform": "<platform>", "model": "<model-id-if-known>" } }`.
+**Omit `roles` entirely when the run is single-host** — when no confirmed off-host assignment was made, the
+human declined, or no non-host platforms are installed. Absent `roles` ⇒ all roles on host (BC1,
+`protocol/config.md:27`). `roles` is a `kata.config` concern only — do NOT write it to `INTENT.md`.
