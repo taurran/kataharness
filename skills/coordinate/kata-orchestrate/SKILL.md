@@ -116,7 +116,7 @@ This section is **additive** — the host/`Agent`-tool path (step 2 of the loop 
 **At each role-group dispatch site**, if `resolved_roles[role]["platform"] ≠ host_platform`:
 
 1. Build a task-brief via `kata_dispatch.build_brief(task_id, role, platform, model=..., objective=..., result_path=..., ...)` (`tools/kata_dispatch.py:42`). Use `sandbox="read-only"` for read-only roles (validator, researcher); `sandbox="write"` for coder.
-2. Call `kata_dispatch.dispatch(brief, worktree)` (`tools/kata_dispatch.py:149`) — this launches the platform's headless CLI in the worktree (N2 adapter) and captures a normalized RESULT envelope (N3).
+2. Call `kata_dispatch.dispatch(brief, worktree)` (`tools/kata_dispatch.py:176`) — this launches the platform's headless CLI in the worktree (N2 adapter) and captures a normalized RESULT envelope (N3).
 3. Read the RESULT envelope; fold the role's `payload` per the per-role contract: validator → `{verdict, findings}`; researcher → `{claim, source, confidence, groundsToPlan}`; coder → the gate RESULT shape.
 
 **Role-group → dispatch-site map (L-MP5):**
