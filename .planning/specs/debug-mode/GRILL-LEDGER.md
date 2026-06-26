@@ -1,6 +1,6 @@
 ---
 title: "Debug Mode — grill decision ledger"
-status: CONVERGENCE GATE = HOLD (2026-06-25) — semantic core under-specified + a phantom reuse; back to Phase 1 on H1–H4
+status: H1-H7 REMEDIATED (research-grounded) — pending RE-RUN of convergence gate, then FREEZE
 date: 2026-06-25
 spec: debug-mode
 method: skills/plan/kata-grill (standard→advanced depth)
@@ -216,3 +216,45 @@ clear H5–H7; re-run the gate before FREEZE.**
 **Verified-solid (so the re-grill is targeted):** worktree isolation · version-up footprint+baseline-green
 discipline · `kata-diagnose` root-cause loop · the run-shape mechanism (DG-11) · gate/backout/closeout (DG-8). The
 pipeline *skeleton* composes; the **semantic core (H1–H4)** is what needs another Phase-1 round.
+
+## Convergence-gate remediation — H1–H7 RESOLVED (round 7, research-grounded, 2026-06-25)
+Grounded in `RESEARCH.md` (4 research threads + 3 repo assessments). v1-ambition calls = operator round 7.
+
+- **H1 → RESOLVED: the oracle = an executable+NL `function_model` per module (FULL).** LLM-derived **runnable
+  pre/postcondition assertions + NL `intent_summary` + behavioral examples + `derivation_sources` + `confidence`**,
+  checkable via a spec-wrapper (inject pre/post, run) — no provers. Every FM is a HYPOTHESIS to corroborate
+  (repo-level spec-gen ~20% fidelity). Reinforced by debug-skill's "invariant-as-intent-assertion" idea.
+- **H2 → RESOLVED: the FM-builder is a NEW in-mode capability — `kata-comprehend`** (pre-change, whole-repo,
+  confidence-tiered; derives intent from graph+docs+types+commit+callers). NOT `kata-understand` reuse (that's
+  post-run, map-only — phantom reuse, caught by the gate). Scope NEW with own ownership/acceptance/cost; F2
+  anti-bloat holds (in-mode). **Deviation detection = the FULL 7-step pipeline**: multi-signal candidates (static/
+  type/test-SBFL + peer-anomaly + graph-localization) → semantic LLM comparison → **self-consistency ≥2/3** →
+  **objective-corroboration HARD gate** (≥1 tool/test/type/Snyk co-locates, else LLM-only→human) → **adversarial
+  refute-or-promote** (ties to D98 `kata-review`) → fix gate (re-run on patch + Snyk).
+- **H3 → RESOLVED: confidence-tiering = MSAS + self-consistency HEURISTIC for v1** (composite of multi-source
+  agreement + cross-sample behavioral-semantic consistency + structural prior; **NOT verbalized confidence**).
+  Sensible default cutoffs route auto-fix / research(≤2 rounds) / defer; **force-LOW** for sparse-signal modules.
+  **Formal isotonic calibration on a labeled corpus = fast-follow** (deferred), tuned by feel until a corpus exists.
+- **H4 → RESOLVED: drift gate = BEHAVIORAL for v1, surface/AST fast-follow.** v1 = characterization/golden-master
+  + **baseline-suite-green EXCEPT an Allowed Exception List** (the nominated buggy test[s] that may go RED→GREEN);
+  any previously-green test→RED = BLOCK; snapshots byte-identical (scrub nondeterminism). **Fast-follow**: the
+  public-API-diff(=∅) + AST-edit-script(body-updates-only) surface/structural layer (per-language plugins +
+  Semgrep/tree-sitter fallback). *Honest v1 caveat: structural drift only loosely guarded until the fast-follow.*
+- **H5 → CLEARED: split the two research uses.** The in-mode comprehension/idiom research (raising FM confidence)
+  is part of **`kata-comprehend`** (a NEW in-mode step), NOT the escalation-routed no-write `kata-research`
+  (which stays for genuine in-loop `research-needed` escalations, used within its real contract).
+- **H6 → CLEARED: forward deps labeled, not "reuse."** `install-portability` is Debug Mode's built-first
+  predecessor (DG-10b); **`kata-preflight` (D29) is planned-not-built → a forward dependency** Debug Mode needs
+  built (DG-1b-edge env provisioning). **DG-10c's convert-to-loop surface is pinned by the install-portability
+  DESIGN, not specified here** — Debug Mode's DESIGN references it, doesn't invent it.
+- **H7 → CLEARED: characterization-suite generation is NEW** (systematic pin-existing-behavior synthesis across a
+  blast-radius), not clean `kata-tdd` (red-green for NEW behavior) / `kata-diagnose` (one test at a seam) reuse.
+  Part of the drift-gate/regression machinery; scope NEW.
+
+## v1 scope summary (post-remediation)
+**Invest in the semantic core:** full `function_model` oracle (`kata-comprehend`) + full 7-step deviation pipeline.
+**Defer to fast-follows:** formal confidence calibration; the surface/AST drift layer. **NEW capabilities to build:**
+`kata-comprehend` · the deviation pipeline · characterization-suite generation · the behavioral drift gate. **Forward
+deps:** full `install-portability` (built first) · `kata-preflight`. **Reused (verified real):** worktrees,
+version-up footprint discipline, `kata-diagnose`, `kata-evaluate`, D98 `kata-review`, run-shape mechanism, gate/
+backout/closeout, Snyk. **Status: re-run the fresh-context convergence gate before FREEZE.**
