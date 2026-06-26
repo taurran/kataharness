@@ -123,17 +123,17 @@ This section is **additive** — the host/`Agent`-tool path (step 2 of the loop 
 
 | Role | Dispatch site in this skill | Notes |
 |---|---|---|
-| `validator` | D98 adversarial red-team (`SKILL.md:248`) + grounding-gate review (`SKILL.md:126-130`) | Read-only; **proven v1 path** (validator→codex). |
-| `researcher` | `kata-research` on a research-needed escalation (`SKILL.md:122-137`) | Read-only; **proven v1 path** (researcher→kiro). |
-| `coder` | Per-task worker dispatch (`SKILL.md:72`, sandbox=write) | Supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`); **NOT the proven v1 path** this build ships (honest scope). |
-| `evaluator` | Host only | The accept/send-back/reroll mechanism is **DEFERRED** (DESIGN §8.5). |
+| `validator` | the **Adversarial red-team before merge** step (`## Final gate` step 6) + the **Research-needed → grounding gate** review (`## Escalation`) | Read-only; **stub-test-proven v1 path** (validator→codex; live-CLI flags pinned at build, guarded by the confirm-probe). |
+| `researcher` | `kata-research` on a **Research-needed** escalation (`## Escalation`) | Read-only; **stub-test-proven v1 path** (researcher→kiro; live-CLI flags pinned at build, guarded by the confirm-probe). |
+| `coder` | the per-task **worker dispatch** (`## The loop` step 2, sandbox=write) | Supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`); **NOT a path this build proves** (honest scope). |
+| `evaluator` | Host only | The accept/send-back/reroll mechanism is **DEFERRED** (DESIGN §8 *Deferred / fast-follow*, MM-1). |
 | `orchestrator` | Host only in v1 | Non-Claude orchestrator host is **DEFERRED** (LD11). |
 
 **LD6 — Concurrency:** Off-host dispatches run as **concurrent background subprocesses** reconciled with the rolling frontier and `.kata/concurrency.json`. Disjoint file-ownership ensures no races; the same frontier invariants (dispatchable iff `depends_on` drained + owned files disjoint from in-flight tasks) apply equally to cross-model tasks.
 
 **LD7 — Host fallback:** When the RESULT envelope carries `status ∈ {failed, timeout, fallback}`, **fall back to the host's `Agent`-tool path** (the existing subagent dispatch), **log the failure** (a board `ESCALATE` or `BLOCK` event), and **surface it** in the conversation. A routed platform failing repeatedly within a run is **flagged unconfirmed for that run** — all subsequent dispatch sites for that platform revert to the host path, and the incident is recorded in the drift ledger. The next run's preflight re-evaluates `confirmedPlatforms`.
 
-**Honest scope (v1):** The **read-only roles** (validator→codex, researcher→kiro) are the **proven v1 paths** this build ships. Coder-routing (write sandbox) is architecturally described and supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`) but is **not** the proven path this build ships. Evaluator injection-point thresholds are deferred (DESIGN §8.5). Orchestrator-host reassignment is deferred (LD11).
+**Honest scope (v1):** The **read-only roles** (validator→codex, researcher→kiro) are **wired and stub-test-proven** this build — the cross-model chain is exercised end-to-end against an injectable stub runner; the **live per-platform CLI flags are point-in-time and pinned/verified at build, with the confirm-probe as the standing guard** (a real multi-model run is gated on install + confirm). Coder-routing (write sandbox) is architecturally described and supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`) but is **not** proven by this build. Evaluator injection-point thresholds are deferred (DESIGN §8 *Deferred / fast-follow*, MM-1). Orchestrator-host reassignment is deferred (LD11).
 
 ## Escalation (the no-re-plan escape valve)
 An escalation is an **async event** — it does **NOT halt the run**. The escalating worker writes the
