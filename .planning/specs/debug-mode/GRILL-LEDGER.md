@@ -1,0 +1,184 @@
+---
+title: "Debug Mode — grill decision ledger"
+status: TREE COMPLETE — pending fresh-context kata-review convergence gate (then FREEZE via kata-design-doc)
+date: 2026-06-25
+spec: debug-mode
+method: skills/plan/kata-grill (standard→advanced depth)
+---
+
+# Debug Mode — GRILL LEDGER
+
+Running record of the design interrogation. Each branch: chosen option · rejected alternatives · rationale ·
+provenance. Convergence (per RUBRIC) requires every branch resolved + no fuzzy terms + every edge defined +
+no contradictions + two-builders-can't-diverge, then a fresh-context `kata-review` SHIP.
+
+## Frozen framing (operator, pre-grill — treated as LOCKED inputs, not re-litigated)
+- **F1** Debug Mode is a **top-level KataHarness mode, peer of version-up** — selected at bootstrap, pointed at a
+  whole codebase, **self-contained**; it debugs the entire codebase **without touching other modes**.
+- **F2 (anti-bloat)** No debug agent injected into the loop / other modes. Specialists live **inside** the mode.
+- **F3** Intent = behavior-preserving: **bugs out, structure/features fixed.** Opposite of version-up.
+- **F4** Reuse built pieces maximally (version-up footprint+regression discipline, `kata-diagnose`, `kata-graph`,
+  Snyk + `kata-evaluate` + D98 `kata-review`); NOT dependent on `capability-aware-assignment`.
+- **F5** Strategic role = the onboarding/conversion killer-app (debug-in-confidence → convert to loop + vault).
+
+## Open decision tree (DG-n) — enumerated; resolve in dependency order
+- **DG-1 — The "nothing broken" guarantee when the target has weak/no tests.** The regression signal is the
+  spine of "confidence"; converting devs often have thin coverage. (Provenance: F3/F5 + version-up's
+  "full baseline suite green" gate assumes tests exist.) **← load-bearing; round 1**
+- **DG-2 — Change scope: bug-fix-only vs. behavior-preserving cleanups vs. broader.** The fix-vs-"promote coding
+  efficiency" line. (Provenance: BRIEF open Q "fix-vs-improve line".) **← round 1**
+- **DG-3 — One-shot vs. iterate-until-clean vs. resumable.** Reconcile operator's "one-shot" with "systematic,
+  thorough, assess all modules". (Provenance: BRIEF.) **← round 1**
+- **DG-4 — Bug-discovery sources.** What finds the defects (security stack, test run, static/type/lint,
+  kata-diagnose reasoning, dynamic/property). (Provenance: F4.) **← round 1**
+- **DG-5 — Whole-codebase footprint vs. version-up's narrow footprint.** What "the whole thing" means for
+  ownership/blast-radius and one-shot sizing. (Provenance: F1 vs version-up footprint.)
+- **DG-6 — Systematic-sweep coverage strategy.** Graph-ordered traversal? risk-ranked? how "all modules/tie-ins/
+  logic" is made exhaustive yet bounded. (Provenance: BRIEF.)
+- **DG-7 — In-mode specialist roster + selection.** Which language/config specialists, prompt-profiles, selection
+  by detected stack — kept inside the mode (F2). (Provenance: F2 + operator's original capture.)
+- **DG-8 — Fix application + human gate.** Auto-apply (gated) vs. propose; per-fix vs. batch; backout. (F3/F4.)
+- **DG-9 — Confidence reporting.** What evidence the closeout shows to substantiate "debugged in confidence".
+- **DG-10 — Onboarding integration.** Dedicated first-run path tied to install + the convert-to-loop handoff. (F5.)
+- **DG-11 — Mode mechanics.** How selected (a `mode`/`delivery.shape` value), bootstrap wiring, `kata.config` shape.
+- **DG-12 — No-fix-found / can't-fix-safely behavior.** What happens to a bug it can't fix without drift (escalate?
+  defer? report-only?).
+
+## Resolved branches (round 1, 2026-06-25)
+
+- **DG-1 → REFRAMED: confidence basis = DEEP COMPREHENSION FIRST (the function-model), not characterization tests.**
+  Before any change, Debug Mode runs a **stronger, thorough `kata-graph`/Graphify review** to assess + document the
+  **intended function** of the codebase: ingest ALL structural context (graph: def/ref/call/import + PageRank) +
+  all available context (docs, comments, docstrings, types, config/IaC), **combine** them, and **determine each
+  module's function**; then **review the code's state for alignment** with that derived function. Where context is
+  thin, **assess deeply and synthesize the function** (flagged as lower-confidence). A **bug = a deviation of the
+  code from its derived/intended function.** *Rationale:* characterization tests pin *current* behavior (bugs and
+  all); a function-model gives an **oracle of intent** to debug against. Provenance: operator round 1.
+  - **Opens DG-1b** (regression signal — the function-model says *what's wrong*; we still need proof a fix doesn't
+    break *unrelated* behavior) and **DG-1c** (which comprehension inputs strengthen the model).
+- **DG-2 → RESOLVED: bug fixes + security ONLY (strictly behavior-preserving).** Debug Mode does NOT do feature/
+  behavior changes. **But the run also produces a RECOMMENDATIONS report** documenting where behavior/feature
+  changes are advisable — and **routes the user to run a `version-up` or `sprint` pass** for those. Clean
+  separation: debug = preserve behavior; version-up/sprint = change behavior. Provenance: operator round 1.
+  - **Opens DG-2b** (the recommendations→version-up/sprint handoff artifact + how it's offered).
+- **DG-3 → RESOLVED: the pass model is a USER CONFIG CHOICE at bootstrap** — (1) one thorough graph-ordered pass,
+  resumable (loop-back) **OR** (2) loop-until-dry (repeat until a pass finds nothing new). Both offered, cleanly
+  labeled, selected at configuration. Provenance: operator round 1.
+- **DG-4 → PARTIAL: confirmed discovery sources** = Snyk security stack · run existing tests · static analysis/
+  types/lint · `kata-diagnose` reasoning · **+ the in-loop research agent (`kata-research`)** to assess modules/
+  language and gather **codebase-tailored** debugging research. **Opens DG-4b** (brainstorm further sources).
+  Provenance: operator round 1.
+
+## New open branches (opened by round 1)
+- **DG-1b — Regression signal for fixes.** Given comprehension-first: do we ALSO generate characterization/
+  regression tests (proving a fix doesn't break unrelated behavior + leaving a suite behind for conversion), rely
+  on the existing suite + re-run, or behavior-snapshot diff? (The function-model is the *oracle*; this is the
+  *don't-regress* proof.) **← round 2**
+- **DG-1c — Comprehension inputs.** What feeds the function-model beyond the graph (docs/comments/types/config,
+  commit history, `kata-understand` reuse, research-agent idioms, low-confidence flagging). **← round 2**
+- **DG-2b — Recommendations handoff.** The behavior/feature-change recommendations artifact + how Debug Mode
+  offers/launches a follow-on `version-up`/`sprint`.
+- **DG-4b — Further discovery techniques (brainstorm).** function-model deviation detector · cross-module
+  tie-in/contract mismatch · commit-churn/blame hotspots · dynamic (fuzz/property/sanitizers) · dependency SCA ·
+  concurrency/race. **← round 2**
+
+## Resolved branches (round 2, 2026-06-25)
+- **DG-1b → RESOLVED: generate scoped characterization tests.** For each fix's blast-radius, generate regression
+  tests pinning current behavior **except the deviation being fixed**; run before/after. So the confidence basis =
+  **function-model (oracle of intent) + scoped characterization suite (don't-break proof)** — and the generated
+  suite is **left behind** as conversion value (a tested repo). Provenance: operator round 2.
+- **DG-1c → RESOLVED: comprehension inputs = graph + core context (assumed) + ALL of:** commit history/blame
+  (intent-over-time + churn hotspots) · **cross-module contract inference** (the tie-ins) · **reuse `kata-understand`**
+  to build the function-model (anti-bloat, F2) · **`kata-research` idioms + low-confidence flagging** (thin-context
+  areas flagged, deepened or surfaced — never silently guessed). Provenance: operator round 2.
+- **DG-4b → RESOLVED: v1 discovery techniques = the confirmed five (Snyk · run tests · static/types/lint ·
+  `kata-diagnose` · `kata-research`) PLUS:** the **function-model deviation detector** (the headline SEMANTIC
+  source) · **cross-module tie-in/contract mismatch** · **commit-churn/blame hotspots** · **dynamic analysis**
+  (fuzz/property/sanitizers, stack-gated). Dependency SCA + concurrency/race = also-considered (defer/free-text).
+  Provenance: operator round 2.
+
+## Resolved branches (round 3, 2026-06-25)
+- **DG-8 → RESOLVED: apply through the loop, gate at closeout + backout.** Each fix is TDD'd + passes
+  `kata-evaluate`/`kata-review`, integrated; the whole run is presented at the closeout human gate with a clean
+  one-command backout. Consistent with version-up's gated autonomy. Provenance: operator round 3.
+- **DG-12 → RESOLVED: defer + report (route to version-up).** A real bug that can't be fixed without behavior/
+  structure drift is **not forced** — it's logged to the recommendations report as "needs a behavior change →
+  version-up / human decision." Preserves the no-drift guarantee; nothing silently broken. Provenance: operator round 3.
+- **DG-5/6 → RESOLVED: whole-repo comprehension; per-fix footprint-scoped changes; graph + risk-ordered sweep.**
+  Understand the entire codebase (the function-model); each **fix** touches only its blast-radius (version-up
+  footprint discipline); the sweep visits modules in dependency/PageRank order, **weighting churn/hotspots first**.
+  Thorough yet bounded. Provenance: operator round 3.
+- **DG-9 → RESOLVED: closeout confidence report shows ALL of:** per-module **confidence map** (assessed/low-
+  confidence/skipped) · **each bug: deviation → fix → pinning test** · **regression + security proof** (suite green
+  + new tests, mutation non-vacuous, Snyk before/after) · the **recommendations list** (behavior/feature changes
+  deliberately NOT made → version-up/sprint). Provenance: operator round 3.
+
+## Resolved branches (round 4, 2026-06-25)
+- **DG-11 → RESOLVED: a run-shape `debug` (peer of version-up), `target.kind == existing`.** Mirrors version-up on
+  the run-shape axis; `kata-bootstrap` router selects it; `kata-orchestrate` stays config-driven. ("Mode" = the
+  user-facing word; run-shape = the mechanism.) Provenance: operator round 4.
+- **DG-7 → RESOLVED: prompt-profile specialists by detected stack, in-mode.** System-prompt profiles (per major
+  language + a config/context specialist) layered on `kata-tdd`/`kata-diagnose`, selected by the detected stack,
+  living **inside** Debug Mode (F2). No new Python (prefer-in-context). Provenance: operator round 4.
+- **DG-2b → RESOLVED: recommendations doc + offered handoff at closeout.** Closeout lists behavior/feature
+  recommendations and **offers** to launch a `version-up`/`sprint` run seeded with them (human opts in; uses the
+  loop-back/conductor). No behavior change without the user's choice. Provenance: operator round 4.
+- **DG-10 → RESOLVED: dedicated first-run path IN v1.** Fresh install pointed at a repo → bootstrap offers Debug
+  Mode as the intro run; on success, offer **convert-to-loop + vault setup**. **Consequence:** this **couples Debug
+  Mode v1 to (part of) `install-portability`** — the first-run detection + bring-your-own-vault binding + the
+  convert-to-loop handoff. Updates the earlier "fully decoupled, ships standalone" note. Provenance: operator round 4.
+  - **Opens DG-10b** (how much of install-portability is in v1 scope) and **DG-10c** (what "convert to the loop"
+    concretely does to the repo).
+
+## Resolved branches (round 5, 2026-06-25)
+- **DG-1-edge → RESOLVED: research-first, then defer.** Low-confidence-intent areas → dispatch `kata-research` to
+  raise confidence; if still low, **defer** the candidate to the recommendations report (don't auto-fix against an
+  uncertain oracle). *Implication to confirm at FREEZE (not re-litigated): objective defects — failing tests, type
+  errors, Snyk findings — don't depend on the oracle, so they stay fixable regardless of intent-confidence.*
+  Provenance: operator round 5.
+- **DG-1b-edge → RESOLVED: pre-flight establishes the env; fallback to snapshot/report-only.** Reuse D29 pre-flight
+  to provision deps + a runnable suite; if the env can't be made runnable, that area drops to behavior-snapshot diff
+  or report-only (honest — no false confidence). Provenance: operator round 5.
+- **DG-10b → RESOLVED: build FULL `install-portability` FIRST.** Debug Mode is sequenced **after** a complete
+  install-portability build (cleanest dependency story). **Roadmap consequence: install-portability becomes Debug
+  Mode's immediate predecessor.** Provenance: operator round 5.
+- **DG-10c → RESOLVED: convert-to-loop writes** kata.config · `.planning/` scaffold · **commits the generated
+  characterization suite** (new regression baseline) · vault binding. **Opens DG-10c-import** (below — operator
+  asked to evaluate import-vs-in-place). Provenance: operator round 5.
+
+## Resolved branches (round 6, 2026-06-25)
+- **DG-10c-import → RESOLVED: configurable per run — in-place (worktrees) DEFAULT, import-a-copy OPT-IN.**
+  Default = operate on the real repo in **isolated git worktrees** (aggressive-but-safe, tests run in the real
+  env, cheap for large repos via shared git objects); the **vault holds the artifacts** (function-model,
+  `.planning/`, report, generated test suite), not a source mirror. **Import-a-copy** is an offered bootstrap
+  option for special cases (read-only / untrusted / deliberate hard-fork) — it needs its own pre-flight to make the
+  copy runnable, and **falls back to snapshot/report-only if it can't** (shares the DG-1b-edge confidence-fallback).
+  Provenance: orchestrator evaluation + operator round 6.
+
+## ✅ Decision tree COMPLETE (all branches resolved, 2026-06-25)
+Every DG branch has a chosen option + rationale + provenance. **Next per RUBRIC: fresh-context `kata-review`
+convergence gate** ("could two independent builders still diverge?") — the griller does NOT self-certify (L8).
+On SHIP → hand to `kata-design-doc` (FREEZE) to compile the DESIGN contract; glossary terms (function-model ·
+intended-function oracle · function deviation · characterization suite · confidence map · debug run-shape ·
+in-mode specialist · recommendations handoff · convert-to-loop) bake into CONTEXT.md at freeze.
+
+## Design summary (for the convergence reviewer + the future design-doc)
+Debug Mode = a **run-shape `debug`** (peer of version-up, `target.kind==existing`), self-contained, selected at
+bootstrap, pointed at a whole codebase. Pipeline:
+1. **Comprehend** (whole-repo): `kata-graph`/Graphify + all context (docs/comments/types/config + commit history +
+   cross-module contract inference) → **reuse `kata-understand`** to build a **function-model** (intended function
+   per module), confidence-tiered; thin areas → `kata-research`, low-confidence flagged.
+2. **Discover** (graph + churn-risk ordered sweep): function-model **deviation detector** (semantic) + cross-module
+   tie-in/contract mismatch + Snyk + run existing tests + static/types/lint + `kata-diagnose` + dynamic (stack-gated).
+3. **Fix** (per-fix, footprint-scoped, in worktrees): bug+security only, behavior-preserving; **generate scoped
+   characterization tests** pinning behavior except the fixed deviation; pre-flight establishes the runnable env
+   (else snapshot/report-only). Low-confidence-intent bugs → research → defer if still unclear. Objective defects
+   (test/type/Snyk) fixed regardless. Can't-fix-without-drift → **defer to recommendations**.
+4. **Gate**: `kata-evaluate` + standing D98 `kata-review`; apply through the loop, **human gate at closeout +
+   one-command backout**. Specialists = in-mode prompt-profiles by detected stack.
+5. **Closeout**: confidence report (per-module confidence map · each deviation→fix→pinning test · regression+security
+   proof · recommendations list) + **offered handoff** to `version-up`/`sprint` for the behavior/feature recs.
+6. **Onboarding (v1)**: dedicated first-run path — depends on **full `install-portability` built first**;
+   convert-to-loop writes kata.config + `.planning/` + commits the characterization suite + vault binding.
+Pass model (one graph-ordered resumable pass | loop-until-dry) and execution locus (in-place worktrees | import)
+are **bootstrap config choices**.
