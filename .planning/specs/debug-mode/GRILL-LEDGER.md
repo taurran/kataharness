@@ -1,6 +1,6 @@
 ---
 title: "Debug Mode — grill decision ledger"
-status: H1-H7 remediated + R1 (design-summary sync) fixed — pending convergence re-confirm, then FREEZE
+status: GRILL COMPLETE — convergence gate SHIP (2026-06-25). Ready to FREEZE via kata-design-doc; build gated behind install-portability (DG-10b).
 date: 2026-06-25
 spec: debug-mode
 method: skills/plan/kata-grill (standard→advanced depth)
@@ -94,7 +94,9 @@ no contradictions + two-builders-can't-diverge, then a fresh-context `kata-revie
   the NEW **`kata-comprehend`** (NOT `kata-understand` — phantom reuse); in-mode idiom research lives in
   `kata-comprehend` (NOT escalation-routed `kata-research`). See the round-7 remediation + the synced design summary.
 - **DG-4b → RESOLVED: v1 discovery techniques = the confirmed five (Snyk · run tests · static/types/lint ·
-  `kata-diagnose` · `kata-research`) PLUS:** the **function-model deviation detector** (the headline SEMANTIC
+  `kata-diagnose` · ~~`kata-research`~~ **⚠ see round-7 H5**: general comprehension/idiom research moved into
+  `kata-comprehend`; `kata-research` stays escalation-only, dropped from the discovery list) PLUS:** the
+  **function-model deviation detector** (the headline SEMANTIC
   source) · **cross-module tie-in/contract mismatch** · **commit-churn/blame hotspots** · **dynamic analysis**
   (fuzz/property/sanitizers, stack-gated). Dependency SCA + concurrency/race = also-considered (defer/free-text).
   Provenance: operator round 2.
