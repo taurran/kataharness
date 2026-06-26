@@ -41,7 +41,8 @@ def test_codex_command_readonly():
     assert cmd[0:2] == ["codex", "exec"]
     assert "--sandbox" in cmd and cmd[cmd.index("--sandbox") + 1] == "read-only"
     assert cmd[cmd.index("--model") + 1] == "gpt-5-codex"
-    assert cmd[cmd.index("--output-schema") + 1] == "RESULT.json"
+    assert cmd[cmd.index("-o") + 1] == "RESULT.json"   # capture final message to the result file
+    assert "--output-schema" not in cmd                # not the result path (NIT-1 fix)
 
 
 def test_codex_command_write_sandbox():
@@ -108,6 +109,32 @@ def test_dispatch_timeout():
     b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
     res = kd.dispatch(b, "/wt", runner=timeout_runner)
     assert res["status"] == "timeout"
+
+
+def test_dispatch_non_object_result_is_failed_not_crash():
+    # valid JSON but a top-level ARRAY must fail gracefully, not raise (D98 MAJOR-1 fix)
+    def array_runner(cmd, cwd, result_path, timeout):
+        return 0, "ok", "[1, 2, 3]"
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    res = kd.dispatch(b, "/wt", runner=array_runner)
+    assert res["status"] == "failed"
+    assert "error" in res["payload"]
+
+
+def test_build_brief_rejects_traversal_result_path():
+    with pytest.raises(ValueError, match="'\\.\\.'"):
+        kd.build_brief("t", "validator", "codex", model="m", objective="o",
+                       result_path="../../etc/evil.json")
+
+
+def test_safe_result_path_under_cwd(tmp_path):
+    rp = kd._safe_result_path("sub/RESULT.json", str(tmp_path))
+    assert str(rp).startswith(str(tmp_path.resolve()))
+
+
+def test_safe_result_path_rejects_escape(tmp_path):
+    with pytest.raises(ValueError):
+        kd._safe_result_path("../escape.json", str(tmp_path))
 
 
 def test_dispatch_unknown_platform_raises():

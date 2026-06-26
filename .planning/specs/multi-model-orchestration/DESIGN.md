@@ -92,7 +92,9 @@ Assembled FROM the `kata-orient` orientation + the plan's task assignment. The b
 
 ### N2 — `adapters/<platform>/dispatch` (per-platform CLI launch + result capture)
 Given (BRIEF.json, worktree): launch the headless CLI, capture the structured result into `resultPath`, normalize → N3.
-- **codex** `codex exec --cd <wt> --sandbox <ro|ww> --model M --output-schema <resultPath> -o <resultPath>`
+- **codex** `codex exec --cd <wt> --sandbox <ro|ww> --model M -o <resultPath> "<brief prompt>"` — `-o` captures
+  the worker's final JSON message to the result file; the prompt instructs JSON output. (A real per-role JSON-Schema
+  file may later be passed to `--output-schema` for hard constraint — **not** the result path itself.)
 - **kiro** `kiro-cli chat --no-interactive --agent <role>` (brief instructs "write result JSON to resultPath"); ACP later.
 - **copilot** `copilot -p <brief> --allow-all-tools --model M`  ·  **cursor** `cursor agent -p --output-format json --model M`
 - **claude** = the existing Agent-tool path. ⚠ Each flag set is a **June-2026 snapshot** (RESEARCH §0/§6) — **pin/verify at build**, not from this doc; the N5 probe is the standing guard.
@@ -115,7 +117,9 @@ skill and (b) returned a parseable result → append the platform to `confirmedP
   `codex exec` in the worktree, and a schema-valid RESULT.json (envelope + validator payload) comes back and is consumed.
 - An unconfirmed platform in `roles` → load-guard STOP at preflight; a confirmed platform made to fail at dispatch →
   host fallback + a surfaced note (verifiable by forcing a nonzero exit).
-- The N5 probe: a sentinel skill installed + confirmed on Claude (real), appended to `confirmedPlatforms`; codex/kiro best-effort.
+- The N5 probe: the **host (Claude) is confirmed-by-construction** (it's where the run executes — no live probe);
+  a **non-host** platform is confirmed by the sentinel probe (headless CLI returns the token) → appended to
+  `confirmedPlatforms`. Testable via the injectable runner; codex/kiro best-effort pending the live CLI.
 - Concurrent cross-model dispatch: two routed tasks run as concurrent background subprocesses (≠ serialized), evidenced in `.kata/concurrency.json`.
 
 ## 7. Test seams

@@ -55,6 +55,8 @@ def build_brief(
         raise ValueError(f"kata_dispatch: sandbox must be one of {sorted(_SANDBOX)}, got {sandbox!r}")
     if not objective or not result_path:
         raise ValueError("kata_dispatch: objective and result_path are required")
+    if any(part == ".." for part in Path(result_path).parts):
+        raise ValueError(f"kata_dispatch: resultPath may not contain '..': {result_path!r}")
     return {
         "taskId": task_id,
         "role": role,
@@ -80,16 +82,20 @@ def _brief_prompt(brief: dict) -> str:
 
 # --------------------------------------------------------------------------- N2
 def codex_command(brief: dict, worktree: str) -> list[str]:
-    """Build the `codex exec` command for a brief (the codex dispatch adapter)."""
+    """Build the `codex exec` command for a brief (the codex dispatch adapter).
+
+    Uses ``-o <resultPath>`` to capture the worker's final JSON message to the result file;
+    the prompt instructs the worker to emit JSON for its role. (A real per-role JSON-Schema
+    file could later be passed to ``--output-schema`` for hard constraint — NOT the result
+    path itself; passing the output path as the schema was a latent bug, fixed here.)
+    """
     sandbox = "workspace-write" if brief["boundaries"]["sandbox"] == "write" else "read-only"
-    rp = brief["resultPath"]
     return [
         "codex", "exec",
         "--cd", str(worktree),
         "--sandbox", sandbox,
         "--model", brief["model"],
-        "--output-schema", rp,
-        "-o", rp,
+        "-o", brief["resultPath"],
         _brief_prompt(brief),
     ]
 
@@ -99,10 +105,25 @@ def codex_command(brief: dict, worktree: str) -> list[str]:
 _COMMAND_BUILDERS = {"codex": codex_command}
 
 
+def _safe_result_path(result_path: str, cwd: str) -> Path:
+    """Resolve ``result_path`` strictly UNDER ``cwd`` (CWE-23). Reject ``..`` and any escape.
+
+    Mirrors the ``_safe_abs`` ``..``-guard the rest of the codebase applies (kata_install /
+    kata_settings) — the result file must live inside the worker's worktree, never outside it.
+    """
+    if any(part == ".." for part in Path(result_path).parts):
+        raise ValueError(f"kata_dispatch: refusing resultPath with '..' traversal: {result_path!r}")
+    base = Path(cwd).resolve()
+    rp = (base / result_path).resolve()
+    if base != rp and base not in rp.parents:
+        raise ValueError(f"kata_dispatch: resultPath escapes the worktree: {result_path!r}")
+    return rp
+
+
 def _subprocess_runner(cmd: list[str], cwd: str, result_path: str, timeout: int):
     """Default real runner: shell out, then read the worker's result file. Gated on the CLI existing."""
+    rp = _safe_result_path(result_path, cwd)
     proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)  # noqa: S603
-    rp = Path(cwd) / result_path if not Path(result_path).is_absolute() else Path(result_path)
     result_text = rp.read_text(encoding="utf-8") if rp.exists() else ""
     return proc.returncode, proc.stdout, result_text
 
@@ -132,7 +153,7 @@ def dispatch(brief: dict, worktree: str, runner=None, timeout: int = 600) -> dic
         )
     try:
         payload = normalize(brief["role"], result_text)
-    except (ValueError, json.JSONDecodeError) as e:
+    except (ValueError, TypeError, AttributeError, json.JSONDecodeError) as e:
         return build_result(
             brief["taskId"], brief["role"], platform, brief["model"], "failed",
             {"error": f"unparseable result: {e}"}, raw=result_text,
@@ -161,6 +182,8 @@ def normalize(role: str, raw_text: str) -> dict:
     - coder      -> {resultJson?, diffPath?}  (the gate RESULT.json is produced separately)
     """
     data = json.loads(raw_text) if raw_text.strip() else {}
+    if not isinstance(data, dict):
+        raise ValueError(f"worker result must be a JSON object, got {type(data).__name__}")
     if role == "validator":
         verdict = data.get("verdict")
         if verdict not in {"ship", "hold"}:
