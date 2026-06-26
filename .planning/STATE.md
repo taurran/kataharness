@@ -1,5 +1,21 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-25, phantom-machinery first hardening BUILT + MERGED — `47648bf`, D102):** D101's worked
+> example shipped — the **verify-before-reuse guard**. `protocol/reuse-claims.md` (cross-skill contract: *before
+> claiming "reuses/composes X", grep/read X + cite `file:line`, else label NEW*) + by-path pointers in
+> `kata-design-doc` / `kata-plan` RUBRIC / `kata-tdd` + a `validate_skills.py` regression rule (dual mechanism +
+> body-integrity full-phrase guard + producer-existence FAIL-loud check). Built through the **full recipe**
+> (subagent-driven Sonnet T1/T2/T3, Opus judgment): freeze-gate **HOLD→SHIP** · `kata-evaluate` **PASS 9/9** ·
+> **T-fire proof-of-fire** (a fresh `kata-design-doc` agent refused to freeze a phantom `orient.emit_pointers()`
+> claim → labeled NEW) · standing D98 `kata-review` **SHIP-WITH-FIXES→SHIP** (caught a default-FAIL gap where a
+> renamed producer would silently disable the guard — fixed). pytest **456**, validator **36/0**, Snyk **0**,
+> mutation non-vacuous. **Honest:** the rule enforces **presence, not behavior**; T-fire is **n=1, contaminated,
+> no guard-off control** — corroborating, not causal proof (the mutation-bitten regression rule is the durable
+> proof). Backout `pre-phantom-hardening`. Record: `specs/recurrence-hardening/{PLAN-phantom,REPORT-phantom}.md`.
+> **NEXT:** Phase 5 EXTERNAL (install-portability → multi-model → testing-model) + **grill → freeze** the two
+> strategy BRIEFs (`second-brain-learning` Recall-contract is load-bearing; `recurrence-hardening` general build)
+> + v0.1 release-checklist (flip Policy A). Far-future: `kata-loop-benchmark` → DAG-in-DAG.
+
 > **CURRENT (2026-06-24, loop-learning strategy locked + fix-loop hardening BUILT — `fc7f4f7`, D98–D101):** A long
 > strategy + hardening session. **(1) The standing adversarial red-team is now wired (D98/L12):** `kata-review`
 > runs after `kata-evaluate` PASS, before merge, on every code/contract-bearing build; `kata-evaluate` gained

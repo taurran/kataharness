@@ -1,8 +1,8 @@
 ---
-date: 2026-06-24 (loop-learning strategy locked + fix-loop hardening BUILT; D98–D101; next = phantom-machinery hardening → Phase 5)
-branch: master — private remote github.com/taurran/kataharness, tip fc7f4f7 (PUSHED, in sync — `git log --oneline -3` for latest)
-green: validator 36 skills / 0 errors · pytest 447 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
-tags: pre-fix-loop-hardening · pre-ws3 · pre-ws2-slopcheck · v0.1.0-alpha.3 · loop-hardening-complete (earlier: pre-s1/1.5/2/3a/3b · v0.1.0-alpha.1/.2/.3)
+date: 2026-06-25 (phantom-machinery first hardening BUILT + MERGED, D102; next = Phase 5 + grill the two strategy BRIEFs)
+branch: master — private remote github.com/taurran/kataharness, tip 47648bf (PUSHED, in sync — `git log --oneline -3` for latest)
+green: validator 36 skills / 0 errors · pytest 456 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
+tags: pre-phantom-hardening · pre-fix-loop-hardening · pre-ws3 · pre-ws2-slopcheck · v0.1.0-alpha.3 · loop-hardening-complete (earlier: pre-s1/1.5/2/3a/3b · v0.1.0-alpha.1/.2/.3)
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
@@ -24,10 +24,11 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 > freeze-gate HOLD→resolved, re-confirm HOLD→resolved, build `kata-evaluate` PASS 7/7 + standing D98 red-team
 > SHIP-WITH-FIXES (fixed). **The adversarial lens caught the phantom-machinery / over-claimed-reuse class FOUR times
 > this session** → memory `verify-primitives-before-claiming-reuse`. Fresh/compacted session: read §1, confirm green
-> (§2). **NEXT = the phantom-machinery FIRST HARDENING (the worked example of D101): document the fix-guide + place
-> the guard in the responsible planning skill, then test it — see §4.** Then Phase 5 EXTERNAL + grill/freeze the two
-> new BRIEFs + v0.1 release-checklist. Durable + committed + **pushed** (tip `fc7f4f7`). Live picture:
-> `.planning/STATE.md` (top box) + `.planning/DECISIONS.md` **D87–D101**.
+> (§2). **UPDATE (2026-06-25, D102): the phantom-machinery FIRST HARDENING is DONE + MERGED (`47648bf`)** — the
+> verify-before-reuse guard shipped through the full recipe (freeze-gate→build→evaluate PASS 9/9→T-fire PASS(n=1)→
+> D98 red-team SHIP). **NEXT = Phase 5 EXTERNAL + grill/freeze the two strategy BRIEFs + v0.1 release-checklist —
+> see §4.** Durable + committed + **pushed** (tip `47648bf`). Live picture:
+> `.planning/STATE.md` (top box) + `.planning/DECISIONS.md` **D87–D102**.
 > **D95–D97**.
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
@@ -122,28 +123,19 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 Pre-public WS-1/2/3 + loop-hardening + the Kata Loop are all DONE. This session added D98–D101 (see the banner).
 The immediate agenda, in order:
 
-1. **★ THE PHANTOM-MACHINERY FIRST HARDENING (the worked example of D101 — DO THIS FIRST; operator-requested).**
-   The adversarial lens caught the **same failure-class FOUR times this session**: spec/planning agents
-   **over-claiming that machinery exists** ("composes existing primitives / reuses X / the orchestrator already
-   writes Y" when the primitive doesn't expose the needed surface — the signature documentation-only-seam). Rather
-   than rely on the red-team to catch it every time, **harden the responsible skill** — the manual first instance
-   of recurrence-hardening (D101):
-   - **Decide the responsible skill + where the guard lands.** Candidates: `kata-plan` (and its tier files
-     `kata-plan-*`) and/or `kata-design-doc` — the spec/planning agents that write "reuses X." The guard likely
-     belongs as a **pre-flight / checklist step** in the planning skill (or its RUBRIC) that the planner must run
-     before freezing a spec. (Cross-check `kata-tdd`/the worker-dispatch prompt too — coders over-claim as well.)
-   - **Document the fix-guide** (the actual guard): *before writing "reuses / composes / via the existing <thing>",
-     grep/read the thing and confirm it exposes exactly the field/event/output/path the design assumes — cite the
-     concrete file:line; treat "this already exists" as a claim to verify, not an assumption; if it isn't there, say
-     "this is a NEW capability" and scope it.* (This is the memory `verify-primitives-before-claiming-reuse`,
-     promoted into a skill guard.)
-   - **Then TEST the fix** (operator's explicit ask): prove the guard actually catches/prevents the pattern — e.g.
-     a deliberate "reuses X" claim against a non-existent surface should be flagged by the hardened skill's
-     pre-flight. (Per D98/L12 *reproduce-don't-trust*: prove the guard fires, don't just document it.)
-   - This is a **contract-bearing skill change** → run it through the loop: freeze → freeze-gate review → build →
-     `kata-evaluate` + the standing D98 `kata-review` → merge. It is also the proof-of-concept that makes the full
-     `recurrence-hardening` spec (D101) concrete.
-2. **Phase 5 EXTERNAL + grill the two new BRIEFs.** install-portability (the BYO-second-brain pointer the C-arc
+1. **✅ THE PHANTOM-MACHINERY FIRST HARDENING — DONE + MERGED (2026-06-25, D102, `47648bf`).** The verify-before-reuse
+   guard shipped through the full recipe: `protocol/reuse-claims.md` (the guard contract) + by-path pointers in
+   `kata-design-doc` / `kata-plan` RUBRIC / `kata-tdd` + a `validate_skills.py` regression rule (dual mechanism +
+   body-integrity full-phrase guard + producer-existence FAIL-loud check) + a non-vacuous test. Freeze-gate
+   **HOLD→SHIP** · `kata-evaluate` **PASS 9/9** · **T-fire proof-of-fire** fired (a fresh `kata-design-doc` agent
+   refused to freeze a phantom `orient.emit_pointers()` claim → labeled NEW) · standing D98 `kata-review`
+   **SHIP-WITH-FIXES→SHIP** (it caught a default-FAIL gap: a renamed producer would have silently disabled the
+   guard — fixed via the producer-existence check). pytest **456**, validator **36/0**, Snyk **0**. **Honest:** the
+   rule enforces **presence, not behavior**; the T-fire is **n=1, contaminated, no guard-off control** (corroborating,
+   not causal — the mutation-bitten regression rule is the durable proof). Backout `pre-phantom-hardening`. Record:
+   `specs/recurrence-hardening/{PLAN-phantom,REPORT-phantom}.md`. **This makes the general `recurrence-hardening`
+   spec (D101) concrete** — the detector + `kata-improve` proposal loop + `kata-promote` gate remain to grill→build.
+2. **★ NEXT: Phase 5 EXTERNAL + grill the two new BRIEFs.** install-portability (the BYO-second-brain pointer the C-arc
    needs) → multi-model-orchestration → testing-model (BRIEFs exist). In parallel, **grill → freeze → freeze-gate**
    the two strategy BRIEFs: `specs/second-brain-learning/BRIEF.md` (Recall/Reason; the Recall *contract* is the
    load-bearing design) and `specs/recurrence-hardening/BRIEF.md`. Then the v0.1 release-checklist — flip **Policy A**

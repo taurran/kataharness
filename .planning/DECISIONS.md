@@ -910,3 +910,22 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   class's recurrence drop?), tying it to the `kata-loop-benchmark` keystone (D99). **Gets its own
   grill → freeze → freeze-gate review → build** (the discipline that paid off 3× this session); **not** bundled
   into any other frozen build. Record: `specs/recurrence-hardening/BRIEF.md` (pre-grill).
+
+<!-- D101 first instance BUILT — the phantom-machinery verify-before-reuse guard. -->
+- **D102 — Phantom-machinery first hardening BUILT + MERGED (`47648bf`, 2026-06-25) — D101's worked example.**
+  The verify-before-reuse guard ships: `protocol/reuse-claims.md` (cross-skill contract, the LD3 guard:
+  *before claiming "reuses/composes X", grep/read X and cite the concrete `file:line`, else label NEW*) +
+  by-path pointers in `kata-design-doc`, `kata-plan/RUBRIC.md`, `kata-tdd` + a `validate_skills.py` regression
+  rule (dual mechanism — skill bodies for the two loaded producers, separate glob for the RUBRIC; **body-integrity**
+  guard requiring the full LD3 phrase verbatim; **producer-existence** check so a renamed producer FAILs loudly
+  rather than silently disabling the guard). Built through the full recipe (subagent-driven Sonnet T1/T2/T3,
+  Opus judgment): freeze-gate `kata-review` HOLD→SHIP · `kata-evaluate` **PASS 9/9** · **T-fire proof-of-fire**
+  (a fresh `kata-design-doc` agent refused to freeze a phantom `orient.emit_pointers()` claim, labeling it NEW) ·
+  standing D98 `kata-review` **SHIP-WITH-FIXES→SHIP**. pytest **456**, validator **36/0**, Snyk **0**, mutation
+  non-vacuous. **Honest scope (D98 M2/M3):** the validator enforces **presence, not behavior** — it catches
+  removal/drift of the guard surface forever, but author-time compliance still rests on the LLM obeying the
+  prose; the **T-fire is n=1, contaminated (probe surface named in the committed plan), with no guard-off
+  control** — corroborating evidence, not proof of causation. The structural regression rule (with a real
+  mutation bite) is the durable proof. Record: `specs/recurrence-hardening/{PLAN-phantom,REPORT-phantom}.md`.
+  Backout tag `pre-phantom-hardening`. **This makes the general `recurrence-hardening` spec (D101) concrete** —
+  the detector/`kata-improve`-proposal/`kata-promote`-gate machinery is still the deferred general build.
