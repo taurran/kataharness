@@ -172,11 +172,17 @@ The immediate agenda, in order:
    (`RESEARCH.md` — SKILL.md is a shared standard across all 5 tools; all headless-automatable), grill→DESIGN
    (5 role groups incl. a lightweight **evaluator** scorer; default all-on-host, multi-modal opt-in at preflight;
    files+CLI dispatch; NEW N1–N5 with schemas). **Convergence HOLD#1: the D102 guard caught over-claimed reuse →
-   relabeled NEW → re-confirm SHIP.** Build PARKED. Records: `specs/multi-model-orchestration/{RESEARCH,GRILL-LEDGER,DESIGN}.md`.
-   **★ NEXT (choose):** (a) **build multi-model** (sequence: extend install+confirm N5 → roles config + BRIEF/RESULT
-   schemas → Codex-as-validator adapter first → generalize) — the operator wanted this for benchmarking; OR (b)
-   **`kata-preflight`** (the other Debug Mode blocker, D29/D103) → Debug Mode build; OR (c) grill capability-aware-
-   assignment (the specialist axis that multiplies with multi-model). NOTE memory [[grill-in-plain-terms]] — keep it plain.
+   relabeled NEW → re-confirm SHIP.** Records: `specs/multi-model-orchestration/{RESEARCH,GRILL-LEDGER,DESIGN}.md`.
+   **✅ Codex-validator PROOF-SLICE BUILT (`11bf609`+`2570cce`):** `tools/{kata_roles,kata_dispatch}.py` + confirm-probe
+   + `roles` config; end-to-end proof (validator→codex→normalized verdict) against the stub-CLI seam; pytest 522,
+   validate 36/0, Snyk 0 med+, D98 SHIP-WITH-FIXES→fixed. **Honest:** codex not installed → stub-proven, real run gated
+   on install+confirm; only the codex adapter built (kiro/copilot/cursor = stubs).
+   **★ NEXT (choose):** (a) **finish the multi-model layer** — wire `kata_dispatch` into `kata-orchestrate` (LD6
+   concurrency + LD7 host-fallback) + the `roles` load-guard + the "make this run multi-modal?" preflight question in
+   `kata-initiate` + the kiro/copilot/cursor adapters + `.agents/skills` install targeting (this makes a real
+   benchmark single-vs-multi-model runnable); OR (b) **`kata-preflight`** (the other Debug Mode blocker, D29/D103) →
+   Debug Mode build; OR (c) grill **capability-aware-assignment** (the specialist axis that multiplies with multi-model).
+   NOTE memory [[grill-in-plain-terms]] — keep design questions plain + the simplest model that works.
 3. **Far-future.** `kata-loop-benchmark` (now the **keystone** that defines the C-arc unlock + measures whether
    learning/hardening pays off — D99) → recursive parallelism (DAG-within-DAG) gated on a hardened separability test.
 

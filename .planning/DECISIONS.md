@@ -991,3 +991,14 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   confirm (N5) → roles config + BRIEF/RESULT schemas (N4/N1/N3) → Codex-as-validator dispatch adapter (N2) first →
   generalize. **Deferred to own pass:** the evaluator injection-points + score-threshold mechanism (supplies the
   evaluator's accept/send-back/reroll cutoffs; its result *shape* is frozen, its *thresholds* are not).
+  **UPDATE (2026-06-26) — Codex-validator PROOF-SLICE BUILT** (`11bf609` + D98 fixes `2570cce`): N4 `tools/kata_roles.py`
+  (roles resolver, default all-on-host/BC1, fail-closed) · N1/N3/N2 `tools/kata_dispatch.py` (build_brief + per-role
+  result normalizer + RESULT envelope [status=dispatch-outcome ⊥ verdict-in-payload] + codex adapter behind an
+  **injectable runner** = DESIGN §7 stub-CLI seam) · N5 `tools/kata_install.py` `confirm_platform` probe +
+  `tools/kata_settings.py` `confirmedPlatforms` · `protocol/config.md` `roles` block. **End-to-end proof:** validator
+  routed→codex → brief → dispatch(stub) → normalized HOLD verdict. pytest 522, validate 36/0, Snyk 0 med+. **D98
+  SHIP-WITH-FIXES→fixed** (normalizer crash on non-object JSON; resultPath `..`-guard; codex `--output-schema`→`-o`).
+  **Honest scope:** codex NOT installed → proven against the stub; real run gated on install+confirm; only the codex
+  adapter built (kiro/copilot/cursor = stubs). Backout `pre-multimodel-slice`. **Remaining for the full layer:** wire
+  dispatch into `kata-orchestrate` (LD6 concurrency + LD7 fallback) + the `roles` load-guard + the multi-modal
+  preflight question in `kata-initiate` + kiro/copilot/cursor adapters + `.agents/skills` install targeting.
