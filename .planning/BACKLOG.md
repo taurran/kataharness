@@ -137,8 +137,10 @@ These are the operator's own end-of-S3b notes; several gate going public. Captur
   their repo to the loop + moving into the vault. Reuse-maximally (a mode over the Harness, not a parallel stack):
   `kata-diagnose` · `kata-graph` · version-up footprint+no-regression discipline · `kata-evaluate`/`kata-review` ·
   `kata-tdd` · closeout/backout. **Borrow** from industry agentic debuggers (the installed
-  `superpowers:systematic-debugging` + `gsd-debug`, SWE-agent, OpenHands, Aider) — keep our gates. **Depends on
-  capability-aware-assignment** (its language specialists). BRIEF: `specs/debug-mode/BRIEF.md`. Open: the
+  `superpowers:systematic-debugging` + `gsd-debug`, SWE-agent, OpenHands, Aider) — keep our gates. **A top-level
+  MODE (peer of version-up), selected and pointed at a whole codebase — self-contained; NOT a debug agent injected
+  into the loop/other modes (anti-bloat). Specialists live INSIDE the mode; does NOT depend on
+  capability-aware-assignment** (independent item; may converge later). BRIEF: `specs/debug-mode/BRIEF.md`. Open: the
   behavior-preserving / no-structural-drift gate (load-bearing) · systematic-sweep planning · the
   fix-vs-improve line · 4th mode to align (planning-approach↔delivery-mode).
 - **★ DOGFOOD #2 RESIDUAL — wire the eval artifacts into a live gate (NEXT increment, 2026-06-19).** Dogfood #2

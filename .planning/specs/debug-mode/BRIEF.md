@@ -3,7 +3,7 @@ title: "Debug Mode — a one-shot delivery mode that systematically debugs an ex
 status: BRIEF (pre-grill, NOT frozen — captured 2026-06-24, enriched 2026-06-25 from operator direction)
 date: 2026-06-25
 spec: debug-mode
-relates-to: modes-A4-version-up (the sibling mode it parallels) · capability-aware-assignment (its language specialists) · kata-diagnose (root-cause core) · install-portability + second-brain-learning (the onboarding/conversion story) · D98 red-team + Snyk security stack
+relates-to: modes-A4-version-up (the sibling MODE it parallels) · kata-diagnose (root-cause core) · kata-graph · install-portability + second-brain-learning (the onboarding/conversion story) · D98 red-team + Snyk security stack · capability-aware-assignment (INDEPENDENT item — NOT a dependency; may share specialist mechanism later)
 tags:
   - kata/coordinate
   - delivery-mode
@@ -22,12 +22,20 @@ tags:
 > security stack. A great first run for devs who install KataHarness and want to convert their code to the loop
 > and live in our vault."* **Status: do NOT build yet — grill it first.**
 
-## What it is
-A **new delivery mode / run-shape, sibling to Version-Up**, with the **opposite intent**: where version-up
-*advances* the code (feature add + version bump), Debug Mode **holds the feature set and structure fixed** and
-runs a **deep systematic debugging pass** — find and resolve real defects, tighten logic, and promote coding
-efficiency, **without changing behavior** (bugs out, structure preserved). Entry: a `delivery.shape == debug`
-preset in `kata-bootstrap`/`kata-orchestrate`, paralleling version-up.
+## What it is — a top-level MODE, not an injected agent (operator framing, 2026-06-25)
+Debug Mode is **a KataHarness mode, exactly like Version-Up** — **selected at bootstrap and pointed at a
+codebase to debug the whole thing.** It is **self-contained**: it runs the whole-codebase debug pass within its
+own mode and **does not touch the other modes.** Opposite intent to version-up: where version-up *advances* the
+code (feature add + version bump), Debug Mode **holds the feature set and structure fixed** and runs a **deep
+systematic debugging pass over the entire codebase** — find and resolve real defects, tighten logic, promote
+coding efficiency, **without changing behavior** (bugs out, structure preserved). Entry: a `delivery.shape ==
+debug` mode selectable in `kata-bootstrap`, paralleling version-up.
+
+## Anti-bloat principle (operator, LOAD-BEARING)
+The thing to AVOID is a **small debug agent injected into the loop / scattered into the other modes** — *that*
+adds bloat. **Debugging the entire codebase as its own contained mode does NOT add bloat.** So: keep debug
+**inside the Debug Mode** (no debug helpers grafted onto grill/plan/version-up/etc.); any debug specialists it
+uses live **within this mode**, not as a cross-cutting layer over the whole loop.
 
 ## The "debug in confidence" contract (the hard part)
 The value proposition is **trust**: a dev points it at their repo and gets fixes, *not* breakage. That needs a
@@ -46,8 +54,11 @@ A **new mode/preset over the existing Harness**, NOT a parallel stack. Expected 
   existing repo) · the **version-up footprint + no-regression gate** discipline · **`kata-evaluate`/`kata-review`**
   (default-FAIL + adversarial) · **`kata-tdd`** (regression test pinning each fix) · the **closeout/backout**
   surfaces (offered rollback). New = the systematic-sweep planning logic + the behavior-preserving gate.
-- **Language-specialist debug agents** come from **`capability-aware-assignment`** (its primary consumer): per
-  major language + config/context-file specialists, routed by the footprint's detected stack.
+- **Language-specialist debug agents** are **internal to this mode** — per major language + config/context-file
+  specialists, selected by the footprint's detected stack, but **scoped inside Debug Mode** (not the cross-cutting
+  loop-wide assignment layer). `capability-aware-assignment` is a **separate, independent big item**; if/when it
+  exists Debug Mode MAY share its specialist-profile mechanism, but Debug Mode is **self-contained and NOT blocked
+  on it** (it ships its own whole-codebase specialist selection). Decoupled by design (anti-bloat).
 
 ## Borrow from industry agentic debugging (research at grill)
 Survey + adopt mechanisms (don't reinvent): the **`superpowers:systematic-debugging`** skill and **`gsd-debug`**
@@ -69,13 +80,16 @@ loop. That experience is the on-ramp to **converting the repo to the Kata Loop a
   footprint-bounded and one-shot? (loop-until-dry over modules? graph-ordered traversal? risk-ranked?)
 - **"Promote coding efficiency"** — is that in-scope for a *debug* mode (behavior-preserving refactors) or does it
   blur into version-up? Where's the line between "fix a bug" and "improve the code"?
-- **Specialist roster + routing** — depends on `capability-aware-assignment`; confirm the dependency direction.
+- **Specialist roster + selection** — which specialists at v1, kept **inside** the mode; pure prompt-profiles vs.
+  any tool. (NOT a dependency on the loop-wide assignment layer — that's the anti-bloat line.)
 - **Onboarding integration** — does Debug Mode get a dedicated `kata-bootstrap` first-run path tied to install?
 - **Relation to the planning-approach↔delivery-mode alignment** item (BACKLOG) — Debug Mode is a 4th mode to align.
 
 ## Scope / sequencing
-- **Depends on:** `capability-aware-assignment` (language specialists) + version-up discipline (built) +
-  `kata-diagnose` (built). Naturally **after** capability-aware-assignment.
+- **Self-contained MODE** — peer of version-up/one-shot; selected at bootstrap, pointed at a whole codebase.
+- **Depends on (built, reused):** version-up discipline + `kata-diagnose` + `kata-graph` + the security stack.
+  **Does NOT depend on `capability-aware-assignment`** — that is an independent item; Debug Mode ships its own
+  in-mode specialist selection and they can converge later if it pays off.
 - **Path:** grill → DESIGN → freeze-gate review → build through the loop (contract-bearing). Not bundled.
 
 ## Out of scope (for now)

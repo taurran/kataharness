@@ -65,7 +65,9 @@ to each task.**
 
 ## Scope / sequencing
 - **Depends on:** install-portability (environment detection) + `kata-graph` (structure/language). Phase-5 work.
-- **Primary consumer:** `debug-mode` (its language-specialist debug agents are this layer's first heavy use).
+- **Potential consumer (NOT a coupling):** `debug-mode` is a **self-contained mode** with its own in-mode
+  specialist selection and does **not** depend on this layer (operator anti-bloat call, 2026-06-25). If both ship,
+  they MAY converge on a shared specialist-profile mechanism — but neither blocks the other.
 - **Pairs with:** multi-model-orchestration (the model/host axis) + testing-model.
 - **Path:** grill → DESIGN → PLAN → build through the loop (contract-bearing).
 
