@@ -88,9 +88,11 @@ no contradictions + two-builders-can't-diverge, then a fresh-context `kata-revie
   **function-model (oracle of intent) + scoped characterization suite (don't-break proof)** — and the generated
   suite is **left behind** as conversion value (a tested repo). Provenance: operator round 2.
 - **DG-1c → RESOLVED: comprehension inputs = graph + core context (assumed) + ALL of:** commit history/blame
-  (intent-over-time + churn hotspots) · **cross-module contract inference** (the tie-ins) · **reuse `kata-understand`**
-  to build the function-model (anti-bloat, F2) · **`kata-research` idioms + low-confidence flagging** (thin-context
-  areas flagged, deepened or surfaced — never silently guessed). Provenance: operator round 2.
+  (intent-over-time + churn hotspots) · **cross-module contract inference** (the tie-ins) · ~~reuse `kata-understand`~~
+  · ~~`kata-research` idioms~~ + low-confidence flagging (thin-context areas flagged, deepened or surfaced — never
+  silently guessed). Provenance: operator round 2. **⚠ SUPERSEDED by round-7 H2/H5:** the function-model is built by
+  the NEW **`kata-comprehend`** (NOT `kata-understand` — phantom reuse); in-mode idiom research lives in
+  `kata-comprehend` (NOT escalation-routed `kata-research`). See the round-7 remediation + the synced design summary.
 - **DG-4b → RESOLVED: v1 discovery techniques = the confirmed five (Snyk · run tests · static/types/lint ·
   `kata-diagnose` · `kata-research`) PLUS:** the **function-model deviation detector** (the headline SEMANTIC
   source) · **cross-module tie-in/contract mismatch** · **commit-churn/blame hotspots** · **dynamic analysis**
