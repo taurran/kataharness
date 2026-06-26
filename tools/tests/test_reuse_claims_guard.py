@@ -22,10 +22,9 @@ from pathlib import Path
 import validate_skills as v
 
 POINTER = "protocol/reuse-claims.md"
-# LD3 load-bearing terms as they appear as continuous substrings in protocol/reuse-claims.md.
-# Note: "claim to verify, not an assumption" wraps across a Markdown blockquote line break in
-# the raw file ("not an\n> assumption"), so the guarded substring is "claim to verify, not an".
-LD3_TERMS = ["claim to verify, not an", "NEW capability", "documentation-only seam"]
+# LD3 load-bearing terms as they appear verbatim in protocol/reuse-claims.md (the contract is
+# reflowed so the full phrase stays on one line, m5).
+LD3_TERMS = ["claim to verify, not an assumption", "NEW capability", "documentation-only seam"]
 
 
 # ---------------------------------------------------------------------------
@@ -154,6 +153,32 @@ def test_kata_plan_rubric_pointer_missing_errors(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# 2d. a producer skill ABSENT entirely → error (m4: default-FAIL, never silently stop enforcing)
+# ---------------------------------------------------------------------------
+
+def test_real_tree_producers_exist_passes():
+    """The real tree has both producer skills → check_reuse_claims_producers_exist is clean."""
+    assert v.check_reuse_claims_producers_exist(v.load_skills()) == []
+
+
+def test_absent_producer_skill_errors(tmp_path, monkeypatch):
+    """If a producer skill (e.g. kata-tdd) is missing from the tree, the existence guard must
+    ERROR loudly rather than let the content-check silently stop enforcing (m4 / L12c)."""
+    # A SKILLS_DIR that has kata-design-doc but NOT kata-tdd.
+    skills_dir = tmp_path / "skills"
+    (skills_dir / "plan" / "kata-design-doc").mkdir(parents=True)
+    (skills_dir / "plan" / "kata-design-doc" / "SKILL.md").write_text("x", encoding="utf-8")
+    monkeypatch.setattr(v, "SKILLS_DIR", skills_dir)
+
+    findings = v.check_reuse_claims_producers_exist([])
+
+    assert any(
+        f.level == "ERROR" and "kata-tdd" in f.where
+        for f in findings
+    ), f"expected ERROR for absent producer skill kata-tdd; got {findings}"
+
+
+# ---------------------------------------------------------------------------
 # 3. contract-body term removed → error
 # ---------------------------------------------------------------------------
 
@@ -161,9 +186,9 @@ def test_contract_body_term_missing_errors(tmp_path, monkeypatch):
     """Removing a LD3 load-bearing term from reuse-claims.md → check_protocol_schemas ERROR."""
     proto_dir = tmp_path / "protocol"
     proto_dir.mkdir()
-    # Write a reuse-claims.md that is MISSING "documentation-only seam".
+    # Write a reuse-claims.md that has the other two terms but is MISSING "documentation-only seam".
     (proto_dir / "reuse-claims.md").write_text(
-        "claim to verify, not an\nNEW capability\n(seam line intentionally absent)\n",
+        "claim to verify, not an assumption\nNEW capability\n(seam line intentionally absent)\n",
         encoding="utf-8",
     )
     monkeypatch.setattr(v, "PROTOCOL_DIR", proto_dir)

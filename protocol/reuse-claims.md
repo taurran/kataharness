@@ -15,9 +15,10 @@ mandatory, and auditable at every site where reuse claims are authored.
 
 > Before writing **"reuses / composes / via the existing X"** (or "the orchestrator already writes Y", "this
 > already exists/has Z"), **grep/read X and confirm it exposes the exact field / event / output / path the
-> design assumes — cite the concrete `file:line`.** Treat "this already exists" as a **claim to verify, not an
-> assumption**. If the surface is not there, label it a **NEW capability** and scope it. A reuse claim with no
-> cited surface is a documentation-only seam (the project's signature failure mode) — do not freeze it.
+> design assumes — cite the concrete `file:line`.** Treat "this already exists" as a
+> **claim to verify, not an assumption**. If the surface is not there, label it a **NEW capability** and scope
+> it. A reuse claim with no cited surface is a documentation-only seam (the project's signature failure mode) —
+> do not freeze it.
 
 ## Verified vs phantom reuse claims
 

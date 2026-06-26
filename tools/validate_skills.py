@@ -312,10 +312,8 @@ REQUIRED_PROTOCOL = {
     # initiation (D88/DESIGN §2): the PINNED INTENT.md artifact schema.
     "intent.md": ["kind", "goal", "fixes", "features", "changeSummary", "target", "grillDepth", "readiness"],
     # recurrence-hardening (LD3/LD5b): the three load-bearing guard terms must remain in the contract body.
-    # Note: the LD3 phrase "claim to verify, not an assumption" wraps across a Markdown blockquote line break
-    # in protocol/reuse-claims.md (raw bytes: "not an\n> assumption"), so the check uses the longest
-    # continuous on-line match: "claim to verify, not an" (guards the same text; still bites on removal).
-    "reuse-claims.md": ["claim to verify, not an", "NEW capability", "documentation-only seam"],
+    # The full LD3 phrase is guarded verbatim (the contract is reflowed so it stays on one line, m5).
+    "reuse-claims.md": ["claim to verify, not an assumption", "NEW capability", "documentation-only seam"],
 }
 
 
@@ -406,6 +404,9 @@ def check_reuse_claims_pointers(skills: list[Skill]) -> list[Finding]:
     for name in ("kata-design-doc", "kata-tdd"):
         s = skill_map.get(name)
         if s is None:
+            # Not in this skill set → nothing to check here. Producer EXISTENCE against the real
+            # tree is enforced separately by check_reuse_claims_producers_exist (m4), so this
+            # content check stays safe over arbitrary/fixture skill lists.
             continue
         if pointer not in s.body:
             errors.append(Finding("ERROR", s.dir.name, f"skill body must reference '{pointer}' (LD4 pointer, never-tiered)"))
@@ -416,6 +417,23 @@ def check_reuse_claims_pointers(skills: list[Skill]) -> list[Finding]:
         if pointer not in rubric.read_text(encoding="utf-8"):
             errors.append(Finding("ERROR", "kata-plan/RUBRIC.md", f"RUBRIC must reference '{pointer}' (LD4 pointer, never-tiered)"))
 
+    return errors
+
+
+@check
+def check_reuse_claims_producers_exist(skills: list[Skill]) -> list[Finding]:
+    """m4 (default-FAIL): the reuse-claims producer skills MUST exist in the real tree.
+
+    The pointer content-check (check_reuse_claims_pointers) silently skips a producer that
+    isn't present, so a future rename/removal would quietly stop enforcing the guard — the
+    exact "unwired lessons recur" risk (L12c) this whole change exists to prevent. This check
+    asserts existence against SKILLS_DIR directly (independent of the passed skill list, so it
+    is stable over fixtures), and fails loudly if a producer skill is gone.
+    """
+    errors: list[Finding] = []
+    for name in ("kata-design-doc", "kata-tdd"):
+        if not list(SKILLS_DIR.glob(f"*/{name}/SKILL.md")):
+            errors.append(Finding("ERROR", name, f"reuse-claims producer skill '{name}' is missing from the tree (LD4 guard cannot be enforced; m4/L12c)"))
     return errors
 
 
