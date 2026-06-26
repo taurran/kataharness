@@ -9,3 +9,4 @@ tools/.venv/
 .kata/
 /INTENT.md
 .claude/
+.kata-settings.json

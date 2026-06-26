@@ -1,0 +1,5 @@
+{
+  "name": "kata",
+  "description": "KataHarness - a tool-agnostic, skills-based agent harness (the Kata Loop).",
+  "version": "0.1.0"
+}

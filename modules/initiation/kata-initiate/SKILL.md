@@ -152,8 +152,9 @@ uninspected does not count (see the gate checklist below).
 | `per-folder:<path>` | Manual per-artifact path configuration (advanced — surface only if asked). |
 | absent | No vault configured for this run. |
 
-Collect `target.vault` from the mirror conversation. Do not trigger installer mechanics — those are
-deferred to Phase 5.
+Collect `target.vault` from the mirror conversation. The default parent project folder + vault location
+are remembered in the central settings file (`tools/kata_settings.py`); installer mechanics are shipped
+(`tools/kata_install.py` + `docs/SETUP.md`). Seed `target.vault`/`target.path` from the settings when present.
 
 **Platform:**
 
@@ -167,6 +168,25 @@ deferred to Phase 5.
 
 If `Kiro`, `Quick`, or `Other`, note that the platform's module-swap mechanism applies (see
 `modules/initiation/AGENTS.md`).
+
+### 2d. Find the project (search → confirm) — for `existing` runs
+
+When `target.kind == existing` and the exact `target.path` isn't already known, **don't ask for a full
+path up front.** Ask the human for the **project name + roughly where it is**, then resolve it:
+
+1. Read the remembered **default parent project folder** from the settings (`kata_settings.read_settings()`);
+   the human may override it for this run.
+2. Run the search: `project_find.find_projects(name, parentDir, rough_location)`.
+3. Resolve by candidate count:
+   - **one match** → show it and confirm;
+   - **several** → list them (best-first) and let the human pick;
+   - **none** → ask for the full path directly.
+4. The confirmed folder becomes `target.path`.
+
+**Copy mode (Debug Mode import-a-copy / aggressive changes on untrusted or large repos):** if the human
+chooses to work on a copy, also ask for a **destination folder**, then
+`kata_install.copy_project(src, dest)` and set `target.path` to the copy. The original is left untouched
+(the copy is a plain file copy — it never runs git against a vault).
 
 ---
 

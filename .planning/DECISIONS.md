@@ -929,3 +929,42 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   mutation bite) is the durable proof. Record: `specs/recurrence-hardening/{PLAN-phantom,REPORT-phantom}.md`.
   Backout tag `pre-phantom-hardening`. **This makes the general `recurrence-hardening` spec (D101) concrete** —
   the detector/`kata-improve`-proposal/`kata-promote`-gate machinery is still the deferred general build.
+- **D103 — Phase-5 re-sequencing + install-portability scope-lock (2026-06-26).** A grounded scoping pass
+  (verify-before-reuse pre-flight per [[reuse-claims]], `file:line`-cited) corrected two HANDOFF assumptions:
+  **(1)** install-portability's **selection UX already landed** — target/platform/vault selection lives in
+  `kata-initiate` Phase 2 (`modules/initiation/kata-initiate/SKILL.md:93–170`, the GL-R3c fold), and the
+  kata.config path-seeds exist schema-level (`protocol/config.md:22–35`); so install-portability's *real*
+  remaining surface is the **installer mechanics + workspace binding**, not the interview. **(2)** Debug Mode's
+  build blocks on **TWO** locks, not one: install-portability **AND** `kata-preflight` (D29, planned-not-built;
+  `debug-mode/DESIGN.md:137`) — install-portability alone does **not** unblock Debug Mode. *Scope:* install-
+  portability v1 = **full installer layer** (workspace-binding file + discovery + the three user paths
+  [PokeVault-link · BYO-vault-scaffold · aim-each-folder] + the stable install contract + per-platform installer
+  dispatch + `docs/SETUP.md`); selection UX is NOT re-built. *Sequence (Track A first):* grill→freeze→build
+  **install-portability** → **kata-preflight** → **Debug Mode** build, THEN Phase-5 strategic (multi-model ·
+  capability-aware-assignment · testing-model · strategy BRIEFs · v0.1 release-checklist). *Why Track-A-first:*
+  Debug Mode is the onboarding/conversion killer-app and the sole reason install-portability became critical-path;
+  nothing else is currently blocked waiting on the foundation items. *Open (decided at install-portability's
+  freeze):* whether the `kata-preflight` grill folds into install-portability's (the `preflight.*` config seeds,
+  `protocol/config.md:28–35`, already couple them) or runs as a clean separate grill.
+- **D104 — install-portability BUILT (the simple model) — 2026-06-26.** Grilled (`kata-grill-standard`), frozen,
+  built, reviewed. **Mid-grill course-correction (operator):** the early grill drifted into a config-resolution
+  cathedral (two-layer bindings, discovery precedence chains, install-contract taxonomy). Operator reset it to a
+  plain model → memory [[grill-in-plain-terms]]. **The shipped model:** KataHarness lives in one central place and
+  installs into the platform there; a small git-ignored `.kata-settings.json` remembers **two settings** — the
+  default parent project folder + the vault location (where the second brain sits, for the learning component);
+  each run, preflight asks project **name + rough location**, **searches** under the parent, and **confirms** the
+  match (N→list, 0→type path); **copy mode** also asks a destination and works on the copy (original untouched).
+  **Multi-platform (needed today, before benchmarking):** one small install routine per platform —
+  **`claude` built + verified end-to-end** (flat-links all 36 skills into the host skills dir → discoverable;
+  `.claude-plugin/plugin.json` for plugin distribution), **`codex`/`kiro` best-effort** (same pattern, not
+  host-verifiable here), **`quick` no-op** (brings its own installer), unknown → manual steps.
+  **Code:** `tools/{project_find,kata_settings,kata_install}.py` (+ CLI) + tests; `docs/SETUP.md` (cordoned, README
+  points to it); `kata-initiate` Phase 2d (search/confirm + copy). **Gates:** pytest **490**, validate **36/0**,
+  Snyk **0 medium+** (residual Low CWE-23 path FPs, `..`-guarded). **D98 adversarial review = SHIP-WITH-FIXES** →
+  fixed: settings-write overclaim (docs corrected), destructive re-link now refuses to clobber a non-kata dir
+  (`.kata-managed` marker), `write_settings` validates parentDir/vaultDir existence. **Honest scope:** never-git-
+  vault is structural (no subprocess import); "verified" = on-disk placement, not in-host discovery; Codex/Kiro
+  ship documented best-effort; Windows install method = copy (symlink needs Developer Mode → re-run to update).
+  **Supersedes the "full installer layer" framing of D103** — multi-platform stays in scope but built the simple
+  way, not as an installer-interface taxonomy. Records: `specs/install-portability/{DESIGN,GRILL-LEDGER}.md`.
+  Backout tag `pre-install-portability`. **Debug Mode still also needs `kata-preflight` before its build (D103).**

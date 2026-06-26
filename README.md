@@ -15,10 +15,9 @@ not a black box. The name is the method — the **Improvement Kata**: each loop 
 > New here? Read [`AGENTS.md`](./AGENTS.md) (canonical) → [`docs/DESIGN.md`](./docs/DESIGN.md) (the charter) →
 > [`docs/STANDARDS.md`](./docs/STANDARDS.md) (conventions).
 >
-> **Setting up / don't have a vault?** Install & workspace setup will live in its own cordoned doc
-> (`docs/SETUP.md`, in progress) — it lets you link [PokeVault], point at your own vault, or aim each folder
-> yourself, with modular per-platform installers. Scope: [`.planning/specs/install-portability/BRIEF.md`](./.planning/specs/install-portability/BRIEF.md).
-> Until it ships, the harness runs in-repo.
+> **Setting up / don't have a vault?** See **[`docs/SETUP.md`](./docs/SETUP.md)** — one central install, a
+> small settings file (default project folder + optional vault), and a per-platform installer (Claude built;
+> Codex/Kiro best-effort). No vault needed to start: the harness runs fine pointed at a plain project folder.
 
 [PokeVault]: # "PokeVault — the reference vault/toolkit home (install link to be added)"
 

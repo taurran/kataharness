@@ -153,13 +153,22 @@ The immediate agenda, in order:
    calibration = fast-follows). LD1–LD13. **Build PARKED behind `install-portability` (built first) + `kata-preflight`**
    → **install-portability is now the critical-path predecessor.** Also captured: `capability-aware-assignment` BRIEF
    (the "multi-modal assignment" item). Artifacts: `specs/debug-mode/{BRIEF,GRILL-LEDGER,RESEARCH,DESIGN}.md`.
-2. **★ NEXT: Phase 5 EXTERNAL + grill the new BRIEFs.** **install-portability is now critical-path** (unblocks Debug
-   Mode) — grill→freeze→build it first. Then multi-model · capability-aware-assignment · the strategy BRIEFs
-   (the BYO-second-brain pointer the C-arc
-   needs) → multi-model-orchestration → testing-model (BRIEFs exist). In parallel, **grill → freeze → freeze-gate**
-   the two strategy BRIEFs: `specs/second-brain-learning/BRIEF.md` (Recall/Reason; the Recall *contract* is the
-   load-bearing design) and `specs/recurrence-hardening/BRIEF.md`. Then the v0.1 release-checklist — flip **Policy A**
-   (hold-at-0.1.0 → bump-on-modify, STANDARDS §3 / ROADMAP).
+2. **★ NEXT (D103, 2026-06-26 — re-sequenced Track-A-first; IN PROGRESS):** the critical path to the Debug Mode
+   killer-app has **TWO** locks, not one — **install-portability AND `kata-preflight`** (`debug-mode/DESIGN.md:137`);
+   install-portability alone does **not** unblock Debug Mode. A grounded scoping pass corrected the old "THE unblock"
+   claim: install-portability's **selection UX already landed** in `kata-initiate` Phase 2 (the GL-R3c fold,
+   `modules/initiation/kata-initiate/SKILL.md:93–170`), so its v1 = the **full installer layer** (workspace-binding
+   file + discovery + 3 user paths + install contract + per-platform dispatch + `docs/SETUP.md`), NOT the interview.
+   **Order:** grill→freeze→build **install-portability** → **kata-preflight** (fold-vs-separate grill decided at
+   install-portability's freeze; `preflight.*` seeds at `protocol/config.md:28–35` couple them) → **Debug Mode**
+   build → THEN Phase-5 strategic: multi-model-orchestration · capability-aware-assignment · testing-model · the
+   strategy BRIEFs (`specs/second-brain-learning/BRIEF.md` — the Recall *contract* is load-bearing — +
+   `specs/recurrence-hardening/BRIEF.md`) · then the v0.1 release-checklist (flip **Policy A**, STANDARDS §3 / ROADMAP).
+   **✅ install-portability BUILT (D104, the simple model — central install + 2-setting file + per-run project
+   search + copy mode + per-platform install: Claude verified, Codex/Kiro best-effort, Quick own).** pytest 490,
+   validate 36/0, Snyk 0 med+, D98 review SHIP-WITH-FIXES→fixed. Records: `specs/install-portability/{DESIGN,GRILL-LEDGER}.md`.
+   **★ NEXT = `kata-preflight`** (the *other* Debug Mode blocker, D29/D103) → then Debug Mode build. NOTE the
+   mid-grill lesson: memory [[grill-in-plain-terms]] — keep design questions plain + the simplest model that works.
 3. **Far-future.** `kata-loop-benchmark` (now the **keystone** that defines the C-arc unlock + measures whether
    learning/hardening pays off — D99) → recursive parallelism (DAG-within-DAG) gated on a hardened separability test.
 
