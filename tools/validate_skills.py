@@ -311,6 +311,9 @@ REQUIRED_PROTOCOL = {
     "handoff.md": ["Boundary handoff", "sprint index"],
     # initiation (D88/DESIGN §2): the PINNED INTENT.md artifact schema.
     "intent.md": ["kind", "goal", "fixes", "features", "changeSummary", "target", "grillDepth", "readiness"],
+    # recurrence-hardening (LD3/LD5b): the three load-bearing guard terms must remain in the contract body.
+    # The full LD3 phrase is guarded verbatim (the contract is reflowed so it stays on one line, m5).
+    "reuse-claims.md": ["claim to verify, not an assumption", "NEW capability", "documentation-only seam"],
 }
 
 
@@ -382,6 +385,56 @@ def check_rubric_wikilinks(_skills: list[Skill]) -> list[Finding]:
             if ref not in targets:
                 out.append(Finding("ERROR", f"{rubric.parent.name}/RUBRIC.md", f"unresolved skill wikilink [[{ref}]]"))
     return out
+
+
+@check
+def check_reuse_claims_pointers(skills: list[Skill]) -> list[Finding]:
+    """LD5(a): assert protocol/reuse-claims.md is referenced in all three concrete paths.
+
+    Dual mechanism (mirrors check_rubric_wikilinks pattern):
+    - kata-design-doc, kata-tdd: checked via loaded-skill bodies (skills arg).
+    - kata-plan/RUBRIC.md:       checked via separate file read (not a loaded skill).
+    Any missing reference is an ERROR (default-FAIL, LD5 / D33 never-tiered).
+    """
+    errors: list[Finding] = []
+    pointer = "protocol/reuse-claims.md"
+
+    # Part 1 — skill bodies: kata-design-doc and kata-tdd are loaded skills; check their bodies.
+    skill_map = {s.name: s for s in skills}
+    for name in ("kata-design-doc", "kata-tdd"):
+        s = skill_map.get(name)
+        if s is None:
+            # Not in this skill set → nothing to check here. Producer EXISTENCE against the real
+            # tree is enforced separately by check_reuse_claims_producers_exist (m4), so this
+            # content check stays safe over arbitrary/fixture skill lists.
+            continue
+        if pointer not in s.body:
+            errors.append(Finding("ERROR", s.dir.name, f"skill body must reference '{pointer}' (LD4 pointer, never-tiered)"))
+
+    # Part 2 — kata-plan/RUBRIC.md: NOT a loaded skill; read separately (mirrors check_rubric_wikilinks).
+    rubric = SKILLS_DIR / "plan" / "kata-plan" / "RUBRIC.md"
+    if rubric.exists():
+        if pointer not in rubric.read_text(encoding="utf-8"):
+            errors.append(Finding("ERROR", "kata-plan/RUBRIC.md", f"RUBRIC must reference '{pointer}' (LD4 pointer, never-tiered)"))
+
+    return errors
+
+
+@check
+def check_reuse_claims_producers_exist(skills: list[Skill]) -> list[Finding]:
+    """m4 (default-FAIL): the reuse-claims producer skills MUST exist in the real tree.
+
+    The pointer content-check (check_reuse_claims_pointers) silently skips a producer that
+    isn't present, so a future rename/removal would quietly stop enforcing the guard — the
+    exact "unwired lessons recur" risk (L12c) this whole change exists to prevent. This check
+    asserts existence against SKILLS_DIR directly (independent of the passed skill list, so it
+    is stable over fixtures), and fails loudly if a producer skill is gone.
+    """
+    errors: list[Finding] = []
+    for name in ("kata-design-doc", "kata-tdd"):
+        if not list(SKILLS_DIR.glob(f"*/{name}/SKILL.md")):
+            errors.append(Finding("ERROR", name, f"reuse-claims producer skill '{name}' is missing from the tree (LD4 guard cannot be enforced; m4/L12c)"))
+    return errors
 
 
 def run_checks(skills: list[Skill]) -> list[Finding]:

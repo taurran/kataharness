@@ -68,6 +68,8 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
 - Every LOCKED decision the task implements is quoted verbatim from the DESIGN.
 - Every task has a runnable verify and falsifiable acceptance criteria.
 - The DAG is acyclic and every task is reachable.
+- Any "reuses / composes / already exists" claim in `read_first` or `action` obeys `protocol/reuse-claims.md` —
+  the surface is cited with a concrete `file:line`, or the capability is labeled NEW.
 
 When these hold, **freeze the plan** and hand to [[kata-orchestrate]].
 

@@ -40,6 +40,9 @@ the original spec/requirements.
 ## The DESIGN contract MUST contain
 1. **Requirements** it satisfies (traceable IDs where they exist).
 2. **Where it lives** — the exact components/files/insertion points it touches (grounded in the code).
+   **Reuse-claims pre-flight (`protocol/reuse-claims.md`):** Before writing any "reuses / composes / via the
+   existing X" or "already exists" claim — in §2 or §5 — follow `protocol/reuse-claims.md`: grep/read X and
+   cite the concrete `file:line`, or label it a NEW capability. Do not freeze a phantom claim.
 3. **LOCKED decisions** — each resolved branch from the ledger, restated as a numbered locked decision with
    its rationale. Mark any tunable knobs explicitly (locked *structure*, tunable *value*).
 4. **The integrity/edge cases** surfaced during grilling and how they're handled.
