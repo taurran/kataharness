@@ -1002,3 +1002,30 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   adapter built (kiro/copilot/cursor = stubs). Backout `pre-multimodel-slice`. **Remaining for the full layer:** wire
   dispatch into `kata-orchestrate` (LD6 concurrency + LD7 fallback) + the `roles` load-guard + the multi-modal
   preflight question in `kata-initiate` + kiro/copilot/cursor adapters + `.agents/skills` install targeting.
+- **D106 — Red-team hardening of today's install + multi-model work (2026-06-26, `14e2ff3`).** A 3-pass adversarial
+  sweep (dead-code/loose-ends + per-feature break-it) on D104/D105 found real defects, all fixed: **copy_project
+  destroyed the SOURCE** when dest was an ancestor of src (broke copy-mode's "original untouched" promise) → reject
+  any overlap; **researcher/coder reported `completed` on an empty result** → normalize default-FAILs on empty for
+  every role; **the confirm probe false-positived on prompt echo** (token was IN the prompt) → the model must now
+  GENERATE a transformed token; **a confirmed-but-undispatchable platform crashed dispatch** → returns a `failed`
+  envelope + `_PROBE_COMMANDS` restricted to codex (the only dispatch adapter); **read_settings crashed on corrupt
+  JSON** → degrades to BC1; **flat-link silently dropped same-named skills** → refuses dupes; build_brief rejects
+  absolute/`..` resultPath (cross-OS); evaluator score validated [0,1]. **Dead code/loose ends:** `_brief_prompt`
+  now conveys the unused inputs/ownedFiles/outputContract fields + fixes the write-vs-emit collision; `confirm_platform`
+  wired into the CLI (`--confirm`, was test-only); dangling copilot/cursor probe entries removed. **Doc-vs-code lies
+  corrected:** `protocol/config.md` + multi-model DESIGN no longer claim (present-tense, false `file:line`) that the
+  orchestrator load-guard validates `roles` (it doesn't yet — marked design-staged/PARKED); the install DESIGN's "no
+  subprocess import" reworded; both DESIGNs note `adapters/<platform>` + `.agents/skills` are TARGET not current.
+  +14 tests. pytest 532, validate 36/0, Snyk 0 med+. What held under attack: path-traversal guards, the non-clobber
+  marker, fail-closed routing, no command injection, the prior fixes.
+- **D107 — Loop-init banner (WS-3 narration, 2026-06-26, `2826df1`+`fe8d015`).** Every run now opens with a
+  **deterministic boxed readout** so the operator sees, in the conversation, that it is **KataHarness** executing +
+  a brief summary of what: `tools/kata_banner.py` (pure, stdlib-only, byte-identical every run — consistency D18;
+  full boxed banner at loop init, compact `↻ … loop-back` line on version-up re-entry; missing fields omitted).
+  Wired into `kata-loop` (drawn from INTENT.md + kata.config + the frozen plan); documented in `protocol/narration.md`
+  §5 as the one fixed-format narration element, additive to the phase map + bound by the honesty guard. **Painted in
+  the closeout-report palette** (`modules/closeout/resources/BRAND.md` — Hokusai ochre brand-mark / warm-border frame
+  / mid-blue labels / paper values, dark-terminal accents) via 24-bit ANSI behind `--color` (auto-on at a TTY, honors
+  `NO_COLOR`); the run readout + the closeout report now share one visual identity. **Caveat:** ANSI renders on an
+  ANSI-capable surface (the conductor runs it as a command); `--no-color`/`NO_COLOR` falls back to plain on a
+  markdown-only surface. +10 tests. pytest 542, validate 36/0.

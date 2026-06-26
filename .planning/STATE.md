@@ -1,5 +1,32 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-26, install-portability BUILT · multi-model GRILLED+FROZEN+proof-slice BUILT · red-team
+> hardened · loop-init banner — tip `fe8d015`, D104–D107; pytest 542 · validator 36/0 · Snyk 0 med+):** A big
+> build+research day. **(D104) install-portability BUILT** (the *simple* model after an operator course-correction
+> from a config-resolution cathedral → memory [[grill-in-plain-terms]]): one central install + a 2-setting
+> `.kata-settings.json` (default parent project folder + vault/second-brain location) + per-run **project search**
+> (name + rough location → search → confirm; copy mode) + per-platform installer (Claude verified end-to-end via
+> flat-link into `~/.claude/skills/`; Codex/Kiro best-effort; Quick own) + `docs/SETUP.md` + `.claude-plugin/plugin.json`.
+> **(D105) multi-model-orchestration GRILLED → FROZEN DESIGN → Codex-validator PROOF-SLICE BUILT** (the operator's
+> real "multi-modal" vision: route loop ROLES to platforms — Claude=coder, Codex=validator, Kiro=researcher).
+> Grounded in **5 cited research agents** (`RESEARCH.md`): the `SKILL.md` Agent-Skills format is a **shared standard**
+> across Claude/Codex/Kiro/Copilot/Cursor, and **all are headless-automatable**. **5 role groups** (coder · validator
+> [red-team+anti-slop+grounding] · researcher · orchestrator · **evaluator** = a lightweight inline scorer that
+> accepts/sends-back/**rerolls** via `bakeoff`); **default all-on-host, multi-modal opt-in at preflight**; **any role
+> routable** (coder stays one sustained agent); **files+CLI dispatch** (concurrent background subprocesses); **failure
+> → host fallback**; two orthogonal layers (platform/model × specialist). **Convergence HOLD#1: the D102 guard caught
+> over-claimed reuse → relabeled NEW (N1–N5 with schemas) → re-confirm SHIP.** Proof-slice = `tools/{kata_roles,
+> kata_dispatch}.py` + confirm-probe + `roles` config; **end-to-end proof** (validator→codex→normalized verdict)
+> against a stub-CLI seam (codex not installed → real run gated on install+confirm). **(D106) 3-pass red-team
+> hardening** of D104/D105 — fixed copy_project source-destruction, default-FAIL gaps, a spoofable confirm probe, a
+> confirm→crash trap, corrupt-JSON/dup-skill robustness, + doc-vs-code lies (the `roles` load-guard is design-staged,
+> not wired). **(D107) loop-init banner** — every run opens with a deterministic boxed `KATAHARNESS 改善型 · executing`
+> readout (`tools/kata_banner.py`), painted in the closeout-report palette (`--color`); wired into `kata-loop`,
+> documented in `protocol/narration.md` §5. **NEXT (choose):** finish the multi-model layer (wire `kata_dispatch`
+> into `kata-orchestrate` + the `roles` load-guard + the "make this multi-modal?" preflight + more adapters) — makes
+> a real single-vs-multi-model benchmark runnable; OR `kata-preflight` (the other Debug Mode blocker) → Debug Mode
+> build; OR grill capability-aware-assignment. Records: `specs/{install-portability,multi-model-orchestration}/*`.
+
 > **CURRENT (2026-06-25, Debug Mode GRILLED + DESIGN FROZEN + PARKED — `d010434`):** Roadmap session. Captured two
 > big Phase-5 items as pre-grill BRIEFs — **capability-aware (multi-modal) assignment** (loop-wide stack-detection →
 > specialist routing; resolves multi-model-orchestration's flagged "multi-modal?" question) and **Debug Mode** — then

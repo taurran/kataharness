@@ -1,60 +1,89 @@
 # KataHarness
 
-**A controllable agent harness that spans the whole spectrum — from spec-driven, interview-shaped sprint
-coding to fully automated, self-learning one-shots — all on one vetted, grounded process.**
+**The agent harness with a control dial — from spec-driven, interview-shaped sprint coding to fully automated,
+self-learning one-shots — on one vetted, grounded process that doesn't drift, doesn't spiral, and *proves* its
+own work instead of trusting it.**
 
-Most agent tools force a bad choice: babysit every step, or let it loose and watch it spiral. KataHarness
-gives you a **dial** instead. Tighten it for **spec-influenced, sprint-by-sprint control**, where an interview
-(the "grill") shapes the work to *your* codebase and *your* style and you approve at every boundary. Loosen it
-for **hands-off one-shots** that resolve their own ambiguity and learn from every run. In between sits a set of
-**well-defined modes** — pick the rigor, the cadence, and how much the harness asks you. Whatever you pick, the
-same backbone holds: the **plan doesn't drift**, a fresh-context evaluator that **assumes failure** gates
-"done," everything is **grounded and versioned**, and the durable artifacts land in **your own project vault** —
-not a black box. The name is the method — the **Improvement Kata**: each loop sharpens the loop.
+Most agent loops make you pick a side — **babysit every step, or let it loose and hope.** And under the hood,
+most are the same shape: take a prompt, generate, declare victory. KataHarness is built differently, on purpose.
+It **interviews you first** and learns your codebase before it writes a line; it **assumes its own work is
+broken** until a fresh, no-write evaluator proves otherwise; its **plan can't drift**; it **catches its own
+over-claims**; it **runs across multiple models at once**; and it **gets sharper every run** — with everything
+landing in **your vault**, not a black box. The name is the method — the **Improvement Kata**: each loop sharpens
+the loop.
 
 > New here? Read [`AGENTS.md`](./AGENTS.md) (canonical) → [`docs/DESIGN.md`](./docs/DESIGN.md) (the charter) →
 > [`docs/STANDARDS.md`](./docs/STANDARDS.md) (conventions).
 >
-> **Setting up / don't have a vault?** See **[`docs/SETUP.md`](./docs/SETUP.md)** — one central install, a
-> small settings file (default project folder + optional vault), and a per-platform installer (Claude built;
-> Codex/Kiro best-effort). No vault needed to start: the harness runs fine pointed at a plain project folder.
+> **Getting started / don't have a vault?** See **[`docs/SETUP.md`](./docs/SETUP.md)** — one central install, a
+> small settings file (default project folder + optional vault), and a per-platform installer. No vault needed
+> to start: point it at a plain project folder and go.
 
 [PokeVault]: # "PokeVault — the reference vault/toolkit home (install link to be added)"
 
 ---
 
-## What makes KataHarness different
+## Why it's different from other loops
 
-**The throughline is _control_.** Everything below is a way of keeping you in charge while the agents do the work.
+Most "agentic loops" are a thin wrapper around *prompt → generate → done*. KataHarness is a **disciplined process**
+with the guardrails that make autonomy actually trustworthy. The difference, point for point:
 
-- 🎛️ **You set the level of control — per run.** Run it fully human-in-the-loop (spec → grill → approve each
-  sprint), fully automated (a hands-off learning one-shot), or anywhere between. Nothing happens off-plan
-  without surfacing it to you first.
+| Most agent loops | **KataHarness** |
+|---|---|
+| Take a prompt and start coding | **Interview-first** — the *grill* interrogates your idea and learns your conventions into a **frozen spec** before any code |
+| The agent decides when it's "done" | **Default-FAIL** — a **fresh-context, no-write evaluator** must independently PASS; *nothing certifies its own work* |
+| The agent re-plans whenever it gets stuck | **No drift** — the plan is frozen and guarded; an unknown **escalates or parks**, it never silently re-plans |
+| Trust the agent's self-report | **Standing red-team** — an adversarial reviewer **tries to break** every contract-bearing build *before* it merges |
+| Plausible-but-fake reuse ("uses the existing X") slips through | **Verify-before-reuse guard** — the harness **catches its own phantom machinery** and forces it to be labeled new + scoped |
+| One model does everything | **Multi-model role routing** — bind each role to a different model/tool: Claude codes, Codex validates, Kiro researches |
+| Babysit *or* fire-and-forget | **A per-run control dial** — `skip → full` grill, one-shot ↔ sprint, essential → advanced rigor |
+| Output disappears into the tool | **Your vault** — durable **Obsidian-native, git-committed** plans, decisions, handoffs you own |
+| Context loss = start over | **File-based two-way handoff** — survives compaction, a dead session, or a tool switch with no re-derivation |
+| Static — same agent next month | **It learns** — mines every run into a second brain; distilled skills promote through a **human gate** |
+| Locked to one vendor | **Tool-agnostic** — one `SKILL.md` standard across Claude · Codex · Kiro · Cursor · Copilot |
+
+---
+
+## The feature set
+
+**The throughline is _control with proof_** — keeping you in charge *and* making "done" mean something.
+
+- 🎛️ **A control dial, per run.** Fully human-in-the-loop (spec → grill → approve each sprint), fully automated
+  (a hands-off learning one-shot), or anywhere between. Nothing happens off-plan without surfacing it first.
 - 🪜 **Well-defined modes, not vibes.** A consistent system of **effort/rigor tiers** (essential · standard ·
   advanced), **run-shapes** (individual · batch · version-up), and a **delivery axis** (one-shot · incremental
-  sprints). Same format across every mode — you compose the run, preview its cost, then launch.
+  sprints). Compose the run, preview its cost, launch — same format every time (consistency is the north star).
 - 🗣️ **An interview that codes like you do.** The **grill** interrogates your idea, learns your codebase's
-  conventions and your style, and enriches *your* intent into a frozen spec — with the depth dialed by you
-  (`skip → light → standard → full`). Whatever ambiguity you don't resolve up front gets resolved **in-loop by
-  a no-write research subagent**, or parked in an assumption log surfaced at the gate — never silently guessed.
-- 👥 **Built for every kind of builder.** Spec-driven sprint coder, version-up maintainer, or
-  one-shot-it-and-walk-away — same harness, different dials. It meets you where you work.
-- ✅ **Backed by sound, vetted process.** Grounding gates, **default-FAIL** evaluation, fresh-context
-  adversarial review, and industry-standard practice (TDD, DDD ubiquitous language, vertical-slice planning,
-  disjoint file-ownership). "Done" is *earned*, never self-declared — no skill certifies its own work.
-- 🧠 **It learns.** Every run mines its own decisions, reviews, and grill ledgers into a **second-brain LEARN
-  feed**; agents can distil reusable skills that pass a grounding check **and a human promotion gate** before
-  going universal. The harness you run next month is sharper than today's.
-- 🗂️ **Lives in your own vault / project.** Durable artifacts are **Obsidian-native** (frontmatter +
-  wikilinks + tags) and **git-committed** in *your* workspace — plans, decisions, handoffs, and the learn feed
-  are yours to read, not locked in a tool.
-- 💾 **Survives every boundary.** Two-way, file-based handoff means work outlives compaction, a dead session,
-  or a switch between agents/tools — a fresh agent re-enters mid-stream without re-deriving anything.
-- 🔌 **Tool-agnostic.** An agnostic core + thin per-tool adapters (Claude today; Codex/Kiro/ACP next). Your
-  discipline travels with you, not with one vendor.
+  conventions and your style, and enriches *your* intent into a frozen spec — depth dialed by you
+  (`skip → light → standard → full`). Ambiguity you don't resolve up front is resolved **in-loop by a no-write
+  research subagent** or parked in an assumption log surfaced at the gate — never silently guessed.
+- ✅ **"Done" is earned, never declared.** Grounding gates, **default-FAIL** evaluation, a **standing
+  fresh-context adversarial review** before every merge, and a **verify-before-reuse** guard that kills
+  documentation-only seams. Industry-standard practice underneath (TDD, DDD ubiquitous language, vertical-slice
+  planning, disjoint file-ownership, mutation-proven tests).
+- 🧩 **Multi-model orchestration.** Route loop *roles* to different platforms — Claude as coder, Codex as
+  validator, Kiro as researcher — coordinating over the shared filesystem, with the orchestrator as the single
+  source of truth. Default is single-model; multi-modal is an opt-in at setup. *(Foundation built; full routing
+  in progress.)*
+- 🧠 **It gets sharper every run.** Every run mines its own decisions, reviews, and grill ledgers into a
+  **second brain**; agents distil reusable skills that pass a grounding check **and a human promotion gate**
+  before going universal. When a failure-class *recurs*, the harness proposes **hardening the responsible
+  agent** — gated, never auto-mutated.
+- 🗂️ **Lives in your own vault.** Durable artifacts are **Obsidian-native** (frontmatter + wikilinks + tags)
+  and **git-committed** in *your* workspace — plans, decisions, handoffs, and the learn feed are yours to read.
+- 💾 **Survives every boundary.** Two-way, file-based handoff + prime-frame self-handoff means work outlives
+  compaction, a dead session, or a switch between agents/tools — a fresh agent re-enters mid-stream cold.
+- 🔌 **Tool-agnostic by design.** An agnostic core + thin per-tool adapters and a shared skills format
+  (Claude today; Codex/Kiro/Cursor/Copilot via the same `SKILL.md`). Your discipline travels with you, not the vendor.
+- 🖥️ **You always see what it's doing.** Every run opens with an on-brand `KATAHARNESS 改善型` readout — what
+  it's executing, in a glance — plus a live statusline and a durable, branded HTML closeout report.
+- 🐛 **Debug Mode (designed, next up).** Point it at a whole codebase and tell it to *debug in confidence* —
+  bugs out, behavior preserved — via an intent-model oracle + a corroboration-gated deviation pipeline. The
+  onboarding on-ramp: convert an existing repo to the loop.
 
 **In short — what people actually want:** an agent you can *trust* and *steer*, that *finishes*, doesn't
-spiral, doesn't lose your context, fits *how you build*, and *gets better over time* — on whatever tool you use.
+spiral, doesn't lose your context, fits *how you build*, proves its work, and *gets better over time* — on
+whatever model(s) you use.
 
 ---
 
@@ -85,16 +114,23 @@ spiral, doesn't lose your context, fits *how you build*, and *gets better over t
 
 ## Status
 
-**`v0.1.0-alpha.1` (first tagged milestone) — skill suite complete & green, not yet field-proven end-to-end.**
-35 skills, all `0.1.0`/experimental; validator 0 errors · tests passing · Snyk clean. Two self-dogfood runs
-done — the second was a real **orchestrated** version-up (concurrent worker subagents in isolated worktrees,
-fresh-context gate, human version-select). The full cognitive architecture is built for the **Claude-only
-core**, now spanning **one-shot and incremental (sprint) delivery**, plus the learning loop (LEARN feed +
-managed skill promotion). What remains before v0.1 *ships*: the **dogfood** (run the harness against a real
-target — its own next version) to turn "built" into "proven"; a small **install & portability layer** (a
-one-time init flow + workspace binding so it drops cleanly into *any* vault or project dir, not just the
-reference one); then the multi-tool **adapters** (Codex, Kiro, ACP). Live state:
-[`.planning/STATE.md`](./.planning/STATE.md) · roadmap: [`.planning/ROADMAP.md`](./.planning/ROADMAP.md).
+**`v0.1.0-alpha` — the full loop is built, green, and self-dogfooded; hardening toward a field-proven v0.1.**
+36 skills, all `0.1.0`/experimental; validator 0 errors · 540+ tests passing · Snyk clean (medium+ 0). The
+complete cognitive architecture runs on the **Claude core** across **one-shot and incremental (sprint)**
+delivery, with the learning loop (second-brain LEARN feed + human-gated skill promotion) wired. The harness
+has been built *by itself* through its own orchestrated loop multiple times — concurrent worker subagents in
+isolated worktrees, a fresh-context default-FAIL gate, a standing adversarial red-team, and human approval at
+each boundary.
+
+**Recently landed:** the **install & portability layer** (one central install + a 2-setting workspace config +
+per-run project search → it drops into any vault or project dir); the **multi-model orchestration** design +
+first cross-model proof-slice (route a role to Codex over the shared filesystem); the **loop-init banner**; and
+a **verify-before-reuse hardening** that makes the harness catch its own phantom machinery.
+
+**Honest about maturity:** experimental, not yet 1.0. The single-model Claude loop is the proven path;
+multi-model routing, the multi-tool adapters (Codex/Kiro/Cursor/Copilot), and **Debug Mode** are designed and
+partially built — see the roadmap. Live state: [`.planning/STATE.md`](./.planning/STATE.md) · roadmap:
+[`.planning/ROADMAP.md`](./.planning/ROADMAP.md).
 
 ## The spine (six non-negotiables)
 
@@ -109,7 +145,7 @@ reference one); then the multi-tool **adapters** (Codex, Kiro, ACP). Live state:
 
 ## The skills
 
-35 skills across the six loop phases (plus the Greater-Loop initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
+36 skills across the six loop phases (plus the initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
 `kata-diagnose`) share one `RUBRIC.md` method and expose depth tiers you dial per run.
 
 ```

@@ -1,12 +1,12 @@
 ---
-date: 2026-06-25 (D102 phantom-hardening MERGED · Debug Mode GRILLED + DESIGN FROZEN + PARKED behind install-portability · next = Phase 5 / install-portability is now critical-path)
-branch: master — private remote github.com/taurran/kataharness, tip e630d27 (PUSHED, in sync — `git log --oneline -3` for latest)
-green: validator 36 skills / 0 errors · pytest 456 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
-tags: pre-phantom-hardening · pre-fix-loop-hardening · pre-ws3 · pre-ws2-slopcheck · v0.1.0-alpha.3 · loop-hardening-complete (earlier: pre-s1/1.5/2/3a/3b · v0.1.0-alpha.1/.2/.3)
+date: 2026-06-26 (install-portability BUILT · multi-model GRILLED+FROZEN+proof-slice BUILT · red-team hardened · loop-init banner — D104–D107; next = finish multi-model layer OR kata-preflight→Debug Mode)
+branch: master — private remote github.com/taurran/kataharness, tip fe8d015 (8 commits UNPUSHED unless this session pushed — `git log --oneline origin/master..HEAD` to check)
+green: validator 36 skills / 0 errors · pytest 542 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
+tags: pre-install-portability · pre-multimodel-slice · pre-phantom-hardening · pre-ws3 · v0.1.0-alpha.3 · loop-hardening-complete
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
-# HANDOFF — KataHarness — 2026-06-26 (D102 phantom-hardening MERGED · Debug Mode GRILLED + DESIGN FROZEN + PARKED · next = install-portability, now critical-path)
+# HANDOFF — KataHarness — 2026-06-26 (install-portability BUILT · multi-model GRILLED+FROZEN+proof-slice · red-team hardened · banner — D104–D107)
 
 > **This session: a deep strategy + hardening arc on top of the (already-done) WS-1/2/3 + two-tier closeout.** Four
 > decisions, D98–D101: **(D98)** the **standing adversarial red-team** is now wired — `kata-review` runs after
@@ -54,7 +54,10 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 ⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated, harness-injected).
 
 ## 2. State *(orientation: VOLATILE)*
-- Branch `master`, tip `e630d27` (**pushed, in sync**; D102 phantom-hardening merged + Debug Mode DESIGN frozen/parked — run `git log --oneline -3` for the exact latest). **36 skills / 0 errors · pytest 456 · Snyk med+ 0.**
+- Branch `master`, tip `fe8d015` (D104 install-portability built · D105 multi-model frozen + proof-slice · D106 red-team
+  hardened · D107 banner — run `git log --oneline -10` for the arc; check `origin/master..HEAD` for unpushed). **36 skills /
+  0 errors · pytest 542 · Snyk med+ 0.** **New tools this day:** `tools/{project_find,kata_settings,kata_install,kata_roles,
+  kata_dispatch,kata_banner}.py` (+ tests). Specs: `specs/{install-portability,multi-model-orchestration}/{RESEARCH,GRILL-LEDGER,DESIGN}.md`.
   Confirm: `cd tools && uv run pytest -q && uv run python validate_skills.py`. **Windows gotcha:** git-bash mangles
   `/tmp/...` args to native python — use `C:/...` paths, a `.kata`-relative path, or `MSYS_NO_PATHCONV=1`. Also: a
   `..` segment in any operator-supplied path is rejected by the `_safe_path` guards by design (CWE-23) — use
