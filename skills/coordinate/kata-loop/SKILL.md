@@ -51,7 +51,21 @@ Invoke [[kata-initiate]] (the front-half module, `modules/initiation/`). It:
 
 ### 2. THE HARNESS — [[kata-orchestrate]] + the built loop
 
-Hand the frozen `INTENT.md` + `kata.config` (written by `kata-bootstrap` during initiation) to
+**First, emit the loop-init banner.** Before handing off to the orchestrator, render and print the
+KataHarness loop-init readout as the **first lines of the harness** so the operator sees, every run,
+that it is KataHarness executing and a brief summary of what:
+
+```
+uv run python tools/kata_banner.py --goal "<INTENT goal>" --run-shape <runShape> \
+    --mode <mode> --grill <grillDepth> --delivery <delivery.shape> [--tasks N --slices M]
+```
+
+Draw the fields from the frozen `INTENT.md` (goal, run-shape) + `kata.config` (mode, grill, delivery);
+pass `--tasks/--slices` once the freeze produces a plan (omit them before then — the renderer drops
+missing fields). Emit the tool's output verbatim. It is a **deterministic** readout (`tools/kata_banner.py`,
+the canonical format — consistency D18; `protocol/narration.md`), not improvised prose.
+
+Then hand the frozen `INTENT.md` + `kata.config` (written by `kata-bootstrap` during initiation) to
 [[kata-orchestrate]]. The orchestrator drives the full built loop:
 
 ```
@@ -90,6 +104,10 @@ The loop-back is the one piece that belongs to `kata-loop` alone. After [[kata-c
 human's decision:
 
 ### Path A — "Run again (version-up)"
+
+**Emit the compact loop-back banner** so the operator sees the new cycle begin:
+`uv run python tools/kata_banner.py --goal "<next goal>" --tasks N --compact`
+(a single `↻ KATAHARNESS 改善型 · loop-back — …` line). Then:
 
 Re-enter [[kata-initiate]] **carrying context** from the completed run. The exact context payload:
 

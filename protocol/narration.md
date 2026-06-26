@@ -119,3 +119,25 @@ This guard exists because overclaiming wired autonomy is itself an inflation sig
 
 The honesty guard does not prohibit warmth or plain language; it prohibits implied capabilities. Plain,
 warm, accurate narration is always the goal.
+
+---
+
+## 5. Loop-init readout (the banner)
+
+**Every run opens with a deterministic banner** so the operator always sees, in the conversation, that it
+is **KataHarness** executing and a brief summary of *what*. It is the one fixed-format narration element —
+rendered by `tools/kata_banner.py` (`render_banner`), NOT improvised — so it is byte-identical every run
+(consistency, D18). It is emitted by the conductor (`kata-loop`), not the per-phase narrator.
+
+| When | What is emitted |
+|---|---|
+| **Loop init** (start of the harness, after `INTENT.md` is frozen) | The full **boxed** banner: brand line (`KATAHARNESS 改善型 · executing`) + `run-shape` (run-shape · mode · grill · delivery) + `goal` (the INTENT goal) + `plan` (tasks · slices · gate · drift, once the freeze produces them). |
+| **Loop-back** (version-up re-entry) | The **compact** one-line banner: `↻ KATAHARNESS 改善型 · loop-back — <goal> · <N> tasks`. |
+
+- Fields are drawn from `INTENT.md` (goal, run-shape) + `kata.config` (mode, grill, delivery) + the frozen
+  plan (tasks/slices). Missing fields are **omitted**, so the banner renders cleanly before a plan exists.
+- The banner is **additive** to the phase→plain-language map (§1): it announces the *run*; the map narrates
+  the *phases* within it. It obeys the honesty guard (§4) — it states only the actual run config, never a
+  gated capability.
+- BC: with no `INTENT.md` (a direct DESIGN run), the conductor may still emit the banner from `kata.config`
+  alone (goal omitted → `(goal pending)`); the banner is never required for the loop to function.
