@@ -1,12 +1,12 @@
 ---
 date: 2026-06-25 (D102 phantom-hardening MERGED · Debug Mode GRILLED + DESIGN FROZEN + PARKED behind install-portability · next = Phase 5 / install-portability is now critical-path)
-branch: master — private remote github.com/taurran/kataharness, tip 47648bf (PUSHED, in sync — `git log --oneline -3` for latest)
+branch: master — private remote github.com/taurran/kataharness, tip e630d27 (PUSHED, in sync — `git log --oneline -3` for latest)
 green: validator 36 skills / 0 errors · pytest 456 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
 tags: pre-phantom-hardening · pre-fix-loop-hardening · pre-ws3 · pre-ws2-slopcheck · v0.1.0-alpha.3 · loop-hardening-complete (earlier: pre-s1/1.5/2/3a/3b · v0.1.0-alpha.1/.2/.3)
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
-# HANDOFF — KataHarness — 2026-06-24 (loop-learning strategy locked · fix-loop hardening built · next = phantom-machinery hardening → Phase 5)
+# HANDOFF — KataHarness — 2026-06-26 (D102 phantom-hardening MERGED · Debug Mode GRILLED + DESIGN FROZEN + PARKED · next = install-portability, now critical-path)
 
 > **This session: a deep strategy + hardening arc on top of the (already-done) WS-1/2/3 + two-tier closeout.** Four
 > decisions, D98–D101: **(D98)** the **standing adversarial red-team** is now wired — `kata-review` runs after
@@ -26,24 +26,35 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 > this session** → memory `verify-primitives-before-claiming-reuse`. Fresh/compacted session: read §1, confirm green
 > (§2). **UPDATE (2026-06-25, D102): the phantom-machinery FIRST HARDENING is DONE + MERGED (`47648bf`)** — the
 > verify-before-reuse guard shipped through the full recipe (freeze-gate→build→evaluate PASS 9/9→T-fire PASS(n=1)→
-> D98 red-team SHIP). **NEXT = Phase 5 EXTERNAL + grill/freeze the two strategy BRIEFs + v0.1 release-checklist —
-> see §4.** Durable + committed + **pushed** (tip `47648bf`). Live picture:
-> `.planning/STATE.md` (top box) + `.planning/DECISIONS.md` **D87–D102**.
-> **D95–D97**.
+> D98 red-team SHIP). **UPDATE (2026-06-26): Debug Mode fully GRILLED + DESIGN FROZEN + PARKED (`d010434`)** — a
+> self-contained run-shape `debug` (peer of version-up, debug-in-confidence, the onboarding killer-app); 7 grill
+> rounds + a 4-thread research pass + 3 repo assessments; two convergence-gate HOLDs → SHIP + freeze-gate SHIP. NEW
+> `kata-comprehend` function-model oracle + 7-step corroboration-gated deviation pipeline + behavioral drift gate
+> (surface/AST + calibration = honest fast-follows). **Build PARKED behind `install-portability` (built first) +
+> `kata-preflight`** → **install-portability is now critical-path.** Also captured: `capability-aware-assignment`
+> BRIEF (the "multi-modal assignment" item). **NEXT = grill/freeze/build `install-portability` (unblocks Debug Mode +
+> Phase 5), then multi-model + the strategy BRIEFs + capability-aware-assignment + v0.1 release-checklist — see §4.**
+> Durable + committed + **pushed** (tip `e630d27`). Live picture: `.planning/STATE.md` (top box) +
+> `.planning/DECISIONS.md` **D87–D102**.
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
 1. `AGENTS.md` (spine + conventions; the **"The Kata Loop"** entry) · 2. `docs/STANDARDS.md` §1 (frontmatter —
    `allowed-tools` REQUIRED) · 3. `CONTEXT.md` (glossary — **Kata Loop / the Harness / loop-back** are defined here) ·
 4. `.planning/STATE.md` (top CURRENT box — live picture) · 5. **`.planning/DECISIONS.md` D87–D95**
    (Kata Loop build · D92 rename/seam-fixes · D93 loop-hardening · D94 WS-2 · **D95 WS-3 user-friendliness**) ·
-6. `.planning/LESSONS-LEARNED.md` · 7. **`.planning/specs/ws3-user-friendliness/{DESIGN,PLAN}.md`** (WS-3 — built;
-   LOCKED L1–L11) + **`protocol/persona.md`** (voice/SOUL) + **`protocol/narration.md`** (phase→plain map) — the
-   live UX surfaces · 8. **`.planning/specs/loop-hardening/{ROADMAP,PLAN-s1..s3b}.md`** + `greater-loop/{DESIGN,PLAN-phase0..3}.md`
-   (the built loop — frozen; keeps the old "Greater Loop" term as **provenance**, the live name is "the Kata Loop").
+6. `.planning/LESSONS-LEARNED.md` (esp. **L12** — wire lessons into skills) · 7. **`.planning/DECISIONS.md`
+   D96–D102** (WS-3R · WS-2-polish · D98 standing red-team · D99 second-brain · D100 fix-loop · D101 recurrence-
+   hardening · **D102 phantom-hardening BUILT**) · 8. **NEXT-WORK specs (for the resume):**
+   `.planning/specs/install-portability/BRIEF.md` (**the critical-path predecessor — grill this next**) +
+   `.planning/specs/debug-mode/{DESIGN,GRILL-LEDGER,RESEARCH}.md` (frozen + parked behind install-portability) +
+   `.planning/specs/{capability-aware-assignment,second-brain-learning,recurrence-hardening,multi-model-orchestration,testing-model}/BRIEF.md`
+   (Phase-5 / strategy BRIEFs) · 9. **`protocol/reuse-claims.md`** (the D102 verify-before-reuse guard — now a standing
+   pre-flight in design/plan/tdd). *(Older deep context — the built loop — if needed: `specs/ws3-user-friendliness/`,
+   `specs/loop-hardening/`, `greater-loop/`; "Greater Loop" = provenance, live name "the Kata Loop".)*
 ⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated, harness-injected).
 
 ## 2. State *(orientation: VOLATILE)*
-- Branch `master`, tip `3ad3c73` (**pushed, in sync**; loop-hardening + WS-1 + WS-2 + WS-3 done — run `git log --oneline -3` for the exact latest). **36 skills / 0 errors · pytest 447 · Snyk med+ 0.**
+- Branch `master`, tip `e630d27` (**pushed, in sync**; D102 phantom-hardening merged + Debug Mode DESIGN frozen/parked — run `git log --oneline -3` for the exact latest). **36 skills / 0 errors · pytest 456 · Snyk med+ 0.**
   Confirm: `cd tools && uv run pytest -q && uv run python validate_skills.py`. **Windows gotcha:** git-bash mangles
   `/tmp/...` args to native python — use `C:/...` paths, a `.kata`-relative path, or `MSYS_NO_PATHCONV=1`. Also: a
   `..` segment in any operator-supplied path is rejected by the `_safe_path` guards by design (CWE-23) — use
