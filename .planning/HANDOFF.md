@@ -167,8 +167,16 @@ The immediate agenda, in order:
    **✅ install-portability BUILT (D104, the simple model — central install + 2-setting file + per-run project
    search + copy mode + per-platform install: Claude verified, Codex/Kiro best-effort, Quick own).** pytest 490,
    validate 36/0, Snyk 0 med+, D98 review SHIP-WITH-FIXES→fixed. Records: `specs/install-portability/{DESIGN,GRILL-LEDGER}.md`.
-   **★ NEXT = `kata-preflight`** (the *other* Debug Mode blocker, D29/D103) → then Debug Mode build. NOTE the
-   mid-grill lesson: memory [[grill-in-plain-terms]] — keep design questions plain + the simplest model that works.
+   **✅ multi-model-orchestration GRILLED + DESIGN FROZEN (D105)** — the operator's real "multi-modal" vision
+   (route loop ROLES to platforms: Claude=coder, Codex=validator, Kiro=researcher). 5 cited research agents
+   (`RESEARCH.md` — SKILL.md is a shared standard across all 5 tools; all headless-automatable), grill→DESIGN
+   (5 role groups incl. a lightweight **evaluator** scorer; default all-on-host, multi-modal opt-in at preflight;
+   files+CLI dispatch; NEW N1–N5 with schemas). **Convergence HOLD#1: the D102 guard caught over-claimed reuse →
+   relabeled NEW → re-confirm SHIP.** Build PARKED. Records: `specs/multi-model-orchestration/{RESEARCH,GRILL-LEDGER,DESIGN}.md`.
+   **★ NEXT (choose):** (a) **build multi-model** (sequence: extend install+confirm N5 → roles config + BRIEF/RESULT
+   schemas → Codex-as-validator adapter first → generalize) — the operator wanted this for benchmarking; OR (b)
+   **`kata-preflight`** (the other Debug Mode blocker, D29/D103) → Debug Mode build; OR (c) grill capability-aware-
+   assignment (the specialist axis that multiplies with multi-model). NOTE memory [[grill-in-plain-terms]] — keep it plain.
 3. **Far-future.** `kata-loop-benchmark` (now the **keystone** that defines the C-arc unlock + measures whether
    learning/hardening pays off — D99) → recursive parallelism (DAG-within-DAG) gated on a hardened separability test.
 

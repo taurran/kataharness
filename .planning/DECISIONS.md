@@ -968,3 +968,26 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   **Supersedes the "full installer layer" framing of D103** — multi-platform stays in scope but built the simple
   way, not as an installer-interface taxonomy. Records: `specs/install-portability/{DESIGN,GRILL-LEDGER}.md`.
   Backout tag `pre-install-portability`. **Debug Mode still also needs `kata-preflight` before its build (D103).**
+- **D105 — multi-model-orchestration GRILLED + DESIGN FROZEN (2026-06-26).** The operator's real "multi-modal" vision:
+  install KataHarness on the machine + on all models, confirm, then route loop **roles** to different platforms/models
+  (Claude=coder, Codex=validator, Kiro=researcher…). Grounded in 5 cited research agents (`RESEARCH.md`): **two
+  headline findings** — (1) the `SKILL.md` Agent-Skills format is now a **shared standard** across Claude/Codex/Kiro/
+  Copilot/Cursor (one skill payload targets all; the D104 flat-link installer generalizes by pointing at
+  `.agents/skills/`); (2) **every target is headless-automatable** (Kiro via `kiro-cli`, not the IDE). **Grill (plain
+  terms, per [[grill-in-plain-terms]]) → DESIGN:** **5 role groups** (coder · validator=red-team+anti-slop+grounding ·
+  researcher · orchestrator · **evaluator**=a lightweight inline scorer that accepts/sends-back/**reroll**s via the
+  existing `bakeoff` best-of-N); **default all-on-host, multi-modal opt-in at preflight** with per-role overrides
+  (BC1); **any role routable** (coder stays one sustained agent — coding parallelizes poorly, Anthropic); **dispatch =
+  files + headless CLI** (a NEW task-brief artifact + NEW per-platform CLI adapters), **concurrent background
+  subprocesses** reconciled with the rolling frontier; **failure → host fallback + log + surface**; **two orthogonal
+  layers** (platform/model × `capability-aware-assignment` specialist); **orchestrator on the init host in v1**,
+  configurable later (Quick→Kiro/Codex). **Convergence gate HOLD#1** — the D102 verify-before-reuse guard caught the
+  ledger **over-claiming reuse** of kata-orient/kata-orchestrate/D104/kata.config (all read-only/Claude-only/absent);
+  relabeled as **NEW capabilities N1–N5** with concrete schemas (BRIEF.json, per-role RESULT.json envelope, `roles`
+  config + `confirmedPlatforms`, sentinel confirm probe) → **re-confirm SHIP**. KataHarness's own seams ARE the
+  best-practice answer (FS-as-substrate, kata-orient three-tier = the Hermes pattern, orchestrator-as-plan-guardian,
+  worktrees). **The lift is a thin routing layer over existing machinery, not a new orchestrator.** Records:
+  `specs/multi-model-orchestration/{RESEARCH,GRILL-LEDGER,DESIGN}.md`. **Build PARKED** — sequence: extend install+
+  confirm (N5) → roles config + BRIEF/RESULT schemas (N4/N1/N3) → Codex-as-validator dispatch adapter (N2) first →
+  generalize. **Deferred to own pass:** the evaluator injection-points + score-threshold mechanism (supplies the
+  evaluator's accept/send-back/reroll cutoffs; its result *shape* is frozen, its *thresholds* are not).
