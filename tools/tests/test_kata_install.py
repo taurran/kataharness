@@ -25,6 +25,7 @@ from pathlib import Path
 import pytest
 
 import kata_install as ki
+import kata_dispatch
 
 
 @pytest.fixture()
@@ -158,7 +159,8 @@ def test_codex_best_effort(fake_home, tmp_path):
     host = tmp_path / "dot-codex"
     res = ki.install("codex", harness_home=fake_home, host_dir=host)
     assert res["platform"] == "codex" and res["bestEffort"] is True
-    assert (host / "skills" / "kata-bootstrap" / "SKILL.md").exists()
+    # best-effort installs use .agents/skills/ (cross-tool standard), NOT <host>/skills/
+    assert (host / ".agents" / "skills" / "kata-bootstrap" / "SKILL.md").exists()
 
 
 def test_quick_is_noop(fake_home):
@@ -245,3 +247,72 @@ def test_copy_project_copies_git_as_data_not_invoked(tmp_path):
     dest = tmp_path / "copy"
     ki.copy_project(src, dest)
     assert (dest / ".git" / "config").exists()  # copied verbatim, never executed
+
+
+# ---------------------------------------------------------------------------
+# Slice D tests: .agents/skills targeting + kiro probe + invariant (L-D, L-MP2)
+# ---------------------------------------------------------------------------
+
+def test_besteffort_links_into_agents_skills(fake_home, tmp_path):
+    """Best-effort installs (codex) target .agents/skills/ (cross-tool standard, DESIGN N5)."""
+    host = tmp_path / "dot-codex"
+    res = ki.install("codex", harness_home=fake_home, host_dir=host)
+    assert res["bestEffort"] is True
+    skills_dir = Path(res["skillsDir"])
+    # Path must end in .agents/skills
+    assert skills_dir.parts[-1] == "skills"
+    assert skills_dir.parts[-2] == ".agents", f"expected .agents/skills, got {skills_dir}"
+    assert (host / ".agents" / "skills" / "kata-bootstrap" / "SKILL.md").exists()
+
+
+def test_kiro_besteffort_links_into_agents_skills(fake_home, tmp_path):
+    """kiro best-effort install also targets .agents/skills/ (cross-tool standard)."""
+    host = tmp_path / "dot-kiro"
+    res = ki.install("kiro", harness_home=fake_home, host_dir=host)
+    assert res["platform"] == "kiro" and res["bestEffort"] is True
+    skills_dir = Path(res["skillsDir"])
+    assert skills_dir.parts[-2:] == (".agents", "skills"), f"expected .agents/skills, got {skills_dir}"
+    assert (host / ".agents" / "skills" / "kata-grill-standard" / "SKILL.md").exists()
+
+
+def test_claude_still_links_into_skills_not_agents(fake_home, tmp_path):
+    """claude install must NOT use .agents/skills — it keeps its own <host>/skills/ (unchanged)."""
+    host = tmp_path / "dot-claude"
+    res = ki.install("claude", harness_home=fake_home, host_dir=host)
+    skills_dir = Path(res["skillsDir"])
+    assert skills_dir.parts[-1] == "skills"
+    assert ".agents" not in skills_dir.parts, "claude must NOT use .agents/skills"
+    assert (host / "skills" / "kata-bootstrap" / "SKILL.md").exists()
+
+
+def test_confirm_kiro_probe_ok(tmp_path):
+    """confirm_platform('kiro') with a token-returning stub confirms and records kiro."""
+    def good_runner(cmd):
+        return 0, f"answer: {ki._PROBE_TOKEN}"
+    res = ki.confirm_platform("kiro", runner=good_runner, home=tmp_path)
+    assert res["confirmed"] is True
+    assert res["detail"] == "probe ok"
+    import kata_settings as ks
+    assert "kiro" in ks.confirmed_platforms(home=tmp_path)
+
+
+def test_confirm_kiro_probe_no_token(tmp_path):
+    """confirm_platform('kiro') with a stub that omits the token does NOT confirm."""
+    def bad_runner(cmd):
+        return 0, "something else entirely"
+    res = ki.confirm_platform("kiro", runner=bad_runner, home=tmp_path)
+    assert res["confirmed"] is False
+    import kata_settings as ks
+    assert "kiro" not in ks.confirmed_platforms(home=tmp_path)
+
+
+def test_probe_commands_subset_of_command_builders():
+    """Invariant (L-MP2): every probe-able platform must have a dispatch adapter.
+
+    A confirmed platform is routable only when it also has a dispatch adapter —
+    otherwise kata_dispatch.dispatch() would silently fail for it at runtime.
+    """
+    assert set(ki._PROBE_COMMANDS) <= set(kata_dispatch._COMMAND_BUILDERS), (
+        "platforms in _PROBE_COMMANDS but missing dispatch adapter: "
+        + str(set(ki._PROBE_COMMANDS) - set(kata_dispatch._COMMAND_BUILDERS))
+    )
