@@ -1,6 +1,6 @@
 ---
 date: 2026-06-26 (install-portability BUILT · multi-model GRILLED+FROZEN+proof-slice BUILT · red-team hardened · loop-init banner — D104–D107; next = finish multi-model layer OR kata-preflight→Debug Mode)
-branch: master — private remote github.com/taurran/kataharness, tip fe8d015 (8 commits UNPUSHED unless this session pushed — `git log --oneline origin/master..HEAD` to check)
+branch: master — private remote github.com/taurran/kataharness, tip d8355c6 (PUSHED, in sync as of 2026-06-26 — `git log --oneline origin/master..HEAD` to verify)
 green: validator 36 skills / 0 errors · pytest 542 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
 tags: pre-install-portability · pre-multimodel-slice · pre-phantom-hardening · pre-ws3 · v0.1.0-alpha.3 · loop-hardening-complete
 authored-for: kata-orient (sections map to the three orientation tiers)
