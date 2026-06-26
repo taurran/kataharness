@@ -53,3 +53,20 @@ def test_compact_is_single_line_loopback():
 def test_grill_label_rendered():
     out = render_banner(goal="g", grill="full")
     assert "grill full" in out
+
+
+def test_no_color_by_default():
+    out = render_banner(goal="g", run_shape="batch", tasks=2)
+    assert "\x1b[" not in out  # no ANSI unless color=True
+
+
+def test_color_emits_report_palette_ansi():
+    out = render_banner(goal="g", run_shape="batch", tasks=2, color=True)
+    assert "\x1b[" in out and out.rstrip().endswith("\x1b[0m")
+    # the ochre brand-mark accent (#B5894B = 181,137,75) is present
+    assert "38;2;181;137;75" in out
+
+
+def test_color_compact():
+    out = render_banner(goal="re-run", tasks=3, compact=True, color=True)
+    assert "\x1b[" in out and "\n" not in out

@@ -23,10 +23,31 @@ _WIDTH = 60  # box rule width in display columns
 _RULE = "━"
 _DOT = " · "
 
+# Hokusai-derived closeout-report palette (modules/closeout/resources/BRAND.md), adapted for a
+# dark terminal: use the accent tones that read on dark (ochre arrow, warm border, mid-blue, paper),
+# not the dark Prussian ink (which is the report's light-bg foreground).
+_PALETTE = {
+    "ochre": (181, 137, 75),   # #B5894B — the kaizen rising-arrow accent → the brand mark
+    "border": (205, 190, 155),  # #CDBE9B — card border/divider → the box frame
+    "blue": (46, 99, 137),     # #2E6389 — mid-blue → labels
+    "paper": (233, 223, 200),  # #E9DFC8 — aged paper → values
+    "muted": (117, 106, 82),   # #756A52 — metadata/taglines → "· executing"
+    "rust": (166, 83, 43),     # #A6532B — error/backout (reserved)
+}
+_RESET = "\x1b[0m"
+
 
 def _dwidth(s: str) -> int:
     """Display width in terminal columns (CJK wide/fullwidth glyphs count as 2)."""
     return sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in s)
+
+
+def _paint(text: str, role: str, *, bold: bool = False, enabled: bool = False) -> str:
+    """Wrap ``text`` in a 24-bit ANSI color from the report palette (no-op when disabled)."""
+    if not enabled or not text:
+        return text
+    r, g, b = _PALETTE[role]
+    return (("\x1b[1m" if bold else "") + f"\x1b[38;2;{r};{g};{b}m") + text + _RESET
 
 
 def _join(parts: list[str]) -> str:
@@ -45,17 +66,23 @@ def render_banner(
     gate: str = "default-FAIL",
     drift: int = 0,
     compact: bool = False,
+    color: bool = False,
 ) -> str:
     """Render the loop-init banner (boxed) or the compact loop-back line.
 
     Only the fields you pass appear — missing run/plan fields are omitted, so the banner
     renders cleanly before a plan exists (e.g. at initiate) and fills in once it does.
+    ``color=True`` paints it in the closeout-report palette via 24-bit ANSI.
     """
     goal = (goal or "").strip() or "(goal pending)"
 
     if compact:
         tail = f" · {tasks} tasks" if tasks is not None else ""
-        return f"↻ {BRAND} · loop-back — {goal}{tail}"
+        return (
+            _paint("↻ ", "ochre", enabled=color)
+            + _paint(BRAND, "ochre", bold=True, enabled=color)
+            + _paint(f" · loop-back — {goal}{tail}", "muted", enabled=color)
+        )
 
     run_line = _join([run_shape, mode, (f"grill {grill}" if grill else None), delivery])
     plan_line = _join([
@@ -65,22 +92,33 @@ def render_banner(
         (f"drift {drift}" if drift is not None else None),
     ])
 
-    header = f"{_RULE}{_RULE} {BRAND} · executing "
-    top = header + _RULE * max(0, _WIDTH - _dwidth(header))
-    bottom = _RULE * _WIDTH
+    # Top rule: brand mark (ochre) + tagline (muted) + frame filler (border), sized on the PLAIN text.
+    plain_header = f"{_RULE}{_RULE} {BRAND} · executing "
+    fill = max(0, _WIDTH - _dwidth(plain_header))
+    top = (
+        _paint(f"{_RULE}{_RULE} ", "border", enabled=color)
+        + _paint(BRAND, "ochre", bold=True, enabled=color)
+        + _paint(" · executing ", "muted", enabled=color)
+        + _paint(_RULE * fill, "border", enabled=color)
+    )
+    bottom = _paint(_RULE * _WIDTH, "border", enabled=color)
+
+    def _row(name: str, value: str) -> str:
+        return f" {_paint(name.ljust(11), 'blue', enabled=color)} {_paint(value, 'paper', enabled=color)}"
 
     rows = []
     if run_line:
-        rows.append(f" run-shape   {run_line}")
-    rows.append(f" goal        {goal}")
+        rows.append(_row("run-shape", run_line))
+    rows.append(_row("goal", goal))
     if plan_line:
-        rows.append(f" plan        {plan_line}")
+        rows.append(_row("plan", plan_line))
 
     return "\n".join([top, *rows, bottom])
 
 
 def main(argv: list[str] | None = None) -> int:  # pragma: no cover
     import argparse
+    import os
     import sys
 
     # The banner uses box-drawing + CJK glyphs; force UTF-8 so a cp1252 console doesn't choke.
@@ -100,10 +138,18 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover
     p.add_argument("--gate", default="default-FAIL")
     p.add_argument("--drift", type=int, default=0)
     p.add_argument("--compact", action="store_true")
+    p.add_argument("--color", dest="color", action="store_true", default=None, help="force the report palette (ANSI)")
+    p.add_argument("--no-color", dest="color", action="store_false", help="plain text, no ANSI")
     a = p.parse_args(argv)
+
+    # Resolve color: explicit flag wins; else auto (a TTY and NO_COLOR unset — no-color.org).
+    color = a.color
+    if color is None:
+        color = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+
     print(render_banner(
         goal=a.goal, run_shape=a.run_shape, mode=a.mode, grill=a.grill, delivery=a.delivery,
-        tasks=a.tasks, slices=a.slices, gate=a.gate, drift=a.drift, compact=a.compact,
+        tasks=a.tasks, slices=a.slices, gate=a.gate, drift=a.drift, compact=a.compact, color=color,
     ))
     return 0
 

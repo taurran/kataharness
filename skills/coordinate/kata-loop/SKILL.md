@@ -56,14 +56,16 @@ KataHarness loop-init readout as the **first lines of the harness** so the opera
 that it is KataHarness executing and a brief summary of what:
 
 ```
-uv run python tools/kata_banner.py --goal "<INTENT goal>" --run-shape <runShape> \
+uv run python tools/kata_banner.py --color --goal "<INTENT goal>" --run-shape <runShape> \
     --mode <mode> --grill <grillDepth> --delivery <delivery.shape> [--tasks N --slices M]
 ```
 
 Draw the fields from the frozen `INTENT.md` (goal, run-shape) + `kata.config` (mode, grill, delivery);
 pass `--tasks/--slices` once the freeze produces a plan (omit them before then — the renderer drops
-missing fields). Emit the tool's output verbatim. It is a **deterministic** readout (`tools/kata_banner.py`,
-the canonical format — consistency D18; `protocol/narration.md`), not improvised prose.
+missing fields). `--color` paints it in the **closeout-report palette** (Hokusai ochre/Prussian/paper,
+`modules/closeout/resources/BRAND.md`) via ANSI — run it as a command so the terminal renders the color;
+drop `--color` (or set `NO_COLOR`) if a surface shows raw escape codes. It is a **deterministic** readout
+(`tools/kata_banner.py`, the canonical format — consistency D18; `protocol/narration.md`), not improvised prose.
 
 Then hand the frozen `INTENT.md` + `kata.config` (written by `kata-bootstrap` during initiation) to
 [[kata-orchestrate]]. The orchestrator drives the full built loop:
@@ -106,7 +108,7 @@ human's decision:
 ### Path A — "Run again (version-up)"
 
 **Emit the compact loop-back banner** so the operator sees the new cycle begin:
-`uv run python tools/kata_banner.py --goal "<next goal>" --tasks N --compact`
+`uv run python tools/kata_banner.py --color --goal "<next goal>" --tasks N --compact`
 (a single `↻ KATAHARNESS 改善型 · loop-back — …` line). Then:
 
 Re-enter [[kata-initiate]] **carrying context** from the completed run. The exact context payload:

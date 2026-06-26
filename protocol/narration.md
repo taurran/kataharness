@@ -136,6 +136,10 @@ rendered by `tools/kata_banner.py` (`render_banner`), NOT improvised — so it i
 
 - Fields are drawn from `INTENT.md` (goal, run-shape) + `kata.config` (mode, grill, delivery) + the frozen
   plan (tasks/slices). Missing fields are **omitted**, so the banner renders cleanly before a plan exists.
+- **Color:** `--color` paints it in the **closeout-report palette** (`modules/closeout/resources/BRAND.md` —
+  Hokusai ochre brand-mark, warm border frame, mid-blue labels, paper values) via 24-bit ANSI, so the run
+  readout and the closeout report share one visual identity. Honors `NO_COLOR`; falls back to plain text on a
+  surface that doesn't render ANSI.
 - The banner is **additive** to the phase→plain-language map (§1): it announces the *run*; the map narrates
   the *phases* within it. It obeys the honesty guard (§4) — it states only the actual run config, never a
   gated capability.
