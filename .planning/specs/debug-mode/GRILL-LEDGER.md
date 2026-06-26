@@ -1,6 +1,6 @@
 ---
 title: "Debug Mode — grill decision ledger"
-status: TREE COMPLETE — pending fresh-context kata-review convergence gate (then FREEZE via kata-design-doc)
+status: CONVERGENCE GATE = HOLD (2026-06-25) — semantic core under-specified + a phantom reuse; back to Phase 1 on H1–H4
 date: 2026-06-25
 spec: debug-mode
 method: skills/plan/kata-grill (standard→advanced depth)
@@ -182,3 +182,37 @@ bootstrap, pointed at a whole codebase. Pipeline:
    convert-to-loop writes kata.config + `.planning/` + commits the characterization suite + vault binding.
 Pass model (one graph-ordered resumable pass | loop-until-dry) and execution locus (in-place worktrees | import)
 are **bootstrap config choices**.
+
+## Convergence gate — HOLD (fresh-context kata-review, 2026-06-25)
+The griller resolved *which* decisions exist but stopped at **labels, not mechanisms** for the hardest semantic
+concepts (the survey-not-grill failure, RUBRIC L21-27). Two builders would diverge. **Back to Phase 1 on H1–H4;
+clear H5–H7; re-run the gate before FREEZE.**
+
+**BLOCKERS:**
+- **H1 — the function-model / "intended function" oracle (DG-1) is TBD.** No artifact schema (what "intended
+  function" *is* on disk) and no concrete deviation-detection procedure. The single most divergence-prone
+  component is 100% unspecified. PIN: the function-model schema + the deviation detector (inputs→comparison→output).
+- **H2 — `kata-understand` reuse is PHANTOM MACHINERY (caught by `protocol/reuse-claims.md`).** `kata-understand`
+  is a **post-run, map-only** comprehension tool (footprint∩graph; "does not judge"; ingests no docs/types to
+  derive intent) — the OPPOSITE of a pre-change whole-repo intent-derivation oracle. The function-model is a **NEW
+  capability**, not reuse. PIN: relabel NEW, scope ownership/acceptance/cost; re-examine the F2 anti-bloat rationale.
+- **H3 — confidence-tiering (DG-1-edge) is undefined.** No signal, no threshold for high- vs low-confidence intent.
+  The research→defer routing gates on a boundary that doesn't exist. PIN: the concrete confidence signal + cutoff.
+- **H4 — the no-structural-drift gate (F3/DG-2) — the BRIEF's named load-bearing design — is still hand-wavy.** The
+  ledger pinned scope (bug+security), regression signal (characterization tests), footprint — but NOT the
+  public-surface/structural-invariance assertion. PIN: the actual surface-invariance mechanism, or explicitly state
+  footprint+baseline-green IS the whole gate (surface-invariance dropped).
+
+**SECONDARY (pin or explicitly defer with an owner):**
+- **H5 — `kata-research` used outside its contract** (it's escalation-routed, no-write, scoped to "must-deliver
+  feature, no in-plan solution" — not a whole-codebase comprehension sweep). Route via a real escalation or label NEW.
+- **H6 — forward deps on un-frozen `install-portability` + un-built `kata-preflight` (D29, planned not built).**
+  Debug Mode's first-run (DG-10c) presumes install-portability decisions not yet made (its config layer may fold
+  into `kata-initiate`). Mark DG-10c's surface "pinned by install-portability DESIGN, not here." Label preflight a
+  forward dependency, not reuse.
+- **H7 — characterization-suite generation (DG-1b) is NEW**, not clean `kata-tdd` (red-green for *new* behavior) /
+  `kata-diagnose` (one test at a known seam) reuse. Scope it NEW.
+
+**Verified-solid (so the re-grill is targeted):** worktree isolation · version-up footprint+baseline-green
+discipline · `kata-diagnose` root-cause loop · the run-shape mechanism (DG-11) · gate/backout/closeout (DG-8). The
+pipeline *skeleton* composes; the **semantic core (H1–H4)** is what needs another Phase-1 round.
