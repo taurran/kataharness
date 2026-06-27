@@ -49,10 +49,21 @@ does not drift.**
    - **Version-up (`target.kind: "existing"`):** use `target.baselineGate` as the precondition-#2 baseline
      command. (The version-up ingestion DAG — kata-graph — is Spec A4; A3 only consumes the config fields.)
    - **Roles load-guard (N4/L-A):** read confirmed platforms via `kata_settings.confirmed_platforms()` (`tools/kata_settings.py:109`) and resolve `kata.config.roles` via `kata_roles.resolve_roles(roles_block, confirmed, host_platform)` (`tools/kata_roles.py:28`). **`host_platform` is the orchestrator's runtime adapter identity** — in v1 this is `"claude"` (the only shipped dispatch adapter; see `SKILL.md:14`, where the `Agent` tool is documented as the Claude-adapter binding of the abstract "dispatch worker" capability, and v0.1 ships only the Claude adapter; `"claude"` is also the resolver's default at `tools/kata_roles.py:31`). This is an adapter binding, not a `kata.config` field — there is no `target.platform`. A non-Claude orchestrator host is DEFERRED (LD11); a future fast-follow swaps only this binding. A `ValueError` from `resolve_roles` (unknown role name, or a platform ∉ `confirmedPlatforms`) ⇒ **STOP + escalate at preflight** (same fail-closed posture as the mode/effort/tiers/modules guard above). **BC1:** `roles` absent ⇒ `resolve_roles` returns every role assigned to the host ⇒ today's single-host loop byte-for-byte (DESIGN R5/LD3).
-1. A **frozen** PLAN exists with a wave/ownership DAG (e.g. `ownership:` + `waves:` + `depends_on:` in
+1. **PRE-FLIGHT gate** — conditional, fail-closed, BC-preserving (N5/D29). Call
+   `kata_preflight.preflight_required(repo_root)` (`tools/kata_preflight.py:389`):
+   - **`False`** (no `kata.dependencies.json` manifest): PRE-FLIGHT is not required — proceed
+     (today's loop unchanged; BC). This precondition is a no-op for dep-free runs.
+   - **`True`** (manifest present): call `kata_preflight.gate_status(repo_root)`
+     (`tools/kata_preflight.py:398`).
+     - `"ready"` ⇒ proceed to dispatch.
+     - `"degraded"` ⇒ the operator must have explicitly accepted this run (surfaced in-conversation
+       as a breakthrough-alert by [[kata-preflight]]); absent recorded acceptance ⇒ **STOP + surface**.
+     - `"blocked"` | `"absent"` | malformed ⇒ **STOP + surface** the `blockers` list (or the missing /
+       malformed artifact); refuse dispatch. Run [[kata-preflight]] first to provision and clear the gate.
+2. A **frozen** PLAN exists with a wave/ownership DAG (e.g. `ownership:` + `waves:` + `depends_on:` in
    frontmatter). If the plan is not frozen, stop — planning is a different phase.
-2. The target repo is **green at the fork point** (run its test/build gate; record the baseline numbers).
-3. The **file-ownership partition is disjoint** — no file appears under two tasks. If it isn't, the plan is
+3. The target repo is **green at the fork point** (run its test/build gate; record the baseline numbers).
+4. The **file-ownership partition is disjoint** — no file appears under two tasks. If it isn't, the plan is
    not executable concurrently; escalate to re-freeze, do not improvise.
 
 ## The loop
