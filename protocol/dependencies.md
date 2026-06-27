@@ -43,6 +43,11 @@ registry/index from `preflight.allowed_registries`. No freeform string is ever e
 
 ### Docs-only fields (NEVER executed)
 
+> **Execution-surface contract:** the structured-argv-only rule that makes these fields safe — and the registry
+> of every subprocess sink with its trust domain — is `protocol/exec-safety.md` (enforced by
+> `tools/tests/test_exec_safety.py`). Any new field that would influence execution must satisfy that contract.
+
+
 | Field | Type | Meaning |
 |---|---|---|
 | `install` | string | **Documentation-only — the PRE-FLIGHT engine NEVER reads or executes this string.** It exists solely as a human-readable reference showing what the auto-installer will do. The engine builds its argv from the structured `{manager, package, version}` fields above. |

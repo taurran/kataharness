@@ -1158,3 +1158,26 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   assess as you apply"), not orchestrated — surgical fixes across shared seam files. **Meta:** the holistic pass
   earns its keep — per-build red-teams are necessary but not sufficient after a fast multi-build day; the
   *between-build* seams (shared `kata-orchestrate`/`kata-evaluate`/`config.md`) are where the fail-opens hid.
+
+<!-- Recurrence-hardening (D101) fired on the execution-injection/RCE class. Operator-prompted. -->
+- **D112 — Execution-surface contract: standing guard for the RCE class — 2026-06-27.** Operator observed RCEs
+  "popping up time and time again" and asked whether it was the first. **It was the third instance of ONE class
+  in ONE component** (`kata-preflight` auto-installer): (#1) freeform `install` shell string executable (freeze-gate),
+  (#2) `package` accepting a URL/VCS/path source bypassing the forced registry → postinstall RCE (D98), (#3) freeform
+  `verify` shell string executed via `shlex.split` (D111, this session). Root cause: the dependency manifest is
+  partially-trusted external input, the installer has several free-text fields, and each was hardened **in isolation**
+  (whack-a-mole) with no standing rule the next field had to satisfy — so #3 slipped in after #1/#2 were "fixed." This
+  is the **recurrence-hardening** loop (D101): a class that recurred is now hardened at the responsible surface, not
+  re-patched per occurrence. **Built (operator-gated, inline, small):** `protocol/exec-safety.md` — the contract
+  (*any externally-sourced value reaching a subprocess MUST be a structured, validated, `fullmatch`-anchored field
+  compiled to an argv with `shell=False`; freeform command strings are docs-only; `shell=True` only for
+  operator-trust-domain commands*) **+ a sink registry** of every `subprocess` call in `tools/` with its trust domain
+  (external / operator / internal) and guard — the "config file that tracks these" the operator intuited. Plus
+  `tools/tests/test_exec_safety.py` (**AST-based**, not text-grep): fails CI if a new `shell=True` appears outside the
+  registered operator-domain allowlist (`mutation_run`, `run_result`), if `kata_preflight` regains a `shell=True`, if
+  it ever reads the freeform `verify`/`install` fields for execution, if the structured builders/validators go
+  missing, or if a registered sink is undocumented — **the mechanical guard that would have caught #3.** Audit result:
+  current shipped code is clean (all manifest-fed sinks structured; only `mutation_run`/`run_result` use `shell=True`,
+  both on operator-authored commands). **Gates:** pytest **786** (+10), validate **39/0**, Snyk **0** on the new test.
+  Pointer added from `protocol/dependencies.md`. **Meta:** the operator's "is this the first?" question *is* the
+  recurrence detector — a human noticing a pattern the per-build gates treated as independents.

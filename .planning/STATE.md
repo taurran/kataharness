@@ -1,5 +1,16 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-27, EXEC-SAFETY STANDING GUARD BUILT — D112; pytest 786 · 39 skills/0 · Snyk 0):** Operator
+> noticed RCEs recurring and asked "is this the first?" — it was the **3rd instance of one class in one component**
+> (`kata-preflight`: freeform `install` [freeze-gate] → `package` source-injection [D98] → freeform `verify` [D111]),
+> each fixed in isolation (whack-a-mole). Fired the **recurrence-hardening** loop (D101): built
+> `protocol/exec-safety.md` (structured-argv-only contract + a **sink registry** of every `subprocess` in `tools/`
+> with trust domain external/operator/internal) + `tools/tests/test_exec_safety.py` (**AST-based** regression — fails
+> CI on a new `shell=True` outside the operator-domain allowlist, on `kata_preflight` regaining `shell=True` or reading
+> the freeform `verify`/`install` fields, etc. — the guard that would have caught #3). Audit: shipped code clean (only
+> `mutation_run`/`run_result` use `shell=True`, both operator-authored). **NEXT: starting the Debug Mode build (queue
+> item (a)) — DESIGN frozen `specs/debug-mode/DESIGN.md`, both blockers long cleared.** Record: `DECISIONS.md` D112.
+
 > **CURRENT (2026-06-27, HOLISTIC RED-TEAM of D108/D109/D110 + FIXES — D111; pytest 776 · 39 skills/0 · Snyk 0;
 > D98 re-review CLEAN):** Session first-task per `NEXT-SESSION-ORIENTATION.md` — a fresh-context *cross-cutting*
 > adversarial pass over the day's 3 back-to-back builds (the seams *between* them were unreviewed). 5 parallel
