@@ -115,7 +115,7 @@ whatever model(s) you use.
 ## Status
 
 **`v0.1.0-alpha` — the full loop is built, green, and self-dogfooded; hardening toward a field-proven v0.1.**
-37 skills, all `0.1.0`/experimental; validator 0 errors · 540+ tests passing · Snyk clean (medium+ 0). The
+39 skills, all `0.1.0`/experimental; validator 0 errors · 540+ tests passing · Snyk clean (medium+ 0). The
 complete cognitive architecture runs on the **Claude core** across **one-shot and incremental (sprint)**
 delivery, with the learning loop (second-brain LEARN feed + human-gated skill promotion) wired. The harness
 has been built *by itself* through its own orchestrated loop multiple times — concurrent worker subagents in
@@ -145,7 +145,7 @@ partially built — see the roadmap. Live state: [`.planning/STATE.md`](./.plann
 
 ## The skills
 
-37 skills across the six loop phases (plus the initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
+39 skills across the six loop phases (plus the initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
 `kata-diagnose`) share one `RUBRIC.md` method and expose depth tiers you dial per run.
 
 ```
@@ -170,6 +170,8 @@ skills/
 │
 ├── execute/      do the work, in a lane
 │   ├── kata-tdd ............ red-green-refactor on a vertical slice
+│   ├── kata-iac-terraform .. Terraform authoring with the IaC safety gate     ·specialist (never-tiered)
+│   ├── kata-iac-cloudformation . CFN/CDK authoring with the IaC safety gate   ·specialist (never-tiered)
 │   └── kata-diagnose/ ...... root-cause a failure                              ·tiers: light·full
 │
 ├── evaluate/     prove it, don't trust it
@@ -218,6 +220,8 @@ skills/
 | `kata-worktree` | 0.1.0 | 1 | coordinate | experimental | adapted-from CryptoPortfolioPlanner worktree proof (LESSONS-LEARNED L2/L3) | Per-owner git-worktree isolation for concurrent code |
 | `kata-diagnose-full` | 0.1.0 | 3 | execute | experimental | adapted-from mattpocock/skills engineering/diagnose | — |
 | `kata-diagnose-light` | 0.1.0 | 2 | execute | experimental | adapted-from mattpocock/skills engineering/diagnose | — |
+| `kata-iac-cloudformation` | 0.1.0 | 3 | execute | experimental | new (KataHarness original — IaC-safety specialist N3, DESIGN §2; shared safety contract protocol/iac-safety.md; Snyk IaC scanner wiring IAC-4) | — |
+| `kata-iac-terraform` | 0.1.0 | 3 | execute | experimental | new (KataHarness original — IaC-safety specialist N3, DESIGN §2; shared safety contract protocol/iac-safety.md; Snyk IaC scanner wiring IAC-4) | — |
 | `kata-tdd` | 0.1.0 | 3 | execute | experimental | adapted-from mattpocock/skills engineering/tdd | Red-green-refactor on a vertical slice |
 | `kata-evaluate` | 0.1.0 | 2 | evaluate | experimental | adapted-from cpp-evaluation (CryptoPortfolioPlanner) + Anthropic fresh-context evaluator pattern | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
 | `kata-report` | 0.1.0 | 1 | evaluate | experimental | new (KataHarness original — the D32 report, minimal v1; sprint-cadence D85/D2) | One-page report of a gated unit of work (reports the gate, never gates) |
