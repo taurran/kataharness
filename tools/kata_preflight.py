@@ -555,7 +555,8 @@ def run_preflight(
             the real ``~/.kata/`` is never touched.
         approved_hash_path:
             Override path to the freeze approval artifact (H2).  Default:
-            ``<repo_root>/.kata/kata.freeze-approval.json``.
+            ``<repo_root>/kata.freeze-approval.json`` (a committable path, NOT
+            under the gitignored ``.kata/``).
         project_path:
             Recorded in D-registry install entries (for cleanup reference-counting).
         branch:
