@@ -1029,3 +1029,37 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `NO_COLOR`); the run readout + the closeout report now share one visual identity. **Caveat:** ANSI renders on an
   ANSI-capable surface (the conductor runs it as a command); `--no-color`/`NO_COLOR` falls back to plain on a
   markdown-only surface. +10 tests. pytest 542, validate 36/0.
+
+<!-- multi-model FULL LAYER built over the D105 proof-slice. PLAN: specs/multi-model-orchestration/PLAN.md
+     (freeze-gate SHIP). Built through the recipe; merge 1f58415. -->
+- **D108 — Multi-model layer BUILT over the proof-slice (full routing wiring) — 2026-06-26, merge `1f58415`.**
+  The D105 frozen DESIGN's PARKED full layer is now wired. Authored a frozen PLAN (4 disjoint slices) →
+  **freeze-gate `kata-review` HOLD→SHIP** (caught a kiro write-vs-emit seam + a `config.md` false-contract +
+  a self-introduced phantom `target.platform` citation, all fixed) → orchestrated build (4 concurrent Sonnet
+  workers in worktrees, TDD, mutation-proven, self-stamped — `concurrency.json maxInFlight:3`) → fresh-context
+  `kata-evaluate` **PASS 9/9** (reproduced every artifact + executed the seams live) → standing D98 `kata-review`
+  **SHIP-WITH-FIXES→SHIP** (caught 5 stale role-map `file:line` citations + 1 "proven" overclaim → fixed via
+  **stable section-name anchors**, not line numbers). **What is now wired:** **(A)** `kata-orchestrate`
+  Preconditions §0 gains a **`roles` load-guard** (reads `kata_settings.confirmed_platforms()`, resolves
+  `kata.config.roles` via `kata_roles.resolve_roles` with `host_platform` = the orchestrator's runtime adapter
+  identity [`"claude"` v1; non-Claude host DEFERRED, LD11], fail-closed STOP on unknown role / unconfirmed
+  platform) + a **"Cross-model dispatch"** section (build_brief→dispatch→fold per role-group site; LD6 concurrent
+  background; LD7 host-fallback + log + surface); `protocol/config.md:27` flipped DESIGN-STAGED→**wired**.
+  **(B)** `kata-initiate` Phase 2e **"Make this run multi-modal?"** (surfaced only when a non-host platform is
+  confirmed) + load-bearing value #8 + gate item; `kata-bootstrap` Phase 3 writes the `roles` block (omit when
+  single-host). **(C)** `kata_dispatch` — a **capture-model branch in `_brief_prompt`** (`emit` for codex's `-o`
+  capture; **`write` for kiro**, which has no `-o` → the worker writes `resultPath`) + `kiro_command` registered
+  in `_COMMAND_BUILDERS`. **(D)** `kata_install` — **`.agents/skills/`** cross-tool flat-link target for
+  best-effort platforms + a **kiro confirm-probe** + the **`_PROBE_COMMANDS ⊆ _COMMAND_BUILDERS` invariant**
+  (a platform is routable only if it has both a dispatch adapter AND a probe). **Gates:** pytest **552**,
+  validate **36/0**, Snyk **0 med+**, mutation `allNonVacuous:true`. **Honest scope:** the read-only roles
+  (validator→codex, researcher→kiro) are **wired and stub-test-proven** (exercised end-to-end against an
+  injectable stub runner); a real multi-model run is gated on **install + confirm**; the per-platform CLI flags
+  are point-in-time (the confirm-probe is the standing guard). **DEFERRED (unchanged):** coder-routing
+  (write-sandbox path described + supported by `build_brief(sandbox="write")`, not proven); **copilot/cursor**
+  adapters; the **evaluator injection-points + score-threshold mechanism** (its result *shape* is frozen, its
+  *thresholds* are not — MM-1). **This makes a real single-vs-multi-model `kata-loop-benchmark` runnable** once a
+  second platform is installed + confirmed. Backout tag `pre-multimodel-layer`. Records:
+  `specs/multi-model-orchestration/{DESIGN,PLAN}.md`. **Meta:** the three adversarial passes each caught a real
+  defect the deterministic gate structurally misses (incl. the verify-before-reuse guard biting my own phantom
+  citation) — the D98/D102 discipline working as designed.

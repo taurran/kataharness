@@ -1,5 +1,26 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-26, MULTI-MODAL LAYER BUILT — full routing wiring over the proof-slice — merge `1f58415`,
+> D108; pytest 552 · validate 36/0 · Snyk 0 med+; PUSHED, in sync):** The D105 PARKED full layer is now wired,
+> built through the full recipe. Frozen PLAN (4 disjoint slices) → **freeze-gate `kata-review` HOLD→SHIP**
+> (caught a kiro write-vs-emit seam + a `config.md` false-contract + a self-introduced phantom `target.platform`
+> citation) → **orchestrated build** (4 concurrent Sonnet workers in worktrees, TDD, mutation-proven, self-stamped
+> — `concurrency.json maxInFlight:3`) → fresh-context **`kata-evaluate` PASS 9/9** (reproduced artifacts + executed
+> seams live) → standing **D98 `kata-review` SHIP** (caught 5 stale role-map citations + 1 overclaim → fixed via
+> stable section-name anchors). **Wired:** (A) `kata-orchestrate` `roles` load-guard (resolve via `kata_roles`,
+> host=runtime adapter identity `"claude"` v1, fail-closed) + "Cross-model dispatch" section (build_brief→dispatch→fold
+> per role-group site, LD6 concurrency, LD7 host-fallback); `config.md:27` flipped DESIGN-STAGED→**wired**. (B)
+> `kata-initiate` Phase 2e "Make this run multi-modal?" + value #8; `kata-bootstrap` writes `roles`. (C)
+> `kata_dispatch` `_brief_prompt` capture-model branch (codex emit / **kiro writes resultPath**) + `kiro_command`.
+> (D) `kata_install` `.agents/skills/` targeting + kiro probe + `_PROBE_COMMANDS ⊆ _COMMAND_BUILDERS` invariant.
+> **Honest scope:** read-only roles (validator→codex, researcher→kiro) **wired + stub-test-proven**; real run gated
+> on install+confirm; coder-routing + copilot/cursor + evaluator-thresholds DEFERRED. **This makes a real
+> single-vs-multi-model `kata-loop-benchmark` runnable** once a 2nd platform is installed+confirmed. Backout
+> `pre-multimodel-layer`. **NEXT (choose):** (a) `kata-preflight` (the other Debug Mode blocker, D29/D103) → Debug
+> Mode; (b) grill **capability-aware-assignment** (the specialist axis that multiplies with multi-model); (c) the
+> strategy BRIEFs (second-brain-learning Recall contract; recurrence-hardening general build); (d) install+confirm a
+> 2nd platform live + run the benchmark. Records: `specs/multi-model-orchestration/{DESIGN,PLAN}.md`.
+
 > **CURRENT (2026-06-26, install-portability BUILT · multi-model GRILLED+FROZEN+proof-slice BUILT · red-team
 > hardened · loop-init banner — tip `fe8d015`, D104–D107; pytest 542 · validator 36/0 · Snyk 0 med+):** A big
 > build+research day. **(D104) install-portability BUILT** (the *simple* model after an operator course-correction

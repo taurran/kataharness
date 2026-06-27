@@ -1,8 +1,8 @@
 ---
-date: 2026-06-26 (install-portability BUILT · multi-model GRILLED+FROZEN+proof-slice BUILT · red-team hardened · loop-init banner — D104–D107; next = finish multi-model layer OR kata-preflight→Debug Mode)
-branch: master — private remote github.com/taurran/kataharness, tip d8355c6 (PUSHED, in sync as of 2026-06-26 — `git log --oneline origin/master..HEAD` to verify)
-green: validator 36 skills / 0 errors · pytest 542 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
-tags: pre-install-portability · pre-multimodel-slice · pre-phantom-hardening · pre-ws3 · v0.1.0-alpha.3 · loop-hardening-complete
+date: 2026-06-26 (MULTI-MODAL LAYER BUILT — full routing wiring over the proof-slice, D108; next = kata-preflight→Debug Mode OR capability-aware-assignment OR install+confirm a 2nd platform → benchmark)
+branch: master — private remote github.com/taurran/kataharness, tip 1f58415 (PUSHED, in sync as of 2026-06-26 — `git log --oneline origin/master..HEAD` to verify)
+green: validator 36 skills / 0 errors · pytest 552 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
+tags: pre-multimodel-layer · pre-install-portability · pre-multimodel-slice · pre-phantom-hardening · pre-ws3 · v0.1.0-alpha.3 · loop-hardening-complete
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
@@ -54,10 +54,14 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 ⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated, harness-injected).
 
 ## 2. State *(orientation: VOLATILE)*
-- Branch `master`, tip `fe8d015` (D104 install-portability built · D105 multi-model frozen + proof-slice · D106 red-team
-  hardened · D107 banner — run `git log --oneline -10` for the arc; check `origin/master..HEAD` for unpushed). **36 skills /
-  0 errors · pytest 542 · Snyk med+ 0.** **New tools this day:** `tools/{project_find,kata_settings,kata_install,kata_roles,
-  kata_dispatch,kata_banner}.py` (+ tests). Specs: `specs/{install-portability,multi-model-orchestration}/{RESEARCH,GRILL-LEDGER,DESIGN}.md`.
+- Branch `master`, tip `1f58415` (**D108 multi-modal layer BUILT** · D104 install-portability · D105 multi-model frozen +
+  proof-slice · D106 red-team hardened · D107 banner — run `git log --oneline -14` for the arc; check `origin/master..HEAD`
+  for unpushed). **36 skills / 0 errors · pytest 552 · Snyk med+ 0.** **D108 = the full multi-model routing layer over the
+  proof-slice** (freeze-gate SHIP → orchestrated 4-slice build → kata-evaluate PASS 9/9 → D98 SHIP): `kata-orchestrate` roles
+  load-guard + cross-model dispatch wiring; `kata-initiate` Phase 2e multi-modal preflight + `kata-bootstrap` roles write;
+  `kata_dispatch` kiro adapter (capture-model branch); `kata_install` `.agents/skills` + kiro probe + probe⊆dispatch invariant.
+  **New tools (D104-D107):** `tools/{project_find,kata_settings,kata_install,kata_roles,kata_dispatch,kata_banner}.py` (+ tests).
+  Specs: `specs/{install-portability,multi-model-orchestration}/{RESEARCH,GRILL-LEDGER,DESIGN}.md` + `multi-model-orchestration/PLAN.md`.
   Confirm: `cd tools && uv run pytest -q && uv run python validate_skills.py`. **Windows gotcha:** git-bash mangles
   `/tmp/...` args to native python — use `C:/...` paths, a `.kata`-relative path, or `MSYS_NO_PATHCONV=1`. Also: a
   `..` segment in any operator-supplied path is rejected by the `_safe_path` guards by design (CWE-23) — use
@@ -180,12 +184,17 @@ The immediate agenda, in order:
    + `roles` config; end-to-end proof (validator→codex→normalized verdict) against the stub-CLI seam; pytest 522,
    validate 36/0, Snyk 0 med+, D98 SHIP-WITH-FIXES→fixed. **Honest:** codex not installed → stub-proven, real run gated
    on install+confirm; only the codex adapter built (kiro/copilot/cursor = stubs).
-   **★ NEXT (choose):** (a) **finish the multi-model layer** — wire `kata_dispatch` into `kata-orchestrate` (LD6
-   concurrency + LD7 host-fallback) + the `roles` load-guard + the "make this run multi-modal?" preflight question in
-   `kata-initiate` + the kiro/copilot/cursor adapters + `.agents/skills` install targeting (this makes a real
-   benchmark single-vs-multi-model runnable); OR (b) **`kata-preflight`** (the other Debug Mode blocker, D29/D103) →
-   Debug Mode build; OR (c) grill **capability-aware-assignment** (the specialist axis that multiplies with multi-model).
-   NOTE memory [[grill-in-plain-terms]] — keep design questions plain + the simplest model that works.
+   **✅ MULTI-MODAL LAYER BUILT (D108, `1f58415`)** — the full routing wiring over the proof-slice: `kata-orchestrate`
+   `roles` load-guard + cross-model dispatch (LD6/LD7); `kata-initiate` Phase 2e preflight + `kata-bootstrap` roles write;
+   `kata_dispatch` kiro adapter (capture-model branch); `kata_install` `.agents/skills` + kiro probe + probe⊆dispatch
+   invariant. Recipe-built (freeze-gate SHIP → kata-evaluate PASS 9/9 → D98 SHIP). Read-only roles (validator→codex,
+   researcher→kiro) wired + stub-test-proven; real run gated on install+confirm. PLAN: `specs/multi-model-orchestration/PLAN.md`.
+   **★ NEXT (choose):** (a) **`kata-preflight`** (the other Debug Mode blocker, D29/D103) → **Debug Mode** build (the
+   onboarding killer-app); OR (b) grill **capability-aware-assignment** (the specialist axis that multiplies with multi-model);
+   OR (c) the strategy BRIEFs (`second-brain-learning` Recall contract is load-bearing; `recurrence-hardening` general build);
+   OR (d) **install + confirm a 2nd platform live** (codex or kiro) and run the single-vs-multi-model `kata-loop-benchmark`
+   (D108 makes this runnable). **DEFERRED in D108:** coder-routing (write sandbox), copilot/cursor adapters, the evaluator
+   injection-points + score-threshold mechanism (MM-1). NOTE memory [[grill-in-plain-terms]] — keep design questions plain.
 3. **Far-future.** `kata-loop-benchmark` (now the **keystone** that defines the C-arc unlock + measures whether
    learning/hardening pays off — D99) → recursive parallelism (DAG-within-DAG) gated on a hardened separability test.
 
