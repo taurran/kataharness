@@ -106,12 +106,12 @@ passes with zero scanner coverage. This mirrors the kata-preflight MINOR-3 fail-
 (`tools/kata_preflight.py:808-826`):
 
 > ```python
-> # tools/kata_preflight.py:808-826
+> # the SCA precedent — tools/kata_preflight.py:808-826 (quoted verbatim; the IaC gate applies the SAME structure with snyk_iac_scan)
 > if not _snyk_check_wired:
 >     blockers.append(
 >         f"dep {name!r}: SCA scanner not wired — scan_required:true but no "
 >         "snyk_check callable was provided; refusing to install without a scan "
->         "(LD3, MINOR 3). Wire mcp__Snyk__snyk_iac_scan or set "
+>         "(LD3, MINOR 3). Wire mcp__Snyk__snyk_sca_scan or set "
 >         "scan_required:false for an explicit opt-out."
 >     )
 >     ...
