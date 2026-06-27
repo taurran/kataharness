@@ -1,8 +1,8 @@
 ---
-date: 2026-06-26 (kata-preflight BUILT — PRE-FLIGHT spine phase, D109; multi-modal layer D108 earlier same day; next = DEBUG MODE (now unblocked) OR capability-aware-assignment OR strategy BRIEFs OR 2nd-platform benchmark)
-branch: master — private remote github.com/taurran/kataharness, tip 710347a (PUSHED, in sync as of 2026-06-26 — `git log --oneline origin/master..HEAD` to verify)
-green: validator 37 skills / 0 errors · pytest 633 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
-tags: pre-kata-preflight · pre-multimodel-layer · pre-install-portability · pre-phantom-hardening · pre-ws3 · v0.1.0-alpha.3 · loop-hardening-complete
+date: 2026-06-26 (IaC-safety specialists Tier-1 BUILT, D110; same day: multi-modal layer D108, kata-preflight D109, primary-grill-style; next = DEBUG MODE (unblocked) OR IaC Tier-2 live-apply OR recurrence-hardening OR second-brain OR 2nd-platform benchmark)
+branch: master — private remote github.com/taurran/kataharness, tip 396baa3 (PUSHED, in sync as of 2026-06-26 — `git log --oneline origin/master..HEAD` to verify)
+green: validator 39 skills / 0 errors · pytest 739 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
+tags: pre-iac-specialist · pre-kata-preflight · pre-multimodel-layer · pre-install-portability · pre-ws3 · v0.1.0-alpha.3 · loop-hardening-complete
 authored-for: kata-orient (sections map to the three orientation tiers)
 ---
 
@@ -54,7 +54,16 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 ⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated, harness-injected).
 
 ## 2. State *(orientation: VOLATILE)*
-- Branch `master`, tip `710347a` (**D109 kata-preflight BUILT — PRE-FLIGHT spine phase** · D108 multi-modal layer ·
+- Branch `master`, tip `396baa3` (**D110 IaC-safety specialists Tier-1 BUILT** · D109 kata-preflight · D108 multi-model
+  · primary-grill-style — `git log --oneline -24` for the day's arc). **39 skills / 0 · pytest 739 · Snyk med+ 0.**
+  **D110 = two IaC specialists** (`kata-iac-terraform`+`kata-iac-cloudformation`, `execute`, never-tiered) +
+  `tools/iac_detect.py` (detector + plan/change-set destructive-parsers, fail-closed) + `protocol/iac-safety.md`
+  (shared contract: 8-smell lens, bake-vs-delegate, escalation mapping) + orchestrate auto-activation+gate (Snyk-IaC
+  primary, **fail-closed**) + `iac` config + kata-evaluate evidence. **Tier 1 = author/review/gate, NO live apply**
+  (Tier 2 deferred, `specs/iac-live-apply/BRIEF.md`). D98 caught + we fixed a real safety BLOCKER (stateful set too
+  narrow). **Also today:** the **plain-language + simplest-model grill style is now PRIMARY** (baked into
+  `skills/plan/kata-grill/RUBRIC.md` with a fidelity invariant — plain ≠ shallow; memory [[grill-in-plain-terms]]).
+- Branch `master`, tip earlier `710347a` (**D109 kata-preflight BUILT — PRE-FLIGHT spine phase** · D108 multi-modal layer ·
   D104-D107 — `git log --oneline -18` for the arc). **37 skills / 0 errors · pytest 633 · Snyk med+ 0.** **D109 =
   the D29 PRE-FLIGHT spine**: `tools/kata_preflight.py` guarded auto-installer (per-manager package-NAME grammar →
   no URL/VCS source expressible, structured argv never `shell=True`, freeform install string never executed, forced
@@ -199,9 +208,11 @@ The immediate agenda, in order:
    `kata_dispatch` kiro adapter (capture-model branch); `kata_install` `.agents/skills` + kiro probe + probe⊆dispatch
    invariant. Recipe-built (freeze-gate SHIP → kata-evaluate PASS 9/9 → D98 SHIP). Read-only roles (validator→codex,
    researcher→kiro) wired + stub-test-proven; real run gated on install+confirm. PLAN: `specs/multi-model-orchestration/PLAN.md`.
-   **✅ kata-preflight BUILT (D109, `710347a`)** — the D29 PRE-FLIGHT spine phase (guarded auto-installer + registry +
-   cleanup + target runnable-env probe + orchestrate precondition). Clears Debug Mode's 2nd build blocker.
-   **★ NEXT (choose):** (a) **DEBUG MODE build — NOW UNBLOCKED** (both blockers cleared; DESIGN frozen
+   **✅ kata-preflight BUILT (D109, `710347a`)** — the D29 PRE-FLIGHT spine phase. **✅ IaC-safety specialists Tier-1
+   BUILT (D110, `396baa3`)** — TF+CFN author/review/gate specialists, auto-by-file-class, Snyk-primary fail-closed;
+   Tier-2 live-apply deferred (`specs/iac-live-apply/BRIEF.md`). **✅ primary-grill-style** (plain+simplest, fidelity-
+   invariant, in `kata-grill/RUBRIC.md`).
+   **★ NEXT (choose):** (a) **DEBUG MODE build — UNBLOCKED** (both blockers cleared; DESIGN frozen
    `specs/debug-mode/DESIGN.md`; the onboarding/conversion killer-app — `debug` run-shape, kata-comprehend oracle,
    7-step deviation pipeline); OR (b) grill **capability-aware-assignment** (specialist axis, multiplies with D108
    multi-model); OR (c) the strategy BRIEFs (`second-brain-learning` Recall contract; `recurrence-hardening` general

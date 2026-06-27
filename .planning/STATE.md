@@ -1,5 +1,22 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-26, IaC-SAFETY SPECIALISTS (Tier 1) BUILT — merge `396baa3`, D110; pytest 739 · 39 skills/0 ·
+> Snyk 0; PUSHED, in sync):** capability-aware-assignment, narrowed to **IaC specialists** for v1 (the specialist
+> value for frontier models is **safety/security/gate discipline, not language expertise**). 4-agent grounded research
+> spike → grill → freeze → recipe build (4 slices). **Two specialists** `kata-iac-terraform` + `kata-iac-cloudformation`
+> (`execute`, never-tiered, DRY-by-pointer to `protocol/iac-safety.md`); **Tier 1 = author/review/gate, NO live apply**
+> (no cloud creds; cloud apply breaks git-reversibility — **Tier 2 deferred**, `specs/iac-live-apply/BRIEF.md`).
+> Auto-activated by `tools/iac_detect.py` (classifier + plan/change-set destructive-parsers, fail-closed); gate =
+> validate/cfn-lint → `snyk_iac_scan` (default-FAIL high/critical; **fail-closed if unwired**) → 8-smell lens →
+> destructive analysis (static + parse-if-provided; no live plan gen) → `.kata/iac.json` → pass/fail/**escalate**
+> (destroy/replace on a stateful resource → human-required). `kata-evaluate` reads the artifact; BC: no IaC ⇒ no-op.
+> freeze-gate **HOLD→SHIP** · `kata-evaluate` **PASS 9/9** · **D98 HOLD→SHIP — caught a real safety BLOCKER** (stateful
+> set too narrow: EFS/SQS/SNS/Kinesis/OpenSearch/Neptune/DocDB weren't escalating on destroy) + fail-open + overclaim,
+> all fixed. Backout `pre-iac-specialist`. **NEXT (choose):** (a) **Debug Mode** build (both blockers cleared long ago;
+> DESIGN frozen — the onboarding killer-app); (b) **Tier-2 IaC live-apply** (its own grill, gated on authenticated
+> cloud access); (c) **recurrence-hardening** general build; (d) **second-brain-learning** (Recall contract); (e)
+> install+confirm a 2nd platform → multi-model benchmark. Records: `specs/iac-safety-specialist/*`, `specs/iac-live-apply/BRIEF.md`.
+
 > **CURRENT (2026-06-26, kata-preflight BUILT — the PRE-FLIGHT spine phase — merge `710347a`, D109; pytest 633 ·
 > validate 37/0 · Snyk 0 med+; PUSHED, in sync):** D29 realized. Grilled in plain terms → 4 operator decisions
 > (auto-run pre-approved installs · full v1 incl. cleanup report · one mechanism for build-deps + target runnable-env ·

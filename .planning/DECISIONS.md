@@ -1096,3 +1096,32 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   D104/D103) → Debug Mode is now UNBLOCKED.** Backout tag `pre-kata-preflight`. Records:
   `specs/kata-preflight/{GRILL-LEDGER,DESIGN,PLAN}.md`. **Meta:** D98 again caught what the conformance gate
   could not — the adversarial second lens is load-bearing on security-critical code (D98 working exactly as designed).
+
+<!-- IaC-safety specialists (Tier 1) BUILT — the v1 of capability-aware-assignment, IaC-scoped.
+     Specs: specs/iac-safety-specialist/{RESEARCH,DESIGN}.md + specs/iac-live-apply/BRIEF.md. Merge 396baa3. -->
+- **D110 — IaC-safety specialists (Tier 1) BUILT — 2026-06-26, merge `396baa3`.** capability-aware-assignment,
+  narrowed (operator) to **IaC specialists** for v1 — because for frontier models the specialist value is **safety/
+  security/gate discipline, NOT language expertise** (a bad `apply` destroys a DB; a generic coder won't apply the
+  plan-not-apply / destroy-escalation / misconfig discipline). 4-agent grounded research spike (`RESEARCH.md`) →
+  grill (IAC-1..4) → freeze. **Two specialists** `kata-iac-terraform` + `kata-iac-cloudformation` (`category:
+  execute`, never-tiered, DRY-by-pointer to `protocol/iac-safety.md`); **Tier 1 = author/review/gate, NO live apply**
+  (the harness has no cloud creds; a live apply isn't git-reversible — **Tier 2 deferred** with a full assessment in
+  `specs/iac-live-apply/BRIEF.md`: the structural blocker is that cloud applies break the loop's git-reversibility
+  safety model). **Auto-activated by detected file-class** (`tools/iac_detect.py` — classifier + plan/change-set
+  destructive-parsers, fail-closed on malformed); **Snyk IaC primary** (NEW wiring, injectable + **fail-closed** when
+  unwired). The gate: validate/cfn-lint → `mcp__Snyk__snyk_iac_scan` (default-FAIL high/critical; FAIL if unwired) →
+  8-smell lens → destructive analysis (static source-diff + parse a plan/change-set JSON *if provided* — Tier 1 does
+  NOT generate plans) → emit `.kata/iac.json` → verdict pass/fail/**escalate** (destroy/replace on a stateful
+  resource → `human-required`, orchestrator-written). `kata-evaluate` reads `.kata/iac.json`. BC: no IaC ⇒ no-op.
+  **Built through the recipe** (4 disjoint slices, concurrent Sonnet workers): freeze-gate `kata-review` **HOLD→SHIP**
+  (caught a command-injection-class freeform overclaim + fail-open scanner + a phantom `target.platform`-style "already
+  wired" reuse claim) → `kata-evaluate` **PASS 9/9** → standing D98 `kata-review` **HOLD→SHIP** — **D98 caught a real
+  safety BLOCKER kata-evaluate missed: the stateful set was too narrow** (EFS/SQS/SNS/Kinesis/OpenSearch/Neptune/
+  DocumentDB classified non-stateful → their destruction silently would NOT escalate); fixed (prefix families) +
+  RequiresRecreation impl + malformed-input fail-closed (`ValueError`, incl. the `actions`-as-string substring
+  fail-open) + finding-7 Details/Target guards. **Gates:** pytest **739** (36→**39 skills**), validate 39/0, Snyk 0
+  med+, mutation nonVacuous. **Honest scope:** Snyk-IaC + the gate are wired; auto-install/live-apply absent (Tier 2);
+  detection is best-effort (false-negative acknowledged + `forceClassify` mitigation); the 8-smell lens is a
+  self-check floor-raiser, the scanner is the authoritative gate. Backout tag `pre-iac-specialist`. Records:
+  `specs/iac-safety-specialist/{RESEARCH,DESIGN}.md`, `specs/iac-live-apply/BRIEF.md`. **Meta:** D98 again caught
+  what conformance passed over — the adversarial lens is load-bearing on security code (3rd session-instance).
