@@ -79,9 +79,39 @@ _MANAGER_REGISTRY_URLS: dict[str, str] = {
     "cargo": "sparse+https://index.crates.io/",
 }
 
-# H1: safe charset for ``package`` and ``version`` field values.
-# Allows alnum + . - _ / @ : + (covers PEP-508, npm, semver, crates.io).
-_SAFE_CHARS_RE = re.compile(r"^[A-Za-z0-9.\-_/@:+]+$")
+# ---------------------------------------------------------------------------
+# BLOCKER 1 fix: per-manager package-name grammars.
+#
+# The old broad charset (alnum + .-_/@:+) permitted `:`, `/`, `@`, `+` which
+# allowed source specs like ``https://evil.com/m.tgz`` or
+# ``git+https://evil/repo.git`` as `package` values.  Those are POSITIONAL
+# SOURCES that pip/npm fetch ignoring the forced --index-url/--registry; the
+# ``--`` end-of-options separator does NOT stop them.
+#
+# A package *name* is not a source spec.  These regexes enforce that.
+# ---------------------------------------------------------------------------
+
+# pip / uv (PyPI PEP-508 package name + optional extras bracket):
+_PYPI_PACKAGE_RE = re.compile(r"^[A-Za-z0-9._-]+(\[[A-Za-z0-9._,-]+\])?$")
+
+# npm: optional ``@scope/`` prefix + name; at most one leading ``@scope/``.
+# No ``:`` (kills ``git+https:``), no bare ``/`` without leading ``@``.
+_NPM_PACKAGE_RE = re.compile(r"^(@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$")
+
+# cargo / crates.io: alphanumeric + hyphen + underscore only.
+_CARGO_PACKAGE_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+
+#: Dispatch table: manager → package-name grammar regex.
+_PACKAGE_RE_BY_MANAGER: dict[str, re.Pattern] = {
+    "pip": _PYPI_PACKAGE_RE,
+    "uv": _PYPI_PACKAGE_RE,
+    "npm": _NPM_PACKAGE_RE,
+    "cargo": _CARGO_PACKAGE_RE,
+}
+
+# Version charset — alnum + . - _ + ~ ^ only.
+# Forbids `:` and `/` which would make a value a source spec.
+_VERSION_RE = re.compile(r"^[A-Za-z0-9.\-_+~^]+$")
 
 _REGISTRY_VERSION = 1
 _DEFAULT_FREEZE_APPROVAL_FILENAME = "kata.freeze-approval.json"
@@ -113,10 +143,13 @@ def _safe_abs(raw: str | Path) -> Path:
 # ---------------------------------------------------------------------------
 
 def _validate_field_value(value: str, field_name: str) -> None:
-    """H1 flag-injection guard: reject leading ``-`` and unsafe charsets.
+    """H1 flag-injection guard for ``version`` (and other non-package string fields).
 
-    Raises ``ValueError`` on violation.  Called by ``_build_argv`` before any
-    field value is placed into an argv list (DESIGN §8 H1).
+    Rejects leading ``-`` and unsafe charsets.  For ``package``, use the
+    per-manager ``_validate_package`` function instead (BLOCKER 1 fix).
+
+    Raises ``ValueError`` on violation.  Called by ``_build_argv`` and the dep
+    loop in ``run_preflight`` for the ``version`` field (DESIGN §8 H1).
     """
     if not value:
         raise ValueError(f"Field {field_name!r} is empty")
@@ -124,9 +157,63 @@ def _validate_field_value(value: str, field_name: str) -> None:
         raise ValueError(
             f"Field {field_name!r} starts with '-' (flag injection risk): {value!r}"
         )
-    if not _SAFE_CHARS_RE.match(value):
+    if not _VERSION_RE.match(value):
         raise ValueError(
             f"Field {field_name!r} contains invalid characters: {value!r}"
+        )
+
+
+def _validate_package(package: str, manager: str) -> None:
+    """Per-manager package-name guard (BLOCKER 1 — source-injection fix).
+
+    Rejects values that are source specs (URLs, VCS refs, paths) rather than
+    registry package names.  Such values would bypass the forced
+    ``--index-url`` / ``--registry`` and cause pip/npm/cargo to fetch from an
+    attacker-controlled source, running arbitrary postinstall code.
+
+    Universal rejects (before per-manager grammar):
+    - Leading ``-`` (flag injection, H1).
+    - Contains ``://`` (kills ``https://``, ``http://``).
+    - Starts with ``git+`` (VCS source spec).
+    - Starts with ``http`` (URL source spec).
+    - Contains ``..`` (path traversal).
+
+    Per-manager grammar (after universal checks):
+    - pip/uv:  ``^[A-Za-z0-9._-]+(\\[[A-Za-z0-9._,-]+\\])?$``
+    - npm:     ``^(@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$``
+    - cargo:   ``^[A-Za-z0-9_-]+$``
+
+    Raises ``ValueError`` on violation.
+    """
+    if not package:
+        raise ValueError("Field 'package' is empty")
+    if package.startswith("-"):
+        raise ValueError(
+            f"Field 'package' starts with '-' (flag injection risk): {package!r}"
+        )
+    if "://" in package:
+        raise ValueError(
+            f"Field 'package' contains '://' (URL source spec rejected): {package!r}"
+        )
+    if package.startswith("git+"):
+        raise ValueError(
+            f"Field 'package' starts with 'git+' (VCS source spec rejected): {package!r}"
+        )
+    if package.startswith("http"):
+        raise ValueError(
+            f"Field 'package' starts with 'http' (URL source spec rejected): {package!r}"
+        )
+    if ".." in package:
+        raise ValueError(
+            f"Field 'package' contains '..' (path traversal rejected): {package!r}"
+        )
+    pkg_re = _PACKAGE_RE_BY_MANAGER.get(manager)
+    if pkg_re is None:
+        raise ValueError(f"No package name grammar defined for manager {manager!r}")
+    if not pkg_re.match(package):
+        raise ValueError(
+            f"Field 'package' contains invalid characters or fails {manager!r} "
+            f"name grammar: {package!r}. Use a registry package name, not a source spec."
         )
 
 
@@ -171,8 +258,9 @@ def _build_argv(dep: dict, registry_url: str | None) -> list[str]:
     if not version:
         raise ValueError("Missing required structured field 'version'")
 
-    # H1: validate before placing into argv
-    _validate_field_value(package, "package")
+    # H1: validate before placing into argv.
+    # BLOCKER 1: use per-manager grammar for package (source-injection fix).
+    _validate_package(package, manager)  # type: ignore[arg-type]
     _validate_field_value(version, "version")
 
     # Builder table — each path inserts ``--`` before positional package args (H1)
@@ -256,8 +344,12 @@ def _default_runner(argv: list[str]) -> tuple[int, str]:
 def _default_snyk_check(package: str, version: str) -> bool:
     """Seam for the Snyk SCA pre-install gate (DESIGN LD3).
 
-    Returns ``True`` (safe) when no scanner is wired in.  The skill layer
-    (Slice B) injects the real ``mcp__Snyk__snyk_sca_scan`` call.
+    Returns ``True`` (safe) — this is the fallback used only when
+    ``scan_required`` is **False**.  When ``scan_required`` is ``True`` and no
+    real ``snyk_check`` callable is provided, ``run_preflight`` blocks with a
+    clear "SCA scanner not wired" reason (MINOR 3 fail-closed fix) and never
+    reaches this function.  The skill layer (Slice B) injects the real
+    ``mcp__Snyk__snyk_sca_scan`` call.
     """
     return True
 
@@ -490,16 +582,20 @@ def run_preflight(
     real_home: Path = _safe_abs(home_dir) if home_dir is not None else Path.home()
 
     # --- Resolve approved-hash path (H2) ---
+    # MAJOR 2: default is repo root (not .kata/) so it can be committed and
+    # tracked separately from the manifest.  Overridable for stronger guarantees.
     if approved_hash_path is not None:
         real_approved_hash_p: Path = _safe_abs(approved_hash_path)
     else:
-        real_approved_hash_p = (
-            repo_root_p / ".kata" / _DEFAULT_FREEZE_APPROVAL_FILENAME
-        )
+        real_approved_hash_p = repo_root_p / _DEFAULT_FREEZE_APPROVAL_FILENAME
 
     # --- Wire injectable defaults ---
     real_runner: RunnerType = runner or _default_runner
-    real_snyk_check: SnykCheckType = snyk_check or _default_snyk_check
+    # MINOR 3: track whether a real scanner was explicitly wired.
+    # When scan_required:True and no snyk_check provided, the dep loop blocks
+    # with a clear "SCA scanner not wired" reason (fail-closed).
+    _snyk_check_wired: bool = snyk_check is not None
+    real_snyk_check: SnykCheckType = snyk_check if _snyk_check_wired else _default_snyk_check
     real_sandbox_check: Callable[[], bool] = sandbox_check or (lambda: True)
 
     # --- Extract preflight config (protocol/config.md:29-36) ---
@@ -670,10 +766,11 @@ def run_preflight(
             overall_status = "blocked"
             continue
 
-        # ---- Guard 3: H1 field-value validation (called here; also inside _build_argv)
+        # ---- Guard 3: field-value validation (called here; also inside _build_argv).
+        # BLOCKER 1: use per-manager grammar for package (source-injection fix).
         try:
-            _validate_field_value(package, "package")  # type: ignore[arg-type]
-            _validate_field_value(version, "version")   # type: ignore[arg-type]
+            _validate_package(package, manager)          # type: ignore[arg-type]
+            _validate_field_value(version, "version")    # type: ignore[arg-type]
         except ValueError as exc:
             blockers.append(f"dep {name!r}: {exc}")
             dep_results.append(
@@ -709,6 +806,23 @@ def run_preflight(
 
         # ---- Dep is missing → Snyk SCA pre-install gate (LD3)
         if scan_required:
+            # MINOR 3: fail-closed when scan_required but no real scanner wired.
+            if not _snyk_check_wired:
+                blockers.append(
+                    f"dep {name!r}: SCA scanner not wired — scan_required:true but no "
+                    "snyk_check callable was provided; refusing to install without a scan "
+                    "(LD3, MINOR 3). Wire mcp__Snyk__snyk_sca_scan or set "
+                    "scan_required:false for an explicit opt-out."
+                )
+                dep_results.append(
+                    {
+                        "name": name, "verify": "failed", "action": "skipped",
+                        "source": dep.get("source", ""), "scope": dep.get("scope", ""),
+                        "classification": dep.get("classification", ""),
+                    }
+                )
+                overall_status = "blocked"
+                continue
             is_safe: bool = real_snyk_check(package, version)  # type: ignore[arg-type]
             if not is_safe:
                 blockers.append(

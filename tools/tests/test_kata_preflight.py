@@ -806,22 +806,236 @@ class TestPathGuard:
 
 
 # ---------------------------------------------------------------------------
+# BLOCKER 1: per-manager package-name grammar (source-injection prevention)
+# ---------------------------------------------------------------------------
+
+class TestSourceInjectionBlocked:
+    """BLOCKER 1: ``package`` values that are source specs must be blocked per-manager.
+
+    A value like ``https://evil.com/m.tgz`` or ``git+https://evil/repo.git``
+    is a POSITIONAL SOURCE that pip/npm will fetch, ignoring the forced
+    ``--index-url`` / ``--registry``.  The ``--`` separator does NOT stop this
+    (it is a source spec, not a flag).
+    """
+
+    # --- pip / uv -------------------------------------------------------
+
+    def test_url_package_pip_blocked(self):
+        """https:// URL as pip package → rejected before any argv is built."""
+        dep = {"manager": "pip", "package": "https://evil.com/m.tgz", "version": "1.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    def test_git_plus_pip_blocked(self):
+        """git+https:// as pip package → rejected."""
+        dep = {"manager": "pip", "package": "git+https://evil.com/repo.git", "version": "1.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    def test_url_package_uv_blocked(self):
+        """https:// URL as uv package → rejected."""
+        dep = {"manager": "uv", "package": "https://evil.com/m.tgz", "version": "1.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    def test_colon_slash_pip_blocked(self):
+        """foo:bar (colon) in pip package → rejected."""
+        dep = {"manager": "pip", "package": "foo:bar", "version": "1.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    def test_path_slash_pip_blocked(self):
+        """a/b/c (slash, non-npm) in pip package → rejected."""
+        dep = {"manager": "pip", "package": "a/b/c", "version": "1.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    # --- npm ------------------------------------------------------------
+
+    def test_git_plus_npm_blocked(self):
+        """git+https:// as npm package → rejected."""
+        dep = {"manager": "npm", "package": "git+https://evil.com/repo.git", "version": "1.0.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    def test_url_package_npm_blocked(self):
+        """https:// URL as npm package → rejected."""
+        dep = {"manager": "npm", "package": "https://evil.com/m.tgz", "version": "1.0.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    def test_multiple_slashes_npm_blocked(self):
+        """scope/pkg/evil (>1 path segment, no leading @) as npm package → rejected."""
+        dep = {"manager": "npm", "package": "scope/pkg/evil", "version": "1.0.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    # --- cargo ----------------------------------------------------------
+
+    def test_colon_cargo_blocked(self):
+        """foo:bar (colon) in cargo package → rejected."""
+        dep = {"manager": "cargo", "package": "foo:bar", "version": "1.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    def test_slash_cargo_blocked(self):
+        """a/b (slash) in cargo package → rejected."""
+        dep = {"manager": "cargo", "package": "a/b", "version": "1.0"}
+        with pytest.raises(ValueError):
+            pf._build_argv(dep, None)
+
+    # --- Valid names must still pass ------------------------------------
+
+    def test_valid_pip_name_passes(self):
+        """pip: plain package name → passes."""
+        dep = {"manager": "pip", "package": "requests", "version": "2.31.0"}
+        argv = pf._build_argv(dep, None)
+        assert "requests==2.31.0" in argv
+
+    def test_valid_pip_extras_pass(self):
+        """pip: package with extras bracket → passes (PEP-508 extras are not source specs)."""
+        dep = {"manager": "pip", "package": "requests[security]", "version": "2.31.0"}
+        argv = pf._build_argv(dep, None)
+        assert "requests[security]==2.31.0" in argv
+
+    def test_valid_npm_name_passes(self):
+        """npm: plain package name → passes."""
+        dep = {"manager": "npm", "package": "lodash", "version": "4.17.21"}
+        argv = pf._build_argv(dep, None)
+        assert "lodash@4.17.21" in argv
+
+    def test_valid_npm_scoped_passes(self):
+        """npm: scoped @scope/pkg → passes."""
+        dep = {"manager": "npm", "package": "@scope/pkg", "version": "1.0.0"}
+        argv = pf._build_argv(dep, None)
+        assert "@scope/pkg@1.0.0" in argv
+
+    def test_valid_cargo_name_passes(self):
+        """cargo: hyphenated crate name → passes."""
+        dep = {"manager": "cargo", "package": "serde-json", "version": "1.0.0"}
+        argv = pf._build_argv(dep, None)
+        assert "serde-json" in argv
+
+    # --- End-to-end: evil URL package → blocked, runner NEVER called ----
+
+    def test_e2e_evil_url_package_blocked_runner_never_called(
+        self, repo: Path, fake_home: Path
+    ):
+        """End-to-end: manifest with evil URL package → run_preflight → blocked;
+        the runner is NEVER called (zero invocations assert)."""
+        evil_dep = {
+            "name": "evil-pkg",
+            "manager": "pip",
+            "package": "https://evil.com/m.tgz",
+            "version": "1.0",
+            "verify": "python -c 'import evil'",
+            "source": "pypi",
+            "scope": "project-local",
+            "classification": "build-time",
+        }
+        mp, ap = _setup_repo(repo, [evil_dep])
+        runner = _TrackingRunner()
+        result = pf.run_preflight(
+            repo, runner=runner, approved_hash_path=ap, home_dir=fake_home,
+            snyk_check=lambda p, v: True, sandbox_check=lambda: True,
+        )
+        assert result["status"] == "blocked"
+        assert runner.calls == [], (
+            f"runner must NEVER be called with evil URL package, got: {runner.calls}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# MAJOR 2: approval artifact default path (repo root, not .kata/)
+# ---------------------------------------------------------------------------
+
+class TestApprovalPathDefault:
+    """MAJOR 2: freeze approval artifact defaults to repo root, not ``.kata/``."""
+
+    def test_default_approval_path_at_repo_root(self, repo: Path, fake_home: Path):
+        """Without ``approved_hash_path=`` kwarg, engine looks at
+        ``repo_root/kata.freeze-approval.json`` (repo root, not ``.kata/``)."""
+        mp = _write_manifest(repo, [])
+        # Write approval at repo root (new default location)
+        ap = repo / "kata.freeze-approval.json"
+        _write_freeze_approval(ap, mp)
+        # No approved_hash_path kwarg → default → should find the repo-root artifact
+        result = pf.run_preflight(repo, home_dir=fake_home)
+        assert result["status"] == "ready"
+
+    def test_approval_in_kata_dir_is_not_default(self, repo: Path, fake_home: Path):
+        """Without kwarg, ``.kata/kata.freeze-approval.json`` is NOT the default → blocked."""
+        mp = _write_manifest(repo, [])
+        # Write approval only in .kata/ (old default location — no longer the default)
+        ap_old = repo / ".kata" / "kata.freeze-approval.json"
+        _write_freeze_approval(ap_old, mp)
+        # No kwarg → new default is repo root → approval NOT found there → blocked
+        result = pf.run_preflight(repo, home_dir=fake_home)
+        assert result["status"] == "blocked"
+        assert any("approval" in b.lower() or "freeze" in b.lower() for b in result["blockers"])
+
+
+# ---------------------------------------------------------------------------
+# MINOR 3: Snyk fail-closed when scan_required:true and no scanner wired
+# ---------------------------------------------------------------------------
+
+class TestSnykFailClosed:
+    """MINOR 3: scan_required:true + no snyk_check callable → blocked with clear reason."""
+
+    def test_no_scanner_wired_scan_required_blocks(self, repo: Path, fake_home: Path):
+        """scan_required (default True) + no snyk_check → blocked with 'scanner not wired'."""
+        mp, ap = _setup_repo(repo, [_PIP_DEP])
+        # verify fails → would reach snyk gate → blocked (no scanner wired)
+        runner = _TrackingRunner([(1, "absent")])
+        result = pf.run_preflight(
+            repo, runner=runner, approved_hash_path=ap, home_dir=fake_home,
+            sandbox_check=lambda: True,
+            # snyk_check NOT provided — should be fail-closed
+        )
+        assert result["status"] == "blocked"
+        assert any(
+            "scanner not wired" in b.lower()
+            or "snyk_check" in b.lower()
+            or "sca" in b.lower()
+            for b in result["blockers"]
+        ), f"Expected scanner-not-wired blocker, got: {result['blockers']}"
+        # Only the verify call should have been made; no install attempt
+        assert len(runner.calls) == 1
+
+    def test_no_scanner_scan_not_required_proceeds(self, repo: Path, fake_home: Path):
+        """scan_required:false + no snyk_check → explicit opt-out → install proceeds."""
+        mp, ap = _setup_repo(repo, [_PIP_DEP])
+        runner = _TrackingRunner([(1, "absent"), (0, "ok"), (0, "ok")])
+        cfg = {"preflight": {"allowed_registries": list(pf.ALLOWED_MANAGERS),
+                              "scan_required": False, "sandbox_required": False}}
+        result = pf.run_preflight(
+            repo, kata_config=cfg, runner=runner,
+            approved_hash_path=ap, home_dir=fake_home,
+            sandbox_check=lambda: True,
+            # snyk_check NOT provided; scan_required:False is the explicit opt-out
+        )
+        assert result["status"] == "ready"
+
+
+# ---------------------------------------------------------------------------
 # Mutation proof — run at the END of this module
 # ---------------------------------------------------------------------------
 
 def test_mutation_prove_non_vacuous():
-    """Prove the H1 leading-dash guard bites: removing it makes the test go red.
+    """Prove the H1 leading-dash guard in ``_validate_package`` bites.
 
     Uses mutation_run.prove_non_vacuous (tools/mutation_run.py:63).
-    Line mutated: the `if value.startswith("-"):` guard in _validate_field_value.
+    Line mutated: the ``if package.startswith("-"):`` guard in ``_validate_package``.
+    Without this guard, ``--editable`` passes the pip name-grammar regex
+    (``-`` is in ``[A-Za-z0-9._-]``) and no ValueError is raised.
     """
     import sys
     from pathlib import Path as _Path
     import mutation_run
 
     source = str(_Path(__file__).resolve().parent.parent / "kata_preflight.py")
-    # The exact guard line in kata_preflight._validate_field_value (H1)
-    asserted_line = '    if value.startswith("-"):'
+    # Guard is now in _validate_package, not _validate_field_value (BLOCKER 1 move).
+    asserted_line = '    if package.startswith("-"):'
     test_cmd = (
         f'cd "{_Path(__file__).resolve().parent.parent}" && '
         f'{sys.executable} -m pytest tests/test_kata_preflight.py::TestArgvBuilder::test_leading_dash_package_raises -q'
@@ -832,4 +1046,34 @@ def test_mutation_prove_non_vacuous():
     )
     assert verdict["nonVacuous"], (
         "Test must be non-vacuous: it must catch the removal of the leading-dash guard"
+    )
+
+
+def test_mutation_prove_colon_guard():
+    """Prove the per-manager name-grammar guard in ``_validate_package`` bites.
+
+    Line mutated: ``if not pkg_re.match(package):``.
+    The colon-only attack vector ``foo:bar`` passes all universal checks
+    (no ``://``, no ``git+``, no ``http``, no ``..``, no leading ``-``) but is
+    caught ONLY by the per-manager regex (``:``) is not in any manager's grammar).
+    Removing the regex guard allows ``foo:bar`` through → test goes red.
+    """
+    import sys
+    from pathlib import Path as _Path
+    import mutation_run
+
+    source = str(_Path(__file__).resolve().parent.parent / "kata_preflight.py")
+    asserted_line = '    if not pkg_re.match(package):'
+    test_cmd = (
+        f'cd "{_Path(__file__).resolve().parent.parent}" && '
+        f'{sys.executable} -m pytest '
+        f'"tests/test_kata_preflight.py'
+        f'::TestSourceInjectionBlocked::test_colon_slash_pip_blocked" -q'
+    )
+    verdict = mutation_run.prove_non_vacuous(source, asserted_line, test_cmd)
+    assert verdict["testWentRed"], (
+        "Mutation should make the colon-package test go red — regex guard is not biting"
+    )
+    assert verdict["nonVacuous"], (
+        "Test must be non-vacuous: it must catch removal of the per-manager regex guard"
     )

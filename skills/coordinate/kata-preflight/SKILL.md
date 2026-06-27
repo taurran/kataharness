@@ -89,10 +89,14 @@ Call `preflight_required(repo_root)` (`tools/kata_preflight.py:389`).
 ### 2. Manifest-hash guard (LD8/H2)
 
 `run_preflight` (`tools/kata_preflight.py:424`) computes the SHA-256 of `kata.dependencies.json` and
-compares it to the approved hash in `.kata/kata.freeze-approval.json` (a distinct freeze artifact, not
-co-located with the manifest — tamper-resistance). **Mismatch ⇒ `blocked` + escalate; the engine
-returns before any install.** This is the structural guard that prevents post-freeze manifest edits from
-silently installing unapproved deps.
+compares it to the approved hash at the default artifact path `kata.freeze-approval.json` at repo root
+(not under `.kata/`; overridable via `approved_hash_path`). **Mismatch ⇒ `blocked` + escalate; the
+engine returns before any install.**
+
+This mechanism **detects post-freeze manifest drift** — the loop cannot silently change what it installs
+without triggering a mismatch, and the engine **fails closed** on a missing or mismatched artifact. It is
+**not** tamper-resistance against a local actor who controls both files; for stronger guarantees, point
+`approved_hash_path` at a committed or access-controlled location.
 
 ### 3. Snyk SCA pre-install gate (LD3)
 

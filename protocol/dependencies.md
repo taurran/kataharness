@@ -37,8 +37,8 @@ No freeform string is ever executed.
 | Field | Type | Required | Meaning |
 |---|---|---|---|
 | `manager` | `"pip" \| "uv" \| "npm" \| "cargo"` | **yes** | The package manager. Must be in `preflight.allowed_registries` **and** in the engine's hard `ALLOWED_MANAGERS` allowlist (`tools/kata_preflight.py`). Any `manager` not in both lists ⇒ `blocked`, nothing executed. |
-| `package` | string | **yes** | Package/crate/npm name. Charset-validated (alphanumeric + `.-_/@:+`). A value starting with `-` is **rejected** (flag-injection guard H1). |
-| `version` | string | **yes** | Pinned version string (honor `preflight.pin_policy`). Same charset/leading-dash validation as `package`. |
+| `package` | string | **yes** | Package/crate/npm name. Per-manager name grammar enforced: pip/uv `[A-Za-z0-9._-]+` (with optional `[extras]`); npm optional `@scope/` prefix + `[a-z0-9._-]+`; cargo `[A-Za-z0-9_-]+`. Universal rejects: values containing `://`, starting with `git+`/`http`, containing `..` (source-injection guard, BLOCKER 1). A value starting with `-` is **rejected** (flag-injection guard H1). `:`, `/` (non-npm), and other source-spec characters are rejected by the per-manager grammar. |
+| `version` | string | **yes** | Pinned version string (honor `preflight.pin_policy`). Charset: `[A-Za-z0-9._\-+~^]` only — `:` and `/` are forbidden (they would make a version value a source spec). Leading `-` is **rejected** (H1). |
 | `index` | string | no | Optional override label (e.g. `"pypi"`, `"npmjs"`). **Informational only** — the engine **forces** the actual registry URL from `preflight.allowed_registries`; a manifest-supplied URL is never used. |
 | `verify` | string | recommended | A runnable shell command proving presence (e.g. `expo --version`, `python -c "import docx"`). PRE-FLIGHT is **default-FAIL** on this: a dep that won't verify after provisioning ⇒ `blocked`. |
 
@@ -51,20 +51,24 @@ No freeform string is ever executed.
 ## Freeze approval hash (H2 / LD8)
 
 At **FREEZE**, `kata-freeze` records the SHA-256 of `kata.dependencies.json` as the
-**freeze approval hash** in a **distinct committed artifact** — **not** beside
+**freeze approval hash** in a **distinct artifact** — **not** beside
 `kata.dependencies.json`. The canonical default path is
-`.kata/kata.freeze-approval.json` (JSON: `{ "manifestHash": "<sha256-hex>" }`),
-committed at freeze, on a separate branch or in a protected location so it cannot be
-trivially overwritten by the same author who edits the manifest.
+`kata.freeze-approval.json` at the **repo root** (not under `.kata/`; JSON:
+`{ "manifestHash": "<sha256-hex>" }`). The `approved_hash_path` parameter to
+`run_preflight` overrides this default; operators may point it at a committed or
+access-controlled location for stronger guarantees.
 
 At **PRE-FLIGHT**, the engine recomputes the hash and compares it to the approved value:
 - **Match** → the manifest is as approved; auto-install may proceed.
-- **Mismatch** → the manifest changed after approval ⇒ `blocked` + escalate
+- **Mismatch** → the manifest changed after freeze approval ⇒ `blocked` + escalate
   (`human-required`) ⇒ re-freeze. **Never silently installs a post-approval edit.**
 
-This tamper-resistance only holds if the approval artifact and the manifest are not
-equally writable (i.e. not co-located in the same uncommitted working-branch file).
-Store them separately (H2 hardening note from DESIGN §8).
+**What this mechanism delivers:** it **detects post-freeze manifest drift** — the loop
+cannot silently change what it installs without triggering a mismatch. The engine
+**fails closed** on a missing or mismatched approval artifact. It is **not** a defense
+against a local actor who controls both the manifest and the approval file (they own
+the machine). For stronger guarantees, point `approved_hash_path` at a committed or
+access-controlled location that is not writable by the same author as the manifest.
 
 ## Pre-flight gate (summary — full procedure in `kata-preflight`, Spec D)
 enumerate → freeze+approve (set + sources) → **record approval hash in distinct artifact (H2)** →
