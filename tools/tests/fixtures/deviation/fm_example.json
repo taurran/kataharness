@@ -1,0 +1,18 @@
+{
+  "_comment": "Example function model for the deviation pipeline fixture (LD4/LD5 seeded fixture).",
+  "module": "tools/example_math.py",
+  "intent_summary": "Add two integers and return their sum without side effects.",
+  "preconditions": [
+    "isinstance(a, int)",
+    "isinstance(b, int)"
+  ],
+  "postconditions": [
+    "result == a + b"
+  ],
+  "behavioral_examples": [
+    {"inputs": {"a": 1, "b": 2}, "expected": 3},
+    {"inputs": {"a": -1, "b": 1}, "expected": 0}
+  ],
+  "derivation_sources": ["types", "graph"],
+  "confidence": 0.88
+}

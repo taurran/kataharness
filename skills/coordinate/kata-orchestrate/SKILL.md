@@ -92,10 +92,21 @@ during S1 editing; no broken-wikilink concern at this stage).
 
 A non-zero FM-validation error count ⇒ surface to the operator and STOP before any dispatch.
 
-<!-- P2: deviation pipeline + drift gate — DO NOT build here.
-     When P2 lands, wire: the 7-step deviation pipeline (LD4), confidence-tiered routing (LD5),
-     characterization-suite generation (LD6), and the behavioral drift gate after the comprehension FMs above.
-     This heading is the P2 insertion seam — extend from here, keyed on kata/module/debug, not on runShape. -->
+## Deviation-discovery phase (ADDITIVE — debug run only; BC: absent `kata/module/debug` ⇒ silent no-op)
+
+**If `kata/module/debug` is in the run's `modules`**, and the comprehension phase above emitted FMs to `.kata/function_models/`, invoke [[kata-deviate]] to run the **7-step deviation-discovery funnel** (LD4) and produce **ROUTED findings** (LD5). When `kata/module/debug` is absent this is a silent no-op (the module degrades gracefully, like every optional module); **version-up and greenfield runs are byte-for-byte unchanged** — the deviation pipeline fires **IFF `kata/module/debug` ∈ modules, NEVER off `target.kind=="existing"` alone** (that field is also set by version-up; keying on it would break BC).
+
+[[kata-deviate]] runs the full pipeline — multi-signal candidate gathering, semantic FM-vs-code comparison, ×3 self-consistency (via `deviation.tally_self_consistency`), the objective-corroboration HARD gate (via `deviation.corroboration_gate`; LLM-only findings ⇒ `route:"human"`, never `auto-fix-eligible`), adversarial refute-or-promote — then scores and routes each surviving finding via `deviation.compute_confidence` → `deviation.apply_force_low` → `deviation.route_finding` (composed via `deviation.run_funnel`), and emits the routed artifact via `deviation.emit_findings` (`tools/deviation.py`, `emit_findings` / `findings_schema`) to **`.kata/deviations/findings.json`**. [[kata-deviate]] is a forward reference resolved at P2a integration (Slice D2 in the same wave — expected not to exist during D3 editing; no broken-wikilink concern at this stage).
+
+**P2a scope — FIND only; this phase produces routed findings and does NOT fix.** The four routes in `.kata/deviations/findings.json` are:
+- `auto-fix-eligible` (C≥τ_H, ≥1 objective corroborator, ≥2/3 self-consistency, survived refute) — **recorded; NOT fixed here** (the fix loop is LD9 / P2b).
+- `research` (τ_L<C<τ_H) → route via the existing [[kata-research]] grounding-gate path (≤2 rounds — escalation-only, NOT a discovery source per H5).
+- `defer` (C≤τ_L) → recorded; surfaced at closeout / recommendations (LD12, produced in a later phase).
+- `human` (LLM-only / uncorroborated at the HARD gate, or contested refute) → recorded and surfaced; never `auto-fix-eligible`.
+
+P2a findings flow through the normal gates that feed the validation-miss manifest (`tools/validation_misses.py` + the universal hook) — P2a does **not** build that manifest.
+
+<!-- P2b: characterization-suite gen (LD6) + behavioral drift gate (§5) + gated fix-application loop (LD9) — DO NOT build here; consume .kata/deviations/findings.json (auto-fix-eligible) from here, keyed on kata/module/debug. -->
 
 ## The loop
 **Maintain a rolling frontier.** A task is **dispatchable** iff (all its `depends_on` are integrated) ∧ (its

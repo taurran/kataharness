@@ -1234,3 +1234,32 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   Snyk **0**. Records: `specs/recurrence-hardening/{BRIEF-validation-misses,PLAN-t1-manifest}.md`; memory
   [[exec-injection-class-hardened]] is an example of what its T2/T3 would auto-propose. **Meta:** the freeze-gate's
   read-only-contradiction catch is itself the kind of doc-vs-code seam this manifest exists to record.
+
+<!-- Debug Mode Phase 2a (the FIND half) built. Spec: specs/debug-mode/{DESIGN,PLAN-p2a}.md. Fully subagent-driven. -->
+- **D115 — Debug Mode Phase 2a (deviation-discovery / the FIND half) BUILT — 2026-06-27.** Second phase of Debug Mode,
+  built **entirely through the loop/subagents** (operator directive: drive every step via subagents to spare the main
+  context). PLAN authored by a planning subagent → **freeze-gate `kata-review` HOLD→SHIP** (caught 2 LOW: pin FM-capture
+  to observation-not-synthesis; add the `k_min` boundary to mutation targets) → 3-slice build (D1 engine; D2+D3 parallel)
+  → `kata-evaluate` **PART A PASS** → **D98 PART B HOLD→fix→re-confirm SHIP** → operator merge gate. **Built:** **(D1)**
+  `tools/deviation.py` — the PURE, deterministic LD4-funnel + LD5-confidence engine: `tally_self_consistency` (≥2/3
+  `k_min`), `corroboration_gate` (the HARD false-positive control), `compute_confidence` (`C = w1·MSAS + w2·(1−entropy)
+  + w3·StructuralPrior`, TUNABLE `DEFAULT_WEIGHTS`/`DEFAULT_THRESHOLDS`), `apply_force_low`, `route_finding`
+  (auto-fix-eligible/research/defer/human), `run_funnel`, `findings_schema`/`emit_findings`/`load_findings`;
+  mutation-proven (co-location, routing boundary, k_min); **no exec sink** (pure dict logic). **(D2)**
+  `skills/execute/kata-deviate/SKILL.md` — the LLM-judgment driver of the 7 steps (FM-deviation via the AST-safe
+  `function_model.evaluate_spec`; semantic compare; self-consistency; corroboration; adversarial-refute-as-bool); FM
+  call-capture is **observation of operator test runs, not harness-synthesized invocation** (no new exec sink);
+  `kata-research` **escalation-only** (H5). **(D3)** `kata-orchestrate` `## Deviation-discovery phase` — gated on
+  `kata/module/debug` (BC: never off `target.kind`), emits `.kata/deviations/findings.json`, leaves a clean P2b seam.
+  **Security (the load-bearing part):** D98 caught a real **fail-open in the corroboration HARD gate** — `_co_locates`
+  did `None==None→True`, so a vague LLM-only finding (null module/locus) could reach `auto-fix-eligible`; fixed
+  fail-closed (require truthy+equal module AND locus), **plus M-2: corroborator objectivity is now CODE-enforced**
+  (`_OBJECTIVE_SOURCES` allowlist; a non-objective/missing `source` is ignored — the gate no longer trusts prose), plus
+  null-coerce robustness (L-1) and the empty-string variant (L-3). Re-confirm: every attack (null/empty/wrong-locus/
+  non-objective/missing-source/refuted/force-LOW) now fails closed. **Honest scope:** P2a STOPS at routed findings — it
+  FIXES NOTHING; characterization-gen (LD6), the behavioral drift gate (§5), and the fix-application loop (LD9) are P2b.
+  **Gates:** pytest **990** (907→990), validate **41/0** (40→41 — `kata-deviate`), Snyk **0** on `deviation.py`.
+  Records: `specs/debug-mode/{DESIGN,PLAN-p2a}.md`. **Meta:** D98 again caught a real fail-open the conformance gate
+  (PART A PASS) missed — in the very control the feature's correctness rests on — exactly the kind of "conformance
+  passed, adversarial caught" event the D114 validation-miss manifest now exists to record. **NEXT: Debug Mode P2b**
+  (the PROTECT half: characterization-suite gen + behavioral drift gate + the gated fix-application loop), then P3.

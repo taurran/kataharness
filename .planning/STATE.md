@@ -1,5 +1,20 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-27, DEBUG MODE PHASE 2a [the FIND half] BUILT — D115; pytest 990 · 41 skills/0 · Snyk 0):**
+> Built **entirely through the loop/subagents** (operator directive — every step delegated to spare main context):
+> planning subagent → freeze-gate **HOLD→SHIP** → 3-slice build (D1 engine; D2+D3 parallel) → evaluate **PART A PASS**
+> → D98 **PART B HOLD→fix→re-confirm SHIP** → merge. **Built:** (D1) `tools/deviation.py` — the pure LD4-funnel +
+> LD5-confidence engine (self-consistency ≥2/3, **corroboration HARD gate**, confidence+routing, force-LOW;
+> mutation-proven; no exec sink); (D2) `skills/execute/kata-deviate/SKILL.md` — the LLM driver (FM-deviation via the
+> AST-safe `evaluate_spec`; `kata-research` escalation-only); (D3) `kata-orchestrate` `## Deviation-discovery phase`
+> gated on `kata/module/debug`, emits `.kata/deviations/findings.json`, P2b seam left. **D98 caught a real fail-open**
+> in the corroboration gate (`None==None` co-location → LLM-only finding could reach auto-fix-eligible) → fixed
+> fail-closed + **corroborator objectivity now code-enforced** (`_OBJECTIVE_SOURCES`, no longer trusts prose) + null/
+> empty hardening; re-confirm SHIP (every attack fails closed). **Honest scope:** P2a STOPS at routed findings — fixes
+> NOTHING (characterization LD6 / drift gate §5 / fix loop LD9 = P2b). The first real "conformance-passed,
+> adversarial-caught" event since the D114 manifest exists to record it. **NEXT: Debug Mode P2b** (the PROTECT half),
+> then P3. Records: `specs/debug-mode/{DESIGN,PLAN-p2a}.md`, `DECISIONS.md` D115.
+
 > **CURRENT (2026-06-27, VALIDATION-MISS MANIFEST T1 BUILT — D114; pytest 907 · 40 skills/0 · Snyk 0):**
 > Operator-directed feature (their idea): a durable, **universal, observe-only** manifest logging when the conformance
 > gate (`kata-evaluate`) PASSED something the adversarial lens (`kata-review`/D98)/re-confirm/human later CAUGHT — the

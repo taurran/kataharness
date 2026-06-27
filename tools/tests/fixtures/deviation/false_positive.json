@@ -1,0 +1,13 @@
+{
+  "_comment": "False-positive LLM-only bundle: NO objective corroborator. Expected funnel outcome: human (HARD gate at corroboration_gate — NEVER auto-fix-eligible). DESIGN §6/§7 false-positive control.",
+  "module": "tools/example_math.py",
+  "locus": "add_numbers",
+  "type": "behavioral_deviation",
+  "evidence": "LLM suspects the function may have a subtle edge-case for negative inputs, but no test, type, or Snyk signal corroborates this at the same locus.",
+  "votes": [true, true, false],
+  "corroborators": [],
+  "refuted": false,
+  "msas": 0.40,
+  "structural_prior": 0.50,
+  "sparse_signal": false
+}

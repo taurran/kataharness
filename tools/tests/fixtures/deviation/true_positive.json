@@ -1,0 +1,26 @@
+{
+  "_comment": "True-positive signal bundle: LLM finding WITH ≥1 objective corroborator, ≥2/3 SC (unanimous), not refuted. Expected funnel outcome: auto-fix-eligible.",
+  "module": "tools/example_math.py",
+  "locus": "add_numbers",
+  "type": "behavioral_deviation",
+  "evidence": "Function returns a + b + 1 instead of a + b (off-by-one bug detected by FM postcondition and confirmed by test failure).",
+  "votes": [true, true, true],
+  "corroborators": [
+    {
+      "module": "tools/example_math.py",
+      "locus": "add_numbers",
+      "source": "test",
+      "signal": "test_add_numbers_off_by_one FAILED"
+    },
+    {
+      "module": "tools/example_math.py",
+      "locus": "add_numbers",
+      "source": "type",
+      "signal": "return-type annotation mismatch: int vs int+1 constant"
+    }
+  ],
+  "refuted": false,
+  "msas": 0.90,
+  "structural_prior": 0.80,
+  "sparse_signal": false
+}
