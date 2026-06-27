@@ -1,5 +1,25 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-26, kata-preflight BUILT — the PRE-FLIGHT spine phase — merge `710347a`, D109; pytest 633 ·
+> validate 37/0 · Snyk 0 med+; PUSHED, in sync):** D29 realized. Grilled in plain terms → 4 operator decisions
+> (auto-run pre-approved installs · full v1 incl. cleanup report · one mechanism for build-deps + target runnable-env ·
+> sandbox-when-available-else-host+warn), built through the recipe. **freeze-gate HOLD→SHIP** (command-injection
+> BLOCKER + 3 MAJORs fixed) → 3-slice orchestrated build → **kata-evaluate PASS 9/9** → **D98 red-team HOLD→SHIP —
+> caught a real untrusted-source RCE path** (`package=https://evil…` bypassing the forced registry) the evaluator
+> missed; fixed via **per-manager package-NAME grammar** (no URL/VCS/source expressible) + approval-artifact path/claims
+> + Snyk fail-closed. **Exists:** `tools/kata_preflight.py` (guarded auto-installer — structured argv never shell,
+> freeform install string never executed, forced trusted registry, Snyk SCA pre-install, manifest-hash drift gate,
+> machine-global registry + reference-counted cleanup [never auto-uninstall], target runnable-env probe,
+> `preflight_required`/`gate_status`) · the spine skill `kata-preflight` (never tiered) · `kata-orchestrate`
+> conditional fail-closed PRE-FLIGHT precondition (BC: no manifest ⇒ today's loop) · structured `dependencies.md` ·
+> grill/design-doc/plan manifest pointers (36→**37 skills**). **Honest scope:** auto-install stub-tested (injectable
+> runner); real install only behind freeze-approved-hash + Snyk + sandbox; workers never install. **Clears the 2nd of
+> Debug Mode's two blockers (install-portability was 1st) → Debug Mode UNBLOCKED.** Backout `pre-kata-preflight`.
+> **NEXT (choose):** (a) **Debug Mode** build (both blockers now cleared — DESIGN frozen `specs/debug-mode/DESIGN.md`;
+> the onboarding killer-app); (b) grill **capability-aware-assignment**; (c) strategy BRIEFs (second-brain-learning ·
+> recurrence-hardening); (d) install+confirm a 2nd platform → multi-model benchmark. Records:
+> `specs/kata-preflight/{GRILL-LEDGER,DESIGN,PLAN}.md`.
+
 > **CURRENT (2026-06-26, MULTI-MODAL LAYER BUILT — full routing wiring over the proof-slice — merge `1f58415`,
 > D108; pytest 552 · validate 36/0 · Snyk 0 med+; PUSHED, in sync):** The D105 PARKED full layer is now wired,
 > built through the full recipe. Frozen PLAN (4 disjoint slices) → **freeze-gate `kata-review` HOLD→SHIP**

