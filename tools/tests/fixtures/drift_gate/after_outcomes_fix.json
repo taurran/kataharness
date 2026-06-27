@@ -1,0 +1,6 @@
+{
+  "_comment": "AFTER run with the NOMINATED FIX applied: test_nominated_buggy flipped RED->GREEN (the fix landed). All other green tests stayed GREEN. Expected drift_verdict with AEL=[test_nominated_buggy]: PASS.",
+  "tests/test_example.py::test_feature_a": "green",
+  "tests/test_example.py::test_feature_b": "green",
+  "tests/test_example.py::test_nominated_buggy": "green"
+}

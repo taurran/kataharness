@@ -1263,3 +1263,31 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   (PART A PASS) missed — in the very control the feature's correctness rests on — exactly the kind of "conformance
   passed, adversarial caught" event the D114 validation-miss manifest now exists to record. **NEXT: Debug Mode P2b**
   (the PROTECT half: characterization-suite gen + behavioral drift gate + the gated fix-application loop), then P3.
+
+<!-- Debug Mode Phase 2b (the PROTECT half) built. Spec: specs/debug-mode/{DESIGN,PLAN-p2b}.md. Fully subagent-driven. -->
+- **D116 — Debug Mode Phase 2b (the PROTECT half — apply fixes safely) BUILT — 2026-06-27.** Completes the core Debug
+  Mode loop (comprehend P1 → find/route P2a → **characterize + drift-gate + apply-or-defer P2b**). Built **entirely
+  through the loop/subagents** (operator directive). Planning subagent → **freeze-gate HOLD... wait SHIP** (1 LOW
+  cite-by-line → anchor) → 3-slice build (F1 engine; F2+F3 parallel) → `kata-evaluate` **PART A PASS** → **D98 PART B
+  SHIP** (found 2 MEDIUM fail-opens in the drift machinery → fixed → re-confirm SHIP). **Built:** **(F1)**
+  `tools/drift_gate.py` — the behavioral drift-gate engine (§5 v1): `parse_test_outcomes`, `classify_transitions`,
+  `validate_allowed_exceptions` (the **AEL integrity** guard — hard-rejects any Allowed-Exception entry that was
+  GREEN-in-before; the AEL is a trusted finding-bound input, never inferred from after-results), `drift_verdict`
+  (green→RED = BLOCK; AEL tests must flip RED→GREEN; **+ Step 2b: a baseline-GREEN test that VANISHES in after = BLOCK**,
+  the D98 fail-open fix), `scrub_nondeterminism` (narrowed to object-repr addresses + labeled/ISO timestamps — the 2nd
+  D98 fix, so real value changes are no longer masked), `characterization_snapshot_verdict`, `defer_record`/
+  `emit_deferrals`, drift-report emit; mutation-proven (5 proofs); **no exec sink** (pure); `structural_drift_verdict`
+  is a non-enforcing seam (§5 structural layer = FAST-FOLLOW, NOT v1 — surfaced honestly). **(F2)**
+  `skills/execute/kata-characterize/SKILL.md` — blast-radius-scoped (via `footprint`) characterization-suite gen,
+  pins-except-the-deviation, left-behind; establishes the AEL bound 1:1 to the finding. **(F3)** `kata-orchestrate`
+  `## Fix-application phase` — gated on `kata/module/debug`: per auto-fix-eligible finding → characterize → `kata-tdd`
+  fix in a `kata-worktree` → `drift_gate` verdict → `kata-evaluate` + D98 + Snyk → apply or **DEFER** (can't-fix-without-
+  drift → `.kata/deviations/deferred.json`, preserving the no-drift guarantee); objective defects fixed regardless of
+  confidence (LD9). **AEL is orchestrator-manifest-owned; the fix worker's lane excludes it (can't authorize its own
+  breakage).** P3 seam left (comment only). **Honest scope:** behavioral drift enforced; structural/public-API
+  invariance is a §5 v1 FAST-FOLLOW (not over-claimed). **Gates:** pytest **1062** (990→1062), validate **42/0**
+  (41→42 — `kata-characterize`), Snyk **0** on `drift_gate.py`. Records: `specs/debug-mode/{DESIGN,PLAN-p2b}.md`.
+  **Meta:** D98 *again* caught real fail-opens (in the very safety machinery, where conformance PART A PASS'd) — the
+  load-bearing adversarial+re-confirm loop, 5th+ session-instance. **NEXT: Debug Mode P3** (language prompt-profiles
+  LD10 + onboarding/convert-to-loop LD13 + the LD12 closeout confidence report) — the final phase; then Debug Mode is
+  functionally complete. Optionally: exercise the full debug loop end-to-end on a seeded fixture repo.

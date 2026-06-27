@@ -1,0 +1,6 @@
+function_output: 42
+computed_at: 2024-01-15T10:30:00Z
+session_id: 550e8400-e29b-41d4-a716-446655440000
+memory_ref: <Foo object at 0x7f8a9b3c4d5e>
+result: OK
+stable_value: expected_behavior

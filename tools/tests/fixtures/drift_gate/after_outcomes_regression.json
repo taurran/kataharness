@@ -1,0 +1,6 @@
+{
+  "_comment": "AFTER run with an injected UNRELATED regression: test_feature_a was GREEN in before, is now RED. This is NOT on the AEL. Expected drift_verdict: BLOCK.",
+  "tests/test_example.py::test_feature_a": "red",
+  "tests/test_example.py::test_feature_b": "green",
+  "tests/test_example.py::test_nominated_buggy": "red"
+}

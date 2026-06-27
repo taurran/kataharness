@@ -1,5 +1,20 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-27, DEBUG MODE PHASE 2b [the PROTECT half] BUILT — D116; pytest 1062 · 42 skills/0 · Snyk 0):**
+> Completes the **core Debug Mode loop** (comprehend P1 → find/route P2a → characterize + drift-gate + apply-or-defer
+> P2b). Built entirely through subagents. Freeze-gate SHIP → 3 slices (F1 engine; F2+F3 parallel) → evaluate PART A
+> PASS → D98 PART B SHIP (found 2 MEDIUM fail-opens in the drift machinery → fixed → re-confirm SHIP). **Built:** (F1)
+> `tools/drift_gate.py` — behavioral drift-gate engine (§5 v1): AEL integrity (rejects green-in-before exceptions;
+> trusted finding-bound input), green→RED=BLOCK, **vanished-baseline-green=BLOCK** (D98 fix), narrowed nondeterminism
+> scrub (D98 fix — no longer masks real value changes); 5 mutation proofs; no exec sink; structural layer = honest
+> non-enforcing seam (FAST-FOLLOW). (F2) `skills/execute/kata-characterize/SKILL.md` — blast-radius characterization
+> suite, pins-except-deviation, left-behind, establishes AEL. (F3) `kata-orchestrate` `## Fix-application phase` —
+> per auto-fix-eligible finding: characterize → kata-tdd in worktree → drift gate → evaluate+D98+Snyk → apply or
+> DEFER (can't-fix-without-drift); AEL orchestrator-owned (worker can't enlarge it). Gated on `kata/module/debug`.
+> **Honest scope:** behavioral drift enforced; structural/public-API invariance = §5 v1 fast-follow. **NEXT: Debug
+> Mode P3** (language prompt-profiles LD10 + onboarding/convert-to-loop LD13 + LD12 closeout confidence report) — the
+> final phase; then Debug Mode is functionally complete. Records: `specs/debug-mode/{DESIGN,PLAN-p2b}.md`, `DECISIONS.md` D116.
+
 > **CURRENT (2026-06-27, DEBUG MODE PHASE 2a [the FIND half] BUILT — D115; pytest 990 · 41 skills/0 · Snyk 0):**
 > Built **entirely through the loop/subagents** (operator directive — every step delegated to spare main context):
 > planning subagent → freeze-gate **HOLD→SHIP** → 3-slice build (D1 engine; D2+D3 parallel) → evaluate **PART A PASS**

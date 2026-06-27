@@ -1,0 +1,6 @@
+{
+  "_comment": "Baseline-BEFORE run outcomes. test_feature_a and test_feature_b are GREEN (passing); test_nominated_buggy is RED (the bug being fixed, nominated in AEL).",
+  "tests/test_example.py::test_feature_a": "green",
+  "tests/test_example.py::test_feature_b": "green",
+  "tests/test_example.py::test_nominated_buggy": "red"
+}

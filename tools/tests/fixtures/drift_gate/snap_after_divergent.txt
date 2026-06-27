@@ -1,0 +1,6 @@
+function_output: 99
+computed_at: 2024-06-27T14:55:30Z
+session_id: a87ff679-a2f8-4701-b57f-e2e3b5a8c9d1
+memory_ref: <Foo object at 0x1a2b3c4d5e6f>
+result: DIFFERENT
+stable_value: behavior_has_changed
