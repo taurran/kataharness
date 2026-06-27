@@ -26,6 +26,11 @@ failure recorded in [[LESSONS-LEARNED]] L8/L9 from the Wizard-of-Oz run.) A real
 demanding, and adversarial to ambiguity**: it walks the decision tree branch by branch, re-deriving the tree
 after each answer, and does not stop until the convergence criteria below are met.
 
+> **Not a contradiction with "recommendation-first / simplest-model" (below):** leading each branch with a plain
+> recommended option is the *interaction format* + the *starting frame to attack* — the survey anti-pattern is
+> emitting the whole list *once* and *stopping*. The plain-language discipline still requires you to probe each
+> branch, re-derive the tree, and pass the convergence backstop. Recommendation-first ≠ resolve-on-first-answer.
+
 ## Interaction format (the GSD-style binding — L7/L8)
 
 Ask **structured questions the user can either click an option for OR answer in free text.** Every question:
@@ -37,6 +42,47 @@ Ask **structured questions the user can either click an option for OR answer in 
 Group tightly-related questions together, but resolve **dependent** branches in sequence (an answer routinely
 opens or closes downstream branches). *(Adapter binding: Claude → `AskUserQuestion`; a plain CLI → numbered
 options + a free-text prompt. The pattern is host-agnostic; the rendering is the adapter's job.)*
+
+## Plain-language & simplest-model discipline — the PRIMARY grill style (memory `grill-in-plain-terms`)
+
+This is how every grill is conducted, at every tier. It is a **presentation + scope** discipline layered on
+top of the rigor below — it changes *how* you ask and *where you start*, and it **never** reduces coverage,
+probing depth, or the convergence bar (see the fidelity invariant).
+
+- **Plain human terms.** A moderate-non-expert operator must be able to follow every question without decoding
+  internal jargon or unexplained machinery names. If a branch can only be stated in framework-speak, you have
+  not understood it well enough to ask it — translate it to the concrete thing at stake. (Operator feedback,
+  2026-06-26: *"If you're going to grill me, do it in human terms — I can't follow all this nonsense."*)
+- **Lead with the simplest model that satisfies the goal.** The recommended (first) option is the **plainest
+  design that actually meets the stated goal** — not the most general, not the most extensible. This is the
+  **starting frame for the interrogation, not a shortcut past it:** you still walk the whole decision tree and
+  stress-test it (Phase 1). Simplest-first means the *baseline you pressure-test from* is lean, so added
+  complexity has to earn its place against a concrete need.
+- **Short, concrete options.** 2–4 options, each a genuinely distinct choice in plain words with its one-line
+  trade-off. No option whose meaning the operator must reverse-engineer.
+- **Stop-and-simplify guard (the anti-cathedral rule).** If you catch yourself designing a config-resolution
+  cathedral, a multi-layer binding/abstraction, or a taxonomy the goal never asked for — **halt, collapse to
+  the plainest model that works, and ask whether the extra structure is genuinely needed before building it.**
+  Over-engineering the design *is* a drift the grill must catch in itself (the operator course-corrected exactly
+  this twice — see `grill-in-plain-terms`; e.g. the D104 install-portability reset).
+
+### Fidelity invariant (D33-class — plain ≠ shallow; never tiered, never relaxed)
+
+The plain-language style is **additive and presentation-level**. It does **NOT** weaken any of the rigor that
+follows. All of these hold unchanged at every tier when a grill runs:
+- the decision-tree enumeration (Phase 0.2) **at this tier's mandated depth** — every branch the tier covers is
+  stated plainly and none is dropped *for being awkward to phrase* (a tier may scope which branches it walks —
+  e.g. Essential's partial tree — but the plain style never shrinks that scope further);
+- the iterative, adversarial-to-ambiguity probing (Phase 1) — *don't accept the first plausible answer*; the
+  simplest model is the thing you attack, not a reason to stop;
+- the convergence criteria (all boxes) and the **don't-grade-your-own-convergence** fresh-context backstop;
+- doc-grounding, glossary canonicalization, decision-ledger checkpointing, contradiction surfacing.
+
+*Test (the binding one, reused from convergence box 5):* **could two independent builders read this contract and
+diverge?** If yes, keep grilling — regardless of how plainly the questions were posed. The only differences the
+plain style introduces are human-readable questions and a lean starting design; it must reach the **same
+specificity** the convergence bar demands. If "plain" ever produces a thinner contract, that is the failure —
+plain is about clarity and right-sizing, never about asking less.
 
 ## Phase 0 — Ground before you ask
 
