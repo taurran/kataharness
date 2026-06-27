@@ -14,7 +14,8 @@ cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Bash, Write, AskUserQuestion]
 source: >-
   new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine);
-  argv-builder pattern from tools/kata_dispatch.py:150; injectable-runner from tools/kata_dispatch.py:168
+  argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner
+  from _subprocess_runner in tools/kata_dispatch.py
 tags:
   - kata/coordinate
   - kata/spine
@@ -32,8 +33,11 @@ a depth dial.
 ## Invariants (never relax)
 
 - **Never tiered** (D29/D33): no Essential/Standard/Advanced depth variants; spine gates apply uniformly.
-- **Default-FAIL on verify**: a dep whose `verify` command returns non-zero after provisioning ⇒
-  `blocked`. Nothing silently passes.
+- **Default-FAIL on verify**: a dep whose structured `verifyImport` check returns non-zero after
+  provisioning ⇒ `blocked`. Nothing silently passes.
+- **No freeform string is ever executed**: presence is checked via the structured `verifyImport`
+  identifier (compiled to a safe argv), NOT the freeform `dep["verify"]` shell string — which, like
+  `dep["install"]`, is documentation-only and is never read or executed (the RCE fix, LD2/LD3).
 - **Approve-at-freeze**: provision ONLY the freeze-approved set (deps in `kata.dependencies.json` whose
   manifest hash matches the freeze approval artifact). A dep present at runtime but absent from the
   approved manifest ⇒ drift ⇒ escalate ⇒ re-freeze. Never silent install.
@@ -49,47 +53,50 @@ The engine is `tools/kata_preflight.py` (N1). This skill drives it; all determin
 the engine (default-FAIL verify, argv builder, guards, registry, hash check, sandbox branch). Do NOT
 re-implement engine logic here — call the engine.
 
-**Public engine surfaces (verify-before-reuse — `protocol/reuse-claims.md`):**
+**Public engine surfaces (verify-before-reuse — `protocol/reuse-claims.md`; cited by stable symbol name,
+not line number, per the cite-by-anchor discipline — line numbers drift, names don't):**
 
 - `run_preflight(repo_root, *, kata_config, runner, snyk_check, sandbox_check, home_dir, approved_hash_path, project_path, branch) -> dict`
-  (`tools/kata_preflight.py:424`) — the deterministic PRE-FLIGHT engine. Returns the N3
-  `preflight.json` schema dict.
-- `preflight_required(repo_root) -> bool`
-  (`tools/kata_preflight.py:389`) — True iff `kata.dependencies.json` is present at `repo_root`.
+  — the deterministic PRE-FLIGHT engine. Returns the N3 `preflight.json` schema dict.
+- `preflight_required(repo_root) -> bool` — True iff `kata.dependencies.json` is present at `repo_root`.
   Used by `kata-orchestrate` Preconditions (N5) to determine whether the gate applies.
-- `gate_status(repo_root) -> "ready" | "blocked" | "degraded" | "absent"`
-  (`tools/kata_preflight.py:398`) — reads `.kata/preflight.json` status field; `"absent"` if
-  the artifact is missing or malformed.
-- `_build_argv(dep, registry_url) -> list[str]`
-  (`tools/kata_preflight.py:137`) — builds install argv from structured `manager`/`package`/`version`
-  fields ONLY. The freeform `dep["install"]` string is **never read or executed** (LD2/LD3).
-- `_validate_field_value(value, field_name) -> None`
-  (`tools/kata_preflight.py:115`) — H1 flag-injection guard: rejects leading `-` and unsafe charsets.
-- `ALLOWED_MANAGERS` (`tools/kata_preflight.py:71`) — the hard global allowlist:
-  `frozenset({"pip", "uv", "npm", "cargo"})`.
+- `gate_status(repo_root) -> "ready" | "blocked" | "degraded" | "absent"` — reads `.kata/preflight.json`
+  status field; `"absent"` if the artifact is missing or malformed.
+- `_build_argv(dep, registry_url) -> list[str]` — builds install argv from structured
+  `manager`/`package`/`version` fields ONLY. The freeform `dep["install"]` string is **never read or
+  executed** (LD2/LD3).
+- `_build_verify_argv(dep, manager) -> list[str] | None` — builds the presence-check argv from the
+  structured `verifyImport` identifier ONLY (validated per-manager). The freeform `dep["verify"]` string
+  is **never executed** (the RCE fix). Returns `None` when no `verifyImport` is supplied.
+- `_validate_package(package, manager) -> None` — per-manager package-NAME grammar: rejects any URL/VCS/
+  path source spec so no value can bypass the forced registry (`fullmatch`-anchored).
+- `_validate_field_value(value, field_name) -> None` — H1 flag-injection guard: rejects leading `-` and
+  unsafe charsets (`fullmatch`-anchored).
+- `ALLOWED_MANAGERS` — the hard global allowlist: `frozenset({"pip", "uv", "npm", "cargo"})`.
 
 ## Procedure
 
 ### 0. Read `kata.config` preflight block
 
-Read the `preflight` block from `kata.config` (`protocol/config.md:29-36`):
-`allowed_registries`, `pin_policy`, `scan_required` (default `true`), `approval_mode`,
-`sandbox_required`. Also read `target.baselineGate` (`protocol/config.md:22`) for the target-env probe.
-Pass as `kata_config` to `run_preflight`.
+Read the `preflight` block from `kata.config` (see `protocol/config.md` → preflight block):
+the engine consumes `allowed_registries`, `scan_required` (default `true`), and `sandbox_required`.
+(`pin_policy` and `approval_mode` are **advisory/reserved** — documented but not yet enforced by the
+engine; version pinning is enforced structurally by requiring a `version` field.) Also read
+`target.baselineGate` for the target-env probe. Pass as `kata_config` to `run_preflight`.
 
 ### 1. Check whether PRE-FLIGHT is required
 
-Call `preflight_required(repo_root)` (`tools/kata_preflight.py:389`).
+Call `preflight_required(repo_root)`.
 
 - **False** (no `kata.dependencies.json`): PRE-FLIGHT is not required. The engine emits
-  `status: ready` immediately (BC path; the engine handles this at `tools/kata_preflight.py:521-534`).
-  Proceed — today's loop is unchanged.
+  `status: ready` immediately (BC path). Proceed — today's loop is unchanged.
 - **True**: a manifest is present; the gate applies. Continue to step 2.
 
 ### 2. Manifest-hash guard (LD8/H2)
 
-`run_preflight` (`tools/kata_preflight.py:424`) computes the SHA-256 of `kata.dependencies.json` and
-compares it to the approved hash at the default artifact path `kata.freeze-approval.json` at repo root
+`run_preflight` reads the manifest bytes once, computes their SHA-256, and parses those same bytes (no
+re-read — TOCTOU-safe), comparing the hash to the approved hash at the default artifact path
+`kata.freeze-approval.json` at repo root
 (not under `.kata/`; overridable via `approved_hash_path`). **Mismatch ⇒ `blocked` + escalate; the
 engine returns before any install.**
 
@@ -101,22 +108,26 @@ without triggering a mismatch, and the engine **fails closed** on a missing or m
 ### 3. Snyk SCA pre-install gate (LD3)
 
 When `scan_required: true` (default), the engine calls `snyk_check(package, version)` on each missing
-dep BEFORE running any install argv (`tools/kata_preflight.py:711-726`). Over-threshold ⇒ `blocked`.
+dep BEFORE running any install argv. **Fail-closed both ways:** a scanner that raises ⇒ `blocked`, and the
+verdict must be the strict sentinel `True` to proceed — any non-`True` value (incl. a truthy raw result
+object) ⇒ `blocked`. When `scan_required: true` and no `snyk_check` is wired ⇒ `blocked` (never installs
+unscanned).
 
-Wire `mcp__Snyk__snyk_sca_scan` as the `snyk_check` callable when invoking `run_preflight`. (Tests
-inject a stub to avoid real network calls and machine mutation.)
+Wire `mcp__Snyk__snyk_sca_scan` as the `snyk_check` callable when invoking `run_preflight`, adapting its
+result to a strict `bool` (`True` = clean). (Tests inject a stub to avoid real network calls and machine
+mutation.)
 
 ### 4. Guarded install (LD2/LD3)
 
 For each missing dep that passes all guards above, the engine:
 
-1. Calls `_build_argv(dep, registry_url)` (`tools/kata_preflight.py:137`) to build install argv from
-   structured `manager`/`package`/`version` fields ONLY. `manager` must be in `ALLOWED_MANAGERS`
-   (`tools/kata_preflight.py:71`). The forced registry URL comes from `_MANAGER_REGISTRY_URLS`
-   (`tools/kata_preflight.py:75-80`) — the manifest cannot override it to an untrusted index.
-   The freeform `dep["install"]` string is **never read** (LD2/LD3).
-2. Validates field values via `_validate_field_value` (`tools/kata_preflight.py:115`) — H1 guard:
-   rejects leading `-` and unsafe charsets; inserts `--` end-of-options separator.
+1. Calls `_build_argv(dep, registry_url)` to build install argv from structured
+   `manager`/`package`/`version` fields ONLY. `manager` must be in `ALLOWED_MANAGERS`. The forced
+   registry URL comes from `_MANAGER_REGISTRY_URLS` — the manifest cannot override it to an untrusted
+   index. The freeform `dep["install"]` string is **never read** (LD2/LD3).
+2. Validates the package via `_validate_package` (per-manager NAME grammar — no URL/VCS/path source can
+   pass) and the version via `_validate_field_value` (H1: rejects leading `-` and unsafe charsets); both
+   are `fullmatch`-anchored. Inserts the `--` end-of-options separator before positional package args.
 3. Runs install via the injectable runner (`subprocess.run(argv, shell=False)` — never `shell=True`).
 
 **If `manager` ∉ `ALLOWED_MANAGERS`, or any required structured field is missing, or H1 validation
@@ -135,35 +146,35 @@ Wire the `sandbox_check` injectable when calling `run_preflight`.
 
 ### 6. Re-verify after install (LD7 — default-FAIL)
 
-After each install the engine re-runs the dep's `verify` command (`tools/kata_preflight.py:762-788`).
-Non-zero exit ⇒ `blocked`. An install that succeeds but whose verify still fails is a gate failure —
-default-FAIL is not relaxed post-install.
+After each install the engine re-runs the dep's structured `verifyImport` presence check (the same safe
+argv built by `_build_verify_argv` — never the freeform `verify` string). Non-zero exit ⇒ `blocked`. An
+install that succeeds but whose verify still fails is a gate failure — default-FAIL is not relaxed
+post-install.
 
 ### 7. Record to D-registry (N4)
 
-Successful installs are appended to `~/.kata/installed-registry.json` by `_record_install`
-(`tools/kata_preflight.py:288`). Pass `project_path` and `branch` so cleanup reference-counting is
-accurate.
+Successful installs are appended to `~/.kata/installed-registry.json` by `_record_install`.
+Pass `project_path` and `branch` so cleanup reference-counting is accurate.
 
 ### 8. Target-env probe (PF-3 / LD5)
 
-If `target.baselineGate` is set (`protocol/config.md:22`), the engine runs it as a verify command
-(`tools/kata_preflight.py:804-818`). Failure ⇒ `targetEnv.runnable: false` ⇒ `status: degraded`.
-Report-only; Debug Mode consumes this snapshot.
+If `target.baselineGate` is set, the engine runs it as the target-env probe. Failure ⇒
+`targetEnv.runnable: false` ⇒ `status: degraded`. Report-only; Debug Mode consumes this snapshot.
+(The `baselineGate` is an operator-supplied `kata.config` command — the same trust domain as a test
+runner — so it is split with `shlex`; it is NOT a manifest-supplied string.)
 
 ### 9. Cleanup report (PF-2 / LD6)
 
 The engine reference-counts each recorded package across all recorded projects' manifests via
-`_compute_cleanup_report` (`tools/kata_preflight.py:317`). A package is `safe_to_remove: true` only
+`_compute_cleanup_report`. A package is `safe_to_remove: true` only
 when no other recorded project's manifest still needs it. **Never auto-uninstall** — the report is a
 recommendation the human executes. Conservative: a missing or unreadable project path ⇒ treat the
 package as still needed (never recommend removal on incomplete evidence).
 
 ### 10. Emit `.kata/preflight.json` (N3)
 
-The engine writes the N3 schema artifact via `_write_preflight` (`tools/kata_preflight.py:376`).
-`kata-orchestrate` reads the `status` field from this artifact via `gate_status(repo_root)`
-(`tools/kata_preflight.py:398`).
+The engine writes the N3 schema artifact via `_write_preflight`.
+`kata-orchestrate` reads the `status` field from this artifact via `gate_status(repo_root)`.
 
 ## Escalation paths
 
@@ -186,7 +197,8 @@ Only on explicit acceptance may downstream dispatch proceed.
 ## Honest scope
 
 Auto-install is stub-tested via the injectable runner — no freeform shell string is ever executed; the
-`dep["install"]` freeform field is documentation-only and is never read by the engine. The real Snyk
+`dep["install"]` **and** `dep["verify"]` freeform fields are documentation-only and are never read or run
+by the engine (presence is checked only via the structured `verifyImport`). The real Snyk
 SCA scan is wired in the skill layer (`mcp__Snyk__snyk_sca_scan`); tests inject a stub verdict to avoid
 real network calls and machine mutation. Workers inherit the provisioned environment; they do not
 install. If a worker's environment is missing a dep that PRE-FLIGHT passed, that is an isolation or

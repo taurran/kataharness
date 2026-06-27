@@ -83,14 +83,19 @@ def _has_cfn_signature(text: str) -> bool:
 _TF_STATEFUL_EXACT: frozenset[str] = frozenset({
     "aws_db_instance",
     "aws_rds_cluster",
-    "aws_dynamodb_table",
     "aws_s3_bucket",
     "aws_ebs_volume",
+    # Single-resource data stores not covered by a safe prefix family.
+    "aws_ssm_parameter",
+    "aws_cloudwatch_log_group",
+    "aws_s3_object",
+    "aws_s3_bucket_object",
 })
 _TF_STATEFUL_PREFIXES: tuple[str, ...] = (
     # Broadened RDS/DB prefixes (catch cluster_instance, global_cluster, db_parameter_group, etc.)
     "aws_db_",
     "aws_rds_",
+    "aws_dynamodb_",       # table, global_table, table_item (catches global-table variant)
     # Data-bearing queue/stream/search/graph/document types (BLOCKER 1 — D98)
     "aws_efs_",
     "aws_sqs_",
@@ -100,6 +105,19 @@ _TF_STATEFUL_PREFIXES: tuple[str, ...] = (
     "aws_elasticsearch_",
     "aws_neptune_",
     "aws_docdb_",
+    # Holistic red-team (D108/D109/D110 pass): data/secret/backup families whose
+    # destruction is unrecoverable and MUST escalate, not silently fail.
+    "aws_kms_",                 # destroying a key renders data encrypted under it unrecoverable
+    "aws_secretsmanager_",
+    "aws_msk_",                 # managed Kafka
+    "aws_fsx_",
+    "aws_backup_",
+    "aws_glacier_",
+    "aws_timestream",           # aws_timestreamwrite_*
+    "aws_qldb_",
+    "aws_memorydb_",
+    "aws_keyspaces_",
+    "aws_redshiftserverless_",  # not caught by the aws_redshift_ prefix
     # Pre-existing
     "aws_elasticache_",
     "aws_redshift_",
@@ -113,7 +131,11 @@ def _is_tf_stateful(resource_type: str) -> bool:
 
 
 # CloudFormation — prefix families and exact type names
-_CFN_STATEFUL_EXACT: frozenset[str] = frozenset({"AWS::S3::Bucket"})
+_CFN_STATEFUL_EXACT: frozenset[str] = frozenset({
+    "AWS::S3::Bucket",
+    "AWS::EC2::Volume",       # EBS — TF flags aws_ebs_volume; close the CFN asymmetry
+    "AWS::SSM::Parameter",
+})
 _CFN_STATEFUL_PREFIXES: tuple[str, ...] = (
     # Pre-existing
     "AWS::RDS::",
@@ -129,6 +151,18 @@ _CFN_STATEFUL_PREFIXES: tuple[str, ...] = (
     "AWS::Elasticsearch::",
     "AWS::Neptune::",
     "AWS::DocDB::",
+    # Holistic red-team (D108/D109/D110 pass): data/secret/backup families.
+    "AWS::KMS::",
+    "AWS::SecretsManager::",
+    "AWS::Logs::",                  # LogGroup (retained log data)
+    "AWS::Backup::",
+    "AWS::FSx::",
+    "AWS::MSK::",
+    "AWS::Timestream::",
+    "AWS::QLDB::",
+    "AWS::MemoryDB::",
+    "AWS::Cassandra::",             # Keyspaces
+    "AWS::OpenSearchServerless::",  # distinct from AWS::OpenSearchService::
 )
 
 
@@ -165,22 +199,30 @@ def classify_file(
     safe = _safe_abs(path)
     p = PurePath(path)
 
+    # Case-insensitive matching: on Windows/macOS (and per CloudFormation, which
+    # places NO casing constraint on the file extension) ``Stack.YAML`` / ``main.TF``
+    # / ``deploy.Template`` are valid IaC files. Matching the literal lowercase
+    # extension would let them skip the gate entirely. Normalise first.
+    suffix = p.suffix.lower()
+    name_lower = p.name.lower()
+    parts_lower = {part.lower() for part in p.parts}
+
     # ---- Terraform: extension-based, checked first ----
     # .tf.json has suffix ".json" but name ends in ".tf.json"; check the
     # compound extension before the single-suffix CFN check.
-    if p.suffix == ".tf" or p.suffix == ".hcl" or p.name.endswith(".tf.json"):
+    if suffix == ".tf" or suffix == ".hcl" or name_lower.endswith(".tf.json"):
         return "terraform"
 
     # ---- CDK: by filename or by path location ----
     # Check CDK BEFORE CFN so that cdk.out/ synthesised templates (which look
     # like CFN) are classified as "cdk" rather than "cloudformation".
-    if p.name == "cdk.json":
+    if name_lower == "cdk.json":
         return "cdk"
-    if "cdk.out" in p.parts:
+    if "cdk.out" in parts_lower:
         return "cdk"
 
     # ---- CloudFormation: extension + content signature ----
-    if p.suffix in _CFN_EXTENSIONS:
+    if suffix in _CFN_EXTENSIONS:
         text = content if content is not None else safe.read_text(encoding="utf-8")
         if _has_cfn_signature(text):
             return "cloudformation"
@@ -192,20 +234,31 @@ def classify_file(
 # classify_task
 # ---------------------------------------------------------------------------
 
-def classify_task(owned_files: list[str | Path]) -> set[str]:
+def classify_task(
+    owned_files: list[str | Path],
+    overrides: dict[str, str] | None = None,
+) -> set[str]:
     """Return the set of IaC kinds present across a task's owned files.
 
     An empty set means no IaC was detected (no gate fires — BC).
 
+    ``overrides`` is the operator's ``iac.forceClassify`` map (glob → kind). It is
+    consulted FIRST per file and is the documented mitigation for auto-detection
+    false-negatives (an operator force-classifies a file auto-detection misses). A
+    matched override wins over auto-detection; a non-match falls through to it.
+
     Args:
         owned_files: List of file paths belonging to the task.
+        overrides:   Optional ``{glob: kind}`` force-classify map (``iac.forceClassify``).
 
     Returns:
         A set of kind strings (subset of ``{"terraform","cloudformation","cdk"}``).
     """
     kinds: set[str] = set()
     for f in owned_files:
-        kind = classify_file(f)
+        kind = force_classify(f, overrides) if overrides else None
+        if kind is None:
+            kind = classify_file(f)
         if kind is not None:
             kinds.add(kind)
     return kinds
@@ -329,7 +382,10 @@ def scan_tf_plan(plan_json: dict) -> list[dict]:
             "address": entry.get("address", ""),
             "type": resource_type,
             "actions": actions,
-            "action_reason": change.get("action_reason", ""),
+            # `action_reason` is a SIBLING of `change` on the resource-change object
+            # in `terraform show -json` (NOT inside `change`). Reading it from `change`
+            # made it always "" on real plans, dropping the delete_because_* signals.
+            "action_reason": entry.get("action_reason", ""),
             "stateful": _is_tf_stateful(resource_type),
         })
 

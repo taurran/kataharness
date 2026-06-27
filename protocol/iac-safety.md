@@ -27,8 +27,10 @@ agent that writes or modifies IaC under this contract must never emit `--auto-ap
 **Activation.** This contract activates when a task's owned files are detected as IaC by `tools/iac_detect.py`
 (`.tf`/`.tf.json`/`.hcl` → terraform; `AWSTemplateFormatVersion`/`Resources` with `Type: AWS::*` → cloudformation;
 `cdk.json`/`cdk.out/` → cdk; belt-and-suspenders: any `.yaml/.yml/.json` with a `Type:\s*AWS::` resource
-declaration). Detection is best-effort; a fragment or unusual template may false-negative (MAJOR-5 — a miss
-is a silent safety bypass; the `forceClassify` config list shrinks but does not eliminate the gap).
+declaration; extension matching is **case-insensitive** so `Stack.YAML`/`main.TF`/`deploy.Template` do not
+skip the gate). Detection is best-effort; a fragment or unusual template may false-negative (MAJOR-5 — a miss
+is a silent safety bypass; the `forceClassify` config map is **wired into `iac_detect.classify_task` at
+dispatch** [a matched glob→kind override wins over auto-detection] and shrinks, but does not eliminate, the gap).
 
 ---
 
@@ -103,10 +105,10 @@ added by slice D, following the injectable + fail-closed seam pattern establishe
 **FAIL-CLOSED — the scanner-absent case is also a FAIL.** If the scanner callable is unwired, unavailable,
 or errors at call time, the gate **FAILS** with a "scanner not wired/unavailable" blocker. The gate never
 passes with zero scanner coverage. This mirrors the kata-preflight MINOR-3 fail-closed guard exactly
-(`tools/kata_preflight.py:808-826`):
+(the SCA fail-closed guard in `run_preflight`, `tools/kata_preflight.py`):
 
 > ```python
-> # the SCA precedent — tools/kata_preflight.py:808-826 (quoted verbatim; the IaC gate applies the SAME structure with snyk_iac_scan)
+> # the SCA precedent — the scanner-not-wired guard in run_preflight (quoted verbatim; the IaC gate applies the SAME structure with snyk_iac_scan)
 > if not _snyk_check_wired:
 >     blockers.append(
 >         f"dep {name!r}: SCA scanner not wired — scan_required:true but no "
@@ -171,7 +173,9 @@ the destructive-parser in `tools/iac_detect.py`:
 - `.Details[].Target.RequiresRecreation == "Always"` — replacement forced.
 
 For each flagged change, classify the resource type as **stateful** (RDS/DynamoDB/S3/EBS/ElastiCache/Redshift/
-EFS/SQS/SNS/Kinesis/OpenSearch/Neptune/DocumentDB and equivalents) or non-stateful.
+EFS/SQS/SNS/Kinesis/OpenSearch/Neptune/DocumentDB/**KMS/SecretsManager/Backup/FSx/MSK/CloudWatch-Logs/
+Timestream/QLDB/MemoryDB/Keyspaces** and equivalents — see `iac_detect._TF_STATEFUL_*` / `_CFN_STATEFUL_*`
+for the authoritative families) or non-stateful.
 
 ### 5c. Honesty contract (MAJOR-3)
 
@@ -281,8 +285,10 @@ integration gate; unresolved high/critical findings or an un-approved destroy �
   destructive-change verdict logic.
 - `source: "static"` on a `destructive` entry must be treated as unverified (MAJOR-3, §5c); the human
   reviewer must be informed of this when `verdict: "escalate"` is written.
-- If no IaC files are detected for a run, no `.kata/iac.json` is written and `kata-evaluate` treats its
-  absence as no IaC finding (BC — no change to artifacts or verdicts for non-IaC tasks, MINOR-7).
+- If no IaC files are detected for a run, no `.kata/iac.json` is written. `kata-evaluate` does **not** trust
+  this by presence alone: it independently re-classifies the footprint's changed files
+  (`iac_detect.classify_task`) and only treats absence as "no IaC finding" when no changed file is IaC-classed
+  (BC, MINOR-7). A changed IaC file with no `.kata/iac.json` ⇒ **NEEDS_WORK** (skipped/crashed gate cannot pass).
 
 ---
 
@@ -290,7 +296,7 @@ integration gate; unresolved high/critical findings or an un-approved destroy �
 
 | Claim | Verified surface |
 |---|---|
-| Fail-closed scanner-absent pattern | `tools/kata_preflight.py:808-826` — `if not _snyk_check_wired: blockers.append(...); overall_status = "blocked"` |
+| Fail-closed scanner-absent pattern | the SCA fail-closed guard in `run_preflight` (`tools/kata_preflight.py`) — `if not _snyk_check_wired: blockers.append(...); overall_status = "blocked"` |
 | `build_escalation` signature | `tools/escalation.py:47` — `def build_escalation(taskId, kind, decisionNeeded, optionsConsidered, agentRecommendation, rationale, ...)` |
 | `write_escalation` signature | `tools/escalation.py:153` — `def write_escalation(kata_dir: str, payload: dict) -> str` |
 | Escalation payload schema + lifecycle | `protocol/escalation.md` — `kind: "human-required"` path + async park/drain |

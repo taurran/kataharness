@@ -13,7 +13,8 @@ ROLE_GROUPS : frozenset
 resolve_roles(roles_block, confirmed_platforms, host_platform="claude") -> dict
     Pure. Returns ``{role: {"platform", "model"?, "effort"?}}`` for EVERY role group
     (absent roles default to the host). Raises ``ValueError`` (fail-closed) on an
-    unknown role or a non-host platform not in ``confirmed_platforms``.
+    unknown role, a non-host platform not in ``confirmed_platforms``, or an attempt
+    to route a HOST_ONLY_ROLES role (orchestrator/evaluator) off the host (LD11).
 is_multimodal(resolved, host_platform="claude") -> bool
     True iff any role resolves to a platform other than the host.
 
@@ -23,6 +24,14 @@ BC1: ``roles_block`` falsy ⇒ every role on the host (today's single-model loop
 from __future__ import annotations
 
 ROLE_GROUPS = frozenset({"coder", "validator", "researcher", "orchestrator", "evaluator"})
+
+# Roles that MUST run on the orchestrator's own host in v1 (DESIGN LD11 / MM-1):
+# the orchestrator is the plan-guardian and the evaluator is the default-FAIL gate —
+# neither has a wired off-host dispatch path. config.md advertises `roles` as
+# "validated fail-closed at preflight"; this set is the code that makes the
+# host-only half of that promise real (an off-host assignment STOPs, never silently
+# resolves-then-drops).
+HOST_ONLY_ROLES = frozenset({"orchestrator", "evaluator"})
 
 
 def resolve_roles(
@@ -42,6 +51,12 @@ def resolve_roles(
         if not isinstance(assign, dict):
             raise ValueError(f"kata_roles: role {role!r} assignment must be an object, got {type(assign).__name__}")
         platform = assign.get("platform") or host_platform
+        if role in HOST_ONLY_ROLES and platform != host_platform:
+            raise ValueError(
+                f"kata_roles: role {role!r} is host-only in v1 (DESIGN LD11) and cannot be "
+                f"routed to {platform!r}; it has no off-host dispatch path. Remove the override "
+                f"or run it on the host {host_platform!r}."
+            )
         if platform not in confirmed:
             raise ValueError(
                 f"kata_roles: role {role!r} → platform {platform!r} is not confirmed "

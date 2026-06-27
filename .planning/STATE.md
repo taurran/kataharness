@@ -1,5 +1,24 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-27, HOLISTIC RED-TEAM of D108/D109/D110 + FIXES — D111; pytest 776 · 39 skills/0 · Snyk 0;
+> D98 re-review CLEAN):** Session first-task per `NEXT-SESSION-ORIENTATION.md` — a fresh-context *cross-cutting*
+> adversarial pass over the day's 3 back-to-back builds (the seams *between* them were unreviewed). 5 parallel
+> reviewers → synthesis → operator-gated trimmed scope (fix confirmed findings; drop LOW cosmetic). **Real defects
+> the per-build passes missed, all fixed + test-proven:** a **preflight RCE** (freeform `dep["verify"]` was executed
+> before the SCA gate → structured `verifyImport` builder; freeform `verify` demoted docs-only), **IaC gate-skips**
+> (case-sensitive ext match; `forceClassify` documented-but-never-wired; stateful-set gaps incl. KMS/Secrets/MSK/
+> FSx/Backup/Logs/Timestream/QLDB/MemoryDB/Keyspaces/CFN-EC2::Volume), **Snyk truthiness** (→ strict `is True` +
+> fail-closed), the **iac.json cross-seam fail-open** (kata-evaluate now independently re-classifies the footprint),
+> **`resolve_roles` host-only** silently-dropped (→ `HOST_ONLY_ROLES` fail-closed), TF **`action_reason`** wrong
+> nesting, manifest **TOCTOU**, regex `fullmatch`, and the **4th doc-drift recurrence** (worst `file:line` cites →
+> function/section anchors, killing the class). **Operator caught one spiral** (a sandbox-default flip over-fixing a
+> cosmetic finding) → reverted — the spiral-check was load-bearing. Deferred LOW/architectural (snake→camel rename,
+> severity-floor enforcement, CDK-source, deterministic `iac_gate.py`). Applied **inline** (operator directive), not
+> orchestrated. **Not a planned feature** — a hardening pass. Record: `DECISIONS.md` D111. **NEXT (the open queue,
+> operator picks):** (a) **Debug Mode** build (DESIGN frozen, both blockers cleared — the onboarding killer-app);
+> (b) IaC Tier-2 live-apply; (c) recurrence-hardening; (d) second-brain-learning; (e) install+confirm a 2nd platform
+> → multi-model benchmark.
+
 > **CURRENT (2026-06-26, IaC-SAFETY SPECIALISTS (Tier 1) BUILT — merge `396baa3`, D110; pytest 739 · 39 skills/0 ·
 > Snyk 0; PUSHED, in sync):** capability-aware-assignment, narrowed to **IaC specialists** for v1 (the specialist
 > value for frontier models is **safety/security/gate discipline, not language expertise**). 4-agent grounded research

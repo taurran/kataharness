@@ -81,7 +81,7 @@ Call `mcp__Snyk__snyk_iac_scan` on the Terraform source files.
 **FAIL-CLOSED:** if the scanner is unwired, unavailable, or errors at call time, the gate
 **FAILS** with a "scanner not wired/unavailable" blocker — it never passes with zero scanner coverage.
 This mirrors the kata-preflight fail-closed guard exactly
-(`tools/kata_preflight.py:808-826` — `if not _snyk_check_wired: blockers.append(...); overall_status = "blocked"`).
+(the SCA fail-closed guard in `run_preflight`, `tools/kata_preflight.py` — `if not _snyk_check_wired: blockers.append(...); overall_status = "blocked"`).
 
 Parse scanner output for `severity` and `rule-id`:
 - `critical` or `high` finding → `verdict: "fail"`. Revise the IaC; re-gate from Step 1.
@@ -130,15 +130,16 @@ guarantee that no infrastructure will be destroyed. Record each finding with `so
 When a Terraform plan JSON (`terraform show -json tfplan`) is provided as task input, parse it via:
 
 ```python
-# tools/iac_detect.py:225
+# iac_detect.scan_tf_plan
 from iac_detect import scan_tf_plan
 
 results = scan_tf_plan(plan_json)  # raises ValueError on malformed input — treat as gate FAIL
 # returns: [{address, type, actions, action_reason, stateful}, ...]
 # "delete" in actions → destructive; stateful=True → must escalate
+# (action_reason is read from the resource-change object — a SIBLING of `change`)
 ```
 
-**Verified reuse:** `scan_tf_plan` defined at `tools/iac_detect.py:225`; it filters
+**Verified reuse:** `iac_detect.scan_tf_plan`; it filters
 `resource_changes[].change.actions` for `"delete"` (covers `["delete"]`, `["delete","create"]`,
 `["create","delete"]`) and classifies resource types as stateful (RDS, DynamoDB, S3, EBS,
 ElastiCache-*, Redshift-*). A `ValueError` from malformed plan input is a gate FAIL

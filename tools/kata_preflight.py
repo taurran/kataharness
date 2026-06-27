@@ -113,6 +113,11 @@ _PACKAGE_RE_BY_MANAGER: dict[str, re.Pattern] = {
 # Forbids `:` and `/` which would make a value a source spec.
 _VERSION_RE = re.compile(r"^[A-Za-z0-9.\-_+~^]+$")
 
+# Python dotted-module identifier (for the structured `verifyImport` presence check).
+# Only a real importable name — no quotes, parens, semicolons, or whitespace, so it
+# cannot break out of ``python -c "import <name>"`` into arbitrary code.
+_PY_MODULE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")
+
 _REGISTRY_VERSION = 1
 _DEFAULT_FREEZE_APPROVAL_FILENAME = "kata.freeze-approval.json"
 
@@ -157,7 +162,7 @@ def _validate_field_value(value: str, field_name: str) -> None:
         raise ValueError(
             f"Field {field_name!r} starts with '-' (flag injection risk): {value!r}"
         )
-    if not _VERSION_RE.match(value):
+    if not _VERSION_RE.fullmatch(value):
         raise ValueError(
             f"Field {field_name!r} contains invalid characters: {value!r}"
         )
@@ -210,7 +215,7 @@ def _validate_package(package: str, manager: str) -> None:
     pkg_re = _PACKAGE_RE_BY_MANAGER.get(manager)
     if pkg_re is None:
         raise ValueError(f"No package name grammar defined for manager {manager!r}")
-    if not pkg_re.match(package):
+    if not pkg_re.fullmatch(package):
         raise ValueError(
             f"Field 'package' contains invalid characters or fails {manager!r} "
             f"name grammar: {package!r}. Use a registry package name, not a source spec."
@@ -296,13 +301,66 @@ def _build_argv(dep: dict, registry_url: str | None) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Manifest hash (H2 / LD8)
+# Verify-presence builder — STRUCTURED, never a freeform shell string.
+#
+# BLOCKER (red-team, holistic D108/D109/D110 pass): the freeform ``verify``
+# string was previously executed via ``shlex.split(verify) → runner`` — an
+# arbitrary-command-execution path that bypassed the registry forcing, the
+# package-name grammar, AND the Snyk SCA gate (it ran *before* the scan).  A
+# malicious/contributed manifest got RCE the moment its hash matched approval.
+#
+# This re-asserts the engine's central invariant ("no freeform string is ever
+# executed", mirroring the ``install``-string demotion, LD2/LD3): presence is
+# checked by importing/invoking a *validated identifier* supplied in the
+# structured ``verifyImport`` field — not by running an attacker-chosen program.
 # ---------------------------------------------------------------------------
 
-def _compute_manifest_hash(manifest_path: Path) -> str:
-    """Compute the SHA-256 hex digest of the manifest file bytes."""
-    return hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+def _build_verify_argv(dep: dict, manager: str) -> list[str] | None:
+    """Build a presence-check argv from the structured ``verifyImport`` field.
 
+    Returns ``None`` when no ``verifyImport`` is supplied (presence unknown → the
+    caller proceeds to the install path).  The freeform ``verify`` string is
+    **never** read or executed (docs-only, like ``install``).
+
+    Args:
+        dep:     A dependency dict from the manifest.
+        manager: The (already-allowlisted) install manager.
+
+    Returns:
+        A ``list[str]`` argv for ``subprocess.run(argv, shell=False)``, or ``None``.
+
+    Raises:
+        ValueError: if ``verifyImport`` fails the per-manager identifier grammar.
+    """
+    target = dep.get("verifyImport")
+    if not target:
+        return None
+    if manager in ("pip", "uv"):
+        if not _PY_MODULE_RE.fullmatch(target):
+            raise ValueError(
+                f"verifyImport {target!r} is not a valid Python module name"
+            )
+        return ["python", "-c", f"import {target}"]
+    if manager == "npm":
+        if not _NPM_PACKAGE_RE.fullmatch(target):
+            raise ValueError(
+                f"verifyImport {target!r} is not a valid npm module name"
+            )
+        return ["node", "-e", f"require('{target}')"]
+    if manager == "cargo":
+        # cargo installs binaries; presence = the binary runs with a fixed flag.
+        if not _CARGO_PACKAGE_RE.fullmatch(target):
+            raise ValueError(
+                f"verifyImport {target!r} is not a valid cargo binary name"
+            )
+        return [target, "--version"]
+    raise ValueError(f"No verify builder for manager {manager!r}")  # pragma: no cover
+
+
+# ---------------------------------------------------------------------------
+# Manifest hash (H2 / LD8) — computed inline in run_preflight from a single
+# read of the manifest bytes (TOCTOU-safe); see the hash check there.
+# ---------------------------------------------------------------------------
 
 def _load_approved_hash(approved_hash_path: Path) -> str | None:
     """Load the approved manifest hash from the distinct freeze artifact.
@@ -632,8 +690,20 @@ def run_preflight(
 
     # =========================================================================
     # H2 / LD8: manifest-hash check (tamper-detect post-freeze edits)
+    # TOCTOU fix: read the bytes ONCE, hash those exact bytes, and parse the SAME
+    # bytes below — never re-read the file between hashing and use.
     # =========================================================================
-    manifest_hash: str = _compute_manifest_hash(manifest_path)
+    try:
+        manifest_bytes: bytes = manifest_path.read_bytes()
+    except OSError as exc:
+        result = {
+            "status": "blocked", "deps": [], "installed": [], "targetEnv": None,
+            "warnings": [], "blockers": [f"manifest unreadable: {exc}"],
+            "sandbox": "isolated", "cleanup": [],
+        }
+        _write_preflight(repo_root_p, result)
+        return result
+    manifest_hash: str = hashlib.sha256(manifest_bytes).hexdigest()
     approved_hash: str | None = _load_approved_hash(real_approved_hash_p)
 
     if approved_hash is None:
@@ -697,11 +767,11 @@ def run_preflight(
     sandbox_status: str = "isolated" if sandbox_ok else "host"
 
     # =========================================================================
-    # Read manifest
+    # Parse manifest — from the SAME bytes that were hashed above (no re-read).
     # =========================================================================
     try:
-        manifest_data: dict = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as exc:
+        manifest_data: dict = json.loads(manifest_bytes.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError) as exc:
         result = {
             "status": "blocked",
             "deps": [],
@@ -784,16 +854,25 @@ def run_preflight(
             overall_status = "blocked"
             continue
 
-        # ---- Verify presence (run the dep's `verify` command)
-        verify_cmd: str = dep.get("verify", "")
+        # ---- Verify presence (STRUCTURED verifyImport — the freeform `verify`
+        #      string is NEVER executed; that was an RCE path, see _build_verify_argv)
+        try:
+            verify_argv = _build_verify_argv(dep, manager)  # type: ignore[arg-type]
+        except ValueError as exc:
+            blockers.append(f"dep {name!r}: invalid verifyImport — {exc}")
+            dep_results.append(
+                {
+                    "name": name, "verify": "failed", "action": "skipped",
+                    "source": dep.get("source", ""), "scope": dep.get("scope", ""),
+                    "classification": dep.get("classification", ""),
+                }
+            )
+            overall_status = "blocked"
+            continue
         dep_present: bool = False
-        if verify_cmd:
-            try:
-                verify_argv = shlex.split(verify_cmd)
-                exit_code, _ = real_runner(verify_argv)
-                dep_present = exit_code == 0
-            except Exception:  # noqa: BLE001
-                dep_present = False
+        if verify_argv is not None:
+            exit_code, _ = real_runner(verify_argv)
+            dep_present = exit_code == 0
 
         if dep_present:
             dep_results.append(
@@ -824,11 +903,29 @@ def run_preflight(
                 )
                 overall_status = "blocked"
                 continue
-            is_safe: bool = real_snyk_check(package, version)  # type: ignore[arg-type]
-            if not is_safe:
+            # Fail-closed on BOTH a scanner error AND a non-strict-True verdict.
+            # A wired adapter that returns its raw MCP result object (truthy) must
+            # NOT be read as "safe": require the exact sentinel ``True``.
+            try:
+                verdict = real_snyk_check(package, version)  # type: ignore[arg-type]
+            except Exception as exc:  # noqa: BLE001 — any scanner failure → block
                 blockers.append(
-                    f"dep {name!r}: Snyk SCA scan blocked install of "
-                    f"{package}@{version} (preflight.scan_required:true, LD3)"
+                    f"dep {name!r}: Snyk SCA scan errored ({exc!r}) — fail-closed, "
+                    f"refusing to install {package}@{version} (LD3, MINOR 3)"
+                )
+                dep_results.append(
+                    {
+                        "name": name, "verify": "failed", "action": "skipped",
+                        "source": dep.get("source", ""), "scope": dep.get("scope", ""),
+                        "classification": dep.get("classification", ""),
+                    }
+                )
+                overall_status = "blocked"
+                continue
+            if verdict is not True:
+                blockers.append(
+                    f"dep {name!r}: Snyk SCA scan did not return a clean (True) verdict "
+                    f"for {package}@{version} — blocking install (preflight.scan_required:true, LD3)"
                 )
                 dep_results.append(
                     {
@@ -874,23 +971,19 @@ def run_preflight(
             overall_status = "blocked"
             continue
 
-        # ---- Re-verify after install (default-FAIL / LD7)
+        # ---- Re-verify after install (default-FAIL / LD7) — same STRUCTURED argv
         re_verify_ok: bool
-        if verify_cmd:
-            try:
-                re_verify_argv = shlex.split(verify_cmd)
-                rv_exit, _ = real_runner(re_verify_argv)
-                re_verify_ok = rv_exit == 0
-            except Exception:  # noqa: BLE001
-                re_verify_ok = False
+        if verify_argv is not None:
+            rv_exit, _ = real_runner(verify_argv)
+            re_verify_ok = rv_exit == 0
         else:
-            # No verify command supplied: accept install at face value
+            # No verifyImport supplied: accept install at face value
             re_verify_ok = True
 
         if not re_verify_ok:
             blockers.append(
                 f"dep {name!r}: re-verify failed after install — default-FAIL (LD7). "
-                "The package installed but its verify command returned non-zero."
+                "The package installed but its verifyImport check returned non-zero."
             )
             dep_results.append(
                 {

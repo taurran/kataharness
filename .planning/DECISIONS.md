@@ -1125,3 +1125,36 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   self-check floor-raiser, the scanner is the authoritative gate. Backout tag `pre-iac-specialist`. Records:
   `specs/iac-safety-specialist/{RESEARCH,DESIGN}.md`, `specs/iac-live-apply/BRIEF.md`. **Meta:** D98 again caught
   what conformance passed over — the adversarial lens is load-bearing on security code (3rd session-instance).
+
+<!-- Holistic cross-build red-team of D108/D109/D110 + fixes. No new feature — a hardening pass. -->
+- **D111 — Holistic red-team of the D108/D109/D110 builds + fixes — 2026-06-27.** First-task of the session per
+  `NEXT-SESSION-ORIENTATION.md`: a fresh-context, *cross-cutting* adversarial pass over the three back-to-back
+  builds (each had only its own per-build D98; the seams *between* them were unreviewed). 5 parallel reviewers →
+  synthesis → **operator-gated trimmed scope** (fix confirmed A/B/C; drop LOW cosmetic). **Real defects the
+  per-build passes missed, all fixed + test-proven:** **(BLOCKER) preflight RCE** — `dep["verify"]` was a freeform
+  shell string executed via `shlex.split`→runner *before* the SCA gate (bypassed registry-forcing + name-grammar +
+  Snyk); fixed by a structured `verifyImport` builder (`_build_verify_argv`, per-manager fullmatch grammar →
+  `python -c "import x"` / `node -e "require('x')"` / `bin --version`); freeform `verify` demoted to docs-only like
+  `install`. **(HIGH) IaC gate-skips:** extension match was case-sensitive (`.YAML`/`.TF`/`.Template` skipped the
+  gate) → case-insensitive; `iac.forceClassify` was a *documented mitigation that was never wired* → now passed into
+  `iac_detect.classify_task` at dispatch; stateful-set was incomplete (KMS/Secrets/MSK/FSx/Backup/CloudWatch-Logs/
+  Timestream/QLDB/MemoryDB/Keyspaces/dynamodb-prefix/S3-objects + CFN `EC2::Volume` missing → destroy downgraded
+  escalate→fail, losing the human gate) → families added. **(HIGH) Snyk verdict** trusted by truthiness → strict
+  `is True` + exception-fail-closed. **(MAJOR) iac.json cross-seam fail-open** — orchestrate claimed kata-evaluate
+  catches an absent iac.json on an IaC run, but evaluate keyed off *presence* and couldn't tell "no IaC" from
+  "gate skipped/crashed"; fixed: kata-evaluate independently re-classifies the footprint's changed files
+  (`classify_task`) → absent/malformed iac.json on IaC-classed changes ⇒ NEEDS_WORK. **(MAJOR) `resolve_roles`**
+  silently accepted-then-dropped off-host `orchestrator`/`evaluator` (config promised fail-closed) → `HOST_ONLY_ROLES`
+  guard raises. **(MED)** TF `action_reason` was read from `change` (always "" on real plans) → entry-level (sibling
+  of `change`); the test fixture had nested it wrong, masking the bug. **(MED)** manifest TOCTOU → single-read bytes.
+  **(LOW)** validators `match`→`fullmatch`. **Doc-drift (4th recurrence):** the worst `file:line` cites converted to
+  **function/section anchors** ([[cite-skills-by-section-anchor]]) — kills the class permanently; dead config fields
+  (`extraScanners`/`pin_policy`/`approval_mode`) labeled reserved/advisory. **Honestly deferred (LOW/architectural,
+  NOT built):** a sandbox-default flip (started, then *reverted* — the operator caught it as over-engineering a
+  cosmetic finding; the spiral-check was load-bearing), snake→camel config rename, `severityThreshold`-floor
+  enforcement, CDK-source classification (Tier-1 = TF+CFN; `forceClassify` is the escape hatch), a deterministic
+  `iac_gate.py` (a separate build). **Gates:** pytest **776** (+37 proof tests), validate **39/0**, Snyk **0** on all
+  3 changed Python files, D98 fresh-context re-review **CLEAN**. Applied **inline** (operator directive "apply +
+  assess as you apply"), not orchestrated — surgical fixes across shared seam files. **Meta:** the holistic pass
+  earns its keep — per-build red-teams are necessary but not sufficient after a fast multi-build day; the
+  *between-build* seams (shared `kata-orchestrate`/`kata-evaluate`/`config.md`) are where the fail-opens hid.

@@ -56,14 +56,18 @@ import iac_detect
 # ---------------------------------------------------------------------------
 
 def _tf_resource(address, rtype, actions, action_reason=""):
-    """Build a resource_changes entry for TF plan fixtures."""
+    """Build a resource_changes entry for TF plan fixtures.
+
+    Matches the real ``terraform show -json`` schema: ``action_reason`` is a
+    SIBLING of ``change`` on the resource-change object, not nested inside it.
+    """
     entry = {
         "address": address,
         "type": rtype,
         "change": {"actions": actions},
     }
     if action_reason:
-        entry["change"]["action_reason"] = action_reason
+        entry["action_reason"] = action_reason
     return entry
 
 
@@ -104,6 +108,11 @@ class TestClassifyFileTerraform:
     def test_content_kwarg_shortcircuits_read(self):
         # Path need not exist when content is supplied
         assert iac_detect.classify_file("/nonexistent/main.tf", content="anything") == "terraform"
+
+    def test_uppercase_extension_still_terraform(self):
+        """Red-team: .TF (Windows/macOS) must NOT skip the gate (case-insensitive)."""
+        assert iac_detect.classify_file("/proj/Main.TF", content="x") == "terraform"
+        assert iac_detect.classify_file("/proj/over.TF.JSON", content="{}") == "terraform"
 
 
 # ---------------------------------------------------------------------------
@@ -156,6 +165,15 @@ services:
         f = tmp_path / "deploy.template"
         f.write_text(self.CFN_VERSION_YAML, encoding="utf-8")
         assert iac_detect.classify_file(str(f)) == "cloudformation"
+
+    def test_uppercase_extensions_still_cloudformation(self):
+        """Red-team: .YAML/.Template (Windows/macOS) must NOT skip the gate."""
+        assert iac_detect.classify_file(
+            "/proj/Stack.YAML", content=self.CFN_VERSION_YAML
+        ) == "cloudformation"
+        assert iac_detect.classify_file(
+            "/proj/Deploy.Template", content=self.CFN_VERSION_YAML
+        ) == "cloudformation"
 
     def test_content_kwarg(self):
         """Pass content directly — path need not exist."""
@@ -245,7 +263,28 @@ class TestClassifyTask:
         f.write_text("", encoding="utf-8")
         result = iac_detect.classify_task([str(f), str(f)])
         assert isinstance(result, set)
-        assert result == {"terraform"}
+
+    def test_force_classify_overrides_are_honored(self):
+        """Red-team: forceClassify is the documented mitigation — it MUST be wired
+        into classify_task (it was dead before). A file auto-detection misses
+        (extensionless / odd name) is rescued by the operator override."""
+        overrides = {"infra/**": "cloudformation"}
+        result = iac_detect.classify_task(["infra/weird_name_no_ext"], overrides=overrides)
+        assert result == {"cloudformation"}
+
+    def test_force_classify_wins_over_autodetect(self, tmp_path):
+        tf = tmp_path / "main.tf"
+        tf.write_text("resource \"aws_vpc\" \"v\" {}\n", encoding="utf-8")
+        # Override forces this .tf to cloudformation
+        result = iac_detect.classify_task(
+            [str(tf)], overrides={str(tf): "cloudformation"}
+        )
+        assert result == {"cloudformation"}
+
+    def test_no_overrides_is_backward_compatible(self, tmp_path):
+        f = tmp_path / "main.tf"
+        f.write_text("", encoding="utf-8")
+        assert iac_detect.classify_task([str(f)]) == {"terraform"}
 
 
 # ---------------------------------------------------------------------------
@@ -390,6 +429,28 @@ class TestScanTfPlan:
         )
         assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
 
+    @pytest.mark.parametrize("rtype", [
+        "aws_kms_key",
+        "aws_secretsmanager_secret",
+        "aws_msk_cluster",
+        "aws_fsx_lustre_file_system",
+        "aws_backup_vault",
+        "aws_glacier_vault",
+        "aws_timestreamwrite_database",
+        "aws_qldb_ledger",
+        "aws_memorydb_cluster",
+        "aws_keyspaces_keyspace",
+        "aws_redshiftserverless_namespace",
+        "aws_dynamodb_global_table",
+        "aws_cloudwatch_log_group",
+        "aws_ssm_parameter",
+        "aws_s3_object",
+    ])
+    def test_stateful_red_team_families(self, rtype):
+        """Red-team: destroying these data/secret/backup types MUST escalate (stateful)."""
+        plan = self._plan(_tf_resource(f"{rtype}.x", rtype, ["delete"]))
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
     def test_non_stateful_resource(self):
         plan = self._plan(
             _tf_resource("aws_vpc.v", "aws_vpc", ["delete"])
@@ -516,6 +577,26 @@ class TestScanCfnChangeset:
         assert "stateful" in r
 
     # --- stateful detection ---
+
+    @pytest.mark.parametrize("rtype", [
+        "AWS::EC2::Volume",                       # EBS — closes the TF/CFN asymmetry
+        "AWS::KMS::Key",
+        "AWS::SecretsManager::Secret",
+        "AWS::Logs::LogGroup",
+        "AWS::Backup::BackupVault",
+        "AWS::FSx::FileSystem",
+        "AWS::MSK::Cluster",
+        "AWS::Timestream::Database",
+        "AWS::QLDB::Ledger",
+        "AWS::MemoryDB::Cluster",
+        "AWS::Cassandra::Keyspace",
+        "AWS::OpenSearchServerless::Collection",
+        "AWS::SSM::Parameter",
+    ])
+    def test_stateful_red_team_families(self, rtype):
+        """Red-team: removing these data/secret/backup types MUST escalate (stateful)."""
+        desc = self._desc(_cfn_change("X", rtype, "Remove"))
+        assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
 
     def test_stateful_rds(self):
         desc = self._desc(_cfn_change("MyDB", "AWS::RDS::DBInstance", "Remove"))

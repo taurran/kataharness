@@ -46,15 +46,26 @@ does not drift.**
      not yet wired)*, and the `kata-defer` assumption/ambiguity log is surfaced at the gate/handoff. Skip
      **shifts** ambiguity resolution from up-front-with-human to in-loop-without-human (the grill↔RS spectrum);
      it never bypasses the `kata-evaluate` gate. (`protocol/config.md` → *Grill-depth dial*.)
-   - **Version-up (`target.kind: "existing"`):** use `target.baselineGate` as the precondition-#2 baseline
-     command. (The version-up ingestion DAG — kata-graph — is Spec A4; A3 only consumes the config fields.)
-   - **Roles load-guard (N4/L-A):** read confirmed platforms via `kata_settings.confirmed_platforms()` (`tools/kata_settings.py:109`) and resolve `kata.config.roles` via `kata_roles.resolve_roles(roles_block, confirmed, host_platform)` (`tools/kata_roles.py:28`). **`host_platform` is the orchestrator's runtime adapter identity** — in v1 this is `"claude"` (the only shipped dispatch adapter; see `SKILL.md:14`, where the `Agent` tool is documented as the Claude-adapter binding of the abstract "dispatch worker" capability, and v0.1 ships only the Claude adapter; `"claude"` is also the resolver's default at `tools/kata_roles.py:31`). This is an adapter binding, not a `kata.config` field — there is no `target.platform`. A non-Claude orchestrator host is DEFERRED (LD11); a future fast-follow swaps only this binding. A `ValueError` from `resolve_roles` (unknown role name, or a platform ∉ `confirmedPlatforms`) ⇒ **STOP + escalate at preflight** (same fail-closed posture as the mode/effort/tiers/modules guard above). **BC1:** `roles` absent ⇒ `resolve_roles` returns every role assigned to the host ⇒ today's single-host loop byte-for-byte (DESIGN R5/LD3).
+   - **Version-up (`target.kind: "existing"`):** use `target.baselineGate` as the baseline command for the
+     **green-at-fork-point** precondition below. (The version-up ingestion DAG — kata-graph — is Spec A4; A3
+     only consumes the config fields.)
+   - **Roles load-guard (N4/L-A):** read confirmed platforms via `kata_settings.confirmed_platforms()` and
+     resolve `kata.config.roles` via `kata_roles.resolve_roles(roles_block, confirmed, host_platform)`.
+     **`host_platform` is the orchestrator's runtime adapter identity** — in v1 this is `"claude"` (the only
+     shipped dispatch adapter; see §"Cross-model dispatch" below — the `Agent` tool is the Claude-adapter
+     binding of the abstract "dispatch worker" capability, and v0.1 ships only the Claude adapter; `"claude"`
+     is also `resolve_roles`'s default `host_platform`). This is an adapter binding, not a
+     `kata.config` field — there is no `target.platform`. A non-Claude orchestrator host is DEFERRED (LD11); a
+     future fast-follow swaps only this binding. A `ValueError` from `resolve_roles` (unknown role name, a
+     platform ∉ `confirmedPlatforms`, **or a host-only role [orchestrator/evaluator] routed off-host —
+     `kata_roles.HOST_ONLY_ROLES`, LD11**) ⇒ **STOP + escalate at preflight** (same fail-closed posture as the
+     mode/effort/tiers/modules guard above). **BC1:** `roles` absent ⇒ `resolve_roles` returns every role
+     assigned to the host ⇒ today's single-host loop byte-for-byte (DESIGN R5/LD3).
 1. **PRE-FLIGHT gate** — conditional, fail-closed, BC-preserving (N5/D29). Call
-   `kata_preflight.preflight_required(repo_root)` (`tools/kata_preflight.py:481`):
+   `kata_preflight.preflight_required(repo_root)`:
    - **`False`** (no `kata.dependencies.json` manifest): PRE-FLIGHT is not required — proceed
      (today's loop unchanged; BC). This precondition is a no-op for dep-free runs.
-   - **`True`** (manifest present): call `kata_preflight.gate_status(repo_root)`
-     (`tools/kata_preflight.py:490`).
+   - **`True`** (manifest present): call `kata_preflight.gate_status(repo_root)`.
      - `"ready"` ⇒ proceed to dispatch.
      - `"degraded"` ⇒ the operator must have explicitly accepted this run (surfaced in-conversation
        as a breakthrough-alert by [[kata-preflight]]); absent recorded acceptance ⇒ **STOP + surface**.
@@ -92,8 +103,10 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      `kata-orient`, not here (D24d). No `kata.graph.json` / module files ⇒ kata-orient degrades to the vertical
      rollup; never blocks a dispatch.
    - **IaC activation (per dispatch, N4 — ADDITIVE; BC: no IaC ⇒ unchanged):** call
-     `iac_detect.classify_task(task.owned_files)` (`tools/iac_detect.py:168`) on the task's owned file list.
-     An **empty set ⇒ no IaC in this task — all downstream behavior unchanged (BC)**.
+     `iac_detect.classify_task(task.owned_files, overrides=<kata.config.iac.forceClassify or None>)` on the
+     task's owned file list. **`forceClassify` (the operator's glob→kind override map) MUST be passed** — it is
+     the documented mitigation for auto-detection false-negatives (MAJOR-5); a matched override wins over
+     auto-detection. An **empty set ⇒ no IaC in this task — all downstream behavior unchanged (BC)**.
      A non-empty set ⇒ inject the matching IaC specialist profile alongside `[[kata-tdd]]` in the worker's
      discipline:
      - `"terraform"` in the set → inject **`[[kata-iac-terraform]]`** as the execute-phase specialist.
@@ -130,13 +143,13 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    1. Syntax/validate — TF: `terraform fmt -check` + `terraform validate` (offline). CFN: `cfn-lint`
       (CDK: `cdk synth` first). Hard-fail on any error.
    2. Security scan — call `mcp__Snyk__snyk_iac_scan` on the IaC source.
-      **Fail-closed (mirrors `tools/kata_preflight.py:808-826`):** scanner unwired/unavailable/errored ⇒
+      **Fail-closed (mirrors the SCA fail-closed guard in `tools/kata_preflight.py` `run_preflight`):** scanner unwired/unavailable/errored ⇒
       `verdict:"fail"` with "scanner not wired/unavailable" blocker; gate never passes with zero scanner
       coverage. Any `high`/`critical` finding ⇒ `verdict:"fail"`. Threshold configurable via
       `iac.severityThreshold` (`protocol/config.md`).
    3. 8-smell safe-authoring lens — per `protocol/iac-safety.md §2` (DRY-by-pointer; do not re-implement here).
    4. Destructive-change analysis — static diff always; plan/change-set JSON if provided, parsed via
-      `scan_tf_plan` (`tools/iac_detect.py:225`) or `scan_cfn_changeset` (`tools/iac_detect.py:299`).
+      `iac_detect.scan_tf_plan` or `iac_detect.scan_cfn_changeset`.
       A `ValueError` from malformed input ⇒ `verdict:"fail"`.
    5. Emit `.kata/iac.json` per the schema at `protocol/iac-safety.md §7`.
 
@@ -231,7 +244,10 @@ After the frontier drains (all tasks integrated), on the integration branch:
    **IaC-bearing runs:** additionally ensure `.kata/iac.json` is present before step 4 — it is emitted at
    each IaC task's verify (step 3 above, one entry per IaC-classed task, merged into a single `tasks` array).
    Absent `.kata/iac.json` on a run with **no IaC tasks** ⇒ safe no-op (BC, MINOR-7,
-   `protocol/iac-safety.md §7`). Absent on a run **with** IaC tasks ⇒ [[kata-evaluate]] returns NEEDS_WORK.
+   `protocol/iac-safety.md §7`). **This is not self-certifying:** [[kata-evaluate]] independently re-derives
+   whether IaC ran by classifying the footprint's changed files (`iac_detect.classify_task`); if any changed
+   file is IaC-classed but `.kata/iac.json` is absent or malformed, the gate **returns NEEDS_WORK** (a skipped
+   or crashed IaC gate cannot pass as "no IaC"). So a missing emit is caught at the gate, not trusted away.
    Example invocation (RESULT + footprint):
    ```
    python -m gate_emit \

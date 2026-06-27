@@ -96,7 +96,7 @@ Call `mcp__Snyk__snyk_iac_scan` on the CloudFormation source templates (or synth
 **FAIL-CLOSED:** if the scanner is unwired, unavailable, or errors at call time, the gate
 **FAILS** with a "scanner not wired/unavailable" blocker — it never passes with zero scanner coverage.
 This mirrors the kata-preflight fail-closed guard exactly
-(`tools/kata_preflight.py:808-826` — `if not _snyk_check_wired: blockers.append(...); overall_status = "blocked"`).
+(the SCA fail-closed guard in `run_preflight`, `tools/kata_preflight.py` — `if not _snyk_check_wired: blockers.append(...); overall_status = "blocked"`).
 
 Parse scanner output for `severity` and `rule-id`:
 - `critical` or `high` finding → `verdict: "fail"`. Revise the template; re-gate from Step 1.
@@ -155,7 +155,7 @@ When a CloudFormation change-set JSON (`describe-change-set` output) is provided
 it via:
 
 ```python
-# tools/iac_detect.py:299
+# iac_detect.scan_cfn_changeset
 from iac_detect import scan_cfn_changeset
 
 results = scan_cfn_changeset(desc)  # raises ValueError on malformed input — treat as gate FAIL
@@ -164,7 +164,7 @@ results = scan_cfn_changeset(desc)  # raises ValueError on malformed input — t
 # → destructive; stateful=True → must escalate
 ```
 
-**Verified reuse:** `scan_cfn_changeset` defined at `tools/iac_detect.py:299`; it filters
+**Verified reuse:** `iac_detect.scan_cfn_changeset`; it filters
 `Changes[].ResourceChange` for `.Action == "Remove"` (deletion),
 `.Replacement in {"True","Conditional"}` (replace), and
 `.PolicyAction in {"Delete","ReplaceAndDelete"}` (old resource not retained). It also evaluates

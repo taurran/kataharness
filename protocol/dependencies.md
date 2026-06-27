@@ -30,9 +30,8 @@ signal ⇒ escalate ⇒ deliberate re-freeze (never a silent install). Workers *
 ### Structured install fields (N0 — REQUIRED for PRE-FLIGHT auto-install)
 
 These fields let `kata-preflight` **build the install argv from structured data** — the engine
-maps `manager` → a fixed argv builder (like `kata_dispatch._COMMAND_BUILDERS`,
-`tools/kata_dispatch.py:150`) and forces the registry/index from `preflight.allowed_registries`.
-No freeform string is ever executed.
+maps `manager` → a fixed argv builder (like `kata_dispatch._COMMAND_BUILDERS`) and forces the
+registry/index from `preflight.allowed_registries`. No freeform string is ever executed.
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
@@ -40,13 +39,14 @@ No freeform string is ever executed.
 | `package` | string | **yes** | Package/crate/npm name. Per-manager name grammar enforced: pip/uv `[A-Za-z0-9._-]+` (with optional `[extras]`); npm optional `@scope/` prefix + `[a-z0-9._-]+`; cargo `[A-Za-z0-9_-]+`. Universal rejects: values containing `://`, starting with `git+`/`http`, containing `..` (source-injection guard, BLOCKER 1). A value starting with `-` is **rejected** (flag-injection guard H1). `:`, `/` (non-npm), and other source-spec characters are rejected by the per-manager grammar. |
 | `version` | string | **yes** | Pinned version string (honor `preflight.pin_policy`). Charset: `[A-Za-z0-9._\-+~^]` only — `:` and `/` are forbidden (they would make a version value a source spec). Leading `-` is **rejected** (H1). |
 | `index` | string | no | Optional override label (e.g. `"pypi"`, `"npmjs"`). **Informational only** — the engine **forces** the actual registry URL from `preflight.allowed_registries`; a manifest-supplied URL is never used. |
-| `verify` | string | recommended | A runnable shell command proving presence (e.g. `expo --version`, `python -c "import docx"`). PRE-FLIGHT is **default-FAIL** on this: a dep that won't verify after provisioning ⇒ `blocked`. |
+| `verifyImport` | string | recommended | A **validated identifier** proving presence — the engine compiles it into a safe argv (pip/uv → `python -c "import <name>"`; npm → `node -e "require('<name>')"`; cargo → `<name> --version`), never a freeform shell. Per-manager grammar enforced (Python dotted module / npm name / cargo binary name); an identifier that fails the grammar ⇒ `blocked`, nothing executed. PRE-FLIGHT is **default-FAIL** on it: a dep that won't verify after provisioning ⇒ `blocked`. |
 
-### Docs-only field (NEVER executed)
+### Docs-only fields (NEVER executed)
 
 | Field | Type | Meaning |
 |---|---|---|
-| `install` | string | **Documentation-only — the PRE-FLIGHT engine NEVER reads or executes this string.** It exists solely as a human-readable reference showing what the auto-installer will do. The engine builds its argv from the structured `{manager, package, version}` fields above. This structural separation kills the `curl\|bash` / untrusted-registry injection class: there is no freeform string for an attacker to hijack (LD2/LD3, DESIGN §3). |
+| `install` | string | **Documentation-only — the PRE-FLIGHT engine NEVER reads or executes this string.** It exists solely as a human-readable reference showing what the auto-installer will do. The engine builds its argv from the structured `{manager, package, version}` fields above. |
+| `verify` | string | **Documentation-only — NEVER executed** (e.g. `expo --version`, `python -c "import docx"`). A human-readable note of how presence is conceptually checked; the engine checks presence ONLY via the structured `verifyImport` above. A freeform shell `verify` that was executed would be an arbitrary-command-execution path bypassing the registry/grammar/SCA guards — so it is demoted exactly like `install` (the RCE fix). This structural separation kills the `curl\|bash` / untrusted-source injection class for BOTH install and verify: there is no freeform string for an attacker to hijack (LD2/LD3, DESIGN §3). |
 
 ## Freeze approval hash (H2 / LD8)
 
@@ -72,9 +72,10 @@ access-controlled location that is not writable by the same author as the manife
 
 ## Pre-flight gate (summary — full procedure in `kata-preflight`, Spec D)
 enumerate → freeze+approve (set + sources) → **record approval hash in distinct artifact (H2)** →
-check presence (`verify`) → Snyk SCA scan if `scan_required` → **build argv from structured fields
-(manager/package/version) — never the freeform `install` string** → install via
-`subprocess(argv, shell=False)` forced to an allowed registry → re-`verify` (default-FAIL) →
+check presence (structured `verifyImport`) → Snyk SCA scan if `scan_required` (fail-closed; strict-True) →
+**build argv from structured fields (manager/package/version) — never the freeform `install` string** →
+install via `subprocess(argv, shell=False)` forced to an allowed registry → re-check `verifyImport`
+(default-FAIL) →
 append to the machine-global installed-library registry (`~/.kata/installed-registry.json`, D-registry) →
 signal loop-ready.
 Never auto-uninstall; the cleanup report (reference-counted across projects) recommends, the human executes.

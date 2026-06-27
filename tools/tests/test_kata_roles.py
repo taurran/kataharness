@@ -44,6 +44,23 @@ def test_non_dict_assignment_rejected():
 
 
 def test_effort_preserved():
-    block = {"evaluator": {"platform": "codex", "model": "m", "effort": "low"}}
+    # validator is routable off-host (evaluator/orchestrator are host-only, LD11)
+    block = {"validator": {"platform": "codex", "model": "m", "effort": "low"}}
     resolved = kr.resolve_roles(block, ["codex"])
-    assert resolved["evaluator"]["effort"] == "low"
+    assert resolved["validator"]["effort"] == "low"
+
+
+def test_host_only_roles_reject_off_host():
+    """Red-team: orchestrator/evaluator MUST fail-closed when routed off-host (LD11).
+
+    Was a doc-vs-code lie: config.md promised fail-closed validation, but
+    resolve_roles silently accepted then dropped these assignments."""
+    for role in ("orchestrator", "evaluator"):
+        with pytest.raises(ValueError, match="host-only"):
+            kr.resolve_roles({role: {"platform": "codex"}}, ["codex"])
+
+
+def test_host_only_roles_allowed_on_host():
+    """Explicitly pinning a host-only role to the host is fine (no-op)."""
+    resolved = kr.resolve_roles({"evaluator": {"platform": "claude"}}, ["codex"])
+    assert resolved["evaluator"]["platform"] == "claude"

@@ -166,8 +166,15 @@ entry per `protocol/iac-safety.md §7` and apply these default-FAIL rules:
 - `verdict: "escalate"` with no human-approved resolution (escalation `resolution` absent or `"open"`) — un-approved
   destroy/replace must not integrate ⇒ **NEEDS_WORK**.
 - `verdict: "fail"` at evaluation time — the IaC gate fix loop did not clear this finding ⇒ **NEEDS_WORK**.
-Absent `.kata/iac.json` (no IaC in the run) ⇒ **N/A — not a failure** (BC, MINOR-7, `protocol/iac-safety.md §7`).
-Do not fail a non-IaC run on the absence of this artifact.
+
+**Absent / malformed `.kata/iac.json` — do NOT trust presence alone (reproduce, item 9).** Presence-of-artifact
+cannot distinguish "no IaC ran" from "the IaC gate was skipped or crashed without emitting." So **independently
+re-derive** whether the run touched IaC: classify the footprint's changed files (`.kata/footprint.json` →
+`changed`) with `iac_detect.classify_task(changed)`.
+- changed files classify as IaC **and** `.kata/iac.json` is absent or malformed ⇒ **NEEDS_WORK** (the IaC gate
+  did not run / did not emit — it cannot pass as "no IaC"; symmetric with the malformed-RESULT.json rule above).
+- no changed file classifies as IaC **and** `.kata/iac.json` absent ⇒ **N/A — not a failure** (BC, MINOR-7).
+Do not fail a genuinely non-IaC run on the absence of this artifact.
 
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,
