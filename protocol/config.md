@@ -18,7 +18,7 @@
 | `preflight` | `object` | Dependency pre-flight policy (D29) — see below. |
 | `bakeoff` | `{ n: int, lineage: string[] }` | N-variant best-of-N (Spec B). `n: 1` ⇒ no bake-off. `lineage` records parent configs for escalation-with-reuse. |
 | `skillVersions` | `{ "<skill>": "<semver>" }` | The exact skill versions this branch was built with (reproducibility). |
-| `runShape` | `"individual" \| "batch" \| "version-up" \| "advanced"` | The preset chosen at bootstrap (GB1) — provenance; presets pre-fill `mode`+`modules`. |
+| `runShape` | `"individual" \| "batch" \| "version-up" \| "advanced" \| "debug"` | The preset chosen at bootstrap (GB1) — provenance; presets pre-fill `mode`+`modules`. |
 | `target` | `{ kind: "greenfield" \| "existing", path?: string, baselineGate?: string }` | `greenfield` (default) or `existing` (version-up): `path` = existing repo, `baselineGate` = the command that must be green before *and* after (the regression baseline). |
 | `graph` | `{ budget: int, marginDepth: int, backend: "tree-sitter"\|"grep-reduced"\|"graphify" }` | `kata-graph` tunables: digest token budget (default 3000), ownership reverse-dependent hop depth (default 1), backend selection. |
 | `delivery` | `{ shape: "one-shot"\|"incremental", boundary: "always-stop"\|"auto-continue-while-green", backend?: <engram pointer> }` | The **third orthogonal axis** (D78, sprint-cadence): cadence of the build. Default `shape: "one-shot"` (D25 absent ⇒ today's behavior exactly, BC1) · `boundary: "always-stop"` (control-first, GB6). `backend?` = the optional boundary CONSULT seam (E2/E19, no-op if absent). Composes with every other axis; it is **not** a run-shape and **not** a module. See *Delivery axis* + *Prime-frame sizing* below. |
@@ -73,7 +73,7 @@ third orthogonal axis composing with `mode` × `effort` × `modules` (D78); the 
 | `delivery.boundary` | `always-stop` \| `auto-continue-while-green` | **`always-stop`** | Control-first (GB6). `always-stop` = every boundary hard-stops for the human (G1). `auto-continue-while-green` = continue **only** while {green ∧ no escalations ∧ no pending corrections ∧ no G3 tertiary drift} all hold (an AND-gate; the moment any is false ⇒ stop). |
 | `delivery.backend?` | engram pointer | absent | Optional boundary CONSULT seam (E2/E19); no-op when absent (gated like all CONSULT, D9/D56). |
 
-- **Preset pre-fill (GB4/D46):** `individual` ⇒ one-shot · `version-up` ⇒ **ask** · `batch` ⇒ one-shot.
+- **Preset pre-fill (GB4/D46):** `individual` ⇒ one-shot · `version-up` ⇒ **ask** · `debug` ⇒ **ask** · `batch` ⇒ one-shot.
 - **Fail-closed (D45):** the load-guard validates `delivery` strictly — a malformed value ⇒ **stop + escalate,
   never guess**. Absent ⇒ one-shot (BC1). `kata-orchestrate` stays **sprint-blind** (BC2): delivery-awareness
   lives only in HANDOFF-phase routing (one-shot → `kata-handoff`/`kata-selfhandoff`; incremental → `kata-sprint`).
@@ -105,6 +105,7 @@ Optional modules are à-la-carte additions to the `modules` array in `kata.confi
 | Module key | Provider skill | Default | Description |
 |---|---|---|---|
 | `kata/module/slop` | `kata-slop-check` | **off** (opt-in) | AI-slop / spiraling-session detection; dispatched in EVALUATE alongside kata-evaluate; a SLOP-DETECTED verdict is default-FAIL. |
+| `kata/module/debug` | `kata-comprehend` | **off** (opt-in) | Pre-change whole-repo comprehension for the `debug` run-shape; orchestrate's comprehension phase invokes `[[kata-comprehend]]` iff this module is present — absent ⇒ silent no-op (BC: no effect on version-up or greenfield runs). |
 
 ## Notes
 - Tier resolution: `kata-orchestrate` maps a bare family reference (`[[kata-grill]]`) → `tiers["kata-grill"]`
@@ -116,3 +117,4 @@ Optional modules are à-la-carte additions to the `modules` array in `kata.confi
   `baselineGate` that `kata-orchestrate`'s **green-at-fork-point** precondition records as the regression
   baseline. The version-up
   *execution* path (kata-graph ingestion) is Spec A4; A3 only writes/validates the config.
+- `runShape: "debug"` is a peer of `version-up` (`target.kind: "existing"`); **gated by the `kata/module/debug` module, NOT by `runShape`** — orchestrate dispatches off `mode`/`modules` per existing rules; `runShape` stays provenance-only. The `debug` preset pre-fills `kata/module/debug` in `modules`; the comprehension phase fires IFF that module is present.

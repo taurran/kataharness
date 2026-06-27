@@ -1,5 +1,20 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-27, DEBUG MODE PHASE 1 BUILT — D113; pytest 867 · 40 skills/0 · Snyk 0):** First phase of the
+> phased Debug Mode build (queue item a; DESIGN frozen). 3 disjoint slices → freeze-gate **HOLD→SHIP** (caught the
+> `eval`-RCE class in the PLAN — D112 paying off) → orchestrated build → `kata-evaluate` PART A **PASS** → D98 PART B
+> **HOLD→fix→re-confirm HOLD→fix→SHIP**. **Built:** (S1) the `debug` run-shape, gated on a distinct `kata/module/debug`
+> module marker (mirrors kata-slop-check; version-up provably unaffected, BC); (S2) `tools/function_model.py` — the
+> `function_model` oracle with `_safe_eval` (**AST-allowlist, no eval/exec**) spec-wrapper, registered in exec-safety.md;
+> (S3) `skills/plan/kata-comprehend/SKILL.md`. **The evaluator is escape-safe AND DoS-safe** after two HOLD rounds —
+> the re-confirm caught a chained-Pow explosion the first fix missed → fixed categorically (`**` removed entirely).
+> **Honest scope:** P1 produces+validates the oracle only — no deviation pipeline / fix loop / drift gate (all P2);
+> confidence stored not routed. **NEXT: Debug Mode P2** (7-step deviation pipeline + confidence routing +
+> characterization-gen + behavioral drift gate), then P3 (language profiles + onboarding). **Operator-raised future
+> feature (assessing lift, not yet built): a validation-miss manifest** — log critical misses by the validation stack,
+> feed the recurrence-hardening/learning loop (D101 + the Hermes-borrowed C-arc), eventually auto-propose+author its own
+> guards (gated). Maps onto existing recurrence-hardening + second-brain-learning. Records: `specs/debug-mode/{DESIGN,PLAN-p1}.md`, `DECISIONS.md` D113.
+
 > **CURRENT (2026-06-27, EXEC-SAFETY STANDING GUARD BUILT — D112; pytest 786 · 39 skills/0 · Snyk 0):** Operator
 > noticed RCEs recurring and asked "is this the first?" — it was the **3rd instance of one class in one component**
 > (`kata-preflight`: freeform `install` [freeze-gate] → `package` source-injection [D98] → freeform `verify` [D111]),

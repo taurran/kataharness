@@ -1181,3 +1181,32 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   both on operator-authored commands). **Gates:** pytest **786** (+10), validate **39/0**, Snyk **0** on the new test.
   Pointer added from `protocol/dependencies.md`. **Meta:** the operator's "is this the first?" question *is* the
   recurrence detector — a human noticing a pattern the per-build gates treated as independents.
+
+<!-- Debug Mode Phase 1 (foundation) built. Spec: specs/debug-mode/{DESIGN,PLAN-p1}.md. -->
+- **D113 — Debug Mode Phase 1 (foundation) BUILT — 2026-06-27.** First phase of the phased Debug Mode build (queue
+  item a; DESIGN frozen `specs/debug-mode/DESIGN.md`, blockers cleared D104+D109). Authored `PLAN-p1.md` (3 disjoint
+  slices) → **freeze-gate `kata-review` HOLD→SHIP** (caught the `eval`-RCE class in the *plan* — the spec-wrapper had
+  proposed `eval(expr, {"__builtins__": {}})`, a known-escapable sandbox, on LLM-authored assertions; the D112
+  exec-safety guard paying off one feature later — plus the debug-vs-version-up discriminator gap) → orchestrated
+  3-worker build (S1+S2 parallel, S3 after S2) → `kata-evaluate` **PART A PASS** → **D98 PART B HOLD→(fix)→re-confirm
+  HOLD→(fix)→SHIP**. **Built:** **(S1)** the `debug` run-shape (peer of version-up, `target.kind==existing`), gated on
+  a distinct **`kata/module/debug`** module marker (mirrors kata-slop-check's `kata/module/slop` gating, so version-up
+  is provably unaffected — BC); config enum + bootstrap preset + a `kata-orchestrate` comprehension-phase hook (P2
+  pipeline/drift left as a comment seam). **(S2)** `tools/function_model.py` — the `function_model` oracle (LD2):
+  schema + `validate_function_model` + **`_safe_eval` (AST-allowlist evaluator, NO `eval`/`exec`)** + `evaluate_spec`
+  spec-wrapper + emit/load; registered as a NEW in-process execution surface in `protocol/exec-safety.md`. **(S3)**
+  `skills/plan/kata-comprehend/SKILL.md` (category `plan`, never-tiered; drives the engine; does NOT reuse
+  kata-understand). **Security (the load-bearing part):** the evaluator is **escape-safe** (D98 ran every breakout —
+  `().__class__.__bases__`, `__import__`, attribute chains, comprehensions, lambda, walrus — all rejected; no builtins
+  leak) AND **DoS-safe after two HOLD rounds**: (1st) `range` removed + per-exponent/shift cap + AST node-count cap;
+  (2nd, re-confirm caught) a **chained-Pow** (`(((10**1000)**1000)**1000)`, 14 nodes, each exponent ≤ cap) still
+  exploded multiplicatively → fixed **categorically: `**` rejected entirely** (boolean assertions never need it;
+  Mult/LShift grow integer size only linearly in node count). Self-verified the reviewer's exact probes all raise in
+  0.000s. **Gates:** pytest **867** (552→867 across the build), validate **40/0** (39→40 skills — `kata-comprehend`),
+  Snyk **0** on `function_model.py`. **Honest scope:** P1 PRODUCES + VALIDATES the oracle only — no deviation
+  pipeline, no fix loop, no drift gate (all P2); `confidence` is stored, not yet routed; FM derivation is LLM-authored
+  (the engine validates/executes, it doesn't derive). **NEXT:** Debug Mode **P2** (7-step deviation pipeline LD4 +
+  confidence routing LD5 + characterization-gen LD6 + behavioral drift gate §5), then **P3** (language prompt-profiles
+  LD10 + onboarding LD13). Records: `specs/debug-mode/{DESIGN,PLAN-p1}.md`. **Meta:** D98 caught a real DoS the
+  conformance gate (PART A PASS) missed — *again* — and the re-confirm caught a second-order miss in the first fix;
+  the standing adversarial lens + re-confirm loop is load-bearing on security code (now the 4th+ session-instance).

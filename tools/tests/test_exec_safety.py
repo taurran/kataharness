@@ -141,3 +141,74 @@ def test_verify_import_grammar_rejects_injection(payload):
     for manager in ("pip", "uv", "npm", "cargo"):
         with pytest.raises(ValueError):
             pf._build_verify_argv({"verifyImport": payload}, manager)
+
+
+# ---------------------------------------------------------------------------
+# In-process surface: function_model._safe_eval (S2)
+# ---------------------------------------------------------------------------
+
+def test_function_model_never_calls_eval_or_exec():
+    """function_model.py must never call eval or exec on an assertion string.
+
+    AST-based check: walk every Call node in function_model.py and confirm
+    that neither 'eval' nor 'exec' is called as a bare Name (the prohibited
+    path per protocol/exec-safety.md in-process section).
+    """
+    src = (_TOOLS / "function_model.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                assert node.func.id not in {"eval", "exec"}, (
+                    f"function_model.py calls {node.func.id!r} — prohibited by "
+                    "protocol/exec-safety.md (in-process section). Use _safe_eval "
+                    "with the AST allowlist instead."
+                )
+            elif isinstance(node.func, ast.Attribute):
+                assert node.func.attr not in {"eval", "exec"}, (
+                    f"function_model.py calls .{node.func.attr}() — prohibited "
+                    "by protocol/exec-safety.md (in-process section)."
+                )
+
+
+def test_safe_eval_symbol_exists_in_function_model():
+    """_safe_eval must exist as a function definition in function_model.py."""
+    src = (_TOOLS / "function_model.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    func_names = {
+        n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)
+    }
+    assert "_safe_eval" in func_names, (
+        "function_model.py is missing '_safe_eval'. "
+        "This surface must exist and be registered in protocol/exec-safety.md."
+    )
+
+
+def test_safe_eval_doc_registered_in_exec_safety():
+    """_safe_eval must appear in the protocol/exec-safety.md registry.
+
+    S2 registers the in-process evaluation surface (LLM-authored FM assertions)
+    as required by the exec-safety contract.
+    """
+    assert _EXEC_SAFETY_DOC.exists(), "protocol/exec-safety.md is missing."
+    doc = _EXEC_SAFETY_DOC.read_text(encoding="utf-8")
+    assert "_safe_eval" in doc, (
+        "protocol/exec-safety.md does not register '_safe_eval'. "
+        "Per S2 requirements, the in-process FM-assertion evaluator must appear "
+        "in the exec-safety registry with its trust domain and guard."
+    )
+
+
+def test_exec_safety_doc_has_in_process_section():
+    """exec-safety.md must contain an in-process evaluation subsection.
+
+    The file was originally scoped to subprocess sinks only; S2 widens it with
+    an 'in-process evaluation of external expressions' section.
+    """
+    assert _EXEC_SAFETY_DOC.exists(), "protocol/exec-safety.md is missing."
+    doc = _EXEC_SAFETY_DOC.read_text(encoding="utf-8")
+    assert "in-process" in doc.lower(), (
+        "protocol/exec-safety.md has no 'in-process' section. "
+        "S2 requires a subsection covering AST-allowlist evaluation of "
+        "external (LLM-authored) FM assertions."
+    )

@@ -61,19 +61,19 @@ The statement covers what the run will do, how careful it will be, and when you 
 confirms, corrects, or continues — not reads a config form.
 
 **What is inferred:**
-- **Run-shape** (`individual / batch / version-up / advanced`) from the goal's character — is it a new build, a
-  change to an existing repo, a batch job? Each is a **preset** (see `resources/run-shapes.md`) that pre-fills
-  `mode` + `modules` + `target`. `batch` (Spec B) and `version-up` (Spec A4) are configurable now but flagged
-  **execution-pending** by readiness; bootstrap still writes a valid config. For **version-up**, additionally
-  collect `target.path` (the existing repo) and `target.baselineGate` (the command that must be green before
-  *and* after). Describe the version-up ingestion engine (kata-graph) in prose only; do **not** wikilink it
-  (A4, unbuilt).
+- **Run-shape** (`individual / batch / version-up / debug / advanced`) from the goal's character — is it a new build, a
+  change to an existing repo, a batch job, a systematic debug pass? Each is a **preset** (see `resources/run-shapes.md`) that pre-fills
+  `mode` + `modules` + `target`. `batch` (Spec B), `version-up` (Spec A4), and `debug` (P1 foundation; full
+  pipeline in P2) are configurable now but flagged **execution-pending** by readiness; bootstrap still writes a
+  valid config. For **version-up** and **debug**, additionally collect `target.path` (the existing repo) and
+  `target.baselineGate` (the command that must be green before *and* after). Describe the version-up and debug
+  execution engines in prose only; do **not** wikilink them (A4/P1, execution-pending).
 - **Mode** (`essential / standard / advanced`) from goal complexity and stated urgency.
 - **Grill-depth** (`skip / light / standard / full`) from priming-prompt richness and ambiguity — [[kata-readiness]]'s
   Scope-3 recommendation is the starting point.
 - **Delivery** (`one-shot` vs. `incremental`, `always-stop` vs. `auto-continue-while-green`) from whether the
   goal implies a long multi-phase build or a single run. `individual` ⇒ one-shot · `batch` ⇒ one-shot ·
-  `version-up` ⇒ ask. `delivery.boundary` defaults `always-stop` (control-first, GB6).
+  `version-up` ⇒ ask · `debug` ⇒ ask. `delivery.boundary` defaults `always-stop` (control-first, GB6).
 
 **Do not present a config form.** State the inferred plan as outcomes. The human edits it in plain language;
 the configuration follows from the edit.

@@ -77,6 +77,26 @@ does not drift.**
 4. The **file-ownership partition is disjoint** — no file appears under two tasks. If it isn't, the plan is
    not executable concurrently; escalate to re-freeze, do not improvise.
 
+## Comprehension phase (ADDITIVE — debug run only; BC: absent `kata/module/debug` ⇒ silent no-op)
+
+**If `kata/module/debug` is in the run's `modules`**, invoke [[kata-comprehend]] as a **fresh-context,
+whole-repo comprehension pass before any change or dispatch**. When `kata/module/debug` is absent this is a
+silent no-op (the module degrades gracefully, like every optional module); **version-up and greenfield runs are
+byte-for-byte unchanged** — the comprehension hook fires **IFF `kata/module/debug` ∈ modules, NEVER off
+`target.kind=="existing"` alone** (that field is also set by version-up; keying on it would break BC).
+
+[[kata-comprehend]] builds a `function_model` per module (intent derivation from graph + docs/types/commit-history
++ cross-module contract inference) and emits schema-valid FMs to `.kata/function_models/`. `[[kata-comprehend]]`
+is a forward reference resolved at P1 integration (built by Slice S3 in the same wave — expected not to exist
+during S1 editing; no broken-wikilink concern at this stage).
+
+A non-zero FM-validation error count ⇒ surface to the operator and STOP before any dispatch.
+
+<!-- P2: deviation pipeline + drift gate — DO NOT build here.
+     When P2 lands, wire: the 7-step deviation pipeline (LD4), confidence-tiered routing (LD5),
+     characterization-suite generation (LD6), and the behavioral drift gate after the comprehension FMs above.
+     This heading is the P2 insertion seam — extend from here, keyed on kata/module/debug, not on runShape. -->
+
 ## The loop
 **Maintain a rolling frontier.** A task is **dispatchable** iff (all its `depends_on` are integrated) ∧ (its
 owned files are disjoint from every in-flight task). Dispatch every dispatchable task concurrently (each in its

@@ -68,6 +68,36 @@ grammar, the argv it compiles to, the trust domain, add it to the registry, and 
 soft-label ("probably fine", "operator controls it") — the distinction is binary: validated-structured-external,
 or operator/internal-and-registered.
 
+## In-process evaluation of external expressions
+
+Not all external-trust-domain input reaches a subprocess. The `kata-comprehend` oracle (LD2/LD7) produces
+**LLM-authored Python boolean expressions** (FM pre/postcondition assertions) that the spec-wrapper evaluates
+at runtime. These are also external-trust-domain input — they are partially-trusted even after schema
+validation — and the same injection class applies: if evaluated via `eval`/`exec`, a crafted assertion can
+escape the sandbox (e.g. `().__class__.__bases__[0].__subclasses__()…` reaches `os`/`subprocess`).
+
+**Rule for in-process evaluation of external expressions:**
+
+> An LLM-authored or contributor-supplied expression string **MUST NEVER be passed to `eval` or `exec`**,
+> including `eval(expr, {"__builtins__": {}}, ns)` (known-escapable). The evaluator must be an **AST
+> allowlist**: parse with `ast.parse(expr, mode="eval")`, walk every node, and **reject** any node outside a
+> strict whitelist (`Compare`, `BoolOp`, `UnaryOp`, `BinOp`, operators, `Constant`, `Name` (Load-only),
+> `List`/`Tuple`/`Dict`/`Set` literals, `Subscript`/`Slice` over those). **No `Attribute` access; no `Call`
+> outside a fixed safe-symbol table** (`len`, `abs`, `min`, `max`, `sum`, `sorted`); no comprehensions; no
+> `Lambda`; no walrus. Names resolve only from the bound call-namespace + the fixed safe-symbol table.
+> A non-conforming expression → `ValueError`, never execution. **The guard also covers resource
+> exhaustion** (a structurally-valid assertion can still hang/OOM): exclude unbounded-iteration symbols
+> (`range`), **reject `**` exponentiation entirely** (chained Pow explodes multiplicatively under any
+> per-exponent cap), cap `<<` shifts, and cap the AST node count.
+
+### In-process sink registry
+
+Every place the harness evaluates an external expression in-process (not via subprocess).
+
+| Sink (`tools/…`) | Input source | Domain | Guard |
+|---|---|---|---|
+| `function_model._safe_eval` | FM pre/postcondition assertions (LLM-authored by `kata-comprehend`) | **external** | AST allowlist — `ast.parse` + `_walk_verify` rejects any non-whitelisted node; pure recursive `_eval_node` evaluates — **never `eval`/`exec`**; no `Attribute`; no out-of-allowlist `Call`. **Resource-exhaustion guard** (D98): `range` is excluded from the safe-symbol table (no unbounded iteration), **`**` exponentiation is rejected entirely** (a chained Pow explodes the integer multiplicatively under any per-exponent cap), `<<` shifts are capped (`_MAX_SHIFT`), and the AST node count is capped (`_MAX_ASSERTION_NODES`) — so all integer sizes grow only linearly in node count. A structurally-valid but resource-exhausting assertion is rejected, not run. |
+
 ## Watch-list (operator-domain `shell=True` sinks)
 
 `mutation_run` and `run_result.run_gate` use `shell=True` on operator-authored commands. They are safe **only
