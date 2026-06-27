@@ -412,12 +412,30 @@ def scan_cfn_changeset(desc: dict) -> list[dict]:
         resource_type: str = rc.get("ResourceType", "")
 
         # RequiresRecreation=Always is a forced replacement even when Replacement=False
-        # (MAJOR 2 — D98; protocol/iac-safety.md §5b)
-        requires_recreation: bool = any(
-            isinstance(detail, dict)
-            and detail.get("Target", {}).get("RequiresRecreation") == "Always"
-            for detail in rc.get("Details", [])
-        )
+        # (MAJOR 2 — D98; protocol/iac-safety.md §5b). Fail-closed on malformed Details/Target
+        # (D98 re-confirm finding 7 — same fail-open class as MAJOR-3; never silently no-op the signal).
+        details = rc.get("Details", [])
+        if not isinstance(details, list):
+            raise ValueError(
+                f"scan_cfn_changeset: Changes[{idx}].ResourceChange.Details must be a list, "
+                f"got {type(details).__name__!r}"
+            )
+        requires_recreation = False
+        for detail in details:
+            if not isinstance(detail, dict):
+                raise ValueError(
+                    f"scan_cfn_changeset: Changes[{idx}].ResourceChange.Details[] entries must be "
+                    f"dicts, got {type(detail).__name__!r}"
+                )
+            target = detail.get("Target", {})
+            if not isinstance(target, dict):
+                raise ValueError(
+                    f"scan_cfn_changeset: Changes[{idx}].ResourceChange.Details[].Target must be a "
+                    f"dict, got {type(target).__name__!r}"
+                )
+            if target.get("RequiresRecreation") == "Always":
+                requires_recreation = True
+                break
 
         is_destructive = (
             action in _CFN_DESTRUCTIVE_ACTIONS

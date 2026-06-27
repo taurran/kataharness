@@ -579,6 +579,30 @@ class TestScanCfnChangeset:
         with pytest.raises(ValueError):
             iac_detect.scan_cfn_changeset({"Changes": [{"NotResourceChange": {}}]})
 
+    # --- malformed Details/Target → ValueError (D98 re-confirm finding 7: same fail-open class as MAJOR-3) ---
+
+    def test_details_not_list_raises_value_error(self):
+        """Malformed Details (non-list) must fail closed, not silently drop the RequiresRecreation signal."""
+        desc = {"Changes": [{"ResourceChange": {
+            "Action": "Modify", "Replacement": "False",
+            "ResourceType": "AWS::RDS::DBInstance", "Details": "oops"}}]}
+        with pytest.raises(ValueError, match="Details"):
+            iac_detect.scan_cfn_changeset(desc)
+
+    def test_details_entry_non_dict_raises_value_error(self):
+        desc = {"Changes": [{"ResourceChange": {
+            "Action": "Modify", "Replacement": "False",
+            "ResourceType": "AWS::RDS::DBInstance", "Details": ["oops"]}}]}
+        with pytest.raises(ValueError, match="Details"):
+            iac_detect.scan_cfn_changeset(desc)
+
+    def test_details_target_non_dict_raises_value_error(self):
+        desc = {"Changes": [{"ResourceChange": {
+            "Action": "Modify", "Replacement": "False",
+            "ResourceType": "AWS::RDS::DBInstance", "Details": [{"Target": "oops"}]}}]}
+        with pytest.raises(ValueError, match="Target"):
+            iac_detect.scan_cfn_changeset(desc)
+
 
 # ---------------------------------------------------------------------------
 # CWE-23 path traversal guard
