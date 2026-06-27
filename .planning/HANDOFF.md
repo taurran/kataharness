@@ -37,6 +37,10 @@ authored-for: kata-orient (sections map to the three orientation tiers)
 > Durable + committed + **pushed** (tip `e630d27`). Live picture: `.planning/STATE.md` (top box) +
 > `.planning/DECISIONS.md` **D87–D102**.
 
+> **★ NEXT-SESSION START HERE:** `.planning/NEXT-SESSION-ORIENTATION.md` is the paste-able, self-contained orientation
+> for the next session. Its **FIRST TASK = a holistic red-team pass on the day's 3 builds (D108/D109/D110)** → fix →
+> prompt to continue. Read it first; this HANDOFF is the deeper reference behind it.
+
 ## 1. Read-in order  *(orientation: CONTEXT)*
 1. `AGENTS.md` (spine + conventions; the **"The Kata Loop"** entry) · 2. `docs/STANDARDS.md` §1 (frontmatter —
    `allowed-tools` REQUIRED) · 3. `CONTEXT.md` (glossary — **Kata Loop / the Harness / loop-back** are defined here) ·
