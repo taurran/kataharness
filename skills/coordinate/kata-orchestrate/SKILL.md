@@ -375,6 +375,15 @@ After the frontier drains (all tasks integrated), on the integration branch:
      changes **executable logic (`codeBearing:true`) OR a contract/protocol/skill surface** (`protocol/**`,
      `skills/**/SKILL.md` or `RUBRIC.md`, a frozen spec contract) — the latter judged, not flag-derived. Only a
      genuinely trivial docs/prose run (planning notes, READMEs, comments) may skip, at the operator's call.
+   - **Validation-miss emit (non-fatal — pure side-effect; BC: no gate verdict changes):** after [[kata-review]]
+     returns its findings, for each finding it flagged as a conformance-escape (per `protocol/validation-misses.md`
+     — a confirmed defect the preceding `kata-evaluate` PASSED), build a miss entry (fields: `ts`, `mode`,
+     `failure_class`, `responsible_skill`, `severity`, `what_conformance_missed`, `what_caught_it:"d98"`,
+     `guard_ref`, `decision_ref`) and call
+     `validation_misses.append_miss(entry, ".planning/validation-misses.jsonl")` (`tools/validation_misses.py`).
+     **A `False` return or any error is surfaced as a NOTE in the conversation — it NEVER fails the build or
+     changes any gate verdict.** Logging is a pure side-effect (T1, observe-only; `protocol/validation-misses.md`
+     §Observe-only). Skip silently if [[kata-review]] flagged no conformance-escapes.
 7. Commit; if a handoff is needed, [[kata-handoff]].
 
 ## Milestone narration (WS-3 — ADDITIVE; does not alter dispatch, frontier, or gate logic)

@@ -182,3 +182,8 @@ minimal remediation **targeted at the existing plan** (not a re-plan). Seed the 
 The output **must** include the consumed `baseline_sha` + `result_sha` and the `RESULT.json` field values
 used for rubric items 1–2 so the record is self-contained.
 *(In injected-knowledge mode, output is the per-finding GROUND/REJECT/ESCALATE verdict + cited evidence instead.)*
+
+> **Conformance-escape note (observe-only):** Any finding this gate PASSES that the subsequent [[kata-review]]/D98
+> adversarial pass or a human later catches is a conformance-escape; [[kata-review]] flags it and the orchestrator
+> records it to `.planning/validation-misses.jsonl` (non-fatally, via `validation_misses.append_miss`). This is
+> purely observational — it does not change this gate's own verdict or behavior (T1, `protocol/validation-misses.md`).

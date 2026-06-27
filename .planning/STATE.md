@@ -1,5 +1,20 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-27, VALIDATION-MISS MANIFEST T1 BUILT — D114; pytest 907 · 40 skills/0 · Snyk 0):**
+> Operator-directed feature (their idea): a durable, **universal, observe-only** manifest logging when the conformance
+> gate (`kata-evaluate`) PASSED something the adversarial lens (`kata-review`/D98)/re-confirm/human later CAUGHT — the
+> **data layer for recurrence-hardening (D101)** / the Hermes C-arc's harness-facing sibling. Makes "operator notices a
+> recurrence" (the D112 RCE catch) a first-class signal. Built alongside Debug Mode but universal (hook in the shared
+> `kata-review` RUBRIC → every mode). Freeze-gate **HOLD→SHIP** (caught: emit hook contradicted kata-review's read-only
+> contract → relocated write to orchestrator; non-fatal guarantee prose-only → pinned/tested) → evaluate **PART A PASS**
+> → D98 **PART B SHIP** (2 LOW hardening fixes moved the BC guarantee fully in-code). **Built:** `tools/validation_misses.py`
+> (schema/validate/append[append-only,CWE-23,non-fatal]/read/count_by_class/passive `recurrences`; mutation-proven) +
+> `protocol/validation-misses.md` + the universal flag(read-only)→write(non-fatal) hook. **Tiers:** T1 done (log/count/
+> surface, observe-only); **T2** = recurrence→gated-proposal (= D101, needs grill); **T3** = auto-author guards
+> (C-arc-gated, future). **NEXT: Debug Mode P2** (7-step deviation pipeline LD4 + confidence routing LD5 +
+> characterization-gen LD6 + behavioral drift gate §5) — the manifest's first live exerciser; then P3. Records:
+> `specs/recurrence-hardening/{BRIEF-validation-misses,PLAN-t1-manifest}.md`, `DECISIONS.md` D114.
+
 > **CURRENT (2026-06-27, DEBUG MODE PHASE 1 BUILT — D113; pytest 867 · 40 skills/0 · Snyk 0):** First phase of the
 > phased Debug Mode build (queue item a; DESIGN frozen). 3 disjoint slices → freeze-gate **HOLD→SHIP** (caught the
 > `eval`-RCE class in the PLAN — D112 paying off) → orchestrated build → `kata-evaluate` PART A **PASS** → D98 PART B

@@ -1210,3 +1210,27 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   LD10 + onboarding LD13). Records: `specs/debug-mode/{DESIGN,PLAN-p1}.md`. **Meta:** D98 caught a real DoS the
   conformance gate (PART A PASS) missed — *again* — and the re-confirm caught a second-order miss in the first fix;
   the standing adversarial lens + re-confirm loop is load-bearing on security code (now the 4th+ session-instance).
+
+<!-- Validation-miss manifest (T1) — recurrence-hardening data layer. Spec: specs/recurrence-hardening/{BRIEF-validation-misses,PLAN-t1-manifest}.md. -->
+- **D114 — Validation-miss manifest (T1, universal/observe-only) BUILT — 2026-06-27.** Operator-directed feature
+  (their own idea, refined from the assessment): a durable, universal manifest logging when the conformance gate
+  (`kata-evaluate`) PASSED something the adversarial lens (`kata-review`/D98), a re-confirm, or a human later CAUGHT —
+  the **data layer for recurrence-hardening (D101)**, the harness-facing sibling of the Hermes-borrowed C-arc (D99).
+  It makes "the operator notices a recurrence" (the D112 RCE catch) a first-class, queryable signal. **Tiered:** T1
+  (this — log/count/surface, observe-only) · T2 (recurrence→gated-proposal, = D101 proper, needs grill) · T3
+  (auto-author guards, C-arc-gated, FUTURE). Built alongside Debug Mode (debug surfaces misses most) but **universal —
+  the emit hook is in the shared `kata-review` RUBRIC, run by every mode's build.** Authored `BRIEF-validation-misses.md`
+  + `PLAN-t1-manifest.md` (2 slices) → **freeze-gate HOLD→SHIP** (caught: the emit hook contradicted kata-review's
+  read-only contract → relocated the write to the orchestrator [reviewer flags read-only → orchestrator appends]; and
+  the non-fatal BC guarantee was prose-only → pinned as a tested contract) → build → `kata-evaluate` **PART A PASS** →
+  **D98 PART B SHIP** (escape/RCE N/A — pure data; found 4 LOW edge cases, applied the 2 that move the BC guarantee
+  in-code: B1 pathological-path → `False` not raise, B3 non-dict tolerance). **Built:** **(S1)** `tools/validation_misses.py`
+  — `miss_schema`/`validate_miss`/`append_miss`(append-only, CWE-23-safe, **non-fatal: raises only on `..`/malformed
+  caller-bugs, returns False on any I/O/path failure**)/`read_misses`(crash-tolerant)/`count_by_class`(string keys)/
+  `recurrences`(passive `>=` detector); mutation-proven; Snyk 0. **(S2)** `protocol/validation-misses.md` (contract) +
+  the universal hook: `kata-review/RUBRIC.md` flags conformance-escapes **read-only** → `kata-orchestrate` Final-gate
+  appends them **non-fatally** + a `kata-evaluate` pointer. **Observe-only / C/B-invariant:** T1 records + counts +
+  surfaces; it NEVER changes a gate verdict or mutates a skill. **Gates:** pytest **907** (867→907), validate **40/0**,
+  Snyk **0**. Records: `specs/recurrence-hardening/{BRIEF-validation-misses,PLAN-t1-manifest}.md`; memory
+  [[exec-injection-class-hardened]] is an example of what its T2/T3 would auto-propose. **Meta:** the freeze-gate's
+  read-only-contradiction catch is itself the kind of doc-vs-code seam this manifest exists to record.

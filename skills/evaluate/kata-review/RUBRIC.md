@@ -54,9 +54,31 @@ A finding that fails here is **HOLD** (→ REJECT or ESCALATE at the gate), neve
 
 ---
 
+## Flag conformance-escapes (universal, all tiers — READ-ONLY)
+
+For every confirmed finding in your findings list, check whether the preceding `kata-evaluate` run **PASSED**
+that same issue without flagging it. If it did, the finding is a **conformance-escape** — the gate let it
+through and you caught it.
+
+Mark each conformance-escape in your findings output with these three fields (inline, no separate doc):
+- `failure_class` — a short slug naming the gap class (e.g. `rce-unchecked`, `dos-vector`, `seam-dead`).
+- `responsible_skill` — the skill that should harden to catch this class next time (e.g. `kata-evaluate`).
+- `severity` — `BLOCKER` | `MAJOR` | `MINOR` (per the finding's severity).
+
+Per `protocol/validation-misses.md` (the full entry schema and when-to-log rule).
+
+**You do NOT write the manifest.** You are fresh-context, read-only — no Write/Edit (structural, per
+`STANDARDS §1`). The orchestrator reads your flagged findings and appends each conformance-escape to
+`.planning/validation-misses.jsonl` via `validation_misses.append_miss` (non-fatally). Your job is to
+flag; the orchestrator's job is to record.
+
+---
+
 ## Output format
 
-A findings list, each entry: **severity · the attack · cited evidence · the specific risk.**
+A findings list, each entry: **severity · the attack · cited evidence · the specific risk** (and, when
+applicable, `failure_class` / `responsible_skill` / `severity` tags for any conformance-escape per the
+section above).
 
 Then an overall **SHIP / HOLD** recommendation.
 
