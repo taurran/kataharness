@@ -91,6 +91,15 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      unresolved gap); **human-required** → escalate. This is a **hook** — the assembly logic lives in
      `kata-orient`, not here (D24d). No `kata.graph.json` / module files ⇒ kata-orient degrades to the vertical
      rollup; never blocks a dispatch.
+   - **IaC activation (per dispatch, N4 — ADDITIVE; BC: no IaC ⇒ unchanged):** call
+     `iac_detect.classify_task(task.owned_files)` (`tools/iac_detect.py:168`) on the task's owned file list.
+     An **empty set ⇒ no IaC in this task — all downstream behavior unchanged (BC)**.
+     A non-empty set ⇒ inject the matching IaC specialist profile alongside `[[kata-tdd]]` in the worker's
+     discipline:
+     - `"terraform"` in the set → inject **`[[kata-iac-terraform]]`** as the execute-phase specialist.
+     - `"cloudformation"` or `"cdk"` in the set → inject **`[[kata-iac-cloudformation]]`** as the execute-phase specialist.
+     - Both ⇒ inject both specialists. A task may own both IaC kinds and ordinary code — no exclusion.
+     - Mark the task as **IaC-classed**: its verify (step 3) runs the IaC gate in addition to its normal verify.
    Each worker prompt MUST carry, and ONLY carry, its task (the orientation frames it; the task scopes it):
    - an instruction to **execute via [[kata-tdd]]** (the worker's execute-phase discipline — vertical
      red→green, stay in lane, escalate don't re-plan);
@@ -114,7 +123,33 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
    verify (tests + security scan). Not done until evidence is read and passes. Confirm it touched **only its
-   owned files** (drift check). 
+   owned files** (drift check).
+   **IaC gate (IaC-classed tasks only; ADDITIVE — non-IaC tasks unchanged):** for any task marked
+   IaC-classed at dispatch (step 2), also run the **IaC gate** per `protocol/iac-safety.md §3` as part
+   of this task's verify. The five ordered gate steps (all creds-free, Tier 1):
+   1. Syntax/validate — TF: `terraform fmt -check` + `terraform validate` (offline). CFN: `cfn-lint`
+      (CDK: `cdk synth` first). Hard-fail on any error.
+   2. Security scan — call `mcp__Snyk__snyk_iac_scan` on the IaC source.
+      **Fail-closed (mirrors `tools/kata_preflight.py:808-826`):** scanner unwired/unavailable/errored ⇒
+      `verdict:"fail"` with "scanner not wired/unavailable" blocker; gate never passes with zero scanner
+      coverage. Any `high`/`critical` finding ⇒ `verdict:"fail"`. Threshold configurable via
+      `iac.severityThreshold` (`protocol/config.md`).
+   3. 8-smell safe-authoring lens — per `protocol/iac-safety.md §2` (DRY-by-pointer; do not re-implement here).
+   4. Destructive-change analysis — static diff always; plan/change-set JSON if provided, parsed via
+      `scan_tf_plan` (`tools/iac_detect.py:225`) or `scan_cfn_changeset` (`tools/iac_detect.py:299`).
+      A `ValueError` from malformed input ⇒ `verdict:"fail"`.
+   5. Emit `.kata/iac.json` per the schema at `protocol/iac-safety.md §7`.
+
+   **Verdict routing (per `protocol/iac-safety.md §6`, MAJOR-4):**
+
+   | Verdict | Orchestrator action |
+   |---|---|
+   | `"pass"` | Proceed to integrate. |
+   | `"fail"` (scanner high/critical, scanner unwired/errored, syntax error, malformed plan artifact) | Default-FAIL fix loop — worker revises IaC; gate re-runs. |
+   | `"escalate"` (destroy/replace on stateful resource; IAM/secrets/network-topology change) | **Orchestrator** calls `build_escalation` (`tools/escalation.py:47`) then `write_escalation` (`tools/escalation.py:153`) with `kind:"human-required"`, writes `.kata/escalations/<task-id>.json`, and parks the task per `protocol/escalation.md`. Never auto-resolved — no rule clears a destroy silently. |
+
+   **Mixed IaC + code task:** run **both** the normal verify (tests/security scan) and the IaC gate.
+   Both must pass before the task integrates.
 4. **Integrate.** Merge each completed task branch into the integration branch ([[kata-worktree]] — disjoint
    files merge cleanly by construction). Re-run the gate on the integration branch, then recompute the frontier.
 5. **Commit at the checkpoint** (conventional commit + project trailer) so compaction can't lose work.
@@ -193,6 +228,10 @@ After the frontier drains (all tasks integrated), on the integration branch:
    integration `.kata/mutation.json` carries the proof the gate ([[kata-evaluate]] rubric item 1) requires for
    code-bearing work. The `python -m gate_emit` CLI emits RESULT+footprint; **to include mutation records call the
    Python API** `gate_emit.emit_gate_artifacts(..., mutation_records=<union>)` (the CLI form omits mutation).
+   **IaC-bearing runs:** additionally ensure `.kata/iac.json` is present before step 4 — it is emitted at
+   each IaC task's verify (step 3 above, one entry per IaC-classed task, merged into a single `tasks` array).
+   Absent `.kata/iac.json` on a run with **no IaC tasks** ⇒ safe no-op (BC, MINOR-7,
+   `protocol/iac-safety.md §7`). Absent on a run **with** IaC tasks ⇒ [[kata-evaluate]] returns NEEDS_WORK.
    Example invocation (RESULT + footprint):
    ```
    python -m gate_emit \

@@ -150,6 +150,7 @@ to the emitter):
 | Footprint manifest | `.kata/footprint.json` | `footprint`, `changed`, `inFootprint`, `outOfFootprint`, `withinFootprint`, `diffstat`, `codeBearing` (bool — present when produced by MAJOR-3+; absent in older artifacts) |
 | Mutation proof | `.kata/mutation.json` | `records` (list of `{testWentRed, nonVacuous}`) + `allNonVacuous` (bool) — **REQUIRED for any run that introduces or changes executable logic** (`allNonVacuous: true` must be present; absent or `false` ⇒ rubric item 1 is NEEDS_WORK); exempt for pure data/config/docs tasks |
 | Concurrency evidence | `.kata/concurrency.json` | `maxInFlight` (int), `genuinelyParallel` (bool), `workerCount` (int), `workers` (map of task-id → `{agent, start, end, sec}`), `overlaps` (list of `[iso-start, iso-end]` windows where ≥2 workers were in-flight), `source` (string); emitted by the canonical snippet in `protocol/board.md` (Concurrency evidence) |
+| IaC findings | `.kata/iac.json` | `tasks` (list of per-task entries, schema `protocol/iac-safety.md §7`): each entry carries `taskId`, `kind`, `scanner` (counts + `wired` bool), `smells`, `destructive`, and `verdict:"pass"\|"fail"\|"escalate"`. **Present only when IaC-classed tasks ran; absent on non-IaC runs (N/A — not a failure, BC, MINOR-7).** |
 
 Optional parallelism evidence — for a run that claims concurrent work, read it to corroborate rubric item 4 (ownership / conflict-free concurrent merges); `genuinelyParallel:false` on a legitimately single-worker run is **not** a finding (it is expected). Never a stand-alone default-FAIL trigger.
 
@@ -157,6 +158,16 @@ Optional parallelism evidence — for a run that claims concurrent work, read it
 If `.kata/footprint.json` is present, use `withinFootprint` for rubric item 4 (ownership respected).
 For rubric item 1 on a code-bearing run: `.kata/mutation.json` MUST be present with `allNonVacuous: true`;
 absent or `allNonVacuous: false` is a **NEEDS_WORK** finding (not a skip).
+
+**IaC evidence (N5):** if `.kata/iac.json` is present (one or more IaC-classed tasks ran), read every task
+entry per `protocol/iac-safety.md §7` and apply these default-FAIL rules:
+- `scanner.wired: false` — scanner was absent/errored (fail-closed); gate should have blocked this ⇒ **NEEDS_WORK**.
+- `scanner.critical > 0` or `scanner.high > 0` — unresolved high/critical scanner finding ⇒ **NEEDS_WORK**.
+- `verdict: "escalate"` with no human-approved resolution (escalation `resolution` absent or `"open"`) — un-approved
+  destroy/replace must not integrate ⇒ **NEEDS_WORK**.
+- `verdict: "fail"` at evaluation time — the IaC gate fix loop did not clear this finding ⇒ **NEEDS_WORK**.
+Absent `.kata/iac.json` (no IaC in the run) ⇒ **N/A — not a failure** (BC, MINOR-7, `protocol/iac-safety.md §7`).
+Do not fail a non-IaC run on the absence of this artifact.
 
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,
