@@ -28,7 +28,7 @@ agent that writes or modifies IaC under this contract must never emit `--auto-ap
 (`.tf`/`.tf.json`/`.hcl` → terraform; `AWSTemplateFormatVersion`/`Resources` with `Type: AWS::*` → cloudformation;
 `cdk.json`/`cdk.out/` → cdk; belt-and-suspenders: any `.yaml/.yml/.json` with a `Type:\s*AWS::` resource
 declaration). Detection is best-effort; a fragment or unusual template may false-negative (MAJOR-5 — a miss
-is a silent safety bypass; the `force-classify` config list shrinks but does not eliminate the gap).
+is a silent safety bypass; the `forceClassify` config list shrinks but does not eliminate the gap).
 
 ---
 
@@ -98,7 +98,7 @@ added by slice D, following the injectable + fail-closed seam pattern establishe
 
 **Default-FAIL on high/critical.** Parse the scanner output for severity and rule-id; any `high` or
 `critical` finding causes the gate to `fail`. The threshold is configurable via the `iac` config block
-(`severity_threshold`); absent ⇒ default `high`.
+(`severityThreshold`); absent ⇒ default `high`.
 
 **FAIL-CLOSED — the scanner-absent case is also a FAIL.** If the scanner callable is unwired, unavailable,
 or errors at call time, the gate **FAILS** with a "scanner not wired/unavailable" blocker. The gate never
@@ -207,9 +207,10 @@ verify step. The three verdict values map to three orchestrator actions (never c
 | Scanner high/critical finding | `fail` | Default-FAIL — revise + re-gate; not merely escalate. |
 | CFN syntax / TF validate / fmt error | `fail` | Default-FAIL — fix syntax, re-gate. |
 | Any destroy or replace on a **stateful** resource (static OR plan-detected) | `escalate` | Orchestrator writes `human-required` payload + parks task. |
+| Destroy or replace on a **non-stateful** resource (static OR plan-detected) | `fail` | Surface the finding; default-FAIL fix loop. If the resource later proves security-sensitive, re-classify to `escalate`. Never silently pass a detected destroy. |
 | IAM / secrets / network-topology change | `escalate` | Orchestrator writes `human-required` payload + parks task. |
 | Scanner medium finding touching a stateful/security-sensitive resource | `escalate` | Orchestrator writes `human-required` payload + parks task. |
-| Scanner medium finding on non-sensitive resource, lens warn only | `fail` | Surface finding; default-FAIL fix loop (configurable: `escalate_medium: true` in `iac` config block). |
+| Scanner medium finding on non-sensitive resource, lens warn only | `fail` | Surface finding; default-FAIL fix loop (configurable: `escalateMedium: true` in `iac` config block). |
 
 **Verdict → producer mapping.** The gate is run by the **orchestrator** as the task's verify, so:
 - `verdict: "escalate"` → the **orchestrator** calls `build_escalation` then `write_escalation`

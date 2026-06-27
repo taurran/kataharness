@@ -102,7 +102,7 @@ Parse scanner output for `severity` and `rule-id`:
 - `critical` or `high` finding → `verdict: "fail"`. Revise the template; re-gate from Step 1.
 - `medium` on a stateful or security-sensitive resource → `verdict: "escalate"`.
 - `medium` on a non-sensitive resource → surface the finding; default threshold is `fail`
-  (configurable: `iac.escalate_medium: true` promotes to escalate).
+  (configurable: `iac.escalateMedium: true` promotes to escalate).
 - `low` → advisory; record in `scanner.low` count.
 
 Record counts by severity in the `scanner` object of `.kata/iac.json`

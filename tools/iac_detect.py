@@ -79,6 +79,7 @@ def _has_cfn_signature(text: str) -> bool:
 # ---------------------------------------------------------------------------
 
 # Terraform — exact type names and prefix families
+# Exact set retained for back-compat; the prefix tuples below now subsume most of these.
 _TF_STATEFUL_EXACT: frozenset[str] = frozenset({
     "aws_db_instance",
     "aws_rds_cluster",
@@ -86,7 +87,23 @@ _TF_STATEFUL_EXACT: frozenset[str] = frozenset({
     "aws_s3_bucket",
     "aws_ebs_volume",
 })
-_TF_STATEFUL_PREFIXES: tuple[str, ...] = ("aws_elasticache_", "aws_redshift_")
+_TF_STATEFUL_PREFIXES: tuple[str, ...] = (
+    # Broadened RDS/DB prefixes (catch cluster_instance, global_cluster, db_parameter_group, etc.)
+    "aws_db_",
+    "aws_rds_",
+    # Data-bearing queue/stream/search/graph/document types (BLOCKER 1 — D98)
+    "aws_efs_",
+    "aws_sqs_",
+    "aws_sns_",
+    "aws_kinesis_",
+    "aws_opensearch_",
+    "aws_elasticsearch_",
+    "aws_neptune_",
+    "aws_docdb_",
+    # Pre-existing
+    "aws_elasticache_",
+    "aws_redshift_",
+)
 
 
 def _is_tf_stateful(resource_type: str) -> bool:
@@ -98,10 +115,20 @@ def _is_tf_stateful(resource_type: str) -> bool:
 # CloudFormation — prefix families and exact type names
 _CFN_STATEFUL_EXACT: frozenset[str] = frozenset({"AWS::S3::Bucket"})
 _CFN_STATEFUL_PREFIXES: tuple[str, ...] = (
+    # Pre-existing
     "AWS::RDS::",
     "AWS::DynamoDB::",
     "AWS::ElastiCache::",
     "AWS::Redshift::",
+    # Data-bearing queue/stream/search/graph/document types (BLOCKER 1 — D98)
+    "AWS::EFS::",
+    "AWS::SQS::",
+    "AWS::SNS::",
+    "AWS::Kinesis::",
+    "AWS::OpenSearchService::",
+    "AWS::Elasticsearch::",
+    "AWS::Neptune::",
+    "AWS::DocDB::",
 )
 
 
@@ -234,9 +261,10 @@ def scan_tf_plan(plan_json: dict) -> list[dict]:
 
     Returns:
         List of dicts: ``{address, type, actions, action_reason, stateful}``.
-        ``stateful`` is True for data-bearing resource types (RDS, DynamoDB,
-        S3, EBS, ElastiCache-*, Redshift-*).  An empty list means no
-        destructive changes were detected.
+        ``stateful`` is True for data-bearing resource types (RDS/DB-*,
+        DynamoDB, S3, EBS, EFS-*, SQS-*, SNS-*, Kinesis-*, OpenSearch-*,
+        Elasticsearch-*, Neptune-*, DocDB-*, ElastiCache-*, Redshift-*).
+        An empty list means no destructive changes were detected.
 
     Raises:
         ValueError: if ``plan_json`` is malformed (missing ``resource_changes``,
@@ -257,6 +285,12 @@ def scan_tf_plan(plan_json: dict) -> list[dict]:
 
     results: list[dict] = []
     for idx, entry in enumerate(rc_list):
+        # Type guard: each entry must be a dict (MAJOR 3 — D98)
+        if not isinstance(entry, dict):
+            raise ValueError(
+                f"scan_tf_plan: resource_changes[{idx}] must be a dict, "
+                f"got {type(entry).__name__!r}"
+            )
         # Validate required structural keys (raise rather than silently skip)
         if "change" not in entry:
             raise ValueError(
@@ -264,12 +298,27 @@ def scan_tf_plan(plan_json: dict) -> list[dict]:
                 f"'change' key (address={entry.get('address', '?')!r})"
             )
         change = entry["change"]
+        # Type guard: change must be a dict (MAJOR 3 — D98)
+        if not isinstance(change, dict):
+            raise ValueError(
+                f"scan_tf_plan: resource_changes[{idx}].change must be a dict, "
+                f"got {type(change).__name__!r} "
+                f"(address={entry.get('address', '?')!r})"
+            )
         if "actions" not in change:
             raise ValueError(
                 f"scan_tf_plan: resource_changes[{idx}].change is missing "
                 f"'actions' key (address={entry.get('address', '?')!r})"
             )
-        actions: list[str] = change["actions"]
+        actions = change["actions"]
+        # Type guard: actions must be a list — a bare string like "DELETE" must RAISE,
+        # not silently pass through the `"delete" in actions` membership check (MAJOR 3 — D98)
+        if not isinstance(actions, list):
+            raise ValueError(
+                f"scan_tf_plan: resource_changes[{idx}].change.actions must be a list, "
+                f"got {type(actions).__name__!r} "
+                f"(address={entry.get('address', '?')!r})"
+            )
 
         # A destructive change contains "delete" in the actions list
         if "delete" not in actions:  # MUTATION PROOF TARGET — removing this guard → false negatives
@@ -311,9 +360,14 @@ def scan_cfn_changeset(desc: dict) -> list[dict]:
 
     Returns:
         List of dicts: ``{logicalId, resourceType, action, replacement,
-        policyAction, stateful}``.  ``policyAction`` is ``None`` when absent.
+        policyAction, requiresRecreation, stateful}``.
+        ``policyAction`` is ``None`` when absent.
+        ``requiresRecreation`` is True when any ``Details[].Target.RequiresRecreation``
+        equals ``"Always"`` (forced replacement — MAJOR 2 D98).
         ``stateful`` is True for data-bearing types (RDS::*, DynamoDB::*,
-        S3::Bucket, ElastiCache::*, Redshift::*).
+        S3::Bucket, ElastiCache::*, Redshift::*, EFS::*, SQS::*, SNS::*,
+        Kinesis::*, OpenSearchService::*, Elasticsearch::*, Neptune::*,
+        DocDB::*).
 
     Raises:
         ValueError: if ``desc`` is malformed (missing ``Changes``, wrong type,
@@ -333,22 +387,43 @@ def scan_cfn_changeset(desc: dict) -> list[dict]:
 
     results: list[dict] = []
     for idx, entry in enumerate(changes_list):
+        # Type guard: each entry must be a dict (MAJOR 3 — D98)
+        if not isinstance(entry, dict):
+            raise ValueError(
+                f"scan_cfn_changeset: Changes[{idx}] must be a dict, "
+                f"got {type(entry).__name__!r}"
+            )
         if "ResourceChange" not in entry:
             raise ValueError(
                 f"scan_cfn_changeset: Changes[{idx}] is missing the "
                 f"'ResourceChange' key"
             )
         rc = entry["ResourceChange"]
+        # Type guard: ResourceChange must be a dict (MAJOR 3 — D98)
+        if not isinstance(rc, dict):
+            raise ValueError(
+                f"scan_cfn_changeset: Changes[{idx}].ResourceChange must be a dict, "
+                f"got {type(rc).__name__!r}"
+            )
 
         action: str = rc.get("Action", "")
         replacement: str = rc.get("Replacement", "False")
         policy_action: Optional[str] = rc.get("PolicyAction")  # absent = None
         resource_type: str = rc.get("ResourceType", "")
 
+        # RequiresRecreation=Always is a forced replacement even when Replacement=False
+        # (MAJOR 2 — D98; protocol/iac-safety.md §5b)
+        requires_recreation: bool = any(
+            isinstance(detail, dict)
+            and detail.get("Target", {}).get("RequiresRecreation") == "Always"
+            for detail in rc.get("Details", [])
+        )
+
         is_destructive = (
             action in _CFN_DESTRUCTIVE_ACTIONS
             or replacement in _CFN_DESTRUCTIVE_REPLACEMENTS
             or policy_action in _CFN_DESTRUCTIVE_POLICY_ACTIONS
+            or requires_recreation  # MUTATION PROOF TARGET — removing → misses forced replacements
         )
         if not is_destructive:
             continue
@@ -359,6 +434,7 @@ def scan_cfn_changeset(desc: dict) -> list[dict]:
             "action": action,
             "replacement": replacement,
             "policyAction": policy_action,
+            "requiresRecreation": requires_recreation,
             "stateful": _is_cfn_stateful(resource_type),
         })
 

@@ -30,6 +30,18 @@ Coverage (DESIGN §6 acceptance — all acceptance criteria exercised):
 - scan_cfn_changeset: stateful detection (AWS::RDS::*, AWS::DynamoDB::*, etc.)
 - scan_cfn_changeset: malformed changeset (missing Changes) → ValueError
 - CWE-23: classify_file with .. path → ValueError
+--- D98 additions ---
+- BLOCKER 1 (TF): aws_efs_*, aws_sqs_*, aws_sns_*, aws_kinesis_*, aws_opensearch_*,
+  aws_elasticsearch_*, aws_neptune_*, aws_docdb_* → stateful True
+- BLOCKER 1 (TF): aws_rds_cluster_instance / aws_rds_global_cluster caught by aws_rds_ prefix
+- BLOCKER 1 (CFN): AWS::EFS::*, AWS::SQS::*, AWS::SNS::*, AWS::Kinesis::*,
+  AWS::OpenSearchService::*, AWS::Elasticsearch::*, AWS::Neptune::*, AWS::DocDB::* → stateful True
+- MAJOR 2: Details[].Target.RequiresRecreation=Always → flagged even when Replacement=False
+- MAJOR 3 (TF): non-dict entry in resource_changes → ValueError
+- MAJOR 3 (TF): non-dict change value → ValueError
+- MAJOR 3 (TF): actions as string (not list) → ValueError
+- MAJOR 3 (CFN): non-dict entry in Changes → ValueError
+- MAJOR 3 (CFN): non-dict ResourceChange value → ValueError
 """
 
 from __future__ import annotations
@@ -536,8 +548,9 @@ class TestScanCfnChangeset:
         assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
 
     def test_non_stateful_resource(self):
+        # AWS::SQS::Queue is now stateful; use EC2::Instance which carries no durable data
         desc = self._desc(
-            _cfn_change("MyQueue", "AWS::SQS::Queue", "Remove")
+            _cfn_change("MyInstance", "AWS::EC2::Instance", "Remove")
         )
         assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is False
 
@@ -586,3 +599,233 @@ class TestCwe23Guard:
         # path is still validated.
         with pytest.raises(ValueError):
             iac_detect.classify_file("../escaped.tf", content="resource {}")
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER 1 — expanded stateful TF prefixes (D98)
+# ---------------------------------------------------------------------------
+
+class TestScanTfPlanStatefulExpanded:
+    """New prefix families that the contract names but the old sets missed."""
+
+    def _plan(self, *changes):
+        return {"resource_changes": list(changes)}
+
+    def test_stateful_aws_efs_prefix(self):
+        plan = self._plan(_tf_resource("aws_efs_file_system.fs", "aws_efs_file_system", ["delete"]))
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_sqs_prefix(self):
+        plan = self._plan(_tf_resource("aws_sqs_queue.q", "aws_sqs_queue", ["delete"]))
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_sns_prefix(self):
+        plan = self._plan(_tf_resource("aws_sns_topic.t", "aws_sns_topic", ["delete"]))
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_kinesis_prefix(self):
+        plan = self._plan(_tf_resource("aws_kinesis_stream.s", "aws_kinesis_stream", ["delete"]))
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_opensearch_prefix(self):
+        plan = self._plan(
+            _tf_resource("aws_opensearch_domain.d", "aws_opensearch_domain", ["delete"])
+        )
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_elasticsearch_prefix(self):
+        plan = self._plan(
+            _tf_resource("aws_elasticsearch_domain.d", "aws_elasticsearch_domain", ["delete"])
+        )
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_neptune_prefix(self):
+        plan = self._plan(_tf_resource("aws_neptune_cluster.c", "aws_neptune_cluster", ["delete"]))
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_docdb_prefix(self):
+        plan = self._plan(_tf_resource("aws_docdb_cluster.c", "aws_docdb_cluster", ["delete"]))
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_rds_cluster_instance_prefix(self):
+        """aws_rds_cluster_instance is NOT in the exact set; must be caught by aws_rds_ prefix."""
+        plan = self._plan(
+            _tf_resource("aws_rds_cluster_instance.ci", "aws_rds_cluster_instance", ["delete"])
+        )
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_rds_global_cluster_prefix(self):
+        """aws_rds_global_cluster must be caught by aws_rds_ prefix."""
+        plan = self._plan(
+            _tf_resource("aws_rds_global_cluster.gc", "aws_rds_global_cluster", ["delete"])
+        )
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+    def test_stateful_aws_db_prefix(self):
+        """aws_db_ prefix catches aws_db_instance and other aws_db_* variants."""
+        plan = self._plan(_tf_resource("aws_db_parameter_group.pg", "aws_db_parameter_group", ["delete"]))
+        assert iac_detect.scan_tf_plan(plan)[0]["stateful"] is True
+
+
+# ---------------------------------------------------------------------------
+# BLOCKER 1 — expanded stateful CFN prefixes (D98)
+# ---------------------------------------------------------------------------
+
+class TestScanCfnChangesetStatefulExpanded:
+    """New prefix families that the contract names but the old sets missed."""
+
+    def _desc(self, *changes):
+        return {"Changes": list(changes)}
+
+    def test_stateful_efs(self):
+        desc = self._desc(_cfn_change("MyFS", "AWS::EFS::FileSystem", "Remove"))
+        assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
+
+    def test_stateful_sqs(self):
+        desc = self._desc(_cfn_change("MyQueue", "AWS::SQS::Queue", "Remove"))
+        assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
+
+    def test_stateful_sns(self):
+        desc = self._desc(_cfn_change("MyTopic", "AWS::SNS::Topic", "Remove"))
+        assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
+
+    def test_stateful_kinesis(self):
+        desc = self._desc(_cfn_change("MyStream", "AWS::Kinesis::Stream", "Remove"))
+        assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
+
+    def test_stateful_opensearch(self):
+        desc = self._desc(_cfn_change("MyDomain", "AWS::OpenSearchService::Domain", "Remove"))
+        assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
+
+    def test_stateful_elasticsearch(self):
+        desc = self._desc(_cfn_change("MyDomain", "AWS::Elasticsearch::Domain", "Remove"))
+        assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
+
+    def test_stateful_neptune(self):
+        desc = self._desc(_cfn_change("MyCluster", "AWS::Neptune::DBCluster", "Remove"))
+        assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
+
+    def test_stateful_docdb(self):
+        desc = self._desc(_cfn_change("MyDocDB", "AWS::DocDB::DBCluster", "Remove"))
+        assert iac_detect.scan_cfn_changeset(desc)[0]["stateful"] is True
+
+
+# ---------------------------------------------------------------------------
+# MAJOR 2 — RequiresRecreation == "Always" must trigger a flag (D98)
+# ---------------------------------------------------------------------------
+
+class TestScanCfnRequiresRecreation:
+    """Replacement=False + Details[].Target.RequiresRecreation=Always must be flagged."""
+
+    def test_requires_recreation_always_flagged(self):
+        """Forced replacement via RequiresRecreation=Always, even when Replacement=False."""
+        desc = {"Changes": [{
+            "ResourceChange": {
+                "LogicalResourceId": "MyFunction",
+                "ResourceType": "AWS::Lambda::Function",
+                "Action": "Modify",
+                "Replacement": "False",
+                "Details": [
+                    {"Target": {"RequiresRecreation": "Always"}}
+                ],
+            }
+        }]}
+        results = iac_detect.scan_cfn_changeset(desc)
+        assert len(results) == 1
+        assert results[0]["logicalId"] == "MyFunction"
+
+    def test_requires_recreation_never_not_flagged(self):
+        """RequiresRecreation=Never with no other destructive signal → not flagged."""
+        desc = {"Changes": [{
+            "ResourceChange": {
+                "LogicalResourceId": "MyFunction",
+                "ResourceType": "AWS::Lambda::Function",
+                "Action": "Modify",
+                "Replacement": "False",
+                "Details": [
+                    {"Target": {"RequiresRecreation": "Never"}}
+                ],
+            }
+        }]}
+        assert iac_detect.scan_cfn_changeset(desc) == []
+
+    def test_requires_recreation_conditionally_not_flagged_by_this_check(self):
+        """RequiresRecreation=Conditionally alone with Replacement=False → not flagged."""
+        desc = {"Changes": [{
+            "ResourceChange": {
+                "LogicalResourceId": "MyFunction",
+                "ResourceType": "AWS::Lambda::Function",
+                "Action": "Modify",
+                "Replacement": "False",
+                "Details": [
+                    {"Target": {"RequiresRecreation": "Conditionally"}}
+                ],
+            }
+        }]}
+        assert iac_detect.scan_cfn_changeset(desc) == []
+
+    def test_no_details_key_not_flagged(self):
+        """A ResourceChange with no Details key → not flagged by RequiresRecreation."""
+        desc = {"Changes": [{
+            "ResourceChange": {
+                "LogicalResourceId": "MyRole",
+                "ResourceType": "AWS::IAM::Role",
+                "Action": "Modify",
+                "Replacement": "False",
+            }
+        }]}
+        assert iac_detect.scan_cfn_changeset(desc) == []
+
+
+# ---------------------------------------------------------------------------
+# MAJOR 3 — type guards: malformed shapes must raise ValueError (D98)
+# ---------------------------------------------------------------------------
+
+class TestScanTfPlanTypeGuards:
+    """Fail-closed: bad shapes must raise ValueError, not TypeError or silently return []."""
+
+    def test_entry_not_dict_raises(self):
+        """A non-dict entry in resource_changes must raise ValueError."""
+        plan = {"resource_changes": ["not-a-dict"]}
+        with pytest.raises(ValueError):
+            iac_detect.scan_tf_plan(plan)
+
+    def test_change_not_dict_raises(self):
+        """change must be a dict; a non-dict value must raise ValueError."""
+        plan = {"resource_changes": [
+            {"address": "x.y", "type": "aws_vpc", "change": "not-a-dict"}
+        ]}
+        with pytest.raises(ValueError):
+            iac_detect.scan_tf_plan(plan)
+
+    def test_actions_string_raises(self):
+        """actions='DELETE' (a string, not list) must raise ValueError — not silently pass/fail."""
+        plan = {"resource_changes": [
+            {"address": "x.y", "type": "aws_vpc", "change": {"actions": "DELETE"}}
+        ]}
+        with pytest.raises(ValueError):
+            iac_detect.scan_tf_plan(plan)
+
+    def test_actions_string_delete_lowercase_raises(self):
+        """actions='delete' (lowercase string) must also raise — even though 'delete' in 'delete' is True."""
+        plan = {"resource_changes": [
+            {"address": "x.y", "type": "aws_vpc", "change": {"actions": "delete"}}
+        ]}
+        with pytest.raises(ValueError):
+            iac_detect.scan_tf_plan(plan)
+
+
+class TestScanCfnChangesetTypeGuards:
+    """Fail-closed: bad shapes must raise ValueError, not TypeError or silently return []."""
+
+    def test_entry_not_dict_raises(self):
+        """A non-dict entry in Changes must raise ValueError."""
+        desc = {"Changes": ["not-a-dict"]}
+        with pytest.raises(ValueError):
+            iac_detect.scan_cfn_changeset(desc)
+
+    def test_resource_change_not_dict_raises(self):
+        """ResourceChange value must be a dict; a non-dict must raise ValueError."""
+        desc = {"Changes": [{"ResourceChange": "not-a-dict"}]}
+        with pytest.raises(ValueError):
+            iac_detect.scan_cfn_changeset(desc)
