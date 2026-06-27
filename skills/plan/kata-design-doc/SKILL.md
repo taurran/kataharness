@@ -51,6 +51,10 @@ the original spec/requirements.
    numbers, plus behavioral assertions (incl. the drift-magnet checks). "Done" is defined here.
 7. **Test seams / testability** — the highest seam(s) at which the work will be tested + any testing
    decisions, so the EXECUTE TDD phase builds to them (mattpocock to-prd).
+8. **Dependency Manifest** — write `kata.dependencies.json` from the external dependencies enumerated
+   during grilling, one entry per `protocol/dependencies.md` schema, with all fields filled. This manifest
+   is approved at freeze (not at build time; D29); the PRE-FLIGHT phase provisions the approved set before
+   the loop launches.
 
 ## Quality bar (freeze-readiness)
 - **Trade-offs over verdicts** (BMAD): each LOCKED decision records the trade-off and the rejected

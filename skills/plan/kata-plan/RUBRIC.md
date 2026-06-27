@@ -70,6 +70,8 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
 - The DAG is acyclic and every task is reachable.
 - Any "reuses / composes / already exists" claim in `read_first` or `action` obeys `protocol/reuse-claims.md` —
   the surface is cited with a concrete `file:line`, or the capability is labeled NEW.
+- The Dependency Manifest (`kata.dependencies.json`) is present at freeze per `protocol/dependencies.md` (D29);
+  the PRE-FLIGHT phase provisions the approved set before `kata-orchestrate` dispatches.
 
 When these hold, **freeze the plan** and hand to [[kata-orchestrate]].
 

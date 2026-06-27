@@ -15,21 +15,66 @@ signal ⇒ escalate ⇒ deliberate re-freeze (never a silent install). Workers *
 (least-privilege); discovery mid-loop escalates to the orchestrator.
 
 ## Per-entry fields
+
+### Identity + metadata
 | Field | Type | Meaning |
 |---|---|---|
 | `name` | string | The dependency identifier (package/tool/MCP/repo/template name). |
 | `type` | `"library" \| "tool" \| "mcp" \| "repo" \| "template" \| "runtime" \| "capability"` | What kind of thing it is. |
-| `version` | string | Pinned version / constraint (honor `preflight.pin_policy`). |
 | `purpose` | string | Why the build needs it (traceable to a DESIGN requirement). |
-| `install` | string | The exact install command (recognized package manager — **never `curl \| bash` from an arbitrary domain**). |
-| `verify` | string | A runnable command proving presence (e.g. `expo --version`, `python -c "import docx"`). PRE-FLIGHT is default-FAIL on this. |
 | `source` | string | Registry/URL + a short trust note; reviewed by the human at freeze. |
 | `hash` | string | Optional integrity hash/checksum for the pinned artifact; verified on install when present. |
 | `scope` | `"global" \| "project-local"` | Install scope. Prefer `project-local` + pinned for determinism + easy cleanup (D-registry). |
 | `classification` | `"build-time" \| "runtime"` | `runtime` ⇒ must be bundled into the artifact (a packaging task) → its global base copy becomes a cleanup candidate; `build-time` ⇒ removable after the run (D-registry). |
 
+### Structured install fields (N0 — REQUIRED for PRE-FLIGHT auto-install)
+
+These fields let `kata-preflight` **build the install argv from structured data** — the engine
+maps `manager` → a fixed argv builder (like `kata_dispatch._COMMAND_BUILDERS`,
+`tools/kata_dispatch.py:150`) and forces the registry/index from `preflight.allowed_registries`.
+No freeform string is ever executed.
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `manager` | `"pip" \| "uv" \| "npm" \| "cargo"` | **yes** | The package manager. Must be in `preflight.allowed_registries` **and** in the engine's hard `ALLOWED_MANAGERS` allowlist (`tools/kata_preflight.py`). Any `manager` not in both lists ⇒ `blocked`, nothing executed. |
+| `package` | string | **yes** | Package/crate/npm name. Per-manager name grammar enforced: pip/uv `[A-Za-z0-9._-]+` (with optional `[extras]`); npm optional `@scope/` prefix + `[a-z0-9._-]+`; cargo `[A-Za-z0-9_-]+`. Universal rejects: values containing `://`, starting with `git+`/`http`, containing `..` (source-injection guard, BLOCKER 1). A value starting with `-` is **rejected** (flag-injection guard H1). `:`, `/` (non-npm), and other source-spec characters are rejected by the per-manager grammar. |
+| `version` | string | **yes** | Pinned version string (honor `preflight.pin_policy`). Charset: `[A-Za-z0-9._\-+~^]` only — `:` and `/` are forbidden (they would make a version value a source spec). Leading `-` is **rejected** (H1). |
+| `index` | string | no | Optional override label (e.g. `"pypi"`, `"npmjs"`). **Informational only** — the engine **forces** the actual registry URL from `preflight.allowed_registries`; a manifest-supplied URL is never used. |
+| `verify` | string | recommended | A runnable shell command proving presence (e.g. `expo --version`, `python -c "import docx"`). PRE-FLIGHT is **default-FAIL** on this: a dep that won't verify after provisioning ⇒ `blocked`. |
+
+### Docs-only field (NEVER executed)
+
+| Field | Type | Meaning |
+|---|---|---|
+| `install` | string | **Documentation-only — the PRE-FLIGHT engine NEVER reads or executes this string.** It exists solely as a human-readable reference showing what the auto-installer will do. The engine builds its argv from the structured `{manager, package, version}` fields above. This structural separation kills the `curl\|bash` / untrusted-registry injection class: there is no freeform string for an attacker to hijack (LD2/LD3, DESIGN §3). |
+
+## Freeze approval hash (H2 / LD8)
+
+At **FREEZE**, `kata-freeze` records the SHA-256 of `kata.dependencies.json` as the
+**freeze approval hash** in a **distinct artifact** — **not** beside
+`kata.dependencies.json`. The canonical default path is
+`kata.freeze-approval.json` at the **repo root** (not under `.kata/`; JSON:
+`{ "manifestHash": "<sha256-hex>" }`). The `approved_hash_path` parameter to
+`run_preflight` overrides this default; operators may point it at a committed or
+access-controlled location for stronger guarantees.
+
+At **PRE-FLIGHT**, the engine recomputes the hash and compares it to the approved value:
+- **Match** → the manifest is as approved; auto-install may proceed.
+- **Mismatch** → the manifest changed after freeze approval ⇒ `blocked` + escalate
+  (`human-required`) ⇒ re-freeze. **Never silently installs a post-approval edit.**
+
+**What this mechanism delivers:** it **detects post-freeze manifest drift** — the loop
+cannot silently change what it installs without triggering a mismatch. The engine
+**fails closed** on a missing or mismatched approval artifact. It is **not** a defense
+against a local actor who controls both the manifest and the approval file (they own
+the machine). For stronger guarantees, point `approved_hash_path` at a committed or
+access-controlled location that is not writable by the same author as the manifest.
+
 ## Pre-flight gate (summary — full procedure in `kata-preflight`, Spec D)
-enumerate → freeze+approve (set + sources) → check presence (`verify`) → Snyk SCA scan if `scan_required` →
-install (recognized registry, pinned, hash-verified) → re-`verify` (default-FAIL) → append to the
-machine-global installed-library registry (`~/.kata/installed-registry.json`, D-registry) → signal loop-ready.
+enumerate → freeze+approve (set + sources) → **record approval hash in distinct artifact (H2)** →
+check presence (`verify`) → Snyk SCA scan if `scan_required` → **build argv from structured fields
+(manager/package/version) — never the freeform `install` string** → install via
+`subprocess(argv, shell=False)` forced to an allowed registry → re-`verify` (default-FAIL) →
+append to the machine-global installed-library registry (`~/.kata/installed-registry.json`, D-registry) →
+signal loop-ready.
 Never auto-uninstall; the cleanup report (reference-counted across projects) recommends, the human executes.

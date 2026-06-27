@@ -51,6 +51,10 @@ options + a free-text prompt. The pattern is host-agnostic; the rendering is the
    `kata.graph.json` and ingest its feature-seeded digest — interrogate the feature's design AGAINST the
    existing architecture and its blast radius, not greenfield. (kata-graph requires tree-sitter; kata-readiness
    BLOCKs version-up without it.)
+5. **Enumerate external dependencies:** list every library, tool, MCP server, or runtime the build needs
+   and record each per `protocol/dependencies.md` (the Dependency Manifest). This list travels with the
+   decision ledger to FREEZE, where it is approved and written to `kata.dependencies.json`; the PRE-FLIGHT
+   phase (D29) provisions the approved set before the loop launches.
 
 ## Phase 1 — Interrogate, dependency-ordered
 

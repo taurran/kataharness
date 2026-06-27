@@ -115,7 +115,7 @@ whatever model(s) you use.
 ## Status
 
 **`v0.1.0-alpha` — the full loop is built, green, and self-dogfooded; hardening toward a field-proven v0.1.**
-36 skills, all `0.1.0`/experimental; validator 0 errors · 540+ tests passing · Snyk clean (medium+ 0). The
+37 skills, all `0.1.0`/experimental; validator 0 errors · 540+ tests passing · Snyk clean (medium+ 0). The
 complete cognitive architecture runs on the **Claude core** across **one-shot and incremental (sprint)**
 delivery, with the learning loop (second-brain LEARN feed + human-gated skill promotion) wired. The harness
 has been built *by itself* through its own orchestrated loop multiple times — concurrent worker subagents in
@@ -145,7 +145,7 @@ partially built — see the roadmap. Live state: [`.planning/STATE.md`](./.plann
 
 ## The skills
 
-36 skills across the six loop phases (plus the initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
+37 skills across the six loop phases (plus the initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
 `kata-diagnose`) share one `RUBRIC.md` method and expose depth tiers you dial per run.
 
 ```
@@ -162,6 +162,7 @@ skills/
 ├── coordinate/   compose, dispatch, and guard the run
 │   ├── kata-bootstrap ...... the on-ramp: compose a run, write kata.config, launch; routes sprint boundaries
 │   ├── kata-readiness ...... pre-run harness+target doctor; detects sprint progression
+│   ├── kata-preflight ...... provision the freeze-approved dep set; manifest-hash + Snyk gated; emits .kata/preflight.json
 │   ├── kata-orchestrate .... plan-guardian lead: assign, partition files, gate, no-drift
 │   ├── kata-board .......... append-only message board for lateral peer comms
 │   ├── kata-worktree ....... per-owner git-worktree isolation for concurrent work
@@ -211,6 +212,7 @@ skills/
 | `kata-initiate` | 0.1.0 | 3 | coordinate | experimental | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
 | `kata-loop` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
 | `kata-orchestrate` | 0.1.0 | 5 | coordinate | experimental | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
+| `kata-preflight` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from tools/kata_dispatch.py:150; injectable-runner from tools/kata_dispatch.py:168 | — |
 | `kata-readiness` | 0.1.0 | 1 | coordinate | experimental | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
 | `kata-sprint` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C) | Own the sprint boundary (G1–G4 change-control); incremental delivery only |
 | `kata-worktree` | 0.1.0 | 1 | coordinate | experimental | adapted-from CryptoPortfolioPlanner worktree proof (LESSONS-LEARNED L2/L3) | Per-owner git-worktree isolation for concurrent code |
