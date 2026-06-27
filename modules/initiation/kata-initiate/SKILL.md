@@ -113,6 +113,7 @@ being closed, not the code change.
 | `target.kind` + `target.path` | "I'd run it [on this project / on a new repo / on the harness itself] — [path if known]." |
 | `target.vault` | "I'd link your PokeVault / I'd skip the vault for this run / I'd aim at [path]." |
 | `target.platform` | "We're running on [Claude / Codex / …]." |
+| `roles` (multi-model routing) | **(Only when `confirmed_platforms()` (`tools/kata_settings.py:109`) returns a non-host platform AND the human opts in.)** "I'd route [coder=Claude · validator=Codex · researcher=Kiro / all roles on Claude]." Omit this line when single-host or when the human declined. |
 | `grillDepth` | "I'd suggest [skip / light / standard / full] planning depth, because [one-line rationale from Phase 0]." |
 | Dual-control execute | "After planning, you confirm before anything runs. That stays in your hands." |
 
@@ -188,6 +189,30 @@ chooses to work on a copy, also ask for a **destination folder**, then
 `kata_install.copy_project(src, dest)` and set `target.path` to the copy. The original is left untouched
 (the copy is a plain file copy — it never runs git against a vault).
 
+### 2e. Multi-modal routing — "Make this run multi-modal?" (skip if single-host)
+
+**Precondition:** call `confirmed_platforms()` (`tools/kata_settings.py:109`). If the result contains **only the host platform** (no non-host platform has been installed and confirmed), **skip this phase entirely** — do not surface the question, do not add `roles` to the mirror, and treat the run as single-host (BC1, `protocol/config.md:27` — absent `roles` ⇒ all roles on host).
+
+When at least one **non-host** platform is present in `confirmedPlatforms`, surface this question via `AskUserQuestion` after the rest of the Phase 2 setup:
+
+> "Your harness has [Codex / Kiro / …] confirmed. Do you want to route any roles to a different model? You can assign individual jobs — coder, validator, researcher, orchestrator, evaluator — to the platforms you have installed, or leave everything on the host."
+
+**If the human opts in:** for each loop role, ask which platform from `confirmedPlatforms` to assign it (default = host; any unassigned role stays on host). Produce a `roles` mapping:
+
+| Role | Default | Description |
+|---|---|---|
+| `coder` | host | The primary build agent (single sustained agent). |
+| `validator` | host | Red-team + anti-slop + grounding review. |
+| `researcher` | host | Research escalations (`kata-research`). |
+| `orchestrator` | host | Plan-guardian; **must remain host in v1** (`.planning/specs/multi-model-orchestration/DESIGN.md` LD11). |
+| `evaluator` | host | Lightweight inline scorer. |
+
+Surface the confirmed assignment in the **Phase 2 mirror** as load-bearing value #8 (see the infer-then-confirm gate below). The `roles` mapping is carried to `kata-bootstrap` for writing to `kata.config` (`protocol/config.md:27`); it is NOT written to `INTENT.md` (`roles` is executable routing — a `kata.config` concern only).
+
+**Orchestrator constraint (v1):** the orchestrator role must remain on the host in v1 (`.planning/specs/multi-model-orchestration/DESIGN.md` LD11). If the human assigns orchestrator to a non-host platform, explain this constraint and reset it to host.
+
+**If the human declines or no non-host platforms are confirmed:** omit `roles` entirely — the run is single-host (BC1). `kata-bootstrap` writes no `roles` block to `kata.config` (`protocol/config.md:27`).
+
 ---
 
 ## Phase 3 — grill depth
@@ -241,6 +266,7 @@ weakening of it.
 5. `target.platform` — the agent host driving this run.
 6. `grillDepth` — the planning depth (skip / light / standard / full).
 7. Dual-control execute — the human's understanding that they confirm before anything runs.
+8. **Multi-model routing** (`roles`) — the per-role platform assignment, or single-host (absent). **Applies only when `confirmed_platforms()` (`tools/kata_settings.py:109`) lists a non-host platform.** If Phase 2e was skipped (single-host) or the human declined, record this as single-host / absent. If the human opted in, the confirmed `roles` mapping must have been named in the mirror.
 
 If any value was not named in the mirror — or the human's response was ambiguous on that value
 specifically — surface it explicitly via `AskUserQuestion` before proceeding.
@@ -259,6 +285,7 @@ individually against the mirror transcript and the frozen `INTENT.md`.
 - [ ] `target.platform` was named in the mirror.
 - [ ] `grillDepth` was named in the mirror, with its rationale.
 - [ ] Dual-control execute was named in the mirror (the human was told they confirm before anything runs).
+- [ ] Multi-model routing (`roles`) was handled correctly: either (a) `confirmed_platforms()` (`tools/kata_settings.py:109`) returned only the host ⇒ Phase 2e was skipped (no mirror entry required); or (b) a non-host platform was confirmed ⇒ the human was asked and the outcome — confirmed `roles` assignment or all-on-host decline — was named in the mirror.
 
 **Human confirmation — each value survived into the frozen `INTENT.md` unchanged or was explicitly corrected:**
 - [ ] `kind` in `INTENT.md` matches what the human confirmed (approved or corrected in the mirror).
@@ -268,6 +295,7 @@ individually against the mirror transcript and the frozen `INTENT.md`.
 - [ ] `target.platform` in `INTENT.md` matches the human-confirmed platform.
 - [ ] `grillDepth` in `INTENT.md` matches the human-confirmed depth.
 - [ ] The dual-control execute decision was made by the human (not auto-decided by the agent).
+- [ ] The multi-model routing decision was made by the human: either all-on-host was confirmed (or Phase 2e was skipped as single-host), or a per-role `roles` mapping was confirmed by the human and will be written to `kata.config` by `kata-bootstrap` — not to `INTENT.md` (`roles` is a config concern only, `protocol/config.md:27`).
 
 **A value that was inferred, not named in the mirror, and passed through with a blanket approval
 FAILS this gate — even if the value happens to be correct.** The confirmation must be traceable
