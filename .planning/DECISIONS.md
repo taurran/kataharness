@@ -1291,3 +1291,53 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   load-bearing adversarial+re-confirm loop, 5th+ session-instance. **NEXT: Debug Mode P3** (language prompt-profiles
   LD10 + onboarding/convert-to-loop LD13 + the LD12 closeout confidence report) — the final phase; then Debug Mode is
   functionally complete. Optionally: exercise the full debug loop end-to-end on a seeded fixture repo.
+
+<!-- Debug Mode Phase 3 (the FINAL phase) built. Spec: specs/debug-mode/{DESIGN,PLAN-p3}.md. Fully subagent-driven. -->
+- **D117 — Debug Mode Phase 3 (the FINAL phase — closeout report + language profiles + onboarding) BUILT — 2026-06-27.**
+  Completes the **core Debug Mode loop** (comprehend P1 → find/route P2a → characterize/drift-gate/apply-or-defer P2b →
+  **report/onboard P3**); Debug Mode is now functionally complete at the skill/seam level. Built **entirely through the
+  loop/subagents** (operator directive: drive every step via subagents to spare main context). PLAN-p3 authored by a
+  planning subagent → **freeze-gate `kata-review` HOLD→SHIP** → 6-slice 2-wave build → `kata-evaluate` **PART A PASS** →
+  **D98 PART B HOLD→fix→re-confirm SHIP** → operator merge gate. **Built:** **(A)** `tools/debug_report.py` — the PURE
+  LD12 report-assembly engine: `debug_report_schema`/`snyk_report_schema`, `finding_id` (derivation identical to
+  `drift_gate.defer_record`), `build_confidence_map` (assessed/low-confidence/skipped; every entry `heuristic:true`),
+  `build_deviation_table` (deviation→fix→pinning-test; route-gated applied claim + ambiguous-id no-cross-join),
+  `build_proof_rollup` (drift + suite + mutation + **real Snyk before/after** read from `.kata/snyk/*.json`),
+  `build_debug_report`/`emit`/`load`; **5 mutation proofs; no exec sink**. **(B)** `skills/evaluate/kata-debrief` — the
+  LD12 author/renderer (two-tier `kata-report` shape; reports, never gates). **(C)** `modules/closeout/kata-closeout`
+  `Step 3b` — debug-gated; offers `[[kata-debrief]]`; reuses the human-gated Decision 2/3 (no new git path). **(D)**
+  `skills/execute/kata-lang-profile` + 6 language profiles + a config/context specialist — LD10 prose-only specialists,
+  selected by **footprint file extensions** (FM has no `language` field), injected at dispatch (mirrors the IaC precedent),
+  **no fork / no new Python**. **(E)** `skills/coordinate/kata-onboard` — LD13 first-run/convert-to-loop, composes the
+  BUILT install-portability surfaces (`kata_settings`/`project_find`/`kata_install`/`intent_scaffold` + `[[kata-initiate]]`/
+  `[[kata-bootstrap]]`/`[[kata-closeout]]`/`[[kata-loop]]`); **convert-to-loop** and the **`.planning/` scaffold** honestly
+  labeled NEW (no single existing surface). **(W)** `kata-orchestrate` — P3-seam resolved to a pointer + LD10 dispatch
+  injection + the **`.kata/snyk/<finding_id>.json` before/after persistence** (the freeze-gate BLOCKER fix). **Freeze-gate
+  caught a real BLOCKER:** LD12's DESIGN-mandated "Snyk before/after" cited a `RESULT.json` field that **no P1/P2 surface
+  emits** (`run_result.build_result`/`gate_emit` carry no Snyk field; the P2b fix loop ran Snyk but discarded it) → phantom
+  capability that would read nothing on a real run → resolved by persisting the fix-loop's existing before/after Snyk to a
+  new `.kata/snyk/<id>.json` artifact (no new Python, no new sink — the Snyk MCP call already existed; persistence is a
+  Write). **Security (the load-bearing part):** D98 caught **2 MAJOR fail-opens** the conformance gate (PART A PASS) missed,
+  both in the LD12 honesty machinery: (1) **Snyk regression-masking** — `_snyk_rollup` trusted the prose-supplied
+  `newFindings` (a +5 regression with `newFindings:0` rendered CLEAN) → now **recomputes** `effective_new =
+  max(stored, max(0, after−before))`, a too-low stored value can't lower the result, missing/malformed count ⇒ `clean=False`
+  (+ a 5th mutation branch); (2) **`applied:true` not route-gated** — a drift PASS marked any row applied regardless of the
+  finding's route, so a `research` finding could inherit another's proof under a `finding_id` collision → now gated on
+  `route=="auto-fix-eligible"` + ambiguous-id refuses to cross-join. Both fixed **at the engine** (not the prose — the exact
+  principle the plan pins), mutation-covered; re-confirm SHIP (the conservative directions all err toward UNDER-claiming,
+  the correct bias for the honesty surface). Plus 2 robustness MINORs (non-numeric/bool confidence + non-dict records →
+  fail-honest, never crash) and the kata-debrief `#6` fix (removed an invented `.kata/RESULT.json` `verdict` field —
+  kata-evaluate is no-write; the verdict is surfaced by the orchestrator/closeout). **Gates:** pytest **1108** (1062→1108),
+  validate **45/0** (42→45 — `kata-debrief`/`kata-lang-profile`/`kata-onboard`), Snyk **0** on `debug_report.py`. **Honest
+  scope:** behavioral drift only (structural = §5 v1 fast-follow); confidence = LD5 v1 heuristic (uncalibrated); **Debug
+  Mode is n=0 LIVE** — proven on seeded fixtures, never run end-to-end on a real repo (the natural next step, newly possible
+  now that install-portability + kata-preflight exist). **Plan divergence recorded (per D98 #5):** `kata-onboard` is tagged
+  `kata/spine` (the validator structurally requires `kata/spine` OR `kata/module/<x>`; `kata/spine` is the least-wrong for
+  a first-run on-ramp — `kata/module/debug` would be actively wrong) rather than PLAN-p3's `kata/coordinate+onboarding`.
+  **Validation-misses:** the 2 MAJOR fail-opens logged to `.planning/validation-misses.jsonl` (D114, observe-only).
+  **Deferred MINORs (NOT built):** clamp the cosmetic `newFindings` display integer on contrived-malformed input (`clean`
+  already fails closed); the pre-existing `kata-report`/`kata-closeout` "verdict from `.kata/RESULT.json`" wording
+  inconsistency. Records: `specs/debug-mode/{DESIGN,PLAN-p3}.md`. **Meta:** D98 *again* caught real fail-opens (in the LD12
+  honesty surface, where PART A PASS'd) — the load-bearing adversarial+re-confirm loop, now the 6th+ session-instance; and
+  the freeze-gate's phantom-capability catch (Snyk-from-RESULT.json) is exactly the verify-before-reuse class the project
+  keeps surfacing.

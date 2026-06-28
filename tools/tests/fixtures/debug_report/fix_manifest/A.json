@@ -1,0 +1,14 @@
+{
+  "finding_id": "src/mod_a.py::compute",
+  "ael": ["tests/characterization/mod_a_char.py::test_compute_pins"],
+  "blast_radius_manifest": {
+    "footprint": ["src/mod_a.py", "tests/characterization/mod_a_char.py"],
+    "inFootprint": ["src/mod_a.py"],
+    "withinFootprint": true
+  },
+  "before_snapshots": {
+    "tests/characterization/mod_a_char.py::test_compute_pins": "output: 0\n"
+  },
+  "characterization_files": ["tests/characterization/mod_a_char.py"],
+  "utc": "2026-06-27T00:00:00+00:00"
+}

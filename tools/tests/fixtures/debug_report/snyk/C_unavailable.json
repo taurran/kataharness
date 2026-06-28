@@ -1,0 +1,8 @@
+{
+  "finding_id": "F-NOSCAN",
+  "before": {"verdict": "unavailable", "findingCount": 0},
+  "after": {"verdict": "clean", "findingCount": 0},
+  "newFindings": 0,
+  "available": false,
+  "utc": "2026-06-27T00:00:00+00:00"
+}

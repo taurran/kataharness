@@ -1,0 +1,9 @@
+{
+  "module": "src/mod_c.py",
+  "intent_summary": "Sparse-signal helper with few callers and no types.",
+  "preconditions": [],
+  "postconditions": [],
+  "behavioral_examples": [],
+  "derivation_sources": ["contract-inference"],
+  "confidence": 0.34
+}

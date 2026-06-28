@@ -1,0 +1,15 @@
+{
+  "finding_id": "src/mod_a.py::compute",
+  "behavioral": {
+    "verdict": "PASS",
+    "blocking": [],
+    "flipped": ["tests/characterization/mod_a_char.py::test_compute_pins"],
+    "reason": "All baseline-green tests stayed green; all AEL tests flipped red->green."
+  },
+  "snapshot": {
+    "verdict": "PASS",
+    "changed_outside_ael": []
+  },
+  "verdict": "PASS",
+  "utc": "2026-06-27T00:00:00+00:00"
+}

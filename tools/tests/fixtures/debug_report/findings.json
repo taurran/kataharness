@@ -1,0 +1,41 @@
+[
+  {
+    "module": "src/mod_a.py",
+    "locus": "src/mod_a.py::compute",
+    "route": "auto-fix-eligible",
+    "sc_tally": {"agree": 3, "total": 3, "passes": true},
+    "confidence": 0.82
+  },
+  {
+    "id": "F-BLOCK",
+    "module": "src/mod_b.py",
+    "locus": "src/mod_b.py::normalize",
+    "route": "auto-fix-eligible",
+    "sc_tally": {"agree": 2, "total": 3, "passes": true},
+    "confidence": 0.75
+  },
+  {
+    "id": "F-RESEARCH",
+    "module": "src/mod_c.py",
+    "locus": "src/mod_c.py::helper",
+    "route": "research",
+    "sc_tally": {"agree": 2, "total": 3, "passes": true},
+    "confidence": 0.5
+  },
+  {
+    "id": "F-DEFER",
+    "module": "src/mod_c.py",
+    "locus": "src/mod_c.py::edge",
+    "route": "defer",
+    "sc_tally": {"agree": 1, "total": 3, "passes": false},
+    "confidence": 0.2
+  },
+  {
+    "id": "F-HUMAN",
+    "module": "src/mod_d.py",
+    "locus": "src/mod_d.py::risky",
+    "route": "human",
+    "sc_tally": {"agree": 3, "total": 3, "passes": true},
+    "confidence": null
+  }
+]

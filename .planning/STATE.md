@@ -1,5 +1,36 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-27, DEBUG MODE PHASE 3 [the FINAL phase] BUILT — D117; pytest 1108 · 45 skills/0 · Snyk 0):**
+> Completes Debug Mode end-to-end at the skill/seam level — the **core loop is now functionally complete** (comprehend
+> P1 → find/route P2a → characterize/drift-gate/apply-or-defer P2b → **report/onboard P3**). Built **entirely through
+> subagents** (operator directive). PLAN-p3 (planning subagent) → **freeze-gate kata-review HOLD→SHIP** (caught a real
+> BLOCKER: LD12's mandated "Snyk before/after" cited a `RESULT.json` field that NO P1/P2 surface emits → resolved by a
+> real persisted `.kata/snyk/<id>.json` artifact piggybacking the fix-loop's existing before/after states + Snyk MCP;
+> +2 MINORs) → 6-slice 2-wave build (A engine; D/E wave-1; B/C/W wave-2) → `kata-evaluate` **PART A PASS** → **D98 PART
+> B HOLD→fix→re-confirm SHIP** (caught 2 MAJOR fail-opens in the LD12 honesty machinery the conformance gate passed).
+> **Built:** **(A)** `tools/debug_report.py` — the pure LD12 report-assembly engine (confidence map · deviation→fix→
+> pinning-test · regression+security proof incl. real Snyk before/after · honesty pinned at the engine: behavioral-only
+> + heuristic-confidence + n=0-live; **finding_id** join = `drift_gate.defer_record` derivation; 5 mutation proofs;
+> no exec sink). **(B)** `skills/evaluate/kata-debrief` — the LD12 author/renderer (two-tier `kata-report` shape; reports
+> never gates). **(C)** `kata-closeout` `Step 3b` — debug-gated; offers kata-debrief; reuses Decision 2/3 (no new git
+> path). **(D)** `skills/execute/kata-lang-profile` + 6 lang profiles + config specialist — LD10, prose-only, selected by
+> footprint file extensions, injected at dispatch (IaC precedent), no fork/no new Python. **(E)** `skills/coordinate/
+> kata-onboard` — LD13 first-run/convert-to-loop, composes built install-portability surfaces; convert-to-loop +
+> `.planning/` scaffold honestly labeled NEW. **(W)** `kata-orchestrate` — P3-seam resolved + LD10 injection + the
+> `.kata/snyk/<id>.json` before/after persistence (no new sink — Snyk MCP already existed; persistence is a Write).
+> **Security (load-bearing):** D98 caught (1) Snyk **regression-masking** (engine trusted prose `newFindings` → now
+> recomputes `max(stored, max(0,after−before))`, missing-count ⇒ not-clean) and (2) `applied:true` **not route-gated**
+> (research finding could inherit another's proof under a finding_id collision → now gated on `route=="auto-fix-eligible"`
+> + ambiguous-id refuses to cross-join); both fixed at the **engine**, mutation-covered; re-confirm SHIP. **Honest scope:**
+> behavioral drift only (structural = §5 fast-follow); confidence = LD5 v1 heuristic; **Debug Mode still n=0 live** (proven
+> on seeded fixtures, never run end-to-end on a real repo — the natural next step, newly possible). 2 validation-misses
+> logged (D114 manifest). **Deferred MINORs:** clamp the cosmetic `newFindings` display on malformed input; a pre-existing
+> `kata-report`/`kata-closeout` "verdict from RESULT.json" wording inconsistency (RESULT.json has no `verdict` field).
+> **kata-onboard** tagged `kata/spine` (validator requires spine-or-module; least-wrong for an on-ramp) — a recorded
+> divergence from PLAN-p3's `kata/coordinate+onboarding`. **NEXT (operator picks):** exercise Debug Mode end-to-end on a
+> seeded fixture repo (first live run); or recurrence-hardening T2; or IaC Tier-2; or second-brain Recall; or 2nd-platform
+> benchmark. Records: `specs/debug-mode/{DESIGN,PLAN-p3}.md`, `DECISIONS.md` D117.
+
 > **CURRENT (2026-06-27, DEBUG MODE PHASE 2b [the PROTECT half] BUILT — D116; pytest 1062 · 42 skills/0 · Snyk 0):**
 > Completes the **core Debug Mode loop** (comprehend P1 → find/route P2a → characterize + drift-gate + apply-or-defer
 > P2b). Built entirely through subagents. Freeze-gate SHIP → 3 slices (F1 engine; F2+F3 parallel) → evaluate PART A

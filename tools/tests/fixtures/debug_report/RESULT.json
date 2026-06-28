@@ -1,0 +1,12 @@
+{
+  "gateName": "debug-integration",
+  "command": "uv run pytest -q",
+  "exitCode": 0,
+  "passed": 42,
+  "failed": 0,
+  "skipped": 1,
+  "stdoutTail": "42 passed, 1 skipped",
+  "baselineSha": "aaaa111",
+  "resultSha": "bbbb222",
+  "utc": "2026-06-27T00:00:00+00:00"
+}

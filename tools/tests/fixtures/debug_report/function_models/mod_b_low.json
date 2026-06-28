@@ -1,0 +1,9 @@
+{
+  "module": "src/mod_b.py",
+  "intent_summary": "Normalize a user-supplied name.",
+  "preconditions": ["isinstance(name, str)"],
+  "postconditions": ["isinstance(result, str)"],
+  "behavioral_examples": [{"inputs": {"name": "x"}, "result": "x"}],
+  "derivation_sources": ["docs"],
+  "confidence": 0.2
+}

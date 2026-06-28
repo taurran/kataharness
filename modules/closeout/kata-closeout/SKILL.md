@@ -202,6 +202,38 @@ the human may skip it. When accepted:
 - When run, it writes the map to `.kata/understand.md` — the path [[kata-loop]]'s loop-back carries
   forward.
 
+## Step 3b — debug-run confidence report (ADDITIVE — debug run only; BC: absent `kata/module/debug` ⇒ silent no-op)
+
+**If `kata/module/debug` is in the run's `modules`**, after the standard report (Step 2) and the opt-in
+understand-map (Step 3), **offer/compose** [[kata-debrief]] to produce the **LD12 debug-run confidence
+section** and fold it into the closeout deliverables alongside the standard report. When `kata/module/debug`
+is absent this is a **silent no-op** (the module degrades gracefully, like every optional module); the general
+closeout is **byte-for-byte unchanged** — this section fires **IFF `kata/module/debug` ∈ modules, NEVER off
+`runShape` and NEVER off `target.kind=="existing"` alone** (those fields are also set by version-up; keying on
+them would break BC for version-up/greenfield/one-shot closeouts).
+
+[[kata-debrief]] is the LLM-judgment author/renderer for the LD12 report. It renders the four LD12 elements —
+the per-module **confidence map** (assessed / low-confidence / skipped, labeled "heuristic (v1, uncalibrated)"),
+the **deviation → fix → pinning-test** traceability rows, the **regression + security proof** (drift PASS +
+characterization suite green + new pinning tests + mutation non-vacuous + real Snyk before/after), and the
+**recommendations list + offered follow-on version-up/sprint** handoff — and states the §5 behavioral-only,
+LD5 heuristic-confidence, and n=0-live honesty in every output. It produces both tiers in the `kata-report`
+shape, so its debug section is folded into **`.kata/CLOSEOUT.md`** (Step 2a source-of-truth) and
+**`.kata/closeout.html`** (Step 2b render) next to the standard §5 report content. `[[kata-debrief]]` is a
+**forward reference** resolved at integration (built by Slice B in the same wave — expected not to exist during
+this slice's editing; no broken-wikilink concern at this stage, the same convention P2b used for
+`[[kata-characterize]]`).
+
+**It still never gates** — gating stays with [[kata-evaluate]] (Hard boundary above; spine principle #4). This
+section only adds a report section and an **offered** follow-on; it confers no verdict and overrides no
+NEEDS_WORK. The two debug follow-ons reuse the **existing** decision gate below — **no new git path, no new
+decision**:
+- The **offered version-up/sprint** follow-on is surfaced in the existing **Decision 3** (loop disposition) —
+  handed to the [[kata-loop]] conductor's loop-back, never auto-started.
+- Committing the **left-behind characterization suite** (authored into the target repo by `kata-characterize`)
+  is surfaced via the existing **human-gated Decision 2** git actions — under the same behavioral guard
+  (diff-first / explicit approval), never autonomous.
+
 ## Step 4 — Human decision gate
 
 Present the four decisions in sequence. Carry out only what the human explicitly approves.

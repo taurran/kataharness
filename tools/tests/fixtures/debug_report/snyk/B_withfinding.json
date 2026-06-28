@@ -1,0 +1,8 @@
+{
+  "finding_id": "F-BLOCK",
+  "before": {"verdict": "clean", "findingCount": 0},
+  "after": {"verdict": "issues", "findingCount": 2},
+  "newFindings": 2,
+  "available": true,
+  "utc": "2026-06-27T00:00:00+00:00"
+}

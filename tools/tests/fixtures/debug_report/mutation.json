@@ -1,0 +1,7 @@
+{
+  "records": [
+    {"testWentRed": true, "nonVacuous": true},
+    {"testWentRed": true, "nonVacuous": true}
+  ],
+  "allNonVacuous": true
+}

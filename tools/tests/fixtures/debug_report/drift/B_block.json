@@ -1,0 +1,15 @@
+{
+  "finding_id": "F-BLOCK",
+  "behavioral": {
+    "verdict": "BLOCK",
+    "blocking": ["tests/test_normalize.py::test_legacy_behavior"],
+    "flipped": [],
+    "reason": "unallowed green->red regression: tests/test_normalize.py::test_legacy_behavior"
+  },
+  "snapshot": {
+    "verdict": "PASS",
+    "changed_outside_ael": []
+  },
+  "verdict": "BLOCK",
+  "utc": "2026-06-27T00:00:00+00:00"
+}

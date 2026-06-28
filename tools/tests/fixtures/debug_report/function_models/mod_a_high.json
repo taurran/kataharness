@@ -1,0 +1,9 @@
+{
+  "module": "src/mod_a.py",
+  "intent_summary": "Compute the running total of a ledger.",
+  "preconditions": ["len(entries) >= 0"],
+  "postconditions": ["result >= 0"],
+  "behavioral_examples": [{"inputs": {"entries": []}, "result": 0}],
+  "derivation_sources": ["graph", "types", "callers"],
+  "confidence": 0.85
+}

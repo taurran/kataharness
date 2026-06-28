@@ -1,0 +1,13 @@
+[
+  {
+    "finding_id": "F-BLOCK",
+    "finding": {
+      "id": "F-BLOCK",
+      "module": "src/mod_b.py",
+      "locus": "src/mod_b.py::normalize",
+      "route": "auto-fix-eligible"
+    },
+    "reason": "cannot fix without behavioral drift (legacy behavior is depended on)",
+    "utc": "2026-06-27T00:00:00+00:00"
+  }
+]

@@ -118,17 +118,69 @@ For each `auto-fix-eligible` finding in `.kata/deviations/findings.json`:
 
 3. **Fix** — dispatch [[kata-tdd]] in the worktree to implement the fix against the characterization tests (the deviation-pinning test must go red→green; all other characterization tests must stay green). **Objective defects — those corroborated by test failure, type error, or Snyk finding — are fixed regardless of intent-confidence** (LD9). The fix worker stays within its owned footprint; it does not re-derive or modify the AEL.
 
+   **LD10 language-profile overlay (per dispatch — ADDITIVE; BC: absent `kata/module/debug` ⇒ unchanged):**
+   When `kata/module/debug` is in the run's `modules`, before dispatching detect the fix's stack from the
+   **footprint's file extensions** — the **primary, always-available signal** (`.py` / `.ts` / `.tsx` /
+   `.js` / `.java` / `.go` / `.cs` / `.rs`); the comprehension pass's `.kata/function_models/*.json`
+   `derivation_sources` is a **weak secondary hint only** (`function_model_schema()` carries **no `language`
+   field**, so no FM "module language" signal is claimed). If an extension matches a profile, inject
+   **[[kata-lang-profile]]**'s matching `resources/<lang>.md` as the execute-phase **specialist overlay
+   alongside [[kata-tdd]]** — exactly the **IaC activation** precedent (the profile *layers on* the worker's
+   discipline; [[kata-tdd]] is never forked or edited). A polyglot fix may match more than one profile ⇒
+   inject **each** (plus `config-context.md` for build/config files) — no exclusion, mirroring the IaC "a
+   task may own both kinds" rule. **No new Python** — the extension signal is read directly, not via a new
+   classifier. Absent a matching profile, or absent `kata/module/debug`, **no overlay**: the worker runs
+   plain [[kata-tdd]], byte-for-byte unchanged (BC).
+
 4. **Drift gate** — run the operator suite + characterization suite **before** (pre-fix state from step 1) and **after** (fixed worktree) via the existing operator runner (`run_result.run_gate`). Then call **`drift_gate.drift_verdict`** + **`drift_gate.characterization_snapshot_verdict`** with the trusted AEL from the fix manifest. **Any `green->red` transition outside the AEL ⇒ BLOCK.** The engine (`tools/drift_gate.py`) enforces: (a) AEL integrity via `drift_gate.validate_allowed_exceptions` — any AEL entry that is GREEN in before (or unknown) is rejected; a green test can never be authorized to regress; (b) every AEL test must flip red→green — a still-RED nominee ⇒ BLOCK (the fix did not land); (c) characterization snapshots must be byte-identical (nondeterminism scrubbed) except the AEL entries.
 
    **§5 v1 LIMITATION (honest):** this gate enforces **behavioral** drift only — every baseline-GREEN test stays GREEN; characterization snapshots are stable except the AEL. The **structural / public-surface invariance layer** (public-API diff = ∅ + AST-edit-script = body-updates-only) is a **FAST-FOLLOW, NOT v1** — `tools/drift_gate.py` carries a named non-executing seam (`structural_drift_verdict`) for it. Do **not** claim "structure preserved" on the basis of this gate alone; full structural enforcement arrives with the fast-follow.
 
 5. **Gate** — the fix must pass [[kata-evaluate]] (PASS) + D98 [[kata-review]] (SHIP) + Snyk (`mcp__Snyk__snyk_code_scan`) on the modified code.
 
+   **LD12 Snyk before/after persistence (ADDITIVE; BC: absent `kata/module/debug` ⇒ unchanged):** when
+   `kata/module/debug` is in the run's `modules`, the `mcp__Snyk__snyk_code_scan` call already invoked here
+   on the **after** (fixed-worktree) state is **also** run on the **before** (pre-fix) state — the **same**
+   before/after pair the drift gate established in step 4 (no new state is created, no new exec sink — the
+   Snyk MCP call already exists in this step). Record both verdicts and finding counts and **`Write`** them
+   to **`.kata/snyk/<finding_id>.json`** conforming to **`debug_report.snyk_report_schema()`** (Slice A owns
+   the shape):
+   `{finding_id, before: {verdict, findingCount}, after: {verdict, findingCount}, newFindings, available, utc}`
+   where `newFindings = max(0, after.findingCount − before.findingCount)`, `finding_id` is derived with the
+   **same key as everywhere else** (`finding.get("id") or finding.get("locus") or "unknown"` — the
+   `drift_gate.defer_record` / `debug_report.finding_id` rule), and `available: false` is recorded
+   **honestly** when a meaningful before-scan was not obtainable for this fix (**no fabrication** — never
+   recorded as "clean"). Persistence is a skill **`Write`** — **no new Python**. Absent `kata/module/debug`,
+   **no `.kata/snyk/*` artifact is written** and this step is byte-for-byte unchanged (BC).
+
 6. **Apply or DEFER** — when all gates are green, merge the worktree (disjoint files → clean integration). Emit a per-fix drift proof via **`drift_gate.build_drift_report`** + **`drift_gate.emit_drift_report`** → `.kata/drift/<finding_id>.json` (feeds the LD12 regression proof in P3). **Can't-fix-without-drift** — a drift BLOCK that cannot be resolved without behavioral change → call **`drift_gate.defer_record`** and accumulate + write via **`drift_gate.emit_deferrals`** → `.kata/deviations/deferred.json` (preserves the no-drift guarantee; LD9/DG-12). Deferred records are consumed by the LD12 closeout confidence report in P3 and are distinct from the P3 recommendations report.
+
+   **(Debug-mode only — gated on `kata/module/debug`; ADDITIVE, BC: absent it ⇒ unchanged):** the per-fix
+   **`.kata/snyk/<finding_id>.json`** before/after artifact written at the Gate step (step 5) is emitted
+   **alongside** this drift proof and likewise feeds the LD12 regression+security proof
+   (`debug_report.build_proof_rollup`, via [[kata-debrief]] at closeout — see the resolved P3 seam above). An
+   `available:false` artifact rolls up honestly as unavailable, never as "clean". Absent `kata/module/debug`,
+   no Snyk artifact exists and this step is byte-for-byte unchanged (BC).
 
 `research`, `defer`, and `human`-routed findings are **not** processed here (they were recorded and routed in the deviation-discovery phase above). The fix-application loop touches only `auto-fix-eligible` findings.
 
-<!-- P3: kata-closeout consumes .kata/drift/*.json + .kata/deviations/deferred.json for the LD12 confidence report; language prompt-profiles (LD10); onboarding/convert-to-loop (LD13) — DO NOT build here. -->
+<!-- P3 seam — RESOLVED (was: "kata-closeout consumes .kata/drift/*.json + .kata/deviations/deferred.json
+for the LD12 confidence report; language prompt-profiles (LD10); onboarding/convert-to-loop (LD13)"). The P3
+deliverables that consume this phase's artifacts are now wired in sibling skills, NOT built here:
+- **LD12** — the debug-run closeout confidence report is produced by [[kata-debrief]], **offered at closeout
+  via [[kata-closeout]]** (which folds the debug section into `.kata/CLOSEOUT.md` / `.kata/closeout.html`
+  from `.kata/drift/*.json` + `.kata/deviations/deferred.json` + the `.kata/snyk/*.json` before/after proofs
+  written at the fix-loop Gate step below).
+- **LD13** — onboarding / convert-to-loop by [[kata-onboard]] (the dedicated first-run path).
+- **LD10** — in-mode language prompt-profiles by [[kata-lang-profile]], **injected at the fix/diagnose
+  dispatch sites** (see the LD10 overlay notes at the Fix step above and the diagnose dispatch in the
+  final-gate fix loop).
+The closeout itself runs in the **back-half** (kata-loop → kata-closeout), not inside this skill — so this
+seam is a **resolved pointer, not an executing stub**. All of it is gated on `kata/module/debug`; absent that
+marker these references are inert and version-up/greenfield runs are byte-for-byte unchanged (BC).
+([[kata-debrief]] / [[kata-onboard]] are forward references to sibling P3 slices — broken-wikilink at
+authoring is expected, resolved at integration per the P2a/P2b convention; [[kata-lang-profile]] already
+exists.) -->
 
 ## The loop
 **Maintain a rolling frontier.** A task is **dispatchable** iff (all its `depends_on` are integrated) ∧ (its
@@ -384,6 +436,14 @@ After the frontier drains (all tasks integrated), on the integration branch:
    1. STOP the fix loop on that area.
    2. Dispatch **`kata-diagnose`** (resolved tier) as a fresh-context root-cause pass — cheap, no human.
       It returns a **fix-problem vs plan-problem** verdict (see `kata-diagnose/RUBRIC.md` Phase 6 → Verdict).
+      **LD10 language-profile overlay (ADDITIVE; BC: absent `kata/module/debug` ⇒ unchanged):** when
+      `kata/module/debug` is in the run's `modules`, detect the area's stack from its **footprint file
+      extensions** (the primary, always-available signal; FM `derivation_sources` a weak hint only — no
+      `language` field) and inject the matching **[[kata-lang-profile]]** `resources/<lang>.md` as a
+      specialist overlay **alongside [[kata-diagnose]]** — the same dispatch-time injection as the IaC
+      precedent; [[kata-diagnose]] is never forked or edited, and **no new Python** is added. A polyglot area
+      may match more than one profile ⇒ inject each (plus `config-context.md`). Absent a matching profile, or
+      absent `kata/module/debug`, **no overlay** — plain [[kata-diagnose]], byte-for-byte unchanged (BC).
    3. **Fix-problem verdict:** the area is legitimately hard but fixable — this is **not** a human interrupt.
       Resume fixing with the diagnosis context.
    4. **Plan-problem verdict:** escalate a **re-plan candidate** via the existing `kind: "human-required"`
