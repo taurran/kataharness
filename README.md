@@ -266,7 +266,3 @@ research/            vendored references (gitignored) + NOTES.md
 Built on Anthropic's long-running-agent harness guidance and the best of
 [mattpocock/skills](https://github.com/mattpocock/skills), GSD, BMAD, and DDD's ubiquitous language —
 attributed per skill in the `source` column. We stand on shoulders.
-
-## License
-
-Apache-2.0 — see [LICENSE](./LICENSE).
