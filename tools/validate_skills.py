@@ -314,6 +314,8 @@ REQUIRED_PROTOCOL = {
     # recurrence-hardening (LD3/LD5b): the three load-bearing guard terms must remain in the contract body.
     # The full LD3 phrase is guarded verbatim (the contract is reflowed so it stays on one line, m5).
     "reuse-claims.md": ["claim to verify, not an assumption", "NEW capability", "documentation-only seam"],
+    # second-brain-learning (R2/B2): the Recall read-CONTRACT load-bearing clauses.
+    "recall.md": ["schema_version", "recall/v1", "NO embeddings", "never written", "read-only invariant"],
 }
 
 

@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -70,7 +70,13 @@ resolve.
 
 ---
 
-## Phase 1b — loop-back context (version-up re-entry from [[kata-loop]])
+## Phase 1b — loop-back context (version-up re-entry from [[kata-loop]]) + recall brief
+
+This phase has two parts: the **loop-back consumption** (version-up re-entry only) and the **recall brief**
+(always — cold start *and* loop-back). The loop-back consumption is skipped on a fresh start; the recall brief
+is **not** — it runs on every initiation.
+
+### Loop-back consumption (version-up re-entry only)
 
 **Detect a loop-back run:** this initiation was re-entered by the [[kata-loop]] conductor's loop-back Path A if a
 prior frozen `INTENT.md` **and** `.kata/understand.md` are present at the target. When detected, this is **not a
@@ -86,7 +92,60 @@ authoritative contract for this payload):
 
 A loop-back run pre-classifies as `version-up` (the prior INTENT proves a prior harness run). Carry the prior
 `target` config forward as the default (the user may change it). If no prior `INTENT.md`/understand-map exist,
-this is a fresh start — skip this phase.
+this is a fresh start — skip **the loop-back consumption above** (but still build the recall brief below).
+
+### Recall brief (always — cold start *and* loop-back)
+
+Build a **read-only RECALL BRIEF** from prior knowledge so the Phase-2 mirror/grill can weigh what was known
+before. This is the read-side of a second brain (the `engram.backend` CONSULT-read seam) — it **surfaces**
+material; it never decides, never gates, and **never writes `INTENT.md`** (see the invariant box below).
+Contract doc: `protocol/recall.md` (the Recall read-CONTRACT — selection/staleness/read-only rules; sibling
+slice, forward-ref OK). Engine: `tools/recall.py`.
+
+**1. Build the payload.** Call `recall.recall_from_paths(...)` (`tools/recall.py :: recall_from_paths` — the
+files-only default adapter; surface verified present) over the six on-disk sources, with `query_terms` derived
+from the run's **goal + CONTEXT** terms (for a `version-up`, also fold in the prior INTENT goal) and `kind` set
+to the classified run kind:
+
+| `recall_from_paths` arg | Source |
+|---|---|
+| `lessons_path` | `.planning/LESSONS-LEARNED.md` |
+| `decisions_path` | `.planning/DECISIONS.md` |
+| `intent_path` | the prior frozen `INTENT.md` (loop-back only; omit on cold start) |
+| `understand_path` | `.kata/understand.md` (the understand-map, written by [[kata-understand]]) |
+| `misses_path` | `.planning/validation-misses.jsonl` |
+| `handled_path` | `.planning/recurrence-handled.jsonl` |
+| `query_terms` | tokens from the run goal + pinned `CONTEXT.md` terms (+ prior-INTENT goal on version-up) |
+| `kind` | `project` \| `research` \| `version-up` |
+
+The adapter returns the contract-shaped payload (`recall.recall_payload_schema`, `schema_version "recall/v1"`):
+tag/keyword + recency-selected `records[]` and the **always-surfaced open validation-miss `recurrences[]`**.
+Selection is **token-overlap + recency only — NO embeddings / NO RAG**.
+
+**2. Render the RECALL BRIEF (Markdown).** From the payload, render a short brief in this order:
+
+- **Recurring open validation-misses first** (`payload["recurrences"]` — always-surfaced, regardless of query
+  overlap): one line per recurrence with its `failure_class` / `responsible_skill` / `distinct_runs` /
+  `severity_tier`. (These carry only the projected recurrence fields — no raw miss text.)
+- **Then the matched records** (`payload["records"]`, highest `match_score` first): each with its `title`,
+  short `excerpt`, and **provenance markers** — `source` / `provenance.date` / a **`stale` hint** where set.
+- **N2 — surface, don't silently drop (one honest line):** note that the surfaced recurrences are the
+  detector's **actionable (over-threshold) open subset** — *sub-threshold validation-misses may exist but were
+  not surfaced here*. This tells the human the recurrence list is the actionable subset, not the full miss log.
+
+**3. Staleness is shown, never enforced.** Display `provenance.date` + the `stale` flag as **hints**; recall
+**never** filters or drops a record by age. The human/grill judges what is still relevant.
+
+**4. Non-fatal / degrades.** `recall_from_paths` reads tolerantly — an absent source contributes nothing and
+never raises. A missing source ⇒ a partial or empty brief. Recall **never blocks** initiation or the freeze
+(it mirrors the understand-map's "never gates" posture). Carry the rendered brief forward into Phase 2.
+
+> **Recall is read-only — it has NO write path to `INTENT.md` (structural invariant, PINNED).**
+> The RECALL BRIEF informs the Phase-2 mirror/grill **deliberation ONLY**. It is **DISPLAYED, never stored**.
+> It **never** enters the operator-confirmed `answers` dict (Phase 4/6) and is **never** passed to
+> `tools/intent_scaffold.py :: write_intent` — which remains the **sole** `INTENT.md` writer, fed only from the
+> human-confirmed `answers`. Recall also never changes a gate verdict, auto-acts, mutates a skill/protocol/tool,
+> or re-decides a LOCKED decision. `INTENT.md` stays PINNED (`protocol/intent.md`).
 
 ---
 
@@ -119,6 +178,19 @@ being closed, not the code change.
 
 Write the mirror as a short paragraph or two — not a table. The goal is a human reading it and
 recognising their own intent, reflected back clearly with a sensible starting setup.
+
+### 2a-recall. Surface the RECALL BRIEF as read-only recall context
+
+Alongside the mirror, surface the **RECALL BRIEF** built in Phase 1b (`recall.recall_from_paths`) as
+**read-only recall context** the human/grill weighs while editing the goal/setup. Frame it plainly as
+**recall — what you knew before** (prior lessons, decisions, prior intent, the understand-map, and the
+always-surfaced open validation-miss recurrences): it is **not a decision and not a default**. It informs the
+human's deliberation; the human still owns every load-bearing value.
+
+This brief is **displayed, never stored.** It does **not** pre-fill or alter any mirror value, never enters the
+`answers` dict, and is **never** written to `INTENT.md` — recall has no write path to the frozen intent (see the
+read-only invariant box in Phase 1b). Staleness (`provenance.date` / `stale`) is shown as a hint, never used to
+filter; recall changes no gate verdict and blocks nothing.
 
 ### 2b. Invite conversational editing
 

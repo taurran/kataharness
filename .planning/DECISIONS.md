@@ -1440,3 +1440,57 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   the single most destructive feature in the project, the freeze-gate caught 3 real defects (one self-binding-safety gap)
   and D98 found zero residual fail-opens — the catastrophic invariant (no reachable cloud mutation) is enforced **by
   construction** (no subprocess; the seam raises), which is why this was the cleanest D98 pass of the session.
+
+<!-- second-brain-learning Recall (the READ contract + files-only adapter, v1). Spec: specs/second-brain-learning/PLAN-recall.md. Fully subagent-driven. -->
+- **D120 — second-brain-learning: the Recall read-CONTRACT + a files-only default adapter (v1) BUILT — 2026-06-29.**
+  Queue item (d). The READ side of the loop's cross-run learning, finally naming the long-reserved `engram.backend`
+  CONSULT seam (D9 engram-backlog / D30 clean-room backend / D99 the Recall(Librarian)+Reason(decider)+Second-brain
+  model). Per operator decision, scoped to the **Recall read-CONTRACT (the interface) + a FILES-ONLY default adapter** —
+  **DEFER** external second-brain stores (Obsidian/kiban/kagami = downstream adapters behind the same contract), the
+  **`kata-reason` decider** (separate future grill), and the **write/distill half** (already emit-only via the β LEARN
+  feed, D74 — NOT re-opened). Operator calls: (1) scope = contract + files-only adapter; (2) selection = tag/keyword
+  overlap (hard >0 predicate) + recency-ranks, ALWAYS surface open validation-miss recurrences, **NO embeddings/RAG**;
+  (3) output = a structured payload rendered into a recall BRIEF in the `kata-initiate` Phase-2 mirror, **NEVER written
+  into the frozen/pinned INTENT**; (4) staleness = surface provenance + date, prefer recency, **do NOT hard-filter**.
+  Built **entirely through the loop/subagents**. **Resumed cleanly after a session-token-limit cut the freeze-gate
+  re-confirm mid-verdict** — re-ran a FRESH freeze-gate: **HOLD→SHIP** (B1 the contract risked being secretly
+  files-only-shaped → pinned `source`/`backend`/`produced_by` as OPEN shape-validated strings + an external-adapter
+  acceptance test; B2 the validator-registration precedent was wrong [validation-misses.md is NOT in REQUIRED_PROTOCOL;
+  engram.md IS, D74 BP2] → register recall.md + give R2 the validate_skills.py line; N1 hard-overlap predicate; N2
+  sub-threshold note; N3 project out raw evidence; + 2 ownership-map reconciliations [add validate_skills.py to R2's DAG
+  entry; README is conductor-owned not slice-owned, per the F2 convention]) → 3-slice 2-wave build → `kata-evaluate`
+  **PART A PASS** → **D98 PART B SHIP**. **Built:** **(R1)** `tools/recall.py` — the PURE engine: `recall_payload_schema`
+  (THE contract — validates SHAPE [keys+types] NEVER a closed vocabulary; the deliberate OPPOSITE of
+  `validation_misses.miss_schema`/`validate_miss`'s hard `severity`/`what_caught_it` enums — `source`/`provenance.backend`/
+  `provenance.produced_by` are OPEN adapter-supplied labels so an external Librarian implements the contract WITHOUT
+  re-contracting), `validate_payload`, the files-only `recall_from_paths` adapter (the six sources), `select_records`
+  (hard token-overlap>0 predicate; recency only RANKS among passers; recurrences bypass selection; **no embeddings/RAG**,
+  asserted by a source-scan over 15 vector/LLM libs), `parse_lessons/decisions/intent/understand`, `match_score`/
+  `token_overlap`, `_guard_path` (CWE-23); `RecurrenceRecord` projects out the raw `evidence` (the 7-field projection —
+  no `what_conformance_missed` miss-text reaches the payload/brief); staleness surfaced-not-filtered. **No exec sink, NO
+  WRITE PATH** (pure reads → returns a dict); 7 mutation proofs (incl. the overlap predicate, recency-ranks-not-filters,
+  the open-contract strings, evidence-projection). **(R2)** `protocol/recall.md` (NEW — the read-side interface contract,
+  mirrors the B1 open-vocabulary rule so external adapters know they may use own labels) + `protocol/engram.md` pointer
+  section (names Recall as the read-side of `engram.backend`; explicitly does NOT activate the gated CONSULT decider
+  [`kata-reason` deferred]; the 6 engram required terms preserved) + `tools/validate_skills.py`
+  `REQUIRED_PROTOCOL["recall.md"]` (terms: `schema_version`/`recall/v1`/no-embeddings/INTENT-never-written/read-only —
+  each verified present in recall.md; the engram/D74-BP2 precedent). **(R3)** `modules/initiation/kata-initiate`
+  v0.1.0→0.2.0 — Phase-1b builds the payload via `recall.recall_from_paths` + renders a short RECALL BRIEF (open
+  recurrences first, then matched records with provenance/date/`stale`; the N2 honest note that surfaced recurrences are
+  the actionable over-threshold subset and sub-threshold misses may exist) + a Phase-2 "2a-recall" subsection surfacing
+  the brief as **read-only recall context** (displayed, never stored). **The INTENT-never-written invariant is
+  STRUCTURAL, not procedural:** `recall.py` has NO write path of any kind; `intent_scaffold.write_intent` (fed only by
+  the operator-confirmed `answers` dict) stays the SOLE INTENT writer; the brief informs the mirror/grill and never
+  enters `answers`. **Read-only:** Recall changes no gate verdict, auto-acts on nothing, mutates no surface, re-decides
+  no LOCKED decision (engram C2/C4/C6). **Degradation:** absent sources (no recurrence-handled.jsonl etc.) contribute
+  `[]` — Recall does NOT depend on the unbuilt recurrence-hardening T2 runtime. **Honest scope:** the decider +
+  write/distill half are NOT activated (deferred to their own grills); external stores are deferred adapters behind the
+  same contract; the contract-vs-files-only-adapter separation is the load-bearing design (proven by the
+  external-adapter acceptance test). **Gates:** pytest **1310** (1261→1310), validate **45/0** (no new skill —
+  kata-initiate version-bumped; `check_protocol_schemas` green for the new recall.md), Snyk **0** on `recall.py` +
+  `validate_skills.py`. **Deferred MINORs (D98 nice-to-haves, NOT built):** a min-token-length(2) doc note in recall.md
+  §2; a `query.kind` schema `open:True`/comment (the `values` key is advisory — validation is type-only by design).
+  Records: `specs/second-brain-learning/PLAN-recall.md`. **Meta:** the session-limit interrupt was resumed cleanly (no
+  half-built code; only the uncommitted plan awaited its verdict) — a fresh freeze-gate re-derived the same SHIP after
+  the fixes; D98 found zero must-fix (2nd clean pass of the session), the read-only/no-write-path invariant holding **by
+  construction** (like IaC Tier-2's no-subprocess seam) being why.

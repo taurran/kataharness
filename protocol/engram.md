@@ -57,6 +57,27 @@ adapter** binds a specific second brain to that contract:
   own cognitive fingerprint" — the harness personalizes to whatever second brain you already run, rather than
   locking you into one.
 
+## Recall — the read-side of `engram.backend` (D30 clean-room, finally named)
+
+The **`engram.backend`** seam (`kata.config`, `protocol/config.md`) is the CONSULT-read backend the core
+points at. Its **read-side binding is now named: Recall** (`protocol/recall.md`, `tools/recall.py`). Recall
+defines the agnostic **read-CONTRACT** a second brain answers — the payload schema
+(`recall.recall_payload_schema()`) + the selection/staleness/read-only rules — and ships a **files-only
+default adapter** (`recall.recall_from_paths`) that serves it from on-disk artifacts. External stores
+(kiban / kagami / a private vault) are **deferred downstream adapters** answering the *same* contract, the
+clean-room D30 promise made concrete: they drop in later **without re-contracting**.
+
+- **This names the read-side binding only.** It does **NOT** turn on the gated CONSULT *decider*. The
+  decider (fuse/recommend/decide from surfaced material) is `kata-reason` — a **separate, deferred** future
+  grill. CONSULT/LEARN stay **gated off** (D9/D56); `engram.backend` remains the still-gated CONSULT
+  backend (config note, BC1). Recall **serves** material; it never decides, writes, or gates.
+- **Invariants preserved.** Recall is bound by the read-only invariant and explicitly upholds **C2**
+  (fail-to-human), **C4** (LOCKED-decision guardrail), **C5** (staleness surfaced, never pinned/dropped),
+  and **C6** (audit) — see `protocol/recall.md` §4–§5. It does not weaken any C1–C6 rule.
+- **The LEARN/write half stays out.** The β LEARN feed (D74, "Wiki-synthesis output schema" below) is
+  emit-only and unchanged; Recall does not read it back. Recall is the **read** side; β is the **emit**
+  side; the decider is deferred.
+
 ## Contract invariants (the safety rules — non-negotiable)
 
 | # | Rule | Why |

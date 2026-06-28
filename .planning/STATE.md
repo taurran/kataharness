@@ -1,5 +1,34 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-29, SECOND-BRAIN RECALL [read-contract + files-only adapter] BUILT — D120; pytest 1310 · 45
+> skills/0 · Snyk 0):** Queue item (d). The READ side of the loop's cross-run learning — names the long-reserved
+> `engram.backend` CONSULT seam (D9/D30/D99). Per operator decision, scoped to the **Recall read-CONTRACT + a
+> files-only default adapter** (defer external stores, the `kata-reason` decider, and the write/distill half [β LEARN
+> feed D74]). Resumed cleanly after a session-limit cut the freeze-gate mid-verdict: re-ran a fresh freeze-gate
+> (HOLD→SHIP; B1 open-vocabulary contract + B2 REQUIRED_PROTOCOL registration + N1/N2/N3 + 2 ownership-map fixes) →
+> 3-slice 2-wave build → `kata-evaluate` **PART A PASS** → **D98 PART B SHIP — NO must-fix** (every probe defended).
+> Built **entirely through subagents**. **Built:** **(R1)** `tools/recall.py` — the PURE engine: `recall_payload_schema`
+> (THE contract — **shape-validated, NOT a closed vocabulary**: `source`/`backend`/`produced_by` are OPEN
+> adapter-supplied strings so external Librarians drop in without re-contracting), `validate_payload`, the files-only
+> `recall_from_paths` adapter (reads LESSONS/DECISIONS/prior-INTENT/understand-map/validation-misses[+handled]),
+> `select_records` (**hard token-overlap>0 predicate**; recency only RANKS; **NO embeddings/RAG**), always-surface open
+> recurrences (`recurrence_detect.detect_from_paths`), `RecurrenceRecord` **projects out raw `evidence`** (no miss-text
+> leak), staleness surfaced-not-filtered; **no exec sink, NO WRITE PATH** (returns a dict), `..`-guarded reads; 7
+> mutation proofs. **(R2)** `protocol/recall.md` (NEW contract doc) + `protocol/engram.md` pointer (names the read-side
+> binding; the gated CONSULT decider stays OFF; 6 engram terms preserved) + `tools/validate_skills.py`
+> `REQUIRED_PROTOCOL["recall.md"]` registration (the engram/D74-BP2 precedent). **(R3)** `kata-initiate` v0.1.0→0.2.0 —
+> Phase-1b recall-brief (open recurrences first, then matched records w/ provenance/stale; N2 sub-threshold note) +
+> Phase-2 "2a-recall" read-only mirror surface. **The INTENT-never-written invariant is STRUCTURAL:** recall.py has no
+> write path at all; `intent_scaffold.write_intent` (fed only by the operator-confirmed `answers`) stays the sole INTENT
+> writer; the brief is display-only. **Read-only:** changes no gate verdict, auto-acts on nothing, mutates no surface.
+> **Honest scope:** the decider + write-half are NOT activated (deferred); external stores are deferred adapters behind
+> the same contract; the files-only adapter degrades gracefully on absent sources. **Deferred MINORs (D98
+> nice-to-haves):** a min-token-length(2) doc note in recall.md §2; a `query.kind` schema `open:True` comment. **NEXT
+> (operator order b→c→d→e):** **(e) install + confirm a 2nd platform (codex/kiro) → run the single-vs-multi-model
+> `kata-loop-benchmark` (D108)** — the benchmark harness is runnable; the run is **gated on the operator installing the
+> 2nd CLI** (operator action). Then (a, last) Debug Mode live run (n=0→1). Records:
+> `specs/second-brain-learning/PLAN-recall.md`, `DECISIONS.md` D120.
+
 > **CURRENT (2026-06-28, IaC TIER-2 [preview/approve half] BUILT — D119; pytest 1261 · 45 skills/0 · Snyk 0):** Queue
 > item (c). The live-apply half of the IaC specialists (Tier-1 = author/review/gate, D110), scoped by operator decision
 > to the **preview/approve/plan-capture HALF** — the actual cloud EXECUTION is a **DEFERRED, n=0-live, creds-gated seam**
