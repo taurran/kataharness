@@ -49,13 +49,20 @@ def _valid_entry(**overrides) -> dict:
 # ---------------------------------------------------------------------------
 
 def test_schema_round_trips():
-    """miss_schema returns a dict containing all 9 schema fields."""
+    """miss_schema returns a dict containing all 10 schema fields (incl. run_id).
+
+    T2 §Enum-BC: adding the nullable ``run_id`` makes this a 10-field schema. The
+    published schema must not lie about its field set, so this expected set is
+    bumped 9→10 — the single intentional existing-test edit (an additive schema
+    extension, not a regression).
+    """
     import validation_misses as vm
 
     schema = vm.miss_schema()
     expected_fields = {
         "ts", "mode", "failure_class", "responsible_skill", "severity",
         "what_conformance_missed", "what_caught_it", "guard_ref", "decision_ref",
+        "run_id",
     }
     assert set(schema.keys()) == expected_fields, (
         f"Schema fields mismatch. Got: {set(schema.keys())}"
@@ -518,6 +525,125 @@ def test_recurrences_multiple_classes(tmp_path):
     keys = {r["key"] for r in result}
     assert "s1::c1" in keys
     assert "s2::c2" not in keys
+
+
+# ---------------------------------------------------------------------------
+# T2 — curated failure_class SOFT enum (BC: validate_miss unchanged)
+# ---------------------------------------------------------------------------
+
+_LOCKED_FAILURE_CLASSES = {
+    "honesty-fail-open", "over-claim-fail-open", "exec-injection",
+    "phantom-reuse", "dos-vector", "stateful-hole", "fail-open", "over-claim",
+}
+
+
+def test_failure_class_values_contains_locked_members():
+    """_FAILURE_CLASS_VALUES is a frozenset containing the 8 LOCKED members."""
+    import validation_misses as vm
+
+    assert isinstance(vm._FAILURE_CLASS_VALUES, frozenset)
+    assert _LOCKED_FAILURE_CLASSES <= vm._FAILURE_CLASS_VALUES, (
+        f"Missing LOCKED members: {_LOCKED_FAILURE_CLASSES - vm._FAILURE_CLASS_VALUES}"
+    )
+
+
+def test_failure_class_enum_published_in_schema():
+    """miss_schema()['failure_class']['enum'] lists the curated vocabulary (sorted)."""
+    import validation_misses as vm
+
+    enum = vm.miss_schema()["failure_class"]["enum"]
+    assert set(enum) == set(vm._FAILURE_CLASS_VALUES)
+    assert enum == sorted(vm._FAILURE_CLASS_VALUES), "enum should be published sorted"
+
+
+def test_is_known_class_membership():
+    """is_known_class is True for a curated member, False for an off-vocab slug."""
+    import validation_misses as vm
+
+    assert vm.is_known_class("honesty-fail-open") is True
+    assert vm.is_known_class("over-claim-fail-open") is True
+    assert vm.is_known_class("rce-unchecked") is False
+    assert vm.is_known_class("totally-made-up") is False
+
+
+def test_soft_enum_off_vocab_failure_class_still_validates():
+    """BC: an off-enum failure_class (default 'rce-unchecked') still validates.
+
+    The enum is SOFT — validate_miss is UNCHANGED for failure_class (any non-None
+    str). A non-fatal append must never drop a real miss over a vocab typo.
+    """
+    import validation_misses as vm
+
+    assert vm.validate_miss(_valid_entry()) == []  # failure_class='rce-unchecked'
+    assert vm.validate_miss(_valid_entry(failure_class="some-new-slug")) == []
+
+
+# ---------------------------------------------------------------------------
+# T2 — nullable run_id field (BC: existing run_id-less misses stay valid)
+# ---------------------------------------------------------------------------
+
+def test_run_id_in_nullable_fields_and_schema():
+    """run_id joins _NULLABLE_STR_FIELDS and the published 10-field schema."""
+    import validation_misses as vm
+
+    assert "run_id" in vm._NULLABLE_STR_FIELDS
+    assert "run_id" in vm._ALL_FIELDS
+    assert "run_id" in vm.miss_schema()
+    assert vm.miss_schema()["run_id"]["type"] == "str|null"
+
+
+def test_miss_without_run_id_validates():
+    """A miss with NO run_id key validates (missing-key allowed, like guard_ref)."""
+    import validation_misses as vm
+
+    entry = _valid_entry()
+    assert "run_id" not in entry
+    assert vm.validate_miss(entry) == []
+
+
+def test_run_id_none_validates():
+    """run_id=None validates (nullable)."""
+    import validation_misses as vm
+
+    assert vm.validate_miss(_valid_entry(run_id=None)) == []
+
+
+def test_run_id_string_validates():
+    """run_id as a string validates."""
+    import validation_misses as vm
+
+    assert vm.validate_miss(_valid_entry(run_id="run-2026-06-27-abc")) == []
+
+
+def test_run_id_non_str_rejected():
+    """run_id as a non-str (int) is rejected (mirrors guard_ref)."""
+    import validation_misses as vm
+
+    errors = vm.validate_miss(_valid_entry(run_id=42))
+    assert errors, "Expected errors for non-str run_id"
+    assert any("run_id" in e for e in errors), f"Expected run_id error, got: {errors}"
+
+
+# ---------------------------------------------------------------------------
+# T2 — data BC: the two REAL logged misses stay valid + are known classes
+# ---------------------------------------------------------------------------
+
+def test_logged_misses_stay_valid_and_known(tmp_path):
+    """The two real .planning/validation-misses.jsonl entries (no run_id,
+    enum-member failure_class) still validate and ARE is_known_class True."""
+    import validation_misses as vm
+
+    manifest = (
+        Path(__file__).resolve().parents[2] / ".planning" / "validation-misses.jsonl"
+    )
+    entries = vm.read_misses(manifest)
+    assert len(entries) >= 2, f"Expected >=2 logged misses, got {len(entries)}"
+    for e in entries:
+        assert "run_id" not in e, "the two logged misses are run_id-less (legacy)"
+        assert vm.validate_miss(e) == [], f"logged miss must still validate: {e}"
+        assert vm.is_known_class(e["failure_class"]) is True, (
+            f"logged failure_class must be a curated member: {e['failure_class']}"
+        )
 
 
 # ---------------------------------------------------------------------------

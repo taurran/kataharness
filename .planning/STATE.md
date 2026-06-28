@@ -1,5 +1,33 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-27, RECURRENCE-HARDENING T2 BUILT — D118; pytest 1175 · 45 skills/0 · Snyk 0):** Queue item
+> (b). Closes the recurrence loop the T1 manifest (D114) opened: when a failure-CLASS recurs (**3× distinct runs, or
+> 2× for BLOCKERs**, clustered by `responsible_skill`×`failure_class`) the loop **auto-drafts a human-gated hardening
+> proposal** — automating the "operator noticed the RCE recurred 3×" move that hand-triggered D112. Built **entirely
+> through subagents** (operator directive). Grill (subagent-framed → operator-decided 3 calls + adopted defaults) →
+> PLAN-t2 (planning subagent) → **freeze-gate kata-review HOLD→SHIP** (caught a real BC contradiction: adding `run_id`
+> to `miss_schema()` breaks `test_schema_round_trips` while the plan forbade editing it → resolved via option-b: keep
+> `run_id` documented + own the 9→10 test edit) → 3-slice 2-wave build → `kata-evaluate` **PART A PASS** → **D98 PART B
+> SHIP** (every fail-open/invariant/BC attack held; 1 nice-to-have hardened: blank/whitespace `run_id` now falls back to
+> `ts`). **Built:** **(S1)** `tools/recurrence_detect.py` — the PURE detector: `actionable_recurrences` (severity-aware
+> threshold; distinct-run via `run_id` with `ts`-fallback incl. blank-coerce; handled-skip; off-vocab flagging),
+> `distinct_run_counts`, `cluster_severity_tier`, `detect_from_paths`, the `.planning/recurrence-handled.jsonl` sidecar
+> (`read_handled`/`append_handled`/`handled_schema`); + the **BC-safe schema extension** to `validation_misses.py` (soft
+> 8-member `failure_class` enum + non-blocking `is_known_class`; nullable **`run_id`** → 10-field schema; `validate_miss`
+> unchanged for failure_class so a non-fatal append never DROPS a miss); pure, no sink, mutation-proven (7 targets).
+> **(S2)** `skills/meta/kata-improve` v0.1.0→**0.2.0** — the auto-DRAFT proposal sub-mode (drafts `PROPOSAL-<class>.md`
+> + the `proposed` marker; **footprint pinned to exactly those 2 paths**; routes to freeze-gate kata-review → **human
+> merge**; NOT kata-promote) + `protocol/validation-misses.md` T2 contract (act-but-gated; T1 observe-only preserved).
+> **(S3)** `kata-orchestrate` Final-gate — one **`run_id` per run** stamping + the **non-fatal** detector hook (all
+> modes; NOTE + auto-invoke the draft; silent no-op absent any actionable recurrence). **Invariant:** T2 READs + AUTHORs
+> a proposal — never changes a gate verdict, edits a skill/protocol/tool, writes `guarded`, or merges (the guarded marker
+> + the actual guard stay human). **Honest scope:** T2 PROPOSES; the human authors+merges the guard. **T3** (auto-author
+> the guard itself) = OUT OF SCOPE / C-arc-gated, future. The footprint/`guarded` invariant is **prose-pinned** (LLM-skill
+> architecture — no code gate possible; same risk class as every Write-capable skill). **NEXT (operator order b→c→d→e):**
+> **(c) IaC Tier-2 live-apply** (own grill + non-git safety contract; live-apply path gated on operator cloud creds);
+> then (d) second-brain Recall; (e) 2nd-platform benchmark; (a, last) Debug Mode live run. Records:
+> `specs/recurrence-hardening/PLAN-t2.md`, `DECISIONS.md` D118.
+
 > **CURRENT (2026-06-27, DEBUG MODE PHASE 3 [the FINAL phase] BUILT — D117; pytest 1108 · 45 skills/0 · Snyk 0):**
 > Completes Debug Mode end-to-end at the skill/seam level — the **core loop is now functionally complete** (comprehend
 > P1 → find/route P2a → characterize/drift-gate/apply-or-defer P2b → **report/onboard P3**). Built **entirely through

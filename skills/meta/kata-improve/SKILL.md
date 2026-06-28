@@ -6,7 +6,7 @@ description: >-
   bump versions. Targets the skills/ tree (not product code); decides WHAT to change and delegates new-skill
   authoring to kata-write-skill.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: meta
 status: experimental
 agnostic: true
@@ -81,3 +81,73 @@ Run it at IMPROVE / handoff time (engram seam E6), never as a per-task hook (kee
   ⇒ write nothing. Distinct from `engram.backend` (the CONSULT backend, still gated/off).
 - **Output:** N synthesis pages written to `engram.learnFeed.dir` (provenance `produced-by: loop`), plus a
   one-line emit summary. No skill edits, no version bumps in this sub-mode.
+
+## Recurrence-hardening proposal (T2 — auto-DRAFT, human-gated; D101/D102/D112)
+
+A **separate sub-mode** from the kata above (which edits skills). This one **only DRAFTS a proposal**: given an
+**actionable recurrence** surfaced by the T2 detector, it authors a one-page hardening-proposal doc and records a
+sidecar marker so the detector stops re-proposing. It is the LLM-judgment author half of the recurrence→proposal
+loop (the pure detector engine lives in `tools/recurrence_detect.py`). It **DRAFTS only** — it does not write the
+guard, edit any surface, or merge. This makes the D102 (`protocol/reuse-claims.md`+`validate_skills` rule) and
+D112 (`protocol/exec-safety.md`+`test_exec_safety.py`) hand-done hardenings repeatable: a recurring class →
+an auto-drafted proposal of *exactly that shape* → the human gate.
+
+**Trigger.** Run when the detector flags a newly-actionable cluster — either from the `kata-orchestrate`
+Final-gate hook (all modes, non-fatal) or **on-demand** by an operator. The deterministic decision (cluster →
+distinct-run count → severity-aware threshold → handled-aware skip → off-vocabulary flag) is owned by the engine;
+this sub-mode never re-clusters or re-thresholds in prose. Get the actionable clusters from the engine, by name:
+- `recurrence_detect.actionable_recurrences(misses, handled, *, default_threshold=3, blocker_threshold=2)`
+  (`tools/recurrence_detect.py`) — or its I/O convenience
+  `recurrence_detect.detect_from_paths(".planning/validation-misses.jsonl", ".planning/recurrence-handled.jsonl")`.
+  Each result dict carries `key, responsible_skill, failure_class, distinct_runs, raw_count, severity_tier,
+  threshold, off_vocabulary, evidence` — author the proposal straight from these, computing nothing yourself.
+
+**For each actionable cluster, DRAFT** a one-page proposal at
+**`.planning/specs/recurrence-hardening/PROPOSAL-<failure_class>.md`** (LOCKED convention — one per recurring
+class; the `proposed` sidecar marker references this path via `proposal_ref`) containing:
+1. **The recurring cluster** — `responsible_skill` × `failure_class`, the `distinct_runs` count, `severity_tier`,
+   and the `threshold` it crossed (and the `off_vocabulary` flag if set — note "clustering may be unreliable;
+   pick `failure_class` from the curated enum next time"). Take all of these from the engine result, not by
+   re-counting.
+2. **Evidence rows** — the cluster's manifest entries (from the result's `evidence`): `ts`, `mode`,
+   `what_conformance_missed`, `what_caught_it`, `decision_ref`, and the distinct runs they span.
+   **Description-level only** — inherit the manifest's secret-hygiene convention (`protocol/validation-misses.md`
+   §Secret-hygiene convention): never copy code payloads, key material, or verbatim fragments into the proposal.
+3. **Proposed target surface** — defaulting to a **protocol contract + a mechanical test** (the D102
+   `protocol/reuse-claims.md`+`validate_skills` rule / D112 `protocol/exec-safety.md`+`test_exec_safety.py`
+   shape). **NAME the surface.** State explicitly that `responsible_skill` is the **clustering key, NOT
+   necessarily the fix location** — the proposal proposes *where* the guard should land.
+4. **Guard text + test sketch** — the would-be contract clause (the standing rule the next occurrence must
+   satisfy) and the mechanical test idea (what a regression check would assert). A sketch, not the guard itself.
+5. **Routing note** — this proposal goes to a fresh-context **freeze-gate [[kata-review]] → human merge gate**.
+   This is the **repo-hardening path — NOT [[kata-promote]]** (which governs external agent-distilled candidate
+   skills outside this repo's `skills/` tree; do not route here through it). **NOT auto-applied:** drafting is
+   automated; authoring/merging the real guard stays human.
+
+**After drafting, record the `proposed` marker** so the detector stops re-proposing the cluster — by name:
+- `recurrence_detect.append_handled({ts, key, responsible_skill, failure_class, status: "proposed",
+  proposal_ref: "<the PROPOSAL path>", guard_ref: null}, ".planning/recurrence-handled.jsonl")`
+  (`tools/recurrence_detect.py`; schema = `recurrence_detect.handled_schema()`). Append-only; non-fatal — a
+  `False` return (I/O failure) is surfaced as a NOTE, never an error. **Only `status: "proposed"`** is written
+  here.
+
+**Writable footprint — EXACTLY two paths (invariant-critical; verifiable by reading this body).** Because the
+`kata-orchestrate` Final gate auto-invokes this Write-capable sub-mode in all modes, its writable footprint is
+**pinned to exactly two paths and nothing else**:
+1. `.planning/specs/recurrence-hardening/PROPOSAL-<failure_class>.md` — the drafted proposal, and
+2. `.planning/recurrence-handled.jsonl` — the `proposed` marker (via `recurrence_detect.append_handled`).
+
+It writes/edits **NOTHING else**: no skill, no protocol, no tool, no manifest row, no other doc; it does **NOT**
+append a `guarded` marker; it does **NOT** merge. A drafting run that touches any third path has drifted and must
+STOP. This reuses kata-improve's existing `Write`; no new allowed-tool.
+
+**Boundary (the C/B invariant + the T2→T3 line).** This sub-mode may **READ the manifest and AUTHOR a
+proposal**; it may NOT (i) change any gate verdict, (ii) edit any skill/protocol/tool, or (iii) merge its own
+proposal. The `guarded` marker (with `guard_ref`) is appended by the **human / kata-improve at guard-merge time**,
+**OUTSIDE T2's auto-scope** — T2 never marks a class `guarded` (that would assert a guard shipped, which only a
+human merge establishes). **Auto-authoring the guard doc/test itself is T3 — OUT OF SCOPE.** If a run "needs" to
+write the guard, edit a surface, or merge to be useful, **STOP and escalate** (the T2/T3 boundary).
+
+**Output:** one `PROPOSAL-<failure_class>.md` per actionable cluster + the `proposed` sidecar marker + a one-line
+summary naming the cluster and the routing (freeze-gate `kata-review` → human merge). No skill edits, no version
+bumps in this sub-mode.

@@ -472,11 +472,45 @@ After the frontier drains (all tasks integrated), on the integration branch:
      returns its findings, for each finding it flagged as a conformance-escape (per `protocol/validation-misses.md`
      — a confirmed defect the preceding `kata-evaluate` PASSED), build a miss entry (fields: `ts`, `mode`,
      `failure_class`, `responsible_skill`, `severity`, `what_conformance_missed`, `what_caught_it:"d98"`,
-     `guard_ref`, `decision_ref`) and call
+     `guard_ref`, `decision_ref`, `run_id`) and call
      `validation_misses.append_miss(entry, ".planning/validation-misses.jsonl")` (`tools/validation_misses.py`).
      **A `False` return or any error is surfaced as a NOTE in the conversation — it NEVER fails the build or
      changes any gate verdict.** Logging is a pure side-effect (T1, observe-only; `protocol/validation-misses.md`
      §Observe-only). Skip silently if [[kata-review]] flagged no conformance-escapes.
+     - **`run_id` stamping (T2 — LOCKED, one id per run; grill #1).** Mint **one** `run_id` for this whole
+       Final-gate emit and stamp the **SAME** value onto **every** miss entry appended in this run before
+       `append_miss` (the field already exists in the miss schema — `validation_misses` carries `run_id` in
+       `_NULLABLE_STR_FIELDS`, treated like `guard_ref`). Source it from a **run-scoped identifier the
+       orchestrator already holds** — the run's existing run identity (e.g. the `<baseline_sha>` /
+       integration-run id already passed to `gate_emit.py` at step 2, or the per-run board's UTC stamp from the
+       run-start board rotation, or a single uuid minted once here) — **one id per run, never per-miss.** This is
+       what makes distinct-run counting robust: the detector counts **distinct `run_id`** per cluster, so several
+       misses from one run collapse to **one** run (not several rows). **BC (additive):** `run_id` is nullable
+       and missing-key-allowed, so legacy / other-writer misses that omit it still validate and simply fall back
+       to `ts` for distinct-run identity — version-up, greenfield, and one-shot runs are unaffected beyond
+       carrying this additive stamp.
+   - **Recurrence detection (T2 — non-fatal, all modes; additive, no verdict change).** Immediately AFTER the
+     miss-append above (this runs in **every** mode — it lives in the shared Final gate), run the actionable-
+     recurrence detector over the manifest + the handled sidecar:
+     `recurrence_detect.detect_from_paths(".planning/validation-misses.jsonl", ".planning/recurrence-handled.jsonl")`
+     (`tools/recurrence_detect.py`). For each **newly-actionable** recurrence it returns (severity-aware
+     2nd/3rd, distinct-`run_id`, handled-aware), do two things:
+     1. **Surface a NOTE** in the conversation — the cluster (`responsible_skill × failure_class`), its
+        `distinct_runs`, `severity_tier`, `threshold`, and the `off_vocabulary` flag.
+     2. **Auto-invoke [[kata-improve]]'s recurrence-hardening proposal sub-mode (S2)** to **DRAFT** the one-page
+        proposal and append the `proposed` handled marker (T2 = propose only; authoring/merging the real guard
+        stays a human act, routed through fresh-context freeze-gate [[kata-review]] → human merge — **NOT**
+        [[kata-promote]]).
+     - **Non-fatal (critical — mirrors the append-miss posture above):** a detector error, a draft failure, or an
+       `append_handled` `False` is surfaced as a **NOTE** only. The detection + draft step **NEVER fails the
+       build, changes any gate verdict, applies a guard, or edits any surface itself** — the draft is delegated
+       to [[kata-improve]], whose writable footprint is pinned to its proposal doc + the handled sidecar.
+     - **BC / invariant:** purely additive — absent any actionable recurrence this is a **silent no-op**; it
+       alters **no** non-Final-gate behavior, no gate verdict, and reads the manifest without mutating it.
+       Version-up / greenfield / one-shot runs are unaffected beyond the additive `run_id` stamp + this
+       non-fatal NOTE.
+     - The detector is also **on-demand-invocable** — an operator can run
+       `recurrence_detect.detect_from_paths(...)` (or the [[kata-improve]] sub-mode) outside the Final gate.
 7. Commit; if a handoff is needed, [[kata-handoff]].
 
 ## Milestone narration (WS-3 — ADDITIVE; does not alter dispatch, frontier, or gate logic)

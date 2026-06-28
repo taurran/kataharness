@@ -29,7 +29,27 @@ log = logging.getLogger(__name__)
 _SEVERITY_VALUES: frozenset[str] = frozenset({"BLOCKER", "MAJOR", "MINOR"})
 _CAUGHT_BY_VALUES: frozenset[str] = frozenset({"d98", "re-confirm", "human"})
 
-# All 9 schema fields
+# Curated, EXTENDABLE failure_class vocabulary (T2 §Enum-BC). SOFT enum: this is
+# the canonical clustering vocabulary that the emit path is guided toward and the
+# recurrence detector flags against (``is_known_class``). It is NOT enforced by
+# ``validate_miss`` — ``failure_class`` stays "must be a non-None str" so a
+# slightly-off slug at the non-fatal append NEVER drops a real miss (signal
+# preservation). Extending = add a member here + note it in
+# protocol/validation-misses.md; this only ever WIDENS acceptance → always BC-safe.
+# MUST include the classes already logged in .planning/validation-misses.jsonl
+# (honesty-fail-open, over-claim-fail-open) plus the historically-seen classes.
+_FAILURE_CLASS_VALUES: frozenset[str] = frozenset({
+    "honesty-fail-open",
+    "over-claim-fail-open",
+    "exec-injection",
+    "phantom-reuse",
+    "dos-vector",
+    "stateful-hole",
+    "fail-open",
+    "over-claim",
+})
+
+# All 10 schema fields
 _REQUIRED_STR_FIELDS: frozenset[str] = frozenset({
     "ts",
     "mode",
@@ -39,7 +59,9 @@ _REQUIRED_STR_FIELDS: frozenset[str] = frozenset({
     "what_conformance_missed",
     "what_caught_it",
 })
-_NULLABLE_STR_FIELDS: frozenset[str] = frozenset({"guard_ref", "decision_ref"})
+# run_id (T2): per-run identity stamped by the orchestrator; nullable + missing-key
+# allowed exactly like guard_ref/decision_ref → existing run_id-less misses stay valid.
+_NULLABLE_STR_FIELDS: frozenset[str] = frozenset({"guard_ref", "decision_ref", "run_id"})
 _ALL_FIELDS: frozenset[str] = _REQUIRED_STR_FIELDS | _NULLABLE_STR_FIELDS
 
 
@@ -70,6 +92,25 @@ def _guard_path(raw: str | Path) -> Path:
 # Public API
 # ---------------------------------------------------------------------------
 
+def is_known_class(failure_class: str) -> bool:
+    """Return True iff ``failure_class`` is in the curated ``_FAILURE_CLASS_VALUES``.
+
+    NON-blocking membership helper (T2 §Enum-BC). ``validate_miss`` still accepts
+    ANY non-None str for ``failure_class`` — this helper exists so the recurrence
+    detector can FLAG off-vocabulary clusters ("clustering may be unreliable")
+    instead of dropping them, and so the emit path can be guided to pick from the
+    curated set. It never rejects a miss.
+
+    Args:
+        failure_class: The slug to test for curated-vocabulary membership.
+
+    Returns:
+        True if ``failure_class`` is a curated member; False otherwise (incl. for
+        any non-str input).
+    """
+    return failure_class in _FAILURE_CLASS_VALUES
+
+
 def miss_schema() -> dict:
     """Return the entry schema — single source of truth for field names and types.
 
@@ -77,9 +118,9 @@ def miss_schema() -> dict:
     allowed values (for enum fields), and a description. Callers (S2 orchestrator,
     tests, documentation) import this so the schema stays DRY.
 
-    All 9 fields:
+    All 10 fields:
         ts, mode, failure_class, responsible_skill, severity,
-        what_conformance_missed, what_caught_it, guard_ref, decision_ref.
+        what_conformance_missed, what_caught_it, guard_ref, decision_ref, run_id.
     """
     return {
         "ts": {
@@ -92,7 +133,14 @@ def miss_schema() -> dict:
         },
         "failure_class": {
             "type": "str",
-            "description": "Slug categorising the miss (e.g. rce-unchecked, dos-vector)",
+            "enum": sorted(_FAILURE_CLASS_VALUES),
+            "description": (
+                "Slug categorising the miss (e.g. dos-vector, exec-injection). "
+                "SOFT/curated enum: the published 'enum' is the canonical clustering "
+                "vocabulary, but validate_miss accepts ANY non-None str (never "
+                "append-rejected) so an off-vocab slug is flagged by the recurrence "
+                "detector via is_known_class, not dropped. See protocol/validation-misses.md."
+            ),
         },
         "responsible_skill": {
             "type": "str",
@@ -124,6 +172,16 @@ def miss_schema() -> dict:
             "type": "str|null",
             "description": "D-number reference (e.g. D109), or null",
         },
+        "run_id": {
+            "type": "str|null",
+            "description": (
+                "Per-run identity stamped by the orchestrator at the Final-gate "
+                "emit (one id shared by every miss from that run). The recurrence "
+                "detector counts DISTINCT run_id per cluster (falling back to ts "
+                "for legacy entries). Nullable + missing-key allowed (BC: existing "
+                "run_id-less misses stay valid), treated like guard_ref."
+            ),
+        },
     }
 
 
@@ -135,8 +193,13 @@ def validate_miss(entry: dict) -> list[str]:
     - All required fields are present and are non-None strings.
     - ``severity`` is in {BLOCKER, MAJOR, MINOR}.
     - ``what_caught_it`` is in {d98, re-confirm, human}.
-    - ``guard_ref`` and ``decision_ref`` are str or None.
+    - ``guard_ref``, ``decision_ref`` and ``run_id`` are str or None.
     - No extra keys (additionalProperties: false).
+
+    Note (T2 SOFT enum): ``failure_class`` is NOT value-checked against
+    ``_FAILURE_CLASS_VALUES`` — any non-None str is accepted (signal preservation:
+    a non-fatal append must never drop a real miss over a vocabulary typo). Use
+    ``is_known_class`` for non-blocking membership.
 
     Not enforced (by design — see module docstring):
     - Content of ``what_conformance_missed`` is not checked for code payloads.

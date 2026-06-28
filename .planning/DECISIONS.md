@@ -1341,3 +1341,49 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   honesty surface, where PART A PASS'd) — the load-bearing adversarial+re-confirm loop, now the 6th+ session-instance; and
   the freeze-gate's phantom-capability catch (Snyk-from-RESULT.json) is exactly the verify-before-reuse class the project
   keeps surfacing.
+
+<!-- Recurrence-hardening T2 (recurrence->proposal loop, act-but-gated) built. Spec: specs/recurrence-hardening/PLAN-t2.md. Fully subagent-driven. -->
+- **D118 — Recurrence-hardening Tier 2 (the recurrence→proposal loop, act-but-gated) BUILT — 2026-06-27.** Queue item (b).
+  Closes the recurrence loop the T1 manifest (D114) opened, realizing **D101**: when a failure-CLASS recurs, the loop
+  **auto-drafts a human-gated hardening proposal** — automating the exact "operator noticed the RCE recurred a 3rd time"
+  move that hand-triggered **D112**. Built **entirely through the loop/subagents** (operator directive). A grill-prep
+  subagent framed the open decisions → **operator decided 3 calls** ((1) trigger = **3rd** recurrence, **2nd** for BLOCKER,
+  clustered by `responsible_skill`×`failure_class`, counting **distinct runs**; (2) `failure_class` → **soft curated enum**;
+  (3) **auto-draft** the proposal, human-gated) + adopted defaults (proposal names the target surface defaulting to a
+  protocol-contract + mechanical-test, the D102/D112 shape; output `PROPOSAL-<class>.md` → freeze-gate `kata-review` →
+  **human merge**, NOT `kata-promote`; detector at the Final-gate append hook + on-demand; a **handled sidecar**; count
+  **distinct runs** not raw rows) → PLAN-t2 (planning subagent) → **freeze-gate `kata-review` HOLD→SHIP** → 3-slice 2-wave
+  build → `kata-evaluate` **PART A PASS** → **D98 PART B SHIP** → operator merge gate. **Built:** **(S1)**
+  `tools/recurrence_detect.py` — the PURE detector: `actionable_recurrences` (severity-aware threshold; **distinct-run
+  counting** via `run_id` with `ts`-fallback **incl. blank/whitespace-coerce**; handled-skip; off-vocab flagging),
+  `distinct_run_counts`, `cluster_severity_tier`, `detect_from_paths`, and the `.planning/recurrence-handled.jsonl`
+  sidecar (`read_handled`/`append_handled`/`validate_handled`/`handled_schema` — `..`-guarded, non-fatal); **+ the BC-safe
+  schema extension** to `tools/validation_misses.py`: a **soft** 8-member `failure_class` enum (published
+  `_FAILURE_CLASS_VALUES` + a schema `enum` key + non-blocking `is_known_class`; **`validate_miss` UNCHANGED for
+  `failure_class`** so a non-fatal append never DROPS a real miss — off-vocab is flagged by the detector, not rejected at
+  write) and a **nullable `run_id`** field (→ 10-field schema). Pure, no exec sink; mutation-proven (8 targets incl. the
+  blank-run_id guard). **(S2)** `skills/meta/kata-improve` **v0.1.0→0.2.0** — the auto-DRAFT proposal sub-mode: drafts a
+  one-page `PROPOSAL-<failure_class>.md` (cluster + evidence rows + proposed target surface + guard text/test sketch) +
+  appends the `proposed` sidecar marker; **writable footprint pinned to EXACTLY those 2 paths**; routes to freeze-gate
+  `kata-review` → human merge. + `protocol/validation-misses.md` T2 contract section (act-but-gated; T1 observe-only kept
+  accurate). **(S3)** `skills/coordinate/kata-orchestrate` Final gate — one **`run_id` per run** stamping on every appended
+  miss + the **non-fatal** detector hook (all modes: NOTE per newly-actionable cluster + auto-invoke the draft; silent
+  no-op absent any actionable recurrence; an error never breaks the run or changes a verdict). **Freeze-gate caught a real
+  BC contradiction:** adding `run_id` to `miss_schema()` breaks `test_schema_round_trips` (asserts the exact field set)
+  while the plan claimed "existing tests unchanged" → resolved via **option-b**: keep `run_id` documented in the schema
+  (10 fields) AND own the single intentional `test_schema_round_trips` 9→10 edit; BC re-scoped to "existing DATA + BEHAVIOUR
+  unchanged, one documented test edit." **D98 PART B SHIP** — every fail-open/invariant/BC attack held (re-proposal loop:
+  a `proposed` cluster + a new miss does NOT re-trip; soft enum: off-vocab validates AND is flagged, never dropped;
+  severity short-circuit fires at 2 for BLOCKER only; detector fails non-fatal on malformed manifest/sidecar) — 1
+  nice-to-have **hardened pre-merge**: a blank/whitespace `run_id` ("" / "  ") was non-None so it collapsed distinct-run
+  counting and silently suppressed detection → now coerced to fall back to `ts` (mutation-covered). **The INVARIANT
+  (load-bearing):** T2 **READs the manifest + AUTHORs a proposal** — it never (i) changes a gate verdict, (ii) edits any
+  skill/protocol/tool, (iii) writes the `guarded` marker, or (iv) merges its own proposal. The `guarded` marker + the
+  actual guard authoring/merge stay **human**. **T3** (auto-authoring the guard doc+test itself) = OUT OF SCOPE / C-arc
+  future. **Honest scope:** the footprint/`guarded` invariant is **prose-pinned** (LLM-skill architecture — no runtime
+  code gate is possible on a markdown instruction; the plan acknowledges it; same risk class as every Write-capable skill).
+  **Gates:** pytest **1175** (1108→1175), validate **45/0** (no new skill — kata-improve version-bumped), Snyk **0** on
+  `recurrence_detect.py` + `validation_misses.py`. Records: `specs/recurrence-hardening/PLAN-t2.md`. **Meta:** the
+  freeze-gate again caught a real internal contradiction (the BC claim vs the round-trip test) the planner was too close
+  to see, and D98's distinct-run/soft-enum/non-fatality probes confirmed the act-but-gated boundary holds — T2 is the
+  machinery that would have auto-proposed exactly the D112 exec-safety guard.

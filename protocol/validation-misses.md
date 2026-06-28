@@ -18,9 +18,11 @@ step (D98) that every code/contract-bearing build runs; it is not owned by any s
 is the richest source (it red-teams whole codebases), but the mechanism fires for every mode's build.
 
 **T1 is observe-only (passive learning, β-LEARN-feed posture):** it logs, counts, and surfaces — it
-changes no gate behavior, never alters a gate verdict, and never mutates a skill. The
-recurrence→proposal loop (T2) and auto-authoring guards (T3) are both deferred per
-`BRIEF-validation-misses.md` (§Tiers).
+changes no gate behavior, never alters a gate verdict, and never mutates a skill. T1's posture is
+**unchanged** by T2: the T1 data layer still only logs/counts/surfaces. The recurrence→proposal loop
+(**T2 — now BUILT**, see §T2 below) adds an **act-but-gated** layer ON TOP — detect → auto-DRAFT a
+human-gated proposal → human-gated hardening — without weakening T1's observe-only guarantee. Auto-authoring
+the guards themselves (T3) remains deferred per `BRIEF-validation-misses.md` (§Tiers).
 
 ## Entry schema
 
@@ -92,7 +94,10 @@ auditors must verify entries comply.
 
 ## Observe-only / C/B-invariant (T1 boundary)
 
-T1 **records, counts, and surfaces** — it never changes a gate verdict or mutates a skill.
+T1 **records, counts, and surfaces** — it never changes a gate verdict or mutates a skill. **This T1
+statement stays accurate after T2 ships: the T1 data layer below remains observe-only; T2 (§T2) acts
+only by authoring an inert, human-gated proposal — it still changes no gate verdict and mutates no
+skill.**
 
 - `validation_misses.append_miss` — append only; no gate logic.
 - `validation_misses.read_misses` — read only; never modifies the file.
@@ -100,6 +105,79 @@ T1 **records, counts, and surfaces** — it never changes a gate verdict or muta
 - `validation_misses.recurrences` — surfaces classes at/over a threshold; T1 does NOT act on them.
 
 **Any change to a gate verdict or skill based on manifest data is T2 (recurrence→proposal loop) or T3
-(auto-author), both deferred.** See `BRIEF-validation-misses.md` §Tiers for the T2/T3 scope and the
-C/B invariant (every hardening is deliberate, frozen, gated, audited — the B-trap is explicitly out of
-bounds for T1/T2; T3 only ever proposes into the existing human+fresh-context gate).
+(auto-author).** T2 is now BUILT (§T2) — but it acts ONLY by drafting a human-gated proposal; it never
+changes a gate verdict, edits a surface, or merges. T3 (auto-author the guard itself) remains deferred.
+See `BRIEF-validation-misses.md` §Tiers for the T2/T3 scope and the C/B invariant (every hardening is
+deliberate, frozen, gated, audited — the B-trap is explicitly out of bounds for T1/T2; T3 only ever
+proposes into the existing human+fresh-context gate).
+
+## T2 — recurrence→proposal (act-but-gated)
+
+T2 turns the observe-only manifest into an **act-but-gated** loop: **detect → auto-DRAFT a proposal →
+human-gated hardening**. It **reads the manifest and authors a proposal**; it changes no gate verdict,
+edits no skill/protocol/tool, and never merges. The detector engine is `tools/recurrence_detect.py`; the
+proposal author is the `kata-improve` "Recurrence-hardening proposal (T2)" sub-mode; the wiring is the
+`kata-orchestrate` Final-gate hook.
+
+### Detection (the pure engine)
+
+`recurrence_detect.actionable_recurrences(misses, handled, *, default_threshold=3, blocker_threshold=2)`
+(or the I/O convenience `recurrence_detect.detect_from_paths(misses_path, handled_path)`) clusters the
+manifest by `responsible_skill` × `failure_class` and surfaces **actionable** clusters:
+
+- **Severity-aware threshold** — act on the **3rd** recurrence of a class, **2nd** for BLOCKER-severity
+  classes (`recurrence_detect.cluster_severity_tier` drives this).
+- **Distinct-run counting** — counts DISTINCT runs, **not raw rows** (`recurrence_detect.distinct_run_counts`):
+  identity = the per-run `run_id` the orchestrator stamps, falling back to `ts` for legacy entries. Two
+  misses from one run count as ONE.
+- **Handled-aware** — a cluster whose key already has a sidecar marker is skipped (no re-proposal).
+- **Off-vocabulary flag** — a cluster whose `failure_class` is not in the curated enum is RETURNED with
+  `off_vocabulary: True` (flagged "clustering may be unreliable"), **never dropped**.
+
+This is pure read+compute — no subprocess, no eval, no exec; it acts on nothing.
+
+### Drafting (kata-improve, human-gated)
+
+For each actionable cluster, `kata-improve` auto-DRAFTS a one-page proposal at
+**`.planning/specs/recurrence-hardening/PROPOSAL-<failure_class>.md`** (one per recurring class) containing:
+the recurring cluster (distinct-run count, severity tier, threshold); the **evidence rows** from the
+manifest (description-level only, per §Secret-hygiene convention); the **proposed target surface**
+(defaulting to a **protocol contract + a mechanical test** — the D102 `protocol/reuse-claims.md`+
+`validate_skills` rule / D112 `protocol/exec-safety.md`+`test_exec_safety.py` shape; `responsible_skill` is
+the clustering key, **NOT necessarily the fix location**); and a **guard text + test sketch**. It then
+records a `proposed` marker via `recurrence_detect.append_handled`. It **DRAFTS only** — it does not write
+the guard, edit any surface, or merge.
+
+### Routing
+
+The drafted proposal goes to a fresh-context **freeze-gate `kata-review` → human merge gate** — the
+**repo-hardening path, NOT `kata-promote`** (which governs external agent-distilled candidate skills,
+outside this repo's `skills/` tree). Drafting is automated; authoring/merging the real guard stays human.
+
+### Handled sidecar — `.planning/recurrence-handled.jsonl`
+
+An append-only sidecar (sibling of the manifest; never mutates manifest rows) with two marker statuses of
+**distinct, LOCKED ownership** (`recurrence_detect.handled_schema`):
+
+- **`proposed`** — appended by `kata-improve` when it auto-drafts (T2's only auto write into the sidecar);
+  the detector then skips that cluster.
+- **`guarded`** — appended by the **human / kata-improve at guard-merge time** (with `guard_ref` + `ts`),
+  **OUTSIDE T2's auto-scope. T2 never marks a class `guarded`.** The `guarded` `ts` is the cutoff that
+  makes **"did recurrence drop?"** answerable (count cluster misses logged after it).
+
+### Curated `failure_class` enum (soft — emit FROM it; never append-rejected)
+
+`validation_misses.miss_schema()["failure_class"]["enum"]` (backed by `_FAILURE_CLASS_VALUES`) publishes
+the canonical clustering vocabulary. The emit path SHOULD pick `failure_class` from this enum so clusters
+are reliable — that is where clustering reliability is earned. It is **SOFT**: `validate_miss` still accepts
+ANY non-None `str` (never append-rejected), so an off-vocab slug at the non-fatal append is **flagged** by
+the detector (`is_known_class`), **never dropped** (signal preservation). Extending the enum = add a member
+to `_FAILURE_CLASS_VALUES` + note it here; this only ever WIDENS acceptance → always BC-safe.
+
+### C/B invariant (T2 boundary — LOCKED)
+
+T2 may **READ the manifest and AUTHOR a proposal**; it may NOT (i) change any gate verdict, (ii) edit any
+skill/protocol/tool, or (iii) merge its own proposal. The only writes T2 performs are **its own proposal
+doc + a `proposed` handled-sidecar record** — both inert until a human acts. Every hardening stays a
+deliberate, frozen, fresh-context-reviewed, human-approved change. **T3 (auto-authoring the guard itself)
+is OUT OF SCOPE.**
