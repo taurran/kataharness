@@ -1,10 +1,24 @@
 ---
-date: 2026-06-26 (IaC-safety specialists Tier-1 BUILT, D110; same day: multi-modal layer D108, kata-preflight D109, primary-grill-style; next = DEBUG MODE (unblocked) OR IaC Tier-2 live-apply OR recurrence-hardening OR second-brain OR 2nd-platform benchmark)
-branch: master — private remote github.com/taurran/kataharness, tip 396baa3 (PUSHED, in sync as of 2026-06-26 — `git log --oneline origin/master..HEAD` to verify)
-green: validator 39 skills / 0 errors · pytest 739 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
-tags: pre-iac-specialist · pre-kata-preflight · pre-multimodel-layer · pre-install-portability · pre-ws3 · v0.1.0-alpha.3 · loop-hardening-complete
+date: 2026-06-27 (a 6-feature day, D111–D116: holistic red-team fixes · exec-safety guard · Debug Mode P1+P2a+P2b · validation-miss manifest; NEXT = Debug Mode P3, the final phase)
+branch: master — private remote github.com/taurran/kataharness, tip 8f6efb2 (PUSHED, in sync as of 2026-06-27 — `git log --oneline origin/master..HEAD` to verify)
+green: validator 42 skills / 0 errors · pytest 1062 passed · Snyk medium+ 0 (residual Low CWE-23 = documented FPs)
+tags: pre-iac-specialist · pre-kata-preflight · pre-multimodel-layer · v0.1.0-alpha.3 · loop-hardening-complete
 authored-for: kata-orient (sections map to the three orientation tiers)
+★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained, paste-able) — it sets the first task + the subagent-driven cadence. This HANDOFF body below is older historical context (D98–D110); STATE.md + DECISIONS.md D111–D116 are current.
 ---
+
+> **★ 2026-06-27 UPDATE (D111–D116, a 6-feature subagent-driven day):** **(D111)** holistic red-team of the D108/D109/
+> D110 builds → fixed a real preflight RCE + IaC gate-skips + fail-opens. **(D112)** `protocol/exec-safety.md` standing
+> guard + `test_exec_safety.py` — the RCE class recurred 3× in kata-preflight; now structurally guarded. **(D113)**
+> Debug Mode **P1** — the `function_model` oracle (`tools/function_model.py`, AST-safe `_safe_eval`) + `kata-comprehend`
+> + the `kata/module/debug` run-shape. **(D114)** the **validation-miss manifest** (`tools/validation_misses.py` +
+> `protocol/validation-misses.md`) — universal, observe-only data layer for recurrence-hardening (operator's idea).
+> **(D115)** Debug Mode **P2a** — the deviation-discovery pipeline (`tools/deviation.py` + `kata-deviate`). **(D116)**
+> Debug Mode **P2b** — the PROTECT half (`tools/drift_gate.py` + `kata-characterize` + the fix-application loop). **The
+> core Debug Mode loop is now COMPLETE (comprehend → find → characterize/drift-gate/apply-or-defer).** Every Debug
+> phase was built ENTIRELY via subagents (operator directive) and the standing D98 lens caught a real fail-open on
+> every one. **NEXT = Debug Mode P3** (language profiles LD10 + onboarding LD13 + closeout report LD12). Full detail:
+> `.planning/NEXT-SESSION-ORIENTATION.md`, `STATE.md`, `DECISIONS.md` D111–D116.
 
 # HANDOFF — KataHarness — 2026-06-26 (install-portability BUILT · multi-model GRILLED+FROZEN+proof-slice · red-team hardened · banner — D104–D107)
 

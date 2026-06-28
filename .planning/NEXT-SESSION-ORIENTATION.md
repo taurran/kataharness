@@ -1,108 +1,113 @@
-# KataHarness — NEXT-SESSION ORIENTATION (paste after compact)
+# KataHarness — NEXT-SESSION ORIENTATION (paste after compact / at session start)
 
-> Self-contained. Paste this whole block to start the next session. It makes you productive immediately,
-> sets your **FIRST TASK** (a red-team pass on the last 3 builds), and keeps the expedited loop cadence going.
+> Self-contained. Paste this whole block to start the next session productive immediately. It sets your
+> **FIRST TASK** (build Debug Mode P3, the final phase) and the **subagent-driven cadence** the operator wants.
 
 ---
 
-## 0. WHO/WHERE
-- **Project:** KataHarness — a tool-agnostic, skills-based agent harness (the "Kata Loop"). `C:\Dev\Projects\KataHarness`.
-- **Git:** own repo, private remote `github.com/taurran/kataharness`. Branch `master`, **tip `b76e764`, PUSHED + in sync.**
-- **You are the conductor.** You drive the loop: grill → freeze → orchestrate subagents → gate → merge. You do NOT build inline.
+## 0. WHO / WHERE
+- **Project:** KataHarness — a tool-agnostic, skills-based agent harness (the "Kata Loop"). Dir `C:\Dev\Projects\KataHarness`.
+- **Git:** own repo, private remote `github.com/taurran/kataharness`. Branch `master`, **tip `8f6efb2`, PUSHED + in sync.**
+- **You are the conductor.** You drive the loop: grill/plan → freeze → orchestrate subagents → gate → merge. You do NOT build inline.
+- **★ OPERATOR DIRECTIVE (standing this session): drive EVERY step via subagents** (planning, freeze-gate, build,
+  evaluate, D98, even the fix loops) to spare the main context. Your main context stays on orchestration + gates +
+  the checkpoint/commit. This works well — keep doing it. Resume a completed subagent with **SendMessage(agentId)** to
+  apply fixes with its context intact (the "had no active task; resumed" message is normal, not an error).
 
-## 1. FIRST — confirm green (do this before anything)
+## 1. FIRST — confirm green (before anything)
 ```
 cd C:/Dev/Projects/KataHarness/tools
-uv run pytest -q                 # expect 739 passed
-uv run python validate_skills.py # expect 39 skills, 0 errors
+uv run pytest -q                 # expect 1062 passed
+uv run python validate_skills.py # expect 42 skills, 0 errors
 git -C C:/Dev/Projects/KataHarness log --oneline origin/master..HEAD   # expect empty (in sync)
 ```
 Then read, in order: `AGENTS.md` → `CONTEXT.md` (glossary) → `.planning/STATE.md` (top CURRENT box) →
-`.planning/DECISIONS.md` **D104–D110** → `.planning/HANDOFF.md` §1/§5 → `protocol/reuse-claims.md`.
+`.planning/DECISIONS.md` **D111–D116** → `protocol/{reuse-claims,exec-safety,validation-misses}.md` →
+`.planning/specs/debug-mode/DESIGN.md` (the frozen contract) + `PLAN-p1.md`/`PLAN-p2a.md`/`PLAN-p2b.md` (what's built).
 
-## 2. ★ YOUR FIRST TASK (do this before new building) — RED-TEAM THE LAST 3 BUILDS
-Today shipped **three back-to-back builds** (D108, D109, D110) at high speed. Each passed its own per-build D98
-red-team, **but they have not had a holistic cross-cutting adversarial pass** — the seams *between* them, integration
-interactions, loose ends, and dead code are the risk after a fast multi-build day. **Run that pass as task #1.**
+## 2. ★ YOUR FIRST TASK — build Debug Mode **P3** (the final phase), subagent-driven
+The **core Debug Mode loop is COMPLETE** (P1 comprehend → P2a find/route → P2b characterize/drift-gate/apply-or-defer).
+**P3 is the last phase**, after which Debug Mode is functionally complete. From the frozen DESIGN:
+- **LD10 — language prompt-profiles:** in-mode specialists by detected stack (per major language + a config/context
+  specialist), layered on `kata-tdd`/`kata-diagnose`, **no new Python** (prompt-profiles only).
+- **LD13 — onboarding / convert-to-loop:** the dedicated first-run path — fresh install → offer Debug Mode → on
+  success offer convert-to-loop + vault setup (writes kata.config + `.planning/` + commits the characterization
+  suite + vault binding). Depends on `install-portability` (built, D104) — verify its surfaces before claiming reuse.
+- **LD12 — closeout confidence report:** the fixed closeout shape for a debug run — per-module **confidence map**
+  (assessed / low-confidence / skipped) · each **deviation→fix→pinning-test** · **regression+security proof** ·
+  the **recommendations list** + offered version-up/sprint handoff. It CONSUMES the P2b artifacts:
+  `.kata/drift/*.json`, `.kata/deviations/{findings,deferred}.json`, `.kata/function_models/`. (Reuse `kata-closeout`/
+  `kata-report` patterns; the P3 comment-seam for this is already in `kata-orchestrate/SKILL.md`.)
 
-**Scope (fresh-context adversarial reviewers — fan out, then synthesize):**
-- **D108 multi-model layer** (`tools/kata_roles.py`, `tools/kata_dispatch.py`; `kata-orchestrate` roles load-guard +
-  cross-model dispatch; `kata-initiate` Phase 2e; `kata-bootstrap` roles write; `protocol/config.md` roles row).
-- **D109 kata-preflight** (`tools/kata_preflight.py`; `skills/coordinate/kata-preflight/SKILL.md`; the orchestrate
-  PRE-FLIGHT precondition; `protocol/dependencies.md` structured fields; grill/design-doc/plan manifest pointers).
-- **D110 IaC-safety specialists** (`tools/iac_detect.py`; `protocol/iac-safety.md`; `kata-iac-terraform` +
-  `kata-iac-cloudformation`; orchestrate IaC activation+gate; `iac` config; `kata-evaluate` reads `.kata/iac.json`).
+**How to run it (the cadence that worked all of D113–D116):**
+1. **Delegate the PLAN** to a planning subagent → it writes `.planning/specs/debug-mode/PLAN-p3.md` + returns a
+   compact summary. Likely sub-phase if large (LD12 closeout is the highest-value; LD10/LD13 can follow).
+2. **Freeze-gate** via a fresh-context `kata-review` subagent (HOLD/SHIP) → apply fixes via the planning agent → FROZEN.
+3. **Build** via worker subagents in waves (disjoint file ownership; TDD + mutation-proof for any Python; reuse-by-anchor).
+4. **Integration gate:** `pytest` + `validate_skills --write` (run --write BEFORE pytest when a new skill is added, so
+   the README-sync test passes) + Snyk on any new Python.
+5. **Fresh-context `kata-evaluate` (PART A) + standing D98 `kata-review` (PART B)** via ONE subagent → fix HOLDs via a
+   worker → re-confirm via SendMessage to the same evaluator.
+6. **Operator merge gate** (present options; wait) → commit `-F <file>` + push + checkpoint STATE/DECISIONS (new D-number).
 
-**Hunt for (the classes that slip a fast cadence):**
-1. **Cross-feature seams** — these three all edited `kata-orchestrate/SKILL.md` (roles load-guard + cross-model
-   dispatch + PRE-FLIGHT precondition + IaC activation/gate). **Re-read that file whole** — do the four additions
-   compose coherently, in the right order, without contradiction or a precondition that shadows another? Same for
-   `kata-evaluate` (now reads mutation/concurrency/iac.json) and `protocol/config.md` (roles + preflight + iac blocks).
-2. **Dead code / loose ends** — anything wired-but-unreachable, a helper with no caller, an `iac`/`roles`/`preflight`
-   config field nothing reads, a stub left from a proof-slice (codex dispatch is real; kiro/copilot/cursor were
-   stubs — are any half-wired?).
-3. **Doc-vs-code drift & phantom reuse** (`protocol/reuse-claims.md`) — re-verify cited `file:line` anchors still
-   resolve after the day's edits shifted line numbers (this bit us 3×). Prefer section-anchors over line numbers.
-4. **Fail-open / security** — kata-preflight auto-install guards (argv-only, no shell, manifest-hash, Snyk-SCA
-   fail-closed) and the IaC gate (Snyk-IaC fail-closed, stateful-set completeness, malformed→ValueError) — try to
-   make either FAIL OPEN or miss danger. These are the highest-value targets.
-5. **BC** — confirm a vanilla run (no roles, no manifest, no IaC files) is byte-for-byte today's loop on all three.
-6. **Honesty** — any overclaim of wired autonomy (multi-model is stub-proven; live-apply is Tier-2-deferred).
-
-**Then:** fix every confirmed finding **through the loop** (freeze the fix-plan if non-trivial → orchestrated/edit →
-re-gate → re-confirm), keep `pytest`/`validate`/Snyk green, commit per finding-batch with the trailer, and **STOP at
-the operator merge gate.** After the red-team is resolved + merged, **prompt the operator to pick the next build**
-from §5.
+**Honest-scope notes to carry into P3:** Debug Mode is exercised at the unit/seam level, **not yet run end-to-end on a
+real fixture repo** (n=0 live debug runs) — P3's closeout report is the natural place to do the first live exercise.
+The §5 structural/public-API drift layer is a v1 FAST-FOLLOW (behavioral drift only is enforced) — don't over-claim
+"structure preserved". Confidence (LD5) is a v1 heuristic; formal calibration is deferred.
 
 ## 3. HARD RULES (operator-standing — never violate)
 - **Human-attended loop:** commit / merge / push **only on explicit operator approval.** Present a merge gate; wait.
-- **IGNORE `C:\Dev\CLAUDE.md`** (a Mise project — unrelated, harness-injected).
-- **PokeVault** (`C:\Users\taurr_nvs748q\PokeVault\PokeVault`) is **LOCAL-ONLY — never run git against it.**
+- **Drive every step via subagents** (operator directive — saves main context). Main context = orchestration + gates.
+- **IGNORE `C:\Dev\CLAUDE.md`** (a Mise project, unrelated). **PokeVault** (`C:\Users\taurr_nvs748q\PokeVault\PokeVault`)
+  is **LOCAL-ONLY — never run git against it.**
 - **Decisions are SUPERSEDED with new D-numbers, never rewritten.** Commit trailer:
   `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
-- **Snyk** on new first-party code (global CLAUDE.md). Build in **worktrees**; backout tags `pre-<feature>`.
-- **Windows/PowerShell gotchas:** git here-strings can mis-parse → use `git commit -F <file>` for multi-line msgs.
-  A `..` in any operator path is rejected by the `_safe_*` CWE-23 guards — use absolute paths without `..`. Console
-  is cp1252; tools that print box/CJK glyphs force UTF-8. PowerShell pipes can show "Exit code 255" on a truncated
-  stream (`Select-Object -First/-Last`) — harmless if the real output printed.
+- **Snyk** `snyk_code_scan` on all new first-party Python; fix; rescan (global CLAUDE.md). Repo PRIVATE — no secrets/PII.
+- **Windows/PowerShell:** git here-strings mis-parse multi-line commit messages → write the message to a scratchpad
+  file and `git commit -F <file>`. A `..` in an operator path trips the CWE-23 `_safe_*` guards — use absolute paths.
+  When a PS `;`-chain runs `pytest` then `validate --write`, the README-sync test can fail on the FIRST pytest (stale
+  README) — run `validate_skills.py --write` BEFORE pytest when a skill was added.
 
-## 4. THE RECIPE (every contract/code-bearing build — NEVER inline; HANDOFF §5 is canonical)
-**grill (in-depth, plain terms) → freeze DESIGN/PLAN → freeze-gate `kata-review` (HOLD/SHIP) → orchestrated build
-(concurrent Sonnet workers in worktrees, disjoint file-ownership, TDD red→green, mutation-proof) → integration gate
-(pytest + validate_skills 39/0 + Snyk on new Python + `gate_emit` RESULT/footprint/mutation + concurrency.json) →
-fresh-context `kata-evaluate` (no-write, 9-rubric, default-FAIL, PASS) → standing D98 `kata-review` (adversarial,
-≥standard, fresh-context) → operator merge gate → merge/push/checkpoint STATE+HANDOFF+DECISIONS.**
-- **Grills are IN-DEPTH but PLAIN** (the primary style now, `skills/plan/kata-grill/RUBRIC.md` + memory
-  `grill-in-plain-terms`): lead with the simplest model that meets the goal, recommendation-first, short concrete
-  AskUserQuestion options, plain language — **without losing fidelity** (full branch coverage, convergence gate,
-  anti-bias backstop all hold; plain ≠ shallow). STOP if you catch yourself building a config-resolution cathedral.
-- **Verify-before-reuse** before any "reuses X" claim — grep/read X, cite `file:line`, else label NEW.
-- **D98 is mandatory** on contract/code-bearing builds — it caught a real defect the conformance gate missed on
-  EVERY build this session (an RCE path; a data-store-destruction safety hole). It is load-bearing, not optional.
-- **Gate-artifact tip:** mutation records via `mutation_run.prove_non_vacuous(source, exact_full_line, test_cmd)`
-  — the line must match including indentation; pick a load-bearing guard line (not a redundant one).
-- Model routing: judgment/eval/grill = **Opus**; workers = **Sonnet**. Fan reviewers out in parallel; resume a
-  completed reviewer with **SendMessage** for HOLD→fix→re-confirm (it restores its prior context — not an error).
+## 4. THE RECIPE + the standing guards (why the loop keeps catching real bugs)
+**grill/plan (in-depth, plain — `kata-grill/RUBRIC.md` + memory [[grill-in-plain-terms]]) → freeze DESIGN/PLAN →
+freeze-gate `kata-review` (HOLD/SHIP) → orchestrated build (subagents, disjoint ownership, TDD red→green,
+mutation-proof via `mutation_run.prove_non_vacuous`) → integration gate (pytest + validate 42/0 + Snyk + gate_emit) →
+fresh-context `kata-evaluate` (9-rubric, default-FAIL) → standing D98 `kata-review` (adversarial, fresh-context) →
+operator merge gate → merge/push/checkpoint.**
+- **D98 is load-bearing — never skip it.** This session it caught a real defect the conformance gate (PART A PASS)
+  missed on EVERY build: a preflight RCE, an IaC stateful-set hole, a function-model DoS (+ a chained-Pow on
+  re-confirm), a corroboration-gate fail-open, and two drift-gate fail-opens. Run it AND re-confirm after fixes.
+- **Verify-before-reuse** (`protocol/reuse-claims.md`): cite reuse surfaces by **stable symbol/section name, NOT line
+  numbers** (memory [[cite-skills-by-section-anchor]]) — line cites drift and have bitten the project repeatedly.
+- **exec-safety** (`protocol/exec-safety.md`, D112): any externally-sourced value reaching a subprocess = structured
+  argv + `shell=False`; any in-process eval of an external expression = AST-allowlist, never `eval`/`exec`. New sinks
+  go in the registry. `tools/tests/test_exec_safety.py` enforces it. (The freeze-gate caught an `eval`-RCE in the
+  Debug-P1 plan — this guard pays off.)
+- **validation-miss manifest** (`protocol/validation-misses.md`, D114): when D98/a human catches what `kata-evaluate`
+  passed, the reviewer flags it and the orchestrator appends to `.planning/validation-misses.jsonl` (observe-only). It
+  is the data layer for recurrence-hardening — this session would have auto-logged ~6 entries.
+- Model routing: judgment/plan/eval/grill = **Opus** (inherit; omit model on Agent calls); workers = **Sonnet**.
 
-## 5. OPEN NEXT QUEUE (operator picks after the red-team; expedite via the loop)
-- **(a) Debug Mode** — DESIGN frozen (`specs/debug-mode/DESIGN.md`); both build blockers cleared (install-portability
-  D104 + kata-preflight D109). The onboarding/conversion killer-app — a `debug` run-shape + `kata-comprehend` oracle +
-  7-step deviation pipeline. **Large build, no grill gate in front** (already frozen). Highest single impact.
-- **(b) IaC Tier-2 live-apply** — `specs/iac-live-apply/BRIEF.md`; its own grill; gated on authenticated cloud access;
-  needs a non-git safety contract (cloud applies aren't `git reset`-able).
-- **(c) recurrence-hardening (general)** — detector + `kata-improve` proposal + `kata-promote` gate (D101; D102 was
-  the first instance). Self-improving loop.
-- **(d) second-brain-learning** — the Recall contract is load-bearing (`specs/second-brain-learning/BRIEF.md`).
+## 5. OPEN QUEUE (after Debug Mode P3 — operator picks)
+- **(a) Exercise Debug Mode end-to-end** on a seeded fixture repo (first live run, n=0→1) — proves the whole loop.
+- **(b) recurrence-hardening T2** — the recurrence detector over `validation-misses.jsonl` → gated `kata-improve`
+  proposal → `kata-promote` (= D101; needs a grill: threshold, class taxonomy, skill-attribution).
+  `specs/recurrence-hardening/{BRIEF,BRIEF-validation-misses,PLAN-t1-manifest}.md`. (T3 = auto-author guards, C-arc-gated, future.)
+- **(c) IaC Tier-2 live-apply** — `specs/iac-live-apply/BRIEF.md` (its own grill; gated on cloud creds + a non-git safety contract).
+- **(d) second-brain-learning** — the Recall contract (`specs/second-brain-learning/BRIEF.md`).
 - **(e) install+confirm a 2nd platform (codex/kiro) live → run the single-vs-multi-model `kata-loop-benchmark`** (D108
-  made this runnable; needs the CLI installed on the machine — operator action).
+  made it runnable; needs the CLI installed — operator action).
 
-## 6. WHAT SHIPPED THIS SESSION (2026-06-26) — context for the red-team
-- **D108** multi-model layer (roles routing + cross-model dispatch + kiro adapter; stub-proven, real run gated on
-  install+confirm). **D109** kata-preflight (D29 PRE-FLIGHT spine: guarded auto-installer + registry + cleanup +
-  target-env probe; D98 caught an untrusted-source RCE path → fixed). **D110** IaC-safety specialists Tier-1 (TF+CFN
-  author/review/gate, auto-by-file-class, Snyk-primary fail-closed; D98 caught a stateful-set safety hole → fixed;
-  Tier-2 live-apply deferred). Plus the **primary grill style** change. Backout tags: `pre-iac-specialist`,
-  `pre-kata-preflight`, `pre-multimodel-layer`. Full detail: `.planning/DECISIONS.md` D104–D110 + `.planning/STATE.md`.
-- **Honest scope to remember:** multi-model = stub-tested (no live codex/kiro here); IaC = Tier-1 only (no live
-  apply); detection (roles/IaC) is best-effort; the IaC 8-smell lens is a self-check floor-raiser, the scanner is the
-  authoritative gate.
+## 6. WHAT SHIPPED THIS SESSION (2026-06-27) — context for P3
+- **D111** holistic red-team of D108/D109/D110 → fixed a preflight `verify`-field RCE, IaC case-sensitivity gate-skip,
+  dead `forceClassify`, stateful-set gaps, Snyk truthiness, an iac.json cross-seam fail-open, resolve_roles host-only.
+- **D112** `protocol/exec-safety.md` + `tools/tests/test_exec_safety.py` — the execution-injection class hardened.
+- **D113** Debug Mode P1 — `tools/function_model.py` (oracle + AST-safe `_safe_eval`), `skills/plan/kata-comprehend`,
+  the `kata/module/debug` run-shape.
+- **D114** validation-miss manifest — `tools/validation_misses.py`, `protocol/validation-misses.md`, the universal hook.
+- **D115** Debug Mode P2a — `tools/deviation.py` (LD4 funnel + LD5 confidence/routing), `skills/execute/kata-deviate`.
+- **D116** Debug Mode P2b — `tools/drift_gate.py` (behavioral drift gate + AEL integrity),
+  `skills/execute/kata-characterize`, the `## Fix-application phase` wiring in `kata-orchestrate`.
+- Backout/anchor: every D has a commit on `origin/master` (D116 = `8f6efb2`). 42 skills, pytest 1062, Snyk 0.
+- **Debug Mode artifacts** a debug run produces (P3's closeout consumes them): `.kata/function_models/` (P1),
+  `.kata/deviations/findings.json` + `deferred.json` (P2a/P2b), `.kata/drift/*.json` (P2b).
