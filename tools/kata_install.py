@@ -276,7 +276,7 @@ _PROBE_PROMPT = "Reply with ONLY the single word KATAHARNESS spelled backwards, 
 # The invariant _PROBE_COMMANDS ⊆ _COMMAND_BUILDERS is enforced by test (L-MP2).
 # Point-in-time flags (RESEARCH §0/§6) — pin/verify at build; the confirm probe is the standing guard.
 _PROBE_COMMANDS = {
-    "codex": lambda: ["codex", "exec", "--sandbox", "read-only", _PROBE_PROMPT],
+    "codex": lambda: ["codex", "exec", "--skip-git-repo-check", "--sandbox", "read-only", _PROBE_PROMPT],
     "kiro": lambda: ["kiro-cli", "chat", "--no-interactive", _PROBE_PROMPT],
 }
 
@@ -319,7 +319,7 @@ def _record(platform: str, home) -> list[str]:
 def _real_probe_runner(cmd: list[str]):
     import subprocess  # noqa: S404 — default real runner; tests inject a stub
 
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)  # noqa: S603
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL)  # noqa: S603
     return proc.returncode, proc.stdout
 
 

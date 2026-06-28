@@ -115,6 +115,7 @@ def codex_command(brief: dict, worktree: str) -> list[str]:
     sandbox = "workspace-write" if brief["boundaries"]["sandbox"] == "write" else "read-only"
     return [
         "codex", "exec",
+        "--skip-git-repo-check",
         "--cd", str(worktree),
         "--sandbox", sandbox,
         "--model", brief["model"],
@@ -168,7 +169,7 @@ def _safe_result_path(result_path: str, cwd: str) -> Path:
 def _subprocess_runner(cmd: list[str], cwd: str, result_path: str, timeout: int):
     """Default real runner: shell out, then read the worker's result file. Gated on the CLI existing."""
     rp = _safe_result_path(result_path, cwd)
-    proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)  # noqa: S603
+    proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL)  # noqa: S603
     result_text = rp.read_text(encoding="utf-8") if rp.exists() else ""
     return proc.returncode, proc.stdout, result_text
 

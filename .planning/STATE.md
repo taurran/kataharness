@@ -1,5 +1,25 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-29, CODEX ADAPTER LIVE-HARDENED + MULTI-MODEL LAYER CONFIRMED LIVE n=0→1 — D121; pytest 1314 ·
+> 45 skills/0 · Snyk 0 on changed lines):** Queue item (e), step 1. The operator installed **Codex CLI 0.142.3**
+> (ChatGPT-authed) locally — lifting the 2nd-platform install gate. The **first live exercise of the D108 multi-model
+> dispatch/probe/confirm chain** (previously stub-only, n=0) immediately surfaced a real adapter defect codex-cli
+> 0.142.3 requires: (1) `codex exec` refuses to run outside a trusted git dir without **`--skip-git-repo-check`**;
+> (2) it **blocks reading stdin** when the runner leaves stdin open (the harness probe hit its 120s timeout this way).
+> **Fixed (4 surgical edits, TDD):** added `--skip-git-repo-check` to `kata_dispatch.codex_command` + the
+> `kata_install._PROBE_COMMANDS["codex"]` probe; added `stdin=subprocess.DEVNULL` to both `_subprocess_runner` and
+> `_real_probe_runner`. (kiro builder/probe untouched; `--sandbox` policy unchanged; no new exec sink / no `shell=True`
+> — `test_exec_safety` green.) **Live confirm now PASSES:** `kata_install.py --platform codex --confirm` → `confirmed:
+> true, "probe ok", confirmedPlatforms:["codex"]` in ~6s (real `codex exec` returns the `SSENRAHATAK` token). The
+> multi-model layer (read-only validator/researcher routing; coder-routing still DEFERRED per D108) is now LIVE-proven
+> on a real 2nd platform. **Gates:** pytest **1314** (1310→1314), `kata_dispatch.py` Snyk **0**; `kata_install.py` has
+> 6 PRE-EXISTING Low CWE-23 path-traversal findings (in `..`-guarded path code, NOT touched by this fix, below the
+> medium+ gate) — flagged as a separate pre-existing hardening item, not fixed here. **NEXT (e), step 2:** build the
+> **`kata-loop-benchmark` keystone** (operator chose this) — grill→freeze→build the benchmark module + a reference-task
+> fixture + a single-vs-multi-model metric set; with Codex now confirmed live, it can include a REAL multi-model arm
+> (not just a single-model baseline). Then (a, last) Debug Mode live run. Records: `DECISIONS.md` D121; benchmark spec
+> TBD `specs/kata-loop-benchmark/`.
+
 > **CURRENT (2026-06-29, SECOND-BRAIN RECALL [read-contract + files-only adapter] BUILT — D120; pytest 1310 · 45
 > skills/0 · Snyk 0):** Queue item (d). The READ side of the loop's cross-run learning — names the long-reserved
 > `engram.backend` CONSULT seam (D9/D30/D99). Per operator decision, scoped to the **Recall read-CONTRACT + a

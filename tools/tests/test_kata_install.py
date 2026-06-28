@@ -306,6 +306,43 @@ def test_confirm_kiro_probe_no_token(tmp_path):
     assert "kiro" not in ks.confirmed_platforms(home=tmp_path)
 
 
+def test_codex_probe_command_has_skip_git_repo_check():
+    """The codex confirm-probe must include --skip-git-repo-check (codex-cli 0.142.3).
+
+    Without it, `codex exec` refuses to run outside a trusted git dir; the probe must
+    still keep exec/--sandbox read-only/prompt intact.
+    """
+    cmd = ki._PROBE_COMMANDS["codex"]()
+    assert "--skip-git-repo-check" in cmd
+    assert cmd[0:2] == ["codex", "exec"]
+    assert cmd[cmd.index("--sandbox") + 1] == "read-only"
+    assert cmd[-1] == ki._PROBE_PROMPT
+    # kiro probe is codex-specific change — untouched
+    assert "--skip-git-repo-check" not in ki._PROBE_COMMANDS["kiro"]()
+
+
+def test_real_probe_runner_closes_stdin(monkeypatch):
+    """_real_probe_runner must pass stdin=DEVNULL so codex never blocks reading stdin."""
+    import subprocess
+
+    captured = {}
+
+    class _Proc:
+        returncode = 0
+        stdout = ki._PROBE_TOKEN
+
+    def fake_run(cmd, **kwargs):
+        captured.update(kwargs)
+        return _Proc()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    ki._real_probe_runner(["codex", "exec", "--skip-git-repo-check"])
+    assert captured.get("stdin") is subprocess.DEVNULL
+    assert captured.get("capture_output") is True
+    assert captured.get("text") is True
+    assert captured.get("timeout") == 120
+
+
 def test_probe_commands_subset_of_command_builders():
     """Invariant (L-MP2): every probe-able platform must have a dispatch adapter.
 

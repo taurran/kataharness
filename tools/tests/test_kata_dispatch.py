@@ -51,6 +51,54 @@ def test_codex_command_write_sandbox():
     assert cmd[cmd.index("--sandbox") + 1] == "workspace-write"
 
 
+def test_codex_command_has_skip_git_repo_check():
+    """codex-cli 0.142.3 refuses to run outside a trusted git dir without --skip-git-repo-check.
+
+    The flag must be present and ordered exec → --skip-git-repo-check → --cd ...,
+    while keeping exec/--cd/--sandbox/--model/-o/prompt intact.
+    """
+    b = kd.build_brief("t1", "validator", "codex", model="gpt-5-codex", objective="o",
+                       result_path="RESULT.json", sandbox="read-only")
+    cmd = kd.codex_command(b, "/wt")
+    assert "--skip-git-repo-check" in cmd
+    # order: exec → skip-flag → cd
+    assert cmd[0:3] == ["codex", "exec", "--skip-git-repo-check"]
+    assert cmd.index("--skip-git-repo-check") < cmd.index("--cd")
+    # everything else still intact
+    assert cmd[cmd.index("--cd") + 1] == "/wt"
+    assert cmd[cmd.index("--sandbox") + 1] == "read-only"
+    assert cmd[cmd.index("--model") + 1] == "gpt-5-codex"
+    assert cmd[cmd.index("-o") + 1] == "RESULT.json"
+    assert cmd[-1] == kd._brief_prompt(b, capture="emit")
+
+
+def test_subprocess_runner_closes_stdin(tmp_path, monkeypatch):
+    """_subprocess_runner must pass stdin=DEVNULL so codex never blocks reading stdin.
+
+    codex exec reads instructions from an open stdin and blocks until timeout otherwise
+    (the live 120s-timeout finding). Capture the kwargs passed to subprocess.run.
+    """
+    import subprocess
+
+    captured = {}
+
+    class _Proc:
+        returncode = 0
+        stdout = "ok"
+
+    def fake_run(cmd, **kwargs):
+        captured.update(kwargs)
+        return _Proc()
+
+    monkeypatch.setattr(kd.subprocess, "run", fake_run)
+    kd._subprocess_runner(["codex", "exec"], str(tmp_path), "RESULT.json", 600)
+    assert captured.get("stdin") is subprocess.DEVNULL
+    # existing behaviour preserved
+    assert captured.get("capture_output") is True
+    assert captured.get("text") is True
+    assert captured.get("timeout") == 600
+
+
 # ----- N3 normalize / build_result -----
 def test_normalize_validator():
     payload = kd.normalize("validator", json.dumps({"verdict": "hold", "findings": [{"t": "x"}]}))

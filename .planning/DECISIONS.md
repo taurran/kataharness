@@ -1494,3 +1494,33 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   half-built code; only the uncommitted plan awaited its verdict) — a fresh freeze-gate re-derived the same SHIP after
   the fixes; D98 found zero must-fix (2nd clean pass of the session), the read-only/no-write-path invariant holding **by
   construction** (like IaC Tier-2's no-subprocess seam) being why.
+
+<!-- D108 codex adapter live-hardened + multi-model layer confirmed LIVE (n=0->1). Queue item (e) step 1. -->
+- **D121 — Codex adapter live-hardened; the multi-model dispatch chain confirmed LIVE (n=0→1) — 2026-06-29.** Queue
+  item (e), step 1. The operator installed **Codex CLI 0.142.3** (ChatGPT-authed) locally, lifting the 2nd-platform
+  install gate that had blocked the multi-model benchmark. The **first live exercise of the D108 dispatch/probe/confirm
+  chain** (built stub-only; D108 honest scope = n=0 live) immediately surfaced a real defect — exactly the class only a
+  live run can catch: codex-cli 0.142.3 (a) refuses to `codex exec` outside a trusted git dir without
+  **`--skip-git-repo-check`** (`"Not inside a trusted directory…"`), and (b) **blocks reading instructions from stdin**
+  when the runner leaves stdin open → the harness confirm-probe hit its 120s timeout. **Diagnosed + fix verified live**
+  (`codex exec --sandbox read-only --skip-git-repo-check "<prompt>"` with stdin closed returns the `SSENRAHATAK` token in
+  ~6s) **before touching code.** **Fixed (4 surgical edits, TDD, subagent-driven):** (1) `kata_dispatch.codex_command`
+  adds `--skip-git-repo-check` (order: `exec`→skip-flag→`--cd`…); (2) `kata_install._PROBE_COMMANDS["codex"]` adds the
+  same flag; (3) `kata_dispatch._subprocess_runner` and (4) `kata_install._real_probe_runner` pass
+  `stdin=subprocess.DEVNULL`. The kiro builder/probe are untouched; the `--sandbox` policy logic is unchanged; **no new
+  exec sink / no `shell=True`** (a fixed flag on an already-registered structured-argv sink + a stdin kwarg) — the N5
+  confirm-probe is the standing guard the BRIEF anticipated for stale per-CLI flags between releases, and it did its job.
+  Tests: `test_codex_command_has_skip_git_repo_check`, `test_subprocess_runner_closes_stdin`,
+  `test_codex_probe_command_has_skip_git_repo_check`, `test_real_probe_runner_closes_stdin` (the stdin ones patch
+  `subprocess.run` and assert `stdin is subprocess.DEVNULL`); the L-MP2 `_PROBE_COMMANDS ⊆ _COMMAND_BUILDERS` invariant +
+  all kiro tests stay green. **Live confirm now PASSES:** `kata_install.py --platform codex --confirm` →
+  `{"confirmed": true, "detail": "probe ok", "confirmedPlatforms": ["codex"]}` — the D108 multi-model layer (read-only
+  validator/researcher routing; coder-routing + evaluator-thresholds still DEFERRED per D108 LD11/MM-1) is **LIVE-proven
+  on a real 2nd platform for the first time.** **Gates:** pytest **1314** (1310→1314), `kata_dispatch.py` Snyk **0**.
+  **Pre-existing observation (NOT fixed — flagged):** `kata_install.py` carries **6 LOW** CWE-23 path-traversal Snyk
+  findings in its `..`-guarded path-handling code (`_safe_abs`/`_default_home`/`_flat_link_skills`/`_link_or_copy`/
+  `copy_project`) — present since D104/D108, untouched by this fix, below the project's medium+ gate; a candidate for a
+  separate hardening pass (the `..`-guards are the intended mitigation; Snyk flags them Low regardless). **Honest scope:**
+  this validates the dispatch/probe/confirm path live; the `kata-loop-benchmark` itself is still unbuilt (e step 2) and a
+  real multi-model *benchmark run* awaits it. Meta: queue item (e) delivered its first real value not as a benchmark run
+  but as a **live-caught adapter bug** — the n=0→1 transition is where stub-tested integrations meet reality.
