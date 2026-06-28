@@ -1387,3 +1387,56 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   freeze-gate again caught a real internal contradiction (the BC claim vs the round-trip test) the planner was too close
   to see, and D98's distinct-run/soft-enum/non-fatality probes confirmed the act-but-gated boundary holds — T2 is the
   machinery that would have auto-proposed exactly the D112 exec-safety guard.
+
+<!-- IaC Tier-2 (preview/approve/plan-capture HALF; execution DEFERRED). Spec: specs/iac-live-apply/PLAN-tier2-preview.md. Fully subagent-driven. -->
+- **D119 — IaC Tier-2 (the live-apply preview/approve/plan-capture HALF; cloud EXECUTION DEFERRED) BUILT — 2026-06-28.**
+  Queue item (c). The live-apply half the IaC specialists (Tier-1 = author/review/gate, D110) deliberately deferred —
+  because a cloud apply is the **one operation `git` cannot undo** (you can't `git revert` a destroyed database). Per
+  operator decision, scoped to the **preview/approve/plan-capture HALF ONLY**; the actual cloud EXECUTION (`terraform
+  plan`/`apply`, `cfn execute-change-set`, live-state drift reads) is a **DEFERRED, n=0-live, creds-gated seam** —
+  `run_apply` raises `NotImplementedError`; **nothing in this build can mutate infrastructure**. Built **entirely through
+  the loop/subagents** (operator directive). A grill-prep subagent framed the open decisions → **operator decided 3 calls**
+  ((1) scope = build-the-preview-half-now, STOP at the creds wall [not full-apply-mocked, not defer-entirely]; (2) **both
+  Terraform AND CloudFormation**; (3) stateful destroy/replace = a separate **typed capability-gate** [the operator chose
+  this over Tier-1's hard-block]) + adopted defaults (plan-hash approval-invalidation mirroring kata-preflight; fixed-argv/
+  `shell=False`/operator-domain/approval-gated sinks, NEVER freeform; remote-state-required + drift-abort; never
+  auto-rollback; `-target`/`-auto-approve` FORBIDDEN; parked-apply never auto-applies; **sibling** `.kata/iac-apply.json`
+  not extending `.kata/iac.json`) → PLAN (planning subagent) → **freeze-gate `kata-review` HOLD→SHIP** → 4-slice 3-wave
+  build → `kata-evaluate` **PART A PASS** → **D98 PART B SHIP** → operator merge gate. **Built:** **(A)**
+  `tools/iac_apply.py` — the PURE engine: `build_tf_plan_argv`/`build_tf_apply_argv`/`build_cfn_create_changeset_argv`/
+  `build_cfn_execute_changeset_argv` (structured argv, `shell=False`, identifier = positional DATA validated by `fullmatch`
+  grammars incl. a **dedicated CFN ARN grammar**, `--` end-of-options, never `-target`/`-auto-approve`); `plan_hash` +
+  `canonical_cfn_plan_bytes` (TF binds the binary `tfplan`; CFN binds the **FULL** `describe-change-set` so ARN/StackId are
+  inside the hashed bytes — no replay against a different change-set/stack); `approval_verdict` (plan-hash-bound; re-plan ⇒
+  `APPROVAL_INVALIDATED`, never collapses to pass); `capability_gate_verdict` (the typed stateful-destroy gate — clears
+  ONLY when all three self-binding conditions hold: `grant.approvedPlanHash == computed_plan_hash` AND
+  `authorizedStatefulAddresses ⊇` the stateful-destroy set AND a typed `confirmedToken`; fail-closed on every missing/null);
+  `apply_state`; sibling artifact `.kata/iac-apply.json` (`iac_apply_schema`/`emit`/`load`); approval/grant/audit builders;
+  and **`run_apply` = the deferred `NotImplementedError` seam** (no `subprocess` import on the path). Pure (AST no-sink
+  scan), 6 mutation proofs incl. the `⊇` containment (b), the **self-binding hash equality (c)**, and the seam (f). **(B)**
+  `protocol/exec-safety.md` — 4 DEFERRED sink rows (operator-domain + approval-artifact gate, `shell=False`, labeled
+  not-shipped-runnable; `_SHELL_TRUE_ALLOWLIST` untouched so `test_exec_safety` stays green) + `protocol/iac-safety.md` §9
+  Tier-2 contract (Tier-1 §1–§8 untouched). **(D)** `skills/coordinate/kata-orchestrate` (v0.1.0→0.2.0) — the Tier-2 apply
+  state-machine in the IaC region, slotted AFTER Tier-1's escalate verdict; park-never-auto-apply via `escalation`; STOPS
+  at `READY_DEFERRED`; sibling artifact only (Tier-1 `.kata/iac.json` + the D111 fail-closed re-classification byte-for-byte
+  untouched). **(C)** `skills/execute/kata-iac-terraform` + `kata-iac-cloudformation` (both v0.1.0→0.2.0) — Tier-2
+  preview/capture sections at the Tier-1 boundary markers, DRY-pointing to §9. **Freeze-gate caught (HOLD→SHIP):** **F2**
+  a real ownership contradiction (Slice D bumps a skill version → README-sync fails, but README was owned by another
+  slice) → README regen centralized to the conductor's integration gate (no slice owns/regens README; per-slice validate
+  is read-only + tolerates the expected out-of-sync); **F1** the capability grant was NOT self-binding to the plan hash
+  (safety rested on a separate call + artifact co-location) → made `capability_gate_verdict` itself assert
+  `grant.approvedPlanHash == computed_plan_hash` (+ a dedicated mutation target); **F3** CFN bound only the `Changes` array
+  → bind the FULL `describe-change-set` (ARN/stack inside the hash) + a dedicated `fullmatch` ARN grammar. **D98 PART B
+  SHIP with NO must-fix** — the FIRST zero-fail-open build this session: every bypass attack failed CLOSED (no-grant,
+  empty/partial authorized set, **stale grant bound to a different plan hash**, missing token → all `CAPABILITY_REQUIRED`;
+  TF one-byte / CFN ARN-swap → `APPROVAL_INVALIDATED`; injection [`;`/`|`/`..`/`://`/leading-`-`/`-target`/`-auto-approve`/
+  `$(...)`] all rejected; `run_apply` raises before any subprocess). 3 nice-to-haves recorded, deferred (all fail-SAFE on
+  the never-run path): `approval_verdict` returns `PENDING_PLAN` vs `BLOCKED` on a non-dict approval; a redundant CFN argv
+  flag; N1 inherited stateful-set completeness (fix belongs in `iac_detect`, already documented §9.5). **Gates:** pytest
+  **1261** (1175→1261), validate **45/0** (no new skill — 3 version bumps), Snyk **0** on `iac_apply.py`. **Honest scope:**
+  the entire apply path is **n=0-live / creds-gated / DEFERRED** — loudly labeled across the module, both specialists, §9,
+  and all 4 exec-safety rows; nothing claims apply "works." **Tier-2 live-apply EXECUTION** remains future-gated on
+  operator-authenticated cloud creds (its own session). Records: `specs/iac-live-apply/PLAN-tier2-preview.md`. **Meta:** on
+  the single most destructive feature in the project, the freeze-gate caught 3 real defects (one self-binding-safety gap)
+  and D98 found zero residual fail-opens — the catastrophic invariant (no reachable cloud mutation) is enforced **by
+  construction** (no subprocess; the seam raises), which is why this was the cleanest D98 pass of the session.

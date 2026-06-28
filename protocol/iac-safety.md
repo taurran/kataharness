@@ -310,3 +310,103 @@ integration gate; unresolved high/critical findings or an un-approved destroy �
 | 8 smells source | RESEARCH §4 — S1–S8 with context |
 | Bake-vs-delegate line | RESEARCH §5 — "Never re-implement scanner logic in prose" |
 | Escalation decision table | RESEARCH §6 → DESIGN §4 |
+
+---
+
+## 9. Tier 2 — live-apply preview/approve/capture (creds-gated; execution DEFERRED)
+
+> **Scope reconciliation (Tier-1 §1 stays accurate).** §1's "Tier 1 only — NO live apply" remains true and is
+> **not weakened**. This section is the preview/approve/plan-capture **half** of the separate Tier-2 contract
+> §1 already points at (`specs/iac-live-apply/`). It builds the **pure** preview→approve→capture machinery and
+> **STOPS at the creds wall**: the actual cloud EXECUTION (running `terraform plan` to generate a plan,
+> `terraform apply`, `aws cloudformation execute-change-set`, and any live state read) is the **DEFERRED,
+> n=0-live seam** — `iac_apply.run_apply` raises `NotImplementedError` and is **never wired runnable** here.
+> The engine is `tools/iac_apply.py`; it consumes a **provided** plan/change-set artifact exactly as Tier-1
+> `scan_tf_plan` consumes a provided `plan_json`. Everything below is creds-FREE.
+
+### 9.1 The apply lifecycle (preview → approve → plan-hash binding → capability-gate → READY_DEFERRED)
+
+1. **Preview the EXACT plan/change-set.** The lifecycle operates on the exact artifact that would be consumed
+   at apply (TF: the binary `tfplan`; CFN: the full `describe-change-set` response) — not a re-derived summary.
+2. **Human approves.** Approval is recorded in the committable `kata.iac-apply-approval.json`
+   (`iac_apply.build_approval_artifact`; read via `iac_apply.load_approval`).
+3. **Plan-hash binding (re-plan invalidates — mirrors kata-preflight H2).** Approval is bound to the SHA-256 of
+   the EXACT apply-consumed bytes: `iac_apply.plan_hash` over the binary `tfplan` (TF) or over
+   `iac_apply.canonical_cfn_plan_bytes(describe_change_set)` (CFN — the FULL response so `ChangeSetId`/`StackId`/
+   `StackName` fall WITHIN the hashed bytes, defeating replay against a different change-set or stack).
+   `iac_apply.approval_verdict` returns `APPROVED` **iff** `approvedPlanHash == computed_plan_hash`; any re-plan
+   or plan change → `APPROVAL_INVALIDATED`. Mismatch is **never** collapsed to a pass. Approval is never reused
+   across plans.
+4. **Typed stateful-destroy capability-gate (distinct from plan approval; self-binding).** For any destroy/
+   replace on a resource classed **stateful** by `iac_detect` (`scan_tf_plan` / `scan_cfn_changeset`; the
+   `_TF_STATEFUL_*` / `_CFN_STATEFUL_*` families of §5b), `iac_apply.capability_gate_verdict` clears ONLY when
+   ALL THREE hold: (i) `grant["approvedPlanHash"] == computed_plan_hash` (self-binding — a stale grant from a
+   prior plan can never authorize a destroy, even if approval/grant artifacts are split); (ii)
+   `authorizedStatefulAddresses` ⊇ the full stateful-destroy set; (iii) a typed `confirmedToken` is present.
+   **A plan approval ALONE never authorizes a stateful destroy** (grill #3). The grant shape is
+   `iac_apply.build_capability_grant` (`{approvedPlanHash, authorizedStatefulAddresses, confirmedToken}`).
+5. **Terminal `READY_DEFERRED` hands to the deferred seam — it does NOT execute.** `iac_apply.apply_state`
+   composes approval + capability + drift + creds and resolves to one of
+   `PENDING_PLAN · PLAN_CAPTURED · APPROVAL_INVALIDATED · CAPABILITY_REQUIRED · DRIFT_ABORT · CREDS_ABSENT ·
+   READY_DEFERRED · BLOCKED`. The success terminal `READY_DEFERRED` hands to `iac_apply.run_apply`, which raises
+   `NotImplementedError`. It is **not** an executed apply.
+6. **Post-apply verify + captured recovery plan are design-level.** **Never auto-rollback** — no automated
+   rollback ever (a captured recovery plan is for a human, not the harness).
+
+### 9.2 Drift-abort (remote-state-required)
+
+v1 **REQUIRES remote state + locking**. Pre-apply drift (real infra ≠ recorded state) is a hard abort:
+`iac_apply.apply_state(..., drift_detected=True, ...)` → `DRIFT_ABORT` regardless of approval/grant; the
+orchestrator escalates and never proceeds. Reading live state for drift is itself creds-gated and **not wired
+here** — drift detection arrives only behind the creds wall.
+
+### 9.3 The sibling artifact (`.kata/iac-apply.json`) — why sibling, not an extension of `.kata/iac.json`
+
+Tier-2 writes a **sibling** runtime artifact `.kata/iac-apply.json` (`iac_apply.iac_apply_schema` is the single
+source of truth; built by `iac_apply.build_iac_apply_artifact`, written by `iac_apply.emit_iac_apply`) plus the
+committable approval input `kata.iac-apply-approval.json`. It is **NOT** an extension of Tier-1's `.kata/iac.json`:
+
+- The D111 anti-fail-open guard makes `kata-evaluate` independently re-classify the footprint and treat an
+  absent/malformed `.kata/iac.json` on IaC-classed changes as `NEEDS_WORK` (§7 field notes). Injecting
+  apply-lifecycle state into that artifact risks perturbing the fail-closed Tier-1 re-classification — a
+  regression on the most safety-critical surface. The sibling keeps Tier-1 byte-for-byte untouched.
+- Separation of concerns / trust: `.kata/iac.json` = Tier-1 analysis FINDINGS (creds-free); `.kata/iac-apply.json`
+  = Tier-2 approval/capture/audit LIFECYCLE (creds-gated). The human-authored grant lives at the committable
+  repo-root path (tamper-resistance, mirroring kata-preflight's `kata.freeze-approval.json` H2), separate from
+  the machine-written runtime state. An append-only audit row is built by `iac_apply.build_apply_audit_record`.
+
+### 9.4 n=0-live / creds-wall honesty (the existential bound)
+
+The whole Tier-2 apply path is **n=0-live, creds-gated**. Generating a plan live, reading live state for drift,
+and executing an apply ALL require authenticated cloud access — **none is wired here**. The single cloud-mutating
+function `iac_apply.run_apply` raises `NotImplementedError` (mirrors `drift_gate.structural_drift_verdict`); it
+imports no subprocess on any path and **cannot mutate cloud infra by construction**. Live execution is a
+separate, n=0-live, creds-gated build with its own grill/DESIGN.
+
+### 9.5 Hard exclusions (do not weaken these)
+
+- **`-target` / scoped apply is FORBIDDEN in v1** (bypasses the lifecycle guards). The TF builders expose no
+  `-target` parameter and never emit the token.
+- **Never `-auto-approve`** — `build_tf_apply_argv` applies the EXACT approved saved plan file (the artifact is
+  the authorization) and never emits `-auto-approve`.
+- **A parked apply stays parked — never auto-applies** (reuse `escalation.py` async park/drain).
+- State surgery (import/mv/rm, backend migration), cost/blast-radius preview, multi-cloud, env-differentiated
+  policy, and auto-rollback are OUT OF SCOPE / FORBIDDEN here.
+- **(N1 — inherited caveat, not a Tier-2 regression)** The capability-gate's completeness is INHERITED from
+  Tier-1's stateful sets (`iac_detect._TF_STATEFUL_*` / `_CFN_STATEFUL_*`): a data-bearing resource type MISSING
+  from those families would class non-stateful and could clear via plan approval without the typed grant. This
+  is the same property that gates Tier-1 escalation (§5b/§6) — a new gap is fixed in `iac_detect`, not here.
+
+### 9.6 Tier-2 key citations (verify-before-reuse per `protocol/reuse-claims.md`)
+
+| Claim | Verified surface (`tools/iac_apply.py`) |
+|---|---|
+| Structured-argv builders (`shell=False`, DATA identifiers, no `-target`/`-auto-approve`) | `iac_apply.build_tf_plan_argv` · `build_tf_apply_argv` · `build_cfn_create_changeset_argv` · `build_cfn_execute_changeset_argv` |
+| Plan-hash binding input (TF binary bytes / CFN full-response bytes) | `iac_apply.plan_hash` · `iac_apply.canonical_cfn_plan_bytes` |
+| Approval verdict (APPROVED iff hash matches; mismatch → invalidated, never pass) | `iac_apply.approval_verdict` (+ `load_approval`, `build_approval_artifact`) |
+| Typed self-binding stateful-destroy capability-gate (distinct from approval) | `iac_apply.capability_gate_verdict` (+ `build_capability_grant`) |
+| Apply state-machine resolver + terminal vocabulary | `iac_apply.apply_state` |
+| Sibling runtime artifact schema / build / emit | `iac_apply.iac_apply_schema` · `build_iac_apply_artifact` · `emit_iac_apply` |
+| Append-only apply-audit row | `iac_apply.build_apply_audit_record` |
+| The DEFERRED cloud-execution seam (raises `NotImplementedError`; creds wall) | `iac_apply.run_apply` |
+| Exec-safety sink registration (deferred, `shell=False`) | `protocol/exec-safety.md` sink registry (the four `iac_apply.run_apply` rows) |

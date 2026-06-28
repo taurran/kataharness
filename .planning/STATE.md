@@ -1,5 +1,36 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-28, IaC TIER-2 [preview/approve half] BUILT — D119; pytest 1261 · 45 skills/0 · Snyk 0):** Queue
+> item (c). The live-apply half of the IaC specialists (Tier-1 = author/review/gate, D110), scoped by operator decision
+> to the **preview/approve/plan-capture HALF** — the actual cloud EXECUTION is a **DEFERRED, n=0-live, creds-gated seam**
+> (`run_apply` → NotImplementedError; nothing in this build can mutate infra). Operator chose: build-the-preview-half-now
+> (stop at the creds wall), **both TF + CFN**, stateful-destroy = a **typed self-binding capability-gate** (not Tier-1's
+> hard-block). Built **entirely through subagents**. Grill (subagent-framed → 3 operator calls + adopted defaults) →
+> PLAN (planning subagent) → **freeze-gate kata-review HOLD→SHIP** (caught: F2 a README/version-bump ownership
+> contradiction → README regen centralized to the conductor integration-gate; F1 the capability grant wasn't
+> self-binding to the plan hash → now is; F3 CFN must hash the FULL describe-change-set + a dedicated ARN grammar) →
+> 4-slice 3-wave build → `kata-evaluate` **PART A PASS** → **D98 PART B SHIP — NO must-fix** (first zero-fail-open build
+> this session; every bypass attack failed CLOSED). **Built:** **(A)** `tools/iac_apply.py` — the PURE engine: 4 argv
+> builders (shell=False, structured, no `-target`/`-auto-approve`, dedicated CFN ARN grammar), `plan_hash` (TF binary
+> `tfplan` / CFN full `describe-change-set` via `canonical_cfn_plan_bytes`), `approval_verdict` (plan-hash-bound; re-plan
+> invalidates), `capability_gate_verdict` (3 self-binding conditions: grant.hash==plan hash AND authorized⊇stateful-set
+> AND typed token — fail-closed on every miss), `apply_state`, sibling-artifact `.kata/iac-apply.json`
+> (`iac_apply_schema`/`emit`), audit-record builder, and `run_apply` (the deferred NotImplementedError seam); pure (no
+> sink — AST-scanned), 6 mutation proofs incl. the self-binding (c) + the seam (f). **(B)** `protocol/exec-safety.md` (4
+> DEFERRED operator-domain sink rows; `_SHELL_TRUE_ALLOWLIST` untouched) + `protocol/iac-safety.md` §9 Tier-2 contract.
+> **(D)** `kata-orchestrate` IaC region (v0.2.0) — the Tier-2 apply state-machine slotted AFTER Tier-1's escalate
+> verdict; park-never-auto-apply; STOPS at READY_DEFERRED; sibling artifact (Tier-1 `.kata/iac.json` + D111
+> re-classification untouched). **(C)** both specialists `kata-iac-terraform`/`kata-iac-cloudformation` (v0.2.0) —
+> Tier-2 preview/capture sections at the Tier-1 boundary markers, DRY-pointing to §9. **The catastrophic invariant
+> holds by construction:** no `subprocess` anywhere in the engine; `run_apply` raises always; the typed self-binding
+> capability-gate fail-closed on no-grant/empty-set/partial-cover/stale-hash/missing-token. **Honest scope:** the entire
+> apply path is **n=0-live / creds-gated / DEFERRED** — loudly labeled; nothing claims apply "works." **Deferred MINORs
+> (D98 nice-to-haves, NOT built):** `approval_verdict` returns PENDING_PLAN (vs BLOCKED) on a non-dict approval
+> (fail-safe); a redundant CFN argv flag; N1 inherited stateful-set completeness (fix belongs in `iac_detect`). **NEXT
+> (operator order b→c→d→e):** **(d) second-brain Recall** (own grill); then (e) 2nd-platform benchmark; (a, last) Debug
+> Mode live run. **Tier-2 live-apply EXECUTION** itself remains future-gated on operator cloud creds. Records:
+> `specs/iac-live-apply/PLAN-tier2-preview.md`, `DECISIONS.md` D119.
+
 > **CURRENT (2026-06-27, RECURRENCE-HARDENING T2 BUILT — D118; pytest 1175 · 45 skills/0 · Snyk 0):** Queue item
 > (b). Closes the recurrence loop the T1 manifest (D114) opened: when a failure-CLASS recurs (**3× distinct runs, or
 > 2× for BLOCKERs**, clustered by `responsible_skill`×`failure_class`) the loop **auto-drafts a human-gated hardening

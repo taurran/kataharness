@@ -1,0 +1,22 @@
+{
+  "_comment": "terraform show -json fixture (creds-free) with a STATEFUL delete (aws_db_instance) plus a NON-stateful delete (aws_instance). Consumed by iac_detect.scan_tf_plan.",
+  "format_version": "1.2",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.primary",
+      "type": "aws_db_instance",
+      "change": {"actions": ["delete", "create"]},
+      "action_reason": "replace_because_cannot_update"
+    },
+    {
+      "address": "aws_instance.web",
+      "type": "aws_instance",
+      "change": {"actions": ["delete"]}
+    },
+    {
+      "address": "aws_s3_bucket.assets",
+      "type": "aws_s3_bucket",
+      "change": {"actions": ["no-op"]}
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "_comment": "aws cloudformation describe-change-set FULL response fixture (creds-free). Embeds ChangeSetId/StackId/StackName so the CFN plan_hash binds to ARN+stack. Contains a STATEFUL Remove (AWS::RDS::DBInstance).",
+  "ChangeSetId": "arn:aws:cloudformation:us-east-1:123456789012:changeSet/my-change-set/9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "ChangeSetName": "my-change-set",
+  "StackId": "arn:aws:cloudformation:us-east-1:123456789012:stack/prod-data/abc1234",
+  "StackName": "prod-data",
+  "Status": "CREATE_COMPLETE",
+  "Changes": [
+    {
+      "Type": "Resource",
+      "ResourceChange": {
+        "Action": "Remove",
+        "LogicalResourceId": "PrimaryDatabase",
+        "ResourceType": "AWS::RDS::DBInstance",
+        "Replacement": "False"
+      }
+    },
+    {
+      "Type": "Resource",
+      "ResourceChange": {
+        "Action": "Remove",
+        "LogicalResourceId": "WebServer",
+        "ResourceType": "AWS::EC2::Instance",
+        "Replacement": "False"
+      }
+    }
+  ]
+}

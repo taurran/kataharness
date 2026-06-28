@@ -6,7 +6,7 @@ description: >-
   change-set JSON parsed via iac_detect.scan_cfn_changeset if provided). Fail-closed on high/critical
   findings; escalate any delete/replace on stateful resources. Tier 1 only — NO live change sets.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: execute
 status: experimental
 agnostic: true
@@ -88,6 +88,50 @@ scanner.
 **Tier 1 boundary:** Do NOT call `aws cloudformation create-change-set` or `update-stack`. Change-set
 creation requires a live stack and cloud credentials — those are Tier 2 capabilities
 (`specs/iac-live-apply/`).
+
+#### Tier 2 — preview / approve / capture (n=0-live, creds-gated; apply EXECUTION DEFERRED)
+
+> **This section is ADDITIVE and creds-FREE.** It does NOT relax the Tier-1 boundary above: this
+> specialist still never calls a live `create-change-set`/`execute-change-set`/`update-stack`. Tier 2 is
+> the **preview/approve/capture half** of the separate contract — it operates on a **provided**
+> change-set artifact (exactly as Step 4(b)'s `scan_cfn_changeset` operates on a provided
+> `describe-change-set` response). The full Tier-2 contract is `protocol/iac-safety.md §9` (DRY-by-pointer
+> — do NOT restate or fork it here).
+
+When the FROZEN plan assigns a Tier-2 preview task, this specialist's role is the **author/produce →
+approve-bind → capture → HAND-OFF → STOP** half. It NEVER executes a cloud mutation.
+
+1. **Author the EXACT change-set command (structured argv, `shell=False`).** The change-set that will be
+   reviewed and (deferred) executed is produced by `aws cloudformation create-change-set` — its argv is
+   built by `iac_apply.build_cfn_create_changeset_argv` (stack-name / change-set-name / template-body,
+   all grammar-validated). The stack/change-set identifiers are DATA, `fullmatch`-anchored + `..`-guarded;
+   never a shell string. Live creation of the change-set is **creds-gated and DEFERRED** — author the
+   EXACT command shape; the actual run arrives only behind authenticated cloud access.
+2. **Bind approval to the plan HASH.** A change-set is server-side and immutable once created; approval is
+   bound to `iac_apply.plan_hash` over `iac_apply.canonical_cfn_plan_bytes(describe_change_set)` — the
+   **FULL `describe-change-set` response** (so `ChangeSetId`/`StackId`/`StackName` fall WITHIN the hashed
+   bytes, defeating replay against a different change-set or target stack, §9.1). `iac_apply.approval_verdict`
+   returns `APPROVED` **iff** `approvedPlanHash == computed_plan_hash`; any re-created change-set →
+   `APPROVAL_INVALIDATED`. Approval is never reused across change-sets.
+3. **Typed stateful-destroy capability-gate (distinct from approval).** Any `Remove`/replace on an
+   `iac_detect`-stateful resource (from Step 4(b)'s `scan_cfn_changeset`, `stateful: true`) requires a
+   typed grant **separate from a bare plan approval**; `iac_apply.capability_gate_verdict` clears ONLY when
+   the grant is self-bound to this exact plan hash, lists every stateful `logicalId`, and carries a typed
+   `confirmedToken` (§9.1). A plan approval ALONE never authorizes a stateful destroy.
+4. **Hand the captured change-set to the orchestrate Tier-2 apply state-machine, then STOP.** The
+   orchestrator composes the terminal state via `iac_apply.apply_state` (see [[kata-orchestrate]] "Tier 2 —
+   apply approval state-machine"). The success terminal is **`READY_DEFERRED`** — it does **not** execute.
+   This specialist does NOT execute the change-set; `iac_apply.build_cfn_execute_changeset_argv` (executes
+   the EXACT approved change-set by its immutable `ChangeSetId` ARN — itself DATA) describes the deferred
+   command only.
+5. **The cloud EXECUTION is the DEFERRED seam.** `READY_DEFERRED` hands to `iac_apply.run_apply`, which
+   raises `NotImplementedError` ALWAYS (n=0-live, creds-gated; reachable only behind a present+matching
+   approval + capability grant + creds, and not runnable even then). **Never auto-rollback** — a captured
+   recovery plan is design-level, for a human (§9.1, §9.5).
+
+Loud honesty: the whole Tier-2 apply path is **n=0-live / creds-gated / execution DEFERRED**. Apply does
+not "work" here. The change-set identifier is always **DATA** in a structured `shell=False` argv — never
+program, never shell-interpolated (§9.4, §9.6). `-target`/scoped apply is FORBIDDEN (§9.5).
 
 ### Step 2 — Snyk IaC scan (fail-closed; BLOCKER)
 

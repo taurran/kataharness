@@ -7,7 +7,7 @@ description: >-
   high/critical findings; escalate any destroy/replace on stateful resources. Tier 1 only — NO live
   terraform plan or apply.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: execute
 status: experimental
 agnostic: true
@@ -73,6 +73,47 @@ not contact cloud APIs or require a configured backend.
 
 **Tier 1 boundary:** Do NOT run `terraform plan` or `terraform apply`. Plan generation requires live
 cloud credentials and a state backend — those are Tier 2 capabilities (`specs/iac-live-apply/`).
+
+#### Tier 2 — preview / approve / capture (n=0-live, creds-gated; apply EXECUTION DEFERRED)
+
+> **This section is ADDITIVE and creds-FREE.** It does NOT relax the Tier-1 boundary above: this
+> specialist still never runs a live `terraform plan`/`apply`. Tier 2 is the **preview/approve/capture
+> half** of the separate contract — it operates on a **provided** plan artifact (exactly as Step 4(b)'s
+> `scan_tf_plan` operates on a provided `plan_json`). The full Tier-2 contract is
+> `protocol/iac-safety.md §9` (DRY-by-pointer — do NOT restate or fork it here).
+
+When the FROZEN plan assigns a Tier-2 preview task, this specialist's role is the **author/produce →
+approve-bind → capture → HAND-OFF → STOP** half. It NEVER executes a cloud mutation.
+
+1. **Author the EXACT plan-capture command (structured argv, `shell=False`).** The plan that will be
+   reviewed and (deferred) applied is produced by `terraform plan -out <tfplan>` — its argv is built by
+   `iac_apply.build_tf_plan_argv` (`-input=false`, `-lock=true`, `-out <path>`; **no `-target`** — the
+   builder exposes no such parameter, §9.5). The out-path is DATA, grammar-validated + `..`-guarded;
+   never a shell string. Live generation of the plan is **creds-gated and DEFERRED** — author the EXACT
+   command shape; the actual run arrives only behind authenticated cloud access.
+2. **Bind approval to the plan HASH.** The captured binary `tfplan` is hashed by `iac_apply.plan_hash`
+   (the exact bytes `terraform apply` would consume). The human approval in the committable
+   `kata.iac-apply-approval.json` is bound to that hash; `iac_apply.approval_verdict` returns `APPROVED`
+   **iff** `approvedPlanHash == computed_plan_hash`. Any re-plan changes the bytes → `APPROVAL_INVALIDATED`
+   — approval is never reused across plans (§9.1).
+3. **Typed stateful-destroy capability-gate (distinct from approval).** Any destroy/replace on an
+   `iac_detect`-stateful resource (from Step 4(b)'s `scan_tf_plan`, `stateful: true`) requires a typed
+   grant **separate from a bare plan approval**; `iac_apply.capability_gate_verdict` clears ONLY when the
+   grant is self-bound to this exact plan hash, lists every stateful address, and carries a typed
+   `confirmedToken` (§9.1). A plan approval ALONE never authorizes a stateful destroy.
+4. **Hand the captured plan to the orchestrate Tier-2 apply state-machine, then STOP.** The orchestrator
+   composes the terminal state via `iac_apply.apply_state` (see [[kata-orchestrate]] "Tier 2 — apply
+   approval state-machine"). The success terminal is **`READY_DEFERRED`** — it does **not** execute. This
+   specialist does NOT call apply; `iac_apply.build_tf_apply_argv` (applies the EXACT saved plan file —
+   **never `-auto-approve`**, never a freeform target) describes the deferred command only.
+5. **The cloud EXECUTION is the DEFERRED seam.** `READY_DEFERRED` hands to `iac_apply.run_apply`, which
+   raises `NotImplementedError` ALWAYS (n=0-live, creds-gated; reachable only behind a present+matching
+   approval + capability grant + creds, and not runnable even then). **Never auto-rollback** — a captured
+   recovery plan is design-level, for a human (§9.1, §9.5).
+
+Loud honesty: the whole Tier-2 apply path is **n=0-live / creds-gated / execution DEFERRED**. Apply does
+not "work" here. The plan/change-set identifier is always **DATA** in a structured `shell=False` argv —
+never program, never shell-interpolated (§9.4, §9.6).
 
 ### Step 2 — Snyk IaC scan (fail-closed; BLOCKER)
 

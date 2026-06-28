@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -268,6 +268,43 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
 
    **Mixed IaC + code task:** run **both** the normal verify (tests/security scan) and the IaC gate.
    Both must pass before the task integrates.
+
+   **Tier 2 — apply approval state-machine (creds-gated; execution DEFERRED, all paths) — ADDITIVE; BC: no Tier-2 apply request ⇒ silent no-op.**
+   This block slots **AFTER** the Tier-1 `escalate` verdict above — Tier-1's author/analyze/gate behavior and its
+   escalate row are **byte-for-byte unchanged**; Tier-2 only fires when an IaC-classed task additionally **requests an
+   apply** against a *provided* plan/change-set artifact. **No apply request ⇒ none of this runs (BC).** The whole
+   Tier-2 apply path is **n=0-live, creds-gated**: it builds preview/approve/capture state and **STOPS at the creds
+   wall** — it NEVER executes a cloud mutation (the engine `tools/iac_apply.py` is creds-free and spawns no process).
+   1. **Compute the plan hash + resolve the state.** Over the *provided* plan/change-set bytes, compute
+      `iac_apply.plan_hash` (TF = the binary `tfplan` bytes; CFN = `iac_apply.canonical_cfn_plan_bytes` of the full
+      `describe-change-set`). Take the destructive set from the Tier-1 scan already run at gate step 3.4
+      (`iac_detect.scan_tf_plan` / `iac_detect.scan_cfn_changeset` — the `stateful:True` entries), load the committable
+      approval via `iac_apply.load_approval`, and resolve the terminal state with
+      `iac_apply.apply_state(computed_plan_hash=…, approval=…, destructive=…, grant=…, drift_detected=…, creds_present=…)`.
+      The approval is **plan-hash bound** (`iac_apply.approval_verdict`): a re-plan changes the hash ⇒
+      `APPROVAL_INVALIDATED` (approval never carries across plans). Any stateful destroy/replace additionally requires
+      the **typed capability-gate** (`iac_apply.capability_gate_verdict`) — **distinct from plan approval**: the human
+      types `confirmedToken` AND authorizes each specific stateful `address`/`logicalId`, and the grant is self-bound to
+      this exact plan hash; absent that ⇒ `CAPABILITY_REQUIRED`. A plan approval ALONE never authorizes a stateful destroy.
+   2. **Write the SIBLING artifact + audit (no Tier-1 perturbation).** Build the runtime artifact per
+      `iac_apply.iac_apply_schema` and write it with `iac_apply.emit_iac_apply` → **`.kata/iac-apply.json`**. Append an
+      append-only apply-audit row via `iac_apply.build_apply_audit_record` (actor/time/rationale — reuses the
+      escalation/board audit substrate; no new sink). **Do NOT touch `.kata/iac.json`** — that is Tier-1's analysis
+      artifact and perturbing it breaks the D111 fail-closed re-classification; Tier-2 state lives ONLY in the sibling.
+   3. **Park, never auto-apply.** `CAPABILITY_REQUIRED`, `APPROVAL_INVALIDATED`, `DRIFT_ABORT`, and `CREDS_ABSENT` →
+      `human-required` escalation: call `escalation.build_escalation` then `escalation.write_escalation` with
+      `kind:"human-required"`, write `.kata/escalations/<task-id>.json`, and **park** the task per
+      `protocol/escalation.md` (async park/drain — the frontier keeps moving). **A parked/unapproved apply stays parked —
+      it NEVER auto-applies.** No rule clears a stateful destroy, an invalidated approval, drift, or absent creds
+      silently. `creds_present=False` ⇒ `CREDS_ABSENT` is an **honest park**, never a host-side apply.
+      **`-target`/scoped apply is FORBIDDEN** (bypasses lifecycle guards); the engine builders expose no such parameter.
+   4. **The terminal `READY_DEFERRED` is the creds wall — STOP.** When all gates pass, `apply_state` returns
+      `READY_DEFERRED`, which hands to the DEFERRED seam `iac_apply.run_apply` — **which raises `NotImplementedError`
+      ALWAYS** (n=0-live, creds-gated). The orchestrator NEVER wires a runnable cloud-mutating path; `READY_DEFERRED` is
+      a terminal *captured* state, not an execution. The live apply arrives only behind authenticated cloud access in a
+      separate, n=0-live build — **not here.**
+   5. **BC (additive + IaC-gated):** absent a Tier-2 apply request this block is a **silent no-op** — non-IaC runs and
+      Tier-1 IaC runs (author/review/gate, the `escalate` verdict, `.kata/iac.json`) are **byte-for-byte unchanged**.
 4. **Integrate.** Merge each completed task branch into the integration branch ([[kata-worktree]] — disjoint
    files merge cleanly by construction). Re-run the gate on the integration branch, then recompute the frontier.
 5. **Commit at the checkpoint** (conventional commit + project trailer) so compaction can't lose work.
