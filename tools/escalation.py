@@ -181,6 +181,27 @@ def write_escalation(kata_dir: str, payload: dict) -> str:
 
     task_id = payload["taskId"]
     out_path = escalations_dir / f"{task_id}.json"
+
+    # Non-clobber guard: refuse to silently overwrite an open escalation with a
+    # DIFFERENT decisionNeeded (defense-in-depth for the IaC Tier-1/Tier-2 clobber risk
+    # where both a Tier-1 escalate verdict and a Tier-2 CAPABILITY_REQUIRED verdict could
+    # fire for the same task in one pass, losing one human-required reason silently).
+    # Allowed: (i) fresh task (no existing file); (ii) idempotent re-write with the SAME
+    # decisionNeeded; (iii) status→"resolved" update of the same decision; (iv) existing
+    # file is already resolved (gate is only on open→open transitions).
+    if out_path.exists():
+        existing = json.loads(out_path.read_text(encoding="utf-8"))
+        existing_open = existing.get("status") == "open"
+        incoming_open = payload.get("status", "open") == "open"
+        different_decision = existing.get("decisionNeeded") != payload.get("decisionNeeded")
+        if existing_open and incoming_open and different_decision:
+            raise ValueError(
+                f"write_escalation: refusing to clobber open escalation for task "
+                f"{task_id!r} (existing decisionNeeded {existing.get('decisionNeeded')!r} "
+                f"differs from incoming {payload.get('decisionNeeded')!r}). "
+                f"Resolve the existing escalation before writing a new one."
+            )
+
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return str(out_path)
 

@@ -170,7 +170,7 @@ deliverables that consume this phase's artifacts are now wired in sibling skills
 - **LD12** — the debug-run closeout confidence report is produced by [[kata-debrief]], **offered at closeout
   via [[kata-closeout]]** (which folds the debug section into `.kata/CLOSEOUT.md` / `.kata/closeout.html`
   from `.kata/drift/*.json` + `.kata/deviations/deferred.json` + the `.kata/snyk/*.json` before/after proofs
-  written at the fix-loop Gate step below).
+  written at the fix-loop Gate step above).
 - **LD13** — onboarding / convert-to-loop by [[kata-onboard]] (the dedicated first-run path).
 - **LD10** — in-mode language prompt-profiles by [[kata-lang-profile]], **injected at the fix/diagnose
   dispatch sites** (see the LD10 overlay notes at the Fix step above and the diagnose dispatch in the
@@ -264,12 +264,13 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    |---|---|
    | `"pass"` | Proceed to integrate. |
    | `"fail"` (scanner high/critical, scanner unwired/errored, syntax error, malformed plan artifact) | Default-FAIL fix loop — worker revises IaC; gate re-runs. |
-   | `"escalate"` (destroy/replace on stateful resource; IAM/secrets/network-topology change) | **Orchestrator** calls `build_escalation` (`tools/escalation.py:47`) then `write_escalation` (`tools/escalation.py:153`) with `kind:"human-required"`, writes `.kata/escalations/<task-id>.json`, and parks the task per `protocol/escalation.md`. Never auto-resolved — no rule clears a destroy silently. |
+   | `"escalate"` (destroy/replace on stateful resource; IAM/secrets/network-topology change) | **Orchestrator** calls `build_escalation` (`tools/escalation.py:47`) then `write_escalation` (`tools/escalation.py:153`) with `kind:"human-required"`, writes `.kata/escalations/<task-id>.json`, and parks the task per `protocol/escalation.md`. **The task leaves the active frontier and this pass ends for it — Tier-2 is NOT reached for a Tier-1-escalated task.** Never auto-resolved — no rule clears a destroy silently. |
 
    **Mixed IaC + code task:** run **both** the normal verify (tests/security scan) and the IaC gate.
    Both must pass before the task integrates.
 
    **Tier 2 — apply approval state-machine (creds-gated; execution DEFERRED, all paths) — ADDITIVE; BC: no Tier-2 apply request ⇒ silent no-op.**
+   **Precondition: Tier-2 runs ONLY for a task that cleared Tier-1 (did NOT receive an `escalate` verdict at Tier-1). A Tier-1 `escalate` verdict parks the task and ends that pass for it — the task never enters this block.**
    This block slots **AFTER** the Tier-1 `escalate` verdict above — Tier-1's author/analyze/gate behavior and its
    escalate row are **byte-for-byte unchanged**; Tier-2 only fires when an IaC-classed task additionally **requests an
    apply** against a *provided* plan/change-set artifact. **No apply request ⇒ none of this runs (BC).** The whole

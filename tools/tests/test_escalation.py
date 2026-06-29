@@ -407,3 +407,189 @@ def test_build_finding_confidence_case_sensitive():
             confidence="high",
             grounds_to_plan="YES",
         )
+
+
+# ---------------------------------------------------------------------------
+# Non-clobber guard behavior tests (TDD — written before implementation)
+# ---------------------------------------------------------------------------
+
+_SOURCE = Path(__file__).resolve().parent.parent / "escalation.py"
+
+
+def test_write_escalation_clobber_different_decision_raises(tmp_path):
+    """Overwriting an open escalation with a DIFFERENT decisionNeeded must raise ValueError.
+
+    Defense-in-depth for the IaC Tier-1/Tier-2 double-write: two human-required
+    decisions for the same task in one pass must never silently merge.
+    """
+    from escalation import build_escalation, write_escalation
+
+    kata_dir = tmp_path / ".kata"
+    first = build_escalation(
+        taskId="T-CLOBBER",
+        kind="human-required",
+        decisionNeeded="Approve stateful destroy?",
+        optionsConsidered=["yes", "no"],
+        agentRecommendation="no",
+        rationale="Destroys prod DB replica.",
+    )
+    write_escalation(str(kata_dir), first)
+
+    second = build_escalation(
+        taskId="T-CLOBBER",
+        kind="human-required",
+        decisionNeeded="Authorize IAM privilege escalation?",
+        optionsConsidered=["yes", "no"],
+        agentRecommendation="no",
+        rationale="Grants Admin role to service account.",
+    )
+    with pytest.raises(ValueError):
+        write_escalation(str(kata_dir), second)
+
+
+def test_write_escalation_idempotent_same_decision_allowed(tmp_path):
+    """Re-writing with the SAME open decisionNeeded must be allowed (idempotent)."""
+    from escalation import build_escalation, write_escalation
+
+    kata_dir = tmp_path / ".kata"
+    payload = build_escalation(
+        taskId="T-IDEM",
+        kind="human-required",
+        decisionNeeded="Approve stateful destroy?",
+        optionsConsidered=["yes", "no"],
+        agentRecommendation="no",
+        rationale="Destroys prod DB replica.",
+    )
+    write_escalation(str(kata_dir), payload)
+    # Idempotent re-write — must not raise
+    written_path = write_escalation(str(kata_dir), payload)
+    assert written_path.endswith("T-IDEM.json")
+
+
+def test_write_escalation_resolved_update_same_decision_allowed(tmp_path):
+    """Writing a resolved update of the SAME decision must be allowed."""
+    from escalation import build_escalation, write_escalation
+
+    kata_dir = tmp_path / ".kata"
+    open_payload = build_escalation(
+        taskId="T-RES",
+        kind="human-required",
+        decisionNeeded="Approve IAM change?",
+        optionsConsidered=["yes", "no"],
+        agentRecommendation="yes",
+        rationale="Required for deployment.",
+    )
+    write_escalation(str(kata_dir), open_payload)
+
+    resolved_payload = build_escalation(
+        taskId="T-RES",
+        kind="human-required",
+        decisionNeeded="Approve IAM change?",
+        optionsConsidered=["yes", "no"],
+        agentRecommendation="yes",
+        rationale="Required for deployment.",
+        status="resolved",
+        resolution="Approved by @taurran 2026-06-28",
+    )
+    written_path = write_escalation(str(kata_dir), resolved_payload)
+    assert written_path.endswith("T-RES.json")
+
+
+def test_write_escalation_fresh_task_allowed(tmp_path):
+    """Writing to a fresh task (no existing file) must always be allowed."""
+    from escalation import build_escalation, write_escalation
+
+    kata_dir = tmp_path / ".kata"
+    payload = build_escalation(
+        taskId="T-FRESH",
+        kind="human-required",
+        decisionNeeded="Initial decision?",
+        optionsConsidered=["A", "B"],
+        agentRecommendation="A",
+        rationale="B is incompatible.",
+    )
+    written_path = write_escalation(str(kata_dir), payload)
+    assert written_path.endswith("T-FRESH.json")
+
+
+def test_write_escalation_existing_resolved_then_new_open_allowed(tmp_path):
+    """After an escalation is resolved, a new open escalation for the same task is allowed."""
+    from escalation import build_escalation, write_escalation
+
+    kata_dir = tmp_path / ".kata"
+    resolved = build_escalation(
+        taskId="T-REOPEN",
+        kind="human-required",
+        decisionNeeded="Old decision?",
+        optionsConsidered=["A"],
+        agentRecommendation="A",
+        rationale="Was blocked.",
+        status="resolved",
+        resolution="Done.",
+    )
+    write_escalation(str(kata_dir), resolved)
+
+    new_open = build_escalation(
+        taskId="T-REOPEN",
+        kind="human-required",
+        decisionNeeded="New different decision?",
+        optionsConsidered=["X", "Y"],
+        agentRecommendation="X",
+        rationale="New blocker emerged.",
+    )
+    written_path = write_escalation(str(kata_dir), new_open)
+    assert written_path.endswith("T-REOPEN.json")
+
+
+# ---------------------------------------------------------------------------
+# Mutation non-vacuity proofs — spawn real subprocess via prove_non_vacuous
+# ---------------------------------------------------------------------------
+
+
+def _tools_dir() -> str:
+    return str(Path(__file__).parent.parent.resolve())
+
+
+def _src() -> str:
+    return str(_SOURCE.resolve())
+
+
+def _cmd(test_name: str) -> str:
+    return (
+        f'cd /d "{_tools_dir()}" && uv run pytest '
+        f"tests/test_escalation.py::{test_name} -q"
+    )
+
+
+def test_mutation_proof_non_clobber_guard_condition():
+    """(a) Removing the guard condition makes idempotent-write test go red.
+
+    Asserted line (exact, 8-space indent):
+        '        if existing_open and incoming_open and different_decision:'
+    Removed -> orphan raise -> IndentationError on import -> all tests fail including
+    test_write_escalation_idempotent_same_decision_allowed.
+    """
+    import mutation_run
+
+    asserted_line = "        if existing_open and incoming_open and different_decision:"
+    verdict = mutation_run.prove_non_vacuous(
+        _src(), asserted_line, _cmd("test_write_escalation_idempotent_same_decision_allowed")
+    )
+    assert verdict["nonVacuous"] is True, f"guard condition not load-bearing: {verdict}"
+
+
+def test_mutation_proof_non_clobber_different_decision():
+    """(b) Removing the different_decision assignment makes clobber test go red.
+
+    Asserted line (exact, 8-space indent):
+        '        different_decision = existing.get("decisionNeeded") != payload.get("decisionNeeded")'
+    Removed -> NameError on `different_decision` reference -> clobber test fails
+    (NameError != ValueError; pytest.raises(ValueError) does not catch it).
+    """
+    import mutation_run
+
+    asserted_line = '        different_decision = existing.get("decisionNeeded") != payload.get("decisionNeeded")'
+    verdict = mutation_run.prove_non_vacuous(
+        _src(), asserted_line, _cmd("test_write_escalation_clobber_different_decision_raises")
+    )
+    assert verdict["nonVacuous"] is True, f"different_decision check not load-bearing: {verdict}"

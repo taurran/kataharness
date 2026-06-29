@@ -54,7 +54,7 @@ Every place the harness spawns a subprocess. **A new sink — or a new external 
 | `kata_preflight._default_runner` (verify) | manifest `verifyImport` | **external** | `_build_verify_argv` — per-manager identifier grammar (`fullmatch`) compiled to `python -c`/`node -e`/`<bin> --version`; `shell=False`. Freeform `dep["verify"]`/`dep["install"]` are **docs-only, never executed**. |
 | `kata_preflight` target-env probe | `target.baselineGate` (`kata.config`) | operator | `shlex.split` → `shell=False`. Operator-authored command. |
 | `kata_dispatch._subprocess_runner` | role/platform brief (`kata.config` roles) | operator | Built by the fixed `_COMMAND_BUILDERS` table; `shell=False`. |
-| `kata_install` runner | per-platform install command | internal | Fixed argv per platform; `shell=False`. |
+| `kata_install._real_probe_runner` (confirm-probe) | fixed per-platform `_PROBE_COMMANDS` argv (codex/kiro lambdas, `kata_install.py:278-281`) | internal | Fixed argv from `_PROBE_COMMANDS` lambda; `shell=False`; `stdin=subprocess.DEVNULL`. |
 | `mutation_check.run_test` | test path/name | internal | Fixed `["uv","run","pytest",…]` argv; `shell=False`. |
 | `footprint` (`changed_files`/`diff_stat`) | git ref | internal | Fixed `["git",…,ref]` argv; `shell=False`. |
 | `mutation_run` default runner | mutation test command (frozen plan) | operator | `shell=True` — **registered exception**: operator/plan-authored test command, never external input. |

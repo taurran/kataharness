@@ -212,3 +212,64 @@ def test_exec_safety_doc_has_in_process_section():
         "S2 requires a subsection covering AST-allowlist evaluation of "
         "external (LLM-authored) FM assertions."
     )
+
+
+# ---------------------------------------------------------------------------
+# Registry-completeness: every subprocess sink module must be registered (D5)
+# ---------------------------------------------------------------------------
+
+_SUBPROCESS_SINK_ATTRS = {"run", "Popen", "call", "check_output", "check_call"}
+
+
+def _module_has_subprocess_sink(tree: ast.Module) -> bool:
+    """Return True if *tree* contains a real subprocess.<sink>() Call node.
+
+    Matches only ``subprocess.<name>(...)`` attribute calls (ast.Call where
+    func is Attribute(value=Name(id='subprocess'), attr in _SUBPROCESS_SINK_ATTRS)).
+    Strings, comments, and docstrings that mention subprocess are NOT matched.
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            func = node.func
+            if (
+                isinstance(func, ast.Attribute)
+                and func.attr in _SUBPROCESS_SINK_ATTRS
+                and isinstance(func.value, ast.Name)
+                and func.value.id == "subprocess"
+            ):
+                return True
+    return False
+
+
+def test_every_subprocess_sink_module_is_registered():
+    """Every production tools/*.py module that contains a subprocess sink must be
+    registered in protocol/exec-safety.md.
+
+    AST-walks every tools/*.py (glob excludes tools/tests/** automatically — only
+    top-level *.py files are matched) and detects real subprocess.run /
+    subprocess.Popen / subprocess.call / subprocess.check_output /
+    subprocess.check_call call nodes — not strings, comments, or docstrings.
+    For each module with ≥1 such sink, asserts that the module stem
+    (e.g. ``kata_install``, ``kata_dispatch``) appears somewhere in
+    protocol/exec-safety.md.
+
+    A failure here means a real subprocess sink exists with no registry entry.
+    Fix by adding the missing row to the exec-safety.md sink registry — do NOT
+    silence or skip this test; an unregistered sink is a live security finding.
+    """
+    assert _EXEC_SAFETY_DOC.exists(), "protocol/exec-safety.md is missing."
+    doc = _EXEC_SAFETY_DOC.read_text(encoding="utf-8")
+
+    unregistered: list[str] = []
+    for path in sorted(_TOOLS.glob("*.py")):
+        module_name = path.stem
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        if _module_has_subprocess_sink(tree) and module_name not in doc:
+            unregistered.append(module_name)
+
+    assert not unregistered, (
+        f"Module(s) with subprocess sinks not registered in protocol/exec-safety.md: "
+        f"{sorted(unregistered)}. Every subprocess sink must appear in the exec-safety "
+        "registry (see 'Sink registry' section). Add the missing row(s) — do NOT "
+        "silence this test; an unregistered sink is a live security finding."
+    )

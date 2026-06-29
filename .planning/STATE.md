@@ -1,5 +1,23 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-28, D117–D121 ARC ADVERSARIALLY VALIDATED [ad-val] + TARGETED FIXES — D122; pytest 1324 · 45
+> skills/0 · Snyk med+ 0):** The cross-cutting holistic red-team of the 5-build arc (between-build seams the per-build
+> D98s couldn't see), D111-pattern, fully subagent-driven: 5 parallel fresh-context opus reviewers → synthesis →
+> operator-gated fix scope → workers (TDD/mutation) → integration gate → **fresh-context D98 re-confirm (all 4 fixes
+> SOLID)**. **NO BLOCKER, NO invariant-defeating MAJOR** — every D117–D121 invariant survives cross-build composition.
+> **Fixed (operator-gated):** (1) MAJOR Tier-2-park-clobbers-Tier-1-escalate-artifact on the stateful-destroy path
+> (fixed at both layers: kata-orchestrate parks-and-returns + escalation.py fail-closed non-clobber guard); (2)
+> debug_report `_snyk_rollup` negative floor (honesty engine); (3+4) doc-truth drift (validation-misses.md 9→10;
+> exec-safety.md kata_install row → the real `_real_probe_runner` sink); (5) exec-safety registry COMPLETENESS now
+> structural (new test). 3 fail-opens (#1/#2/#5) logged to validation-misses.jsonl (`d122-adval`). **Deferred per D111
+> anti-over-fix:** the latent/prose findings + 2 re-confirm nice-to-haves (corrupt-escalation-file parse error;
+> completeness-test substring/prefix limits). **NOTE:** kata-debrief×honesty-fail-open now at 2 distinct runs (1 short
+> of T2 auto-proposal). **Gates:** pytest 1324 (1314→1324), 45/0 (README regen), Snyk med+ 0. **UNCOMMITTED** pending
+> operator commit gate: the D122 fixes + this session's doc updates (CONTEXT/HANDOFF/orientation from last session) +
+> the new `specs/kata-loop-benchmark/RESEARCH.md` (benchmark grill RESOLVED, ready to freeze). **NEXT:** operator commit
+> gate → then freeze the kata-loop-benchmark (planning subagent authors DESIGN/PLAN from RESEARCH.md). Records:
+> `DECISIONS.md` D122; `specs/kata-loop-benchmark/RESEARCH.md`.
+
 > **CURRENT (2026-06-29, CODEX ADAPTER LIVE-HARDENED + MULTI-MODEL LAYER CONFIRMED LIVE n=0→1 — D121; pytest 1314 ·
 > 45 skills/0 · Snyk 0 on changed lines):** Queue item (e), step 1. The operator installed **Codex CLI 0.142.3**
 > (ChatGPT-authed) locally — lifting the 2nd-platform install gate. The **first live exercise of the D108 multi-model

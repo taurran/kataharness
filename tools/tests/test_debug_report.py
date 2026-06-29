@@ -483,6 +483,36 @@ class TestProofRollup:
         assert rollup["snyk"]["reportCount"] == 1
         assert rollup["snyk"]["newFindings"] == 0
 
+    def test_snyk_negative_new_findings_floor(self):
+        """Floor effective_new at 0 when counts absent and newFindings is negative (ad-val).
+
+        A malformed/adversarial record with newFindings:-50 and no before/after
+        findingCounts must NOT drive the aggregate newFindings total negative.
+        The floor must clamp effective_new to >= 0 on the counts-absent path.
+        The honesty invariant is preserved: count_missing => counts_ok=False =>
+        snyk_clean=False.  The floor only fixes the advisory integer; it never
+        flips clean to True.
+        """
+        import debug_report as dr
+        snyk_negative = {
+            "finding_id": "F-NEGATIVE",
+            "before": {"verdict": "clean"},
+            "after": {"verdict": "clean"},
+            "newFindings": -50,
+            "available": True,
+        }
+        rollup = dr.build_proof_rollup(
+            _drift_reports(), _result_json(), _mutation_json(), [snyk_negative]
+        )
+        # Per-record effective_new must be clamped to >= 0.
+        per = next(r for r in rollup["snyk"]["per_fix"] if r["finding_id"] == "F-NEGATIVE")
+        assert per["newFindings"] >= 0, "per-record effective_new driven negative by -50 input"
+        # Aggregate total must also be >= 0.
+        assert rollup["snyk"]["newFindings"] >= 0, "aggregate newFindings driven negative"
+        # Honesty invariant: counts absent => countMissing => NOT clean.
+        assert "F-NEGATIVE" in rollup["snyk"]["countMissing"]
+        assert rollup["snyk"]["clean"] is False
+
 
 # ---------------------------------------------------------------------------
 # build_debug_report / emit / load
@@ -677,4 +707,24 @@ class TestMutationProof:
         assert verdict["nonVacuous"], (
             "test_snyk_regression_not_masked must catch removal of the "
             "newFindings recompute (regression-masking defense)"
+        )
+
+    def test_mutation_snyk_negative_floor(self):
+        """(f) The effective_new >= 0 floor on ALL paths is load-bearing (ad-val).
+
+        Removing the floor line allows a negative effective_new (-50) to pass
+        through on the counts-absent branch, driving the aggregate newFindings
+        total negative — the guard test goes red.
+        """
+        import mutation_run
+        asserted_line = "        effective_new = max(0, effective_new)"
+        cmd = self._test_cmd("TestProofRollup::test_snyk_negative_new_findings_floor")
+        verdict = mutation_run.prove_non_vacuous(self._source(), asserted_line, cmd)
+        assert verdict["testWentRed"], (
+            "Removing the effective_new >= 0 floor must make "
+            "test_snyk_negative_new_findings_floor go red"
+        )
+        assert verdict["nonVacuous"], (
+            "test_snyk_negative_new_findings_floor must catch removal of the "
+            "effective_new floor (negative newFindings ad-val defense)"
         )

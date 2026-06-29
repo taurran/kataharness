@@ -27,7 +27,7 @@ the guards themselves (T3) remains deferred per `BRIEF-validation-misses.md` (§
 ## Entry schema
 
 The schema is the single source of truth exported by `validation_misses.miss_schema`
-(`tools/validation_misses.py`). All 9 fields:
+(`tools/validation_misses.py`). All 10 fields:
 
 | Field | Type | Description |
 |---|---|---|
@@ -40,6 +40,7 @@ The schema is the single source of truth exported by `validation_misses.miss_sch
 | `what_caught_it` | str | `d98` \| `re-confirm` \| `human` |
 | `guard_ref` | str\|null | Doc/test that closed the miss, or `null` when still open |
 | `decision_ref` | str\|null | D-number reference (e.g. `D109`), or `null` |
+| `run_id` | str\|null | Per-run identity stamped by the orchestrator at the Final-gate emit (one id shared by every miss from that run). The recurrence detector counts DISTINCT `run_id` per cluster (falling back to `ts` for legacy entries). Nullable + missing-key allowed — existing `run_id`-less misses stay valid. (D118) |
 
 Callers import `validation_misses.miss_schema` to stay DRY — do not duplicate this table in code.
 Validate entries with `validation_misses.validate_miss` before appending.

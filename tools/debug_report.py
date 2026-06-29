@@ -529,6 +529,11 @@ def _snyk_rollup(snyk_reports: Union[list[dict], None]) -> dict:
         if counts_present:
             derived = max(0, after_count - before_count)
             effective_new = max(stored_new, derived)
+        # Floor at 0 on ALL paths: a negative newFindings (malformed/adversarial
+        # artifact) must never drive the advisory integer below zero.  This does
+        # NOT change the honesty verdict — a counts-absent record still goes into
+        # count_missing => counts_ok=False => snyk_clean=False.
+        effective_new = max(0, effective_new)
 
         per_fix.append(
             {

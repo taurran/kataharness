@@ -1524,3 +1524,45 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   this validates the dispatch/probe/confirm path live; the `kata-loop-benchmark` itself is still unbuilt (e step 2) and a
   real multi-model *benchmark run* awaits it. Meta: queue item (e) delivered its first real value not as a benchmark run
   but as a **live-caught adapter bug** — the n=0→1 transition is where stub-tested integrations meet reality.
+
+<!-- Adversarial validation (ad-val) of the D117-D121 arc + targeted fixes. Cross-cutting holistic red-team (D111 pattern). Fully subagent-driven. -->
+- **D122 — Adversarial validation (ad-val) of the D117–D121 arc + targeted fixes BUILT — 2026-06-28.** The cross-cutting
+  holistic red-team of the 5-build arc — the **between-build seams** the per-build D98s structurally could NOT see —
+  mirroring the D111 pattern. **5 parallel fresh-context opus reviewers** (one per seam-cluster: shared kata-orchestrate
+  composition · shared validation_misses.py BC · exec-safety registry · multi-model live surfaces · honesty/no-write
+  invariants cross-build) → synthesis → **operator-gated fix scope** → workers (TDD, mutation-proof) → integration gate →
+  **fresh-context D98 re-confirm (all 4 fixes SOLID)**. Built **entirely via subagents** (operator directive).
+  **Headline: NO BLOCKER, NO invariant-defeating MAJOR** — every D117–D121 structural invariant **survives cross-build
+  composition** (verified at code level: recall's evidence-projection is airtight; no `finding_id` collision across
+  debug_report/iac_apply; `run_apply` unconditionally dead, no subprocess import; the L-MP2 `_PROBE_COMMANDS ⊆
+  _COMMAND_BUILDERS` invariant holds + is tested; kiro untouched by the codex fix; the confirm-token can't false-pass via
+  prompt-echo; the 6 LOW CWE-23 install guards are sufficient for the trust model). ~11 MINOR/NIT findings, mostly
+  latent/prose/doc. **FIX-NOW scope (operator-gated, 4 clusters + 1 cosmetic):** **(1) MAJOR escalation-clobber** — a
+  Tier-2 apply park could overwrite the Tier-1 `escalate` artifact (`.kata/escalations/<task-id>.json`) for the **same
+  task** on the stateful-destroy-apply path (the one scenario Tier-2 exists for), silently losing one of two
+  human-required reasons; a D110(Tier-1)↔D119(Tier-2) seam. Fixed at **BOTH layers**: `kata-orchestrate` made explicit
+  that a Tier-1 `escalate` **parks-and-returns** (Tier-2 reached ONLY for a task that cleared Tier-1) + `escalation.py`
+  `write_escalation` gained a **fail-closed non-clobber guard** (refuses to overwrite an OPEN escalation with a different
+  `decisionNeeded`; idempotent same-decision rewrites + status→resolved updates still allowed; 2 mutation proofs).
+  **(2) honesty-fail-open** — `debug_report._snyk_rollup` now floors `effective_new = max(0, …)` (a negative
+  `newFindings` artifact deflated the advisory regression total; could NOT flip `clean`; floor + mutation proof).
+  **(3+4) doc-truth drift on standing-guard contracts** — `protocol/validation-misses.md` corrected 9→10 fields (adds
+  `run_id`); `protocol/exec-safety.md` `kata_install` row corrected to name the **real** sink (`_real_probe_runner`, the
+  confirm-probe — the D121-modified one; the old row described a nonexistent "install command"). **(5) exec-safety
+  registry COMPLETENESS made structural** — new `test_every_subprocess_sink_module_is_registered` asserts every
+  `tools/*.py` subprocess-sink module appears in the registry (was human-enforced only; the mis-described row was a live
+  instance). Plus the #12 cosmetic stale-pointer fix in kata-orchestrate. **DEFERRED (per D111 anti-over-fix):** the
+  latent/prose findings (coarse-`ts` distinct-run collapse window; the "every mode" recurrence-detector overclaim given
+  its placement in the skippable red-team; the proposed→guarded prose-only backstop; the kata-onboard `.planning/`
+  scaffold clobber hazard; confirm-probe validates the platform-CLI not the routed-model; `stdin=DEVNULL` runner-wide) +
+  2 D98-re-confirm nice-to-haves (`escalation.py` raises a confusing parse error on a corrupt existing escalation file
+  [fail-CLOSED, untested]; the completeness test's substring-module-match + `subprocess.`-prefix-only sink detection
+  [zero active miss]). **Validation-misses:** the 3 genuine fail-opens (#1/#2/#5) logged to
+  `.planning/validation-misses.jsonl` (`run_id` `d122-adval`, `what_caught_it:d98`). **NOTE:**
+  `kata-debrief × honesty-fail-open` is now at **2 distinct runs** (D117 Snyk-masking + this negative-floor) — **1 short
+  of the T2 auto-proposal threshold**; the LD12 honesty engine is a recurring fail-open surface the recurrence loop is
+  now watching. **Gates:** pytest **1324** (1314→1324, +10 tests), validate **45/0** (README regenerated), Snyk
+  **medium+ 0** on all changed Python. **Meta:** the cross-cut found the between-build seams genuinely held — the arc was
+  partitioned into disjoint regions/artifacts; the only MAJOR was a Tier-1↔Tier-2 escalation-artifact seam, exactly the
+  class a per-build review cannot see; and the D98 re-confirm found **zero** new fail-open in the fixes (no over-fix
+  spiral). Records: `.planning/specs/` (no new spec — fixes to existing surfaces); the ad-val itself was the deliverable.
