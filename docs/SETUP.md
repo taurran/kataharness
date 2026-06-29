@@ -10,15 +10,59 @@ It remembers **two settings** and, each run, finds the project to work on. That'
 
 ## 1. Install into your platform
 
-From the central KataHarness folder, run the installer for your platform. The installer makes the
-skills discoverable to your agent. To record your settings at the same time, pass `--parent-dir`
-(and optionally `--vault-dir`); otherwise `kata-initiate` records them on first run.
+### One-command install (recommended)
+
+```sh
+# POSIX shell — macOS / Linux / Git Bash on Windows
+curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh | sh
+```
+
+```powershell
+# PowerShell — Windows
+irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 | iex
+```
+
+Both one-liners clone KataHarness to `~/.kata-home` (`%USERPROFILE%\.kata-home` on Windows) and
+invoke the installer. Default platform: **claude**.  Pass extra arguments via
+`sh -s -- --platform <p> --parent-dir <dir>` or as direct arguments to the `.ps1`.
+
+**Honest security caveat — read before piping:** `curl … | sh` and `irm … | iex` execute bytes as
+they stream — there is nothing to hash until after execution.  A checksum protects the
+*download-then-run* path (fetch the script to a file, verify its SHA, then execute); it **does not**
+protect the piped form.  Mitigations shipped: stable URL, short readable script, `KATA_REF` env var
+for version-pinning.  For a stronger guarantee, use one of the git-clone paths below.
+
+### Git-clone / manual path (audit-friendly)
+
+Already have a clone, or want to inspect first?
 
 ```bash
+# If you cloned manually or used "Use this template":
 cd <where-KataHarness-lives>            # e.g. C:/Dev/Projects/KataHarness
 uv run python tools/kata_install.py --platform claude \
     --parent-dir C:/Dev/Projects        # optional: also writes the settings file
 ```
+
+Or clone and install in one go:
+
+```sh
+git clone https://github.com/taurran/kataharness.git ~/.kata-home
+cd ~/.kata-home
+uv run python tools/kata_install.py --platform claude
+```
+
+**"Use this template"** on GitHub forks the repo to your own account — no remote install script
+involved at all.
+
+### Env var support
+
+| Variable | Purpose |
+|---|---|
+| `KATA_HOME` | Reuse an existing harness home (skip the clone) |
+| `KATA_REF` | Pin the clone to a git tag / branch / SHA (default: `master`) |
+| `KATA_SRC` | Local path to use as harness home — skips all network fetches (for CI or offline use) |
+| `KATA_PARENT_DIR` | Default parent project folder (forwarded to the engine) |
+| `KATA_VAULT_DIR` | Vault location (forwarded to the engine) |
 
 | Platform | Status | What it does |
 |----------|--------|--------------|
@@ -77,7 +121,46 @@ copy; it never runs git against your vault.)
 
 ## 4. Updating / uninstalling
 
-- **Update:** pull the central repo. With symlinks, skills update automatically. With the copy
-  fallback, re-run `tools/kata_install.py --platform <p>`.
-- **Uninstall:** remove the linked/copied skill folders from your host skills directory (e.g.
-  `~/.claude/skills/`) and delete `.kata-settings.json`.
+- **Update:** pull the central repo (`git pull` inside `~/.kata-home`). With symlinks, skills update
+  automatically. With the copy fallback, re-run `install.sh` / `install.ps1` (or
+  `tools/kata_install.py --platform <p>` directly) to refresh the copied skills.
+
+### Uninstall (shipped uninstaller — recommended)
+
+```sh
+# POSIX — removes skills, settings, and router stanza from the supplied project
+sh ~/.kata-home/uninstall.sh --target-dir /path/to/project --yes
+```
+
+```powershell
+# PowerShell
+& "$env:USERPROFILE\.kata-home\uninstall.ps1" --target-dir C:\path\to\project --yes
+```
+
+Or invoke the engine directly:
+
+```bash
+uv run python tools/kata_install.py --uninstall --platform claude \
+    --target-dir /path/to/project --yes
+```
+
+The uninstaller removes:
+- Flat-linked skills from the host skills directory (e.g. `~/.claude/skills/kata-*`)
+- `.kata-settings.json`
+- The `<!-- kata:begin … kata:end -->` router stanza from `<target-dir>/AGENTS.md`
+
+Re-running on an already-uninstalled target exits `0` (no-op).
+
+**Scope honesty — router stanza removal is scoped to the supplied `--target-dir` only.** The
+harness keeps no registry of every project where a stanza was written (deliberately simple design,
+no `~/.kata` registry). For each additional project, re-run with that project's path:
+
+```sh
+sh ~/.kata-home/uninstall.sh --target-dir /path/to/other-project --yes
+```
+
+### Manual fallback (if the scripts are unavailable)
+
+Remove the linked/copied skill folders from your host skills directory (e.g. `~/.claude/skills/`)
+and delete `.kata-settings.json`.  To remove a router stanza, delete the
+`<!-- kata:begin -->…<!-- kata:end -->` block from the target project's `AGENTS.md`.

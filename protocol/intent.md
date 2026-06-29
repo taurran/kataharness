@@ -4,6 +4,10 @@ The **front-half hand-off**. Written and **frozen by `kata-initiate`** at the en
 harness as the authoritative goal record for the current run. This schema is **PINNED** (D88/DESIGN §2) — slices
 may not fork it.
 
+> **Additive amendment (Slice D, 2026-06-29):** `acceptanceCriteria` added as an OPTIONAL field.  This is an
+> additive amendment to the PINNED schema, not a fork — the required set is unchanged and existing `INTENT.md`
+> files that omit this field remain fully valid.
+
 > **BC:** `INTENT.md` absent ⇒ the harness reads the frozen DESIGN as today. Initiation is additive; the
 > greater loop remains fully optional.
 
@@ -24,6 +28,7 @@ frozen at the end of the initiation session, never mutated mid-run.
 | `target` | `object` | WHERE/ON WHAT the run executes — see *target sub-schema* below. |
 | `grillDepth` | `"skip" \| "light" \| "standard" \| "full"` | The grill tier chosen during initiation (maps to `config.tiers["kata-grill"]`). Frozen here so closeout + kata-loop can reconstruct the run's rigor level. |
 | `readiness` | `string` | The agent's "enough-to-execute" verdict + rationale — one paragraph stating which decision branches are resolved and what, if anything, remains to be discovered mid-run. Honest: if readiness is conditional, say so. |
+| `acceptanceCriteria` | `string[]` **(OPTIONAL)** | Checkable success criteria captured in the Phase-2 mirror (step 2g) — "how we'll know it's done."  Framed as outcomes, not implementation.  **Absent or empty is valid** (e.g. `research` runs or when the human explicitly confirms no checkable criteria for this run).  `build_intent` emits this field only when non-empty; absent ⇒ byte-identical output to pre-field builds (BC). |
 
 ### `target` sub-schema
 
@@ -47,4 +52,5 @@ frozen at the end of the initiation session, never mutated mid-run.
   the upgrade, not just "improve the thing". The `fixes[]` / `features[]` split makes it auditable.
 - **Validator.** `protocol/intent.md` is in `REQUIRED_PROTOCOL`; `check_protocol_schemas` enforces that
   every required term is documented here (`kind`, `goal`, `fixes`, `features`, `changeSummary`, `target`,
-  `grillDepth`, `readiness`).
+  `grillDepth`, `readiness`).  `acceptanceCriteria` is documented as an **optional** term — it is not in
+  the required set and existing `INTENT.md` files that omit it remain fully valid.

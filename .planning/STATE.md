@@ -1,5 +1,40 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-29, FEATURE 2 BUILT — install/onboarding final polish — D126; pytest 1764 · 47 skills/0 ·
+> Snyk med+ 0):** The install/onboarding surface is finished off in four gated slices, **ADDITIVE + backward-compatible
+> throughout** — the **5 `tools/kata_install.py` install-engine functions are byte-for-byte UNTOUCHED**; **no working
+> pattern altered**. **(G1) One-command + GitHub install:** NEW repo-root `install.sh` (`curl|sh`) + `install.ps1`
+> (`irm|iex`) + `uninstall.sh`/`uninstall.ps1` — they clone/seed then **invoke the EXISTING `kata_install.py` engine**;
+> idempotent, no-cruft, **`KATA_SRC` offline override**; documents the clone path + "Use this template"; an **honest
+> `curl|sh` caveat** (checksum protects the download-then-run, NOT the pipe); the uninstaller ships. README + `docs/SETUP`
+> updated. **(G2) Headless install+setup:** ADDITIVE flags on `kata_install.py` (`--yes`/`--non-interactive`,
+> `--answers-json`, `--json`, `--uninstall`, `--target-dir`) + non-TTY auto-skip; **SEMANTIC EXIT CODES** (0 ok / 1
+> not-confirmed / 2 usage / 3 not-found / 4 permission / 5 conflict=non-kata-only); **idempotent re-install = 0 no-op**
+> (no `changed` field); machine JSON→stdout, human→stderr. **Autonomous-loop mode DEFERRED** (commit/merge/fix gates stay
+> human). **(G3) Grill-for-goals:** ADDITIVE optional `acceptanceCriteria` in `intent_scaffold` (byte-identical BC when
+> absent; NOT required) + `protocol/intent.md` amendment; `kata-initiate` **step 2g** (enumerate+confirm success criteria,
+> start-with-the-end-in-mind) + **S2 gate value #9** like conditional value #8 — explicit "no criteria" **PASSES** (no
+> deadlock; the verbatim "blanket looks-good FAILS" rule preserved; gate **STRENGTHENED not loosened**). **(G4) Router
+> stanza:** NEW pure `tools/kata_router.py` (`render`/`write`/`remove_stanza` — `..`-guarded idempotent marked-block upsert
+> between `<!-- kata:begin -->`/`<!-- kata:end -->`); `kata-onboard` (**v0.2.0**) gains an **opt-in human-gated Step-3 item**
+> that writes the ~15-line stanza into the target project's AGENTS.md; the uninstaller removes exactly that block. Canonical
+> AGENTS.md; CLAUDE.md stays a pointer. **Locked:** the persona-SOUL + AGENTS.md-router + CLAUDE.md-pointer "system prompt"
+> concept is **already sound** — no change beyond G4. **Build:** 7 disjoint slices / 3 waves (W1 router+intent/initiate ·
+> W2 install headless+uninstall · W3 onboard stanza + bootstrap scripts + README/SETUP). **Gate journey:** freeze-gate
+> `kata-review` **HOLD** (the `changed:false`-would-force-an-engine-edit contradiction; the optional-field-as-gate-value
+> deadlock) → fixed in frozen docs → **SHIP**; live offline install/re-install/uninstall smoke on **BOTH Git Bash and
+> PowerShell**; **PART A `kata-evaluate` PASS**; **PART B `kata-review` SHIP** (6 minor findings); hardening folded in
+> Finding 1 (marker-corruption data-loss guard), Finding 2 (headless `OSError`→exit 4), Finding 4 (`render_stanza` summary
+> test). **★ 1 validation-miss the unit tests missed, PART B caught (`stateful-hole`):** the `kata_router` marked-stanza
+> upsert had a **data-loss edge** — an unmatched/orphan `<!-- kata:begin -->` (no end) would, on the 2nd write, pair the
+> stray begin with the new block's end and delete the lines between → fixed with a **fail-loud guard + byte-identical-after-
+> raise test** (`d126-install-onboarding`). **Gates:** pytest **1764 passed** (new `kata_router` + `install_cli_headless` +
+> `intent_scaffold` tests), validate **47/0**, Snyk **med+ 0**, both-shells offline smoke green. **Honest scope:** the known
+> D124 env-sensitive benchmark test (`test_benchmark.py::TestRunDualGateCwd::test_importing_fixture_gives_q_one`) is green
+> canonically but flaky in some subagent venvs — **NOT a Feature-2 regression, NOT a miss**; the `curl|sh` network fetch is
+> **exercised, not proven**; Codex/Kiro install is **honest-scoped** (verify in-host). Records: `specs/install-onboarding/`,
+> `DECISIONS.md` D126, `validation-misses.jsonl` (`d126-install-onboarding`).
+
 > **CURRENT (2026-06-29, kata-validate BUILT — the always-available validation mini-loop — D125; pytest 1680 ·
 > 47 skills/0 · Snyk med+ 0):** A NEW EVALUATE-family skill `skills/evaluate/kata-validate/SKILL.md` (v0.1.0,
 > cost-weight 3, `kata/spine`) — a **programmatically-callable validation mini-loop**:

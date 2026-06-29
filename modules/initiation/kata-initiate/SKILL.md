@@ -285,6 +285,28 @@ Surface the confirmed assignment in the **Phase 2 mirror** as load-bearing value
 
 **If the human declines or no non-host platforms are confirmed:** omit `roles` entirely — the run is single-host (BC1). `kata-bootstrap` writes no `roles` block to `kata.config` (`protocol/config.md:27`).
 
+### 2g. Acceptance / success criteria — "start with the end in mind"
+
+After the multi-model routing question (or after 2e is skipped on a single-host run), enumerate and reflect back
+the **checkable success criteria** for this run: "how we'll know it's done."
+
+**Infer candidates** from the goal + brief (e.g. "the CLI exits 0 on a clean re-install", "validate_skills
+reports 0 errors", "Snyk medium+ 0 on the new Python file").  Frame each criterion as an **observable
+outcome**, not an implementation step — the test you'd run at the end, not the code you'd write.
+
+Reflect them back as a **numbered list** inside the mirror, inviting the human to confirm, edit, add, or delete
+each one.  Require **per-criterion confirmation or correction** — the same S2 discipline as every other load-
+bearing value.
+
+**Confirmed-absent is a valid outcome (no deadlock for empty / research runs):** if the human confirms there
+are no checkable criteria for this run (e.g. a `research` run producing findings, or a quick spike with no
+verifiable end-state), record that explicit opt-out and carry an **empty `acceptanceCriteria`** forward.  The
+gate PASSES for a confirmed-absent decision exactly as it does for confirmed value #8 (single-host / skip).
+
+The confirmed list (or the confirmed-absent decision) is written into `INTENT.md` via the `acceptanceCriteria`
+field (`tools/intent_scaffold.py` `build_intent` — Slice D).  When the list is empty, the field is omitted
+from the frontmatter (byte-identical to a pre-field build — BC).
+
 ---
 
 ## Phase 3 — grill depth
@@ -339,6 +361,7 @@ weakening of it.
 6. `grillDepth` — the planning depth (skip / light / standard / full).
 7. Dual-control execute — the human's understanding that they confirm before anything runs.
 8. **Multi-model routing** (`roles`) — the per-role platform assignment, or single-host (absent). **Applies only when `confirmed_platforms()` (`tools/kata_settings.py:109`) lists a non-host platform.** If Phase 2e was skipped (single-host) or the human declined, record this as single-host / absent. If the human opted in, the confirmed `roles` mapping must have been named in the mirror.
+9. **Acceptance / success criteria** (`acceptanceCriteria`) — the checkable "how we'll know it's done" list confirmed in step 2g. **Handled exactly like conditional value #8:** when there are no checkable criteria for this run (e.g. a `research` run, or the human explicitly opts out), an explicit "no acceptance criteria for this run" is a valid confirmation and the run PASSES with an **empty `acceptanceCriteria`**. The gate fails only on an un-itemized, unconfirmed value — never on a legitimately empty or research run.
 
 If any value was not named in the mirror — or the human's response was ambiguous on that value
 specifically — surface it explicitly via `AskUserQuestion` before proceeding.
@@ -358,6 +381,7 @@ individually against the mirror transcript and the frozen `INTENT.md`.
 - [ ] `grillDepth` was named in the mirror, with its rationale.
 - [ ] Dual-control execute was named in the mirror (the human was told they confirm before anything runs).
 - [ ] Multi-model routing (`roles`) was handled correctly: either (a) `confirmed_platforms()` (`tools/kata_settings.py:109`) returned only the host ⇒ Phase 2e was skipped (no mirror entry required); or (b) a non-host platform was confirmed ⇒ the human was asked and the outcome — confirmed `roles` assignment or all-on-host decline — was named in the mirror.
+- [ ] Acceptance criteria (step 2g) were handled correctly: either (a) each acceptance criterion was individually named in the mirror and the human confirmed or corrected it; OR (b) the human explicitly confirmed "no acceptance criteria for this run" — and that confirmed-absent decision was named in the mirror (not silently assumed).
 
 **Human confirmation — each value survived into the frozen `INTENT.md` unchanged or was explicitly corrected:**
 - [ ] `kind` in `INTENT.md` matches what the human confirmed (approved or corrected in the mirror).
@@ -368,6 +392,7 @@ individually against the mirror transcript and the frozen `INTENT.md`.
 - [ ] `grillDepth` in `INTENT.md` matches the human-confirmed depth.
 - [ ] The dual-control execute decision was made by the human (not auto-decided by the agent).
 - [ ] The multi-model routing decision was made by the human: either all-on-host was confirmed (or Phase 2e was skipped as single-host), or a per-role `roles` mapping was confirmed by the human and will be written to `kata.config` by `kata-bootstrap` — not to `INTENT.md` (`roles` is a config concern only, `protocol/config.md:27`).
+- [ ] The acceptance criteria decision was made by the human: either each criterion in `INTENT.md` traces to an explicit human approval or correction from step 2g; OR a confirmed-absent decision is recorded (empty `acceptanceCriteria` in `INTENT.md`, or field omitted). A blanket "looks good" over un-itemized criteria does **not** satisfy this check; an explicit "no criteria for this run" **does**.
 
 **A value that was inferred, not named in the mirror, and passed through with a blanket approval
 FAILS this gate — even if the value happens to be correct.** The confirmation must be traceable
@@ -410,6 +435,8 @@ answers = {
     },
     "grillDepth": grill_depth,       # operator-confirmed
     "readiness":  "",                # filled after Phase 5
+    # OPTIONAL — Slice D additive field (step 2g); empty list when no criteria confirmed
+    "acceptanceCriteria": acceptance_criteria,  # list[str]; [] for research/opted-out runs
 }
 ```
 

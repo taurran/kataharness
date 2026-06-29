@@ -550,3 +550,37 @@ thin conductor** (the `kata-loop`/`kata-onboard` composition-wrapper precedent) 
 by default**; a **per-finding human-gated fix** is applied by a **single writer** (the validators themselves stay
 no-write). _Avoid_: calling it a module (it is always-available, not module-gated); saying it needs a freeze/plan;
 routing it through `kata-orchestrate`; letting a validator write a fix (only the sole writer does, human-gated).
+
+## Install & onboarding — final polish (D126, 2026-06-29)
+**one-command install / bootstrap** (`install.sh` · `install.ps1` · `uninstall.sh` · `uninstall.ps1`, repo root):
+The cross-platform front door — `curl|sh` (POSIX) or `irm|iex` (PowerShell) clone/seed then **invoke the existing
+`tools/kata_install.py` engine** (the bootstrap scripts never re-implement install). Idempotent, no-cruft;
+**`KATA_SRC`** overrides the source for **offline** install; an **uninstaller ships** alongside. The `curl|sh`
+security caveat is **honest**: the checksum protects the **downloaded artifact** (download-then-run), **NOT the
+pipe itself**. _Avoid_: "the installer" (name the engine `kata_install.py` vs the bootstrap scripts); implying
+`curl|sh` is verified end-to-end (the network fetch is exercised, not proven); calling the engine new (it is
+byte-for-byte untouched — the scripts wrap it).
+
+**headless install surface** (the `kata_install.py` flags + exit codes):
+The agent-friendly / non-interactive entry — ADDITIVE flags (`--yes`/`--non-interactive`, `--answers-json`,
+`--json`, `--uninstall`, `--target-dir`) + non-TTY auto-skip, with **semantic exit codes** (0 ok · 1 not-confirmed
+· 2 usage · 3 not-found · 4 permission · 5 conflict=non-kata-only). Machine JSON → stdout, human → stderr;
+**idempotent re-install = exit 0 no-op** (deliberately **no `changed` field** — that would force an engine edit).
+Autonomous-loop mode is **DEFERRED** (the build loop's commit/merge/fix gates stay human). _Avoid_: "the install
+API"; expecting a `changed`/diff field; assuming it can drive an unattended build loop.
+
+**kata_router / router stanza** (`tools/kata_router.py`; the marked block in a target AGENTS.md):
+The pure stanza engine — `render`/`write`/`remove_stanza` perform a **`..`-guarded, idempotent marked-block
+upsert** between `<!-- kata:begin -->` and `<!-- kata:end -->` (the **router stanza**, ~15 lines, instruction-
+budgeted). `kata-onboard` (v0.2.0) gains an **opt-in, human-gated Step-3 item** that writes the stanza into the
+target project's **canonical AGENTS.md**; the uninstaller removes **exactly that block**. _Avoid_: editing
+CLAUDE.md (it stays a pointer, D5); hand-editing inside the markers; leaving an **orphan/unbalanced marker** (the
+engine fails loud rather than risk the data-loss upsert edge).
+
+**acceptance-criteria step** (`kata-initiate` step 2g + S2 gate value #9 + `intent_scaffold.acceptanceCriteria`):
+The grill-for-goals polish — an **ADDITIVE optional `acceptanceCriteria`** field in `intent_scaffold` (byte-
+identical BC when absent; **NOT required**) plus a `kata-initiate` step that **enumerates + confirms** the run's
+acceptance/success criteria up front (start-with-the-end-in-mind). The S2 freeze-gate's value #9 is handled like
+conditional value #8: an explicit **"no criteria for this run" PASSES** (no deadlock), while the verbatim
+"blanket looks-good **FAILS**" rule is preserved — the gate is **strengthened, not loosened**. _Avoid_: treating
+`acceptanceCriteria` as mandatory; reading the explicit-no-criteria path as a gate bypass.

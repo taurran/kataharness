@@ -8,7 +8,7 @@ description: >-
   the initiate/bootstrap/closeout/loop skills; reimplements nothing. Invoke on a fresh install when no
   kata.config / INTENT.md exists at the target.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -133,6 +133,19 @@ whole step is **human-gated**; present it as a set of opt-in actions, each confi
 5. **Offer a follow-on version-up / sprint** — hand the follow-on disposition to the **[[kata-loop]]**
    conductor's **loop-back** (`skills/coordinate/kata-loop/SKILL.md`, Decision-3 path), matching LD12's
    offered handoff. **Offered, never auto-started.**
+6. **Write a KataHarness router stanza into `AGENTS.md`** *(offered — never forced)* — offer, via
+   `AskUserQuestion`, to write a compact marked block into the **target project's** `AGENTS.md`. State
+   plainly to the user: "I can add a short KataHarness section to your project's AGENTS.md — it names
+   what's installed, the two entrypoints (`kata-bootstrap`, `kata-validate`), and the four run-state
+   locations. This writes only to your project's AGENTS.md, and only with your explicit yes." On an
+   explicit yes, call **`kata_router.write_stanza(<target_path>/AGENTS.md)`** (`tools/kata_router.py`,
+   `..`-guarded idempotent upsert — Slice A) as executed Python, the same convention as
+   `intent_scaffold.write_intent` at item 4: creates the file if absent; upserts the
+   `<!-- kata:begin -->…<!-- kata:end -->` block in place if present; re-running is a no-op (exactly one
+   block, never duplicated). `CLAUDE.md` stays a pointer and is **never touched**. **On decline,
+   no-op — `AGENTS.md` is left exactly as found.** The uninstaller
+   (`kata_install --uninstall --target-dir <project>`) reverses exactly this block via
+   `kata_router.remove_stanza` (DESIGN §2.2 / Slice C).
 
 Each action is presented for explicit approval; declining any one leaves the rest untouched. If the debug
 run did **not** succeed, do **not** offer conversion — report the outcome honestly and stop.
@@ -144,8 +157,9 @@ run did **not** succeed, do **not** offer conversion — report the outcome hone
 - It **adds no execution sink** (`protocol/exec-safety.md`): it composes only **sink-free / registered /
   human-gated** surfaces — `kata_install.copy_project` (`shutil`, never git), `kata_settings.*` (pure
   builders + boundary-validated writers), `project_find.find_projects` (pure search),
-  `intent_scaffold.write_intent` (`..`-guarded writer), and the **already human-gated** git actions that
-  live in [[kata-closeout]]. The `.planning/` scaffold is a skill `Write`, not a subprocess.
+  `intent_scaffold.write_intent` (`..`-guarded writer), `kata_router.write_stanza`
+  (`..`-guarded, idempotent upsert), and the **already human-gated** git actions that live in
+  [[kata-closeout]]. The `.planning/` scaffold is a skill `Write`, not a subprocess.
 - It introduces **no new installer Python** and **no new run-shape** — it steers existing config writers.
 - It **never gates** and never runs the debug pipeline — [[kata-evaluate]] owns the gate; the orchestrator
   owns the run.
@@ -165,3 +179,4 @@ run did **not** succeed, do **not** offer conversion — report the outcome hone
 | [[kata-loop]] | `skills/coordinate/kata-loop/SKILL.md` | loop-back / offered version-up |
 | **`convert-to-loop`** | **NEW** (this skill) | composition, not a single existing surface |
 | **`.planning/` scaffold** | **NEW** (this skill, `Write`) | skill-prose, no scaffolder tool |
+| **`kata_router.write_stanza`** | **NEW** (`tools/kata_router.py`) | router stanza upsert into target `AGENTS.md` (item 6) |

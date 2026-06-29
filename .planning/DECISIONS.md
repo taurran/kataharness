@@ -1704,3 +1704,55 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   adversarial review caught it — both logged (`d125-kata-validate`). **Gates:** pytest **1680** (+84: 78 engine +
   6 banner), validate **47 skills / 0**, Snyk **medium+ 0**. Records: `.planning/specs/kata-validate/`, `DECISIONS.md`
   D125, `validation-misses.jsonl` (F1/F1b).
+- **D126 — Feature 2 BUILT: install/onboarding final polish (one-command + headless + grill-for-goals + router
+  stanza) — 2026-06-29.** The install/onboarding surface is finished off in four gated slices, **ADDITIVE and
+  backward-compatible throughout** — the **5 `tools/kata_install.py` install-engine functions are byte-for-byte
+  untouched** and **no working pattern is altered**. **LOCKED decisions:** **(G1) Cross-platform one-command +
+  GitHub install** — NEW repo-root `install.sh` (`curl|sh`) + `install.ps1` (`irm|iex`) + `uninstall.sh` +
+  `uninstall.ps1`; they clone/seed then **invoke the EXISTING `tools/kata_install.py` engine** (no engine fork);
+  idempotent, no-cruft, **`KATA_SRC` offline override**; documents the clone path + "Use this template"; an
+  **honest `curl|sh` security caveat** (the checksum protects download-then-run, **NOT** the pipe); an uninstaller
+  ships. README + `docs/SETUP` updated. **(G2) Agent-friendly / headless install+setup** — ADDITIVE flags on
+  `kata_install.py` (`--yes`/`--non-interactive`, `--answers-json`, `--json`, `--uninstall`, `--target-dir`) +
+  non-TTY auto-skip; **SEMANTIC EXIT CODES** (0 ok / 1 not-confirmed / 2 usage / 3 not-found / 4 permission /
+  5 conflict=non-kata-only); **idempotent re-install = 0 no-op** (no `changed` field — that would have forced an
+  engine edit); machine JSON to stdout, human to stderr. **Autonomous-loop mode explicitly DEFERRED** — the build
+  loop's commit/merge/fix gates stay human. **(G3) Grill-for-goals** — ADDITIVE optional `acceptanceCriteria`
+  field in `intent_scaffold` (**byte-identical BC when absent; NOT required**) + a `protocol/intent.md` amendment;
+  ADDITIVE `kata-initiate` **step 2g** (enumerate + confirm acceptance/success criteria — start-with-the-end-in-mind)
+  + **S2 gate value #9** handled like conditional value #8 (an explicit "no criteria for this run" **PASSES** — no
+  deadlock; the verbatim "blanket looks-good FAILS" rule is preserved; the gate is **STRENGTHENED, not loosened**).
+  **(G4) Project-router stanza** — NEW pure `tools/kata_router.py` (`render`/`write`/`remove_stanza` — `..`-guarded,
+  idempotent marked-block upsert between `<!-- kata:begin -->` / `<!-- kata:end -->`); `kata-onboard` (**v0.2.0**)
+  gains an **opt-in, human-gated Step-3 item** that EXECUTES `kata_router.write_stanza` into the target project's
+  AGENTS.md; the uninstaller removes **exactly that block**; stanza ~15 lines (instruction-budget). **Canonical
+  AGENTS.md; CLAUDE.md stays a pointer** (D5). **Locked assessment:** the "system prompt" concept (persona SOUL +
+  AGENTS.md-as-router + CLAUDE.md pointer) is **ALREADY SOUND** — no change beyond G4. **Build:** 7 disjoint slices
+  in 3 waves (W1 `kata_router` + intent/initiate; W2 `kata_install` headless + uninstall; W3 `kata-onboard` stanza +
+  bootstrap scripts + README/SETUP). **Gate journey:** freeze-gate `kata-review` **HOLD** (two real contradictions:
+  a `changed:false` field would have FORCED an engine edit — dropped for the no-op-returns-0 contract; and the
+  optional-field-as-gate-value **deadlock** on G3 value #9) → fixed in the frozen docs → **SHIP**; live **offline
+  install / re-install / uninstall smoke ran on BOTH Git Bash and PowerShell**; **PART A `kata-evaluate` PASS**;
+  **PART B `kata-review` SHIP** (6 minor findings). **Hardening pass folded in:** Finding 1 (a `kata_router`
+  marker-corruption **data-loss guard** — see below), Finding 2 (headless `OSError` → exit 4), Finding 4
+  (`render_stanza` summary test). **★ One validation-miss the unit tests missed, PART B caught (`stateful-hole`):**
+  the `kata_router` marked-stanza upsert had a **data-loss state edge** — an unmatched/orphan `<!-- kata:begin -->`
+  (no matching end) would, on the **2nd write**, pair the stray begin with the new block's end and **delete the lines
+  between**. The unit tests covered the happy/complete-block paths but missed the orphan-marker state edge → fixed
+  with a **fail-loud guard + a byte-identical-after-raise test**; logged (`d126-install-onboarding`). **Gates:**
+  pytest **1764 passed** (new tests: `kata_router` + `install_cli_headless` + `intent_scaffold` additions),
+  `validate_skills` **47 / 0**, Snyk **medium+ 0**, offline install/re-install/uninstall smoke green on **both
+  shells**. **Honest scope:** (a) the known **D124 environment-sensitive benchmark test**
+  (`test_benchmark.py::TestRunDualGateCwd::test_importing_fixture_gives_q_one`) is **green canonically (1764 passed)**
+  but flaky in some subagent venvs — this is **NOT a Feature-2 regression and NOT a validation-miss**, noted only for
+  honesty; (b) the `curl|sh` network-fetch path is **exercised, not proven** (the honest caveat above stands — the
+  checksum guards the downloaded artifact, never the pipe); (c) **Codex/Kiro install is honest-scoped** (verify
+  in-host). Records: `.planning/specs/install-onboarding/`, `DECISIONS.md` D126, `validation-misses.jsonl`
+  (`d126-install-onboarding`).
+  **Known rough edges (pre-existing / honest-scoped; NOT Feature-2 regressions):** (a) `write_settings` does
+  not merge — an install with `--parent-dir` overwrites `.kata-settings.json` and drops any `confirmedPlatforms`
+  (D121 multi-model confirm state); pre-existing in `kata_settings.py` (a NOT-TOUCHED working pattern);
+  recoverable via re-`--confirm`; recommend a separate merge-preserving fix as a follow-up. (b)
+  `intent_scaffold`/pyyaml is only available under `tools/` — `build_intent`/`write_intent` must run from
+  `tools/`; the install path is stdlib-only and unaffected. (c) Windows-without-Developer-Mode uses copy-mode
+  fallback (documented), so harness skill updates need reinstall to propagate.

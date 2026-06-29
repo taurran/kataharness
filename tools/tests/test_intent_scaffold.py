@@ -290,3 +290,86 @@ def test_write_intent_rejects_literal_dotdot_segment():
     from intent_scaffold import write_intent
     with pytest.raises(ValueError, match=r"\.\."):
         write_intent("some/../../etc/passwd", FULL_ANSWERS)
+
+
+# ---------------------------------------------------------------------------
+# Slice D — OPTIONAL acceptanceCriteria field (additive, BC)
+# ---------------------------------------------------------------------------
+
+def test_build_intent_acceptance_criteria_when_supplied():
+    """When acceptanceCriteria is non-empty it appears in the frontmatter as a list."""
+    from intent_scaffold import build_intent
+    criteria = ["CLI exits 0 on clean install", "no orphan symlinks after uninstall"]
+    answers = {**FULL_ANSWERS, "acceptanceCriteria": criteria}
+    fm = _parse_frontmatter(build_intent(answers))
+    assert "acceptanceCriteria" in fm, "acceptanceCriteria must appear when non-empty"
+    assert isinstance(fm["acceptanceCriteria"], list)
+    assert fm["acceptanceCriteria"] == criteria
+
+
+def test_build_intent_no_acceptance_criteria_byte_identical():
+    """BC golden: absent or empty acceptanceCriteria yields byte-identical output.
+
+    Mutation-proof: if the 'if acceptance_criteria:' guard is removed and the
+    field is always emitted, the absent-key case would include
+    'acceptanceCriteria: []\\n' in YAML, failing the 'not in fm' assertion.
+    """
+    from intent_scaffold import build_intent
+
+    # Absent key — the baseline (FULL_ANSWERS has no acceptanceCriteria key)
+    out_absent = build_intent(FULL_ANSWERS)
+
+    # Explicit empty list — must be treated identically to absent
+    out_empty = build_intent({**FULL_ANSWERS, "acceptanceCriteria": []})
+
+    assert out_absent == out_empty, (
+        "Empty acceptanceCriteria must produce byte-identical output to absent key"
+    )
+
+    # The field must NOT appear in the frontmatter in either case
+    fm = _parse_frontmatter(out_absent)
+    assert "acceptanceCriteria" not in fm, (
+        "acceptanceCriteria must be omitted from frontmatter when absent/empty"
+    )
+
+
+def test_build_intent_acceptance_criteria_not_required():
+    """acceptanceCriteria is OPTIONAL — omitting it never triggers validation error."""
+    from intent_scaffold import build_intent
+    # FULL_ANSWERS has no acceptanceCriteria key; must build without raising
+    result = build_intent(FULL_ANSWERS)
+    assert isinstance(result, str)
+    fm = _parse_frontmatter(result)
+    # Required keys still present
+    required = {"kind", "goal", "fixes", "features", "modulesAdded",
+                "changeSummary", "target", "grillDepth", "readiness"}
+    assert required <= fm.keys()
+
+
+def test_build_intent_acceptance_criteria_conditional_guard():
+    """Mutation-proof: non-empty → field present; absent/empty → field absent."""
+    from intent_scaffold import build_intent
+
+    # Non-empty: field must appear
+    answers_with = {**FULL_ANSWERS, "acceptanceCriteria": ["exits 0", "no cruft"]}
+    fm_with = _parse_frontmatter(build_intent(answers_with))
+    assert "acceptanceCriteria" in fm_with
+
+    # Absent: field must NOT appear; output must differ from the non-empty case
+    fm_absent = _parse_frontmatter(build_intent(FULL_ANSWERS))
+    assert "acceptanceCriteria" not in fm_absent
+
+    # The two outputs must differ (the conditional inserts content)
+    assert build_intent(answers_with) != build_intent(FULL_ANSWERS)
+
+
+def test_write_intent_roundtrips_acceptance_criteria(tmp_path):
+    """write_intent round-trips acceptanceCriteria through YAML correctly."""
+    from intent_scaffold import write_intent
+    criteria = ["all tests green", "validate_skills 0 errors", "Snyk medium+ 0"]
+    answers = {**FULL_ANSWERS, "acceptanceCriteria": criteria}
+    target = tmp_path / "INTENT.md"
+    write_intent(str(target), answers)
+    text = target.read_text(encoding="utf-8")
+    fm = _parse_frontmatter(text)
+    assert fm["acceptanceCriteria"] == criteria

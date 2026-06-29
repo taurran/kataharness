@@ -53,6 +53,12 @@ def build_intent(answers: dict) -> str:  # noqa: C901
         ``changeSummary``, ``target`` (sub-dict with ``kind``, ``path``,
         ``vault``, ``platform``), ``grillDepth``, ``readiness``.
 
+        **Optional field (ADDITIVE — BC):**
+        ``acceptanceCriteria`` (``list[str]``) — checkable success criteria
+        confirmed in the Phase-2 mirror (step 2g, Slice D).  When absent or
+        empty the emitted ``INTENT.md`` is byte-identical to the pre-field
+        build (the conditional insert is skipped entirely).
+
     Returns
     -------
     str
@@ -114,6 +120,8 @@ def build_intent(answers: dict) -> str:  # noqa: C901
     modules_added: list[Any] = list(answers.get("modulesAdded", []))
     change_summary: str = str(answers.get("changeSummary", ""))
     readiness: str = str(answers.get("readiness", ""))
+    # OPTIONAL — Slice D additive field; default to empty list (never raises)
+    acceptance_criteria: list[Any] = list(answers.get("acceptanceCriteria", []))
 
     # Target sub-object
     target_obj: dict = {
@@ -135,6 +143,12 @@ def build_intent(answers: dict) -> str:  # noqa: C901
         "grillDepth": grill_depth,
         "readiness": readiness,
     }
+
+    # acceptanceCriteria is OPTIONAL — emitted only when non-empty.
+    # BC guarantee: absent or empty ⇒ the frontmatter dict is identical to
+    # the pre-Slice-D dict, so yaml.dump produces byte-identical output.
+    if acceptance_criteria:
+        frontmatter["acceptanceCriteria"] = acceptance_criteria
 
     # ------------------------------------------------------------------
     # Render YAML frontmatter

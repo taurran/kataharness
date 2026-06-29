@@ -32,6 +32,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import sys
 from pathlib import Path
 
 PLUGIN_NAME = "kata"
@@ -324,17 +325,192 @@ def _real_probe_runner(cmd: list[str]):
 
 
 # ---------------------------------------------------------------------------
+# Headless-surface helpers (Slice B — NEW, ADDITIVE)
+# ---------------------------------------------------------------------------
+
+
+def _emit(msg: str, as_json: bool = False) -> None:
+    """Print a human-readable message to stdout (default) or stderr (``--json`` mode).
+
+    Without ``--json`` the output is byte-for-byte identical to the old
+    ``print()`` call, preserving the BC guarantee.
+    """
+    if as_json:
+        print(msg, file=sys.stderr)
+    else:
+        print(msg)
+
+
+def _exit_code_for(result: dict, exc: BaseException | None = None) -> int:
+    """Map an install/uninstall result dict or exception to a semantic exit code.
+
+    Codes
+    -----
+    0  OK        — ``result["ok"] is True`` (idempotent re-install, confirm ok, uninstall ok)
+    1  ERROR     — generic / confirm-probe not confirmed (preserved from today)
+    2  USAGE     — bad/missing args (argparse default; not mapped here)
+    3  NOT_FOUND — ``ok:False`` (unknown platform); bad path; settings-write ``ValueError``
+    4  PERMISSION — ``OSError`` from the link/copy fallback
+    5  CONFLICT  — non-kata dir collision (the ``":118-122"`` ``ValueError``)
+    """
+    if exc is not None:
+        if isinstance(exc, OSError):
+            return 4  # PERMISSION
+        if isinstance(exc, ValueError) and "non-kata" in str(exc):
+            return 5  # CONFLICT
+        if isinstance(exc, ValueError):
+            return 3  # NOT_FOUND (bad path / settings write failure)
+        return 1  # generic
+    return 0 if result.get("ok") else 3  # NOT_FOUND for ok:False
+
+
+def _load_answers_json(path: str | Path) -> dict:
+    """Load and validate a ``--answers-json`` setup file.
+
+    Returns the parsed dict on success.
+
+    Raises
+    ------
+    FileNotFoundError
+        When the path does not exist (maps to exit ``3 NOT_FOUND`` in ``main()``).
+    ValueError
+        For a traversal-containing path, malformed JSON, non-dict JSON, or a
+        missing required key.  Maps to exit ``2 USAGE`` in ``main()``.
+    """
+    p = _safe_abs(path)  # raises ValueError for '..' traversal
+    if not p.exists():
+        raise FileNotFoundError(f"--answers-json path not found: {path!r}")
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise ValueError(f"malformed --answers-json ({path!r}): {e}") from e
+    if not isinstance(data, dict):
+        raise ValueError(
+            f"--answers-json must contain a JSON object, got {type(data).__name__!r}: {path!r}"
+        )
+    required = {"parentDir"}
+    missing = required - data.keys()
+    if missing:
+        raise ValueError(
+            f"--answers-json missing required key(s): {sorted(missing)} — in {path!r}"
+        )
+    return data
+
+
+# ---------------------------------------------------------------------------
+# Uninstall verb (Slice C — NEW, ADDITIVE)
+# ---------------------------------------------------------------------------
+
+
+def uninstall(
+    platform: str,
+    harness_home: str | Path | None = None,
+    host_dir: str | Path | None = None,
+    target_dir: str | Path | None = None,
+) -> dict:
+    """Reverse a KataHarness install: remove flat-linked skills, settings, and router stanza.
+
+    Removes **only** what KataHarness created:
+
+    - Symlinks whose resolved target is under ``harness_home`` → unlinked.
+    - Directories carrying the ``.kata-managed`` marker → ``rmtree``'d.
+    - Anything else → reported in ``leftIntact`` and **left intact** (never deleted).
+
+    Also unlinks ``<harness_home>/.kata-settings.json`` and, when ``target_dir``
+    is supplied, calls ``kata_router.remove_stanza(<target_dir>/AGENTS.md)``.
+
+    This function **never invokes git** (hard rule, mirrors ``install()``).
+    """
+    import kata_router
+    import kata_settings
+
+    home = _safe_abs(harness_home) if harness_home is not None else _default_home()
+    p = (platform or "").strip().casefold()
+
+    removed: list[str] = []
+    left_intact: list[str] = []
+
+    # Determine skills host dir + subdir (mirrors install routing)
+    skills_subdir = ".agents/skills" if p in _BEST_EFFORT else "skills"
+
+    if host_dir is not None or p == "claude":
+        hd = _safe_abs(host_dir) if host_dir is not None else (Path.home() / ".claude")
+        skills_dst = hd / skills_subdir
+        if skills_dst.is_dir():
+            for skill_dir in iter_skill_dirs(home):
+                dst = skills_dst / skill_dir.name
+                if not dst.exists() and not dst.is_symlink():
+                    continue  # already gone — no-op
+                if dst.is_symlink():
+                    try:
+                        resolved = dst.resolve()
+                    except (OSError, RuntimeError):
+                        left_intact.append(str(dst))
+                        continue
+                    if resolved.is_relative_to(home.resolve()):
+                        dst.unlink()
+                        removed.append(skill_dir.name)
+                    else:
+                        left_intact.append(str(dst))
+                elif dst.is_dir() and (dst / _MARKER).exists():
+                    shutil.rmtree(dst)
+                    removed.append(skill_dir.name)
+                else:
+                    # Non-kata dir occupying the slot — leave intact, report
+                    left_intact.append(str(dst))
+
+    # Unlink settings file (idempotent: absent -> no-op)
+    sp = kata_settings.settings_path(home)
+    if sp.exists():
+        sp.unlink()
+
+    # Remove router stanza from the supplied target dir's AGENTS.md
+    if target_dir is not None:
+        agents_md = _safe_abs(target_dir) / "AGENTS.md"
+        kata_router.remove_stanza(agents_md)
+
+    notes: list[str] = [f"uninstalled {len(removed)} skills"]
+    if left_intact:
+        notes.append(f"left intact (not kata-managed): {left_intact}")
+
+    return {
+        "ok": True,
+        "removed": removed,
+        "leftIntact": left_intact,
+        "notes": notes,
+    }
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Install KataHarness into a platform; optionally record the two settings."""
+    """Install (or uninstall) KataHarness into a platform; optionally record settings.
+
+    Exit codes (Slice B semantic table)
+    ------------------------------------
+    0  OK         — install ok, idempotent re-install, confirm ok, uninstall ok
+    1  ERROR      — generic / confirm-probe not confirmed
+    2  USAGE      — bad/missing args (argparse default; also malformed --answers-json)
+    3  NOT_FOUND  — unknown platform, missing path, bad parentDir/vaultDir
+    4  PERMISSION — host dir not writable / symlink + copy both denied (OSError)
+    5  CONFLICT   — non-kata dir occupies a skill slot (refuse to clobber)
+    """
     import argparse
 
     parser = argparse.ArgumentParser(
         prog="kata_install",
         description="Install KataHarness into a host platform from its central home.",
+        epilog=(
+            "Examples:\n"
+            "  kata_install --platform claude\n"
+            "  kata_install --platform claude --answers-json setup.json --json\n"
+            "  kata_install --platform claude --uninstall --target-dir /path/to/project\n"
+            "  kata_install --platform codex --confirm\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--platform", required=True, help="claude | codex | kiro | quick | other")
     parser.add_argument("--home", default=None, help="harness home (default: $KATA_HOME or self-locate)")
@@ -343,24 +519,126 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--vault-dir", default=None, help="vault / second-brain location (optional)")
     parser.add_argument("--confirm", action="store_true",
                         help="run the headless confirm-probe for --platform and record it in confirmedPlatforms")
+    # NEW flags (Slice B)
+    parser.add_argument(
+        "--non-interactive", "--yes",
+        dest="non_interactive",
+        action="store_true",
+        help=(
+            "non-interactive mode: suppress all prompts "
+            "(reserved; no interactive prompts today; "
+            "also auto-enabled when stdin is not a TTY)"
+        ),
+    )
+    parser.add_argument(
+        "--answers-json",
+        dest="answers_json",
+        default=None,
+        metavar="PATH",
+        help="JSON file supplying setup values {parentDir, vaultDir} for headless runs",
+    )
+    parser.add_argument(
+        "--json",
+        dest="use_json",
+        action="store_true",
+        help="machine-readable JSON to stdout; human notes to stderr",
+    )
+    parser.add_argument(
+        "--uninstall",
+        action="store_true",
+        help="reverse the install: remove linked skills, settings, and the router stanza",
+    )
+    parser.add_argument(
+        "--target-dir",
+        dest="target_dir",
+        default=None,
+        metavar="DIR",
+        help="target project directory (used by --uninstall to remove the router stanza)",
+    )
     args = parser.parse_args(argv)
 
-    if args.parent_dir:
+    use_json: bool = args.use_json
+    # Non-interactive auto-engages when stdin is not a TTY (forward-compat assertion)
+    _non_interactive: bool = args.non_interactive or not sys.stdin.isatty()  # noqa: F841
+
+    # Env-var fallbacks (additive; explicit flags win)
+    parent_dir: str | None = args.parent_dir or os.environ.get("KATA_PARENT_DIR")
+    vault_dir: str | None = args.vault_dir or os.environ.get("KATA_VAULT_DIR")
+
+    # --answers-json: load all setup values up-front for headless runs
+    if args.answers_json:
+        try:
+            answers = _load_answers_json(args.answers_json)
+        except FileNotFoundError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 3  # NOT_FOUND
+        except (json.JSONDecodeError, ValueError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2  # USAGE
+        # Answers override flag / env values
+        parent_dir = answers.get("parentDir", parent_dir)
+        vault_dir = answers.get("vaultDir", vault_dir)
+
+    # Write settings when parentDir is known (--parent-dir, KATA_PARENT_DIR, or --answers-json)
+    if parent_dir:
         import kata_settings
 
-        sp = kata_settings.write_settings(args.parent_dir, args.vault_dir, home=args.home)
-        print(f"settings: wrote {sp}")
+        try:
+            sp = kata_settings.write_settings(parent_dir, vault_dir, home=args.home)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 3  # NOT_FOUND (non-existent dir)
+        except OSError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 4  # PERMISSION (disk full / unwritable settings file)
+        _emit(f"settings: wrote {sp}", as_json=use_json)
 
+    # --confirm probe (existing path, unchanged)
     if args.confirm:
         probe = confirm_platform(args.platform, home=args.home)
         print(json.dumps(probe, indent=2))
         return 0 if probe.get("confirmed") else 1
 
-    result = install(args.platform, harness_home=args.home, host_dir=args.host_dir)
-    print(json.dumps(result, indent=2))
+    # --uninstall verb (Slice C)
+    if args.uninstall:
+        try:
+            result = uninstall(
+                args.platform,
+                harness_home=args.home,
+                host_dir=args.host_dir,
+                target_dir=args.target_dir,
+            )
+        except OSError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return _exit_code_for({}, exc=exc)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return _exit_code_for({}, exc=exc)
+        if use_json:
+            print(json.dumps(result))
+        else:
+            print(json.dumps(result, indent=2))
+        for note in result.get("notes", []):
+            _emit(f"  - {note}", as_json=use_json)
+        return 0 if result.get("ok") else 1
+
+    # Install (existing path, now wrapped in try/except for semantic exit codes)
+    try:
+        result = install(args.platform, harness_home=args.home, host_dir=args.host_dir)
+    except OSError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return _exit_code_for({}, exc=exc)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return _exit_code_for({}, exc=exc)
+
+    if use_json:
+        print(json.dumps(result))
+    else:
+        print(json.dumps(result, indent=2))
     for note in result.get("notes", []):
-        print(f"  - {note}")
-    return 0 if result.get("ok") else 1
+        _emit(f"  - {note}", as_json=use_json)
+    return _exit_code_for(result)
 
 
 if __name__ == "__main__":  # pragma: no cover

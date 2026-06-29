@@ -23,6 +23,61 @@ the loop.
 
 ---
 
+## Quick install
+
+```sh
+# POSIX shell — macOS / Linux / Git Bash on Windows
+curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh | sh
+```
+
+```powershell
+# PowerShell — Windows
+irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 | iex
+```
+
+Both one-liners clone KataHarness to `~/.kata-home` (`%USERPROFILE%\.kata-home` on Windows) and
+invoke the Python installer. Default platform: **claude**. Pass extra arguments via
+`sh -s -- --platform <p> --parent-dir <dir>` or as direct arguments to the `.ps1`.
+
+**Prefer not to pipe to a shell?** Three audit-friendly alternatives:
+
+```sh
+# 1. Git clone — inspect before running
+git clone https://github.com/taurran/kataharness.git ~/.kata-home
+cd ~/.kata-home && uv run python tools/kata_install.py --platform claude
+
+# 2. Already inside the repo (cloned or "Use this template")
+uv run python tools/kata_install.py --platform claude
+```
+
+3\. **GitHub "Use this template"** — fork to your own account; no remote script involved.
+
+**Honest security caveat:** `curl … | sh` and `irm … | iex` execute bytes as they stream — nothing
+to hash until after execution. A checksum protects the *download-then-run* path (fetch the script
+to a file, verify its SHA, then execute); it **does not** protect the piped form. Mitigations
+shipped here: a stable URL, a short and readable script, and a `KATA_REF` environment variable for
+version-pinning to any specific tag or commit. For a stronger guarantee, use the git-clone or
+"Use this template" paths above and audit the source directly.
+
+**Uninstall:**
+
+```sh
+# POSIX
+sh ~/.kata-home/uninstall.sh --target-dir /path/to/project --yes
+```
+
+```powershell
+# PowerShell
+& "$env:USERPROFILE\.kata-home\uninstall.ps1" --target-dir C:\path\to\project --yes
+```
+
+Router-stanza removal is scoped to the supplied `--target-dir` only — other projects' `AGENTS.md`
+are not crawled (no project registry). Re-run with a different `--target-dir` for each additional
+project. For full options, env vars, platform table, and Windows symlink notes →
+**[`docs/SETUP.md`](./docs/SETUP.md)**.
+
+---
+
 ## Why it's different from other loops
 
 Most "agentic loops" are a thin wrapper around *prompt → generate → done*. KataHarness is a **disciplined process**
@@ -214,7 +269,7 @@ skills/
 | `kata-bootstrap` | 0.1.0 | 2 | coordinate | experimental | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
 | `kata-initiate` | 0.2.0 | 3 | coordinate | experimental | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
 | `kata-loop` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
-| `kata-onboard` | 0.1.0 | 3 | coordinate | experimental | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
+| `kata-onboard` | 0.2.0 | 3 | coordinate | experimental | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
 | `kata-orchestrate` | 0.2.0 | 5 | coordinate | experimental | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
 | `kata-preflight` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner from _subprocess_runner in tools/kata_dispatch.py | — |
 | `kata-readiness` | 0.1.0 | 1 | coordinate | experimental | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
