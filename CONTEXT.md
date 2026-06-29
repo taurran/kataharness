@@ -482,3 +482,57 @@ The `kata_install` confirm probe that runs a real platform CLI and checks for th
 guard the multi-model BRIEF anticipated for **stale per-CLI flags between releases**. It did its job: it surfaced the
 codex 0.142.3 flag/stdin change. `_PROBE_COMMANDS ⊆ _COMMAND_BUILDERS` (L-MP2 invariant). _Avoid_: trusting a
 stub-only adapter as live-confirmed.
+
+## kata-loop-benchmark — the C-arc keystone (D123 BUILT · D124 deep-ad-val'd, 2026-06-29)
+**The benchmark**:
+The deterministic **outcome+efficiency benchmark** for the loop — the D99 keystone that measures **C-on/C-off learning
+lift**. A **hidden, off-by-default `benchmark` module** (mirrors `kata/module/slop`; flag/`KATA_BENCHMARK=1`/config block;
+**not in `kata-bootstrap`** — a power-user surface). **n=0 LIVE** — proven on synthetic fixtures + unit/e2e dry-runs,
+**never run on a real control repo (= D5, operator-supplied)**. _Avoid_: claiming it ran live; calling it "proven."
+
+**Control (the immutable reference)**:
+The experimental **control** — an immutable reference (code repo or research project), **cloned per run** into
+`<base>-katabenchmark<N>` (`benchmark_control.clone_control`; the reference is **never mutated**). **Rigidity lives in the
+control** (byte-identical start + identical inputs across arms via `content_hash`/`detect_drift`), **not in the metric**.
+_Avoid_: mutating the reference; treating the metric as the rigid element.
+
+**Two-axis scorecard**:
+**Axis Q** (∈[0,1], gated): the `kata-evaluate` default-FAIL **floor** (floor-fail ⇒ **Q=0 absolute**) + the SWE-bench-style
+**dual-gate** `FAIL_TO_PASS`×`PASS_TO_PASS` + a **mutation** multiplier. **Axis C** (efficiency): tokens/$/wall-clock/
+tool-calls/escalations/thrash (host-dependent fields **nullable**; missing/invalid → **worst-case imputed**, never excluded,
+so omitting a dimension can't win). **Floor-gated composite**: a Pareto point `(Q,C)` + a convenience scalar
+`Q/(1+λ·C_norm)`, efficiency scored **ONLY among floor-passers** (a cheap-wrong answer can't win). Profiles
+`balanced|cost-lean|quality-strict`. _Avoid_: scoring efficiency for a floor-failer; letting a negative/NaN cost win
+(the read-path `_validate_numeric` guards it).
+
+**Benchmark Definition · repeat_from · delta** (replay-by-definition):
+The durable, content-pinned `benchmark.def.json` (`benchmark_id`, `criteria_ref`, `control.content_hash`, `provenance`;
+written to `def_out`, NOT `.kata/`). **A `repeat_from` re-run REUSES the prior `benchmark_id`** → `compute_delta.sameDefinition:true`
+→ the **honest harness-delta** (same definition + newer provenance = the C-on/C-off number). **`parent_benchmark_id` is
+FORK-only** (a NEW benchmark deriving from an old one); a plain repeat leaves it absent. Delta rendering activates on
+`repeat_from`/`sameDefinition` — **NOT** `parent_benchmark_id`. _Avoid_: minting a fresh id on a repeat (→ false "drifted").
+
+**Embedded criteria**:
+`.kata-benchmark/criteria.json` in the control (`{fail_to_pass:[], pass_to_pass:[]}` of pytest node-IDs). `benchmark_def.load_criteria`
+reads it → `benchmark.run_dual_gate(clone_root, f2p, p2p)` runs the IDs **as DATA** via `mutation_check.run_named_test`
+(`cwd=clone_root` + PYTHONPATH so the control imports; `shell=False`; `_guard_node_id` blocks traversal). Missing criteria
+⇒ empty lists ⇒ `dual_gate_evaluated:false` (no free credit). _Avoid_: shell-executing a control's command strings (only
+declared test-IDs run); running the dual-gate without `cwd` (→ Q=0 for any importing control).
+
+**Benchmark engines + report**:
+PURE engines `tools/{usage_meter,benchmark,benchmark_def,benchmark_control}.py` (no new direct exec sink — `run_dual_gate`
+delegates to the registered `mutation_check` sink, external-trust row in `exec-safety.md`). The `kata-benchmark-report`
+skill (evaluate) renders the **two-tier** report into `modules/closeout/resources/benchmark-report.template.html` (the
+new BRAND-consistent template). **Reports NEVER gate** (`kata-evaluate` owns the gate); **n=1 directional** honesty pinned
+in the engine `honesty` block. _Avoid_: the report re-deriving a join in prose (it drives `benchmark.py`).
+
+**k-repeats (honest-simplify, v1)**:
+k-repeats are **independent per-repeat rows** (`<arm>·repeat<k>`); **mean±spread aggregation + cross-repeat ranking are
+DEFERRED** (operator decision (b); DESIGN §6b superseded with an explicit R6-no-drift note). _Avoid_: claiming mean±spread;
+ranking a repeat as "dominated" by its own sibling.
+
+**Benchmark DEFERRED set (D1–D5)**:
+**D1** concurrent bakeoff arms (gated on Spec B execution — v1 = sequential/single-arm + k-repeat + arm-ranking scorer);
+**D2** research-mode judge; **D3** benchmark→`kata-improve` T2 optimization-proposal hook; **D4** promote-best-arm-to-master
+(real-repo only); **D5** the real control FIXTURE (operator-supplied; design is fixture-agnostic). _Avoid_: treating any of
+these as built.

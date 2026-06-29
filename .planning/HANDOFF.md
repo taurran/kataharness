@@ -1,11 +1,34 @@
 ---
-date: 2026-06-29 (a 5-feature subagent-driven arc, D117–D121: Debug Mode P3 [final phase] · recurrence-hardening T2 · IaC Tier-2 preview-half · second-brain Recall · Codex adapter live-hardened + multi-model LIVE; NEXT = adversarially validate the whole arc, THEN commit/push, THEN start the kata-loop-benchmark)
-branch: master — private remote github.com/taurran/kataharness, tip a11b9de (all D117–D121 PUSHED + in sync; the THIS-SESSION doc updates [CONTEXT/HANDOFF/orientation] are UNCOMMITTED, to be committed next session after the ad-val pass)
-green: validator 45 skills / 0 errors · pytest 1314 passed · Snyk medium+ 0 on all new/changed Python EXCEPT a flagged PRE-EXISTING item — `tools/kata_install.py` 6 LOW CWE-23 (in `..`-guarded code, below the medium+ gate, since D104/D108)
-tags: pre-iac-specialist · pre-kata-preflight · pre-multimodel-layer · v0.1.0-alpha.3 · loop-hardening-complete
+date: 2026-06-29 (the benchmark arc, D122–D124: ad-val of D117–D121 → kata-loop-benchmark v1 BUILT → DEEP ad-val + integration-completion + metric-hardening; the C-arc keystone now exists, n=0 LIVE)
+branch: master — private remote github.com/taurran/kataharness, tip b750211 (all D122–D124 PUSHED + in sync; the THIS-SESSION doc updates [CONTEXT/HANDOFF/orientation] may be UNCOMMITTED, to be committed next session)
+green: validator 46 skills / 0 errors · pytest 1597 passed · Snyk medium+ 0 on all new/changed Python (pre-existing `tools/kata_install.py` 6 LOW CWE-23 still below gate)
+tags: kata-loop-benchmark-v1 · deep-ad-val-clean · phantom-reuse-recurrence-proposed · n0-live · v0.1.0-alpha.3
 authored-for: kata-orient (sections map to the orientation tiers)
-★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained, paste-able) — it sets the FIRST TASK = the adversarial-validation (ad-val) holistic red-team of D117–D121, then commit/push, then the kata-loop-benchmark. This HANDOFF body below is older historical context (D98–D116); STATE.md + DECISIONS.md D117–D121 are current.
+★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained, paste-able). It sets the read-in,
+the queue (next likely = the operator's **real control fixture → first LIVE benchmark run, D5/n=0→1**; plus the
+**PROPOSAL-phantom-reuse freeze-gate+merge**), the hard rules, and the recipe. STATE.md top box + DECISIONS.md D122–D124 +
+CONTEXT.md (now has the kata-loop-benchmark glossary section) are current.
 ---
+
+> **★ 2026-06-29 UPDATE (D122–D124, the benchmark arc — fully subagent-driven, the conductor cadence):**
+> **(D122)** Adversarial validation of the D117–D121 arc — 5 fresh-context reviewers over the BETWEEN-build seams → NO
+> BLOCKER/MAJOR-invariant-break; fixed the Tier-2 escalation-clobber + debug_report snyk negative-floor + 2 doc-truth
+> drifts + made the exec-safety registry-**completeness** structural. **(D123)** **kata-loop-benchmark v1 BUILT** (the
+> D99 C-arc keystone) — research (SWE-bench + deep web) → grill → freeze-gate SHIP → 6-slice build → eval → D98 (caught
+> the orphaned dual-gate) → fixed. An **experimental-control** design: immutable reference cloned per run, two-axis
+> (quality×token/cost) floor-gated scorecard, content-pinned Benchmark Definition + `repeat_from`/delta, a hidden
+> off-by-default `benchmark` module, a two-tier report that never gates. **(D124)** **DEEP ad-val (operator-requested,
+> pre-push)** — 5 reviewers found the engines unit-solid but the **integration/render/metric layers ship-blocking**:
+> every real control would have scored **Q=0** (dual-gate had no cwd/import-context); the **definition/criteria/delta were
+> built-but-UNWIRED**; the report **couldn't render**; the metric could be **gamed**; delta **mis-fired**. **All fixed
+> (TDD/mutation), re-confirmed CLEAN/SHIP.** **★ The recurrence system caught itself** — `kata-orchestrate ×
+> phantom-reuse` hit threshold → **T2 auto-drafted `PROPOSAL-phantom-reuse.md`** (a proposed standing end-to-end
+> wiring-completeness gate) → `proposed`, human-merge-gated. **Meta-lesson (load-bearing):** PART A + D98 (unit/injected)
+> **cannot see built-but-unwired / exec-context / metric-read gaps** — a realistic end-to-end dry-run is now the proposed
+> standing gate. **Gates:** pytest **1597** · **46/0** · Snyk **med+ 0**. **Honest scope: n=0 LIVE** (real control fixture
+> = D5, operator-supplied). All D122–D124 PUSHED (tip `b750211`). **NEXT:** (a) the operator's real fixture → first LIVE
+> run; (b) PROPOSAL-phantom-reuse freeze-gate+merge; (c) D3 benchmark→improve hook. Full detail:
+> `NEXT-SESSION-ORIENTATION.md`, `STATE.md`, `DECISIONS.md` D122–D124, `CONTEXT.md` (kata-loop-benchmark section).
 
 > **★ 2026-06-29 UPDATE (D117–D121, a 5-feature subagent-driven arc — each through the full recipe):**
 > **(D117)** Debug Mode **P3** — the FINAL phase; Debug Mode is now functionally complete at the skill/seam level
