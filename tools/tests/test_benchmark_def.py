@@ -76,6 +76,39 @@ exec-safety:
 Mutation proofs (spawn real subprocess via prove_non_vacuous):
     TestMutationProof::test_mutation_proof_content_hash_validation_line
     TestMutationProof::test_mutation_proof_same_definition_assignment
+    TestMutationProof::test_mutation_proof_missing_file_returns_empty_lists  ← mutation-proof target (c)
+    TestMutationProof::test_mutation_proof_node_id_guard_in_f2p              ← mutation-proof target (d)
+
+CRITERIA_FILE / criteria_schema:
+    TestConventionalPath::test_criteria_file_constant_value
+    TestCriteriaSchema::test_criteria_schema_returns_dict
+    TestCriteriaSchema::test_criteria_schema_has_required_fields
+    TestCriteriaSchema::test_criteria_schema_fail_to_pass_is_array_of_strings
+    TestCriteriaSchema::test_criteria_schema_pass_to_pass_is_array_of_strings
+    TestCriteriaSchema::test_criteria_schema_empty_lists_allowed
+    TestCriteriaSchema::test_criteria_schema_description_mentions_conventional_path
+    TestCriteriaSchema::test_criteria_schema_description_mentions_criteria_ref_and_load
+
+load_criteria:
+    TestLoadCriteria::test_load_criteria_valid_file_returns_f2p_and_p2p
+    TestLoadCriteria::test_load_criteria_missing_file_returns_empty_lists    ← mutation-proof target (c)
+    TestLoadCriteria::test_load_criteria_missing_file_not_an_error
+    TestLoadCriteria::test_load_criteria_both_empty_lists_valid
+    TestLoadCriteria::test_load_criteria_multiple_node_ids_in_both_lists
+    TestLoadCriteria::test_load_criteria_malformed_json_raises_value_error
+    TestLoadCriteria::test_load_criteria_missing_fail_to_pass_key_raises
+    TestLoadCriteria::test_load_criteria_missing_pass_to_pass_key_raises
+    TestLoadCriteria::test_load_criteria_non_dict_root_raises
+    TestLoadCriteria::test_load_criteria_node_id_dotdot_in_f2p_raises        ← mutation-proof target (d)
+    TestLoadCriteria::test_load_criteria_node_id_dotdot_in_p2p_raises
+    TestLoadCriteria::test_load_criteria_node_id_leading_dash_raises
+    TestLoadCriteria::test_load_criteria_node_id_no_double_colon_raises
+    TestLoadCriteria::test_load_criteria_empty_string_node_id_raises
+    TestLoadCriteria::test_load_criteria_control_dir_traversal_raises
+    TestLoadCriteria::test_load_criteria_explicit_criteria_ref_is_used
+    TestLoadCriteria::test_load_criteria_explicit_criteria_ref_traversal_raises
+    TestLoadCriteria::test_load_criteria_uses_conventional_path_by_default
+    TestLoadCriteria::test_load_criteria_output_has_f2p_and_p2p_keys
 """
 
 from __future__ import annotations
@@ -812,3 +845,385 @@ class TestMutationProof:
             "test_compute_delta_same_definition_true must catch removal of the "
             "same_definition assignment"
         )
+
+    def test_mutation_proof_missing_file_returns_empty_lists(self):
+        """Prove the early-return-empty in load_criteria is load-bearing.  [target (c)]
+
+        Target line (exact, in load_criteria):
+            ``        return {"f2p": [], "p2p": []}``
+
+        When removed: load_criteria no longer short-circuits on a missing file
+        and instead falls through to ``read_text`` on the non-existent file,
+        raising ``FileNotFoundError``.  The test
+        ``TestLoadCriteria::test_load_criteria_missing_file_returns_empty_lists``
+        (which expects the empty-dict return) then fails → testWentRed=True.
+        """
+        import mutation_run
+
+        asserted_line = '        return {"f2p": [], "p2p": []}'
+        test_cmd = self._cmd(
+            "TestLoadCriteria::test_load_criteria_missing_file_returns_empty_lists"
+        )
+        verdict = mutation_run.prove_non_vacuous(self._src(), asserted_line, test_cmd)
+        assert verdict["testWentRed"], (
+            "Mutation should make test_load_criteria_missing_file_returns_empty_lists "
+            "go red — the early-return-empty line in load_criteria is not load-bearing"
+        )
+        assert verdict["nonVacuous"], (
+            "test_load_criteria_missing_file_returns_empty_lists must catch removal "
+            "of the early-return-empty line (missing-file honest-empty behavior)"
+        )
+
+    def test_mutation_proof_node_id_guard_in_f2p(self):
+        """Prove the _guard_node_id call in the f2p loop of load_criteria is load-bearing.  [target (d)]
+
+        Target line (exact, first occurrence in load_criteria — the f2p loop):
+            ``        _guard_node_id(nid)``
+
+        When removed: the f2p loop no longer validates node-IDs → a node-ID
+        with ``..`` passes through without raising ValueError.  The test
+        ``TestLoadCriteria::test_load_criteria_node_id_dotdot_in_f2p_raises``
+        (which expects ValueError) then fails → testWentRed=True.
+
+        apply_line_removal removes only the FIRST occurrence of the target line,
+        which is in the f2p loop.  The p2p loop's call is untouched, so p2p
+        validation remains — this isolates the f2p guard specifically.
+        """
+        import mutation_run
+
+        asserted_line = "        _guard_node_id(nid)"
+        test_cmd = self._cmd(
+            "TestLoadCriteria::test_load_criteria_node_id_dotdot_in_f2p_raises"
+        )
+        verdict = mutation_run.prove_non_vacuous(self._src(), asserted_line, test_cmd)
+        assert verdict["testWentRed"], (
+            "Mutation should make test_load_criteria_node_id_dotdot_in_f2p_raises "
+            "go red — the _guard_node_id(nid) call in the f2p loop is not load-bearing"
+        )
+        assert verdict["nonVacuous"], (
+            "test_load_criteria_node_id_dotdot_in_f2p_raises must catch removal "
+            "of the _guard_node_id call in the f2p loop"
+        )
+
+
+# ---------------------------------------------------------------------------
+# CRITERIA_FILE conventional-path constant
+# ---------------------------------------------------------------------------
+
+
+class TestConventionalPath:
+    """Verify the CRITERIA_FILE constant value (the canonical contract)."""
+
+    def test_criteria_file_constant_value(self):
+        """CRITERIA_FILE must be '.kata-benchmark/criteria.json'.
+
+        This is the conventional path for the embedded criteria file within
+        a control root.  build_def.criteria_ref resolves to this path;
+        load_criteria reads it.  The exact value is the citeable contract
+        for the wiring worker.
+        """
+        assert benchmark_def.CRITERIA_FILE == ".kata-benchmark/criteria.json"
+
+
+# ---------------------------------------------------------------------------
+# criteria_schema
+# ---------------------------------------------------------------------------
+
+
+class TestCriteriaSchema:
+    """Unit tests for criteria_schema() — JSON schema for the criteria file."""
+
+    def _schema(self) -> dict:
+        return benchmark_def.criteria_schema()
+
+    def test_criteria_schema_returns_dict(self):
+        """criteria_schema() returns a dict."""
+        assert isinstance(self._schema(), dict)
+
+    def test_criteria_schema_has_required_fields(self):
+        """Schema must declare fail_to_pass and pass_to_pass as required."""
+        s = self._schema()
+        required = s.get("required", [])
+        assert "fail_to_pass" in required, "fail_to_pass missing from required"
+        assert "pass_to_pass" in required, "pass_to_pass missing from required"
+
+    def test_criteria_schema_fail_to_pass_is_array_of_strings(self):
+        """fail_to_pass must be declared as array with string items."""
+        prop = self._schema()["properties"]["fail_to_pass"]
+        assert prop["type"] == "array"
+        assert prop["items"]["type"] == "string"
+
+    def test_criteria_schema_pass_to_pass_is_array_of_strings(self):
+        """pass_to_pass must be declared as array with string items."""
+        prop = self._schema()["properties"]["pass_to_pass"]
+        assert prop["type"] == "array"
+        assert prop["items"]["type"] == "string"
+
+    def test_criteria_schema_empty_lists_allowed(self):
+        """Schema must not impose a minimum-items constraint (empty lists valid)."""
+        for key in ("fail_to_pass", "pass_to_pass"):
+            prop = self._schema()["properties"][key]
+            # minItems absent or 0 means empty lists are accepted
+            assert prop.get("minItems", 0) == 0, (
+                f"{key}: schema must allow empty lists (minItems must be absent or 0)"
+            )
+
+    def test_criteria_schema_description_mentions_conventional_path(self):
+        """Top-level description must mention the conventional path."""
+        desc = self._schema()["description"]
+        assert ".kata-benchmark/criteria.json" in desc or "CRITERIA_FILE" in desc, (
+            "criteria_schema description must cite the conventional file path"
+        )
+
+    def test_criteria_schema_description_mentions_criteria_ref_and_load(self):
+        """Description must mention criteria_ref (producer) and load_criteria (consumer)."""
+        desc = self._schema()["description"]
+        assert "criteria_ref" in desc, (
+            "criteria_schema description must mention criteria_ref (producer link)"
+        )
+        assert "load_criteria" in desc, (
+            "criteria_schema description must mention load_criteria (consumer link)"
+        )
+
+
+# ---------------------------------------------------------------------------
+# load_criteria — helpers
+# ---------------------------------------------------------------------------
+
+
+def _make_criteria_json(f2p=None, p2p=None) -> str:
+    """Return a valid serialized criteria JSON string."""
+    return json.dumps({
+        "fail_to_pass": f2p if f2p is not None else ["tests/test_x.py::test_name"],
+        "pass_to_pass": p2p if p2p is not None else ["tests/test_y.py::test_other"],
+    })
+
+
+def _write_criteria_at_conventional_path(control_dir: Path, content: str) -> Path:
+    """Write *content* to the conventional criteria path within *control_dir*."""
+    criteria_dir = control_dir / ".kata-benchmark"
+    criteria_dir.mkdir(parents=True, exist_ok=True)
+    criteria_file = criteria_dir / "criteria.json"
+    criteria_file.write_text(content, encoding="utf-8")
+    return criteria_file
+
+
+# ---------------------------------------------------------------------------
+# load_criteria — tests
+# ---------------------------------------------------------------------------
+
+
+class TestLoadCriteria:
+    """Tests for load_criteria(control_dir, *, criteria_ref) → {f2p, p2p}."""
+
+    def test_load_criteria_valid_file_returns_f2p_and_p2p(self, tmp_path):
+        """A valid criteria file returns the expected f2p and p2p lists."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            _make_criteria_json(
+                f2p=["tests/test_a.py::test_fails_first"],
+                p2p=["tests/test_b.py::test_stays_green"],
+            ),
+        )
+        result = benchmark_def.load_criteria(tmp_path)
+        assert result["f2p"] == ["tests/test_a.py::test_fails_first"]
+        assert result["p2p"] == ["tests/test_b.py::test_stays_green"]
+
+    def test_load_criteria_missing_file_returns_empty_lists(self, tmp_path):
+        """Missing criteria file → {"f2p": [], "p2p": []} (not an error).
+
+        This is also mutation-proof target (c): removing the early-return line
+        makes load_criteria fall through to read_text on a non-existent file
+        (FileNotFoundError), causing this test to fail → testWentRed=True.
+        """
+        result = benchmark_def.load_criteria(tmp_path)
+        assert result == {"f2p": [], "p2p": []}
+
+    def test_load_criteria_missing_file_not_an_error(self, tmp_path):
+        """Missing criteria file must NOT raise any exception."""
+        # No file created — must return cleanly without raising
+        result = benchmark_def.load_criteria(tmp_path)
+        assert isinstance(result, dict)
+
+    def test_load_criteria_both_empty_lists_valid(self, tmp_path):
+        """A criteria file with both empty lists is valid and returns empty lists."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            _make_criteria_json(f2p=[], p2p=[]),
+        )
+        result = benchmark_def.load_criteria(tmp_path)
+        assert result == {"f2p": [], "p2p": []}
+
+    def test_load_criteria_multiple_node_ids_in_both_lists(self, tmp_path):
+        """Multiple node-IDs in each list are all returned correctly."""
+        f2p_ids = [
+            "tests/test_one.py::test_alpha",
+            "tests/test_two.py::test_beta",
+        ]
+        p2p_ids = [
+            "tests/test_reg.py::test_gamma",
+            "tests/test_reg.py::test_delta",
+            "tests/test_reg.py::test_epsilon",
+        ]
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            _make_criteria_json(f2p=f2p_ids, p2p=p2p_ids),
+        )
+        result = benchmark_def.load_criteria(tmp_path)
+        assert result["f2p"] == f2p_ids
+        assert result["p2p"] == p2p_ids
+
+    def test_load_criteria_malformed_json_raises_value_error(self, tmp_path):
+        """A criteria file that is not valid JSON raises ValueError (fail-closed)."""
+        crit_dir = tmp_path / ".kata-benchmark"
+        crit_dir.mkdir()
+        (crit_dir / "criteria.json").write_text("{ not json }", encoding="utf-8")
+        with pytest.raises(ValueError, match="JSON|criteria"):
+            benchmark_def.load_criteria(tmp_path)
+
+    def test_load_criteria_missing_fail_to_pass_key_raises(self, tmp_path):
+        """A criteria file missing fail_to_pass raises ValueError (fail-closed)."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            json.dumps({"pass_to_pass": []}),
+        )
+        with pytest.raises(ValueError, match="fail_to_pass"):
+            benchmark_def.load_criteria(tmp_path)
+
+    def test_load_criteria_missing_pass_to_pass_key_raises(self, tmp_path):
+        """A criteria file missing pass_to_pass raises ValueError (fail-closed)."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            json.dumps({"fail_to_pass": []}),
+        )
+        with pytest.raises(ValueError, match="pass_to_pass"):
+            benchmark_def.load_criteria(tmp_path)
+
+    def test_load_criteria_non_dict_root_raises(self, tmp_path):
+        """A criteria file whose root is not a JSON object raises ValueError."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            json.dumps(["not", "a", "dict"]),
+        )
+        with pytest.raises(ValueError):
+            benchmark_def.load_criteria(tmp_path)
+
+    def test_load_criteria_node_id_dotdot_in_f2p_raises(self, tmp_path):
+        """A node-ID with '..' in fail_to_pass raises ValueError (path traversal guard).
+
+        This is also mutation-proof target (d): removing the _guard_node_id call
+        in the f2p loop makes this test fail (no ValueError raised for the bad
+        node-ID) → testWentRed=True.
+        """
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            _make_criteria_json(
+                f2p=["../outside/test.py::test_escape"],
+                p2p=[],
+            ),
+        )
+        with pytest.raises(ValueError, match=r"\.\.|traversal|node.?[Ii][Dd]|node.?id"):
+            benchmark_def.load_criteria(tmp_path)
+
+    def test_load_criteria_node_id_dotdot_in_p2p_raises(self, tmp_path):
+        """A node-ID with '..' in pass_to_pass raises ValueError."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            _make_criteria_json(
+                f2p=[],
+                p2p=["tests/../secret.py::test_leak"],
+            ),
+        )
+        with pytest.raises(ValueError, match=r"\.\.|traversal|node.?[Ii][Dd]|node.?id"):
+            benchmark_def.load_criteria(tmp_path)
+
+    def test_load_criteria_node_id_leading_dash_raises(self, tmp_path):
+        """A node-ID starting with '-' raises ValueError (CLI flag injection guard)."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            _make_criteria_json(
+                f2p=["-flag_injection::test_name"],
+                p2p=[],
+            ),
+        )
+        with pytest.raises(ValueError, match=r"-|leading|node.?[Ii][Dd]|node.?id"):
+            benchmark_def.load_criteria(tmp_path)
+
+    def test_load_criteria_node_id_no_double_colon_raises(self, tmp_path):
+        """A node-ID without '::' raises ValueError (must be path::name shape)."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            _make_criteria_json(
+                f2p=["tests/test_x.py/test_name"],  # slash not double-colon
+                p2p=[],
+            ),
+        )
+        with pytest.raises(ValueError, match=r"::|path|node.?[Ii][Dd]|node.?id"):
+            benchmark_def.load_criteria(tmp_path)
+
+    def test_load_criteria_empty_string_node_id_raises(self, tmp_path):
+        """An empty string node-ID raises ValueError."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            _make_criteria_json(f2p=[""], p2p=[]),
+        )
+        with pytest.raises(ValueError):
+            benchmark_def.load_criteria(tmp_path)
+
+    def test_load_criteria_control_dir_traversal_raises(self, tmp_path):
+        """A control_dir containing '..' raises ValueError (CWE-23 guard)."""
+        bad_dir = tmp_path / ".." / "outside"
+        with pytest.raises(ValueError, match=r"'\.\.'|traversal"):
+            benchmark_def.load_criteria(bad_dir)
+
+    def test_load_criteria_explicit_criteria_ref_is_used(self, tmp_path):
+        """An explicit criteria_ref path overrides the conventional path."""
+        # Place criteria at a non-conventional location
+        alt_dir = tmp_path / "custom"
+        alt_dir.mkdir()
+        alt_file = alt_dir / "my_criteria.json"
+        alt_file.write_text(
+            _make_criteria_json(
+                f2p=["tests/test_alt.py::test_explicit"],
+                p2p=[],
+            ),
+            encoding="utf-8",
+        )
+        result = benchmark_def.load_criteria(
+            tmp_path, criteria_ref=str(alt_file)
+        )
+        assert result["f2p"] == ["tests/test_alt.py::test_explicit"]
+        assert result["p2p"] == []
+
+    def test_load_criteria_explicit_criteria_ref_traversal_raises(self, tmp_path):
+        """An explicit criteria_ref containing '..' raises ValueError (CWE-23)."""
+        bad_ref = str(tmp_path / ".." / "outside" / "criteria.json")
+        with pytest.raises(ValueError, match=r"'\.\.'|traversal"):
+            benchmark_def.load_criteria(tmp_path, criteria_ref=bad_ref)
+
+    def test_load_criteria_uses_conventional_path_by_default(self, tmp_path):
+        """Default path is CRITERIA_FILE (.kata-benchmark/criteria.json) in control_dir."""
+        # Only place file at the conventional path — no criteria_ref supplied
+        crit_dir = tmp_path / ".kata-benchmark"
+        crit_dir.mkdir()
+        (crit_dir / "criteria.json").write_text(
+            _make_criteria_json(
+                f2p=["tests/test_conv.py::test_conventional"],
+                p2p=[],
+            ),
+            encoding="utf-8",
+        )
+        result = benchmark_def.load_criteria(tmp_path)
+        assert result["f2p"] == ["tests/test_conv.py::test_conventional"]
+
+    def test_load_criteria_output_has_f2p_and_p2p_keys(self, tmp_path):
+        """Return dict always has exactly 'f2p' and 'p2p' keys."""
+        _write_criteria_at_conventional_path(
+            tmp_path,
+            _make_criteria_json(),
+        )
+        result = benchmark_def.load_criteria(tmp_path)
+        assert "f2p" in result
+        assert "p2p" in result
+        assert isinstance(result["f2p"], list)
+        assert isinstance(result["p2p"], list)

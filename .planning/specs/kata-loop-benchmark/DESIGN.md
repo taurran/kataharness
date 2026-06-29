@@ -90,6 +90,9 @@ way. NEW action — deferred (D4).
 Comparison uses **both** (i) **embedded criteria** in the reference (hidden dual-gate tests + mutation
 criteria + expected outcomes) and (ii) the **accumulated historical-scorecard distribution** across prior
 runs ("is this optimal vs prior runs").
+> **[2026-06-29 R — honest-scope note]** v1 operationalizes (ii) as a **pairwise delta** vs a single
+> referenced prior run (`repeat_from` / delta mode §4). Multi-run percentile / distribution aggregation
+> across all historical runs is **deferred** — not built in v1.
 
 ### 2.5 R1 control semantics — LOCKED
 Immutable reference = frozen **starting state + embedded criteria**; scoring = run-vs-criteria +
@@ -197,6 +200,13 @@ provider `protocol/config.md:103-104`).
 small-greenfield shape) of mode X vs mode Y against the immutable reference. Support **k-repeats per arm**
 → report mean ± spread, **label n explicitly**, bake in **"n=1 = directional, not proven"** (extends the
 *exercised ≠ proven* convention). **R6 RESOLVED: k default = 1** (honest n=1 directional), configurable.
+> **[2026-06-29 A4 supersede — k-repeats presentation, operator decision (b)]** The "*report mean ±
+> spread*" phrase above is **superseded for v1**: k-repeats are emitted as **independent per-repeat rows**
+> (`<arm>·repeat<k>`); **statistical aggregation (mean ± spread) and cross-repeat ranking are DEFERRED**
+> (a named v1 simplification). **R6-consistency confirmation:** LOCKED R6 mandates k-repeats are
+> *supported* and k defaults to 1 — it does **not** prescribe aggregation of those repeats into a summary
+> statistic. Row-per-repeat satisfies R6 fully (support = emit rows; aggregation is a presentation-layer
+> addition). The narrowing is in §6b's original presentation wording only. **No drift from any LOCKED fork.**
 
 **(a) Concurrent same-task loops — DEFERRED (D1).** RESEARCH §6 routes this onto the `bakeoff` module
 (best-of-N, AgentHub/worktrees). **Verification finding:** the bakeoff **config surface** exists
@@ -214,8 +224,12 @@ retired grill-vs-baseline RCT (D70/L11).
 Mirror the two-tier closeout. **NEW skill `kata-benchmark-report`** (evaluate category, module-gated —
 exact precedent: `kata-debrief`, `skills/evaluate/kata-debrief/SKILL.md`) authors it; the pure
 deterministic engine `tools/benchmark.py` (the D99 smallest-v1 scorer) does every join over
-`.kata/{RESULT,footprint,mutation}.json` + `.kata/usage.json` + the criteria → emits
+`.kata/{RESULT,mutation}.json` + `.kata/usage.json` + the criteria → emits
 `.kata/benchmark/<run-id>.json`.
+> **[2026-06-29 B5 de-claim]** `footprint.json` is **not** a scorer join input. `tools/benchmark.py`
+> reads `.kata/{RESULT,mutation,usage}.json` + criteria only; `footprint.json` is **evidence-only**
+> (available for context but not joined in scoring). Amend the brace-list above: drop `footprint` from
+> the join inputs.
 - Reuses the `kata-report` two-tier `{{TOKEN}}` shape (`skills/evaluate/kata-report/SKILL.md:44-57`) +
   the committed template + BRAND palette (`modules/closeout/resources/closeout-report.template.html:6-33`,
   `BRAND.md`).
@@ -256,7 +270,7 @@ scorecards (§2.4) + **mutation-proof + hidden criteria** to kill weak-test infl
 |---|---|---|---|
 | Floor verdict | `.kata/RESULT.json` | `tools/run_result.py:54-97` | REUSE |
 | Anti-weak-test multiplier | `.kata/mutation.json` `allNonVacuous` | `tools/gate_emit.py:129-136` | REUSE |
-| Footprint manifest | `.kata/footprint.json` | `tools/footprint.py:107-133` via `gate_emit.py:117-122` | REUSE |
+| Footprint manifest | `.kata/footprint.json` | `tools/footprint.py:107-133` via `gate_emit.py:117-122` | REUSE *(evidence-only — **not** a scorer join input; see B5 note §7 [2026-06-29])* |
 | Run F2P/P2P **test-IDs (data)** | `mutation_check.run_named_test` per test-ID (fixed `shell=False` argv, registered INTERNAL) | `tools/mutation_check.py:71`; `protocol/exec-safety.md:58` | REUSE (no new sink; no `run_gate`) |
 | Off-by-default module | `kata/module/slop` precedent | `kata-slop-check:36-45`; `config.md:105-108` | REUSE pattern |
 | Two-tier `{{TOKEN}}` report | `kata-report` + template + BRAND | `kata-report:44-57`; template `:6-33` | REUSE |

@@ -6,7 +6,9 @@ Run from the ``tools/`` directory so pytest's pythonpath resolves them.
 
 from __future__ import annotations
 
+import os
 import subprocess
+from typing import Optional
 
 
 def mutation_verdict(baseline_passed: bool, mutated_passed: bool) -> dict:
@@ -54,21 +56,48 @@ def apply_line_removal(source: str, target_line: str) -> str:
     raise ValueError(f"Line not found in source: {target_line!r}")
 
 
-def run_named_test(test_path: str, test_name: str) -> bool:
+def run_named_test(
+    test_path: str,
+    test_name: str,
+    *,
+    cwd: Optional[str] = None,
+) -> bool:
     """Run a single named pytest test via ``uv run pytest`` and return True if it passed.
 
     This is a thin shell around subprocess — not required by the test suite but
     provided for orchestrator use when automating the mutation-proof loop.
 
+    FIX A1 — cwd parameter: when *cwd* is provided, pytest runs from that working
+    directory AND *cwd* is prepended to ``PYTHONPATH`` so that a simple
+    ``from src import X`` in the control's tests resolves correctly.
+    BC: *cwd=None* is the default and preserves exactly the previous behavior
+    (no cwd, no PYTHONPATH mutation, env unchanged).
+
+    NOTE: Full per-control dependency-env isolation (a control with its own
+    3rd-party deps) is a D5/real-fixture concern.  v1 only needs simple-import
+    controls (flat ``src/`` package) to resolve via PYTHONPATH.
+
     Args:
-        test_path: Path to the test file (absolute or relative to cwd).
+        test_path: Path to the test file (absolute, or relative to *cwd*).
         test_name: The test function name (no ``::`` prefix).
+        cwd:       Optional working directory for pytest subprocess.  When set,
+                   *cwd* is also prepended to ``PYTHONPATH`` so imports from the
+                   clone root resolve.  Default None = current working directory
+                   (BC, unchanged behavior).
 
     Returns:
         True if pytest exits 0 (test passed), False otherwise.
     """
+    run_env: Optional[dict] = None
+    if cwd is not None:
+        run_env = os.environ.copy()
+        existing_pp = run_env.get("PYTHONPATH", "")
+        run_env["PYTHONPATH"] = cwd + (os.pathsep + existing_pp if existing_pp else "")
+
     result = subprocess.run(
         ["uv", "run", "pytest", f"{test_path}::{test_name}", "-q"],
         capture_output=True,
+        cwd=cwd,
+        env=run_env,
     )
     return result.returncode == 0

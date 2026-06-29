@@ -1147,7 +1147,7 @@ class TestTraversalGuard:
         clone_root.mkdir()
         called: list = []
 
-        def fake_rnt(test_path: str, test_name: str) -> bool:
+        def fake_rnt(test_path: str, test_name: str, *, cwd: Optional[str] = None) -> bool:
             called.append((test_path, test_name))
             return True
 
@@ -1257,7 +1257,9 @@ class TestRunDualGate:
 
         calls: list = []
 
-        def fake_run_named_test(test_path: str, test_name: str) -> bool:
+        def fake_run_named_test(
+            test_path: str, test_name: str, *, cwd: Optional[str] = None
+        ) -> bool:
             calls.append((test_path, test_name))
             return True  # all pass
 
@@ -1447,3 +1449,498 @@ class TestMutationProof:
             "test_floor_fail_missing_failed_key must catch removal of the "
             "fail-closed failed_present check"
         )
+
+
+# ===========================================================================
+# FIX A1 — dual-gate execution context: cwd resolves clone imports
+# ===========================================================================
+
+
+class TestRunDualGateCwd:
+    """FIX A1: run_dual_gate passes cwd=clone_root so `from src import X` resolves."""
+
+    def test_cwd_passed_to_run_named_test(self, tmp_path):
+        """run_dual_gate passes cwd=str(clone_root) to run_named_test (FIX A1)."""
+        clone_root = tmp_path / "clone"
+        clone_root.mkdir()
+        calls: list = []
+
+        def fake_rnt(test_path: str, test_name: str, *, cwd: Optional[str] = None) -> bool:
+            calls.append({"test_path": test_path, "test_name": test_name, "cwd": cwd})
+            return True
+
+        with patch("mutation_check.run_named_test", fake_rnt):
+            bm.run_dual_gate(clone_root, f2p_ids=["tests/test_x.py::test_foo"], p2p_ids=[])
+
+        assert len(calls) == 1
+        assert calls[0]["cwd"] == str(clone_root), (
+            "FIX A1: run_dual_gate must pass cwd=str(clone_root) to run_named_test"
+        )
+
+    def test_relative_path_passed_to_run_named_test(self, tmp_path):
+        """run_dual_gate passes rel_path (not absolute) so it resolves under cwd (FIX A1)."""
+        clone_root = tmp_path / "clone"
+        clone_root.mkdir()
+        calls: list = []
+
+        def fake_rnt(test_path: str, test_name: str, *, cwd: Optional[str] = None) -> bool:
+            calls.append({"test_path": test_path, "test_name": test_name, "cwd": cwd})
+            return True
+
+        with patch("mutation_check.run_named_test", fake_rnt):
+            bm.run_dual_gate(clone_root, f2p_ids=["tests/test_x.py::test_foo"], p2p_ids=[])
+
+        assert len(calls) == 1
+        assert calls[0]["test_path"] == "tests/test_x.py", (
+            "FIX A1: run_dual_gate must pass the relative path (not absolute) to run_named_test"
+        )
+
+    @pytest.mark.integration
+    def test_importing_fixture_gives_q_one(self, tmp_path):
+        """Integration: control with `from src import add` → run_dual_gate True → Q=1.0.
+
+        FIX A1 acceptance criterion (DESIGN §3.1.2 v1 shape): build a synthetic
+        control whose test does `from src import add`; run_dual_gate on it returns
+        True booleans → score_arms gives Q=1.0.  Was Q=0 before fix (clone root
+        never on sys.path → collection failure → all-False gate → Q=0).
+
+        Full per-control dep-env isolation (3rd-party deps in clone) is D5/real-fixture.
+        This test only covers the v1 simple-import shape.
+        """
+        import textwrap
+
+        clone = tmp_path / "control"
+        src_dir = clone / "src"
+        src_dir.mkdir(parents=True)
+        (src_dir / "__init__.py").write_text("", encoding="utf-8")
+        (src_dir / "add.py").write_text(
+            "def add(a: int, b: int) -> int:\n    return a + b\n",
+            encoding="utf-8",
+        )
+        tests_dir = clone / "tests"
+        tests_dir.mkdir()
+        (tests_dir / "__init__.py").write_text("", encoding="utf-8")
+        (tests_dir / "test_add.py").write_text(
+            textwrap.dedent("""\
+                from src import add
+
+                def test_add_basic():
+                    assert add.add(1, 2) == 3
+
+                def test_add_zero():
+                    assert add.add(0, 0) == 0
+            """),
+            encoding="utf-8",
+        )
+
+        kata = clone / ".kata"
+        kata.mkdir()
+        (kata / "RESULT.json").write_text(
+            json.dumps({"exitCode": 0, "failed": 0, "passed": 2}), encoding="utf-8"
+        )
+        (kata / "mutation.json").write_text(
+            json.dumps({"allNonVacuous": True, "records": []}), encoding="utf-8"
+        )
+        (kata / "usage.json").write_text(
+            json.dumps(_usage("control")), encoding="utf-8"
+        )
+
+        f2p_ids = ["tests/test_add.py::test_add_basic"]
+        p2p_ids = ["tests/test_add.py::test_add_zero"]
+        gate_results = bm.run_dual_gate(clone, f2p_ids, p2p_ids)
+
+        assert gate_results["f2p"]["tests/test_add.py::test_add_basic"] is True, (
+            "FIX A1: `from src import add` test must pass with cwd=clone_root on PYTHONPATH "
+            "(was False before fix — import failed, gate returned all-False)"
+        )
+        assert gate_results["p2p"]["tests/test_add.py::test_add_zero"] is True
+
+        sc = bm.score_arms({"control": clone}, f2p_p2p_results={"control": gate_results})
+        arm = _arm_by_label(sc, "control")
+        assert arm["q"] == pytest.approx(1.0), (
+            f"FIX A1: Q must be 1.0 when both gates pass; got {arm['q']} "
+            "(was 0.0 before fix)"
+        )
+
+
+# ===========================================================================
+# FIX C1 — metric read-path numeric sanity
+# ===========================================================================
+
+
+class TestAxisCNumericSanity:
+    """FIX C1: negative/NaN/Inf usage values treated as missing, not scored."""
+
+    def test_negative_cost_does_not_win(self, tmp_path):
+        """costUSD=-540 (attack) must NOT produce a lower c_norm than the honest arm (FIX C1).
+
+        Before fix: negative cost is accepted as float(-540), normalizes against a
+        positive max → cost dimension goes negative → c_norm_attack < c_norm_honest
+        → attack appears cheaper → wins composite race (rank 1) or produces
+        non-deterministic NaN-like behaviour.
+        After fix: _validate_numeric rejects negative → treated as missing →
+        imputed as 1.0 (worst-case) → c_norm_attack >= c_norm_honest.
+
+        Note: the invariant is c_norm, not rank (equal c_norm arms tie by insertion
+        order; the c_norm invariant is unambiguous).
+        """
+        # arm-honest cost is the only valid cost, so it normalises to 1.0.
+        # arm-attack's invalid cost is imputed to 1.0 as well → equal c_norm.
+        # If C1 validation is removed, arm-attack gets cost dim = -540/0.01 = -54000
+        # → c_norm << 0 → c_norm_attack < c_norm_honest → assertion fails.
+        root_attack = _make_arm(
+            tmp_path, "arm-attack",
+            usage=_usage("arm-attack", cost_usd=-540.0),
+        )
+        root_honest = _make_arm(
+            tmp_path, "arm-honest",
+            usage=_usage("arm-honest", cost_usd=0.01),
+        )
+        sc = bm.score_arms(
+            {"arm-attack": root_attack, "arm-honest": root_honest},
+            f2p_p2p_results={
+                "arm-attack": {"f2p": {"t1": True}, "p2p": {}},
+                "arm-honest": {"f2p": {"t1": True}, "p2p": {}},
+            },
+        )
+        arm_attack = _arm_by_label(sc, "arm-attack")
+        arm_honest = _arm_by_label(sc, "arm-honest")
+        assert arm_attack["usage_incomplete"] is True, (
+            "FIX C1: negative costUSD must flag usage_incomplete=True"
+        )
+        # Core C1 invariant: attack's c_norm must NOT be lower than honest's.
+        # (Lower c_norm = appears cheaper = unfair advantage.)
+        assert arm_attack["c_norm"] >= arm_honest["c_norm"], (
+            f"FIX C1: attack arm c_norm={arm_attack['c_norm']:.4f} must NOT be lower "
+            f"than honest arm c_norm={arm_honest['c_norm']:.4f}. "
+            "Negative costUSD must be rejected and imputed as worst-case 1.0."
+        )
+
+    def test_nan_does_not_poison_ranking(self, tmp_path):
+        """NaN in a usage field must not poison ranking of other arms (FIX C1)."""
+        u_nan = _usage("arm-nan")
+        u_nan["costUSD"] = float("nan")
+        root_nan = _make_arm(tmp_path, "arm-nan", usage=u_nan)
+
+        u_ok = _usage("arm-ok", cost_usd=0.05)
+        root_ok = _make_arm(tmp_path, "arm-ok", usage=u_ok)
+
+        sc = bm.score_arms(
+            {"arm-nan": root_nan, "arm-ok": root_ok},
+            f2p_p2p_results={
+                "arm-nan": {"f2p": {"t1": True}, "p2p": {}},
+                "arm-ok": {"f2p": {"t1": True}, "p2p": {}},
+            },
+        )
+        import math as _math
+        arm_ok = _arm_by_label(sc, "arm-ok")
+        assert arm_ok["c_norm"] is not None
+        assert _math.isfinite(arm_ok["c_norm"]), (
+            "FIX C1: NaN from arm-nan must not poison arm-ok's c_norm"
+        )
+
+    def test_inf_wall_clock_flagged_and_not_exploding(self, tmp_path):
+        """Infinity in wallClockS treated as missing → usage_incomplete, c_norm finite (FIX C1)."""
+        u_inf = _usage("arm-inf")
+        u_inf["wallClockS"] = float("inf")
+        root_inf = _make_arm(tmp_path, "arm-inf", usage=u_inf)
+
+        sc = bm.score_arms(
+            {"arm-inf": root_inf},
+            f2p_p2p_results={"arm-inf": {"f2p": {"t1": True}, "p2p": {}}},
+        )
+        arm = _arm_by_label(sc, "arm-inf")
+        import math as _math
+        assert arm["usage_incomplete"] is True, (
+            "FIX C1: Inf wallClockS must flag usage_incomplete=True"
+        )
+        assert _math.isfinite(arm["c_norm"]), (
+            "FIX C1: Inf field must not produce Inf c_norm"
+        )
+
+
+# ===========================================================================
+# FIX C2 — C-norm imputation: omission never helps
+# ===========================================================================
+
+
+class TestAxisCImputation:
+    """FIX C2: missing/null/invalid fields imputed as 1.0 (worst-case), not excluded."""
+
+    def test_null_cost_does_not_improve_c_norm(self, tmp_path):
+        """costUSD=null must NOT lower c_norm below honest arm with real low cost (FIX C2).
+
+        Before fix (old FIX 6b): null costUSD excluded → c_norm computed without it →
+        arm appeared cheaper on that dimension.
+        After fix: null → imputed as 1.0 → arm looks expensive (honest-conservative).
+        """
+        # arm-null: costUSD=null, same non-cost profile as arm-honest
+        u_null = _usage("arm-null", cost_usd=None, tokens_in=None, tokens_out=None)
+        u_null["wallClockS"] = 1.0
+        u_null["toolCalls"] = 1
+        root_null = _make_arm(tmp_path, "arm-null", usage=u_null)
+
+        # arm-honest: all fields present, same non-cost profile + low real cost
+        root_honest = _make_arm(
+            tmp_path, "arm-honest",
+            usage=_usage("arm-honest", wall_clock_s=1.0, tool_calls=1, cost_usd=0.01),
+        )
+        sc = bm.score_arms(
+            {"arm-null": root_null, "arm-honest": root_honest},
+            f2p_p2p_results={
+                "arm-null": {"f2p": {"t1": True}, "p2p": {}},
+                "arm-honest": {"f2p": {"t1": True}, "p2p": {}},
+            },
+        )
+        arm_null = _arm_by_label(sc, "arm-null")
+        arm_honest = _arm_by_label(sc, "arm-honest")
+
+        # Under FIX C2: null cost → imputed as 1.0 → arm-null's c_norm is HIGHER
+        # than arm-honest (which has a real low cost normalized to ~0).
+        assert arm_null["c_norm"] >= arm_honest["c_norm"], (
+            f"FIX C2: arm with null cost must NOT have lower c_norm than honest arm. "
+            f"null c_norm={arm_null['c_norm']:.4f}, honest c_norm={arm_honest['c_norm']:.4f}. "
+            "Missing cost must be imputed as 1.0 (worst-case), not excluded."
+        )
+
+    def test_missing_worst_field_does_not_improve_rank(self, tmp_path):
+        """Arm missing its worst Axis-C field must NOT get lower c_norm than honest arm (FIX C2).
+
+        arm-omit omits wallClockS (which would have been 100.0 = the worst value in
+        the comparison).
+        Under FIX C2: missing → imputed 1.0 → included in mean → same c_norm as
+        arm-honest (whose wallClockS=100.0 normalises to 1.0).
+        Under old FIX 6b: missing → excluded → arm-omit's mean computed over 5
+        fields instead of 6 → lower c_norm → appears cheaper → unfair advantage.
+
+        Note: the invariant is c_norm, not rank (equal c_norm arms tie by insertion
+        order; the c_norm invariant is unambiguous and is what the mutation proof checks).
+        """
+        usage_omit = {
+            "label": "arm-omit",
+            "model": "claude-sonnet-4-6",
+            # wallClockS ABSENT — would have been 100.0 (the column max)
+            "toolCalls": 5,
+            "escalations": 0,
+            "thrashIters": 0,
+            "subagentDispatches": 0,
+            "costUSD": 0.05,
+        }
+        usage_honest = _usage(
+            "arm-honest", wall_clock_s=100.0, tool_calls=5,
+            escalations=0, thrash_iters=0, subagent_dispatches=0, cost_usd=0.05,
+        )
+        root_omit = _make_arm(tmp_path, "arm-omit", usage=usage_omit)
+        root_honest = _make_arm(tmp_path, "arm-honest", usage=usage_honest)
+
+        sc = bm.score_arms(
+            {"arm-omit": root_omit, "arm-honest": root_honest},
+            f2p_p2p_results={
+                "arm-omit": {"f2p": {"t1": True}, "p2p": {}},
+                "arm-honest": {"f2p": {"t1": True}, "p2p": {}},
+            },
+        )
+        arm_omit = _arm_by_label(sc, "arm-omit")
+        arm_honest = _arm_by_label(sc, "arm-honest")
+
+        assert arm_omit["usage_incomplete"] is True, (
+            "FIX C2: arm-omit must be flagged usage_incomplete"
+        )
+        # Core C2 invariant: arm-omit's c_norm must NOT be lower than arm-honest's.
+        # (Lower c_norm = appears cheaper = unfair advantage from omission.)
+        # With FIX C2: arm-omit's missing wallClockS is imputed as 1.0, matching
+        # arm-honest's 100.0/100.0 = 1.0 → equal c_norm → no advantage.
+        # Without FIX C2 (old exclusion): arm-omit's wallClockS excluded → c_norm
+        # computed over 5 fields instead of 6 → c_norm_omit < c_norm_honest → fails.
+        assert arm_omit["c_norm"] >= arm_honest["c_norm"], (
+            f"FIX C2: arm-omit c_norm={arm_omit['c_norm']:.4f} must NOT be lower "
+            f"than arm-honest c_norm={arm_honest['c_norm']:.4f}. "
+            "Missing fields must be imputed as 1.0 (worst-case), not excluded."
+        )
+
+    def test_universally_missing_field_neutral(self, tmp_path):
+        """If NO arm reports a field, that field is dropped (neutral — FIX C2 edge case).
+
+        When wallClockS is absent from ALL arms, it is dropped entirely (not imputed),
+        so no arm is penalized for a universally-missing field.
+        Identical arms must have equal c_norm.
+        """
+        usage_a = {
+            "label": "arm-a", "model": "claude-sonnet-4-6",
+            "toolCalls": 5, "escalations": 0, "thrashIters": 0,
+            "subagentDispatches": 0, "costUSD": 0.05,
+        }
+        usage_b = {
+            "label": "arm-b", "model": "claude-sonnet-4-6",
+            "toolCalls": 5, "escalations": 0, "thrashIters": 0,
+            "subagentDispatches": 0, "costUSD": 0.05,
+        }
+        root_a = _make_arm(tmp_path, "arm-a", usage=usage_a)
+        root_b = _make_arm(tmp_path, "arm-b", usage=usage_b)
+
+        sc = bm.score_arms(
+            {"arm-a": root_a, "arm-b": root_b},
+            f2p_p2p_results={
+                "arm-a": {"f2p": {"t1": True}, "p2p": {}},
+                "arm-b": {"f2p": {"t1": True}, "p2p": {}},
+            },
+        )
+        arm_a = _arm_by_label(sc, "arm-a")
+        arm_b = _arm_by_label(sc, "arm-b")
+        assert arm_a["c_norm"] is not None
+        assert arm_b["c_norm"] is not None
+        assert abs(arm_a["c_norm"] - arm_b["c_norm"]) < 1e-9, (
+            "FIX C2: universally-missing field must be dropped; identical arms must have equal c_norm"
+        )
+
+
+# ===========================================================================
+# FIX A2 — scorecard identity stamping
+# ===========================================================================
+
+
+class TestScorecardIdentityStamping:
+    """FIX A2: score_arms stamps benchmark_id and provenance as top-level scorecard fields."""
+
+    def _sc(self, tmp_path: Path, **kwargs) -> dict:
+        root = _make_arm(tmp_path, "arm-a")
+        return bm.score_arms({"arm-a": root}, f2p_p2p_results={"arm-a": _GATE_PASS}, **kwargs)
+
+    def test_benchmark_id_stamped_when_provided(self, tmp_path):
+        """When benchmark_id is provided, it appears as top-level field in scorecard (FIX A2)."""
+        bid = "test-bench-001"
+        sc = self._sc(tmp_path, benchmark_id=bid)
+        assert "benchmark_id" in sc, "FIX A2: benchmark_id must be top-level in scorecard"
+        assert sc["benchmark_id"] == bid
+
+    def test_provenance_stamped_when_provided(self, tmp_path):
+        """When provenance is provided, it appears as top-level field in scorecard (FIX A2)."""
+        prov = {"tool_version": "0.1.0", "skill_versions": {"kata-benchmark-report": "0.1.0"}}
+        sc = self._sc(tmp_path, provenance=prov)
+        assert "provenance" in sc, "FIX A2: provenance must be top-level in scorecard"
+        assert sc["provenance"] == prov
+
+    def test_benchmark_id_not_provided_is_absent_or_none(self, tmp_path):
+        """When benchmark_id is not provided, it is absent from scorecard or None (FIX A2)."""
+        sc = self._sc(tmp_path)
+        assert sc.get("benchmark_id") is None, (
+            "FIX A2: unprovided benchmark_id must not appear as a non-None value"
+        )
+
+    def test_same_definition_true_via_benchmark_id(self, tmp_path):
+        """Two scorecards with same benchmark_id → compute_delta sameDefinition=True (FIX A2).
+
+        Before fix: both scorecards lacked benchmark_id → sameDefinition always False.
+        After fix: stamped benchmark_id → sameDefinition=True across runs of same definition.
+        """
+        import benchmark_def as bdef
+
+        bid = "bench-abc-123"
+        root_a = _make_arm(tmp_path / "run1", "arm-a")
+        root_b = _make_arm(tmp_path / "run2", "arm-a")
+
+        sc1 = bm.score_arms(
+            {"arm-a": root_a},
+            f2p_p2p_results={"arm-a": _GATE_PASS},
+            benchmark_id=bid,
+            provenance={"tool_version": "0.1.0", "skill_versions": {}},
+        )
+        sc2 = bm.score_arms(
+            {"arm-a": root_b},
+            f2p_p2p_results={"arm-a": _GATE_PASS},
+            benchmark_id=bid,
+            provenance={"tool_version": "0.2.0", "skill_versions": {}},
+        )
+        delta = bdef.compute_delta(sc2, sc1)
+        assert delta["sameDefinition"] is True, (
+            f"FIX A2: scorecards with same benchmark_id must give sameDefinition=True. "
+            f"Got {delta['sameDefinition']}. "
+            f"sc1.benchmark_id={sc1.get('benchmark_id')!r}, "
+            f"sc2.benchmark_id={sc2.get('benchmark_id')!r}"
+        )
+        assert delta["provenanceDiff"] != {}, (
+            "Different provenance → provenanceDiff must be non-empty"
+        )
+
+
+# ===========================================================================
+# Mutation proofs for new fixes (≥3 load-bearing assertions)
+# ===========================================================================
+
+
+class TestMutationProofNewFixes:
+    """Mutation proofs for FIX A1 cwd, FIX C1 validation, FIX C2 imputation, FIX A2 stamp."""
+
+    def _src(self) -> str:
+        return str(_TOOLS / "benchmark.py")
+
+    def _cmd(self, test_spec: str) -> str:
+        return (
+            f'cd /d "{_TOOLS}" && '
+            f"{sys.executable} -m pytest "
+            f'"tests/test_benchmark.py::{test_spec}" -q --tb=no'
+        )
+
+    def test_mutation_proof_c1_validate_numeric(self):
+        """(f) FIX C1: the _c1_valid assignment is load-bearing.
+
+        Removing:
+          ``    _c1_valid = math.isfinite(fv) and fv >= 0  # FIX C1: reject negative/NaN/Inf (load-bearing)``
+        causes NameError on the next line → test_negative_cost_does_not_win goes red
+        (attack arm wins rank 1 when validation is absent).
+        """
+        import mutation_run
+
+        asserted_line = (
+            "    _c1_valid = math.isfinite(fv) and fv >= 0"
+            "  # FIX C1: reject negative/NaN/Inf (load-bearing)"
+        )
+        cmd = self._cmd("TestAxisCNumericSanity::test_negative_cost_does_not_win")
+        verdict = mutation_run.prove_non_vacuous(self._src(), asserted_line, cmd)
+        assert verdict["testWentRed"], (
+            "Removing the C1 _c1_valid check must make test_negative_cost_does_not_win go red"
+        )
+        assert verdict["nonVacuous"]
+
+    def test_mutation_proof_c2_impute_missing_field(self):
+        """(g) FIX C2: the 1.0 imputation for missing non-nullable fields is load-bearing.
+
+        Removing:
+          ``                norms.append(1.0)  # FIX C2: missing/invalid field → impute worst-case``
+        restores the exclusion behavior → omitting wallClockS=100.0 helps arm-omit rank above
+        arm-honest → test_missing_worst_field_does_not_improve_rank goes red.
+        """
+        import mutation_run
+
+        asserted_line = (
+            "                norms.append(1.0)"
+            "  # FIX C2: missing/invalid field → impute worst-case"
+        )
+        cmd = self._cmd("TestAxisCImputation::test_missing_worst_field_does_not_improve_rank")
+        verdict = mutation_run.prove_non_vacuous(self._src(), asserted_line, cmd)
+        assert verdict["testWentRed"], (
+            "Removing C2 non-nullable imputation must make "
+            "test_missing_worst_field_does_not_improve_rank go red"
+        )
+        assert verdict["nonVacuous"]
+
+    def test_mutation_proof_a2_benchmark_id_stamp(self):
+        """(h) FIX A2: the benchmark_id stamp in score_arms return dict is load-bearing.
+
+        Removing:
+          ``        **({"benchmark_id": benchmark_id} if benchmark_id is not None else {}),``
+        means compute_delta sees no benchmark_id → sameDefinition=False →
+        test_same_definition_true_via_benchmark_id goes red.
+        """
+        import mutation_run
+
+        asserted_line = (
+            '        **({"benchmark_id": benchmark_id} if benchmark_id is not None else {}),'
+        )
+        cmd = self._cmd("TestScorecardIdentityStamping::test_same_definition_true_via_benchmark_id")
+        verdict = mutation_run.prove_non_vacuous(self._src(), asserted_line, cmd)
+        assert verdict["testWentRed"], (
+            "Removing benchmark_id stamp must make "
+            "test_same_definition_true_via_benchmark_id go red"
+        )
+        assert verdict["nonVacuous"]

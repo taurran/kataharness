@@ -1,4 +1,4 @@
-"""benchmark_def.py — S3 Benchmark Definition + repeat_from + delta.
+"""benchmark_def.py — S3 Benchmark Definition + repeat_from + delta + criteria loader.
 
 Durable, content-pinned Benchmark Definition artifact (``benchmark.def.json``)
 that fully specifies a benchmark run for **replay-by-definition** (DESIGN §4).
@@ -16,6 +16,12 @@ Split (per PLAN S3 + DESIGN §4):
       URL locations are explicitly unsupported in v1 (no network call made).
   (D) Delta — compute_delta
       Pure diff of two scorecards; produces the delta-mode headline.
+  (E) Embedded-criteria contract — criteria_schema, CRITERIA_FILE, load_criteria
+      Pure: reads + validates the embedded criteria file from a control root.
+      Bridges ``build_def.criteria_ref`` (producer) to
+      ``benchmark.run_dual_gate`` ``f2p_ids`` / ``p2p_ids`` (consumer).
+      Conventional path: ``.kata-benchmark/criteria.json`` within the control root
+      (``CRITERIA_FILE`` constant).  ``load_criteria`` is the canonical reader.
 
 Security posture
 ----------------
@@ -26,6 +32,8 @@ sink is a deliberate invariant.  ``resolve_repeat_from`` accepts a URL field
 but raises ``NotImplementedError`` clearly rather than silently fetching
 (network fetch is out of v1 scope; accepting the field without fetching keeps
 the API honest for future extension without adding an unregistered network sink).
+Node-IDs loaded by ``load_criteria`` are validated by ``_guard_node_id`` before
+being returned — defense-in-depth ahead of the ``run_dual_gate`` INTERNAL sink.
 
 Content-hash pinning (DESIGN §4, mutation-proven)
 -------------------------------------------------
@@ -45,6 +53,9 @@ write_def(path, definition)                     — durable write (NOT .kata/; C
 load_def(path)                                  — durable read (CWE-23)
 resolve_repeat_from(location, *, registry)      — path / registry-id resolver (no network)
 compute_delta(new_scorecard, prior_scorecard)   — pure delta headline
+criteria_schema()                               — JSON schema for embedded criteria file
+CRITERIA_FILE                                   — conventional path (.kata-benchmark/criteria.json)
+load_criteria(control_dir, *, criteria_ref)     — load + validate criteria → {f2p, p2p}
 """
 
 from __future__ import annotations
@@ -367,7 +378,12 @@ def build_def(
                              kind must be 'code' or 'research'.
                              content_hash must be a 64-char lowercase hex string
                              (compute via benchmark_control.content_hash).
-        criteria_ref:        Reference to the embedded criteria.
+        criteria_ref:        Reference to the embedded criteria file.  Points at
+                             ``CRITERIA_FILE`` (``.kata-benchmark/criteria.json``)
+                             within the control root.  ``load_criteria`` is the
+                             canonical reader that resolves this field and returns
+                             the ``{f2p, p2p}`` id-lists consumed by
+                             ``benchmark.run_dual_gate``.
         arms:                Non-empty list of arm dicts, each with
                              {label, mode, modules, effort, model, routing}.
         metric:              Dict with {profile, weights, floor_gate}.
@@ -646,3 +662,235 @@ def compute_delta(new_scorecard: dict, prior_scorecard: dict) -> dict:
         "sameDefinition": same_definition,
         "provenanceDiff": provenance_diff,
     }
+
+
+# ---------------------------------------------------------------------------
+# (E) Embedded-criteria contract — criteria_schema, CRITERIA_FILE, load_criteria
+# ---------------------------------------------------------------------------
+
+#: Conventional path for the embedded criteria file within a control root.
+#:
+#: ``build_def``'s ``criteria_ref`` field resolves to this path (relative to
+#: the control root).  ``load_criteria`` is the canonical reader that produces
+#: the ``{f2p, p2p}`` id-lists consumed by ``benchmark.run_dual_gate``.
+#:
+#: The file lives in a hidden ``.kata-benchmark/`` directory at the control
+#: root — separate from ``.kata/`` (run-time disposable artifacts) and from
+#: the project's own test tree.  It is committed with the control and never
+#: auto-generated at run time.
+CRITERIA_FILE: str = ".kata-benchmark/criteria.json"
+
+
+def criteria_schema() -> dict:
+    """Return the JSON schema for the embedded criteria file (single source of truth).
+
+    The criteria file lives at ``CRITERIA_FILE`` (``.kata-benchmark/criteria.json``)
+    within the control root.  It declares two test-ID lists consumed by the
+    dual-gate scorer (DESIGN §3.1, SWE-bench F2P/P2P model):
+
+    - ``fail_to_pass``: tests expected to FAIL on the unmodified control and
+      PASS after the agent's changes.  Non-empty list = the primary gate.
+    - ``pass_to_pass``: tests expected to PASS both before and after the
+      agent's changes.  Regression guard.
+
+    Both lists may be empty.  Node-IDs are relative to the control root, e.g.
+    ``tests/test_x.py::test_name`` (``path::name`` shape, ``shell=False``-safe).
+
+    Producer ↔ consumer bridge:
+        ``build_def``'s ``criteria_ref`` field points at this file.
+        ``load_criteria`` is the reader that resolves ``criteria_ref`` and
+        returns the ``{f2p, p2p}`` dict fed to ``benchmark.run_dual_gate``.
+
+    Returns:
+        A JSON Schema (draft 2020-12) dict for the criteria file.
+    """
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "BenchmarkCriteria",
+        "description": (
+            "Embedded benchmark criteria file for a KataHarness control "
+            "(DESIGN §2.4, §3.1). Declares FAIL_TO_PASS and PASS_TO_PASS "
+            "test-ID lists (SWE-bench F2P/P2P model). Node-IDs are relative "
+            "to the control root (e.g. 'tests/test_x.py::test_name'). "
+            "Stored at .kata-benchmark/criteria.json within the control root "
+            "(CRITERIA_FILE). "
+            "criteria_ref in build_def points at this file; "
+            "load_criteria is the reader that produces {f2p, p2p} for run_dual_gate."
+        ),
+        "type": "object",
+        "required": ["fail_to_pass", "pass_to_pass"],
+        "properties": {
+            "fail_to_pass": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": (
+                    "Tests expected to FAIL on the unmodified control and PASS "
+                    "after the agent's changes (SWE-bench F2P model). "
+                    "Node-IDs relative to the control root. May be empty."
+                ),
+            },
+            "pass_to_pass": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": (
+                    "Tests expected to PASS both before and after the agent's "
+                    "changes (regression guard). Node-IDs relative to the "
+                    "control root. May be empty."
+                ),
+            },
+        },
+        "additionalProperties": True,
+    }
+
+
+def _guard_node_id(node_id: str) -> str:
+    """Validate a pytest node-ID before feeding it to run_dual_gate (defense-in-depth).
+
+    Node-IDs must satisfy all of:
+      - Non-empty string.
+      - Not start with ``-`` (no CLI flag injection — argv list, not shell string).
+      - Not contain ``..`` (no path traversal).
+      - Contain ``::`` (``path::name`` shape, as in ``run_named_test``).
+
+    ``run_dual_gate``'s own ``_guard_node_id`` re-checks at the INTERNAL sink
+    boundary.  This call is the earlier defense layer in the criteria loader.
+
+    Args:
+        node_id: The candidate node-ID string.
+
+    Returns:
+        The node_id string if it passes all checks.
+
+    Raises:
+        ValueError: if the node_id fails any validation check.
+    """
+    if not isinstance(node_id, str) or not node_id:
+        raise ValueError(
+            f"benchmark_def: node-ID must be a non-empty string, got {node_id!r}"
+        )
+    if node_id.startswith("-"):
+        raise ValueError(
+            f"benchmark_def: node-ID must not start with '-' (CLI flag injection "
+            f"risk in argv list): {node_id!r}"
+        )
+    if ".." in node_id:
+        raise ValueError(
+            f"benchmark_def: node-ID must not contain '..' (path traversal "
+            f"risk; CWE-23): {node_id!r}"
+        )
+    if "::" not in node_id:
+        raise ValueError(
+            f"benchmark_def: node-ID must be 'path::name' shape (must contain "
+            f"'::', e.g. 'tests/test_x.py::test_name'): {node_id!r}"
+        )
+    return node_id
+
+
+def load_criteria(
+    control_dir: Union[str, Path],
+    *,
+    criteria_ref: Optional[str] = None,
+) -> dict:
+    """Load and validate the embedded benchmark criteria from a control directory.
+
+    Reads the criteria file at ``CRITERIA_FILE`` (``.kata-benchmark/criteria.json``)
+    within *control_dir*, or from an explicit *criteria_ref* path if supplied.
+    Returns ``{"f2p": [...], "p2p": [...]}`` — the test-ID lists consumed by
+    ``benchmark.run_dual_gate(clone_root, f2p_ids, p2p_ids)``.
+
+    This is the producer ↔ consumer bridge::
+
+        # build_def records criteria_ref (producer)
+        defn = build_def(..., criteria_ref=CRITERIA_FILE, ...)
+
+        # load_criteria reads it (consumer → run_dual_gate)
+        ids = load_criteria(clone_root)
+        run_dual_gate(clone_root, ids["f2p"], ids["p2p"])
+
+    Missing file (honest empty):
+        Returns ``{"f2p": [], "p2p": []}`` — the scorer then flags
+        ``dual_gate_evaluated: false``.  A missing file is NOT free credit.
+
+    Malformed file (fail-closed):
+        Raises ``ValueError`` — invalid JSON, missing required keys, wrong
+        structure, or any node-ID that fails ``_guard_node_id``.
+
+    CWE-23 guard:
+        Both *control_dir* and *criteria_ref* are ``..``-guarded at the
+        boundary.  Node-IDs in the file are also validated by ``_guard_node_id``
+        (defense-in-depth; ``run_dual_gate`` re-checks at the INTERNAL sink).
+
+    Args:
+        control_dir:  Root of the control directory (the immutable reference;
+                      never mutated).  Must not contain ``..`` (CWE-23).
+        criteria_ref: Optional explicit path to the criteria file.  When
+                      supplied, overrides the conventional ``CRITERIA_FILE``
+                      path.  Must not contain ``..`` (CWE-23).  When None,
+                      defaults to ``control_dir / CRITERIA_FILE``.
+
+    Returns:
+        ``{"f2p": [<node-id>, ...], "p2p": [<node-id>, ...]}``
+
+    Raises:
+        ValueError: if *control_dir* or *criteria_ref* contain ``..`` (CWE-23),
+                    if the file is malformed JSON, if required keys are missing
+                    or have wrong types, or if a node-ID fails ``_guard_node_id``.
+
+    Pure: no subprocess, no eval, no exec, no network fetch.
+    """
+    # CWE-23 guard on control_dir — use returned Path object
+    guarded_dir = _guard_path(control_dir)
+
+    # Resolve criteria file path (explicit override takes precedence)
+    if criteria_ref is not None:
+        criteria_path = _guard_path(criteria_ref)
+    else:
+        criteria_path = guarded_dir / CRITERIA_FILE
+
+    # Missing file → honest empty (not an error; scorer flags dual_gate_evaluated:false)
+    if not criteria_path.exists():
+        return {"f2p": [], "p2p": []}
+
+    # Read and parse JSON — fail-closed on any parse error
+    raw = criteria_path.read_text(encoding="utf-8")
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"benchmark_def.load_criteria: criteria file is not valid JSON "
+            f"({criteria_path!r}): {exc}"
+        ) from exc
+
+    # Root must be a JSON object
+    if not isinstance(data, dict):
+        raise ValueError(
+            f"benchmark_def.load_criteria: criteria file root must be a JSON "
+            f"object, got {type(data).__name__!r} ({criteria_path!r})"
+        )
+
+    # Required keys + list types (fail-closed)
+    for key in ("fail_to_pass", "pass_to_pass"):
+        if key not in data:
+            raise ValueError(
+                f"benchmark_def.load_criteria: criteria file missing required "
+                f"key {key!r} ({criteria_path!r})"
+            )
+        if not isinstance(data[key], list):
+            raise ValueError(
+                f"benchmark_def.load_criteria: criteria key {key!r} must be a "
+                f"list, got {type(data[key]).__name__!r} ({criteria_path!r})"
+            )
+
+    # Node-ID validation (defense-in-depth; run_dual_gate._guard_node_id re-checks)
+    # MUTATION-PROVEN: removing the _guard_node_id(nid) call in the f2p loop
+    # causes test_load_criteria_node_id_dotdot_in_f2p_raises to go red.
+    f2p: List[str] = []
+    for nid in data["fail_to_pass"]:
+        _guard_node_id(nid)
+        f2p.append(nid)
+    p2p: List[str] = []
+    for nid in data["pass_to_pass"]:
+        _guard_node_id(nid)
+        p2p.append(nid)
+
+    return {"f2p": f2p, "p2p": p2p}

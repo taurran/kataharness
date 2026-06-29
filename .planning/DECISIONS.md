@@ -1618,3 +1618,53 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   freeze-gate caught the dual-gate RCE seam *before* build; the autonomous full-recipe run held the
   grill→freeze→freeze-gate→build→eval→D98→re-confirm discipline end to end. Records:
   `specs/kata-loop-benchmark/{RESEARCH,DESIGN,PLAN}.md`, `DECISIONS.md` D123.
+
+<!-- Deep adversarial validation of the D123 benchmark build + integration-completion + metric-hardening. Operator-requested pre-push. Fully subagent-driven. -->
+- **D124 — Deep adversarial validation of the benchmark build + integration-completion + metric-hardening — 2026-06-29.**
+  Operator-requested **deep ad-val** of the D123 benchmark build *before push* ("check the agents' work — end-to-end
+  applied properly, no loose ends, no overcomplication, no drift"). **5 parallel fresh-context opus reviewers** (E2E
+  integration dry-run · drift vs DESIGN/PLAN/STANDARDS · overcomplication/loose-ends/dead-code · deep adversarial
+  correctness · prose/skill coherence) → synthesis → **operator-gated fix scope** → 6 fix workers (TDD/mutation, 2 waves)
+  + 1 delta-identity fix → **re-confirm (3 reviewers resumed) → all CLEAN/SHIP**. **Headline:** the engine SLICES were
+  unit-solid (no drift; lean/idiomatic; no phantom *function* citations; the D123 fixes held under re-attack) — but the
+  **INTEGRATION + RENDER + METRIC-INTEGRITY** layers had ship-blocking gaps the unit-level gates (PART A + D98)
+  **structurally could not see**. As built, D123 would have: **(1)** scored **every REAL control Q=0** (the dual-gate ran
+  a control's tests with no `cwd`/import-context → `from src import X` fails collection → Q=0 despite floor PASS); **(2)**
+  **never produced its replay-definition** (`build_def`/`write_def`/`content_hash` unwired; `def_out` required-but-never-
+  written); **(3)** failed to **resolve criteria** (`criteria_ref` produced-never-consumed; no loader); **(4)** failed to
+  **render its report** (the `{{BENCHMARK_*}}` tokens didn't exist in the closeout template → broken page); **(5)** let an
+  arm **WIN the ranking** via a negative/NaN `costUSD` or by omitting its worst Axis-C dimension (the D98 non-negativity
+  guard was on the *writer* not the *reader*; FIX-6b exclude-from-mean was an over-fix); **(6)** **mis-fired delta-mode**
+  (fresh `benchmark_id` per run → `sameDefinition` always False → false "definition drifted" on every honest repeat).
+  **Fixed (D124, all TDD + mutation-proven, gates green throughout):** **A1** dual-gate exec context (`mutation_check.run_named_test`
+  gained `cwd` [BC] + `run_dual_gate` passes `cwd=clone_root`+PYTHONPATH → **proven Q=0→Q=1** on an importing fixture;
+  honest scope: nested-`uv-run` is environment-sensitive — green canonically; full per-control dep-env isolation is a
+  D5/real-fixture concern). **A2/A3** wiring: `content_hash`→`build_def`→`write_def(def_out)`; new `.kata-benchmark/criteria.json`
+  schema + `load_criteria`→`run_dual_gate`; `benchmark_id`/`provenance` stamped; durable scorecard co-located via
+  `emit_scorecard`; `repeat_from`→`resolve_repeat_from`→`compute_delta`. **C1/C2** metric integrity: read-path
+  `_validate_numeric` (`isfinite & >=0`; invalid→missing+`usage_incomplete`); **worst-case imputation** replaces
+  exclude-from-mean (omitting your worst dim no longer wins; an honest null-token host is penalized once, conservatively);
+  `build_usage` rejects NaN/inf — **re-attack confirmed both gaming vectors DEAD, over-fix sweep CLEAN**. **A4** k-repeats
+  honest-simplify (operator decision (b)): per-repeat rows, mean±spread **DEFERRED**, cross-repeat dominance suppressed;
+  DESIGN §6b superseded with an **explicit R6-no-drift confirmation**. **A5** cost wiring: `default_rate_table()` +
+  `cost_from_rate_table` → `costUSD` populated (was always null; rate table is a v1 placeholder, override-able). **B1–B5/A6**
+  render: NEW **`benchmark-report.template.html`** (BRAND-consistent — Hokusai palette/tiles/logo, 10 tokens 1:1,
+  self-contained); tile mapping fixed; C-fields-from-`usage.json`; `usage_incomplete` rendered; footprint de-claimed;
+  "no-write renderer" dropped. **Delta-identity:** repeat = **same `benchmark_id`** (`sameDefinition:true` → honest
+  harness-delta); `parent_benchmark_id` is fork-only; delta activates on `repeat_from`/`sameDefinition` (NOT
+  `parent_benchmark_id`) — resolved a schema tension across orchestrate/report/`def_schema`. Cleanup: registered the
+  `integration` pytest marker; dead vars cut. **Re-confirm:** R1(e2e) **CLEAN** (full path + `repeat_from` delta
+  reproduced), R4(correctness) **SHIP** (over-fix sweep clean), R5(prose) all named fixes good; the A1 integration test
+  verified **green in the canonical env** (R4's sandbox failure was nested-`uv-run` env, not a regression). **★ ACTIONABLE
+  RECURRENCE (the system caught itself):** `kata-orchestrate × phantom-reuse` reached the **BLOCKER-tier threshold** (2
+  distinct runs: D123 orphaned-dual-gate + D124 unwired-chain). **T2 auto-drafted `.planning/PROPOSAL-phantom-reuse.md`**
+  (proposed standing guard: an **end-to-end WIRING-COMPLETENESS gate** — trace the whole flow on a realistic fixture +
+  a produced-vs-consumed sweep; PART A + D98 unit/injected **cannot** see built-but-unwired seams) → marked `proposed` in
+  `recurrence-handled.jsonl` → routes to freeze-gate `kata-review` → **human merge**. **T2 invariant held (proposed, never
+  applied).** **Validation-misses:** 3 deep-ad-val fail-opens logged (`d124-deepadval`). **Meta-lesson (load-bearing):**
+  the per-build gates test units + injected data; **built-but-unwired + execution-context + metric-read-path gaps need an
+  end-to-end dry-run with a realistic fixture** — now a *proposed* standing gate. **Gates:** pytest **1597** (1536→1597,
+  +61), validate **46/0**, Snyk **medium+ 0**. **Honest scope unchanged: n=0 LIVE** (the real control fixture is D5,
+  operator-supplied). **COMMITTED-LOCAL; PUSH** (b90a8a2 freeze + 72c1b8f D123 + this D124) **HELD for the operator
+  commit/push gate.** Records: `specs/kata-loop-benchmark/{RESEARCH,DESIGN,PLAN}.md` (DESIGN amended), `DECISIONS.md` D124,
+  `PROPOSAL-phantom-reuse.md`.

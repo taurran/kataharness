@@ -1,5 +1,27 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-29, benchmark build DEEP-AD-VAL'd + integration-completed + metric-hardened — D124; pytest 1597 ·
+> 46 skills/0 · Snyk med+ 0):** Operator-requested deep adversarial validation of the D123 benchmark build BEFORE push
+> ("end-to-end applied properly, no loose ends, no overcomplication, no drift"). 5 fresh-context opus reviewers →
+> operator-gated fixes → 7 fix workers → re-confirm (3 reviewers) → **all CLEAN/SHIP**. **The engine slices were
+> unit-solid; the INTEGRATION + RENDER + METRIC layers had ship-blocking gaps the unit gates (PART A + D98) couldn't
+> see.** As built, D123 would have scored every REAL control **Q=0** (dual-gate ran tests with no cwd/import-context),
+> never produced its replay-definition (build_def/criteria/delta unwired), failed to render its report ({{BENCHMARK_*}}
+> tokens absent from the template), let an arm WIN via negative/NaN cost or omitting its worst dimension, and mis-fired
+> delta-mode (fresh benchmark_id → false "drifted"). **All fixed (TDD/mutation):** dual-gate cwd (Q=0→Q=1 proven);
+> definition+criteria+delta WIRED; metric read-path sanity + worst-case imputation (gaming vectors DEAD, over-fix sweep
+> clean); new BRAND-consistent benchmark-report.template.html; k-repeats honest-simplified (mean±spread deferred, R6
+> no-drift confirmed); costUSD wired; delta-identity (repeat=same benchmark_id→sameDefinition:true→honest harness-delta).
+> **★ The recurrence system caught itself:** kata-orchestrate×phantom-reuse hit the BLOCKER threshold (D123+D124
+> built-but-unwired) → T2 auto-drafted PROPOSAL-phantom-reuse.md (proposed standing guard: an end-to-end
+> WIRING-COMPLETENESS dry-run on a realistic fixture — unit+injected gates can't see unwired seams) → marked proposed →
+> human-merge-gated. **Meta-lesson:** built-but-unwired/exec-context/metric-read gaps need a realistic end-to-end dry-run,
+> now a proposed standing gate. 3 fail-opens logged (d124-deepadval). **Gates:** pytest 1597 (1536→1597), 46/0, Snyk
+> med+ 0. **Honest scope: n=0 LIVE** (real control fixture = D5, operator-supplied). **COMMITTED-LOCAL; PUSH HELD**
+> (b90a8a2 freeze + 72c1b8f D123 + D124) for the operator commit/push gate. **NEXT (operator):** commit/push gate → then
+> the D5 real control fixture for the first LIVE run; PROPOSAL-phantom-reuse freeze-gate+merge; D3 benchmark→improve hook.
+> Records: DECISIONS.md D124; specs/kata-loop-benchmark/ (DESIGN amended); PROPOSAL-phantom-reuse.md.
+
 > **CURRENT (2026-06-29, kata-loop-benchmark v1 BUILT [the D99 C-arc keystone] — D123; pytest 1536 · 46 skills/0 ·
 > Snyk med+ 0):** Queue item (e) step 2 DONE. The deterministic outcome+efficiency benchmark — the keystone that measures
 > C-on/C-off learning lift (D99 tumbler #4). Built **entirely via subagents**, **AUTONOMOUSLY at operator request**,

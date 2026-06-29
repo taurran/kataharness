@@ -303,6 +303,54 @@ class TestBuildUsage:
         )
         assert entry["tokensIn"] is None
 
+    # -- C1-writer: NaN/inf slip the < 0 guard (isfinite extension) ----------
+
+    def test_nan_cost_usd_raises_value_error(self):
+        """NaN cost_usd is rejected with ValueError (C1-writer: isfinite guard)."""
+        import usage_meter as um
+        import pytest
+        with pytest.raises(ValueError, match="cost_usd"):
+            um.build_usage(
+                label="arm", model="m", wall_clock_s=1.0, tool_calls=0,
+                cost_usd=float("nan"),
+            )
+
+    def test_inf_wall_clock_s_raises_value_error(self):
+        """+inf wall_clock_s is rejected with ValueError (C1-writer: isfinite guard)."""
+        import usage_meter as um
+        import pytest
+        with pytest.raises(ValueError, match="wall_clock_s"):
+            um.build_usage(
+                label="arm", model="m", wall_clock_s=float("inf"), tool_calls=0,
+            )
+
+    def test_neg_inf_wall_clock_s_raises_value_error(self):
+        """-inf wall_clock_s is rejected with ValueError (C1-writer: isfinite guard)."""
+        import usage_meter as um
+        import pytest
+        with pytest.raises(ValueError, match="wall_clock_s"):
+            um.build_usage(
+                label="arm", model="m", wall_clock_s=float("-inf"), tool_calls=0,
+            )
+
+    def test_finite_positive_cost_usd_still_allowed(self):
+        """A finite positive cost_usd passes (isfinite guard must not over-reject)."""
+        import usage_meter as um
+        entry = um.build_usage(
+            label="arm", model="m", wall_clock_s=1.0, tool_calls=0,
+            cost_usd=0.001,
+        )
+        assert entry["costUSD"] == 0.001
+
+    def test_none_cost_usd_not_rejected_by_isfinite(self):
+        """cost_usd=None is not touched by the isfinite guard (nullable field)."""
+        import usage_meter as um
+        entry = um.build_usage(
+            label="arm", model="m", wall_clock_s=1.0, tool_calls=0,
+            cost_usd=None,
+        )
+        assert entry["costUSD"] is None
+
 
 # ---------------------------------------------------------------------------
 # cost_from_rate_table
@@ -355,6 +403,65 @@ class TestCostFromRateTable:
         assert cost_opus is not None
         # Opus is more expensive per token — its cost must be strictly higher
         assert cost_opus > cost_sonnet
+
+
+# ---------------------------------------------------------------------------
+# default_rate_table (A5 fix — v1 default rate table)
+# ---------------------------------------------------------------------------
+
+
+class TestDefaultRateTable:
+    """Tests for the v1 default per-model $/token rate table (A5 fix)."""
+
+    def test_default_rate_table_returns_dict(self):
+        """default_rate_table() returns a non-empty dict."""
+        import usage_meter as um
+        table = um.default_rate_table()
+        assert isinstance(table, dict)
+        assert len(table) > 0
+
+    def test_default_rate_table_entries_have_input_output_keys(self):
+        """Every entry in default_rate_table() has 'input' and 'output' float keys >= 0."""
+        import usage_meter as um
+        table = um.default_rate_table()
+        for model_name, rates in table.items():
+            assert "input" in rates, f"{model_name!r}: missing 'input' key"
+            assert "output" in rates, f"{model_name!r}: missing 'output' key"
+            assert isinstance(rates["input"], float), (
+                f"{model_name!r}: 'input' rate must be float"
+            )
+            assert isinstance(rates["output"], float), (
+                f"{model_name!r}: 'output' rate must be float"
+            )
+            assert rates["input"] >= 0, f"{model_name!r}: negative input rate"
+            assert rates["output"] >= 0, f"{model_name!r}: negative output rate"
+
+    def test_cost_from_default_rate_table_prices_sample(self):
+        """cost_from_rate_table with default_rate_table() returns a positive float for claude-sonnet-4-6."""
+        import usage_meter as um
+        table = um.default_rate_table()
+        model = "claude-sonnet-4-6"
+        assert model in table, f"{model!r} must be in default_rate_table()"
+        result = um.cost_from_rate_table(1000, 300, model, table)
+        assert result is not None, "cost must not be None when tokens and model are known"
+        assert result > 0, "cost must be positive for non-zero tokens"
+
+    def test_default_rate_table_includes_claude_family(self):
+        """The claude model family is present in default_rate_table()."""
+        import usage_meter as um
+        table = um.default_rate_table()
+        claude_models = [k for k in table if k.startswith("claude-")]
+        assert len(claude_models) > 0, "No claude-* models found in default_rate_table()"
+
+    def test_default_rate_table_returns_independent_copy(self):
+        """default_rate_table() returns a fresh copy — mutating it does not corrupt the constant."""
+        import usage_meter as um
+        table1 = um.default_rate_table()
+        table1["__sentinel__"] = {"input": 0.0, "output": 0.0}
+        table2 = um.default_rate_table()
+        assert "__sentinel__" not in table2, (
+            "Mutating the returned dict must not affect the module constant"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -456,6 +563,34 @@ class TestExecSafety:
 
 
 # ---------------------------------------------------------------------------
+# Dead-var removal (LOW fix) — _absent / _missing in cost_from_rate_table
+# ---------------------------------------------------------------------------
+
+
+class TestDeadVarsRemoved:
+    """Source-scan confirms dead variable assignments are gone from cost_from_rate_table."""
+
+    def _source(self) -> str:
+        return (_TOOLS / "usage_meter.py").read_text(encoding="utf-8")
+
+    def test_no_dead_absent_assignment(self):
+        """_absent = True is no longer present in usage_meter.py."""
+        import re
+        hits = list(re.finditer(r"\b_absent\s*=\s*True\b", self._source()))
+        assert not hits, (
+            f"_absent = True dead variable still present in usage_meter.py: {hits}"
+        )
+
+    def test_no_dead_missing_assignment(self):
+        """_missing = True is no longer present in usage_meter.py."""
+        import re
+        hits = list(re.finditer(r"\b_missing\s*=\s*True\b", self._source()))
+        assert not hits, (
+            f"_missing = True dead variable still present in usage_meter.py: {hits}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Mutation non-vacuity proofs (spawn real subprocess via prove_non_vacuous)
 # ---------------------------------------------------------------------------
 
@@ -541,4 +676,51 @@ class TestMutationProof:
         assert verdict["nonVacuous"], (
             "test_negative_cost_usd_raises_value_error must catch removal of "
             "the D98 non-negativity guard raise for cost_usd"
+        )
+
+    def test_mutation_isfinite_cost_usd_guard(self):
+        """(d) The isfinite check for cost_usd is load-bearing (C1-writer).
+
+        Removing the f-string message from the cost_usd finite guard's raise
+        leaves raise ValueError() with no message — the match='cost_usd' check
+        fails, so test_nan_cost_usd_raises_value_error goes red.
+        """
+        import mutation_run
+        asserted_line = (
+            '            f"usage_meter: cost_usd must be finite (not NaN/inf), '
+            'got {cost_usd!r}"'
+        )
+        cmd = self._test_cmd("TestBuildUsage::test_nan_cost_usd_raises_value_error")
+        verdict = mutation_run.prove_non_vacuous(self._source(), asserted_line, cmd)
+        assert verdict["testWentRed"], (
+            "Removing the isfinite f-string for cost_usd must make "
+            "test_nan_cost_usd_raises_value_error go red"
+        )
+        assert verdict["nonVacuous"], (
+            "test_nan_cost_usd_raises_value_error must catch removal of "
+            "the C1-writer isfinite guard message for cost_usd"
+        )
+
+    def test_mutation_rate_table_pricing_line(self):
+        """(e) The pricing return in cost_from_rate_table is load-bearing (A5).
+
+        Removing the return line makes cost_from_rate_table return None — the
+        test_cost_from_default_rate_table_prices_sample assertion 'result is not
+        None' fails, so the test goes red.
+        """
+        import mutation_run
+        asserted_line = (
+            '    return tokens_in * rates["input"] + tokens_out * rates["output"]'
+        )
+        cmd = self._test_cmd(
+            "TestDefaultRateTable::test_cost_from_default_rate_table_prices_sample"
+        )
+        verdict = mutation_run.prove_non_vacuous(self._source(), asserted_line, cmd)
+        assert verdict["testWentRed"], (
+            "Removing the pricing return must make "
+            "test_cost_from_default_rate_table_prices_sample go red"
+        )
+        assert verdict["nonVacuous"], (
+            "test_cost_from_default_rate_table_prices_sample must catch "
+            "removal of the rate-table pricing return"
         )

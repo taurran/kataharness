@@ -1,0 +1,292 @@
+<!--
+  KataHarness 改善型 — Benchmark Report Template  ·  theme: Hokusai-derived palette (no wave motif)
+  ================================================================================
+  Self-contained HTML · inline CSS + inline SVG logo only · no external refs · opens offline anywhere.
+  Visual system: identical to closeout-report.template.html (same palette, tile classes, logo, layout).
+
+  PLACEHOLDER TOKEN CONTRACT
+  --------------------------
+  kata-benchmark-report (S5) fills all content by substituting every {{BENCHMARK_*}} token before
+  writing .kata/benchmark/<run-id>-report.html. Every token MUST be replaced; no token should remain
+  literal in the output file. Do NOT use this file as a destination for closeout tokens — it is not
+  closeout-report.template.html.
+
+  TOKEN LIST (in section order):
+
+  {{BENCHMARK_RUN_TITLE}}       plain text — <title> + the report <h1> card header.
+                                 Example: "Benchmark · balanced profile — 2026-06-28"
+
+  {{BENCHMARK_VERDICT_BADGE}}   full <span> element:
+                                 <span class="badge badge--{STATE}">{LABEL}</span>
+                                 STATE ∈ pass | partial | needs-work.
+                                 Derived from the highest-ranking floor-passing arm's verdict.
+                                 A floor-fail-only run → badge--needs-work.
+
+  {{BENCHMARK_DELTA}}           The repeat_from delta block.
+                                 When the run IS a repeat_from: substitute the full
+                                 <div class="section"> ... </div> HTML block produced by §4
+                                 (ΔQ/ΔC/ΔPareto headline + provenance stamp + honesty banner).
+                                 When the run is NOT a repeat_from: substitute an EMPTY STRING —
+                                 no section is rendered, the slot collapses cleanly.
+
+  {{BENCHMARK_SCORECARD}}       element 1: Q×C scorecard table per arm, with the honesty footer
+                                 tile. Each floor-fail arm's composite cell shows "—". Source:
+                                 scorecard_schema() arm fields + per-arm .kata/usage.json raw C
+                                 key fields. Includes n=1-directional + exercised-not-proven footer.
+
+  {{BENCHMARK_PARETO}}          element 2: Pareto position section.
+                                 Dominated arms in .tile--note (blue); Pareto-optimal arms in
+                                 .tile--ok (deep Prussian). Single-arm runs rendered as labeled
+                                 single-entry ("single-arm run; no relative Pareto comparison").
+
+  {{BENCHMARK_ARM_TABLE}}       element 3: per-arm comparison table.
+                                 Columns: arm label · floor verdict · Q · c_norm ·
+                                 tokens_unavailable · usage_incomplete · composite · Pareto rank.
+                                 Scorecard fields: scorecard_schema(). Raw C key fields: each arm's
+                                 .kata/usage.json (NOT the scorecard). Null raw fields shown as "—".
+                                 k-repeats rendered as labeled per-repeat sample rows under base arm.
+
+  {{BENCHMARK_RECOMMENDATIONS}} element 3 (cont.): optimization recommendation tiles.
+                                 One tile per top-level recommendations entry
+                                 (kind ∈ pareto-best | cost-outlier | dominated; arm; optional detail).
+                                 pareto-best → .tile--ok (deep Prussian).
+                                 cost-outlier / dominated → .tile--warning (ochre, Watch label).
+                                 OFFERED — not auto-applied. Cross-repeat entries suppressed (A4).
+
+  {{BENCHMARK_EVIDENCE}}        evidence artifact links (linked, not dumped):
+                                 .kata/benchmark/<run-id>.json (scorecard; benchmark_id; provenance;
+                                 arm count; profile); .kata/RESULT.json per arm (gate counts);
+                                 .kata/usage.json per arm (cost fields, nulls noted);
+                                 .kata/mutation.json per arm (allNonVacuous);
+                                 .kata/footprint.json per arm (evidence-link only; not a scorer input).
+
+  {{BENCHMARK_HONESTY}}         mandatory honesty tile (.tile--warning, ochre) built from the
+                                 scorecard's engine-pinned honesty block (directional / basis /
+                                 disclosure). Cannot be empty — the engine-pinned block cannot be
+                                 dropped. Renders: n=1-directional + exercised-not-proven disclosure.
+
+  {{BENCHMARK_TIMESTAMP}}       UTC ISO-8601 timestamp at report-emit time.
+
+  TOKEN COUNT: 10
+  All 10 tokens are filled by kata-benchmark-report's Emit step. Every template token is filled
+  by the skill; every skill fill has a matching template token (1:1, verified).
+
+  END TOKEN CONTRACT
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>改善型 · KataHarness — {{BENCHMARK_RUN_TITLE}}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Palette (Hokusai-derived: aged paper · Prussian ink · ochre · rust) ── */
+    :root {
+      --paper:     #E9DFC8;
+      --card:      #F5EEDD;
+      --border:    #CDBE9B;
+      --ink:       #1A2C3B;   /* primary text — deep Prussian near-black */
+      --muted:     #756A52;   /* metadata */
+      --deep:      #163A57;   /* deepest Prussian — titles, accents */
+      --blue:      #2E6389;   /* mid blue */
+      --foam:      #F7F2E6;
+      --ochre:     #B5894B;   /* warning / accent */
+      --ochre-ink: #856231;
+      --rust:      #A6532B;   /* error / destructive */
+    }
+
+    /* ── Type ───────────────────────────────────────────────────────────── */
+    body {
+      background: var(--paper); color: var(--ink);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15.5px; line-height: 1.72; min-height: 100vh; padding: 2.5rem 1rem;
+      -webkit-font-smoothing: antialiased;
+    }
+    .serif { font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif; }
+    .mono, code, .footer-item { font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace; }
+
+    /* ── Card ───────────────────────────────────────────────────────────── */
+    .report-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      max-width: 700px; margin: 0 auto; overflow: hidden; box-shadow: 0 8px 34px rgba(22, 44, 62, 0.16);
+    }
+
+    /* ── Brand splash ────────────────────────────────────────────────────── */
+    .brandbar {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 1.1rem 2rem; border-bottom: 1px solid var(--border); background: var(--card);
+    }
+    .brandbar svg { display: block; flex: none; }
+    .brandname {
+      font-weight: 700; font-size: 1.02rem; letter-spacing: 0.01em; color: var(--deep);
+    }
+    .brandkanji {
+      font-size: 0.85rem; color: var(--muted); letter-spacing: 0.04em; padding-left: 0.1rem;
+    }
+    .brandbar .spacer { flex: 1; }
+    .brandbar .tagline {
+      font-size: 0.72rem; color: var(--muted); letter-spacing: 0.02em; font-style: italic;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    .card-header { padding: 1.5rem 2rem 1.35rem; }
+    .report-title { font-size: 1.6rem; font-weight: 700; color: var(--ink); line-height: 1.25; margin-bottom: 0.85rem; }
+    .verdict-row { display: flex; align-items: center; gap: 0.75rem; }
+    .badge {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+      padding: 0.3rem 0.85rem; border-radius: 999px; text-transform: uppercase; white-space: nowrap;
+    }
+    .badge--pass { background: rgba(22,58,87,0.10); color: var(--deep); border: 1px solid rgba(22,58,87,0.4); }
+    .badge--partial { background: rgba(181,137,75,0.16); color: var(--ochre-ink); border: 1px solid rgba(181,137,75,0.5); }
+    .badge--needs-work { background: rgba(166,83,43,0.13); color: var(--rust); border: 1px solid rgba(166,83,43,0.45); }
+
+    /* ── Body & sections ────────────────────────────────────────────────── */
+    .card-body { padding: 0 2rem; }
+    .section { padding: 1.6rem 0; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+    .section-heading {
+      font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+      font-size: 1.18rem; font-weight: 700; color: var(--deep);
+      margin-bottom: 0.7rem; padding-left: 0.7rem; border-left: 3px solid var(--blue);
+    }
+    p { color: var(--ink); margin-bottom: 0.6rem; }
+    p:last-child { margin-bottom: 0; }
+    ul { list-style: none; padding-left: 0; margin: 0; }
+    ul li { padding: 0.22rem 0 0.22rem 1.15rem; position: relative; color: var(--ink); }
+    ul li::before { content: "·"; position: absolute; left: 0.2rem; color: var(--blue); font-weight: 700; }
+    a { color: var(--blue); text-decoration: underline; text-decoration-color: var(--ochre); text-underline-offset: 2px; }
+    a:hover { color: var(--deep); }
+    code { background: rgba(22,44,62,0.06); border: 1px solid var(--border); border-radius: 3px; padding: 0.1em 0.35em; font-size: 0.85em; color: var(--ink); }
+    strong { color: var(--deep); }
+
+    /* ── Callout tiles (error / warning / note / ok) ────────────────────── */
+    .tile { border: 1px solid; border-left-width: 4px; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.55rem 0; }
+    .tile:first-child { margin-top: 0; }
+    .tile:last-child { margin-bottom: 0; }
+    .tile p { margin: 0; }
+    .tile-label {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.3rem;
+    }
+    .tile--warning { background: rgba(181,137,75,0.10); border-color: rgba(181,137,75,0.45); }
+    .tile--warning .tile-label { color: var(--ochre-ink); }
+    .tile--error { background: rgba(166,83,43,0.08); border-color: rgba(166,83,43,0.45); }
+    .tile--error .tile-label { color: var(--rust); }
+    .tile--note { background: rgba(46,99,137,0.09); border-color: rgba(46,99,137,0.4); }
+    .tile--note .tile-label { color: var(--deep); }
+    .tile--ok { background: rgba(22,58,87,0.06); border-color: rgba(22,58,87,0.32); }
+    .tile--ok .tile-label { color: var(--deep); }
+
+    /* ── Benchmark-specific: scorecard / arm table ──────────────────────── */
+    .score-table {
+      width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.6rem 0;
+    }
+    .score-table th {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.67rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--deep); background: rgba(22,58,87,0.06);
+      padding: 0.45rem 0.65rem; border-bottom: 2px solid var(--border); text-align: left;
+    }
+    .score-table td {
+      padding: 0.38rem 0.65rem; border-bottom: 1px solid var(--border); color: var(--ink); vertical-align: top;
+    }
+    .score-table tr:last-child td { border-bottom: none; }
+    .score-table .cell--mono {
+      font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.82rem;
+    }
+    .score-table .cell--pass { color: var(--deep); font-weight: 600; }
+    .score-table .cell--fail { color: var(--rust); font-weight: 600; }
+    .score-table .cell--na { color: var(--muted); }
+    .score-table .cell--repeat { padding-left: 1.4rem; color: var(--muted); font-size: 0.84rem; }
+    .score-table .row--repeat-sibling td { background: rgba(117,106,82,0.04); }
+
+    /* ── Footer ─────────────────────────────────────────────────────────── */
+    .card-footer {
+      background: var(--deep); padding: 0.85rem 2rem; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem;
+      font-size: 0.68rem; color: var(--foam);
+    }
+    .footer-item { display: flex; gap: 0.4rem; align-items: baseline; white-space: nowrap; }
+    .footer-label { color: var(--blue); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+    .footer-value { color: var(--foam); opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+  <div class="report-card">
+
+    <!-- ── Brand splash: KataHarness logo (kaizen ascending-steps + rising arrow) + name ── -->
+    <div class="brandbar">
+      <svg width="26" height="26" viewBox="0 0 32 32" role="img" aria-label="KataHarness logo">
+        <rect x="4"  y="20" width="6" height="8"  rx="1.5" fill="#163A57"/>
+        <rect x="13" y="15" width="6" height="13" rx="1.5" fill="#2E6389"/>
+        <rect x="22" y="9"  width="6" height="19" rx="1.5" fill="#163A57"/>
+        <path d="M5 19 L25 7.5" fill="none" stroke="#B5894B" stroke-width="2" stroke-linecap="round"/>
+        <path d="M25 7.5 l-5.4 0.5 l2.7 4.2 z" fill="#B5894B"/>
+      </svg>
+      <span class="brandname">KataHarness</span>
+      <span class="brandkanji">改善型</span>
+      <span class="spacer"></span>
+      <span class="tagline">benchmark report</span>
+    </div>
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="card-header">
+      <div class="report-title serif">{{BENCHMARK_RUN_TITLE}}</div>
+      <div class="verdict-row">
+        {{BENCHMARK_VERDICT_BADGE}}
+      </div>
+    </div>
+
+    <!-- ── Report body ────────────────────────────────────────────────────── -->
+    <div class="card-body">
+
+      <!-- §delta — repeat_from runs only. Skill substitutes the complete section block here,
+           or an empty string for non-repeat_from runs. No wrapper — the skill owns the section. -->
+      {{BENCHMARK_DELTA}}
+
+      <!-- §1 — Q×C scorecard ───────────────────────────────────────────────── -->
+      <div class="section">
+        <div class="section-heading">Scorecard — Q × C</div>
+        {{BENCHMARK_SCORECARD}}
+      </div>
+
+      <!-- §2 — Pareto position ────────────────────────────────────────────── -->
+      <div class="section">
+        <div class="section-heading">Pareto Position</div>
+        {{BENCHMARK_PARETO}}
+      </div>
+
+      <!-- §3 — Per-arm comparison table + optimization observations ───────── -->
+      <div class="section">
+        <div class="section-heading">Per-Arm Comparison</div>
+        {{BENCHMARK_ARM_TABLE}}
+        {{BENCHMARK_RECOMMENDATIONS}}
+      </div>
+
+      <!-- §4 — Evidence ───────────────────────────────────────────────────── -->
+      <div class="section">
+        <div class="section-heading">Evidence</div>
+        {{BENCHMARK_EVIDENCE}}
+      </div>
+
+      <!-- §5 — Honesty disclosures ────────────────────────────────────────── -->
+      <div class="section">
+        <div class="section-heading">Honesty</div>
+        {{BENCHMARK_HONESTY}}
+      </div>
+
+    </div><!-- /.card-body -->
+
+    <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+    <div class="card-footer">
+      <div class="footer-item"><span class="footer-label">generated</span><span class="footer-value">{{BENCHMARK_TIMESTAMP}}</span></div>
+    </div>
+
+  </div><!-- /.report-card -->
+
+</body>
+</html>

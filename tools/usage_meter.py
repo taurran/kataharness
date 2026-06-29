@@ -23,6 +23,7 @@ Public surfaces (cite-able by name per protocol/reuse-claims.md)
 usage_schema          — JSON schema (single source of truth) for .kata/usage.json
 build_usage(...)      — pure builder; validates inputs; nullable token fields allowed
 cost_from_rate_table  — per-model $/token pricing; returns None when tokens are null
+default_rate_table    — v1 default per-model $/token rate table (override-able)
 write_usage           — writes .kata/usage.json (CWE-23 guarded)
 load_usage            — reads .kata/usage.json
 """
@@ -30,6 +31,7 @@ load_usage            — reads .kata/usage.json
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Optional, Union
 
@@ -196,8 +198,13 @@ def build_usage(
         A dict conforming to usage_schema().
 
     Raises:
-        TypeError: if required non-nullable fields have wrong types, or if
-                   nullable fields receive a value of the wrong type.
+        TypeError:  if required non-nullable fields have wrong types, or if
+                    nullable fields receive a value of the wrong type.
+        ValueError: if any present (non-None) numeric field is negative, NaN,
+                    or non-finite (±inf).  Null/None is allowed for nullable
+                    fields.  NaN/inf are rejected in addition to negatives
+                    because ``float('nan') < 0`` and ``float('inf') < 0`` are
+                    both False, letting them slip a ``< 0``-only guard.
     """
     if not isinstance(label, str):
         raise TypeError(
@@ -230,23 +237,41 @@ def build_usage(
             f"got {type(cost_usd).__name__!r}"
         )
 
-    # Non-negativity guards (D98) — usage magnitudes are ≥ 0 by definition;
-    # negatives are nonsensical and are a cheap Axis-C gaming vector (a crafted
-    # negative cost_usd drives 1+λ·c_norm toward zero and inflates composite).
-    # Null/None remains allowed for nullable fields — only NEGATIVE is rejected.
+    # Non-negativity + finiteness guards (D98 / C1-writer) — usage magnitudes
+    # are ≥ 0 by definition; negatives are a cheap Axis-C gaming vector (a
+    # crafted negative cost_usd drives 1+λ·c_norm toward zero and inflates
+    # composite).  NaN and ±inf are also rejected: ``float('nan') < 0`` and
+    # ``float('inf') < 0`` are both False, so a ``< 0``-only guard lets them
+    # slip through silently.  Null/None remains allowed for nullable fields.
+    if not math.isfinite(wall_clock_s):
+        raise ValueError(
+            f"usage_meter: wall_clock_s must be finite (not NaN/inf), got {wall_clock_s!r}"
+        )
     if wall_clock_s < 0:
         raise ValueError(
             f"usage_meter: wall_clock_s must be >= 0, got {wall_clock_s!r}"
+        )
+    if not math.isfinite(tool_calls):
+        raise ValueError(
+            f"usage_meter: tool_calls must be finite (not NaN/inf), got {tool_calls!r}"
         )
     if tool_calls < 0:
         raise ValueError(
             f"usage_meter: tool_calls must be >= 0, got {tool_calls!r}"
         )
     for _name, _val in (("tokens_in", tokens_in), ("tokens_out", tokens_out)):
+        if _val is not None and not math.isfinite(_val):
+            raise ValueError(
+                f"usage_meter: {_name} must be finite (not NaN/inf), got {_val!r}"
+            )
         if _val is not None and _val < 0:
             raise ValueError(
                 f"usage_meter: {_name} must be >= 0, got {_val!r}"
             )
+    if cost_usd is not None and not math.isfinite(cost_usd):
+        raise ValueError(
+            f"usage_meter: cost_usd must be finite (not NaN/inf), got {cost_usd!r}"
+        )
     if cost_usd is not None and cost_usd < 0:
         raise ValueError(
             f"usage_meter: cost_usd must be >= 0, got {cost_usd!r}"
@@ -256,6 +281,10 @@ def build_usage(
         ("thrash_iters", thrash_iters),
         ("subagent_dispatches", subagent_dispatches),
     ):
+        if not math.isfinite(_val):
+            raise ValueError(
+                f"usage_meter: {_name} must be finite (not NaN/inf), got {_val!r}"
+            )
         if _val < 0:
             raise ValueError(
                 f"usage_meter: {_name} must be >= 0, got {_val!r}"
@@ -279,6 +308,49 @@ def build_usage(
 # Rate-table pricing
 # ---------------------------------------------------------------------------
 
+# v1 default per-model $/token price list — update this constant as pricing
+# changes.  Prices are USD per token (NOT per 1K tokens).
+# Source: public pricing pages, accurate as of 2026-06.
+# A benchmark config may supply its own rate_table to cost_from_rate_table()
+# to override these defaults; see default_rate_table() below.
+_DEFAULT_RATE_TABLE: dict = {
+    # --- Claude (Anthropic) ------------------------------------------------
+    # claude-sonnet-4-x: $3.00 input / $15.00 output per 1M tokens
+    "claude-sonnet-4-6":    {"input": 3.00e-6,  "output": 15.00e-6},
+    "claude-sonnet-4-5":    {"input": 3.00e-6,  "output": 15.00e-6},
+    # claude-opus-4-x: $15.00 input / $75.00 output per 1M tokens
+    "claude-opus-4-5":      {"input": 15.00e-6, "output": 75.00e-6},
+    "claude-opus-4":        {"input": 15.00e-6, "output": 75.00e-6},
+    # claude-haiku-3-5: $0.80 input / $4.00 output per 1M tokens
+    "claude-haiku-3-5":     {"input": 0.80e-6,  "output":  4.00e-6},
+    # --- OpenAI Codex / o-series -------------------------------------------
+    # codex-mini: ~$1.50 input / $6.00 output per 1M tokens (estimated)
+    "codex-mini":           {"input": 1.50e-6,  "output":  6.00e-6},
+    # o3: ~$10.00 input / $40.00 output per 1M tokens (estimated)
+    "o3":                   {"input": 10.00e-6, "output": 40.00e-6},
+    # --- Kiro (Amazon AI IDE) -----------------------------------------------
+    # Kiro routes through Claude Sonnet-class models; priced accordingly
+    "kiro-sonnet":          {"input": 3.00e-6,  "output": 15.00e-6},
+    "kiro-1":               {"input": 3.00e-6,  "output": 15.00e-6},
+}
+
+
+def default_rate_table() -> dict:
+    """Return the v1 default per-model $/token rate table (v1 default, override-able).
+
+    Returns a fresh copy of ``_DEFAULT_RATE_TABLE`` mapping model name →
+    ``{"input": cost_per_token, "output": cost_per_token}`` in USD per token.
+
+    This is a **v1 default**.  A benchmark config may supply its own
+    ``rate_table`` to ``cost_from_rate_table()`` to override.  All prices live
+    in ``_DEFAULT_RATE_TABLE`` (one labeled constant — update it as pricing
+    changes; do **not** hard-code prices elsewhere).
+
+    Returns:
+        Dict mapping model name → {"input": float, "output": float}.
+    """
+    return dict(_DEFAULT_RATE_TABLE)
+
 
 def cost_from_rate_table(
     tokens_in: Optional[int],
@@ -298,16 +370,17 @@ def cost_from_rate_table(
         model:      Model identifier.
         rate_table: Dict mapping model name → {"input": cost_per_token,
                     "output": cost_per_token} where cost_per_token is in USD.
+                    Use ``default_rate_table()`` for the v1 default table.
 
     Returns:
         USD cost as float, or None if tokens are null or model not in table.
     """
     if tokens_in is None or tokens_out is None:
-        _absent = True  # host did not surface token count — honestly null
+        # host did not surface token count — honestly null
         return None
     rates = rate_table.get(model)
     if rates is None:
-        _missing = True  # model not in rate table — return None, not zero
+        # model not in rate table — return None, not zero
         return None
     return tokens_in * rates["input"] + tokens_out * rates["output"]
 

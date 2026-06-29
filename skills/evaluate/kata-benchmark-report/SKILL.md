@@ -30,7 +30,8 @@ tags:
 
 The **author + renderer** of the benchmark run scorecard. When a benchmarked run finishes, `kata-benchmark-report`
 turns the machine artifacts the benchmark engine left behind (`.kata/benchmark/<run-id>.json`,
-`.kata/{RESULT,footprint,mutation}.json`, `.kata/usage.json`, and the benchmark definition) into a human
+`.kata/{RESULT,mutation}.json`, `.kata/usage.json`, and the benchmark definition; `.kata/footprint.json`
+is available for evidence-linking only — `score_arms` does not read it) into a human
 deliverable: an honest two-tier report a non-expert owner can read to understand how the run scored, how it
 ranked against other arms and prior runs, and what the benchmark recommends next.
 
@@ -117,10 +118,15 @@ floor pass** that the engine did not award.
 Read the emitted scorecard (conforming to `benchmark.scorecard_schema()`). Render, per arm:
 
 - **Axis Q** (floor + dual-gate + mutation): the engine's `q` (Q score), the floor verdict (`floor_verdict` string / `floor_passed` boolean), the dual-gate results (`f2p_pass_rate` / `p2p_pass_rate` / `dual_gate_both_green`), the `dual_gate_evaluated` flag (false = no declared criteria, Q forced to 0 — no free dual-credit), and the mutation multiplier (`allNonVacuous` from `.kata/mutation.json`). **Floor fail ⇒ Q = 0 — quote it, never soften it.** If the dual-gate is partial (F2P partial, P2P green), render the partial credit honestly.
-- **Axis C** (efficiency): the normalized cost fields from `.kata/usage.json` per-arm:
+- **Axis C** (efficiency): the raw C key fields come from each arm's `.kata/usage.json`:
   `tokensIn / tokensOut / costUSD / wallClockS / toolCalls / escalations / thrashIters / subagentDispatches`.
-  When a token/cost field is `null` (host did not surface it), render it as **"not reported by host"** —
+  When a raw token/cost field is `null` (host did not surface it), render it as **"not reported by host"** —
   never as zero, never silently omitted.
+  Also render the per-arm scorecard fields (from `scorecard_schema()`): `tokens_unavailable: true` → *"cost
+  field not reported by host"*; `usage_incomplete: true` (distinct from `tokens_unavailable`) → explicit
+  honesty note: *"usage record structurally incomplete — Axis-C imputed worst-case."* `usage_incomplete`
+  fires when any non-nullable C field (`wallClockS`, `toolCalls`, etc.) was absent or C1-invalid
+  (negative/NaN/Inf) — it is NOT the same as a missing `costUSD`.
 - **Composite**: the floor-gated Pareto point `(Q, C)` and the convenience scalar
   `Q / (1 + λ·C_norm)`, profile weights applied. **Composite is blank for floor-fail arms** — render
   `"—"` or `"floor fail"`, not a number.
@@ -131,7 +137,7 @@ criteria."*
 ### 2. Pareto position vs control/baseline
 
 Render the arm's Pareto point `(Q, C)` on the Pareto frontier relative to the control and any prior-run
-baseline the scorecard carries. State which arms dominate and which are dominated — an arm is dominated when the top-level `recommendations` list carries a `{kind: "dominated", arm: <label>}` entry for it (the engine's `_build_recommendations` emits this; there is no per-arm `pareto_dominated` field). Use the per-arm `pareto{q, c}`, `rank`, `in_efficiency_set`, `composite`, and `c_norm` fields for the Pareto-point table. If there is only one arm or no prior baseline, state so plainly — *"single-arm run; no relative Pareto comparison available."*
+baseline the scorecard carries. State which arms dominate and which are dominated — an arm is dominated when the top-level `recommendations` list carries a `{kind: "dominated", arm: <label>}` entry for it (the engine's `_build_recommendations` emits this; there is no per-arm `pareto_dominated` field). **Cross-repeat suppression (A4 — consistent with §3/`{{BENCHMARK_RECOMMENDATIONS}}`):** when reading dominance from `recommendations`, skip any `dominated` or `pareto-best` entry whose `arm` is a repeat-sibling of another arm (same base label — `<base>·repeat<k>` pattern); scope the §2 dominance narration to distinct-base arms only. Cross-repeat dominance among identical-base repeats is not a meaningful quality signal. Use the per-arm `pareto{q, c}`, `rank`, `in_efficiency_set`, `composite`, and `c_norm` fields for the Pareto-point table. If there is only one arm or no prior baseline, state so plainly — *"single-arm run; no relative Pareto comparison available."*
 
 Use a **note tile** (`.tile--note`, blue) for dominated arms and an **ok tile** (`.tile--ok`, deep
 Prussian) for Pareto-optimal arms (BRAND.md callout-tile convention from
@@ -139,34 +145,41 @@ Prussian) for Pareto-optimal arms (BRAND.md callout-tile convention from
 
 ### 3. Per-arm comparison table
 
-Render one row per arm from the engine's scorecard: arm label · floor verdict · Q · C (key fields, null
-shown as "—") · composite · Pareto rank. Source all values from `scorecard_schema()` fields — no hand-
-computed columns. If only one arm is present, label the table *"single-arm run"* and still render it
-(the degenerate case is valid; k-repeats each appear as a separate arm row).
+Render one row per arm from the engine's scorecard: arm label · floor verdict · Q · `c_norm` ·
+`tokens_unavailable` · `usage_incomplete` · composite · Pareto rank — source all these from
+`scorecard_schema()` fields. The raw C key fields (`tokensIn` / `costUSD` / `wallClockS` / `toolCalls` /
+`escalations` / `thrashIters` / `subagentDispatches`) come from each arm's `.kata/usage.json`, NOT from
+the scorecard; null or absent raw fields shown as "—". If only one arm is present, label the table
+*"single-arm run"* and still render it (the degenerate case is valid).
+
+**k-repeats:** arms whose labels match `<base>·repeat<k>` for the same base are repeat siblings. Present
+each repeat as a labeled per-repeat sample row under its base arm — do NOT compute or display "mean ±
+spread" (aggregation is deferred in honest v1). Cross-repeat arm rows appear in the table as standard
+entries alongside distinct-base arm rows.
 
 **Optimization recommendation tiles**: after the comparison table, render one tile per
 optimization finding that the scorecard's `recommendations` field carries (authored by the engine's
-internal heuristics). Each tile follows the BRAND `.tile--warning` convention (ochre, `Watch` label) for
-marginal items and `.tile--error` (rust) for floor failures. **These tiles are OFFERED observations —
-never auto-applied directives.** The D3 hook into `kata-improve` T2 proposals is deferred; the skill
+internal heuristics). Each tile follows the BRAND conventions: `pareto-best` → `.tile--ok` (deep Prussian, positive
+confirmation); `cost-outlier` and `dominated` → `.tile--warning` (ochre, `Watch` label). **These tiles
+are OFFERED observations — never auto-applied directives.** The D3 hook into `kata-improve` T2 proposals is deferred; the skill
 surfaces the tile content for human review only.
 
 ### 4. Delta header (repeat_from runs only)
 
-**Render only when the run was launched via `repeat_from`** (a `parent_benchmark_id` is present in the
-definition). In all other runs this section is omitted entirely.
+**Render only when the run was launched via `repeat_from`** (the `repeat_from` field is set in the `benchmark` config block). In all other runs this section is omitted entirely. `parent_benchmark_id` is NOT the activation predicate — it is the lineage pointer for an explicit fork (a new benchmark derived from a prior one with a different `benchmark_id`); a plain `repeat_from` re-run does not set `parent_benchmark_id` and must not be confused with a fork.
 
-When present, call `benchmark_def.compute_delta(new_scorecard, prior_scorecard)` and lead the entire
-report with the delta block — before the scorecard, before the comparison table:
+When present, call `benchmark_def.compute_delta(new_scorecard, prior_scorecard)`. **Lead the full delta block only when `sameDefinition:true`** — this is the real activation gate for the delta header proper (the `repeat_from` flag is the outer check; `sameDefinition:true` is the inner check for the delta content itself). If `sameDefinition:false`, render only the `.tile--error` warning below and skip the delta headline. When `sameDefinition:true`, lead the entire report with the delta block — before the scorecard, before the comparison table:
 
 - **Δ headline**: `ΔQ = {dQuality:+.3f}` · `ΔC = {dCost:+.3f}` · `ΔPareto = {dParetoPosition}`
 - **Provenance stamp**: `sameDefinition = {true|false}`; `provenanceDiff` (harness version, skill
   versions) — same definition + newer provenance = honest harness-delta. Render `provenanceDiff` verbatim.
+  The scorecard carries `benchmark_id` (definition UUID) and `provenance` (tool/skill versions) as
+  top-level fields (FIX A2 — stamped by `score_arms` when provided by the wiring layer). `compute_delta`
+  uses these to determine `sameDefinition`; reference them truthfully in the delta block, do not fabricate.
 - **Honesty banner**: *"n=[k] repeat; delta is directional, not a statistically certified improvement."*
   Render as a `.tile--warning` (ochre) so it cannot be missed.
 
-If `sameDefinition` is false, render a `.tile--error` (rust) warning: the definition drifted between runs
-— the delta reflects a mixed signal (criteria change + harness change), not a clean harness-delta.
+If `sameDefinition` is false (the run was a `repeat_from` but the definition drifted — a genuine drift), render a `.tile--error` (rust) warning: the definition drifted between runs — the delta reflects a mixed signal (criteria change + harness change), not a clean harness-delta. This tile fires ONLY on a `repeat_from` run with `sameDefinition:false`; it does not fire on non-`repeat_from` runs (those simply omit the delta section).
 
 ---
 
@@ -197,28 +210,30 @@ stage names, no jargon dump). In order:
 
 ### Tier 2 — full report content keyed to the {{TOKEN}} contract
 
-The complete benchmark report, keyed to `{{TOKEN}}` placeholders that parallel the `kata-report`
-two-tier shape (`skills/evaluate/kata-report/SKILL.md:44-57`) and render via the committed template +
-BRAND system (`modules/closeout/resources/closeout-report.template.html:6-33`;
-`modules/closeout/resources/BRAND.md`). Do not invent extra tokens or rename these.
+The complete benchmark report, keyed to `{{BENCHMARK_*}}` token slots defined in the dedicated template
+`modules/closeout/resources/benchmark-report.template.html` (same BRAND visual system as
+`closeout-report.template.html`; documented in `modules/closeout/resources/BRAND.md`). Do not invent
+extra tokens or rename these.
 
 - `{{BENCHMARK_RUN_TITLE}}` — short human title: control name + profile + date.
   Example: `"Benchmark · balanced profile — 2026-06-28"`.
 - `{{BENCHMARK_VERDICT_BADGE}}` — `<span class="badge badge--{STATE}">{LABEL}</span>`. STATE ∈
   `pass | partial | needs-work`. Derived from the highest-ranking arm's floor verdict. A floor-fail-only
   run renders `badge--needs-work`. Mirrors the `{{VERDICT_BADGE}}` contract from `kata-report`.
-- `{{BENCHMARK_DELTA_HEADER}}` — the delta block (§4 above, full content). **Omit this token entirely**
-  when not a `repeat_from` run; `kata-orchestrate` skips substitution when the block is absent.
+- `{{BENCHMARK_DELTA}}` — the delta block (§4 above, full content), including the outer section wrapper.
+  Substitute an **empty string** when not a `repeat_from` run — the token slot collapses cleanly.
 - `{{BENCHMARK_SCORECARD}}` — element 1: scorecard table (Q, C, composite) per arm, with the honesty
   footer tile. Each floor-fail arm's composite cell shows `"—"`.
 - `{{BENCHMARK_PARETO}}` — element 2: Pareto position section. Dominated arms in `.tile--note`;
   Pareto-optimal arms in `.tile--ok`. Single-arm runs render as labeled single-entry.
-- `{{BENCHMARK_ARM_TABLE}}` — element 3: per-arm comparison table (one row per arm: label · floor · Q · C
-  key fields · composite · Pareto rank). Source: `scorecard_schema()` fields verbatim.
-- `{{BENCHMARK_RECOMMENDATIONS}}` — element 3 (cont.): optimization recommendation tiles, one per top-level `recommendations` entry (`kind` ∈ `pareto-best | cost-outlier | dominated`; `arm`; optional `detail`). `.tile--ok` (deep Prussian) for `pareto-best`; `.tile--warning` (ochre) for `cost-outlier`/`dominated` observations. Labeled **OFFERED — not auto-applied**. D3 optimization-proposal hook is deferred; these tiles are human-facing content only.
+- `{{BENCHMARK_ARM_TABLE}}` — element 3: per-arm comparison table (one row per arm: label · floor verdict ·
+  Q · `c_norm` · `tokens_unavailable` · `usage_incomplete` · composite · Pareto rank from `scorecard_schema()`
+  fields; raw C key fields from each arm's `.kata/usage.json` — NOT from the scorecard).
+- `{{BENCHMARK_RECOMMENDATIONS}}` — element 3 (cont.): optimization recommendation tiles, one per top-level `recommendations` entry (`kind` ∈ `pareto-best | cost-outlier | dominated`; `arm`; optional `detail`). `.tile--ok` (deep Prussian) for `pareto-best`; `.tile--warning` (ochre) for `cost-outlier`/`dominated` observations. Labeled **OFFERED — not auto-applied**. D3 optimization-proposal hook is deferred; these tiles are human-facing content only. **Cross-repeat suppression (A4):** skip any `pareto-best` or `dominated` entry whose `arm` is a repeat-sibling of another arm (same base label — `<base>·repeat<k>` pattern); cross-repeat dominance among identical-base repeats is meaningless. Surface only recommendations comparing distinct base arms.
 - `{{BENCHMARK_EVIDENCE}}` — evidence artifact links: `.kata/benchmark/<run-id>.json` (scorecard path +
-  arm count + profile); `.kata/RESULT.json` per arm (gate counts verbatim); `.kata/usage.json` per arm
-  (cost fields, nulls noted); `.kata/mutation.json` per arm (`allNonVacuous` value).
+  `benchmark_id` + `provenance` + arm count + profile); `.kata/RESULT.json` per arm (gate counts verbatim);
+  `.kata/usage.json` per arm (cost fields, nulls noted); `.kata/mutation.json` per arm (`allNonVacuous`
+  value); `.kata/footprint.json` per arm (evidence-link only — not a scorer input).
 - `{{BENCHMARK_HONESTY}}` — the two mandatory disclosures (n=1 directional; exercised ≠ proven beyond
   declared criteria), rendered from the scorecard's `honesty` block (`{directional, basis, disclosure}` — engine-pinned; cannot be silently dropped). Read `honesty.basis` (e.g. `"n=1"`) and `honesty.disclosure` verbatim for the rendered text. Render as a `.tile--warning` (ochre) so it is not buried. The Markdown content is authoritative; the HTML is the presentation layer.
 - `{{BENCHMARK_TIMESTAMP}}` — UTC ISO-8601 timestamp at report-emit time.
@@ -226,9 +241,9 @@ BRAND system (`modules/closeout/resources/closeout-report.template.html:6-33`;
 ### Emit
 
 Write the Tier 2 content to `.kata/benchmark/<run-id>-report.html` by substituting the `{{BENCHMARK_*}}`
-tokens into the template at `modules/closeout/resources/closeout-report.template.html` (same BRAND,
-same layout, benchmark-specific content). Write the Tier 1 summary to conversation output. Both tiers
-are required; neither is optional.
+tokens into the dedicated benchmark template at `modules/closeout/resources/benchmark-report.template.html`
+(same BRAND, same visual system — do NOT substitute into `closeout-report.template.html`). Write the Tier 1
+summary to conversation output. Both tiers are required; neither is optional.
 
 ---
 

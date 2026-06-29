@@ -41,6 +41,7 @@ FIX 6b: Absent non-nullable Axis-C field → usage_incomplete=True, not 0.
 from __future__ import annotations
 
 import json
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Union
@@ -415,6 +416,32 @@ def _compute_arm_q(
     return q, detail
 
 
+def _validate_numeric(v: object) -> Optional[float]:
+    """Return a validated non-negative finite float, or None.
+
+    FIX C1 READ-PATH GUARD: any raw usage metric value that is negative, NaN,
+    or Infinity is treated as *missing* (returns None) rather than being accepted
+    and potentially poisoning the normalization or ranking.  The validated value
+    feeds FIX C2 imputation (missing → worst-case 1.0).
+
+    Args:
+        v: Raw value from usage.json (any type; may be None, str, float, int, etc.).
+
+    Returns:
+        float if v is numeric, finite, and >= 0; None otherwise.
+    """
+    if v is None:
+        return None
+    try:
+        fv = float(v)
+    except (TypeError, ValueError):
+        return None
+    _c1_valid = math.isfinite(fv) and fv >= 0  # FIX C1: reject negative/NaN/Inf (load-bearing)
+    if not _c1_valid:
+        return None
+    return fv
+
+
 def _compute_c_norm_for_arms(usage_list: List[Optional[dict]]) -> List[dict]:
     """Normalize Axis C across all arms.
 
@@ -422,41 +449,52 @@ def _compute_c_norm_for_arms(usage_list: List[Optional[dict]]) -> List[dict]:
     "usage_incomplete": bool}`` dicts, one per arm in the same order as
     *usage_list*.
 
-    Null ``costUSD`` is NOT silently scored as 0 (honesty contract — PLAN S2
-    Axis-C, DESIGN §3.2): arms whose ``costUSD`` is null receive
-    ``tokens_unavailable=True`` and their ``c_norm`` is computed from the
-    remaining always-present fields only.  This avoids falsely crediting a
-    zero-cost advantage to arms whose token usage the host did not surface.
+    FIX C1 (READ-PATH GUARD): every raw numeric value is validated via
+    ``_validate_numeric`` before use.  Negative, NaN, or Infinity values are
+    treated as *missing* (None) and feed FIX C2 imputation.  This closes the
+    attack where ``costUSD: -540`` would produce the smallest c_norm and win
+    rank-1.  The arm is flagged ``usage_incomplete=True``.
 
-    FIX 6b — Absent non-nullable fields: a missing ``wallClockS``, ``toolCalls``,
-    or other non-nullable Axis-C field is NOT silently scored as 0.0 (which
-    would make the arm falsely cheapest on that dimension).  Instead, the arm
-    is flagged ``usage_incomplete=True`` and the missing fields are excluded
-    from the normalization entirely (not counted toward the mean).
+    FIX C2 (IMPUTATION — replaces old FIX 6b exclusion): a missing, null, or
+    C1-invalid field is **imputed as the worst-case normalized value (1.0)**
+    and *included* in the mean.  Omission never helps; an arm with missing data
+    looks expensive (the honest-conservative direction).
+    Exception: if **no** arm reports a given field at all (field_max is None),
+    that field is dropped for everyone (neutral — not imputed for any arm).
 
-    Normalization: each present field is divided by its maximum across all arms
-    (0.0 when the max is 0 — no relative disadvantage).  ``c_norm`` is the
-    mean of the normalized values for the available fields of that arm.
+    Honesty labels:
+      ``tokens_unavailable=True``  — costUSD was null/absent from the host
+                                      (host could not surface token data).
+      ``usage_incomplete=True``    — any non-nullable field is absent OR any
+                                      field (including costUSD) failed C1 validation.
+
+    Normalization: each present field is divided by its per-arm-set maximum
+    (0.0 when the max is 0 — no relative disadvantage).  ``c_norm`` is the mean
+    of all dimension contributions (imputed or real) for the available fields of
+    that arm.
     """
     n = len(usage_list)
     if n == 0:
         return []
 
-    # Collect raw values per non-nullable field (None = missing, not scored as 0)
+    # --- Collect and validate raw values (FIX C1) ---
+    # field_vals[f][i] = validated float or None (missing/invalid)
     field_vals: Dict[str, List[Optional[float]]] = {f: [] for f in _NON_NULLABLE_C_FIELDS}
-    cost_vals: List[Optional[float]] = []
+    cost_vals: List[Optional[float]] = []   # validated costUSD (None = missing or C1-rejected)
+    cost_raw_null: List[bool] = []          # True when original costUSD was null/absent
 
     for u in usage_list:
         uj = u or {}
         for field in _NON_NULLABLE_C_FIELDS:
-            raw = uj.get(field)
-            # FIX 6b: preserve None for missing fields — do not score as 0.0
-            field_vals[field].append(float(raw) if raw is not None else None)
-        cost_vals.append(uj.get("costUSD"))
+            field_vals[field].append(_validate_numeric(uj.get(field)))  # FIX C1
+        cost_raw = uj.get("costUSD")
+        cost_raw_null.append(cost_raw is None)          # honest null vs invalid
+        cost_vals.append(_validate_numeric(cost_raw))   # FIX C1
 
-    # Per-field max for normalization (exclude None / missing values)
-    field_maxes: Dict[str, float] = {
-        f: max((v for v in vs if v is not None), default=0.0)
+    # --- Per-field max for normalization ---
+    # None means "no arm reported this field" → drop that field for everyone (FIX C2 edge).
+    field_maxes: Dict[str, Optional[float]] = {
+        f: max((v for v in vs if v is not None), default=None)
         for f, vs in field_vals.items()
     }
     cost_max: Optional[float] = max(
@@ -464,35 +502,46 @@ def _compute_c_norm_for_arms(usage_list: List[Optional[dict]]) -> List[dict]:
     )
 
     results: List[dict] = []
-    for i, cost_val in enumerate(cost_vals):
-        tokens_unavailable = cost_val is None
+    for i in range(n):
+        cost_val = cost_vals[i]
 
-        # FIX 6b: flag if any non-nullable field is absent
+        # tokens_unavailable: costUSD was null/absent from the original JSON (honesty label)
+        tokens_unavailable = cost_raw_null[i]
+
+        # usage_incomplete: any non-nullable field missing/invalid (FIX 6b + FIX C1)
         usage_incomplete = any(field_vals[f][i] is None for f in _NON_NULLABLE_C_FIELDS)
+        # Also flag when costUSD was present but C1-rejected (invalid value)
+        if not cost_raw_null[i] and cost_val is None:
+            usage_incomplete = True
 
-        # Normalize non-nullable fields for this arm (skip missing fields)
+        # --- Normalize non-nullable fields (FIX C2: impute 1.0 for missing) ---
         norms: List[float] = []
         for field in _NON_NULLABLE_C_FIELDS:
             v = field_vals[field][i]
-            if v is None:
-                continue  # FIX 6b: absent field excluded — not scored as 0
             mx = field_maxes[field]
+
+            if mx is None:
+                # No arm reports this field → neutral, drop for everyone (FIX C2 edge)
+                continue
+
+            if v is None:
+                norms.append(1.0)  # FIX C2: missing/invalid field → impute worst-case
+                continue
+
             norms.append(v / mx if mx > 0.0 else 0.0)
 
-        # Add costUSD normalization only when available for THIS arm
-        if (
-            not tokens_unavailable
-            and cost_max is not None
-            and cost_max > 0.0
-            and cost_val is not None
-        ):
-            norms.append(cost_val / cost_max)
+        # --- costUSD dimension (FIX C2: impute 1.0 for missing/invalid) ---
+        if cost_max is not None:
+            if cost_val is not None:
+                norms.append(cost_val / cost_max if cost_max > 0.0 else 0.0)
+            else:
+                norms.append(1.0)  # FIX C2: missing/invalid costUSD → impute worst-case
 
         c_norm = sum(norms) / len(norms) if norms else 0.0
         results.append({
             "c_norm": c_norm,
             "tokens_unavailable": tokens_unavailable,
-            "usage_incomplete": usage_incomplete,  # FIX 6b
+            "usage_incomplete": usage_incomplete,
         })
 
     return results
@@ -581,6 +630,8 @@ def score_arms(
     *,
     profile: str = _DEFAULT_PROFILE,
     f2p_p2p_results: Optional[Dict[str, dict]] = None,
+    benchmark_id: Optional[str] = None,
+    provenance: Optional[dict] = None,
 ) -> dict:
     """Score every arm in *arm_map* and return a benchmark scorecard.
 
@@ -596,6 +647,14 @@ def score_arms(
     FIX 3: Scorecard always contains an engine-pinned ``honesty`` dict and a
     ``recommendations`` list (both in schema required).
 
+    FIX A2: When *benchmark_id* and/or *provenance* are provided (non-None),
+    they are stamped as TOP-LEVEL scorecard fields so that
+    ``benchmark_def.compute_delta``'s ``sameDefinition`` can be True across
+    runs of the same benchmark definition.  Without this stamp, both scorecards
+    carried ``benchmark_id=None`` and ``sameDefinition`` was structurally always
+    False.  Supply these from the wiring layer (the benchmark runner that owns
+    the definition).
+
     Args:
         arm_map:           {arm_label → clone_artifact_root}.  Each root must
                            contain ``.kata/{RESULT,mutation,usage}.json``.
@@ -604,6 +663,13 @@ def score_arms(
         f2p_p2p_results:   {arm_label → {"f2p": {test_id: bool},
                            "p2p": {test_id: bool}}}.  Defaults to empty dicts
                            (no declared test-IDs) when None or key absent.
+        benchmark_id:      Optional benchmark definition UUID.  When provided,
+                           stamped top-level → enables ``sameDefinition=True``
+                           in delta mode (FIX A2).
+        provenance:        Optional provenance dict (e.g. tool_version,
+                           skill_versions).  When provided, stamped top-level →
+                           same benchmark_id + differing provenance = honest
+                           harness-delta (C-on/C-off, DESIGN §4).
 
     Returns:
         Scorecard dict conforming to scorecard_schema().
@@ -722,6 +788,10 @@ def score_arms(
         "floor_passers": floor_passer_labels,
         "floor_failers": floor_failer_labels,
         "utc": datetime.now(tz=timezone.utc).isoformat(),
+        # FIX A2: stamp identity fields when provided so compute_delta.sameDefinition can be True.
+        # When benchmark_id/provenance are None (not provided), they are omitted (not stamped as null).
+        **({"benchmark_id": benchmark_id} if benchmark_id is not None else {}),
+        **({"provenance": provenance} if provenance is not None else {}),
     }
 
 
@@ -792,15 +862,22 @@ def run_dual_gate(
     root = Path(clone_root)
 
     def _run_one(test_id: str) -> bool:
-        """Split ``'path::name'`` and call mutation_check.run_named_test."""
+        """Split ``'path::name'`` and call mutation_check.run_named_test.
+
+        FIX A1: passes ``cwd=str(root)`` so pytest runs from the clone root and
+        PYTHONPATH includes the clone root → ``from src import X`` resolves.
+        Uses *rel_path* (relative to clone root) rather than an absolute path, so
+        pytest resolves the file under cwd.  The _guard_node_id containment check
+        still applies (verifies rel_path stays inside the clone root).
+        """
         if "::" not in test_id:
             return False  # malformed test-ID: fail safe
         _guard_node_id(test_id, root)  # FIX 2: traversal guard (load-bearing)
         sep = test_id.rfind("::")
         rel_path = test_id[:sep]
         test_name = test_id[sep + 2:]
-        test_path = str(root / rel_path)
-        return mutation_check.run_named_test(test_path, test_name)
+        # FIX A1: cwd=clone_root so pytest runs there; rel_path resolves under cwd.
+        return mutation_check.run_named_test(rel_path, test_name, cwd=str(root))
 
     return {
         "f2p": {tid: _run_one(tid) for tid in f2p_ids},

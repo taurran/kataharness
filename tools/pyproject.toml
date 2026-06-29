@@ -16,3 +16,6 @@ dev = ["pytest>=8.0"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "integration: end-to-end integration test (may run a real pytest subprocess over a benchmark clone)",
+]
