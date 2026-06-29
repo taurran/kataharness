@@ -536,3 +536,17 @@ ranking a repeat as "dominated" by its own sibling.
 **D2** research-mode judge; **D3** benchmark→`kata-improve` T2 optimization-proposal hook; **D4** promote-best-arm-to-master
 (real-repo only); **D5** the real control FIXTURE (operator-supplied; design is fixture-agnostic). _Avoid_: treating any of
 these as built.
+
+## kata-validate — the validation mini-loop (D125, 2026-06-29)
+**kata-validate / validation mini-loop** (`skills/evaluate/kata-validate`):
+The always-available, **programmatically-callable** validator — `validate(payload, target="auto", profile) ->
+Report{passed, findings[]}`. Runs **inline on ANY data** and **requires NO freeze/INTENT/`kata.config`** (its
+defining property); **dual-target** (arbitrary content OR another agent's output) with **payload-as-data isolation**
+(the payload is graded, never obeyed — injection containment). Four deterministic-first legs by **method-by-reference**
+(grounding = `kata-evaluate` injected-knowledge + grounding_gate · review = `kata-review` 5-surface RUBRIC · slop =
+`kata-slop-check` G1–G6/A1–A3 · score = `kata-evaluate` conformance, conditional/N-A when no plan). Drives its **own
+thin conductor** (the `kata-loop`/`kata-onboard` composition-wrapper precedent) — it does **NOT** route through
+`kata-orchestrate` (untouched); bounded **≤2 passes**; **tripwire + cross-family-judge** safety rails. **Report-only
+by default**; a **per-finding human-gated fix** is applied by a **single writer** (the validators themselves stay
+no-write). _Avoid_: calling it a module (it is always-available, not module-gated); saying it needs a freeze/plan;
+routing it through `kata-orchestrate`; letting a validator write a fix (only the sole writer does, human-gated).

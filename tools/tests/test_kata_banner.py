@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from kata_banner import BRAND, render_banner
+from kata_banner import BRAND, render_banner, render_validation_banner
 
 
 def test_full_banner_has_brand_and_all_lines():
@@ -70,3 +70,42 @@ def test_color_emits_report_palette_ansi():
 def test_color_compact():
     out = render_banner(goal="re-run", tasks=3, compact=True, color=True)
     assert "\x1b[" in out and "\n" not in out
+
+
+# ── render_validation_banner ─────────────────────────────────────────────────
+
+def test_validation_banner_contains_marker():
+    """Marker text is present and banner is non-trivial — RED if string is changed or function stubbed."""
+    out = render_validation_banner()
+    assert "Running KataHarness validation loop" in out
+    assert len(out) > len("Running KataHarness validation loop")
+
+
+def test_validation_banner_structure():
+    """Three-line banner: top rule (with BRAND), marker body, bottom rule."""
+    out = render_validation_banner()
+    lines = out.splitlines()
+    assert len(lines) == 3
+    assert lines[0].startswith("━━") and BRAND in lines[0]
+    assert "Running KataHarness validation loop" in lines[1]
+    assert lines[2].startswith("━")
+
+
+def test_validation_banner_deterministic():
+    """Two calls with the same args produce byte-identical output."""
+    assert render_validation_banner() == render_validation_banner()
+    assert render_validation_banner(color=False) == render_validation_banner(color=False)
+
+
+def test_validation_banner_no_color_by_default():
+    """No ANSI escape codes when color=False (the default)."""
+    out = render_validation_banner()
+    assert "\x1b[" not in out
+
+
+def test_validation_banner_color_wraps_brand_in_ochre():
+    """color=True wraps BRAND in the ochre 24-bit code — RED if palette wrap is removed."""
+    out = render_validation_banner(color=True)
+    assert "\x1b[" in out
+    # ochre = (181, 137, 75) = #B5894B
+    assert "38;2;181;137;75" in out

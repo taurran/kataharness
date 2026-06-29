@@ -1,0 +1,10 @@
+{
+  "id": "tw-grounding-001",
+  "severity": "error",
+  "leg": "grounding",
+  "location": "payload:1",
+  "message": "Claim asserts a specific fact with no cited source and cannot be grounded against available evidence.",
+  "rule": "grounding/unsupported-claim",
+  "behavior_changing": true,
+  "hold": false
+}

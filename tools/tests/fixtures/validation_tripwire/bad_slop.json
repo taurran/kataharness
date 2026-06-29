@@ -1,0 +1,10 @@
+{
+  "id": "tw-slop-001",
+  "severity": "error",
+  "leg": "slop",
+  "location": "payload:3",
+  "message": "G2: vague filler phrase detected ('as per your request') — non-substantive padding.",
+  "rule": "slop/G2-vague-filler",
+  "behavior_changing": true,
+  "hold": false
+}

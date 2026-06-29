@@ -22,6 +22,7 @@ BRAND = "KATAHARNESS 改善型"
 _WIDTH = 60  # box rule width in display columns
 _RULE = "━"
 _DOT = " · "
+_VALIDATION_MARKER = "Running KataHarness validation loop…"
 
 # Hokusai-derived closeout-report palette (modules/closeout/resources/BRAND.md), adapted for a
 # dark terminal: use the accent tones that read on dark (ochre arrow, warm border, mid-blue, paper),
@@ -116,6 +117,27 @@ def render_banner(
     return "\n".join([top, *rows, bottom])
 
 
+def render_validation_banner(*, color: bool = False) -> str:
+    """Render the deterministic validation-loop init banner.
+
+    Emitted once at the start of every kata-validate run so the operator sees —
+    immediately — that KataHarness is running the validation mini-loop.
+    Byte-identical for identical inputs (deterministic). ``color=True`` paints
+    the closeout-report palette via 24-bit ANSI (same palette as ``render_banner``).
+    """
+    plain_header = f"{_RULE}{_RULE} {BRAND} · validation "
+    fill = max(0, _WIDTH - _dwidth(plain_header))
+    top = (
+        _paint(f"{_RULE}{_RULE} ", "border", enabled=color)
+        + _paint(BRAND, "ochre", bold=True, enabled=color)
+        + _paint(" · validation ", "muted", enabled=color)
+        + _paint(_RULE * fill, "border", enabled=color)
+    )
+    bottom = _paint(_RULE * _WIDTH, "border", enabled=color)
+    body = " " + _paint(_VALIDATION_MARKER, "paper", enabled=color)
+    return "\n".join([top, body, bottom])
+
+
 def main(argv: list[str] | None = None) -> int:  # pragma: no cover
     import argparse
     import os
@@ -128,7 +150,8 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover
         pass
 
     p = argparse.ArgumentParser(prog="kata_banner", description="Render the KataHarness loop-init banner.")
-    p.add_argument("--goal", required=True)
+    p.add_argument("--validation", action="store_true", help="render the validation-loop init banner instead")
+    p.add_argument("--goal", default=None)
     p.add_argument("--run-shape")
     p.add_argument("--mode")
     p.add_argument("--grill")
@@ -146,6 +169,13 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover
     color = a.color
     if color is None:
         color = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+
+    if a.validation:
+        print(render_validation_banner(color=color))
+        return 0
+
+    if not a.goal:
+        p.error("--goal is required unless --validation is used")
 
     print(render_banner(
         goal=a.goal, run_shape=a.run_shape, mode=a.mode, grill=a.grill, delivery=a.delivery,

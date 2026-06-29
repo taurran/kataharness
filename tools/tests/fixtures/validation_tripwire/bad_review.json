@@ -1,0 +1,10 @@
+{
+  "id": "tw-review-001",
+  "severity": "warning",
+  "leg": "review",
+  "location": "payload:5",
+  "message": "HOLD: adversarial review found unverified claim contradicting project documentation.",
+  "rule": "review/unverified-claim",
+  "behavior_changing": false,
+  "hold": true
+}

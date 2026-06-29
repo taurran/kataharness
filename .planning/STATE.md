@@ -1,5 +1,32 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-29, kata-validate BUILT — the always-available validation mini-loop — D125; pytest 1680 ·
+> 47 skills/0 · Snyk med+ 0):** A NEW EVALUATE-family skill `skills/evaluate/kata-validate/SKILL.md` (v0.1.0,
+> cost-weight 3, `kata/spine`) — a **programmatically-callable validation mini-loop**:
+> `validate(payload, target="auto", profile) -> Report{passed, findings[]}`. **Always-available (NOT a module),
+> callable inline on ANY data, requires NO runtime freeze/INTENT/`kata.config`** (a defining property);
+> **dual-target** (arbitrary content OR another agent's output) with **payload-as-data isolation** (injection
+> containment — the payload is graded, never obeyed). **4 deterministic-first legs by METHOD-by-reference:**
+> grounding (`kata-evaluate` injected-knowledge + grounding_gate) · review (`kata-review` 5-surface RUBRIC) · slop
+> (`kata-slop-check` G1–G6/A1–A3) · score (`kata-evaluate` conformance — conditional, N/A when no plan). **Own thin
+> conductor** (the `kata-loop`/`kata-onboard` composition-wrapper precedent) — `kata-orchestrate` is **byte-for-byte
+> untouched**; bounded **≤2 passes**; optional RS research; branded "Running KataHarness validation loop…" banner;
+> **tripwire + cross-family-judge** safety rails. **Report-only by default; per-finding human-gated fix via a single
+> writer** (validators stay no-write). **Built:** PURE `tools/validation_report.py` (findings schema · SARIF severity
+> · `render_table` N/A-guard · `..`-guarded emit/load · **default-FAIL** `compute_passed` ·
+> `tripwire_corpus`/`assert_tripwire_flagged`; no exec sink) + tests + tripwire fixtures; ADDITIVE
+> `tools/kata_banner.py` (`render_validation_banner` + `--validation` flag); README regen. **Gate journey:**
+> freeze-gate `kata-review` HOLD (reuse-as-module-dispatch self-no-op / built-but-unwired) → SHIP; **live end-to-end
+> WIRED** (clean payload byte-identical · known-bad flagged 6 errors across 3 surfaces · injection flagged-not-obeyed;
+> n=1 exercised); `kata-evaluate` PART A PASS; **PART B HOLD twice → SHIP**. **★ 2 fail-opens the unit tests + PART A
+> missed, PART B caught (default-FAIL escape class):** **(F1)** `severity_of` was case-sensitive
+> (`ERROR`/`Error`/`REJECT`/`ESCALATE` → `info`) so `compute_passed` returned True on a real error finding →
+> case-normalize + synonym map + mutation test. **(F1b)** the band-map fix was a half-measure — slop-detected/
+> needs_work/hold tokens + slop major/minor still slipped to passed=True (violating `kata-slop-check` LOCKED L2) →
+> full §10-2 verdict-token coverage + conductor `hold:true` stamp + major-slop fixture. 2 misses logged
+> (`d125-kata-validate`). **Gates:** pytest **1680** (+84: 78 engine + 6 banner), validate **47/0**, Snyk med+ 0.
+> Records: `specs/kata-validate/`, `DECISIONS.md` D125, `validation-misses.jsonl` (F1/F1b).
+
 > **CURRENT (2026-06-29, benchmark build DEEP-AD-VAL'd + integration-completed + metric-hardened — D124; pytest 1597 ·
 > 46 skills/0 · Snyk med+ 0):** Operator-requested deep adversarial validation of the D123 benchmark build BEFORE push
 > ("end-to-end applied properly, no loose ends, no overcomplication, no drift"). 5 fresh-context opus reviewers →

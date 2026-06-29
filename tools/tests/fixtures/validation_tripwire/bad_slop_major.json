@@ -1,0 +1,10 @@
+{
+  "id": "tw-slop-major-001",
+  "severity": "major",
+  "leg": "slop",
+  "location": "payload:7",
+  "message": "SLOP-DETECTED: A1 inflation on core deliverable — claimed coverage not substantiated (normal-band slop; gate-fails via hold per kata-slop-check LOCKED L2).",
+  "rule": "slop/A1-inflation",
+  "behavior_changing": false,
+  "hold": true
+}

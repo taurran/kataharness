@@ -1668,3 +1668,39 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   operator-supplied). **COMMITTED-LOCAL; PUSH** (b90a8a2 freeze + 72c1b8f D123 + this D124) **HELD for the operator
   commit/push gate.** Records: `specs/kata-loop-benchmark/{RESEARCH,DESIGN,PLAN}.md` (DESIGN amended), `DECISIONS.md` D124,
   `PROPOSAL-phantom-reuse.md`.
+
+<!-- kata-validate: the always-available validation mini-loop. Spec: specs/kata-validate/. Fully gated. -->
+- **D125 — kata-validate BUILT: the always-available validation mini-loop — 2026-06-29.** A NEW EVALUATE-family
+  skill `skills/evaluate/kata-validate/SKILL.md` (v0.1.0, category `evaluate`, status experimental, cost-weight 3,
+  `kata/spine` tag) exposing a **programmatically-callable validation mini-loop**:
+  `validate(payload, target="auto", profile) -> Report{passed, findings[]}`. **LOCKED decisions:** **(1)
+  Always-available, NOT a module** — callable inline on ANY data, **dual-target** (arbitrary content OR another
+  agent's output), with **payload-as-data isolation** (injection containment: the payload is graded, never obeyed).
+  **(2) Requires NO runtime freeze/INTENT/`kata.config`** — a defining property; it validates inline data with zero
+  loop scaffolding (the conformance `score` leg is conditional — N/A when no plan exists). **(3) Method-by-reference
+  reuse** — 4 deterministic-first legs CITE the existing methods rather than re-implement: `grounding`
+  (`kata-evaluate` injected-knowledge + grounding_gate) · `review` (`kata-review` 5-surface RUBRIC) · `slop`
+  (`kata-slop-check` G1–G6/A1–A3) · `score` (`kata-evaluate` conformance, conditional). **(4) Own thin conductor,
+  NOT `kata-orchestrate`** — a composition-wrapper (the `kata-loop`/`kata-onboard` precedent); `kata-orchestrate`
+  is **byte-for-byte untouched**. Bounded **≤2 passes**; optional RS research method for grounding; a branded
+  "Running KataHarness validation loop…" banner. **(5) Report-only by DEFAULT + per-finding human-gated fix via a
+  single writer** — validators stay no-write; one sole Write actor applies a fix only on a per-finding human gate.
+  **(6) Safety rails:** a **tripwire** corpus + a **cross-family-judge** (honest weaker same-host fallback). **Built:**
+  NEW PURE engine `tools/validation_report.py` (findings schema · SARIF severity error/warn/info · `render_table`
+  with an explicit N/A-row guard · `..`-guarded `emit`/`load` of `findings.json` · **default-FAIL** `compute_passed`
+  · `tripwire_corpus` + `assert_tripwire_flagged`; **no exec sink**) + tests + tripwire fixtures; ADDITIVE
+  `tools/kata_banner.py` (`render_validation_banner` + a `--validation` CLI flag); README regen (**47 skills**).
+  **Gate journey:** freeze-gate `kata-review` **HOLD** (reuse-as-module-dispatch would self-no-op — built-but-unwired
+  risk) → fixed in the frozen docs → **SHIP**; **live end-to-end wiring proof WIRED** (clean payload byte-identical ·
+  known-bad flagged **6 errors across 3 surfaces** · injection **flagged-not-obeyed**; n=1 exercised); `kata-evaluate`
+  **PART A PASS**; **PART B `kata-review` HOLD twice → SHIP**. **★ Two fail-opens PART A + the unit tests missed,
+  PART B caught (the default-FAIL/gate-escape class):** **(F1)** `validation_report.severity_of` was case-sensitive —
+  `ERROR`/`Error`/`REJECT`/`ESCALATE` fell through to `info`, so `compute_passed` returned **True on a real error
+  finding** (a default-FAIL escape) → fixed: case-normalize + synonym map + a mutation-proof test. **(F1b)** that
+  band-map fix was a half-measure — `slop-detected`/`needs_work`/`hold` tokens + slop major/minor severities still
+  slipped to `passed=True`, violating `kata-slop-check` LOCKED **L2** ("SLOP-DETECTED fails regardless of severity")
+  → fixed: full `§10-2` verdict-token coverage in the engine + the conductor contract (writer stamps `hold:true`) +
+  a major-slop fixture. **Meta-lesson:** the unit-test layer under-covered the fail-open class; the standing
+  adversarial review caught it — both logged (`d125-kata-validate`). **Gates:** pytest **1680** (+84: 78 engine +
+  6 banner), validate **47 skills / 0**, Snyk **medium+ 0**. Records: `.planning/specs/kata-validate/`, `DECISIONS.md`
+  D125, `validation-misses.jsonl` (F1/F1b).
