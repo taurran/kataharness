@@ -182,6 +182,18 @@ marker these references are inert and version-up/greenfield runs are byte-for-by
 authoring is expected, resolved at integration per the P2a/P2b convention; [[kata-lang-profile]] already
 exists.) -->
 
+## Benchmark setup phase (ADDITIVE — benchmark run only; BC: absent `kata/module/benchmark` ⇒ silent no-op)
+
+**If `kata/module/benchmark` is in the run's `modules`**, perform the control-clone setup below before any worker dispatch. When `kata/module/benchmark` is absent this is a **silent no-op** (the module degrades gracefully, like every optional module); all other runs are byte-for-byte unchanged.
+
+**`kata-bootstrap` is NOT touched.** The `kata/module/benchmark` flag and the `benchmark` config block stay out of the bootstrap interview — discoverable only to operators who know they exist (hidden power-user feature, DESIGN §5 / `protocol/config.md` § Optional modules). Never add this module to the bootstrap flow.
+
+1. **Load the `benchmark` config block** from `kata.config` (`protocol/config.md` schema). Defaults: `profile: balanced`, `k_repeats: 1`, `repeat_from` absent (standard mode). A missing `def_out` ⇒ STOP + escalate — the benchmark definition has no durable path.
+
+2. **Clone the immutable control per arm** — call `benchmark_control.clone_control(ref_dir, dest)` (`tools/benchmark_control.py` — S4) where `dest = benchmark_control.sibling_name(base, benchmark_control.next_index(parent_dir, base))` → `<base>-katabenchmark<N>`. For v1 (sequential / single-arm): one clone is created. **The reference (`ref_dir`) is never written to.** Record the clone root as the arm's artifact base; it is the directory under which the arm's run emits `.kata/{RESULT,footprint,mutation,usage}.json`.
+
+3. **DEFERRED (D1) — concurrent multi-arm launch.** v1 wires the **sequential / single-arm + k-repeat** path only. The `arm_label → clone-artifact-root` map shape is identical for concurrent arms; only the parallel-arm driver waits on Spec B (bakeoff execution — "configurable now, executable later"; not built). **Do NOT claim v1 launches concurrent arms.** State this in any narration or report output that references the benchmark path.
+
 ## The loop
 **Maintain a rolling frontier.** A task is **dispatchable** iff (all its `depends_on` are integrated) ∧ (its
 owned files are disjoint from every in-flight task). Dispatch every dispatchable task concurrently (each in its
@@ -550,6 +562,18 @@ After the frontier drains (all tasks integrated), on the integration branch:
      - The detector is also **on-demand-invocable** — an operator can run
        `recurrence_detect.detect_from_paths(...)` (or the [[kata-improve]] sub-mode) outside the Final gate.
 7. Commit; if a handoff is needed, [[kata-handoff]].
+
+## Benchmark closeout phase (ADDITIVE — benchmark run only; BC: absent `kata/module/benchmark` ⇒ silent no-op)
+
+**If `kata/module/benchmark` is in the run's `modules`**, and the benchmark setup phase cloned a control root, perform the steps below **after the Final gate passes** (gate artifacts emitted, [[kata-evaluate]] returned PASS). When `kata/module/benchmark` is absent this is a **silent no-op**; all other runs are byte-for-byte unchanged. **Reports from this phase never gate** — the gate is and stays [[kata-evaluate]]; this phase only reports.
+
+1. **Write usage (S1)** — call `usage_meter.write_usage(.kata/usage.json)` (`tools/usage_meter.py`) to emit the arm's `{tokensIn, tokensOut, costUSD, wallClockS, toolCalls, escalations, thrashIters, subagentDispatches, label, model}`. Token capture is host-dependent and labeled honestly when the host did not surface it (wall-clock + tool-calls always present; `tokensIn`/`tokensOut`/`costUSD` nullable). For `k_repeats > 1`, each repeat emits its own `usage.json` under its clone root.
+
+2. **Assemble the arm map — MINOR-1 producer side** — build the `arm_label → clone-artifact-root` dict that S2's scorer consumes. For a single-arm run: `{"<arm>": <clone_root>}`. For k-repeats: `{"<arm>·repeat<k>": <clone_root_k>}` for each k ∈ [1 .. k_repeats]. Each clone root holds the arm's `.kata/{RESULT,footprint,mutation,usage}.json`. This map shape is identical for the concurrent-arm path (D1 — deferred); only the launch differs, not the contract.
+
+3. **Score (S2)** — for each arm, call `benchmark.run_dual_gate(clone_root, <declared F2P ids>, <declared P2P ids>)` (the F2P/P2P test-IDs come from the control's embedded criteria) to produce `{"f2p": {test_id: bool}, "p2p": {test_id: bool}}`; assemble `f2p_p2p_results = {arm_label: <gate result>}` across all arms. Then call `benchmark.score_arms(arm_map, profile=<cfg.profile>, f2p_p2p_results=<assembled>)` — **`profile` and `f2p_p2p_results` are keyword-only**; the positional call `score_arms(arm_map, 'balanced')` crashes with `TypeError`. Finally call `benchmark.emit_scorecard(<path>, scorecard)` (**path is the FIRST arg**). **An arm with no declared criteria scores no free dual-credit — the engine flags `dual_gate_evaluated: false` and Q = 0 for that arm.** The scorer applies the Axis Q floor-gate (`.kata/RESULT.json` `exitCode`/`failed`), the dual-gate F2P/P2P interpretation, the mutation multiplier (`.kata/mutation.json` `allNonVacuous`), and the Axis C efficiency normalization, then emits the per-arm Pareto point + convenience scalar. **Floor fail ⇒ Q = 0 (absolute); no cost score can compensate.**
+
+4. **Offer the report (S5)** — dispatch [[kata-benchmark-report]] as a **no-write** renderer. It drives `tools/benchmark.py` for every deterministic join and renders the `kata-report` two-tier `{{TOKEN}}` shape. When `repeat_from` is set in the `benchmark` config block, it leads with the delta header (Δquality · Δcost · ΔPareto-position vs the referenced prior run). Every output carries the n=1-directional + exercised-not-proven honesty. **Reports never gate.**
 
 ## Milestone narration (WS-3 — ADDITIVE; does not alter dispatch, frontier, or gate logic)
 

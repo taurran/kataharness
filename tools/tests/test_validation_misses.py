@@ -629,8 +629,10 @@ def test_run_id_non_str_rejected():
 # ---------------------------------------------------------------------------
 
 def test_logged_misses_stay_valid_and_known(tmp_path):
-    """The two real .planning/validation-misses.jsonl entries (no run_id,
-    enum-member failure_class) still validate and ARE is_known_class True."""
+    """Every real .planning/validation-misses.jsonl entry still validates and has
+    a curated (is_known_class) failure_class. Entries may be legacy (run_id-less)
+    or carry a run_id (D118+ stamped, e.g. the D122 ad-val misses); run_id is a
+    nullable OPTIONAL field, never forbidden."""
     import validation_misses as vm
 
     manifest = (
@@ -639,7 +641,11 @@ def test_logged_misses_stay_valid_and_known(tmp_path):
     entries = vm.read_misses(manifest)
     assert len(entries) >= 2, f"Expected >=2 logged misses, got {len(entries)}"
     for e in entries:
-        assert "run_id" not in e, "the two logged misses are run_id-less (legacy)"
+        # run_id is OPTIONAL (nullable, D118): present on stamped misses, absent on legacy.
+        if "run_id" in e:
+            assert e["run_id"] is None or isinstance(e["run_id"], str), (
+                f"run_id must be str or None: {e['run_id']!r}"
+            )
         assert vm.validate_miss(e) == [], f"logged miss must still validate: {e}"
         assert vm.is_known_class(e["failure_class"]) is True, (
             f"logged failure_class must be a curated member: {e['failure_class']}"

@@ -1,5 +1,31 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-29, kata-loop-benchmark v1 BUILT [the D99 C-arc keystone] — D123; pytest 1536 · 46 skills/0 ·
+> Snyk med+ 0):** Queue item (e) step 2 DONE. The deterministic outcome+efficiency benchmark — the keystone that measures
+> C-on/C-off learning lift (D99 tumbler #4). Built **entirely via subagents**, **AUTONOMOUSLY at operator request**,
+> through the FULL recipe: SWE-bench review + deep web research → grill-RESOLVED RESEARCH.md → DESIGN/PLAN → freeze-gate
+> HOLD→SHIP (caught a dual-gate RCE seam: F2P/P2P run as test-IDs-as-DATA via mutation_check.run_named_test, not run_gate)
+> → 6-slice/5-wave build → kata-evaluate PART A PASS → **D98 PART B HOLD (1 BLOCKER + 2 MAJOR + 3 MINOR, all proven by
+> running the code) → fixed → re-confirm D98 SHIP**. **Design:** an EXPERIMENTAL CONTROL — immutable reference cloned per
+> run into `<base>-katabenchmark<N>` (rigidity = the control, not the metric); 2-axis scorecard (Axis Q floor-gated +
+> dual-gate F2P/P2P + mutation; Axis C tokens/$/wall-clock/etc, host-dependent fields nullable); floor-gated composite
+> (Pareto + scalar, efficiency only among floor-passers); content-pinned Benchmark Definition + repeat_from + delta mode;
+> hidden off-by-default `benchmark` module (not in bootstrap); two-tier report (never gates; n=1 directional). **Built:**
+> S1 usage_meter.py (net-new metering), S2 benchmark.py (scorer), S3 benchmark_def.py (definition+delta), S4
+> benchmark_control.py (immutable clone), S5 kata-benchmark-report skill, S6 config.md + kata-orchestrate wiring. **D98
+> caught the load-bearing fail-open:** the dual-gate runner was ORPHANED (never wired) → every floor-passing arm scored
+> Q=1.0, quality axis non-functional → wired + engine flags dual_gate_evaluated:false; + a run_dual_gate traversal hole
+> (external test-IDs → pytest exec) → _guard_node_id + exec-safety row; + phantom skill citations / fake honesty-pin →
+> real engine honesty+recommendations. 3 integrity MINORs fixed (hash collision, floor partial-RESULT, negative usage).
+> 3 D98 fail-opens logged to validation-misses.jsonl (d123-benchmark). **DEFERRED:** D1 concurrent bakeoff arms (Spec B
+> not executable; v1 = sequential/single-arm + k-repeat + arm-ranking scorer), D2 research-judge, D3 benchmark→improve T2
+> optimization proposals, D4 promotion, D5 the real control FIXTURE (operator-supplied; design fixture-agnostic). **Honest
+> scope: n=0 LIVE** (synthetic fixtures + unit tests; never run on a real control repo = D5). **Gates:** pytest 1536
+> (1324→1536), validate 46/0 (new skill; README regen), Snyk med+ 0. **COMMITTED-LOCAL; PUSH HELD** for the operator
+> commit/push gate (built autonomously while operator away). **NEXT (operator):** push gate → then provide the real
+> control fixture (D5, orientation §5) for the first LIVE benchmark run, and/or (a) Debug Mode live run, (e D3)
+> benchmark→optimization-proposal hook. Records: `specs/kata-loop-benchmark/{RESEARCH,DESIGN,PLAN}.md`, DECISIONS.md D123.
+
 > **CURRENT (2026-06-28, D117–D121 ARC ADVERSARIALLY VALIDATED [ad-val] + TARGETED FIXES — D122; pytest 1324 · 45
 > skills/0 · Snyk med+ 0):** The cross-cutting holistic red-team of the 5-build arc (between-build seams the per-build
 > D98s couldn't see), D111-pattern, fully subagent-driven: 5 parallel fresh-context opus reviewers → synthesis →

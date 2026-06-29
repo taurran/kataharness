@@ -55,7 +55,8 @@ Every place the harness spawns a subprocess. **A new sink — or a new external 
 | `kata_preflight` target-env probe | `target.baselineGate` (`kata.config`) | operator | `shlex.split` → `shell=False`. Operator-authored command. |
 | `kata_dispatch._subprocess_runner` | role/platform brief (`kata.config` roles) | operator | Built by the fixed `_COMMAND_BUILDERS` table; `shell=False`. |
 | `kata_install._real_probe_runner` (confirm-probe) | fixed per-platform `_PROBE_COMMANDS` argv (codex/kiro lambdas, `kata_install.py:278-281`) | internal | Fixed argv from `_PROBE_COMMANDS` lambda; `shell=False`; `stdin=subprocess.DEVNULL`. |
-| `mutation_check.run_test` | test path/name | internal | Fixed `["uv","run","pytest",…]` argv; `shell=False`. |
+| `mutation_check.run_named_test` | test path/name | internal | Fixed `["uv","run","pytest", f"{path}::{name}", "-q"]` argv; `shell=False`. Test node-ID is a flag-VALUE (DATA), never the program. |
+| `benchmark.run_dual_gate` → `mutation_check.run_named_test` (delegated) | control/`repeat_from`-supplied test-IDs (control criteria fields, external trust domain) | **external** | `benchmark._guard_node_id` — rejects leading `-` path segments (pytest-flag injection), `..` traversal (via `_guard_path` / CWE-23), and node-ID paths escaping the clone root (resolved-containment check) — applied before any ID reaches `run_named_test`; `shell=False` (inherited from delegated sink). |
 | `footprint` (`changed_files`/`diff_stat`) | git ref | internal | Fixed `["git",…,ref]` argv; `shell=False`. |
 | `mutation_run` default runner | mutation test command (frozen plan) | operator | `shell=True` — **registered exception**: operator/plan-authored test command, never external input. |
 | `run_result.run_gate` | gate command (`kata.config`/plan) | operator | `shell=True` — **registered exception**: operator-authored gate command, never external input. |

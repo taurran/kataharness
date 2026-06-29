@@ -17,6 +17,7 @@
 | `ingested` | `[{ name, slot, source }]` | External/custom skills folded in (D24c): each declares where it slots in the loop. |
 | `preflight` | `object` | Dependency pre-flight policy (D29) — see below. |
 | `bakeoff` | `{ n: int, lineage: string[] }` | N-variant best-of-N (Spec B). `n: 1` ⇒ no bake-off. `lineage` records parent configs for escalation-with-reuse. |
+| `benchmark` | `{ profile: "balanced"\|"cost-lean"\|"quality-strict", k_repeats: int, repeat_from?: string, def_out: string }` | Benchmark config (ignored unless `kata/module/benchmark` is in `modules`; absent ⇒ silent no-op, BC). `profile` sets the Axis Q × Axis C composite weight (default `"balanced"`). `k_repeats` = sequential repeats per arm (default `1` — n=1 directional); one arm-map entry per `<arm>·repeat<k>`. `repeat_from` = location (path / registry id) of a prior `benchmark.def.json` to mirror — activates delta mode. `def_out` = durable path for the new `benchmark.def.json` (outside `.kata/`; required when the module is active). |
 | `skillVersions` | `{ "<skill>": "<semver>" }` | The exact skill versions this branch was built with (reproducibility). |
 | `runShape` | `"individual" \| "batch" \| "version-up" \| "advanced" \| "debug"` | The preset chosen at bootstrap (GB1) — provenance; presets pre-fill `mode`+`modules`. |
 | `target` | `{ kind: "greenfield" \| "existing", path?: string, baselineGate?: string }` | `greenfield` (default) or `existing` (version-up): `path` = existing repo, `baselineGate` = the command that must be green before *and* after (the regression baseline). |
@@ -106,6 +107,7 @@ Optional modules are à-la-carte additions to the `modules` array in `kata.confi
 |---|---|---|---|
 | `kata/module/slop` | `kata-slop-check` | **off** (opt-in) | AI-slop / spiraling-session detection; dispatched in EVALUATE alongside kata-evaluate; a SLOP-DETECTED verdict is default-FAIL. |
 | `kata/module/debug` | `kata-comprehend` | **off** (opt-in) | Pre-change whole-repo comprehension for the `debug` run-shape; orchestrate's comprehension phase invokes `[[kata-comprehend]]` iff this module is present — absent ⇒ silent no-op (BC: no effect on version-up or greenfield runs). |
+| `kata/module/benchmark` | `kata-benchmark-report` | **off** (opt-in) | Two-axis scorecard + two-tier report for the benchmark path. Dispatched at benchmark closeout (after the frontier drains and gate artifacts are emitted). **Never gates** — reports only; `kata-evaluate` is the exclusive gate. `kata-orchestrate` wires: control clone (S4 `benchmark_control.clone_control`), usage write (S1 `usage_meter.write_usage`), scorer (S2 `benchmark.score_arms`/`emit_scorecard`), report dispatch (S5 `kata-benchmark-report`). Absent ⇒ silent no-op, zero overhead (BC). Load-guard: a `kata/module/benchmark` entry with no provider skill ⇒ `kata-orchestrate` load-guard STOP + escalate (fail-closed, D45). |
 
 ## Notes
 - Tier resolution: `kata-orchestrate` maps a bare family reference (`[[kata-grill]]`) → `tiers["kata-grill"]`

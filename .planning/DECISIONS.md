@@ -1566,3 +1566,55 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   partitioned into disjoint regions/artifacts; the only MAJOR was a Tier-1↔Tier-2 escalation-artifact seam, exactly the
   class a per-build review cannot see; and the D98 re-confirm found **zero** new fail-open in the fixes (no over-fix
   spiral). Records: `.planning/specs/` (no new spec — fixes to existing surfaces); the ad-val itself was the deliverable.
+
+<!-- kata-loop-benchmark v1 (the D99 C-arc keystone) BUILT. Spec: specs/kata-loop-benchmark/{RESEARCH,DESIGN,PLAN}.md. Fully subagent-driven; autonomous full-recipe run. -->
+- **D123 — kata-loop-benchmark v1 BUILT (the D99 C-arc keystone) — 2026-06-29.** Queue item (e) step 2. The deterministic
+  outcome+efficiency benchmark for the loop — the keystone that measures **C-on/C-off learning lift** (D99 tumbler #4).
+  Built **entirely via subagents** through the full recipe, executed **AUTONOMOUSLY at operator request**. Research
+  (SWE-bench code-level review + deep web research, wf_7f373992-209) → `RESEARCH.md` (operator grill RESOLVED:
+  control-anchored 2-axis metric, hidden module, replay-by-definition) → planning subagent `DESIGN`/`PLAN` → **freeze-gate
+  `kata-review` HOLD→SHIP** (caught a dual-gate RCE seam: F2P/P2P now run as **test-IDs-as-DATA** via
+  `mutation_check.run_named_test` `shell=False`, NOT `run_gate`) → 6-slice / 5-wave build → integration gate →
+  `kata-evaluate` **PART A PASS** → **D98 PART B HOLD** (1 BLOCKER + 2 MAJOR + 3 MINOR, all proven by running the code) →
+  fix (Wave-1 engine ∥ Wave-2 wiring) → **re-confirm D98 SHIP** (all 6 reproduced fixed; new-break sweep clean).
+  **Design (operator-shaped):** the benchmark is an **EXPERIMENTAL CONTROL** — an immutable reference (code repo or
+  research project) **cloned per run** into `<base>-katabenchmark<N>`; **rigidity = the control** (identical start+inputs
+  across arms), not the metric. **Two-axis scorecard:** Axis Q (floor-gated default-FAIL + SWE-bench-style dual-gate
+  F2P/P2P + mutation multiplier; **floor-fail ⇒ Q=0 absolute**) × Axis C (tokens/$/wall-clock/tool-calls/escalations/
+  thrash — host-dependent fields honestly **nullable**); **floor-gated composite** (Pareto point + scalar `Q/(1+λ·C_norm)`,
+  efficiency scored **ONLY among floor-passers** so a cheap-wrong answer never wins; profiles `balanced|cost-lean|
+  quality-strict`). **Content-pinned Benchmark Definition + `repeat_from` + delta mode** (same-definition / newer-provenance
+  = honest harness-delta = the C-on/C-off number). **Hidden off-by-default `benchmark` module** (NOT in bootstrap). Two-tier
+  report skill mirrors `kata-debrief`; **reports never gate**; n=1 directional honesty. **Built (6 PURE-engine slices, no new
+  DIRECT exec sink):** (S1) `tools/usage_meter.py` (Axis-C metering → `.kata/usage.json`; the CONFIRMED net-new dep — the
+  harness persisted no per-arm tokens/cost); (S2) `tools/benchmark.py` (the deterministic scorer; pure engine + a thin
+  `run_dual_gate` that runs test-IDs-as-data via the existing `mutation_check` sink); (S3) `tools/benchmark_def.py`
+  (Definition + `repeat_from` [no network] + `compute_delta`); (S4) `tools/benchmark_control.py` (immutable-ref clone +
+  `content_hash` + drift + prune; ref never written); (S5) `skills/evaluate/kata-benchmark-report` (two-tier report author,
+  drives `benchmark.py`); (S6) `protocol/config.md` (module row + config block) + `kata-orchestrate` wiring (module-gated,
+  BC, arm-map assembly, D1 deferral). **D98 caught REAL fail-opens PART A missed (the load-bearing value):** **(BLOCKER)**
+  the dual-gate runner was **orphaned** — never wired → `score_arms` ran with no gate data → **every floor-passing arm
+  scored Q=1.0; the quality axis was non-functional** (PART A tested `score_arms` in isolation with injected booleans, so it
+  passed) → wired `run_dual_gate` per arm + engine now flags `dual_gate_evaluated:false` / no-free-credit; **(MAJOR)**
+  `run_dual_gate` joined external-trust control test-IDs without a `..`-guard → pytest code-exec → added `_guard_node_id`
+  (reject `..`/escape/leading-`-`) + registered the external-field sink in `exec-safety.md`; **(MAJOR)** the report skill
+  cited phantom scorecard fields incl. a **fake "engine-pinned honesty block"** → made `honesty`+`recommendations` REAL
+  engine fields + skill cites only real fields + fixed reversed `emit_scorecard` arg order. **3 integrity MINORs fixed:**
+  `content_hash` path‖bytes collision (length-prefixed), floor partial-RESULT fail-open (require present `failed==0`),
+  `build_usage` negative-value gaming (reject negatives). All TDD + mutation-proven. **Validation-misses:** the 3
+  D98-caught fail-opens (BLOCKER+2 MAJOR) logged (`run_id` `d123-benchmark`). Also fixed a **stale test**
+  (`test_logged_misses_stay_valid_and_known` asserted `run_id` absent — broke when D122 logged run_id'd misses; now allows
+  the nullable `run_id`) + the residual freeze-gate **name-drift** (`exec-safety.md` `run_test`→`run_named_test`).
+  **DEFERRED (named, phased):** **D1** concurrent bakeoff arms (gated on Spec B execution — NOT built; v1 ships the
+  **sequential/single-arm + k-repeat** path + the arm-ranking scorer); **D2** research-mode judge; **D3** benchmark→
+  `kata-improve` T2 optimization-proposal sub-mode (config-defaults + routing-tables; propose-never-apply); **D4**
+  promotion (promote-best-arm-to-master, real-repo only); **D5** the real control FIXTURE (operator-supplied; design is
+  fixture-agnostic). Plus 1 residual NIT (floor accepts `failed:0.0`/`False` — internal-trust robustness edge). **Gates:**
+  pytest **1536** (1324→1536, +212 build+fix tests), validate **46/0** (new skill `kata-benchmark-report`; README regen),
+  Snyk **medium+ 0** on all new/changed Python. **Honest scope:** **n=0 LIVE** — proven on synthetic fixtures + unit tests,
+  never run end-to-end on a real control repo (D5). **COMMITTED-LOCAL; PUSH HELD** for operator return (the standing
+  commit/push gate — built autonomously while the operator was away). **Meta:** D98 again caught real fail-opens PART A
+  passed — the orphaned dual-gate is the starkest this session (a whole axis conformance-green yet non-functional); the
+  freeze-gate caught the dual-gate RCE seam *before* build; the autonomous full-recipe run held the
+  grill→freeze→freeze-gate→build→eval→D98→re-confirm discipline end to end. Records:
+  `specs/kata-loop-benchmark/{RESEARCH,DESIGN,PLAN}.md`, `DECISIONS.md` D123.
