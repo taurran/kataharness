@@ -376,3 +376,109 @@ research context) at **calibrated confidence** (high-confidence-wrong fails hard
 standing + cached (project-start / on-request / corpus-growth — **not** every loop). Pass → C unlocks; fail →
 graceful fallback to A. The measurable definition of "mature." _Avoid_: scoring raw confidence (must be
 calibration vs held-out truth); running it every loop.
+
+## Debug Mode P3 — closeout report · language profiles · onboarding (D117, 2026-06-27)
+**Debug closeout report** (`tools/debug_report.py` + `kata-debrief`):
+The fixed LD12 closeout shape for a **debug** run — per-module **confidence map** (assessed / low-confidence /
+skipped, every entry `heuristic:true`) · each **deviation→fix→pinning-test** (route-gated `applied` claim) ·
+a **proof rollup** (drift + characterization suite + mutation + **real Snyk before/after**). `tools/debug_report.py`
+is the PURE assembly engine; `kata-debrief` (skills/evaluate) authors/renders it in the two-tier `kata-report` shape.
+Reports **never gate**. Honesty is pinned at the engine (behavioral-only · heuristic-confidence · n=0-live).
+_Avoid_: trusting prose-supplied Snyk counts (the engine recomputes `effective_new`); claiming "structure preserved"
+(behavioral drift only).
+
+**`.kata/snyk/<finding_id>.json`**:
+The persisted Snyk **before/after** artifact a debug fix-loop writes (the D117 freeze-gate BLOCKER fix — the
+DESIGN cited a `RESULT.json` Snyk field that no surface emitted). `finding_id` derivation is identical to
+`drift_gate.defer_record`. _Avoid_: reading Snyk state from `RESULT.json` (it carries none).
+
+**Language profile** (`kata-lang-profile`, LD10):
+A **prose-only** in-mode specialist selected by **footprint file extensions** (the function-model has no `language`
+field), injected at dispatch (the IaC-specialist precedent), layered on `kata-tdd`/`kata-diagnose`. 6 language
+profiles + a config/context specialist. **No fork, no new Python.** _Avoid_: a per-language code path; a new agent.
+
+**Onboard / convert-to-loop** (`kata-onboard`, LD13):
+The dedicated first-run on-ramp (skills/coordinate) — fresh install → offer Debug Mode → on success offer
+**convert-to-loop** + vault setup (writes kata.config + `.planning/` scaffold + commits the characterization suite).
+Composes the BUILT install-portability surfaces. Tagged `kata/spine` (validator requires spine-or-module; least-wrong
+for an on-ramp — a recorded divergence from PLAN-p3). _Avoid_: treating convert-to-loop/`.planning`-scaffold as reuse
+(honestly labeled NEW).
+
+## Recurrence-hardening Tier 2 — recurrence→proposal (D118, 2026-06-27)
+**Actionable recurrence** (`tools/recurrence_detect.py`):
+A failure **CLASS** that has recurred across **3 distinct runs** (or **2** for a BLOCKER), clustered by
+`responsible_skill`×`failure_class`, **not yet `handled`**. Distinct-run counting uses `run_id` with a `ts`-fallback
+(blank/whitespace `run_id` coerces to `ts`). The detector READs the manifest; it never writes guards. _Avoid_:
+counting raw rows (must be distinct runs); re-tripping a `handled` cluster.
+
+**`failure_class` (soft enum)**:
+A curated 8-member classification on a validation-miss. **Soft:** published `_FAILURE_CLASS_VALUES` + a schema `enum`
+key + non-blocking `is_known_class`; **`validate_miss` is UNCHANGED for `failure_class`** so an off-vocab value is
+flagged by the detector, never DROPPED at write. _Avoid_: hard-rejecting off-vocab (would lose a real miss).
+
+**T2 proposal** (`PROPOSAL-<class>.md`, `kata-improve` v0.2.0):
+The human-gated hardening proposal the loop **auto-drafts** when a recurrence becomes actionable — cluster + evidence
+rows + proposed target surface + guard text/test sketch. Routes to **freeze-gate `kata-review` → human merge** (NOT
+`kata-promote`). Writable footprint pinned to EXACTLY `PROPOSAL-<class>.md` + the `proposed` sidecar marker. **T2
+INVARIANT (load-bearing):** T2 proposes — it never changes a gate verdict, edits a skill/protocol/tool, writes the
+`guarded` marker, or merges its own proposal. **T3** (auto-authoring the guard) = C-arc future. _Avoid_: treating the
+proposal as the guard; auto-merging it.
+
+**recurrence-handled sidecar** (`.planning/recurrence-handled.jsonl`):
+The append-only `proposed`/`guarded` marker log the detector consults to skip already-actioned clusters. _Avoid_:
+editing prior lines (append-only).
+
+## IaC Tier-2 — preview/approve HALF (execution DEFERRED) (D119, 2026-06-28)
+**IaC apply engine** (`tools/iac_apply.py`):
+The PURE preview/approve/plan-capture engine for live IaC — structured-argv builders (TF + CFN; `shell=False`, no
+`-target`/`-auto-approve`, dedicated CFN ARN grammar), `plan_hash`/`canonical_cfn_plan_bytes`, `approval_verdict`
+(plan-hash-bound; re-plan ⇒ `APPROVAL_INVALIDATED`), the typed self-binding `capability_gate_verdict`, `apply_state`,
+and the sibling `.kata/iac-apply.json`. **Contains NO subprocess on the path.** _Avoid_: extending `.kata/iac.json`
+(sibling artifact only); reading it as proof apply "works".
+
+**`run_apply` seam** (DEFERRED):
+The single function that would actually mutate cloud infra — **raises `NotImplementedError` always.** The
+**catastrophic invariant** (no reachable cloud mutation; a destroyed DB can't be `git revert`ed) holds **by
+construction**. Live execution is future-gated on operator-authenticated CLOUD creds (its own session). _Avoid_:
+claiming Tier-2 can apply; conflating cloud creds with the (now-installed) Codex CLI.
+
+**Capability gate** (`capability_gate_verdict`, typed self-binding):
+The stateful-destroy/replace gate (operator chose this over Tier-1's hard-block) — clears ONLY when all three hold:
+`grant.approvedPlanHash == computed_plan_hash` AND `authorizedStatefulAddresses ⊇` the stateful-destroy set AND a
+typed `confirmedToken`. Fail-closed on every miss. Contract: `protocol/iac-safety.md` **§9** (Tier-1 §1–§8 untouched).
+_Avoid_: a grant not bound to the plan hash (a stale grant must not pass).
+
+## Recall (BUILT) — read-contract + files-only adapter (D120, 2026-06-29)
+**Recall engine** (`tools/recall.py`):
+The BUILT read side of cross-run learning (the D99 *Librarian*, now concrete). `recall_payload_schema` validates
+**SHAPE only, NEVER a closed vocabulary** — `source`/`provenance.backend`/`provenance.produced_by` are **OPEN**
+adapter-supplied labels (the deliberate opposite of `validate_miss`'s hard enums) so an external Librarian implements
+the contract without re-contracting. `recall_from_paths` is the **files-only default adapter** (six sources);
+`select_records` is a **hard token-overlap>0 predicate** (recency only RANKS) — **NO embeddings/RAG**. **No exec
+sink, NO WRITE PATH** (returns a dict). _Avoid_: adding embeddings; making the contract files-only-shaped.
+
+**`engram.backend` (named)**:
+The long-reserved CONSULT seam (D9/D30/D99), now named by Recall's read-side. The gated CONSULT **decider**
+(`kata-reason`) stays OFF (deferred to its own grill); the write/distill half stays emit-only (β LEARN, D74).
+Contract doc: `protocol/recall.md` (registered in `validate_skills.py REQUIRED_PROTOCOL`). _Avoid_: treating Recall
+as the decider; re-opening the write half.
+
+**INTENT-never-written invariant** (Recall):
+`recall.py` has NO write path of any kind; `intent_scaffold.write_intent` (fed only by operator-confirmed `answers`)
+stays the SOLE INTENT writer. `kata-initiate` Phase-1b renders a read-only **RECALL BRIEF** (open recurrences first,
+then matched records w/ provenance/date/`stale`) that informs the mirror/grill and never enters `answers`.
+**Structural, not procedural.** _Avoid_: writing recall output into INTENT; hard-filtering on staleness (surface it).
+
+## Multi-model layer — now LIVE on Codex (D121, 2026-06-29)
+**Multi-model LIVE status**:
+The D108 read-only role routing (validator→codex, researcher→kiro) is **LIVE-proven on a real 2nd platform** for the
+first time (n=0→1). Operator installed **Codex CLI 0.142.3** (ChatGPT-authed); the first live run caught a real
+adapter defect (codex needs `--skip-git-repo-check` + closed stdin) → fixed in `kata_dispatch`/`kata_install`.
+`kata_install.py --platform codex --confirm` → `confirmed:true`. **Coder-routing + evaluator-thresholds remain
+DEFERRED** (D108 LD11/MM-1). _Avoid_: claiming the benchmark ran (the `kata-loop-benchmark` is still unbuilt — e step 2).
+
+**Confirm-probe** (N5 standing guard):
+The `kata_install` confirm probe that runs a real platform CLI and checks for the `SSENRAHATAK` token — the standing
+guard the multi-model BRIEF anticipated for **stale per-CLI flags between releases**. It did its job: it surfaced the
+codex 0.142.3 flag/stdin change. `_PROBE_COMMANDS ⊆ _COMMAND_BUILDERS` (L-MP2 invariant). _Avoid_: trusting a
+stub-only adapter as live-confirmed.
