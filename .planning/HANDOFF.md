@@ -1,154 +1,123 @@
 ---
-date: 2026-06-29 (the benchmark arc, D122–D124: ad-val of D117–D121 → kata-loop-benchmark v1 BUILT → DEEP ad-val + integration-completion + metric-hardening; the C-arc keystone now exists, n=0 LIVE)
-branch: master — private remote github.com/taurran/kataharness, tip b750211 (all D122–D124 PUSHED + in sync; the THIS-SESSION doc updates [CONTEXT/HANDOFF/orientation] may be UNCOMMITTED, to be committed next session)
-green: validator 46 skills / 0 errors · pytest 1597 passed · Snyk medium+ 0 on all new/changed Python (pre-existing `tools/kata_install.py` 6 LOW CWE-23 still below gate)
-tags: kata-loop-benchmark-v1 · deep-ad-val-clean · phantom-reuse-recurrence-proposed · n0-live · v0.1.0-alpha.3
+date: 2026-06-29 (session end — two features shipped + pushed: D125 kata-validate, D126 install/onboarding final polish; tip 8d84125 all in sync)
+branch: master — private remote github.com/taurran/kataharness, tip 8d84125 (D125 a749f5d + D126 8d84125 BOTH PUSHED + in sync; the THIS-SESSION doc updates [STATE/HANDOFF/orientation/REQUIREMENT] may be UNCOMMITTED, to be committed next session)
+green: validator 47 skills / 0 errors · pytest 1765 passed · Snyk medium+ 0 on all new/changed Python (pre-existing tools/kata_install.py 6 LOW CWE-23 still below gate)
+tags: kata-validate · install-onboarding-polish · install-update-polish-NEXT · no-functional-update-today · v0.1.0-alpha
 authored-for: kata-orient (sections map to the orientation tiers)
 ★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained, paste-able). It sets the read-in,
-the queue (next likely = the operator's **real control fixture → first LIVE benchmark run, D5/n=0→1**; plus the
-**PROPOSAL-phantom-reuse freeze-gate+merge**), the hard rules, and the recipe. STATE.md top box + DECISIONS.md D122–D124 +
-CONTEXT.md (now has the kata-loop-benchmark glossary section) are current.
+the NEXT requirement (`install-update-polish` — grill it; the headline = there is NO functional update path today), the
+open queue, the hard rules, and the recipe. STATE.md top box + DECISIONS.md D125–D126 + CONTEXT.md (now has the
+kata-validate + install/onboarding glossary sections) + `.planning/specs/install-update-polish/REQUIREMENT.md` are current.
 ---
 
-> **★ 2026-06-29 UPDATE (D122–D124, the benchmark arc — fully subagent-driven, the conductor cadence):**
-> **(D122)** Adversarial validation of the D117–D121 arc — 5 fresh-context reviewers over the BETWEEN-build seams → NO
-> BLOCKER/MAJOR-invariant-break; fixed the Tier-2 escalation-clobber + debug_report snyk negative-floor + 2 doc-truth
-> drifts + made the exec-safety registry-**completeness** structural. **(D123)** **kata-loop-benchmark v1 BUILT** (the
-> D99 C-arc keystone) — research (SWE-bench + deep web) → grill → freeze-gate SHIP → 6-slice build → eval → D98 (caught
-> the orphaned dual-gate) → fixed. An **experimental-control** design: immutable reference cloned per run, two-axis
-> (quality×token/cost) floor-gated scorecard, content-pinned Benchmark Definition + `repeat_from`/delta, a hidden
-> off-by-default `benchmark` module, a two-tier report that never gates. **(D124)** **DEEP ad-val (operator-requested,
-> pre-push)** — 5 reviewers found the engines unit-solid but the **integration/render/metric layers ship-blocking**:
-> every real control would have scored **Q=0** (dual-gate had no cwd/import-context); the **definition/criteria/delta were
-> built-but-UNWIRED**; the report **couldn't render**; the metric could be **gamed**; delta **mis-fired**. **All fixed
-> (TDD/mutation), re-confirmed CLEAN/SHIP.** **★ The recurrence system caught itself** — `kata-orchestrate ×
-> phantom-reuse` hit threshold → **T2 auto-drafted `PROPOSAL-phantom-reuse.md`** (a proposed standing end-to-end
-> wiring-completeness gate) → `proposed`, human-merge-gated. **Meta-lesson (load-bearing):** PART A + D98 (unit/injected)
-> **cannot see built-but-unwired / exec-context / metric-read gaps** — a realistic end-to-end dry-run is now the proposed
-> standing gate. **Gates:** pytest **1597** · **46/0** · Snyk **med+ 0**. **Honest scope: n=0 LIVE** (real control fixture
-> = D5, operator-supplied). All D122–D124 PUSHED (tip `b750211`). **NEXT:** (a) the operator's real fixture → first LIVE
-> run; (b) PROPOSAL-phantom-reuse freeze-gate+merge; (c) D3 benchmark→improve hook. Full detail:
-> `NEXT-SESSION-ORIENTATION.md`, `STATE.md`, `DECISIONS.md` D122–D124, `CONTEXT.md` (kata-loop-benchmark section).
+> **★ 2026-06-29 SESSION END (D125 + D126, two features shipped + pushed — fully subagent-driven, the conductor cadence):**
+> **(D125 `a749f5d`)** `kata-validate` — the always-available, programmatically-callable validation mini-loop
+> (`validate(payload, target, profile) -> Report{passed, findings[]}`): runs **inline on ANY data or another agent's
+> output**, requires **NO freeze/INTENT/`kata.config`**, 4 deterministic-first METHOD-by-reference legs (grounding /
+> review / slop / conditional score), its **OWN thin conductor** (`kata-orchestrate` byte-for-byte untouched),
+> payload-as-data isolation, report-only default + per-finding human-gated single-writer fix, tripwire +
+> cross-family-judge rails. PART B caught **2 fail-opens** the unit tests + PART A missed (severity case-sensitivity +
+> a half-measure band-map — the default-FAIL escape class). **(D126 `8d84125`)** install/onboarding final polish in 4
+> ADDITIVE+BC slices — the **5 `kata_install.py` engine functions byte-for-byte UNTOUCHED, none of the 18 working
+> patterns altered**: G1 bootstrap scripts (`install.sh`/`install.ps1`/`uninstall.{sh,ps1}`) wrapping the existing
+> engine; G2 headless flags + semantic exit codes + idempotent re-install=0 no-op; G3 optional `acceptanceCriteria`
+> (grill-for-goals) + `kata-initiate` step 2g + S2 gate value #9; G4 NEW pure `tools/kata_router.py` + `kata-onboard`
+> v0.2.0 opt-in human-gated router stanza. PART B caught **1 data-loss state edge** (`kata_router` orphan-marker upsert,
+> class `stateful-hole`). **Gates:** pytest **1765** · **47/0** · Snyk **med+ 0** · offline install/re-install/uninstall
+> smoke green on **BOTH Git Bash + PowerShell** · **live e2e seam proof WIRED** (the D124 lesson applied — and it
+> caught real defects). validation-misses now **14**. **All D125–D126 PUSHED (tip `8d84125`, in sync).** **NEXT (the
+> operator's chosen step):** **`install-update-polish`** — release-readiness for update / uninstall / settings; the
+> operator installs + runs a full test environment once it's done. Intake brief written (pre-grill):
+> `.planning/specs/install-update-polish/REQUIREMENT.md`. Full detail: `NEXT-SESSION-ORIENTATION.md`, `STATE.md` top
+> box, `DECISIONS.md` D125–D126, `CONTEXT.md` (kata-validate + install/onboarding sections).
 
-> **★ 2026-06-29 UPDATE (D117–D121, a 5-feature subagent-driven arc — each through the full recipe):**
-> **(D117)** Debug Mode **P3** — the FINAL phase; Debug Mode is now functionally complete at the skill/seam level
-> (`tools/debug_report.py` LD12 closeout engine + `kata-debrief` + `kata-closeout` Step 3b + `kata-lang-profile` LD10
-> [6 lang profiles] + `kata-onboard` LD13 + `kata-orchestrate` P3-seam/LD10-injection/Snyk-persist). D98 caught **2
-> MAJOR fail-opens** (Snyk regression-masking; un-route-gated `applied:true`) → fixed at the engine.
-> **(D118)** recurrence-hardening **T2** — recurrence→proposal, act-but-gated (`tools/recurrence_detect.py` +
-> soft `failure_class` enum + nullable `run_id` in `validation_misses.py` + `kata-improve` v0.2.0 auto-draft +
-> `kata-orchestrate` Final-gate detector hook + `protocol/validation-misses.md` T2). Invariant: T2 PROPOSES, never
-> writes guards/decides/merges.
-> **(D119)** IaC **Tier-2 preview/approve HALF** (execution DEFERRED) — `tools/iac_apply.py` (argv builders, plan-hash,
-> typed self-binding capability-gate, `run_apply`=NotImplementedError seam) + exec-safety deferred rows + `iac-safety.md`
-> §9 + both specialists v0.2.0. Catastrophic invariant (no reachable cloud mutation) holds **by construction**;
-> live-apply future-gated on operator CLOUD creds.
-> **(D120)** second-brain **Recall** (read-CONTRACT + files-only adapter) — `tools/recall.py` (shape-only/open-vocabulary
-> contract, files-only adapter, hard token-overlap selection, NO embeddings, NO write path) + `protocol/recall.md` +
-> `engram.backend` naming + `kata-initiate` v0.2.0 Phase-1b/mirror wiring. INTENT-never-written is STRUCTURAL. Decider
-> (`kata-reason`) + write/distill half DEFERRED.
-> **(D121)** Codex adapter **live-hardened + multi-model layer confirmed LIVE (n=0→1)** — operator installed Codex CLI
-> 0.142.3 (ChatGPT-authed); first live run of the D108 chain caught a real defect → fixed (`--skip-git-repo-check` +
-> `stdin=DEVNULL`). `kata_install.py --platform codex --confirm` → `confirmed:true`. Read-only validator/researcher
-> routing now LIVE-proven; coder-routing + evaluator-thresholds still DEFERRED.
-> **Gates:** pytest **1314** · **45 skills / 0** · Snyk **0** on all new/changed Python EXCEPT a flagged PRE-EXISTING
-> `kata_install.py` **6 LOW** CWE-23 (separate hardening candidate). All D117–D121 committed + pushed (tip `a11b9de`).
-> **NEXT (operator's explicit sequence): (1) adversarially validate the whole D117–D121 arc** (a fresh-context holistic
-> red-team over the 5 builds + the seams BETWEEN them — the per-build D98s happened, the between-build seams did not);
-> **(2) then commit/push** the doc updates + any ad-val fixes (each its own D-number); **(3) then start the
-> `kata-loop-benchmark`** (queue item (e) step 2 — needs a grill). **(4) Operator intends to PROVIDE A REPO to intake**
-> — confirm what they want done with it. Full detail: `.planning/NEXT-SESSION-ORIENTATION.md`, `STATE.md`,
-> `DECISIONS.md` D117–D121.
+# HANDOFF — KataHarness — 2026-06-29 (D125 kata-validate · D126 install/onboarding final polish — SHIPPED + PUSHED)
 
-> **★ 2026-06-27 UPDATE (D111–D116, a 6-feature subagent-driven day):** **(D111)** holistic red-team of the D108/D109/
-> D110 builds → fixed a real preflight RCE + IaC gate-skips + fail-opens. **(D112)** `protocol/exec-safety.md` standing
-> guard + `test_exec_safety.py` — the RCE class recurred 3× in kata-preflight; now structurally guarded. **(D113)**
-> Debug Mode **P1** — the `function_model` oracle (`tools/function_model.py`, AST-safe `_safe_eval`) + `kata-comprehend`
-> + the `kata/module/debug` run-shape. **(D114)** the **validation-miss manifest** (`tools/validation_misses.py` +
-> `protocol/validation-misses.md`) — universal, observe-only data layer for recurrence-hardening (operator's idea).
-> **(D115)** Debug Mode **P2a** — the deviation-discovery pipeline (`tools/deviation.py` + `kata-deviate`). **(D116)**
-> Debug Mode **P2b** — the PROTECT half (`tools/drift_gate.py` + `kata-characterize` + the fix-application loop). **The
-> core Debug Mode loop went COMPLETE (comprehend → find → characterize/drift-gate/apply-or-defer); D117 then added the
-> report/onboard P3 capstone.** Every phase built ENTIRELY via subagents and the standing D98 lens caught a real
-> fail-open on every one. Full detail: `.planning/NEXT-SESSION-ORIENTATION.md`, `STATE.md`, `DECISIONS.md` D111–D121.
-
-# HANDOFF — KataHarness — 2026-06-26 (install-portability BUILT · multi-model GRILLED+FROZEN+proof-slice · red-team hardened · banner — D104–D107)
-
-> **This session: a deep strategy + hardening arc on top of the (already-done) WS-1/2/3 + two-tier closeout.** Four
-> decisions, D98–D101: **(D98)** the **standing adversarial red-team** is now wired — `kata-review` runs after
-> `kata-evaluate` PASS, before merge, on every code/contract-bearing build; `kata-evaluate` gained rubric **item 9
-> "reproduce, don't trust"** (regenerate derived artifacts; execute claimed seams). This baked in L10c, a lesson
-> the project recorded a month ago but never wired, so it kept recurring (L12). **(D99)** the **loop-learning
-> strategy** is locked — ship **Controlled (A)** now, **Gated-learning (C)** is the destination, **Hermes-fluid (B)**
-> is a trap; the learning subsystem is re-modeled **Second brain + Recall + Reason** (`kata-reason`; "engram"
-> retired, rename pending), C gated by a **four-tumbler unlock** + the **C/B invariant**; `kata-loop-benchmark`
-> promoted to keystone. Spec `specs/second-brain-learning/BRIEF.md`. **(D101)** **recurrence hardening** captured —
-> when a failure-class recurs, the loop hardens the responsible agent (gated, never auto-mutate); the harness-facing
-> sibling of Reason. Spec `specs/recurrence-hardening/BRIEF.md`. **(D100)** the **fix-loop hardening** was **built
-> through the main orchestrated loop** — material (footprint-scoped) re-verification + a per-area (N=2) + run-level
-> (`2×tasks+2` `[TUNABLE]`) thrash budget → `kata-diagnose` fix-vs-plan verdict → human only on a plan-problem;
-> freeze-gate HOLD→resolved, re-confirm HOLD→resolved, build `kata-evaluate` PASS 7/7 + standing D98 red-team
-> SHIP-WITH-FIXES (fixed). **The adversarial lens caught the phantom-machinery / over-claimed-reuse class FOUR times
-> this session** → memory `verify-primitives-before-claiming-reuse`. Fresh/compacted session: read §1, confirm green
-> (§2).
+> **This session: two features, each driven ENTIRELY through subagents and the full recipe, both committed AND pushed.**
+> D125 `kata-validate` (the always-available validation mini-loop, a749f5d) and D126 install/onboarding final polish
+> (8d84125). The standing **D98 adversarial lens caught a real fail-open on BOTH** (D125: 2 severity/band fail-opens;
+> D126: 1 orphan-marker data-loss edge) — it stays load-bearing. The work was deliberately **ADDITIVE + backward-
+> compatible** throughout: D126 left the 5 `kata_install.py` engine functions byte-for-byte untouched and altered none
+> of the 18 working patterns. The session closes with a clean tree on origin (`8d84125`, in sync) and a written intake
+> brief for the operator's chosen next step — **`install-update-polish`**, where the headline finding is that **there is
+> NO functional update path today**. Fresh/compacted session: read §1, confirm green (§2), then §3 (the NEXT requirement).
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
 1. `AGENTS.md` (spine + conventions; the **"The Kata Loop"** entry) · 2. `docs/STANDARDS.md` §1 (frontmatter —
-   `allowed-tools` REQUIRED) · 3. `CONTEXT.md` (glossary — now extended with the D117–D121 surfaces:
-   debug-report/kata-debrief/kata-lang-profile/kata-onboard · recurrence T2 · iac_apply · Recall · multi-model-LIVE) ·
-4. `.planning/STATE.md` (top CURRENT box — live picture) · 5. **`.planning/DECISIONS.md` D117–D121** (this session) ·
-6. **`.planning/DECISIONS.md` D111–D116** (the prior session — exec-safety guard + Debug P1/P2a/P2b + validation-miss
-   manifest) · 7. `protocol/{reuse-claims,exec-safety,validation-misses,recall,iac-safety}.md` (the standing guards +
-   the new contracts) · 8. `.planning/LESSONS-LEARNED.md` (esp. **L12** — wire lessons into skills).
+   `allowed-tools` REQUIRED) · 3. `CONTEXT.md` (glossary — now extended with the D125 **kata-validate** section + the
+   D126 **install/onboarding** sections: bootstrap scripts · headless surface · `kata_router`/router stanza ·
+   acceptance-criteria step) · 4. `.planning/STATE.md` (top CURRENT box — live picture) · 5. **`.planning/DECISIONS.md`
+   D125 + D126** (this session) · 6. **`.planning/specs/install-update-polish/REQUIREMENT.md`** (the NEXT requirement —
+   the intake brief to grill) · 7. `protocol/{exec-safety,validation-misses,intent,reuse-claims}.md` (the standing
+   guards + the amended intent contract) · 8. `.planning/specs/install-onboarding/` + `.planning/specs/kata-validate/`
+   (this session's frozen specs) · 9. `.planning/LESSONS-LEARNED.md` (esp. **L12** — wire lessons into skills; and the
+   **D124** live-wiring lesson, §6 below).
 ⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated, harness-injected). PokeVault is LOCAL-ONLY, never git.
 
 ## 2. State *(orientation: VOLATILE)*
-- Branch `master`, tip `a11b9de` (**D121 Codex adapter live-hardened + multi-model LIVE** · D120 Recall · D119 IaC
-  Tier-2 preview-half · D118 recurrence T2 · D117 Debug Mode P3 — `git log --oneline -10` for the arc). **45 skills /
-  0 · pytest 1314 · Snyk med+ 0** (PRE-EXISTING `kata_install.py` 6 LOW CWE-23 flagged, below gate). **All D117–D121
-  committed + pushed, in sync.** The THIS-SESSION doc updates (CONTEXT/HANDOFF/orientation) are **uncommitted** — they
-  get committed next session after the ad-val pass (an operator decision: keep the docs out of the tree the ad-val
-  red-teams).
-- **Codex CLI is LIVE** at `C:\Users\taurr_nvs748q\AppData\Local\Programs\OpenAI\Codex\bin\codex.exe` (version 0.142.3,
-  ChatGPT-authed). It is **NOT on PATH** — prepend that bin dir for codex invocations; the harness probe needs it on PATH.
-- **The arc is older context now in CONTEXT.md + STATE.md.** Debug Mode is functionally complete at the skill/seam
-  level (P1→P3) but **still n=0 LIVE** (never run end-to-end on a real repo — queue item (a)). IaC Tier-2 live-apply
-  EXECUTION is DEFERRED + creds-gated. Recall's decider (`kata-reason`) + write/distill half are DEFERRED. Multi-model
-  coder-routing + evaluator-thresholds are DEFERRED.
-- **Historical (still true):** the Kata Loop is fully built + proven (Phases 0–3 + Phase-4 dogfood); loop-hardening is
-  DONE (G1–G7, G6 proven by the S3b live loop-back). WS-1/2/3 + two-tier closeout shipped. Debug Mode P1–P3, the
-  exec-safety standing guard, the validation-miss manifest, the IaC Tier-1 specialists, kata-preflight, the multi-model
-  layer, and install-portability all shipped across D102–D121.
+- Branch `master`, tip **`8d84125`** (D126 install/onboarding polish) on top of `a749f5d` (D125 kata-validate) —
+  `git log --oneline -6` for the arc. **47 skills / 0 · pytest 1765 · Snyk med+ 0** (PRE-EXISTING `kata_install.py`
+  6 LOW CWE-23 flagged, below gate). **Both D125 + D126 committed + pushed, in sync** (`git log origin/master..HEAD`
+  empty). The THIS-SESSION doc updates (STATE/HANDOFF/orientation/REQUIREMENT) are **uncommitted** — commit them after
+  the next session's first read-in (or fold into the install-update-polish freeze commit).
+- **Multi-model is LIVE:** Codex CLI 0.142.3 (ChatGPT-authed) at
+  `C:\Users\taurr_nvs748q\AppData\Local\Programs\OpenAI\Codex\bin\codex.exe` — NOT on PATH (prepend that bin dir for
+  codex invocations; the harness probe needs it on PATH).
+- **What's new this session is now the install/onboarding + validation surface.** `kata-validate` is wired + live-e2e
+  proven (n=1 exercised, not "proven"); the bootstrap scripts + headless flags + router stanza are smoke-tested on both
+  shells. **Honest scope still open:** the `curl|sh` network fetch is **exercised, not proven** (the checksum guards the
+  downloaded artifact, NOT the pipe); Codex/Kiro install is honest-scoped (verify in-host).
+- **Historical (still true):** the Kata Loop is fully built + proven; loop-hardening DONE; Debug Mode functionally
+  complete at the skill/seam level (P1→P3) but **still n=0 LIVE**; IaC Tier-2 live-apply EXECUTION DEFERRED + creds-gated;
+  Recall's decider (`kata-reason`) + write/distill half DEFERRED; multi-model coder-routing + evaluator-thresholds
+  DEFERRED; kata-loop-benchmark **n=0 LIVE** (needs the operator's real control fixture, D5).
 
-## 3. NEXT ACTION — resume here *(VOLATILE — the operator's EXPLICIT sequence)*
-**The next session's spine — do these IN ORDER:**
-1. **FIRST TASK: adversarially validate ("ad-val") the whole D117–D121 arc** — a fresh-context, cross-cutting holistic
-   red-team over the 5 builds + the seams BETWEEN them (mirror the D111 holistic-red-team pattern: parallel
-   fresh-context reviewers → synthesis → operator-gated fix scope). The per-build D98s already happened; the
-   **between-build seams are unreviewed as a set** — the shared `kata-orchestrate`, the shared `validation_misses.py`
-   (T2 extended it; debug consumed it), the exec-safety registry (IaC added deferred rows), and the multi-model
-   surfaces (live now). See the ORIENTATION §2 for how to run it.
-2. **THEN commit/push** — the uncommitted doc updates from THIS session (CONTEXT/HANDOFF/orientation) + any fixes the
-   ad-val produces (each its own D-number, supersede-never-rewrite, trailer
-   `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`). git may diverge from operator GitHub-web edits →
-   `git fetch` + rebase before push (happened this session with LICENSE/README web edits → `cae9fae`/`6a15bfb`).
-3. **THEN start the `kata-loop-benchmark`** (queue item (e), step 2 — the C-arc keystone, D99). It needs a fresh grill
-   (deferred this session). **Captured pre-decisions so the next session doesn't re-derive** (see ORIENTATION §4):
-   smallest-v1 = a DETERMINISTIC scorer over `.kata/{RESULT,footprint,mutation}.json` + the frozen `01-cli-wordfreq`
-   fixture + run-metadata → `.kata/benchmark/<run-id>.json` scorecard; reuse the now-LIVE multi-model machinery;
-   fairness = frozen task + fresh context per arm + constant Claude model (D13/D14). **Operator pre-decided:**
-   build-vs-adopt deferred (lean native); **include the LIVE multi-model arm in v1** (spend ~1 Codex run for a real
-   single-vs-multi n=1 number); scoring metric set + LLM-judge = GRILL next session.
-4. **Operator will PROVIDE A REPO to intake** — flag prominently. Likely the Debug Mode end-to-end live-run target
-   (queue item (a), still n=0 live) or a new build target. **Confirm what they want done with it before assuming.**
+## 3. NEXT ACTION — resume here: `install-update-polish` *(VOLATILE — the operator's chosen step)*
+The operator wants the install / update / uninstall / settings surface **polished for the ACTUAL release**; once it's
+done they install and run a **full test environment**. The intake brief is written (pre-grill, NOT frozen):
+**`.planning/specs/install-update-polish/REQUIREMENT.md`**. Grill it → freeze → build through the recipe. **3 items:**
 
-> **Process reminder (the discipline that paid off ~5× this session):** every contract/code-bearing build is
+1. **One-command UPDATE path — the headline gap. There is NO functional update today.** Evidence: `install.sh` clones the
+   harness to `~/.kata-home` (a real git repo) but on re-run **REUSES it without pulling** (`install.sh:51-56`) — so
+   re-running the curl one-liner does NOT update. Symlink installs (mac/linux, win+DevMode) can update via `git pull` in
+   the home; COPY installs (Windows default, no DevMode) need `git pull` THEN re-run the engine to re-copy
+   (`docs/SETUP.md:78`). No `--update` flag, no version check, no update notification. **REQUIREMENT:** a single-command
+   update (a `--update` flag on `kata_install.py` and/or `update.sh`/`update.ps1`) that (a) pulls/fetches the home to the
+   target ref, (b) re-links/re-copies skills in one step, (c) works on **both** link modes, (d) is idempotent + honest
+   about copy-vs-symlink, (e) optionally an install-level version stamp + "newer version available" check (note: skills
+   carry per-skill semver in frontmatter but there is **NO install-level version surface today**). Keep ADDITIVE; do not
+   edit the 5 engine functions unless freeze-gated.
+2. **UNINSTALL polish — mostly built, make it release-clean.** Today `kata_install --uninstall --target-dir` +
+   `uninstall.{sh,ps1}` work (remove skills + `.kata-settings.json` + the router stanza; scoped to the supplied target;
+   idempotent; non-kata guard; verified live). Polish: (a) **PART B Finding 5** — orphaned host links survive if a skill
+   was renamed/removed between install and uninstall (uninstall only removes basenames currently in the home); consider
+   sweeping all kata-managed slots. (b) router-stanza removal is scoped to the SUPPLIED target only (no registry of where
+   stanzas were written across projects) — document clearly or add light tracking. (c) consider a `--list` / dry-run
+   preview. (d) confirm the uninstall messaging is consumption-grade.
+3. **`write_settings` MERGE-fix — the one item that EDITS a working pattern; needs its OWN freeze-gate.**
+   `kata_settings.write_settings` OVERWRITES `~/.kata-settings.json` wholesale, so an install with `--parent-dir` drops
+   any `confirmedPlatforms` (the D121 multi-model confirm state). **REQUIREMENT:** make `write_settings` **MERGE** —
+   preserve keys it does not own (esp. `confirmedPlatforms`) so install/reconfigure never clobbers multi-model confirm
+   state. **CAUTION:** `kata_settings.py` is one of the 18 NOT-TOUCHED working patterns — this is the single item that
+   edits a working pattern, so it needs a **freeze-gate + strict BC** (every existing `write_settings` test must still
+   pass; the change is preserve-more / lose-less). Recoverable today via re-`--confirm`, but a release should not silently
+   lose state.
+
+**Two honest non-blocking notes to carry into the grill:** (i) pyyaml lives only under `tools/` (`build_intent`/
+`write_intent` must run from `tools/`; the install path is stdlib-only, unaffected); (ii) Windows copy-mode fallback means
+skill updates need a reinstall (item 1 addresses the UX). And the known env-sensitive test
+`test_benchmark.py::TestRunDualGateCwd::test_importing_fixture_gives_q_one` is **green canonically (1765)** but flaky in
+some sandbox venvs — **NOT a regression** (D124 caveat).
+
+> **Process reminder (the discipline that paid off on BOTH builds this session):** every contract/code-bearing build is
 > grill/plain → freeze → **freeze-gate adversarial review (HOLD/SHIP)** → orchestrated build (subagents, disjoint
-> ownership, TDD, mutation-proof) → integration gate (pytest + validate 45/0 + Snyk + central README --write) →
+> ownership, TDD, mutation-proof) → integration gate (pytest + validate 47/0 + Snyk + central README `--write`) →
 > fresh-context **kata-evaluate (PART A, default-FAIL)** → standing **D98 kata-review (PART B, adversarial)** →
-> re-confirm after fixes → operator merge gate → checkpoint. **D98 is load-bearing** (caught real fail-opens on most
-> builds this session). Guards: exec-safety, verify-before-reuse/cite-by-anchor, the validation-miss manifest, and the
-> now-LIVE multi-model confirm-probe (the standing guard for stale per-CLI flags).
+> re-confirm after fixes → operator merge gate → checkpoint. **D98 is load-bearing** (caught a real fail-open on both
+> features). **★ For any build touching `kata-orchestrate` wiring OR claiming an end-to-end flow, ADD a realistic live
+> wiring/e2e proof** (the D124 lesson — this session's wiring proof + live e2e seam proof are the template; they caught
+> real defects). Guards: exec-safety (+ completeness test), verify-before-reuse/cite-by-anchor, the validation-miss
+> manifest + T2, multi-model confirm-probe (LIVE).
 
 ## 4. The orchestration recipe (each cycle's *inner* build follows this — never inline) *(task-type hint)*
 The **vetted, never-inline** loop, driven ENTIRELY via subagents (operator directive — spare main context):
@@ -160,28 +129,31 @@ The **vetted, never-inline** loop, driven ENTIRELY via subagents (operator direc
    self-stamp `CLAIM`/`DONE` to the shared `.kata/board.md`.
 4. **Integrate** (octopus merge; disjoint = no conflict) → `cd tools && uv sync`.
 5. **Integration gate:** `validate_skills.py --write` (run BEFORE pytest when a skill/version changed — README-sync;
-   README is conductor-owned, F2) → `uv run pytest -q` (expect 1314) → `mcp__Snyk__snyk_code_scan` on new Python →
+   README is conductor-owned) → `uv run pytest -q` (expect 1765) → `mcp__Snyk__snyk_code_scan` on new Python →
    emit `.kata/RESULT.json` via `gate_emit` (+ `mutation.json` for code-bearing).
 6. **Fresh-context `kata-evaluate` (PART A)** — SEPARATE no-write Agent subagent, 9-rubric, default-FAIL, no self-cert.
 7. **Standing `kata-review` (PART B, D98)** — SEPARATE fresh-context no-write subagent (opus) that tries to BREAK it
    (fail-opens, doc-only seams, overclaim) — not re-grade conformance. HOLD → targeted fixes (via SendMessage to a
    worker, then re-confirm via SendMessage to the same evaluator). **Never skip D98.**
-8. **Operator merge gate** (present options; wait) → `git commit -F <file>` + push + checkpoint STATE/DECISIONS (new
+8. **★ Live wiring / e2e proof** for any build touching `kata-orchestrate` wiring or claiming an end-to-end flow —
+   a realistic seam exercise (n=1) that PART A + D98 + unit tests cannot see (the D124 lesson).
+9. **Operator merge gate** (present options; wait) → `git commit -F <file>` + push + checkpoint STATE/DECISIONS (new
    D-number) + push.
-Model routing: judgment/eval/plan/grill = **Opus** (inherit; omit model on Agent calls); workers = **Sonnet**.
-Supersede-never-rewrite.
+Model routing: judgment/eval/plan/grill/D98 = **Opus**; build/encode/workers = **Sonnet**. Supersede-never-rewrite.
 
-## 5. Open decisions / queue *(orientation: human-required + deferred)*
-- **OPEN QUEUE (operator picks after ad-val + benchmark):** (a) Debug Mode end-to-end live run on a fixture repo
-  (n=0→1) — may be the repo the operator provides; (e) step 2 = the `kata-loop-benchmark` keystone (grill + build) —
-  the immediate post-ad-val item; IaC Tier-2 LIVE-APPLY execution (future-gated on operator CLOUD creds);
-  recurrence-hardening T3 (auto-author guards, C-arc-gated); the `kata-reason` decider + second-brain write/distill
-  half (own grills).
-- **Deferred MINORs:** `kata_install.py` 6 LOW CWE-23 (separate hardening pass); D119 nice-to-haves (`approval_verdict`
-  PENDING_PLAN-vs-BLOCKED; redundant CFN argv flag; N1 stateful-set completeness in `iac_detect`); D120 nice-to-haves
-  (recall.md min-token-length doc note; `query.kind` schema `open:True` comment).
-- **Standing platform facts:** Codex LIVE (ChatGPT-authed, not on PATH); Kiro/Quick still stubs/seams; cloud creds for
-  IaC Tier-2 are a SEPARATE gate from the now-installed Codex.
+## 5. Open decisions / queue *(orientation: human-required + deferred — lower priority than install-update-polish)*
+- **install-update-polish is the immediate next step** (per the operator — they install + run a full test environment
+  once it's done). Everything below is LOWER priority.
+- **PROPOSAL-phantom-reuse** (`.planning/PROPOSAL-phantom-reuse.md`) → freeze-gate `kata-review` → human merge — the
+  standing **wiring-completeness gate** (the built-but-unwired class can't recur). Still `proposed`, awaiting human merge.
+- **kata-loop-benchmark** DEFERRED items D1–D5: **D5** = the operator's real control fixture = the first LIVE benchmark
+  run (n=0→1); **D3** = benchmark→`kata-improve` optimization-proposal hook; D1 concurrent bakeoff arms (gated on Spec B),
+  D2 research-mode judge, D4 promote-best-arm.
+- **Debug Mode end-to-end live run** (n=0→1); **IaC Tier-2 LIVE-APPLY execution** (future-gated on operator cloud creds);
+  **`kata-reason` decider** + second-brain write/distill half (own grills); recurrence-hardening **T3** (auto-author
+  guards, C-arc-gated).
+- **Deferred MINORs:** `kata_install.py` 6 LOW CWE-23 (separate hardening pass); the D125 nice-to-haves (logged with the
+  2 misses); D126 honest-scope notes (curl|sh exercised-not-proven; pyyaml-under-tools; Windows copy-mode reinstall).
 
 ## 6. Redaction
 No secrets / keys / PII in any artifact this session. Repo is PRIVATE. Nothing to redact.

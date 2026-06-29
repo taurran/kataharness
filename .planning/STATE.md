@@ -1,5 +1,40 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-29, SESSION END — BOTH FEATURES SHIPPED + PUSHED · tip `8d84125` in sync; pytest 1765 ·
+> 47 skills/0 · Snyk med+ 0):** Two features built, gated, committed AND pushed this session — `master` tip is
+> **`8d84125`, all in sync** (`git log origin/master..HEAD` empty). **(1) D125 (`a749f5d`) — `kata-validate`**, the
+> always-available validation mini-loop (`skills/evaluate/kata-validate`): a programmatically-callable
+> `validate(payload, target, profile) -> Report{passed, findings[]}` that runs **inline on ANY data or another
+> agent's output** with **NO freeze/INTENT/`kata.config`** required; 4 deterministic-first METHOD-by-reference legs
+> (grounding / review / slop / conditional score); its **OWN thin conductor** (`kata-loop`/`kata-onboard` precedent —
+> `kata-orchestrate` byte-for-byte untouched); bounded ≤2 passes; payload-as-data isolation; report-only default with
+> per-finding human-gated fix via a single writer (validators stay no-write); tripwire + cross-family-judge rails; NEW
+> pure `tools/validation_report.py` + `render_validation_banner`. **(2) D126 (`8d84125`) — install/onboarding final
+> polish** in 4 ADDITIVE+BC slices, the **5 `kata_install.py` engine functions byte-for-byte UNTOUCHED, none of the 18
+> working patterns altered**: **G1** NEW `install.sh` (curl|sh) + `install.ps1` (irm|iex) + `uninstall.{sh,ps1}`
+> wrapping the EXISTING `kata_install.py` engine (idempotent, no-cruft, `KATA_SRC` offline override, ships an
+> uninstaller, honest curl|sh caveat); **G2** ADDITIVE headless flags (`--yes`/`--non-interactive`/`--answers-json`/
+> `--json`/`--uninstall`/`--target-dir`) + non-TTY auto-skip + semantic exit codes (0 ok/1 not-confirmed/2 usage/
+> 3 not-found/4 permission/5 conflict) + idempotent re-install=0 no-op + machine JSON→stdout/human→stderr
+> (autonomous-loop DEFERRED); **G3** optional `acceptanceCriteria` in `intent_scaffold` (byte-identical BC absent) +
+> `protocol/intent.md` + `kata-initiate` step 2g + S2 gate value #9 (confirmed-absent PASSES, no deadlock; "blanket
+> looks-good FAILS" preserved); **G4** NEW pure `tools/kata_router.py` (`..`-guarded idempotent marked-stanza
+> upsert + orphan-marker data-loss guard) + `kata-onboard` v0.2.0 opt-in human-gated router-stanza into the target's
+> AGENTS.md; uninstaller removes exactly that block. **Gates this session:** pytest **1765 passed**, `validate_skills`
+> **47/0**, Snyk **medium+ 0**, offline install/re-install/uninstall smoke green on **BOTH Git Bash and PowerShell**,
+> **live e2e seam proof WIRED** (the D124 lesson applied). **validation-misses now 14** (D125 = `kata-validate`
+> severity fail-open + class fail-open; D126 = `kata_router` orphan-marker data-loss, class `stateful-hole`). Each
+> feature ran the FULL recipe: grill→freeze→freeze-gate `kata-review`(HOLD→fix→SHIP)→disjoint-slice build
+> (TDD/mutation-proof)→integration gate→live wiring/e2e proof→PART A `kata-evaluate`→PART B D98 `kata-review`→
+> (fixes)→operator merge gate→checkpoint. **NEXT = `install-update-polish`** — release-readiness for update / uninstall
+> / settings, the operator's chosen next step (they install + run a full test environment once it's done). **3 items:**
+> (1) the **headline gap — there is NO functional update path today** (re-running curl|sh does NOT pull/update); a
+> one-command `--update`; (2) **uninstall polish** (orphaned-link sweep, stanza-registry, dry-run preview); (3)
+> **`write_settings` MERGE-fix** (the one item that edits a working pattern — needs its OWN freeze-gate + strict BC).
+> The intake brief is written: **`.planning/specs/install-update-polish/REQUIREMENT.md`** (pre-grill, not yet frozen).
+> Records: `.planning/specs/{kata-validate,install-onboarding,install-update-polish}/`, `DECISIONS.md` D125 + D126,
+> `validation-misses.jsonl` (`d125-kata-validate`, `d126-install-onboarding`).
+
 > **CURRENT (2026-06-29, FEATURE 2 BUILT — install/onboarding final polish — D126; pytest 1764 · 47 skills/0 ·
 > Snyk med+ 0):** The install/onboarding surface is finished off in four gated slices, **ADDITIVE + backward-compatible
 > throughout** — the **5 `tools/kata_install.py` install-engine functions are byte-for-byte UNTOUCHED**; **no working
