@@ -1,5 +1,19 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-29, D127 SHIPPED — write_settings MERGE-fix · pytest 1772 · 47 skills/0 · Snyk 0):**
+> `write_settings` now **merges** instead of clobbering: validate (unchanged) → strict fail-closed
+> `_load_existing` (corrupt JSON AND valid-but-non-dict both fail closed; does NOT reuse lenient
+> `read_settings`) → overlay owned keys (`settingsVersion`/`parentDir`/`vaultDir`) → preserve prior `vaultDir`
+> when not re-supplied → preserve `confirmedPlatforms` + ALL unknown keys verbatim (denylist-of-owned /
+> preserve-everything-else — future keys safe by default). Kills the **D121 confirm-state clobber on
+> `--parent-dir` reconfigure** and the sibling `vaultDir`-drop. Strict BC: all 13 prior `kata_settings` tests
+> unchanged; 7 new non-tautological tests; live reconfigure proof. Process: own freeze-gate **(SHIP)** +
+> post-build adversarial review **(PASS)**. **install-update-polish** IN PROGRESS — **item 3 (`write_settings`)
+> DONE**; the full update-system **DESIGN is frozen + freeze-gate SHIP** with **4 binding build-condition
+> fold-ins**; **Phase A** (version surface + `--update` + factory-reset + uninstall sweep + bootstraps) is next.
+> Files: `tools/kata_settings.py`, `tools/tests/test_kata_settings.py`. Spec:
+> `.planning/specs/install-update-polish/FREEZE-write-settings-merge.md`. Records: `DECISIONS.md` D127.
+
 > **CURRENT (2026-06-29, SESSION END — BOTH FEATURES SHIPPED + PUSHED · tip `8d84125` in sync; pytest 1765 ·
 > 47 skills/0 · Snyk med+ 0):** Two features built, gated, committed AND pushed this session — `master` tip is
 > **`8d84125`, all in sync** (`git log origin/master..HEAD` empty). **(1) D125 (`a749f5d`) — `kata-validate`**, the

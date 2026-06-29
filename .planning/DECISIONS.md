@@ -1756,3 +1756,16 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `intent_scaffold`/pyyaml is only available under `tools/` — `build_intent`/`write_intent` must run from
   `tools/`; the install path is stdlib-only and unaffected. (c) Windows-without-Developer-Mode uses copy-mode
   fallback (documented), so harness skill updates need reinstall to propagate.
+- **D127 — write_settings MERGE-fix (install-update-polish item 3, the single working-pattern edit) — 2026-06-29.**
+  `write_settings` now **MERGES** instead of clobbering: validate (unchanged, first) → strict fail-closed
+  load-existing (new private `_load_existing` — fails closed on corrupt JSON AND valid-but-non-dict JSON; does
+  NOT reuse lenient `read_settings`) → overlay owned keys (`settingsVersion`/`parentDir`/`vaultDir`) → preserve
+  prior `vaultDir` when not re-supplied → preserve `confirmedPlatforms` + ALL unknown keys verbatim.
+  **Denylist-of-owned / preserve-everything-else** (future keys safe by default). Kills the **D121 confirm-state
+  clobber on `--parent-dir` reconfigure** and the sibling `vaultDir`-drop. **Strict BC:** all 13 prior
+  `kata_settings` tests unchanged; **7 new non-tautological tests**; live reconfigure proof
+  (confirmedPlatforms + vaultDir preserved, parentDir updated). **Process:** own freeze-gate **(SHIP)** +
+  post-build adversarial review **(PASS)**. **Gates:** pytest **1772**, validate **47/0**, Snyk **0**. Files:
+  `tools/kata_settings.py`, `tools/tests/test_kata_settings.py`. Spec:
+  `.planning/specs/install-update-polish/FREEZE-write-settings-merge.md`. Supersedes nothing; precedes the
+  install-update-polish update-system build (Phase A next).

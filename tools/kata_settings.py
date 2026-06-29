@@ -111,6 +111,33 @@ def confirmed_platforms(home: str | Path | None = None) -> list[str]:
     return list(read_settings(home).get("confirmedPlatforms", []))
 
 
+def _load_existing(path: Path) -> dict:
+    """Strict raw-load of the settings file for merge use.
+
+    Returns ``{}`` when the file is absent. Raises ``ValueError`` when the file
+    is present but unparseable JSON **or** contains valid JSON that is not a dict
+    (e.g. ``[]``, ``null``, ``42``). OSError is NOT caught — the CLI maps it to
+    exit-4 and the operator should not silently lose state they cannot read.
+
+    Deliberately does NOT reuse ``read_settings``: that function leniently returns
+    ``{}`` on corruption (BC1 degrade for the *run* path). A *writer* about to
+    overwrite must not destroy data it cannot understand — fail-closed is required.
+    """
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        raise ValueError(
+            f"kata_settings: refusing to overwrite unparseable settings file: {path}"
+        )
+    if not isinstance(data, dict):
+        raise ValueError(
+            f"kata_settings: refusing to overwrite unparseable settings file: {path}"
+        )
+    return data
+
+
 def write_settings(
     parent_dir: str | Path,
     vault_dir: str | Path | None = None,
@@ -121,12 +148,32 @@ def write_settings(
     Validates at the persistence boundary (DESIGN §4): ``parentDir`` must be an
     existing directory; ``vaultDir``, when given, likewise. (``build_settings``
     stays pure for previews; existence checks need IO so they live here.)
+
+    Merge semantics (load-existing → overlay owned keys → write):
+    - File absent: behaves exactly like today (``existing == {}``).
+    - File present but corrupt / non-dict: **fail-closed** (``ValueError``; file
+      untouched). Do NOT silently clobber.
+    - Owned keys (``settingsVersion``, ``parentDir``): always replaced.
+    - ``vaultDir``: replaced when ``vault_dir`` is supplied; otherwise the prior
+      on-disk value is preserved (falls back to ``None`` only when no prior exists).
+    - Every other key (e.g. ``confirmedPlatforms``, future keys): preserved verbatim.
     """
+    # 1. Validate FIRST — same ValueErrors, same order, before any file read.
     if not Path(parent_dir).is_dir():
         raise ValueError(f"kata_settings: parentDir is not an existing directory: {parent_dir!r}")
     if vault_dir not in (None, "") and not Path(vault_dir).is_dir():
         raise ValueError(f"kata_settings: vaultDir is not an existing directory: {vault_dir!r}")
-    data = build_settings(parent_dir, vault_dir)
+    # 2. Strict-load existing (fail-closed on corrupt / non-dict).
     p = settings_path(home)
-    p.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    existing = _load_existing(p)
+    # 3. Overlay owned keys on top of existing (owned wins on collision).
+    owned = build_settings(parent_dir, vault_dir)
+    merged = {**existing, **owned}
+    # 4. Vault-preserve rule: when vault_dir was NOT supplied, restore the prior
+    #    on-disk vaultDir so a --parent-dir-only reconfigure does not drop it.
+    #    Falls back to None only when no prior exists — byte-identical to today.
+    if vault_dir in (None, ""):
+        merged["vaultDir"] = existing.get("vaultDir")
+    # 5. Write (same serialization as today: indent=2 + trailing newline).
+    p.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
     return p
