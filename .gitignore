@@ -10,3 +10,7 @@ tools/.venv/
 /INTENT.md
 .claude/
 .kata-settings.json
+# User-owned install-state files — git-ignored so home git ops never touch them (DESIGN Invariant 7)
+.kata-version
+.kata-manifest.json
+.kata-overlay/

@@ -1769,3 +1769,23 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `tools/kata_settings.py`, `tools/tests/test_kata_settings.py`. Spec:
   `.planning/specs/install-update-polish/FREEZE-write-settings-merge.md`. Supersedes nothing; precedes the
   install-update-polish update-system build (Phase A next).
+- **D128 — install-update-polish Phase A (core update path) + hybrid update-system design ADOPTED — 2026-06-29.**
+  Upstream base is immutable from the user's side → update is a clean overwrite; parametric local change →
+  overlay store (Phase B); deep divergence → supersedes/fork (Phase C); factory-reset = drop overlay. Phase A
+  is ALL ADDITIVE: the 5 frozen `kata_install.py` engine fns (`_flat_link_skills`, `_link_or_copy`, `install`,
+  `copy_project`, `confirm_platform`) are **BYTE-UNCHANGED**; the never-git guarantee holds (all git in
+  `update.{sh,ps1}`; engine fed only `--git-sha`). **A1** new pure `tools/kata_version.py` (`.kata-version`
+  stamp + `.kata-manifest.json` content-hash + `is_pristine` + `suite_semver`). **A2** engine wiring
+  (`--update`, `--factory-reset`/`--reinstall`, `--hard`, `--dry-run`, `--git-sha`; M1 plain-install stamp
+  `gitSha:"unknown"` when absent; `_sweep_managed_slots` fail-closed orphan sweep; `_materialize_pass` no-op
+  stub for B). **A3** `update.sh` + `update.ps1` bootstraps (git fetch/ref/reset; M2 dirty-tree guard
+  abort-by-default + `--discard-local`; `--check` no-mutation; minor-c non-git-clone detection; `--hard`
+  confirm-gated). **A4** `.gitignore` (`.kata-version`/`.kata-manifest.json`/`.kata-overlay/`) + `SETUP.md` §4
+  + README. **Process:** design freeze-gate **SHIP** (M1–M4 folded) + per-task TDD + **LIVE PROOF 11/11**
+  (real install→update→factory-reset→uninstall on scratch home+host; bootstrap→engine→`kata_version` chain
+  WIRED, the D124 lesson) + post-build adversarial review **SHIP**. **Gates:** pytest **1844** (+2
+  Windows-DevMode skips), validate **47/0**, Snyk medium+ **0** (`kata_install` 9 LOW CWE-23 operator-path
+  class, below gate → standing hardening item). **Carried to Phase B:** wire a real `--ref` (stamp ref-field
+  honesty — currently hardcoded `"master"`); split `_materialize_pass` out of `install`'s `except` before
+  fleshing it. Specs: `.planning/specs/install-update-polish/{SPIKE-learning-overlay,DESIGN,PLAN}.md`. Phase B
+  (overlay) + C (fork) next.

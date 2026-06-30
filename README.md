@@ -59,6 +59,22 @@ shipped here: a stable URL, a short and readable script, and a `KATA_REF` enviro
 version-pinning to any specific tag or commit. For a stronger guarantee, use the git-clone or
 "Use this template" paths above and audit the source directly.
 
+**Update** (once installed):
+
+```sh
+# POSIX
+sh ~/.kata-home/update.sh
+```
+
+```powershell
+# PowerShell
+& "$env:USERPROFILE\.kata-home\update.ps1"
+```
+
+Fast-forwards the home, re-links or re-copies skills, and stamps the version. Add `--check` to
+report available updates without applying them. See [`docs/SETUP.md §4`](./docs/SETUP.md) for
+`--discard-local`, `--factory-reset [--hard]`, copy-mode re-copy behavior, and non-git-clone homes.
+
 **Uninstall:**
 
 ```sh

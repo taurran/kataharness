@@ -121,9 +121,106 @@ copy; it never runs git against your vault.)
 
 ## 4. Updating / uninstalling
 
-- **Update:** pull the central repo (`git pull` inside `~/.kata-home`). With symlinks, skills update
-  automatically. With the copy fallback, re-run `install.sh` / `install.ps1` (or
-  `tools/kata_install.py --platform <p>` directly) to refresh the copied skills.
+### Update (one command)
+
+Run the update script from your installed home:
+
+```sh
+# POSIX shell — macOS / Linux / Git Bash on Windows
+sh ~/.kata-home/update.sh
+```
+
+```powershell
+# PowerShell — Windows
+& "$env:USERPROFILE\.kata-home\update.ps1"
+```
+
+Or fetch and run the latest bootstrap remotely (ensures you also pick up any bootstrap fixes):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/update.sh | sh
+```
+
+```powershell
+irm https://raw.githubusercontent.com/taurran/kataharness/master/update.ps1 | iex
+```
+
+Both scripts fast-forward the home to the latest ref (`master` by default; set `KATA_REF` to pin a
+tag/branch/SHA), then invoke the engine (`kata_install.py --update --git-sha <sha>`) to re-link or
+re-copy skills and write a version stamp. The engine's exit code propagates.
+
+**Check for an update without applying it:**
+
+```sh
+sh ~/.kata-home/update.sh --check
+```
+
+Reports "update available" or "already current" and exits without mutating anything.
+
+**Dirty-base guard:** If you have hand-edited any tracked base file inside the home, the script
+detects the dirty tree (`git status --porcelain`) and **aborts** — printing the dirty paths — rather
+than silently overwriting your edits. To acknowledge and proceed (discarding your local base edits):
+
+```sh
+sh ~/.kata-home/update.sh --discard-local
+```
+
+**Symlink vs copy mode on update:**
+- **Symlink mode** (POSIX, or Windows with Developer Mode): non-overlaid skills already track the
+  home; the git fast-forward alone refreshes them. `--update` additionally re-stamps the version
+  file.
+- **Copy mode** (Windows without Developer Mode): copied skill files are stale between update runs.
+  `--update` re-copies **every** skill — files do **not** auto-refresh without an explicit
+  `update.sh` run. Enable Developer Mode (Settings → Privacy & security → For developers) to get
+  live symlinks instead.
+
+**Non-git-clone homes:** If your home was set up via "Use this template" or copied (no fetchable
+git remote), `update.sh` detects the missing remote, prints
+`"this home is not a git clone — re-install to update"`, and exits without mutating. Re-run the
+one-command installer (`install.sh` / `install.ps1`) to update such homes instead.
+
+### Factory-reset
+
+Restores the pristine base skills while keeping all your user-owned state (`.kata-settings.json`,
+`.planning/`, vault, and your overlay store):
+
+```sh
+# POSIX — bootstrap path (also fast-forwards the base via git)
+sh ~/.kata-home/update.sh --factory-reset
+```
+
+```powershell
+& "$env:USERPROFILE\.kata-home\update.ps1" --factory-reset
+```
+
+Or invoke the engine directly (re-links pristine base, no git step):
+
+```bash
+uv run python tools/kata_install.py --factory-reset --platform claude --yes
+```
+
+**`--hard` additionally clears the overlay store** (local skill adaptations you have authored),
+yielding a fully pristine tree with no local adaptations:
+
+```sh
+sh ~/.kata-home/update.sh --factory-reset --hard
+```
+
+| Operation | Base skills | Your overlays | Materialized slots |
+|---|---|---|---|
+| `--update` | refreshed from upstream | preserved | re-applied |
+| `--factory-reset` | re-linked pristine | preserved | dropped → pristine links |
+| `--factory-reset --hard` | re-linked pristine | cleared | dropped → pristine links |
+
+### Manual fallback (if the update scripts are unavailable)
+
+```bash
+cd ~/.kata-home && git pull
+uv run python tools/kata_install.py --platform claude
+```
+
+In symlink mode, skills update automatically after `git pull`. In copy mode, re-running the
+installer re-copies the updated skills.
 
 ### Uninstall (shipped uninstaller — recommended)
 

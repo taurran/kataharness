@@ -407,6 +407,7 @@ def uninstall(
     harness_home: str | Path | None = None,
     host_dir: str | Path | None = None,
     target_dir: str | Path | None = None,
+    dry_run: bool = False,
 ) -> dict:
     """Reverse a KataHarness install: remove flat-linked skills, settings, and router stanza.
 
@@ -459,6 +460,19 @@ def uninstall(
                     # Non-kata dir occupying the slot — leave intact, report
                     left_intact.append(str(dst))
 
+            # Sweep ALL host slots for orphaned kata-managed entries (A2: rename-orphan
+            # cleanup).  The basename loop above handles current skills; this pass catches
+            # any entry whose source skill was renamed or removed since the last install.
+            swept_removed, swept_intact = _sweep_managed_slots(
+                skills_dst, home, dry_run=dry_run
+            )
+            for name in swept_removed:
+                if name not in removed:
+                    removed.append(name)
+            for path in swept_intact:
+                if path not in left_intact:
+                    left_intact.append(path)
+
     # Unlink settings file (idempotent: absent -> no-op)
     sp = kata_settings.settings_path(home)
     if sp.exists():
@@ -479,6 +493,104 @@ def uninstall(
         "leftIntact": left_intact,
         "notes": notes,
     }
+
+
+# ---------------------------------------------------------------------------
+# Post-link hooks (A2 — NEW, ADDITIVE; Phase B/C will flesh these out)
+# ---------------------------------------------------------------------------
+
+
+def _materialize_pass(home: Path, host_skills_dir: Path, link_mode: str) -> None:
+    """Post-link materialize pass — NO-OP in Phase A when ``kata_overlay`` is absent.
+
+    Phase B (task B2) replaces this stub with the full overlay materialize logic.
+    The import guard ensures ``--update`` / install can call this unconditionally;
+    when ``kata_overlay`` is not yet present the function exits immediately with no
+    side-effects, so B/C can wire in the real implementation without re-touching any
+    branch logic in ``main()``.
+
+    Never invokes git.  Never touches the 5 frozen engine fns.
+    """
+    try:
+        import kata_overlay  # noqa: F401  # Phase B module
+    except ImportError:
+        return  # kata_overlay not yet present (Phase A) — safe no-op
+
+
+def _sweep_managed_slots(
+    skills_dst: Path,
+    home: Path,
+    *,
+    dry_run: bool = False,
+) -> tuple[list[str], list[str]]:
+    """Sweep ALL entries in ``skills_dst`` and remove kata-managed ones.
+
+    Unlike the ``uninstall()`` basename loop (which only iterates *current*
+    skill names), this sweep enumerates every filesystem entry in the host
+    skills directory.  It removes an entry **iff**:
+
+    - it is a **symlink whose resolved target is under ``home``** (an orphaned
+      kata link — e.g. left behind by a skill rename/remove in the home), OR
+    - it is a **directory carrying ``.kata-managed``** (a kata copy or a
+      materialized slot written by ``_materialize_pass``).
+
+    **Fail-closed:** anything else — a non-kata dir, a symlink pointing
+    outside the home, an unreadable entry — is reported in ``left_intact``
+    and **never removed**.  This reuses the same signal the engine already
+    trusts (``_link_or_copy:115–123``).
+
+    Parameters
+    ----------
+    skills_dst:
+        The host skills directory to sweep (e.g. ``~/.claude/skills``).
+    home:
+        The resolved harness home; used to determine whether a symlink
+        target is kata-owned.
+    dry_run:
+        When ``True``, classify entries and return the lists **without
+        performing any filesystem mutation**.
+
+    Returns
+    -------
+    tuple[list[str], list[str]]
+        ``(removed, left_intact)`` — basenames (not full paths) that were
+        removed or left intact, respectively.  Full paths are used for
+        ``left_intact`` to aid diagnosis, matching the existing ``uninstall``
+        convention.
+    """
+    removed: list[str] = []
+    left_intact: list[str] = []
+
+    if not skills_dst.is_dir():
+        return removed, left_intact
+
+    home_resolved = home.resolve()
+
+    for entry in sorted(skills_dst.iterdir()):
+        if entry.is_symlink():
+            try:
+                resolved = entry.resolve()
+            except (OSError, RuntimeError):
+                left_intact.append(str(entry))
+                continue
+            if resolved.is_relative_to(home_resolved):
+                if not dry_run:
+                    entry.unlink()
+                removed.append(entry.name)
+            else:
+                left_intact.append(str(entry))
+        elif entry.is_dir():
+            if (entry / _MARKER).exists():
+                if not dry_run:
+                    shutil.rmtree(entry)
+                removed.append(entry.name)
+            else:
+                left_intact.append(str(entry))
+        else:
+            # Files or other non-dir entries — leave intact, report
+            left_intact.append(str(entry))
+
+    return removed, left_intact
 
 
 # ---------------------------------------------------------------------------
@@ -555,6 +667,52 @@ def main(argv: list[str] | None = None) -> int:
         metavar="DIR",
         help="target project directory (used by --uninstall to remove the router stanza)",
     )
+    # NEW flags (A2 — update / factory-reset / dry-run / git-sha)
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help=(
+            "re-link / re-copy skills from the home, then re-stamp (idempotent; "
+            "use after `git pull` in the home or via `update.sh`)"
+        ),
+    )
+    parser.add_argument(
+        "--factory-reset",
+        "--reinstall",
+        dest="factory_reset",
+        action="store_true",
+        help=(
+            "restore pristine links + re-stamp (Phase-A form: re-link/re-copy pristine; "
+            "Phase B will also drop overlay materializations)"
+        ),
+    )
+    parser.add_argument(
+        "--hard",
+        action="store_true",
+        help=(
+            "--factory-reset --hard: additionally clear the overlay store (Phase B+). "
+            "In Phase A this is a no-op passthrough (overlay does not exist yet)."
+        ),
+    )
+    parser.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help=(
+            "print what would happen without mutating any files "
+            "(for --update, --factory-reset, --uninstall)"
+        ),
+    )
+    parser.add_argument(
+        "--git-sha",
+        dest="git_sha",
+        default=None,
+        metavar="SHA",
+        help=(
+            "40-hex git SHA passed in by the bootstrap shell (update.sh / update.ps1); "
+            "recorded in .kata-version. Omit for plain installs → gitSha:'unknown'."
+        ),
+    )
     args = parser.parse_args(argv)
 
     use_json: bool = args.use_json
@@ -599,14 +757,43 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(probe, indent=2))
         return 0 if probe.get("confirmed") else 1
 
-    # --uninstall verb (Slice C)
+    # --uninstall verb (Slice C; extended A2: dry_run passthrough)
     if args.uninstall:
+        if args.dry_run:
+            # Dry-run: classify what the sweep would remove without mutating
+            _home_dr = _safe_abs(args.home) if args.home is not None else _default_home()
+            _p_dr = (args.platform or "").strip().casefold()
+            _subdir_dr = ".agents/skills" if _p_dr in _BEST_EFFORT else "skills"
+            _hd_raw_dr = args.host_dir
+            if _hd_raw_dr is not None or _p_dr == "claude":
+                _hd_dr = (
+                    _safe_abs(_hd_raw_dr)
+                    if _hd_raw_dr is not None
+                    else (Path.home() / ".claude")
+                )
+                _would_rm, _would_keep = _sweep_managed_slots(
+                    _hd_dr / _subdir_dr, _home_dr, dry_run=True
+                )
+                plan = {
+                    "dryRun": True,
+                    "wouldRemove": _would_rm,
+                    "wouldKeepIntact": _would_keep,
+                }
+            else:
+                plan = {"dryRun": True, "wouldRemove": [], "wouldKeepIntact": []}
+            if use_json:
+                print(json.dumps(plan))
+            else:
+                print(json.dumps(plan, indent=2))
+            return 0
+
         try:
             result = uninstall(
                 args.platform,
                 harness_home=args.home,
                 host_dir=args.host_dir,
                 target_dir=args.target_dir,
+                dry_run=args.dry_run,
             )
         except OSError as exc:
             print(f"error: {exc}", file=sys.stderr)
@@ -622,6 +809,162 @@ def main(argv: list[str] | None = None) -> int:
             _emit(f"  - {note}", as_json=use_json)
         return 0 if result.get("ok") else 1
 
+    # --update: re-link / re-materialize / re-stamp (A2 NEW branch; NO git)
+    if args.update:
+        if args.dry_run:
+            _emit("dry-run: would re-link all skills and re-write the version stamp", as_json=use_json)
+            return 0
+
+        # minor-a: check is_pristine for each tracked skill against the PREVIOUS manifest;
+        # surface a drift NOTE for any hand-edited tracked base file before the re-link.
+        import kata_version as _kv_upd
+
+        _home_upd = _safe_abs(args.home) if args.home is not None else _default_home()
+        _prev_manifest = _kv_upd.read_manifest(_home_upd)
+        if _prev_manifest.get("skills"):
+            for _skill_name in _prev_manifest["skills"]:
+                if not _kv_upd.is_pristine(_home_upd, _skill_name):
+                    _emit(
+                        f"NOTE: drift detected in base skill '{_skill_name}' — "
+                        f"tracked base file has been hand-edited (minor-a). "
+                        f"Use the overlay (kata-improve) rather than editing the base directly.",
+                        as_json=use_json,
+                    )
+
+        # Re-link (composing the frozen engine fns unchanged)
+        try:
+            result = install(args.platform, harness_home=args.home, host_dir=args.host_dir)
+        except OSError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return _exit_code_for({}, exc=exc)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return _exit_code_for({}, exc=exc)
+
+        # Derive link_mode from result
+        _methods_upd = result.get("method", [])
+        _link_mode_upd = (
+            _methods_upd[0]
+            if len(_methods_upd) == 1
+            else ("mixed" if len(_methods_upd) > 1 else "unknown")
+        )
+
+        # Post-link materialize pass (no-op stub in Phase A; Phase B wires in overlay)
+        _p_upd = (args.platform or "").strip().casefold()
+        _hd_raw_upd = args.host_dir
+        if _p_upd == "claude":
+            _hd_upd = (
+                _safe_abs(_hd_raw_upd)
+                if _hd_raw_upd is not None
+                else (Path.home() / ".claude")
+            )
+            _materialize_pass(_home_upd, _hd_upd / "skills", _link_mode_upd)
+        elif _p_upd in _BEST_EFFORT and _hd_raw_upd is not None:
+            _hd_upd = _safe_abs(_hd_raw_upd)
+            _materialize_pass(_home_upd, _hd_upd / ".agents" / "skills", _link_mode_upd)
+
+        # Write stamp + manifest (consuming --git-sha; "unknown" when absent)
+        _git_sha_upd = args.git_sha or "unknown"
+        try:
+            _kv_upd.write_stamp(
+                _home_upd,
+                git_sha=_git_sha_upd,
+                suite_semver=_kv_upd.suite_semver(_home_upd),
+                ref="master",
+                link_mode=_link_mode_upd,
+                platform=args.platform or "",
+            )
+            _kv_upd.write_manifest(_home_upd, git_sha=_git_sha_upd)
+        except Exception:  # noqa: BLE001 — stamp write failure non-fatal for update
+            pass
+
+        if use_json:
+            print(json.dumps(result))
+        else:
+            print(json.dumps(result, indent=2))
+        for note in result.get("notes", []):
+            _emit(f"  - {note}", as_json=use_json)
+        return _exit_code_for(result)
+
+    # --factory-reset / --reinstall: re-link pristine + re-stamp (A2 NEW branch; NO git)
+    # Phase A form: no overlay materializations yet; --hard is a no-op passthrough on overlay.
+    if args.factory_reset:
+        if args.dry_run:
+            _emit(
+                "dry-run: would re-link all skills to pristine and re-write the version stamp",
+                as_json=use_json,
+            )
+            if args.hard:
+                _emit("dry-run: --hard would clear the overlay store (Phase B+; no-op in Phase A)", as_json=use_json)
+            return 0
+
+        import kata_version as _kv_fr
+
+        _home_fr = _safe_abs(args.home) if args.home is not None else _default_home()
+
+        # Re-link pristine (composing the frozen engine fns unchanged)
+        try:
+            result = install(args.platform, harness_home=args.home, host_dir=args.host_dir)
+        except OSError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return _exit_code_for({}, exc=exc)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return _exit_code_for({}, exc=exc)
+
+        # Derive link_mode
+        _methods_fr = result.get("method", [])
+        _link_mode_fr = (
+            _methods_fr[0]
+            if len(_methods_fr) == 1
+            else ("mixed" if len(_methods_fr) > 1 else "unknown")
+        )
+
+        # Post-link materialize pass (no-op in Phase A)
+        _p_fr = (args.platform or "").strip().casefold()
+        _hd_raw_fr = args.host_dir
+        if _p_fr == "claude":
+            _hd_fr = (
+                _safe_abs(_hd_raw_fr)
+                if _hd_raw_fr is not None
+                else (Path.home() / ".claude")
+            )
+            _materialize_pass(_home_fr, _hd_fr / "skills", _link_mode_fr)
+        elif _p_fr in _BEST_EFFORT and _hd_raw_fr is not None:
+            _hd_fr = _safe_abs(_hd_raw_fr)
+            _materialize_pass(_home_fr, _hd_fr / ".agents" / "skills", _link_mode_fr)
+
+        # --hard: clear overlay store (Phase B+); in Phase A the overlay does not exist →
+        # this is a documented no-op passthrough (wire the flag, acknowledge it, skip).
+        if args.hard:
+            _emit(
+                "NOTE: --hard clears the overlay store (Phase B+); no overlay exists yet — no-op",
+                as_json=use_json,
+            )
+
+        # Re-stamp + re-manifest
+        _git_sha_fr = args.git_sha or "unknown"
+        try:
+            _kv_fr.write_stamp(
+                _home_fr,
+                git_sha=_git_sha_fr,
+                suite_semver=_kv_fr.suite_semver(_home_fr),
+                ref="master",
+                link_mode=_link_mode_fr,
+                platform=args.platform or "",
+            )
+            _kv_fr.write_manifest(_home_fr, git_sha=_git_sha_fr)
+        except Exception:  # noqa: BLE001 — stamp write failure non-fatal
+            pass
+
+        if use_json:
+            print(json.dumps(result))
+        else:
+            print(json.dumps(result, indent=2))
+        for note in result.get("notes", []):
+            _emit(f"  - {note}", as_json=use_json)
+        return _exit_code_for(result)
+
     # Install (existing path, now wrapped in try/except for semantic exit codes)
     try:
         result = install(args.platform, harness_home=args.home, host_dir=args.host_dir)
@@ -631,6 +974,48 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return _exit_code_for({}, exc=exc)
+
+    # M1 (load-bearing): write stamp + manifest on every successful install so that
+    # adaptation_context (DESIGN §6.2) returns "install" on a real install, and the
+    # §12 Phase-A live-proof step 1 passes.  gitSha is "unknown" when --git-sha is
+    # absent (plain install.sh path — the engine never computes a SHA).  Stays additive
+    # and git-free: the stamp write is appended post-install, never inside the 5 frozen fns.
+    if result.get("ok"):
+        try:
+            import kata_version as _kv_inst
+
+            _home_inst = _safe_abs(args.home) if args.home is not None else _default_home()
+            _methods_inst = result.get("method", [])
+            _link_mode_inst = (
+                _methods_inst[0]
+                if len(_methods_inst) == 1
+                else ("mixed" if len(_methods_inst) > 1 else "unknown")
+            )
+            _git_sha_inst = args.git_sha or "unknown"
+            _kv_inst.write_stamp(
+                _home_inst,
+                git_sha=_git_sha_inst,
+                suite_semver=_kv_inst.suite_semver(_home_inst),
+                ref="master",
+                link_mode=_link_mode_inst,
+                platform=args.platform or "",
+            )
+            _kv_inst.write_manifest(_home_inst, git_sha=_git_sha_inst)
+            # Post-link materialize pass (no-op stub in Phase A)
+            _p_inst = (args.platform or "").strip().casefold()
+            _hd_raw_inst = args.host_dir
+            if _p_inst == "claude":
+                _hd_inst = (
+                    _safe_abs(_hd_raw_inst)
+                    if _hd_raw_inst is not None
+                    else (Path.home() / ".claude")
+                )
+                _materialize_pass(_home_inst, _hd_inst / "skills", _link_mode_inst)
+            elif _p_inst in _BEST_EFFORT and _hd_raw_inst is not None:
+                _hd_inst = _safe_abs(_hd_raw_inst)
+                _materialize_pass(_home_inst, _hd_inst / ".agents" / "skills", _link_mode_inst)
+        except Exception:  # noqa: BLE001 — stamp write failure is non-fatal for install
+            pass
 
     if use_json:
         print(json.dumps(result))

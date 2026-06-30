@@ -1,18 +1,18 @@
 # STATE — KataHarness
 
-> **CURRENT (2026-06-29, D127 SHIPPED — write_settings MERGE-fix · pytest 1772 · 47 skills/0 · Snyk 0):**
-> `write_settings` now **merges** instead of clobbering: validate (unchanged) → strict fail-closed
-> `_load_existing` (corrupt JSON AND valid-but-non-dict both fail closed; does NOT reuse lenient
-> `read_settings`) → overlay owned keys (`settingsVersion`/`parentDir`/`vaultDir`) → preserve prior `vaultDir`
-> when not re-supplied → preserve `confirmedPlatforms` + ALL unknown keys verbatim (denylist-of-owned /
-> preserve-everything-else — future keys safe by default). Kills the **D121 confirm-state clobber on
-> `--parent-dir` reconfigure** and the sibling `vaultDir`-drop. Strict BC: all 13 prior `kata_settings` tests
-> unchanged; 7 new non-tautological tests; live reconfigure proof. Process: own freeze-gate **(SHIP)** +
-> post-build adversarial review **(PASS)**. **install-update-polish** IN PROGRESS — **item 3 (`write_settings`)
-> DONE**; the full update-system **DESIGN is frozen + freeze-gate SHIP** with **4 binding build-condition
-> fold-ins**; **Phase A** (version surface + `--update` + factory-reset + uninstall sweep + bootstraps) is next.
-> Files: `tools/kata_settings.py`, `tools/tests/test_kata_settings.py`. Spec:
-> `.planning/specs/install-update-polish/FREEZE-write-settings-merge.md`. Records: `DECISIONS.md` D127.
+> **CURRENT (2026-06-29, D128 SHIPPED — install-update-polish Phase A · pytest 1844 · 47 skills/0 · Snyk med+ 0):**
+> Installable/testable core of the hybrid update system: one-command update/factory-reset/uninstall with an
+> install-level version stamp + manifest. All additive — the 5 frozen `kata_install.py` engine fns
+> byte-unchanged; never-git guarantee holds (all git in `update.{sh,ps1}`; engine fed only `--git-sha`).
+> A1 `tools/kata_version.py`: `.kata-version` stamp + `.kata-manifest.json` + `is_pristine`. A2
+> `kata_install.py`: `--update` / `--factory-reset` / `--dry-run` / `--git-sha`, install-stamp (M1),
+> fail-closed orphan sweep, materialize no-op stub. A3 `update.sh` + `update.ps1`: git fetch/reset, M2
+> dirty-guard + `--discard-local`, `--check`, non-git-clone detection, `--hard` confirm-gated. A4 `.gitignore`
+> + `SETUP.md` + README docs. Live proof 11/11 (install→update→factory-reset→uninstall, bootstrap chain wired).
+> **Phase B (overlay) IN PROGRESS next**, then Phase C (fork). Files: `tools/kata_version.py`,
+> `tools/tests/test_kata_version.py`, `tools/kata_install.py`, `tools/tests/test_install_update.py`,
+> `update.sh`, `update.ps1`, `.gitignore`, `docs/SETUP.md`, `README.md`,
+> `.planning/specs/install-update-polish/{SPIKE-learning-overlay,DESIGN,PLAN}.md`. Records: `DECISIONS.md` D128.
 
 > **CURRENT (2026-06-29, SESSION END — BOTH FEATURES SHIPPED + PUSHED · tip `8d84125` in sync; pytest 1765 ·
 > 47 skills/0 · Snyk med+ 0):** Two features built, gated, committed AND pushed this session — `master` tip is
