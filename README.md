@@ -1,271 +1,64 @@
 # KataHarness
 
-**The agent harness with a control dial — from spec-driven, interview-shaped sprint coding to fully automated,
-self-learning one-shots — on one vetted, grounded process that doesn't drift, doesn't spiral, and *proves* its
-own work instead of trusting it.**
+**A tool-agnostic, skills-based agent harness that one-shots complex coding tasks.** It front-loads deep,
+doc-grounded planning, **freezes the plan**, executes it faithfully across one or many subagents, and gates
+"done" behind a **fresh-context, default-FAIL evaluator** — then folds every run's lessons back into itself.
+The name is the method: the **Improvement Kata** — *every loop sharpens the loop.*
 
-Most agent loops make you pick a side — **babysit every step, or let it loose and hope.** And under the hood,
-most are the same shape: take a prompt, generate, declare victory. KataHarness is built differently, on purpose.
-It **interviews you first** and learns your codebase before it writes a line; it **assumes its own work is
-broken** until a fresh, no-write evaluator proves otherwise; its **plan can't drift**; it **catches its own
-over-claims**; it **runs across multiple models at once**; and it **gets sharper every run** — with everything
-landing in **your vault**, not a black box. The name is the method — the **Improvement Kata**: each loop sharpens
-the loop.
-
-> New here? Read [`AGENTS.md`](./AGENTS.md) (canonical) → [`docs/DESIGN.md`](./docs/DESIGN.md) (the charter) →
-> [`docs/STANDARDS.md`](./docs/STANDARDS.md) (conventions).
->
-> **Getting started / don't have a vault?** See **[`docs/SETUP.md`](./docs/SETUP.md)** — one central install, a
-> small settings file (default project folder + optional vault), and a per-platform installer. No vault needed
-> to start: point it at a plain project folder and go.
-
-[PokeVault]: # "PokeVault — the reference vault/toolkit home (install link to be added)"
+> **Status: pre-v0.1, experimental.** The single-model Claude core is the proven path; multi-model routing
+> and the Codex/Kiro adapters are partially built. Honest about maturity — see [Docs / status](#docs--status).
+> New here? Start with [`AGENTS.md`](./AGENTS.md) (the vision + the spine).
 
 ---
 
-## Quick install
+## What makes it different
 
-```sh
-# POSIX shell — macOS / Linux / Git Bash on Windows
-curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh | sh
-```
+Most "agentic loops" are a thin wrapper around *prompt → generate → done*. KataHarness adds the guardrails
+that make autonomy trustworthy:
 
-```powershell
-# PowerShell — Windows
-irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 | iex
-```
-
-Both one-liners clone KataHarness to `~/.kata-home` (`%USERPROFILE%\.kata-home` on Windows) and
-invoke the Python installer. Default platform: **claude**. Pass extra arguments via
-`sh -s -- --platform <p> --parent-dir <dir>` or as direct arguments to the `.ps1`.
-
-**Prefer not to pipe to a shell?** Three audit-friendly alternatives:
-
-```sh
-# 1. Git clone — inspect before running
-git clone https://github.com/taurran/kataharness.git ~/.kata-home
-cd ~/.kata-home && uv run python tools/kata_install.py --platform claude
-
-# 2. Already inside the repo (cloned or "Use this template")
-uv run python tools/kata_install.py --platform claude
-```
-
-3\. **GitHub "Use this template"** — fork to your own account; no remote script involved.
-
-**Honest security caveat:** `curl … | sh` and `irm … | iex` execute bytes as they stream — nothing
-to hash until after execution. A checksum protects the *download-then-run* path (fetch the script
-to a file, verify its SHA, then execute); it **does not** protect the piped form. Mitigations
-shipped here: a stable URL, a short and readable script, and a `KATA_REF` environment variable for
-version-pinning to any specific tag or commit. For a stronger guarantee, use the git-clone or
-"Use this template" paths above and audit the source directly.
-
-**Update** (once installed):
-
-```sh
-# POSIX
-sh ~/.kata-home/update.sh
-```
-
-```powershell
-# PowerShell
-& "$env:USERPROFILE\.kata-home\update.ps1"
-```
-
-Fast-forwards the home, re-links or re-copies skills, and stamps the version. Add `--check` to
-report available updates without applying them. See [`docs/SETUP.md §4`](./docs/SETUP.md) for
-`--discard-local`, `--factory-reset [--hard]`, copy-mode re-copy behavior, and non-git-clone homes.
-
-**Uninstall:**
-
-```sh
-# POSIX
-sh ~/.kata-home/uninstall.sh --target-dir /path/to/project --yes
-```
-
-```powershell
-# PowerShell
-& "$env:USERPROFILE\.kata-home\uninstall.ps1" --target-dir C:\path\to\project --yes
-```
-
-Router-stanza removal is scoped to the supplied `--target-dir` only — other projects' `AGENTS.md`
-are not crawled (no project registry). Re-run with a different `--target-dir` for each additional
-project. For full options, env vars, platform table, and Windows symlink notes →
-**[`docs/SETUP.md`](./docs/SETUP.md)**.
+- **The plan doesn't drift.** The plan is *frozen* after planning; the orchestrator is its guardian; worker
+  subagents execute and talk laterally but **never re-plan**. An unknown escalates or parks — it's never silently guessed.
+- **Nothing is "done" until proven.** A **fresh-context, no-write, default-FAIL** evaluator independently reads
+  the evidence and must return PASS. *Nothing certifies its own work.*
+- **Tool-agnostic core + thin adapters.** One agnostic core (protocol, skills, planning engine, quality loop)
+  with per-tool adapters (`claude` today; `codex`/`kiro` next) — not locked to one vendor.
+- **Everything is versioned.** Every skill carries a semver in its frontmatter; the generated catalog is the
+  machine source of truth for what exists and at what version.
+- **Self-improvement folds into the skills.** Lessons from each run are distilled back into the *skills
+  themselves* (through a human promotion gate) — not just appended to a ledger.
+- **Adapt without forking upstream.** Customize any skill via a local **overlay** or a promoted **fork** — your
+  changes survive every update; the upstream base stays pristine and is never edited or lost.
+- **Zero-dependency install.** Pure-stdlib Python engine; one command drops it into your agent host.
 
 ---
 
-## Why it's different from other loops
+## Features — what's in the box
 
-Most "agentic loops" are a thin wrapper around *prompt → generate → done*. KataHarness is a **disciplined process**
-with the guardrails that make autonomy actually trustworthy. The difference, point for point:
-
-| Most agent loops | **KataHarness** |
-|---|---|
-| Take a prompt and start coding | **Interview-first** — the *grill* interrogates your idea and learns your conventions into a **frozen spec** before any code |
-| The agent decides when it's "done" | **Default-FAIL** — a **fresh-context, no-write evaluator** must independently PASS; *nothing certifies its own work* |
-| The agent re-plans whenever it gets stuck | **No drift** — the plan is frozen and guarded; an unknown **escalates or parks**, it never silently re-plans |
-| Trust the agent's self-report | **Standing red-team** — an adversarial reviewer **tries to break** every contract-bearing build *before* it merges |
-| Plausible-but-fake reuse ("uses the existing X") slips through | **Verify-before-reuse guard** — the harness **catches its own phantom machinery** and forces it to be labeled new + scoped |
-| One model does everything | **Multi-model role routing** — bind each role to a different model/tool: Claude codes, Codex validates, Kiro researches |
-| Babysit *or* fire-and-forget | **A per-run control dial** — `skip → full` grill, one-shot ↔ sprint, essential → advanced rigor |
-| Output disappears into the tool | **Your vault** — durable **Obsidian-native, git-committed** plans, decisions, handoffs you own |
-| Context loss = start over | **File-based two-way handoff** — survives compaction, a dead session, or a tool switch with no re-derivation |
-| Static — same agent next month | **It learns** — mines every run into a second brain; distilled skills promote through a **human gate** |
-| Locked to one vendor | **Tool-agnostic** — one `SKILL.md` standard across Claude · Codex · Kiro · Cursor · Copilot |
-
----
-
-## The feature set
-
-**The throughline is _control with proof_** — keeping you in charge *and* making "done" mean something.
-
-- 🎛️ **A control dial, per run.** Fully human-in-the-loop (spec → grill → approve each sprint), fully automated
-  (a hands-off learning one-shot), or anywhere between. Nothing happens off-plan without surfacing it first.
-- 🪜 **Well-defined modes, not vibes.** A consistent system of **effort/rigor tiers** (essential · standard ·
-  advanced), **run-shapes** (individual · batch · version-up), and a **delivery axis** (one-shot · incremental
-  sprints). Compose the run, preview its cost, launch — same format every time (consistency is the north star).
-- 🗣️ **An interview that codes like you do.** The **grill** interrogates your idea, learns your codebase's
-  conventions and your style, and enriches *your* intent into a frozen spec — depth dialed by you
-  (`skip → light → standard → full`). Ambiguity you don't resolve up front is resolved **in-loop by a no-write
-  research subagent** or parked in an assumption log surfaced at the gate — never silently guessed.
-- ✅ **"Done" is earned, never declared.** Grounding gates, **default-FAIL** evaluation, a **standing
-  fresh-context adversarial review** before every merge, and a **verify-before-reuse** guard that kills
-  documentation-only seams. Industry-standard practice underneath (TDD, DDD ubiquitous language, vertical-slice
-  planning, disjoint file-ownership, mutation-proven tests).
-- 🧩 **Multi-model orchestration.** Route loop *roles* to different platforms — Claude as coder, Codex as
-  validator, Kiro as researcher — coordinating over the shared filesystem, with the orchestrator as the single
-  source of truth. Default is single-model; multi-modal is an opt-in at setup. *(Foundation built; full routing
-  in progress.)*
-- 🧠 **It gets sharper every run.** Every run mines its own decisions, reviews, and grill ledgers into a
-  **second brain**; agents distil reusable skills that pass a grounding check **and a human promotion gate**
-  before going universal. When a failure-class *recurs*, the harness proposes **hardening the responsible
-  agent** — gated, never auto-mutated.
-- 🗂️ **Lives in your own vault.** Durable artifacts are **Obsidian-native** (frontmatter + wikilinks + tags)
-  and **git-committed** in *your* workspace — plans, decisions, handoffs, and the learn feed are yours to read.
-- 💾 **Survives every boundary.** Two-way, file-based handoff + prime-frame self-handoff means work outlives
-  compaction, a dead session, or a switch between agents/tools — a fresh agent re-enters mid-stream cold.
-- 🔌 **Tool-agnostic by design.** An agnostic core + thin per-tool adapters and a shared skills format
-  (Claude today; Codex/Kiro/Cursor/Copilot via the same `SKILL.md`). Your discipline travels with you, not the vendor.
-- 🖥️ **You always see what it's doing.** Every run opens with an on-brand `KATAHARNESS 改善型` readout — what
-  it's executing, in a glance — plus a live statusline and a durable, branded HTML closeout report.
-- 🐛 **Debug Mode (designed, next up).** Point it at a whole codebase and tell it to *debug in confidence* —
-  bugs out, behavior preserved — via an intent-model oracle + a corroboration-gated deviation pipeline. The
-  onboarding on-ramp: convert an existing repo to the loop.
-
-**In short — what people actually want:** an agent you can *trust* and *steer*, that *finishes*, doesn't
-spiral, doesn't lose your context, fits *how you build*, proves its work, and *gets better over time* — on
-whatever model(s) you use.
-
----
-
-## The loop
+**The Kata Loop** runs six phases, with every run feeding the next:
 
 ```
-                  ┌──────────────────────  the improvement kata  ──────────────────────┐
-                  │            every run folds its lessons back into the harness        │
-                  ▼                                                                     │
-   ┌─────────┐   ┌────────┐   ┌─────────┐   ┌──────────┐   ┌─────────┐   ┌─────────┐    │
-   │  GRILL  │──▶│ FREEZE │──▶│ EXECUTE │──▶│ EVALUATE │──▶│ HANDOFF │──▶│ IMPROVE │────┘
-   └─────────┘   └────────┘   └─────────┘   └──────────┘   └─────────┘   └─────────┘
-   interrogate   lock the     plan-faithful fresh-context  durable,      distil +
-   the spec →    design +     parallel      no-write,       two-way,      promote +
-   a frozen      plan         workers in    DEFAULT-FAIL    git-committed  fold lessons
-   intent        (no drift)   worktrees     gate            file           → next run
-        ▲                          │                                            
-        │                          ▼                                            
-   research subagent ◀──── escalate (ambiguity / no in-plan solution)           
-   + assumption log         resolve in-loop, never re-plan blindly              
-
-   incremental delivery: EXECUTE→EVALUATE repeats per sprint; a controlled
-   boundary (approve · label drift · adversarial sweep · snowball guard)
-   sits between sprints — the only place steering happens.
+GRILL → FREEZE → EXECUTE → EVALUATE → HANDOFF → IMPROVE
+interrogate  lock the   plan-faithful  fresh-context  durable,    distil + promote
+the spec     design +   parallel       no-write,      two-way,    + fold lessons
+             plan       workers         DEFAULT-FAIL   git-committed   → next run
 ```
 
----
+- **47 skills** across six families — `plan` · `coordinate` · `execute` · `evaluate` · `handoff` · `meta` —
+  plus the `initiation` / `closeout` modules. The full catalog is below.
+- **Modes & tiers.** Three modes (**Essential · Standard · Advanced**) set breadth and depth; tiered skill
+  families (`kata-grill`, `kata-plan`, `kata-review`, `kata-diagnose`) share one rubric and expose a depth dial.
+  A **bake-off** runs N variants in parallel, judges them, and refines the winner up a tier.
+- **The quality loop.** A **default-FAIL** evaluator owns "done," backed by an **adversarial review** before
+  every merge and an optional **AI-slop check** that fails a run for spiraling / over-claiming signals.
+- **Install lifecycle.** One-command install, `--update` (with `--check`), `--factory-reset`, a clean
+  uninstaller, and a version stamp + skill manifest.
+- **Local adaptation.** An **overlay store** customizes skills in place; deeper rewrites route through a
+  **supersedes/fork** candidate and a human promotion gate — upstream is never touched.
 
-## Status
-
-**`v0.1.0-alpha` — the full loop is built, green, and self-dogfooded; hardening toward a field-proven v0.1.**
-39 skills, all `0.1.0`/experimental; validator 0 errors · 540+ tests passing · Snyk clean (medium+ 0). The
-complete cognitive architecture runs on the **Claude core** across **one-shot and incremental (sprint)**
-delivery, with the learning loop (second-brain LEARN feed + human-gated skill promotion) wired. The harness
-has been built *by itself* through its own orchestrated loop multiple times — concurrent worker subagents in
-isolated worktrees, a fresh-context default-FAIL gate, a standing adversarial red-team, and human approval at
-each boundary.
-
-**Recently landed:** the **install & portability layer** (one central install + a 2-setting workspace config +
-per-run project search → it drops into any vault or project dir); the **multi-model orchestration** design +
-first cross-model proof-slice (route a role to Codex over the shared filesystem); the **loop-init banner**; and
-a **verify-before-reuse hardening** that makes the harness catch its own phantom machinery.
-
-**Honest about maturity:** experimental, not yet 1.0. The single-model Claude loop is the proven path;
-multi-model routing, the multi-tool adapters (Codex/Kiro/Cursor/Copilot), and **Debug Mode** are designed and
-partially built — see the roadmap. Live state: [`.planning/STATE.md`](./.planning/STATE.md) · roadmap:
-[`.planning/ROADMAP.md`](./.planning/ROADMAP.md).
-
-## The spine (six non-negotiables)
-
-1. **The plan does not drift** — the orchestrator guards it; peers execute + talk, never re-plan.
-2. **One-shot = no plan churn** — fix against the same plan; don't re-plan by reflex.
-3. **Agnostic via adapters** — agnostic core + thin per-tool adapters.
-4. **Default-FAIL** — a fresh-context, no-write evaluator gates "done."
-5. **Two-way, file-based handoff** — plus prime-frame self-handoff (survives context rot without bailing early).
-6. **Everything versioned** — per-skill semver is the machine source of truth; the catalog is generated.
-
----
-
-## The skills
-
-39 skills across the six loop phases (plus the initiation/closeout modules). Tiered families (`kata-grill`, `kata-plan`, `kata-review`,
-`kata-diagnose`) share one `RUBRIC.md` method and expose depth tiers you dial per run.
-
-```
-skills/
-├── plan/         turn an idea into a frozen, executable spec
-│   ├── kata-context ........ build/maintain CONTEXT.md (shared, ubiquitous language)
-│   ├── kata-grill/ ......... interrogate the spec to kill ambiguity   ·tiers: essential·standard·advanced
-│   ├── kata-design-doc ..... synthesize the frozen design doc / spec
-│   ├── kata-plan/ .......... vertical-slice plan: disjoint file-ownership + a wave/DAG
-│   │                         └ ROADMAP.md: partition into prime-frame sprints (incremental)  ·tiers: e·s·a
-│   ├── kata-graph .......... token-budgeted structural map of an existing repo (version-up)
-│   └── kata-research ....... in-loop, escalation-routed, NO-WRITE researcher (grounds before it folds)
-│
-├── coordinate/   compose, dispatch, and guard the run
-│   ├── kata-bootstrap ...... the on-ramp: compose a run, write kata.config, launch; routes sprint boundaries
-│   ├── kata-readiness ...... pre-run harness+target doctor; detects sprint progression
-│   ├── kata-preflight ...... provision the freeze-approved dep set; manifest-hash + Snyk gated; emits .kata/preflight.json
-│   ├── kata-orchestrate .... plan-guardian lead: assign, partition files, gate, no-drift
-│   ├── kata-board .......... append-only message board for lateral peer comms
-│   ├── kata-worktree ....... per-owner git-worktree isolation for concurrent work
-│   └── kata-sprint ......... own the sprint boundary (G1–G4 change-control)   ·incremental only
-│
-├── execute/      do the work, in a lane
-│   ├── kata-tdd ............ red-green-refactor on a vertical slice
-│   ├── kata-iac-terraform .. Terraform authoring with the IaC safety gate     ·specialist (never-tiered)
-│   ├── kata-iac-cloudformation . CFN/CDK authoring with the IaC safety gate   ·specialist (never-tiered)
-│   └── kata-diagnose/ ...... root-cause a failure                              ·tiers: light·full
-│
-├── evaluate/     prove it, don't trust it
-│   ├── kata-evaluate ....... fresh-context, no-write, DEFAULT-FAIL gate (owns "done")
-│   ├── kata-review/ ........ adversarial pre-done review                       ·tiers: essential·standard·advanced
-│   └── kata-report ......... one-page report of a gated unit (reports the gate, never gates)
-│
-├── handoff/      survive every boundary
-│   ├── kata-handoff ........ durable, two-way, git-committed handoff
-│   ├── kata-selfhandoff .... prime-frame self-handoff (compaction survival, no early bail)
-│   ├── kata-orient ......... assemble a subagent's launch orientation (the read half of handoff)
-│   └── kata-defer .......... park off-plan items + log assumptions — never drift the frozen plan
-│
-└── meta/         improve the harness itself
-    ├── kata-improve ........ fold cross-run lessons into skills/ + emit the LEARN feed
-    ├── kata-write-skill .... author new skills to STANDARDS
-    └── kata-promote ........ stage-2 HUMAN gate: promote a grounded agent-distilled skill into the toolkit
-```
-
-> **Planned (roadmap, not yet built):** `kata-tasklist` · `kata-zoom-out` · `kata-engram`.
+See [`docs/SETUP.md`](./docs/SETUP.md) for the install/update/overlay/factory-reset depth.
 
 <details>
-<summary><b>Full machine index</b> — name · version · cost · category · status · source · use (auto-generated from frontmatter; the versioning source of truth)</summary>
+<summary><b>Full skill catalog</b> — name · version · cost · category · status · source · use (auto-generated from frontmatter; the versioning source of truth)</summary>
 
 <!-- SKILL-INDEX:START -->
 | Skill | Ver | Cost | Category | Status | Source | Use |
@@ -323,18 +116,70 @@ skills/
 
 ---
 
-## Repository layout
+## Installation
 
+**Prerequisites:** `git` and either [`uv`](https://docs.astral.sh/uv/) **or** Python 3.12+. Both installers
+clone KataHarness to `~/.kata-home` (`%USERPROFILE%\.kata-home` on Windows) and link/copy the skills into your
+agent host. Default platform is **`claude`**.
+
+### Windows (PowerShell) — primary route
+
+```powershell
+irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 | iex
 ```
-AGENTS.md            canonical agent instructions   ·   CLAUDE.md   pointer to AGENTS.md
-docs/                DESIGN · STANDARDS · TAXONOMY · TEST-PLAN · MODES-DESIGN
-skills/              plan · coordinate · execute · evaluate · handoff · meta   (cognition: planned)
-protocol/            machine schemas: config · state · board · handoff · escalation · graph · engram · orientation
-tools/               validate_skills.py — the conformance validator + the README index generator
-.planning/           PROJECT · ROADMAP · STATE · DECISIONS · LESSONS-LEARNED · BACKLOG · HANDOFF · specs/
-adapters/            per-tool adapters (planned — v0.1 is a Claude-only core)
-research/            vendored references (gitignored) + NOTES.md
+
+To choose a platform, download-then-run:
+
+```powershell
+irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 -OutFile install.ps1; .\install.ps1 --platform codex
 ```
+
+### macOS / Linux (and Git Bash on Windows)
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh | sh
+```
+
+Pass a platform via the piped POSIX form:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh | sh -s -- --platform codex
+```
+
+`--platform` accepts `claude` · `codex` · `kiro`.
+
+### Update & uninstall
+
+```powershell
+# PowerShell
+& "$env:USERPROFILE\.kata-home\update.ps1"            # add --check to report without changing anything
+& "$env:USERPROFILE\.kata-home\uninstall.ps1"
+```
+
+```sh
+# POSIX
+sh ~/.kata-home/update.sh                             # add --check to report without changing anything
+sh ~/.kata-home/uninstall.sh
+```
+
+### Notes
+
+- **Security:** `curl … | sh` and `irm … | iex` execute bytes as they stream — there is nothing to verify
+  until after it runs. Pin a known ref with the `KATA_REF` env var, or download-then-run to inspect first; see
+  [`docs/SETUP.md`](./docs/SETUP.md) for the full tradeoff and audit-friendly git-clone path.
+- **Windows symlinks:** without Developer Mode, the installer falls back to **copy-mode** (works fine; just
+  re-run `update.ps1` after each update to refresh copied skills). Detail in [`docs/SETUP.md`](./docs/SETUP.md).
+
+---
+
+## Docs / status
+
+**Pre-v0.1, experimental.** The single-model Claude core is the proven path; multi-model routing and the
+Codex/Kiro adapters are partially built. Read next:
+
+- [`AGENTS.md`](./AGENTS.md) — the vision, the spine, how to work in the repo (canonical).
+- [`docs/SETUP.md`](./docs/SETUP.md) — install / update / overlay / factory-reset / uninstall in depth.
+- [`docs/STANDARDS.md`](./docs/STANDARDS.md) — frontmatter, versioning, and naming conventions.
 
 Built on Anthropic's long-running-agent harness guidance and the best of
 [mattpocock/skills](https://github.com/mattpocock/skills), GSD, BMAD, and DDD's ubiquitous language —

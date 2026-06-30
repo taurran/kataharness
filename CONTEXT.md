@@ -584,3 +584,70 @@ acceptance/success criteria up front (start-with-the-end-in-mind). The S2 freeze
 conditional value #8: an explicit **"no criteria for this run" PASSES** (no deadlock), while the verbatim
 "blanket looks-good **FAILS**" rule is preserved — the gate is **strengthened, not loosened**. _Avoid_: treating
 `acceptanceCriteria` as mandatory; reading the explicit-no-criteria path as a gate bypass.
+
+## Install · update · polish — the hybrid update system (D127–D129, 2026-06-29)
+**version stamp** (`.kata-version`):
+The per-install identity record written at install/update — `{gitSha, suiteSemver, ref, installedAt, linkMode, platform}`
+(stdlib `tools/kata_version.py`). The **install-level version surface** that did not exist before D128 (per-skill semver
+in frontmatter was the only version data). The source the update/factory-reset/adaptation paths read to know "what is
+installed and how." _Avoid_: deriving install version from per-skill frontmatter (that is per-skill, not the install).
+
+**content-hash manifest** (`.kata-manifest.json`):
+The companion to the stamp — a content-hash map of the managed slots (`kata_version.py`), the substrate for `is_pristine`
+(has this skill been hand-edited since install?) and the orphan-slot sweep. _Avoid_: trusting mtime (content hash only).
+
+**`--update` / `--check` / `--discard-local` / `--factory-reset` (`--reinstall`) / `--hard` / `--git-sha` / `--ref`**:
+The D128 engine flags. `--update` re-pulls (via the bootstrap) + re-links/re-copies to the target ref in one step;
+`--check` is **no-mutation** (report only); `--factory-reset`/`--reinstall` re-installs pristine (un-shadows forks/overlays,
+D129); `--hard` is the confirm-gated destructive variant; `--git-sha`/`--ref` are how the bootstrap feeds the resolved
+revision to the engine. **All git lives in the bootstraps** (`update.sh`/`update.ps1`); the engine never runs git — it is
+**fed** `--git-sha`. _Avoid_: making the engine run git (the never-git invariant); treating `--check` as a mutation.
+
+**M2 dirty-tree guard**:
+The `update.{sh,ps1}` bootstrap safety: a dirty `~/.kata-home` working tree **ABORTS the update by default**; only
+`--discard-local` proceeds (discarding local edits). `--check` never mutates. Minor-c non-git-clone homes are detected.
+_Avoid_: pulling over uncommitted local work; assuming every home is a git clone.
+
+**orphan-slot sweep** (`_sweep_managed_slots`):
+The engine's **fail-closed** removal of host skill slots that are kata-managed but no longer in the suite (a skill renamed
+/removed between install and update/uninstall). Closes PART-B Finding 5 (orphaned links surviving). _Avoid_: removing
+non-kata-managed slots (scoped to managed only); leaving renamed-away slots behind.
+
+**overlay store** (`<home>/.kata-overlay/overlay.json`):
+The D129 parametric-adaptation store (stdlib `tools/kata_overlay.py`) — line-based **M4 frontmatter composer** + a
+`materialized.json` record. Holds a user's **overlay** edits to a skill (parametric tweaks) **without mutating the
+installed base**. The lightweight half of local adaptation (the heavy half is a fork). _Avoid_: editing the installed
+base in place (overlays/forks exist precisely so the base stays pristine).
+
+**overlay materialize + the two markers** (`_materialize_pass`):
+The engine pass that **composes an overlaid skill onto a concrete host slot** at install/update, stamping two markers:
+`.kata-managed` (kata owns this slot) + `.kata-overlay-materialized` (this slot is an overlay projection, not pristine).
+_Avoid_: materializing without both markers (the sweep/shadow logic reads them); treating a materialized slot as pristine.
+
+**M3 fail-soft**:
+The overlay-materialize behavior when an overlay's **base skill is missing** — it **fails soft** (skips that overlay,
+does not abort the whole materialize pass). _Avoid_: hard-failing the install on one stale overlay.
+
+**local-adaptation mode** (`kata-improve`) + **`improve.allowUpstreamEdit`** + **adaptation_context**:
+`kata-improve`'s D129 mode that routes a local edit by category into an **overlay** (parametric) or a **fork** (deep),
+never an in-place base edit. **adaptation_context** is read from `.kata-version` (am I a real install or the dev repo?);
+the **`improve.allowUpstreamEdit`** config rail gates whether an edit may touch the upstream base at all. _Avoid_:
+hand-editing the base when adaptation_context says "install"; treating `allowUpstreamEdit` as on by default.
+
+**supersedes / fork shadow + precedence (fork > overlay > pristine)** (`tools/kata_supersede.py`):
+The D129 deep-adaptation layer — a **fork** fully shadows a skill. `kata_supersede.py` (`resolve_shadows`/`validate_shadows`,
+stdlib, fail-closed) computes the precedence: a **fork** wins over an **overlay** which wins over the **pristine** base.
+**validate STOPS before materialize** (a broken shadow halts the pass); **factory-reset un-shadows** (back to pristine).
+`kata-promote` carries the shadow-binding. _Avoid_: materializing past a failed shadow-validate; letting an overlay win
+over a fork.
+
+**dormant-overlay NOTE**:
+The informational engine NOTE emitted when an **overlay is shadowed by a fork** (so the overlay is present but inert —
+the fork wins). Surfaced, never silently dropped. _Avoid_: treating a dormant overlay as an error; hiding the shadowing.
+
+**stdlib-only-install-path invariant**:
+The load-bearing rule that **every module on the install / materialize / shadow path must avoid `yaml`** (and avoid
+importing `validate_skills`, which imports yaml) — because a real `uv run`/plain-python install runs from the home root
+where **pyyaml is absent** (pyproject lives under `tools/`, not root). `kata_overlay.py` + `kata_supersede.py` were made
+stdlib-only for exactly this reason; without it, overlays/forks **silently no-op** in a real install. _Avoid_: adding a
+yaml import to any install-path module (it restores a silent-no-op deployment bug).

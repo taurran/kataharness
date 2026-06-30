@@ -1,5 +1,38 @@
 # STATE — KataHarness
 
+> **CURRENT (2026-06-29, SESSION END — install-update-polish SHIPPED + PUSHED · tip `1ac85ed` in sync; pytest 1991 ·
+> 47 skills/0 · Snyk med+ 0):** The hybrid install/update/polish feature is COMPLETE, gated, committed AND pushed —
+> `master` tip is **`1ac85ed`, in sync** (`git log origin/master..HEAD` empty; **3 commits this session**). Three
+> LOCKED decisions: **D127** `write_settings` MERGE-fix (the single working-pattern edit — strict BC); **D128** Phase A
+> (the core update path); **D129** Phase B+C (overlay + fork). Plus a README rewrite (pitch / features / per-platform
+> install). **(D127)** `kata_settings.write_settings` now **MERGES** — load-existing strict/fail-closed → overlay owned
+> keys (`settingsVersion`/`parentDir`/`vaultDir`) → preserve prior `vaultDir`-when-absent → preserve `confirmedPlatforms`
+> + unknown keys. Kills the D121 confirm-state clobber + the sibling vaultDir-drop. **(D128 Phase A)** NEW stdlib
+> `tools/kata_version.py` (`.kata-version` stamp + `.kata-manifest.json` content-hash + `is_pristine`/`suite_semver`);
+> engine `--update`/`--factory-reset`(`--reinstall`)/`--hard`/`--dry-run`/`--git-sha`/`--ref`; M1 plain-install stamp;
+> `_sweep_managed_slots` (fail-closed orphan sweep); `update.sh`+`update.ps1` bootstraps (**ALL git here**; M2 dirty-tree
+> guard ABORT-by-default + `--discard-local`; `--check` no-mutation; `--hard` confirm-gated); `.gitignore`+SETUP+README
+> docs. **(D129 Phase B+C)** stdlib `tools/kata_overlay.py` (overlay store `<home>/.kata-overlay/overlay.json` + M4
+> frontmatter composer); engine `_materialize_pass` (markers `.kata-managed`+`.kata-overlay-materialized`, M3 missing-base
+> fail-soft); `kata-improve` local-adaptation mode (overlay vs fork by edit-category; `improve.allowUpstreamEdit` rail;
+> `adaptation_context` from `.kata-version`); stdlib `tools/kata_supersede.py` (resolve/validate shadows, fail-closed);
+> engine shadow precedence (**fork > overlay > pristine**; dormant-overlay NOTE; validate-STOPs-before-materialize;
+> factory-reset un-shadows); `kata-promote` shadow-binding; STANDARDS supersedes-now-wired. **KEY FIX (deployment
+> blocker):** the install/materialize/shadow path is **STDLIB-ONLY** — `kata_overlay`/`kata_supersede` dropped yaml — so
+> overlays/forks no longer **silently no-op** under a real `uv run`-from-home-root install (pyyaml lives only under
+> `tools/`). **Invariants held:** the 5 frozen `kata_install.py` engine fns (`_flat_link_skills`, `_link_or_copy`,
+> `install`, `copy_project`, `confirm_platform`) **BYTE-UNCHANGED** (MD5-verified each phase); never-git (all git in the
+> bootstraps; engine fed only `--git-sha`); `kata_settings.py` untouched outside D127. **Proofs:** write_settings
+> post-build PASS; Phase A live install→update→factory-reset→uninstall **11/11**; Phase B overlay-materialize **15/15**;
+> Phase C fork/shadow **8/8**; CAPSTONE clean-install-from-fresh-clone via real `install.sh` **7/7**; **SIX** adversarial
+> reviews all SHIP/PASS (incl. a FINAL whole-feature pass = SHIP, zero direct-fixes). **Gates:** pytest **1991 passed,
+> 2 skipped** (the 2 = known env-sensitive Windows-no-DevMode symlink skips); validate **47/0**; Snyk medium+ **0**
+> (`kata_install.py` carries **17 LOW CWE-23**, operator-supplies-own-path class, below gate → STANDING hardening item).
+> **NEXT (operator):** install on Windows (`irm …/install.ps1 | iex`) + run a full test environment; update via
+> `& "$env:USERPROFILE\.kata-home\update.ps1"`. **★ Watch for the SPECULATIVE spurious drift NOTE on first real update**
+> (orientation §4 #1 — informational-only but noisy). The closeout docs (CONTEXT/STATE/HANDOFF/orientation) are
+> **uncommitted**, to be committed next. Records: `DECISIONS.md` D127–D129; `.planning/specs/install-update-polish/`.
+
 > **CURRENT (2026-06-29, D129 SHIPPED — install-update-polish Phase B+C · pytest 1991 · 47 skills/0 · Snyk med+ 0):**
 > install-update-polish FEATURE-COMPLETE (Phase A+B+C all live-proven). Hybrid update system fully landed:
 > local adaptation is an OVERLAY (parametric, `kata_overlay.py`) or a FORK (deep, `kata_supersede.py`),
