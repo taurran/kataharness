@@ -11,7 +11,6 @@ status: experimental
 agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob]
-model: fable
 source: new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1)
 tags:
   - kata/coordinate

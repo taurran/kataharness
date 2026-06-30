@@ -14,7 +14,6 @@ status: experimental
 agnostic: true
 cost-weight: 1
 allowed-tools: [Read, Grep, Glob, Write]
-model: sonnet
 source: >-
   new (KataHarness original — kata-loop-benchmark report; mirrors the kata-report/kata-debrief two-tier
   {{TOKEN}} render contract; engine tools/benchmark.py)

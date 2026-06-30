@@ -11,7 +11,6 @@ status: experimental
 agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Bash, Write]
-model: fable
 source: >-
   new (KataHarness original, Phase 2 GL-R2c / DESIGN §3 / PLAN-phase2 Task C1) — comprehension-map half of the
   closeout back-half; backed by the F2 graph runtime (tools/graph_gen.py → kata.graph.json)

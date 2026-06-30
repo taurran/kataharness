@@ -162,6 +162,33 @@ sh ~/.kata-home/update.sh                             # add --check to report wi
 sh ~/.kata-home/uninstall.sh
 ```
 
+### Reinstall / refresh
+
+`install.ps1` / `install.sh` **reuse an existing `~/.kata-home`** (they do not re-clone). To pull the latest
+engine *and* skills, either run `update` (above), or do a clean reinstall:
+
+```powershell
+# Windows — clean reinstall (safe: ~/.kata-home is just the clone; your vault is separate)
+Remove-Item -Recurse -Force "$env:USERPROFILE\.kata-home"; irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 | iex
+```
+
+```sh
+# POSIX — clean reinstall
+rm -rf ~/.kata-home && curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh | sh
+```
+
+### Start a run
+
+Restart your agent so it loads the skills, then begin a run (Claude Code shown):
+
+```text
+/kata-initiate     start a run (the front door)
+/kata-onboard      guided tour on an existing repo
+/kata-bootstrap    configure and launch a run
+```
+
+…or just ask: **“Start a KataHarness run on `<your project>`.”** The installer prints these same next steps.
+
 ### Notes
 
 - **Security:** `curl … | sh` and `irm … | iex` execute bytes as they stream — there is nothing to verify

@@ -11,7 +11,6 @@ status: experimental
 agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Write, Edit]
-model: fable
 source: adapted-from mattpocock/skills {to-prd} + superpowers brainstorming + GSD spec-phase
 tags:
   - kata/plan

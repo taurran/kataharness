@@ -13,7 +13,6 @@ status: experimental
 agnostic: true
 cost-weight: 1
 allowed-tools: [Read, Grep, Glob, Write]
-model: sonnet
 source: new (KataHarness original — the D32 report, minimal v1; sprint-cadence D85/D2)
 tags:
   - kata/evaluate

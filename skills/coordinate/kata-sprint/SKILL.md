@@ -13,7 +13,6 @@ status: experimental
 agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Write, Edit, AskUserQuestion]
-model: fable
 source: new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C)
 tags:
   - kata/coordinate

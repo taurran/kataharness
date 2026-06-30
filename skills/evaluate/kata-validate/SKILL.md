@@ -14,7 +14,6 @@ status: experimental
 agnostic: true
 cost-weight: 3
 allowed-tools: [Read, Grep, Glob, Write, Edit, Bash, AskUserQuestion]
-model: sonnet
 source: >-
   new (KataHarness original — validation mini-loop). Adapted patterns: Guardrails-AI on_fail
   propose-vs-apply seam; OASIS SARIF severity taxonomy (error/warning/note); Reflexion bounded

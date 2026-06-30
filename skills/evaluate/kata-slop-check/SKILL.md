@@ -12,7 +12,6 @@ status: experimental
 agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Bash]
-model: fable
 source: >-
   General heuristics original to KataHarness; adopted-check concepts from ai-slop-detector by flamehaven01
   (Flamehaven Labs), https://github.com/flamehaven01/ai-slop-detector, MIT License (Copyright (c) 2026

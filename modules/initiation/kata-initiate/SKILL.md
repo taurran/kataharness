@@ -12,7 +12,6 @@ status: experimental
 agnostic: true
 cost-weight: 3
 allowed-tools: [Read, Grep, Glob, Write, Edit, AskUserQuestion]
-model: fable
 source: >-
   new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill,
   kata-bootstrap, kata-context

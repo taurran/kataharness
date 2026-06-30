@@ -18,7 +18,6 @@ status: experimental
 agnostic: true
 cost-weight: 1
 allowed-tools: [Read, Grep, Glob, Write]
-model: sonnet
 source: >-
   new (KataHarness original, Debug Mode P3 — LD12 closeout confidence report + LD3 recommendations /
   offered version-up; mirrors the kata-report two-tier + {{TOKEN}} render contract)

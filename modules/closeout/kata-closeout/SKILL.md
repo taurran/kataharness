@@ -13,7 +13,6 @@ status: experimental
 agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Bash, Write]
-model: fable
 source: new (KataHarness original — Phase 2 Kata Loop back-half, D89/DESIGN §3)
 tags:
   - kata/handoff
