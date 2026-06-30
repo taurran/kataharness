@@ -1819,3 +1819,32 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   stamp-written-before-materialize-raises on a failed structural-shadow install. Specs:
   `.planning/specs/install-update-polish/{DESIGN,PLAN}.md`. **NEXT:** cross-phase final gate +
   clean-install capstone, then operator merge/push gate.
+- **D131 — relative, mode-driven model selection (model-tiering resolver, W3-B) — 2026-06-30.** Model resolved
+  at dispatch as a **differential off the operator's session model (the anchor)**; skills carry no `model:`
+  frontmatter (enforced by the A1 guard in `validate_skills.py`). **Folds R1–R8** (operator-approved; R1–R8
+  supersede any conflicting text in `.planning/specs/model-tiering/ASSESSMENT.md`). Builds on **D130** (stripped
+  hard-baked `model:` frontmatter, commit `8af2e37`) and implements the **D59 relative-routing note**.
+  **Locked decisions (R1–R8):** **(R1)** Coder-floor monotonicity invariant — `essential-coding ≤ standard-coding
+  ≤ anchor` at every anchor; coder-floor raises a coding tier only when `floor_index ≤ anchor_index − 1`, capped
+  at standard's rung, never exceeds the anchor. **(R2)** Availability fallback: any non-inherited dispatch failure
+  triggers a step-down (≤2 then OMIT the `model` param entirely — terminus is OMIT, never re-inherit a gated
+  anchor); 401/403 surfaces as a real error, never silently downgraded. **(R3)** BC grounding: absent
+  `kata.config.models` ⇒ `resolve()` returns `None` everywhere ⇒ inherit ⇒ today's single-model behavior
+  byte-for-byte (confirmed for Claude host: omitting the `model` param inherits the session model). **(R4)**
+  Ladders are plain string lists, not alias lists — `["haiku","sonnet","opus","fable","mythos"]`; fable and
+  mythos are distinct models (mythos-gated is the live fallback test case); the alias-list model from ASSESSMENT
+  is dropped. **(R5)** Work-class map covers **all 47 skills** — `skills/` AND the 3 `modules/` skills (`load_skills`
+  counts both) — so economy tier-down fires; `unknown → critical` only for genuinely-new/unseen skills.
+  **(R6)** Ladders live as DATA in `tools/kata_models.py` (deliberate v0.1 Claude-only core; agnostic-core
+  adapter boundary is honest-scoped). **(R7)** Zero-step cells (advanced all-cells + standard-critical) inherit
+  by omission — `resolve()` returns `None`/OMIT, never re-selects the anchor ID; only strictly-below-anchor cells
+  return an explicit id string. This is the determinant: step-count, not work-class. **(R8)** Guard scope: A1
+  re-introduction guard (`validate_skills.py` `check_model_in_skill_frontmatter`) ERRORs on any absolute `model:`
+  in **SKILL.md frontmatter only**; adapters/config MAY still pin models (explicit carve-out); fallback step cap
+  ≤2. **Architecture:** NEW pure-stdlib `tools/kata_models.py` — `FAMILY_LADDERS` data registry, `SKILL_WORK_CLASS`
+  map (47/47 explicitly covered), `resolve(skill, mode, anchor, *, family, coder_floor) → id | None` (OMIT on
+  zero-step or any uncertainty), `step_down()`, `family_of()`, `fallback_chain(id, family) → [id, …, None]`
+  (≤2 entries then `None`). `kata.config.models` block (`anchor`/`family`/`coderFloor`) is BC-safe: absent ⇒
+  all-`None` ⇒ today's behavior byte-for-byte. **W3-B gates:** pytest green (coverage test asserts every skill
+  from `load_skills()` is in the map — count-agnostic, derives the set dynamically), validate 47/0 with A1 guard
+  active, Snyk medium+ 0. Spec: `.planning/specs/model-tiering/{ASSESSMENT,DESIGN,PLAN}.md`.

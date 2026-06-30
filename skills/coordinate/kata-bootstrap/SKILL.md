@@ -136,7 +136,7 @@ line in the plain-language statement ("this is a medium-cost run").
 
 ## Phase 3 — write kata.config + launch
 Write `kata.config` (JSON, branch root) per `protocol/config.md`: `mode`, `modules`, `effort`, `tiers`,
-`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**. Bootstrap writes the config
+`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**. Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;
 a second validation pass here would be redundant bloat). Then hand off to the loop ([[kata-orchestrate]]).
 
@@ -146,3 +146,28 @@ produced a confirmed per-role platform assignment, write it as the `roles` block
 **Omit `roles` entirely when the run is single-host** — when no confirmed off-host assignment was made, the
 human declined, or no non-host platforms are installed. Absent `roles` ⇒ all roles on host (BC1,
 `protocol/config.md:27`). `roles` is a `kata.config` concern only — do NOT write it to `INTENT.md`.
+
+**`models` block — anchor write (Layer 3, R7):** At run setup, resolve the operator's session model as the
+**anchor** — the reference rung for all relative tier arithmetic — and write the `models` block into
+`kata.config` once per branch. The canonical written shape is:
+`{ "anchor": "session", "family": "auto", "coderFloor": "sonnet" }`.
+
+`"session"` is the default sentinel — it defers to the platform's latest top rung at dispatch when the
+operator's current model is not detectable or not confirmed. If the session model is identifiable (e.g.
+from `kata_settings` or the platform context), write that identifier in place of `"session"`; always refer
+to it in prose as "the platform's latest top rung," never as a hard-coded model name.
+
+Note: `"session"` is a deferred sentinel; the orchestrator substitutes it with the concrete session-model ladder short-name (haiku/sonnet/opus/fable/mythos) at dispatch before calling `resolve()`. A detected full model id (e.g. returned by the platform context) is also acceptable as the anchor value — `resolve()` normalizes it to its ladder short-name via the id map, so full-id anchors activate tiering identically to their short-name equivalents.
+
+**R7 contract:** zero-step critical work (advanced-critical and standard-critical cells, resolved rung
+`== anchor_index`) resolves to `None`/OMIT regardless — these cells **never read the anchor name** and
+inherit by omission, always running at the current session model. Only **below-anchor cells** read the
+anchor name to step down a rung: economy tier-down (`standard-coding`, `standard-economy`, all `essential`
+work). An unknown anchor (id not found in the family ladder) → `resolve()` returns `None` → inherit —
+never a crash, never a forced model.
+
+**BC:** the **absent-block path still inherits** (today's behavior, byte-for-byte). Writing the `models`
+block is ADDITIVE — it supplies inputs to `kata_models.resolve()` but never alters the absent-block path.
+A run written without a `models` block continues to behave exactly as before; adding the block only
+activates the relative-tier resolver for below-anchor cells. Never write the block in a way that could
+break the no-block path.

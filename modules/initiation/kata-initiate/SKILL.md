@@ -479,6 +479,23 @@ decisions are resolved in the grill (so the config is ready at Phase 6).
 mid-grill), **`INTENT.md` wins** — it is frozen; regenerate `kata.config` from it. Never let a stale `kata.config`
 override the frozen intent.
 
+**Anchor resolution — `models` block (Layer 3, R7):** When invoking [[kata-bootstrap]] to write or update
+`kata.config` (here during the grill or at Phase 6 freeze), ensure the `models` block is written once per
+branch. Determine the operator's session model as the **anchor**: if the platform surfaces its current model
+identifier (via `kata_settings` or the platform context), use that identifier; otherwise default to
+`"session"` — the sentinel that defers to the platform's latest top rung at dispatch. The block takes the
+form `{ "anchor": "session" (or detected id), "family": "auto", "coderFloor": "sonnet" }`.
+
+Note: `"session"` is a deferred sentinel resolved at dispatch to the concrete session-model ladder short-name (haiku/sonnet/opus/fable/mythos) before calling `resolve()`. A detected full model id (e.g. returned by the platform context) is also acceptable as the anchor value — `resolve()` normalizes it to its ladder short-name via the id map, so full-id anchors activate tiering identically to their short-name equivalents.
+
+**R7 contract:** critical work inherits by omission — zero-step critical cells (advanced-critical and
+standard-critical) never read the anchor name and need no anchor detection. Only below-anchor economy cells
+read the anchor name to step down a rung. An unknown anchor → `resolve()` returns `None` → inherit —
+never a crash, never a forced model.
+
+**BC:** the absent-block path still inherits today's behavior. Writing the block is ADDITIVE and must never
+break a run that was written without it.
+
 Note: the understand-map ([[kata-understand]]) is offered by [[kata-closeout]] at run end, not here; the
 [[kata-loop]] conductor sequences this skill and, on a version-up re-entry, feeds it the prior run's context
 (see Phase 1b).

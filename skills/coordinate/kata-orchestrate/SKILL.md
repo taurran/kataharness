@@ -216,7 +216,9 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    branch (a lone sequential task may run directly on the integration branch).
 2. **Orient, then dispatch one worker subagent per task** via the host's subagent mechanism *(adapter binding:
    Claude → the `Agent` tool; other hosts → their subagent/ACP call — the capability is abstract, the binding is
-   the adapter's job)*. Pin the implementer model to the cheaper workhorse, held constant across any A/B.
+   the adapter's job)*. Select the dispatch model per **§ Dispatch-time model selection** below —
+   classify the target skill's work-class, call `kata_models.resolve`, then pass or omit `model=`
+   per the result. The resolved model is held constant across any A/B arm for a given skill slot.
    - **AO hook (per dispatch):** invoke [[kata-orient]] (read-only) to assemble the worker's **launch
      orientation** (three-tier, task-type-tailored, prime-frame-budgeted — `protocol/orientation.md`); inject it
      as the worker's context. Act on the **routed-question flags** it returns: **`research-needed`** → route to
@@ -327,6 +329,85 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    files merge cleanly by construction). Re-run the gate on the integration branch, then recompute the frontier.
 5. **Commit at the checkpoint** (conventional commit + project trailer) so compaction can't lose work.
    Completions integrate **in completion order** — a linear integration-branch history, not a wave-batched one.
+
+## Dispatch-time model selection (D59 / R2)
+
+This four-step protocol runs **at every `Agent`-tool subagent dispatch** (the host path in **§ The
+loop** step 2 above). The goal is differential model selection: a work-class-appropriate tier below
+the operator's anchor, or inherit-by-omission when no step-down applies. It also applies at any
+cross-model dispatch site (§ Cross-model dispatch) when the target platform accepts a `model`
+parameter — the resolver is platform-agnostic; only the returned ID is family-scoped.
+
+**Run-start setup:** extract from `kata.config` — `anchor` (operator's session model short-name),
+`family` (model-family key, e.g. `"anthropic"`), `mode` (`"advanced"` | `"standard"` |
+`"essential"`), and `coder_floor` (optional minimum rung for coding work from `kata.config`; pass
+`None` when absent). These are constant for a run; read them once and reuse across all dispatches.
+
+**Session sentinel substitution:** if `anchor` is the sentinel `"session"`, substitute it at
+run-start with the agent's current session model's ladder short-name (haiku/sonnet/opus/fable/mythos)
+before calling `resolve()` — `"session"` is resolved agent-side and must never be passed as a
+literal string to `resolve()`. `family:"auto"` is then derived from the substituted anchor by the
+resolver (`kata_models.family_of`) — no explicit family string is required in the config when
+`family:"auto"` is set.
+
+### 1 — Classify the work-class
+
+Look up the target skill in `kata_models.SKILL_WORK_CLASS`. Three classes exist:
+
+| Work-class | Applies to |
+|---|---|
+| `critical` | judgment, grilling, evaluation, planning, the gate — highest-judgment work |
+| `coding` | TDD, build, refactor, encode |
+| `economy` | reporting, graphing, summaries, low-stakes loops |
+
+A skill absent from the registry defaults to `critical` (the safest / highest-judgment sentinel).
+Never hard-code a class; look up the registry and trust the default for unlisted skills.
+
+### 2 — Resolve the model
+
+Call `kata_models.resolve(skill, mode, anchor, family=family, coder_floor=coder_floor)`.
+
+The function returns **an explicit full model ID** when the resolved ladder rung is strictly below
+the anchor, or **`None`** (OMIT → inherit the anchor) when:
+- the resolved rung equals the anchor — the zero-step contract, including when a step of −1 or −2
+  is clamped back to the anchor floor by the R1 coder-floor rule or the ladder boundary; or
+- any required lookup fails (unknown family / anchor / mode → `None`; BC / inherit-on-doubt).
+
+### 3 — Pass or omit the `model` parameter
+
+| `resolve` result | Dispatch action |
+|---|---|
+| Explicit full model ID | Pass `model=<id>` on the dispatch call — the subagent runs at the resolved tier. |
+| `None` | **OMIT the `model` parameter entirely.** Do not re-select the anchor's own ID; omission inherits the anchor via the host's native mechanism. |
+
+Zero-step cells (any skill in `advanced` mode; `critical` in `standard`; any rung clamped back
+to the anchor by floor or boundary) **always inherit by omission and must never re-select the
+anchor's own ID as an explicit string**. The resolved model is held constant across any A/B arm
+for a given skill slot; do not re-resolve per-dispatch within a run.
+
+### R2 — Fallback loop on dispatch failure (≤ 2 step-downs, then OMIT)
+
+Applies **only when the dispatched `model=` was an explicit (non-inherited) ID** and the call
+fails:
+
+1. Call `kata_models.fallback_chain(model_id, family)` → a list of ≤ 2 full model IDs followed
+   by `None` (the OMIT terminus). The chain steps down the family ladder one rung at a time from
+   the failing model.
+2. Advance one position in the chain and retry the dispatch with that candidate. If the next
+   entry is `None`, omit the parameter and retry — that is the final attempt.
+3. **NOTE** the step-down in the conversation (model tried, model attempted next, reason) and
+   record it in the drift ledger.
+4. After ≤ 2 step-downs the chain ends in `None`. Omit the `model` parameter on the final retry.
+   **Never abort** solely due to model unavailability; always make the `None`/omit final attempt.
+   **Never re-select the anchor's own ID as the terminus** — `None`/omit is the terminus.
+5. **Inherited-model dispatches (the OMIT path) skip R2 entirely.** A failure on an
+   inherited-model call is a hard dispatch error; surface it via the normal escalation path.
+
+**EXCEPTION — HTTP 401 / 403 (auth / quota):** these are **real errors**, never
+model-availability transients. **Do not step down silently on a billing or authorization
+failure.** Surface immediately as a `kind: "human-required"` escalation — a 401/403 signals a
+credential or quota problem in the dispatch infrastructure; silent downgrading masks the root
+cause and may incur runaway cost on an unintended model.
 
 ## Cross-model dispatch (multi-model routing)
 

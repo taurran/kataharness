@@ -24,7 +24,10 @@ status: experimental             # REQUIRED. experimental | beta | stable | depr
 agnostic: true                   # REQUIRED. true = no tool-specific deps in the skill body
 cost-weight: 4                   # REQUIRED. 1–5 (authority: .planning/SKILL-COST-RATINGS.md) — D27
 allowed-tools: [Read, Grep, Glob, Write]   # REQUIRED. non-empty YAML list (Claude v0.1); adapter normalizes to the open-standard space-separated string (D31b). Evaluators MUST omit Write/Edit. (REQUIRED + shape enforced — dogfood-selfup-1)
-model: opus                      # OPTIONAL. only when the model is fixed for correctness
+# model:                        # FORBIDDEN in core SKILL.md (model-tiering D131, A1 guard).
+#                                # Model is dispatch-resolved at runtime (relative to the operator's
+#                                # anchor). Hard-baking a model ID breaks when that model is gated
+#                                # (the Fable outage). adapters/** may pin a model; core SKILL.md must not.
 compatibility: >-               # OPTIONAL (spec; ≤500). env requirements; doubles as a human-readable pre-flight hint (D29)
   Requires git + a subagent-capable host
 source: >-                       # OPTIONAL but REQUIRED when adapting external work (provenance)
@@ -56,6 +59,11 @@ tags:                            # OPTIONAL but RECOMMENDED. namespaced automati
 - `source:` is mandatory whenever a skill is derived from external work — we stand on shoulders *and attribute*.
 - **Obsidian:** only the *plural* reserved props exist — `tags` / `aliases` / `cssclasses` — and their values
   MUST be lists (1.9 removed the singular `tag`/`alias`/`cssclass`). Never use the singular forms.
+- `model:` is **FORBIDDEN** in core `skills/**` and `modules/**/SKILL.md` frontmatter — model is
+  dispatch-resolved (relative to the operator's anchor at runtime), never pinned in a skill body.
+  Hard-baking a model ID breaks when that model is gated or unavailable (the Fable outage pattern).
+  `adapters/**` may still pin a model; the core skill must not. Enforced structurally by
+  `tools/validate_skills.py` (`check_model_in_skill_frontmatter`, A1 guard, model-tiering D131).
 
 ### 1.1 Tag namespace (automation scaffold — D31)
 `tags` is the future-automation surface. Use Obsidian nested tags (`/`) so automations can query slices:

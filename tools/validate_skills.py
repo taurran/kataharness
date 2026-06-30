@@ -439,6 +439,33 @@ def check_reuse_claims_producers_exist(skills: list[Skill]) -> list[Finding]:
     return errors
 
 
+@check
+def check_model_in_skill_frontmatter(skills: list[Skill]) -> list[Finding]:
+    """A1 re-introduction guard (DESIGN §3 A1, R8 / model-tiering D131).
+
+    ERRORs on any absolute 'model:' key in SKILL.md frontmatter for core skills
+    (skills/**) and modules/**. This prevents re-introducing a hard-baked model ID
+    that breaks when that model is gated or unavailable (the Fable outage pattern).
+
+    Scope predicate (R8): 'adapters' not in s.dir.parts.
+    Adapters/config MAY still pin a model — that is explicitly out of scope for this guard.
+    """
+    out: list[Finding] = []
+    for s in skills:
+        if "adapters" in s.dir.parts:
+            continue  # adapters/** may pin models — R8 carve-out
+        if any(k.lower() == "model" for k in s.frontmatter):
+            out.append(Finding(
+                "ERROR",
+                s.dir.name,
+                "frontmatter 'model:' is FORBIDDEN in core SKILL.md — model is dispatch-resolved "
+                "(relative to the operator's anchor at runtime), never pinned in a skill body. "
+                "Remove this field and rely on dispatch-time relative resolution instead. "
+                "See STANDARDS.md §1 and AGENTS.md (model-tiering D131, A1 guard).",
+            ))
+    return out
+
+
 def run_checks(skills: list[Skill]) -> list[Finding]:
     findings: list[Finding] = []
     for fn in CHECKS:

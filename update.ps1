@@ -72,12 +72,13 @@ if ($env:KATA_SRC) {
 } elseif (Test-Path (Join-Path $_KataDefaultHome 'tools\kata_install.py')) {
     $_home = $_KataDefaultHome
 } else {
-    Write-Error 'kata-update: KataHarness home not found. Set KATA_HOME or KATA_SRC.'
-    exit 1
+    # 'throw' (not 'exit'): piped via `irm | iex` this runs in the caller's
+    # session, where 'exit' would terminate the host WINDOW. 'throw' surfaces
+    # the error without closing it; as a file it still stops with a failure code.
+    throw 'kata-update: KataHarness home not found. Set KATA_HOME or KATA_SRC, or run install.ps1 first.'
 }
 if (-not (Test-Path (Join-Path $_home 'tools\kata_install.py'))) {
-    Write-Error "kata-update: tools/kata_install.py not found in $_home"
-    exit 1
+    throw "kata-update: tools/kata_install.py not found in $_home"
 }
 Set-Location $_home
 
@@ -107,10 +108,17 @@ function Invoke-Engine {
     } elseif (Get-Command python -ErrorAction SilentlyContinue) {
         & python tools/kata_install.py @EngineArgs
     } else {
-        Write-Error 'kata-update: Python not found. Install uv or Python 3.12+.'
-        exit 1
+        throw 'kata-update: Python not found. Install uv (https://docs.astral.sh/uv/) or Python 3.12+.'
     }
-    exit $LASTEXITCODE
+    # Propagate the engine's exit code WITHOUT 'exit' — under `irm | iex` this script
+    # runs in the caller's session, so a bare 'exit' (even 'exit 0') closes the host
+    # WINDOW. Set $LASTEXITCODE for the download-then-run path; 'throw' only on a real
+    # failure (surfaces in red, window stays open). Success simply falls off the end.
+    $_ExitCode = $LASTEXITCODE
+    $global:LASTEXITCODE = $_ExitCode
+    if ($_ExitCode -ne 0) {
+        throw "kata-update: engine exited with code $_ExitCode"
+    }
 }
 
 # --------------------------------------------------------------------------
@@ -123,11 +131,10 @@ if ($_factoryReset) {
     if ($_hard) {
         if (-not $_yes) {
             if ([Console]::IsInputRedirected) {
-                Write-Error 'kata-update: --factory-reset --hard requires --yes in non-interactive mode.'
-                exit 1
+                throw 'kata-update: --factory-reset --hard requires --yes in non-interactive mode.'
             }
             $confirm = Read-Host 'kata-update: --factory-reset --hard will CLEAR the overlay store and reset the base tree. Type YES to continue'
-            if ($confirm -ne 'YES') { Write-Error 'kata-update: aborted.'; exit 1 }
+            if ($confirm -ne 'YES') { throw 'kata-update: aborted.' }
         }
         if (Test-GitClone) {
             Write-Host "kata-update: fetching and resetting to $_KataRef ..."
@@ -139,14 +146,16 @@ if ($_factoryReset) {
         }
     }
     Invoke-Engine (@('--git-sha', $_gitSha) + $_engineArgs)
+    # Invoke-Engine throws on failure and sets $global:LASTEXITCODE on success;
+    # return here so the update path below does not execute after a factory reset.
+    return
 }
 
 # --------------------------------------------------------------------------
 # UPDATE path - minor-c: requires a git-clone home with a fetchable origin
 # --------------------------------------------------------------------------
 if (-not (Test-GitClone)) {
-    Write-Host 'kata-update: this home is not a git clone - re-install to update'
-    exit 1
+    throw 'kata-update: this home is not a git clone - re-install to update'
 }
 
 Write-Host 'kata-update: fetching origin ...'
@@ -166,7 +175,8 @@ if ($_check) {
         Write-Host "  current:   $_lShort"
         Write-Host "  available: $_rShort (ref: $_KataRef)"
     }
-    exit 0
+    $global:LASTEXITCODE = 0
+    return
 }
 
 # M2 - dirty-tree guard (tracked files only; untracked '??' and ignored are safe)
@@ -177,7 +187,7 @@ if ($_dirtyLines.Count -gt 0) {
         $_dirtyLines | ForEach-Object { Write-Host $_ }
         Write-Host ''
         Write-Host 'Re-run with --discard-local to overwrite them, or commit/stash first.'
-        exit 1
+        throw 'kata-update: ABORT - dirty base; re-run with --discard-local'
     }
     Write-Host 'kata-update: WARNING - --discard-local: discarding modifications to tracked base files:'
     $_dirtyLines | ForEach-Object { Write-Host $_ }

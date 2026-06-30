@@ -1,4 +1,35 @@
+---
+gsd_state_version: 1.0
+milestone: v0.1
+milestone_name: milestone
+status: unknown
+last_updated: "2026-06-30T00:00:00.000Z"
+---
+
 # STATE — KataHarness
+
+> **CURRENT (2026-06-30, D131 model-tiering COMPLETE — built, gated, ready to commit; builds on D130 `8af2e37`):**
+> D131 = **relative, mode-driven model-tiering** — DONE across **3 waves**, all via subagents. **W1:**
+> `tools/kata_models.py` (NEW pure-stdlib resolver: `resolve`/`step_down`/`fallback_chain`/`family_of`, family ladders
+> DATA registry, `ID_MAP`, `SKILL_WORK_CLASS`); A1 re-introduction guard in `validate_skills.py`
+> (`check_model_in_skill_frontmatter`, case-insensitive, SKILL.md-frontmatter-only, adapters/config exempt);
+> `update.ps1` bare-`exit`→`throw`/`$global:LASTEXITCODE` fix; `protocol/config.md` `models` schema. **W2:**
+> `kata_roles.py` relative tokens (`anchor`/`anchor-1`/`anchor-2`, delegating to `step_down`); `kata-orchestrate`
+> dispatch-time model-selection prose + R2 ≤2-then-omit fallback (401/403 raises); `kata-bootstrap`/`kata-initiate`
+> anchor-write of the `models` block. **W3:** `kata-write-skill` no-`model:` authoring note; D131 entry in
+> `DECISIONS.md`; full **47/47** work-class map (25 critical / 12 coding / 10 economy) + count-agnostic coverage test.
+> **Contract:** model resolved at dispatch as a differential off the operator's session model (anchor); zero-step cells
+> inherit by omission (`None`/OMIT), explicit id only strictly below anchor (determinant = step-count, not work-class);
+> R1 coder-floor (essential-coding ≤ standard-coding ≤ anchor); R2 fallback OMIT-terminus; BC: absent config ⇒ inherit
+> byte-for-byte. Folds R1–R8; builds on D130; implements D59. **Quality loop:** adval between W2/W3 (SHIP; 4 fixes incl.
+> `family="auto"` activation, shared `step_down` DRY primitive). Deep adval (PASS all 7 DESIGN §4 criteria, independently
+> re-run). **Two real defects caught by LIVE PROOF / D98 and fixed** (validating D124): (1) advanced/coding wrongly
+> stepped down — coder-floor now gated to `mode=="essential"`; (2) MAJOR full-id anchor silently disabled tiering —
+> `_normalize_anchor` now maps full ids → short names. **Gates:** pytest **2126 passed / 2 skipped / 0 failed**;
+> `validate_skills` **47/0** WITH A1 guard; Snyk medium+ **0** on all new/changed Python. **UNCOMMITTED** —
+> operator-approved commit + push to master is the immediate next step.
+> **NEXT:** commit + push to master; then version/closeout per the loop. Records: `.planning/specs/model-tiering/`,
+> `DECISIONS.md` D131.
 
 > **CURRENT (2026-06-29, SESSION END — install-update-polish SHIPPED + PUSHED · tip `1ac85ed` in sync; pytest 1991 ·
 > 47 skills/0 · Snyk med+ 0):** The hybrid install/update/polish feature is COMPLETE, gated, committed AND pushed —
@@ -821,37 +852,46 @@
 > `delivery: incremental` exercise — will light up the deferred-runtime BACKLOG). See `.planning/HANDOFF.md`.
 
 ## Where we are
+
 - Project scaffolded at `C:\Dev\Projects\KataHarness` (git, `.gitattributes eol=lf`). Foundation committed.
 - Canonical docs: `AGENTS.md`, `CLAUDE.md` (pointer), `docs/{DESIGN,STANDARDS,TEST-PLAN}.md`, `README.md`
   (versioned skill index). `.planning/{PROJECT,ROADMAP,DECISIONS(16),LESSONS-LEARNED(10),BACKLOG,STATE,STEERING,REVIEW-v0.1}.md`.
+
 - Reference skills vendored (gitignored): `research/reference/{mattpocock-skills,bmad-method}`; GSD local
   at `~/.claude/get-shit-done`.
+
 - **15 `kata-*` skills built**, all `0.1.0/experimental`: the v0.1 ten + `kata-review` + the four
   v0.2-pulled-forward (`kata-diagnose`, `kata-selfhandoff`, `kata-improve`, `kata-write-skill`). 3 remain
   unbuilt: `kata-tasklist` (deferred — redundant with state.json + the plan DAG until workers self-select),
   `kata-zoom-out` (deferred — too thin), `kata-engram` (backlog, gated on a mature engram, D9). The README
   index is the source of truth. (Adversarial-reviewed → `.planning/REVIEW-v0.1.md`; new batch review pending.)
+
 - **2026-06-10 — CPP decoupled (D57) + PortaVault→PokeVault (D58).** CPP is no longer the test medium or
   consumer (history stands; provenance kept). The D16 A/B target is reshaped to **small one-shottable test
   projects**. PokeVault vault is READY (`C:\Users\taurr_nvs748q\PokeVault\PokeVault`, incl.
   `toolkit/agent-sops/`) — KataHarness's install/test home (under `toolkit/`).
 
 ## Done so far (this session, 2026-06-06)
+
 - Froze the shared control: CPP `03-DESIGN.md` + `03-01-PLAN.md` (4 locked decisions, 4-task disjoint partition).
 - Built the **5 v0.1 execution skills** (`kata-orchestrate/worktree/board/tdd/evaluate`) → `0.1.0/experimental`.
 - Ran **Arm A** (KataHarness via Sonnet subagents in CPP worktrees) → GREEN: 244 tests, det build, Snyk 0,
   fresh-context `kata-evaluate` 9/9 PASS, **0 drift / 0 escalations / 0 human interventions** ([[LESSONS-LEARNED]] L9).
+
 - Arm A lives on CPP branch `test/phase3-kata` (worktree `C:/Dev/_kata_armA/integration`).
 
 ## Also done (2026-06-06, cont.)
+
 - **A/B verdict recorded: TIE** ([[LESSONS-LEARNED]] L10). Arm B (GSD) matched Arm A on every objective
   metric incl. the identical in-lane auto-fix → execution half on-par, not better; differentiation lives in
   the (frozen-for-both) planning half. User shipping Arm B to CPP `main`.
+
 - **Built the remaining v0.1 planning skills + the adversarial leg** → all `0.1.0/experimental`:
   `kata-grill` (deep, to the L8 standard: GSD-format choice-or-text questions, relentless + doc-grounded,
   doc-baking, convergence criteria, anti-shallow guard + a `resources/DECISION-LEDGER.md`),
   `kata-context`, `kata-design-doc`, `kata-plan` (disjoint file-ownership + wave DAG), `kata-handoff`,
   and **`kata-review`** (adversarial/red-team — the EVALUATE leg the A/B exposed as missing, L10).
+
 - **v0.1 is now skill-complete: 11 skills built** (the 10 + kata-review). README index promoted.
 
 ## Active workstream — OPERATING MODES (Spec A1 + A2 + A3 MERGED to master; A4 in progress)
@@ -883,7 +923,6 @@ DAG-frontier dispatch, async park/drain/hard-wait, structured escalation payload
 engram-mediated escalation (D56). Then Spec B (bake-off), `design` module. Parallel outstanding: D16
 planning-varied A/B.
 
-
 Brainstormed a major new capability: cost/effort/thoroughness **operating modes** (Essential/Standard/Advanced),
 all one-shot, consistency-first. Full design in `docs/MODES-DESIGN.md`; vocabulary in `CONTEXT.md`; skill
 token-weights in `.planning/SKILL-COST-RATINGS.md`; decisions D17–D23. Prior art researched (FrugalGPT cascade,
@@ -891,8 +930,10 @@ Cursor/AgentHub best-of-N, Claude `effort`, GitHub Spec Kit) — pieces exist; o
 escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
 
 ## 2026-06-11 (evening session) — D59 + sprint-cadence spec opened
+
 - **D59 — model routing Opus → Fable 5** for deep/judgment work (`claude-fable-5`); Sonnet stays the
   lightweight workhorse; 8 skill `model:` pins flipped to `fable`; test arms remain Sonnet (D14/D57).
+
 - **NEW capability spec opened: sprint-cadence** (`.planning/specs/sprint-cadence/`) — user-requested
   bootstrap toggle between **one-shot** (current loop) and **sprint** execution (plan partitions the project
   into GSD-style sprints; run one sprint → gate → output → user course-corrects via grill → re-enter, same
@@ -903,17 +944,20 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   boundary is the scheduled re-plan event (spine #2 compatible).
 
 ## 2026-06-15 — sprint-cadence grill CONVERGED + engram registry created (uncommitted until 2026-06-18)
+
 - **Sprint-cadence ledger fully resolved (SC-GB1–10 + engram cross-cut).** Knob = **`delivery: one-shot |
   incremental`** (unit = sprint); three-layer freeze (DESIGN north-star / ROADMAP boundary-amendable / sprint
   PLAN immutable) + Boundary Change-Control Protocol G1–G4; sequencing A+C (re-entrant `kata-bootstrap` routes,
   `kata-orchestrate` stays sprint-blind, NEW thin `kata-sprint`); three-tier state w/ derived `.kata/` cache
   rebuilt from git; scoped delta-grill course-correct (default always-stop); prime-frame sizing primitive
   (refines D8); sprint N≥2 = version-up vs most-recent-green baseline; bake-off trimmed; **D16-first LOCKED**.
+
 - **`protocol/engram.md` CREATED** — engram plugin contract + seam registry (E1–E21, C1–C6, backend binding
   incl. external-backend clean-room). Adversarially reviewed (HOLD→hardened). Freeze-gate audit on sprint-cadence
   returned HOLD with must-fixes (roadmap-layer is NET-NEW in kata-plan; pin tunables; D8 supersession; etc.).
 
 ## 2026-06-18 — loop-cognition spec OPENED + CONVERGED (this session)
+
 - **NEW umbrella spec `loop-cognition`** (`.planning/specs/loop-cognition/{RESEARCH,GRILL-LEDGER}.md`): three
   entangled loop enhancements — **RS** in-loop research subagent (escalation-routed, grounding-gated,
   fresh-context no-write `kata-research`), **AO** agent orientation (orchestrator-assembled stable→context→
@@ -921,44 +965,54 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   `kata-orient`), **ML** managed learning (candidate-skill distillation → 2-stage gate → human promotion
   `kata-promote`; second-brain LEARN feed as Karpathy-LLM-Wiki-pattern synthesis; progressive autonomy
   `engram.autonomy` maturity∧config AND-gate, grounding never bypassed).
+
 - **Hermes Agent (Nous) baked off** — verdict: borrow mechanisms (autonomous distillation, protected
   head+tail compaction, tiered prompt assembly, `.usage.json` telemetry), keep OUR gates (default-FAIL +
   human promotion). Their no-gate skills + emergent-plan compaction = the failure modes our spine prevents.
+
 - **LC-GB1–9 + RS-GB1–3 + AO-GB1–3 all RESOLVED + user-confirmed.** Sequencing = **Path 2**: D16 first, build
   the LEARN-only feed pipeline (β) in parallel (it's an engram *prerequisite*, low-drift, observe-and-emit,
   zero CONSULT). Artifact map recorded (NEW: kata-research/kata-orient/kata-promote + protocol/orientation +
   protocol/wiki-synthesis; EXTEND: evaluate/review/selfhandoff/orchestrate/handoff/improve/graph).
+
 - **Freeze-gate audited HOLD→SHIP** (fresh-context Opus; MF1–MF3 + SF1–SF4 resolved; re-confirm SHIP).
   **DESIGN FROZEN** (`loop-cognition/DESIGN.md`); decisions promoted **D60–D69**; β ingested into ROADMAP
   (∥ D16), rest post-D16.
+
 - **D16 RETIRED as an RCT + Priming-and-Grill resolved (D70/D71/D72, L11).** Two A/B attempts (easy + hardened
   `wordfreq`) proved the autonomous deterministic-gate A/B can't isolate the grill (4/4→10/10 gate passes; grill's
   human-engine is off without a human). **Grill is now an OPTIONAL human certainty layer over the priming prompt,
   with an autonomous-reliability floor** (default-FAIL + RS + assumption-log); grill ledgers are a PRIMARY
   cognitive-fingerprint feed. **Autonomous reliability is demonstrated; v0.1 no longer gated on an RCT → the
   D16-first lock is dissolved → the full build is UNBLOCKED.**
+
 - **D71 Priming-and-Grill wiring ✅ DONE 2026-06-18** (spec `priming-and-grill`, DESIGN FROZEN; D73 + M1–M3):
   grill **skip** rung (`tiers["kata-grill"]="skip"`) + bootstrap grill-depth dial (Phase 1.5) + readiness Scope-3
   prompt-richness recommendation + orchestrate skip-floor branch + **`kata-defer` built** (DEFERRED.md parking +
   ASSUMPTIONS.md grill-skip log; **25→26 skills**) + grill↔RS spectrum doc'd. Validator 26/0, pytest 15.
   **Caveat:** RS slot doc'd/wired-for, lit in the loop-cognition phase. **Pending: fresh-context `kata-review`.**
+
 - **β LEARN feed ✅ DONE 2026-06-18** (D74 + BP1/BP2): `kata-improve` emit-only sub-mode (E6) → Karpathy-LLM-Wiki
   synthesis pages per the schema in `protocol/engram.md` (`produced-by: loop`); **zero CONSULT** (BC2),
   **redaction-gated** (C3), no-op without `engram.learnFeed.dir` (BP1/BC1); `engram.md` now validator-enforced
   (BP2). Validator 26/0, pytest 18. **Pending: fresh-context `kata-review`.**
+
 - **RS ✅ DONE 2026-06-19** (D75; RS-GB1/2/3): `kata-research` escalation-routed fresh-context **no-write**
   researcher (`research-needed` kind); **L2 grounding gate** = injected-knowledge mode of `kata-evaluate` +
   `kata-review` RUBRIC (never bypassed, D33); orchestrator folds GROUND findings via deliberate superseding
   re-plan, else REJECT/escalate-to-human. `kata/module/research`; **27 skills**. Validator 27/0, pytest 21.
   **Pending: fresh-context `kata-review`.**
+
 - **AO ✅ DONE 2026-06-19** (D76; AO-GB1/2/3 + user extensions): `kata-orient` (spine, read-only) three-tier
   launch orientation + `protocol/orientation.md`; **task-type-aware**, contextually-derived **pointers+callouts**
   from standard markdown, **smart questioning routed** (answer-inline / research-needed→RS / human→grill),
   `kata-handoff` Orientation tie-in (aligned both sides). **28 skills.** Validator 28/0, pytest 24.
+
 - **ML ✅ DONE 2026-06-19** (D77; L5/L6): `kata-promote` stage-2 human promotion gate (AskUserQuestion);
   agent-distilled candidates (STANDARDS §1.3, `<agentSkills.dir>/candidates/`, not universal) → grounding gate →
   human gate; `engram.autonomy` AND-gate default **always-human**; candidate lifecycle in `state.md`. **29 skills.**
   Validator 29/0, pytest 27. **⇒ loop-cognition COMPLETE (RS + AO + ML).**
+
 - **NEXT (see HANDOFF §4 THE PLAN):** (1)–(4) ✅ D71/β/RS/AO; (5) ✅ RS+AO validation; (6) ✅ ML →
   **loop-cognition done.** **(7) ✅ sprint-cadence DESIGN FROZEN 2026-06-19** (D78–D85; freeze-gate HOLD→SHIP) →
   **BUILD it next** (NEW: `kata-plan` roadmap layer + `kata-sprint` + `kata-report` v1; needs PLAN + approval);
@@ -966,34 +1020,42 @@ escalation-with-reuse + Improvement-Kata version-ups) is the contribution.
   stay gated on a mature engram.
 
 ## Next action — RS → AO → ML (D16 lock dissolved by D70; D71 + β DONE 2026-06-18)
+
 > ⚠️ The numbered list below predates D70 and is **superseded** — it described the D16-first sequencing that no
 > longer applies. Authoritative next step: **RS (research subagent), then AO, then ML.** Kept for provenance.
+
 0. **Answer the sprint-cadence grill ledger** (`.planning/specs/sprint-cadence/GRILL-LEDGER.md`, SC-GB1–10)
    — note SC-GB10 proposes: freeze the sprint DESIGN now, build after D16.
+
 1. **D16 planning-varied A/B (the v0.1 validation gate; ROADMAP-sequenced FIRST):** prove the grill
    differentiates — Arm A plans via `kata-grill`→`kata-design-doc`→`kata-plan` vs a GSD baseline. **Target
    reshaped (D57): small one-shottable greenfield projects in a dedicated test directory** (repeated paired
    measurements, not one big task). Needs its own spec grill (`.planning/specs/`) — TEST-PLAN v1 is superseded.
+
 2. **Obsidian-KG / kata-understand spec** — emit+ingest over the `kata.graph.json` contract (D54/D55).
    **PokeVault gate SATISFIED (D58)** — vault is git-versioned/durable, so no freshness pressure; sequenced
    AFTER D16 per ROADMAP + the 2026-06-10 adversarial review of the "grill-KG-first" option (REJECTED:
    premise decay — durable vault; post-v0.1 inversion; rework exposure from an unvalidated grill).
+
 3. **Spec B — bake-off** (anytime; composes with version-up, D37).
 - **Backlog:** A3-review carry-overs (`kata-readiness` harness-vs-target wording for the KG spec; `tools/`
   example-`kata.config` check) · `kata-defer`/`kata-understand`/`kata-tasklist`/`kata-engram` · adapters ·
   **set a git remote before public release** (still local-only).
 
 ## Model per stage
+
 Build KataHarness → **Claude Fable 5** (`claude-fable-5`, D59 — supersedes the Opus routing). D16 test
 arms → **Sonnet** (constant across arms — D14 principle, survives D57/D59). I pin subagent models on
 spawn; operator sets main-session model via `/model`.
 
 ## Open decisions for the user
+
 - Confirm D16-first sequencing (adversarial review recommends it; Option D "grill-KG-first" was reviewed
   and REJECTED 2026-06-10). Suite/plugin packaging shape. Git remote before public release.
 
 ## Session Continuity
-Last session: 2026-06-18. Stopped at: loop-cognition grill fully converged + user-confirmed (LC-GB1–9,
+
+Last session: 2026-06-30T15:02:58.583Z
 RS-GB1–3, AO-GB1–3); STATE/HANDOFF refreshed; checkpoint commit of 2026-06-15 (sprint-cadence converged +
 engram.md) + 2026-06-18 (loop-cognition spec) work. Resume file: `.planning/HANDOFF.md` (read it first).
 **Immediate next:** the session resolved the **Priming-and-Grill architecture (D70/D71/D72, L11)** and

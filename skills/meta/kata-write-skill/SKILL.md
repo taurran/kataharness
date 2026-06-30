@@ -38,6 +38,14 @@ live in `docs/STANDARDS.md` — **read it; do not duplicate it here** (DRY). Thi
    - Frontmatter per STANDARDS: `name`(==dir, `kata-<verb>`), trigger-rich one-line `description`, `version`
      `0.1.0`, `category`, `status: experimental`, `agnostic: true`, **least-privilege `allowed-tools`**
      (evaluators omit Write/Edit), `source:` provenance (must map to a real ADOPT row in `research/NOTES.md`).
+   - **No `model:` field** (`docs/STANDARDS.md §1` / A1 guard `check_model_in_skill_frontmatter`):
+     `model:` is **FORBIDDEN** in core SKILL.md frontmatter. Model is dispatch-resolved *relative to the
+     operator's anchor at runtime* — never pinned in a skill body. Hard-baking a model ID force-switches
+     the host model and silently breaks when that model is gated or unavailable (the **Fable-outage
+     class** of failure). Rely on dispatch-time relative resolution instead. `adapters/**` may still pin
+     a model (R8 carve-out); core `skills/**` must not. The validator raises a hard ERROR (not a warning)
+     on any absolute `model:` key present here — see `docs/STANDARDS.md §1` and `AGENTS.md`
+     (model-tiering D131).
    - Body: lean. **Context efficiency is a design constraint** — the body loads only when invoked, the
      `description` is the only always-resident cost, so make it tight and trigger-rich. Keep SKILL.md short
      (~100 lines); push depth into `resources/` (progressive disclosure, refs one level deep); reference
@@ -62,6 +70,9 @@ skill:
       push tool bindings to an adapter note, like kata-grill/kata-orchestrate do)
 - [ ] `description` trigger-rich, third person, "Use when …"
 - [ ] `allowed-tools` least-privilege and justified
+- [ ] No `model:` key in frontmatter — dispatch-resolved, never pinned in a skill body (A1 guard:
+      `check_model_in_skill_frontmatter` hard-fails any absolute `model:` in core SKILL.md;
+      see `docs/STANDARDS.md §1`, model-tiering D131)
 - [ ] `source:` maps to a `research/NOTES.md` row; boundary vs neighbors stated (no overlap)
 - [ ] SKILL.md lean; depth in `resources/`; pointers not restatements
 - [ ] README index updated
