@@ -7,6 +7,10 @@ distinct_runs: 2 (BLOCKER-tier threshold = 2) — ACTIONABLE
 detector: recurrence_detect.detect_from_paths
 ---
 
+> **INTERIM (2026-06-30):** prose-pin applied to `kata-evaluate` item 9 + `kata-review` 6(b); full
+> wiring-completeness-gate build SCHEDULED (see BACKLOG). NOT yet marked guarded in
+> `recurrence-handled.jsonl` — per T2, the guarded marker waits for the build to land.
+
 # Actionable recurrence: orchestrate wiring describes a flow a slice isn't actually wired into
 
 ## The cluster (evidence)

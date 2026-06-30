@@ -15,6 +15,13 @@ Promote to ROADMAP milestones when ready.
   `kata-design-doc`/`kata-plan` RUBRIC/`kata-tdd` + validator regression rule + T-fire proof-of-fire (full recipe,
   D98 red-team SHIP). Record: `specs/recurrence-hardening/{PLAN-phantom,REPORT-phantom}.md`. **REMAINING (general
   build):** the detector + `kata-improve` proposal loop + `kata-promote` gate — **grill → freeze → build** the BRIEF.
+- **★ wiring-completeness gate — full build (SCHEDULED, after v0.1 cluster).** A `tools/` produced-vs-consumed
+  sweep helper + tests + mutation bite (mirror `test_exec_safety.py` registry-completeness check) + a
+  realistic-fixture end-to-end trace — run as an **ORCHESTRATOR INTEGRATION-GATE step** (NOT a no-write
+  `kata-evaluate` item, which collides with the no-write invariant). Supersedes the interim prose-pin
+  (2026-06-30); `kata-evaluate` item 9 and `kata-review` 6(b) hold a POINTER to this gate. Refs:
+  `.planning/PROPOSAL-phantom-reuse.md` + `specs/recurrence-hardening/`. **Size M, tier standard. Grill →
+  freeze → build.**
 
 ## ★★ PRE-PUBLIC PRIORITIES (operator notes, 2026-06-21 — post-S3b review) ★★
 These are the operator's own end-of-S3b notes; several gate going public. Captured verbatim-in-intent.

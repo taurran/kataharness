@@ -71,10 +71,18 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
    `.kata/concurrency.json` from the board, a generated report from a template + tokens, a computed manifest):
    **regenerate it yourself from its stated source and reconcile** — a material mismatch between the presented
    artifact and the freshly-reproduced one is **NEEDS_WORK** (the presented copy may have been hand-massaged).
-   For any **seam the build claims is wired** ("the orchestrator runs X", "the gate emits Y"): **execute it once**
-   against real inputs rather than confirming the prose describes it. (Raw test/build output captured by
-   `gate_emit` is *primary*, not derived — item 2 already re-runs it; this item targets *second-order* artifacts
-   and wiring claims. A run with no derived artifacts and no new seam ⇒ N/A, not a failure.)
+   For any **seam the build claims is wired** ("the orchestrator runs X", "the gate emits Y"): trace the
+   **WHOLE orchestrated flow** once on a realistic fixture (not a single isolated seam) — assert every PRODUCED
+   surface is CONSUMED and every CONSUMED surface is PRODUCED. A produced-but-unconsumed or
+   consumed-but-unproduced seam is **NEEDS_WORK**. (Scope: code-bearing wiring — greppable producer→consumer
+   handoffs; prose-orchestrated LLM seams are out of scope here.) (Raw test/build output captured by `gate_emit`
+   is *primary*, not derived — item 2 already re-runs it; this item targets *second-order* artifacts and wiring
+   claims. A run with no derived artifacts and no new seam ⇒ N/A, not a failure.)
+
+   > **Caveat (no-write fresh-context grade limit):** a no-write grader CAN grep produced-vs-consumed handoffs
+   > in the wiring files and assert handoff shapes match; it CANNOT build or run the fixture itself. The
+   > build-and-run leg is enforced by the orchestrator integration gate (the scheduled wiring-completeness build
+   > — see BACKLOG), not by this no-write item.
 
 ## Injected-knowledge grounding mode (the L2 gate — RS findings / ML candidates; D33)
 A distinct invocation: instead of grading a built phase, grade **knowledge about to influence the build** —
