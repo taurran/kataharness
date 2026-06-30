@@ -137,3 +137,33 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
      `kata-evaluate` PASS and **before merge** (operator-chosen cadence, 2026-06-24). Two lenses: one grades against
      the plan, one attacks the result. (c) **Meta-lesson: fold lessons into the SKILLS, not just the ledger** — an
      unwired lesson (L10c) is latent debt that resurfaces; `kata-improve` must close the loop to a skill edit.
+
+- **L13 — The D124 thesis held live (D131): a green 2126-test matrix BLESSed two defects that only the live proof +
+  D98 adversarial sweep caught. (2026-06-30)** (a) `advanced/coding` applied the coder-floor because the guard wasn't
+  gated to `mode=="essential"` — wrong tier for a specific anchor×mode cell. (b) A full-model-id anchor silently
+  disabled ALL tiering because the resolver compared an id string against ladder short-name indices. Both defects were
+  invisible in the unit matrix, which exercised the **contract** (input→output mapping) but not the **integration seam**
+  (resolver output → SDK dispatch call). *Reinforces:* live-proof + adversarial gates are load-bearing, not ceremony.
+  *Baked in:* see [[L15]] (seam coverage) and [[L16]] (run-order).
+
+- **L14 — Freeze the DETERMINANT, not just the outcome table. (2026-06-30)** The freeze-gate HOLD on D131 caught that
+  the spec described the `step==0`/`step<0` logic by work-class rather than by step-count. The fix was to state the
+  deciding variable explicitly ("step-count, not work-class") — not to expand the table. When a resolver has multiple
+  plausible interpretations, ambiguity lives in which input *drives* the branch, not in what the branches do; freeze the
+  determinant first, the outcomes follow. *Baked in:* spec freeze checklist must confirm the determinant is named, not
+  only the outcome rows.
+
+- **L15 — A full matrix test is necessary but not sufficient — treat the resolver→dispatch seam as untrusted until
+  exercised live. (2026-06-30)** Unit tests validating a resolver's contract (input→output) will not catch errors in how
+  that output is *consumed* by the downstream call-site (wrong field, un-indexed value, type mismatch against an SDK
+  enum). For any resolver whose output feeds an SDK or dispatch call, require: (1) unit tests on the contract, AND (2) a
+  live dispatch that exercises the full resolver→call path. Treat the seam as untrusted until (2) passes. *Ties to:*
+  [[L12]] "execute the seam, don't accept the prose." *Baked in:* integration gate must include at least one live
+  dispatch per resolver under test; "green matrix" alone is not a gate pass.
+
+- **L16 — Adversarial sweep (D98) runs AFTER the live proof, not before; the run-order is load-bearing. (2026-06-30)**
+  Running D98 before live-proof produces a pure spec audit — it can miss the same integration seams the unit tests
+  missed, because it has no concrete failures to anchor the investigation. The live proof surfaces specific, observable
+  failures; D98 investigates those failures with full context. Correct gate sequence: integration gate → live proof →
+  D98 adversarial sweep. *Baked in:* `kata-orchestrate` Final-gate ordering must list live-proof before adversarial
+  sweep on any code/contract-bearing build.
