@@ -40,6 +40,8 @@ PLUGIN_NAME = "kata"
 
 def _safe_abs(raw: str | Path) -> Path:
     """Reject ``..`` traversal (CWE-23) then resolve to absolute."""
+    # CWE-23 guard: rejects any path containing a '..' component before resolving.
+    # Snyk rule python/PT on downstream path ops is suppressed in .snyk — this idiom is not recognised as a sanitizer.
     p = Path(raw)
     if any(part == ".." for part in p.parts):
         raise ValueError(f"kata_install: refusing path with '..' traversal: {raw!r}")
