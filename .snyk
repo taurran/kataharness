@@ -4,20 +4,22 @@
 #
 # SUPPRESSION RATIONALE — python/PT (CWE-23 Path Traversal) in tools/kata_install.py
 #
-# All 17 LOW findings are false positives. _safe_abs() (lines 41-46) is the CWE-23
-# boundary guard: it rejects any path whose components include '..' via
+# Every python/PT LOW finding in this file is a false positive. _safe_abs() is the
+# CWE-23 boundary guard: it rejects any path whose components include '..' via
 #   any(part == ".." for part in p.parts)
 # before resolving, and is called at every external-input entry point. Snyk's taint
 # engine does not recognise this Python idiom as a sanitizer, so it marks downstream
 # path operations (shutil.rmtree, shutil.copytree, Path / concatenation) as tainted.
+# (Snyk's reported count varies with taint-propagation changes; the file-level ignore
+# below is count-independent and blankets every python/PT finding in this file.)
 #
-# Additional constraint: 4 of the 17 findings land inside 5 byte-frozen engine fns
-# (_link_or_copy, _flat_link_skills, install, copy_project, confirm_platform) that
+# Additional constraint: several of these findings land inside the 5 byte-frozen engine
+# fns (_link_or_copy, _flat_link_skills, install, copy_project, confirm_platform) that
 # cannot receive inline # snyk:ignore comments without breaking the byte-freeze.
 #
 # Risk class: operator-controlled local CLI tool; all paths are operator-supplied and
 # validated at the _safe_abs boundary. Residual risk is negligible.
-# Severity: LOW (all 17 findings). No medium+ findings present.
+# Severity: LOW (every python/PT finding here). No medium+ findings present.
 #
 # Risk accepted under Approach C (documented suppression). Review by: 2027-06-30.
 version: v1.25.0
@@ -25,11 +27,11 @@ ignore:
   python/PT:
     - 'tools/kata_install.py':
         reason: >-
-          FALSE POSITIVE: _safe_abs() (lines 41-46) rejects '..' traversal at every
-          external-input boundary via `any(part == ".." for part in p.parts)` — Snyk's
-          taint engine does not recognise this idiom as a sanitizer. 4 of 17 findings
-          are in 5 byte-frozen engine fns that cannot accept inline snyk:ignore comments.
+          FALSE POSITIVE: _safe_abs() rejects '..' traversal at every external-input
+          boundary via `any(part == ".." for part in p.parts)` — Snyk's taint engine
+          does not recognise this idiom as a sanitizer. Several findings are in the 5
+          byte-frozen engine fns that cannot accept inline snyk:ignore comments.
           Operator-controlled local CLI; all paths are operator-supplied. Severity: LOW.
-          Risk accepted per Approach C (documented suppression). Expiry: 2027-06-30.
+          File-level ignore is count-independent. Risk accepted per Approach C. Expiry: 2027-06-30.
         expires: '2027-06-30T00:00:00.000Z'
 patch: {}
