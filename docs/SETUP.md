@@ -179,6 +179,68 @@ git remote), `update.sh` detects the missing remote, prints
 `"this home is not a git clone — re-install to update"`, and exits without mutating. Re-run the
 one-command installer (`install.sh` / `install.ps1`) to update such homes instead.
 
+### Local adaptation (overlays)
+
+KataHarness lets you adapt individual skills to your workflow **without touching the installed base**.
+The base skills under `<home>/skills/` are immutable from the user's side — every `--update` cleanly
+overwrites them. Local adaptations live exclusively in the **overlay store**, which is preserved across
+updates and factory-resets.
+
+**Overlay store — `<home>/.kata-overlay/overlay.json`.** User-owned, git-ignored, per-install. The
+file is keyed by skill name; each entry can hold:
+
+| Key | Purpose |
+|---|---|
+| `frontmatterOverrides` | Field-level overrides merged over the base frontmatter. Shallow, per-key replace — list-valued keys (`tags`, `allowed-tools`, `aliases`, `supersedes`) are replaced entirely, not element-merged. To extend a list, restate the full intended list in the overlay. |
+| `prepend` / `append` | Ordered content blocks spliced at a named heading anchor in the skill body (e.g. `"## Output"`), or at the start / end of the body when `anchor` is `null`. Multiple blocks for the same anchor apply in array order. |
+| `pin` | Advisory semver the entry was authored against (informational). |
+
+**Authoring overlays — `kata-improve` local-adaptation mode.**
+Before entering its authoring path, `kata-improve` calls `kata_overlay.adaptation_context(home)`:
+
+- **`"install"`** — a `.kata-version` stamp is present in the home (written by every successful install
+  or `--update`; git-ignored; every real user install self-identifies). In this context, `kata-improve`'s
+  kata mode **refuses to run** — it will not mutate the installed base — unless the operator explicitly
+  passes `improve.allowUpstreamEdit`. The safety rail defaults to "never mutate the installed base."
+- **`"dev-repo"`** — no stamp; a canonical maintainer checkout. The authoring-upstream path runs as
+  normal (edits `skills/**` in place, bumps semver, updates the README index).
+
+In install context, the **pinned writable footprint** is exactly:
+1. `<home>/.kata-overlay/overlay.json` — overlay entries, via `kata_overlay.write_overlay_entry`
+   (read-merge-write one skill; all others preserved).
+2. `<agentSkills.dir>/candidates/<name>/` — fork candidates, via `kata-write-skill`
+   (sandboxed, pre-`kata-promote`-gate).
+
+For change shapes that cannot be expressed as a frontmatter override or append block — deep prose or
+contract rewrites — `kata-improve` routes to a **fork**: authored via `kata-write-skill` into
+`<agentSkills.dir>/candidates/<name>/` (carrying `supersedes: <upstream>`), then passed through the
+`kata-promote` human gate before it can shadow the upstream skill.
+
+**Materialization — how an overlay reaches the host slot.**
+The engine applies overlays at the end of every install or `--update` run (a post-link materialize
+pass):
+
+- A skill **with** an overlay entry is materialized as a **concrete host slot**: the base dir is copied
+  into the slot, the `SKILL.md` is composed (base + overlay → single concrete file), and two markers are
+  written — `.kata-managed` (the uninstaller removes it) and `.kata-overlay-materialized` (factory-reset
+  uses this to restore the slot to a pristine link).
+- A skill **without** an overlay stays a verbatim **symlink** (or copy on Windows without Developer
+  Mode), exactly as before.
+
+**One honest tradeoff:** a materialized slot is a concrete file — it no longer auto-tracks the home
+symlink. Upstream base changes do not propagate live into a materialized slot. Running `--update`
+re-materializes the slot from the updated base, which is the expected update path.
+
+**Stale overlays (base skill removed upstream).** If a base skill is removed or renamed by an update
+and an overlay entry still exists for it, the materialize pass emits a NOTE and skips that entry — it
+never crashes, and the entry is retained in the overlay store (it re-activates if the skill returns):
+
+```
+NOTE: overlay for '<name>': base skill no longer exists — skipped
+```
+
+---
+
 ### Factory-reset
 
 Restores the pristine base skills while keeping all your user-owned state (`.kata-settings.json`,
@@ -211,6 +273,12 @@ sh ~/.kata-home/update.sh --factory-reset --hard
 | `--update` | refreshed from upstream | preserved | re-applied |
 | `--factory-reset` | re-linked pristine | preserved | dropped → pristine links |
 | `--factory-reset --hard` | re-linked pristine | cleared | dropped → pristine links |
+
+> **Overlay preserve / re-apply:** a plain `--factory-reset` un-materializes overlaid slots back to
+> pristine links but leaves the overlay store intact. Running `--update` afterwards re-materializes
+> every overlay from the (now-refreshed) base. `--factory-reset --hard` additionally clears the
+> overlay store (`NOTE: --hard: overlay store cleared`); the next `--update` will produce a fully
+> pristine install with no local adaptations.
 
 ### Manual fallback (if the update scripts are unavailable)
 

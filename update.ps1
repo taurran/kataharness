@@ -58,6 +58,10 @@ if ($_engineArgs -notcontains '--platform') {
     $_engineArgs = @('--platform', 'claude') + $_engineArgs
 }
 
+# Pass the git ref through so the engine stamps the ACTUAL ref (not hardcoded
+# "master") into .kata-version - stamp-ref honesty (DESIGN B2 --ref).
+$_engineArgs += @('--ref', $_KataRef)
+
 # --------------------------------------------------------------------------
 # Resolve the harness home (no cloning - must already be present)
 # --------------------------------------------------------------------------

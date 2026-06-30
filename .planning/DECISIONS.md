@@ -1789,3 +1789,33 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   honesty — currently hardcoded `"master"`); split `_materialize_pass` out of `install`'s `except` before
   fleshing it. Specs: `.planning/specs/install-update-polish/{SPIKE-learning-overlay,DESIGN,PLAN}.md`. Phase B
   (overlay) + C (fork) next.
+- **D129 — install-update-polish Phase B (overlay) + Phase C (fork/supersedes) — 2026-06-29.**
+  Completes the hybrid update system: local adaptation lands as an OVERLAY (parametric) or a FORK
+  (deep), never mutating the installed base. **Phase B — overlay layer:** B1 new STDLIB-ONLY
+  `tools/kata_overlay.py` (overlay store `<home>/.kata-overlay/overlay.json` + M4 line-based
+  frontmatter composer + `materialized.json`); B2 engine `_materialize_pass` — materializes
+  overlaid skills into concrete host slots (markers `.kata-managed` + `.kata-overlay-materialized`;
+  M3 missing-base fail-soft; split OUT of the stamp's `except` — no silent swallow); B3
+  `kata-improve` local-adaptation mode (adaptation_context via `.kata-version`;
+  `improve.allowUpstreamEdit` safety rail; edit-category→overlay/fork decision table); B4 `SETUP.md`
+  overlay docs. **Phase C — fork/supersedes layer:** C1 new STDLIB-ONLY `tools/kata_supersede.py`
+  (`resolve_shadows` + `validate_shadows` — fail-closed on unknown base / double-supersede); C2
+  engine shadow precedence (fork > overlay > pristine; dormant-overlay NOTE;
+  validate-STOPs-before-materialize; factory-reset un-shadows); C3 `kata-promote` shadow-binding
+  note; C4 `STANDARDS` supersedes-now-wired note; `update.{sh,ps1}` `--ref` passthrough (stamp ref
+  honesty, replacing hardcoded `"master"`). **KEY FIX — deployment blocker:** `kata_overlay` and
+  `kata_supersede` are STDLIB-ONLY (no pyyaml) because the install/materialize path runs via
+  `uv run`/plain-python from the home root where pyyaml is absent (pyproject.toml is at `tools/`,
+  not root); without this, overlays/forks silently no-op'd in a real install. The
+  "install path is stdlib-only" invariant now holds for the full materialize/shadow path. **Process:**
+  per-task TDD; design freeze-gate SHIP earlier; LIVE PROOFS — Phase B overlay-materialize 15/15
+  and Phase C fork/shadow 8/8, both in the real no-yaml `uv run`-from-home-root env; post-build
+  adversarial review SHIP. Note: C2 had a premature-kill recovery (one agent wrote the `test_c2_*`
+  tests, another wrote the impl; the review confirmed tests are sound, non-tautological, and
+  satisfied). The 5 frozen `kata_install.py` engine fns remain BYTE-UNCHANGED; `kata_settings.py`
+  untouched. **Gates:** pytest **1991** (+2 Windows-DevMode skips), validate **47/0**, Snyk medium+
+  **0** (`kata_install` 17 LOW CWE-23 operator-path class, below gate → standing hardening item).
+  **Deferred nits:** a stdlib-invariant comment at the shadow-path `ImportError` guard;
+  stamp-written-before-materialize-raises on a failed structural-shadow install. Specs:
+  `.planning/specs/install-update-polish/{DESIGN,PLAN}.md`. **NEXT:** cross-phase final gate +
+  clean-install capstone, then operator merge/push gate.

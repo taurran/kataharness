@@ -114,6 +114,9 @@ D33). Core repo skills never carry these fields.
   framing, a pre-spin-off legacy statement). A skill not present in the index is not "released."
 - `status` lifecycle: `experimental → beta → stable`; retiring → `deprecated` + `supersedes` on the
   replacement; deprecated skills move to a `deprecated/` area, never silently deleted.
+- `supersedes:` is now **wired as install/update-time precedence** (no longer dormant): a promoted toolkit
+  skill carrying `supersedes: <name>` shadows that upstream skill by name at install/update time —
+  precedence fork > overlay > pristine — gated by `kata-promote`; no schema change.
 
 ## 4. The AGENTS.md / CLAUDE.md dual standard
 

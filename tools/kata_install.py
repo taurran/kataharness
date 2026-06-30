@@ -103,6 +103,7 @@ def ensure_plugin_manifest(harness_home: str | Path) -> Path:
 
 
 _MARKER = ".kata-managed"
+_OVERLAY_MATERIALIZED_MARKER = ".kata-overlay-materialized"
 
 
 def _link_or_copy(src_dir: Path, dst_dir: Path) -> str:
@@ -501,20 +502,262 @@ def uninstall(
 
 
 def _materialize_pass(home: Path, host_skills_dir: Path, link_mode: str) -> None:
-    """Post-link materialize pass — NO-OP in Phase A when ``kata_overlay`` is absent.
+    """Post-link materialize pass — applies fork shadows and overlay entries (Phase B/C2).
 
-    Phase B (task B2) replaces this stub with the full overlay materialize logic.
-    The import guard ensures ``--update`` / install can call this unconditionally;
-    when ``kata_overlay`` is not yet present the function exits immediately with no
-    side-effects, so B/C can wire in the real implementation without re-touching any
-    branch logic in ``main()``.
+    Runs AFTER ``_flat_link_skills`` (which laid pristine symlinks/copies for every
+    skill).
 
+    **C2 — Fork shadow precedence (fork > overlay > pristine):**
+
+    1. Read ``agentSkills.dir`` from ``.kata-settings.json``; absent → no shadows (BC).
+    2. ``kata_supersede.resolve_shadows(agentskills_dir)`` → map of upstream skill name
+       to promoted fork dir.
+    3. ``kata_supersede.validate_shadows(shadows, base_names)`` → STOP with
+       ``ValueError("shadow validation failed: …")`` on any structural error
+       (unknown upstream, double-supersede) BEFORE any slot is materialised.
+    4. For each shadowed upstream skill: ``shutil.copytree`` the fork dir into the slot,
+       write both ``.kata-managed`` and ``.kata-overlay-materialized`` markers, and record
+       the slot in ``materialized.json`` with ``source: "fork"``.
+    5. If an overlay entry also exists for a fork-shadowed skill, emit a dormant-overlay
+       NOTE and skip overlay application (the overlay entry is preserved so it
+       re-activates if the fork is later removed).
+
+    **Phase B — Overlay materialization (unchanged; skips fork-shadowed skills):**
+
+    For each skill that has an overlay entry (and no winning fork shadow) this pass
+    replaces the verbatim host slot with a concrete materialized directory:
+
+    1. Read the base SKILL.md from the home tree.
+    2. Call ``kata_overlay.apply_overlay(base_text, entry)`` to compose the overlay.
+    3. Remove the verbatim slot (symlink → unlink; ``.kata-managed`` copy → rmtree).
+    4. ``shutil.copytree`` the base skill dir into the slot.
+    5. Overwrite ``SKILL.md`` with the composed text.
+    6. Write ``.kata-managed`` and ``.kata-overlay-materialized`` markers.
+    7. Record the slot in ``materialized.json`` with ``source: "overlay"``.
+
+    Skills without a fork shadow or overlay remain as pristine symlinks/copies.
+
+    **M3 (fail-soft):** an overlay entry whose base skill no longer exists → NOTE + skip.
+
+    **Per-skill failures** emit a NOTE and continue (fail-soft at skill granularity).
+
+    **Structural integrity:** this function does NOT swallow structural exceptions.
+    ``ValueError`` from shadow validation propagates to the caller (no partial shadow).
+    The caller places this call OUTSIDE any stamp-write ``except Exception`` guard.
+
+    Import-guarded: when ``kata_overlay`` is absent (Phase A fallback), exits as no-op.
     Never invokes git.  Never touches the 5 frozen engine fns.
     """
     try:
-        import kata_overlay  # noqa: F401  # Phase B module
+        import kata_overlay as _ko
     except ImportError:
-        return  # kata_overlay not yet present (Phase A) — safe no-op
+        return  # kata_overlay not present — safe no-op (Phase A fallback)
+
+    import hashlib
+
+    # C2: Resolve fork shadows from agentSkills.dir.
+    # Import-guarded separately so ImportError only suppresses the shadow path,
+    # not overlay processing.  ValueError from validate_shadows propagates (no catch).
+    shadows: dict[str, Path] = {}
+    try:
+        import kata_settings as _ks
+        import kata_supersede as _kss
+    except ImportError:
+        _ks = None  # type: ignore[assignment]
+        _kss = None  # type: ignore[assignment]
+
+    if _ks is not None and _kss is not None:
+        _settings = _ks.read_settings(home)
+        _agentskills_dir = _settings.get("agentSkills", {}).get("dir")
+        if _agentskills_dir:
+            shadows = _kss.resolve_shadows(_agentskills_dir)
+            # Validate BEFORE any materialization — fail-closed on structural errors.
+            # Raises ValueError("shadow validation failed: …") if any error found.
+            _base_names: set[str] = {d.name for d in iter_skill_dirs(home)}
+            _errors = _kss.validate_shadows(shadows, _base_names)
+            if _errors:
+                raise ValueError("shadow validation failed: " + "; ".join(_errors))
+
+    # Build a map of skill-name → base skill dir from the home tree.
+    base_skill_dirs: dict[str, Path] = {d.name: d for d in iter_skill_dirs(home)}
+
+    # Read overlay store; empty store → fast path when no shadows either.
+    overlay_data = _ko.read_overlay(home)
+    overlay_skills: dict = overlay_data.get("skills", {})
+    if not overlay_skills and not shadows:
+        return  # no overlays and no shadows — no-op
+
+    # --- C2: Fork shadow materialization (fork > overlay > pristine) ----------------
+    for upstream_name, fork_dir in shadows.items():
+        slot = host_skills_dir / upstream_name
+
+        # Determine baseMode from the current slot (as laid by _flat_link_skills).
+        if slot.is_symlink():
+            base_mode = "symlink"
+        elif slot.is_dir() and (slot / _MARKER).exists():
+            base_mode = "copy"
+        else:
+            base_mode = link_mode
+
+        # Remove the verbatim slot.
+        try:
+            if slot.is_symlink():
+                slot.unlink()
+            elif slot.is_dir() and (slot / _MARKER).exists():
+                shutil.rmtree(slot)
+            elif slot.exists():
+                print(
+                    f"NOTE: fork shadow for '{upstream_name}': host slot exists but is not "
+                    f"kata-managed — skipped to avoid data loss"
+                )
+                continue
+        except OSError as exc:
+            print(
+                f"NOTE: fork shadow for '{upstream_name}': failed to remove verbatim slot:"
+                f" {exc} — skipped"
+            )
+            continue
+
+        # Copytree the fork dir into the slot.
+        try:
+            shutil.copytree(fork_dir, slot)
+        except OSError as exc:
+            print(
+                f"NOTE: fork shadow for '{upstream_name}': failed to materialize fork slot:"
+                f" {exc} — skipped"
+            )
+            continue
+
+        # Write both markers.
+        (slot / _MARKER).write_text(
+            "kata-managed materialized fork shadow — safe to delete on uninstall.\n",
+            encoding="utf-8",
+        )
+        (slot / _OVERLAY_MATERIALIZED_MARKER).write_text(
+            "kata fork materialization marker — factory-reset restores pristine link.\n",
+            encoding="utf-8",
+        )
+
+        # If an overlay entry also exists for this skill → emit dormant NOTE.
+        # The overlay entry is preserved (not dropped) so it re-activates if the fork is removed.
+        if upstream_name in overlay_skills:
+            print(
+                f"NOTE: overlay for '{upstream_name}' is dormant"
+                f" — a superseding fork shadows it"
+            )
+
+        # Compute SHA256 of the fork's SKILL.md and record the slot.
+        fork_skill_md = slot / "SKILL.md"
+        applied_sha = ""
+        if fork_skill_md.exists():
+            fork_text = fork_skill_md.read_text(encoding="utf-8")
+            applied_sha = hashlib.sha256(fork_text.encode("utf-8")).hexdigest()
+
+        _ko.record_slot(
+            home,
+            upstream_name,
+            {
+                "hostPath": str(slot),
+                "baseMode": base_mode,
+                "source": "fork",
+                "appliedSha": applied_sha,
+            },
+        )
+
+    # --- Phase B: Overlay materialization (unchanged; skips fork-shadowed skills) ---
+    for name, entry in overlay_skills.items():
+        # Fork wins — skip overlay application; entry preserved in overlay.json.
+        if name in shadows:
+            continue
+
+        slot = host_skills_dir / name
+
+        # M3 fail-soft: base skill no longer in the home tree.
+        base_dir = base_skill_dirs.get(name)
+        if base_dir is None:
+            print(
+                f"NOTE: overlay for '{name}': base skill no longer exists — skipped"
+            )
+            continue
+
+        base_skill_md = base_dir / "SKILL.md"
+        if not base_skill_md.exists():
+            print(
+                f"NOTE: overlay for '{name}': base SKILL.md not found — skipped"
+            )
+            continue
+
+        base_text = base_skill_md.read_text(encoding="utf-8")
+
+        # Per-skill fail-soft: apply_overlay errors (e.g. bad anchor) → NOTE + continue.
+        try:
+            composed_text = _ko.apply_overlay(base_text, entry)
+        except Exception as exc:  # noqa: BLE001
+            print(
+                f"NOTE: overlay for '{name}': apply_overlay failed: {exc} — skipped"
+            )
+            continue
+
+        # Determine baseMode from the current slot (as laid by _flat_link_skills).
+        if slot.is_symlink():
+            base_mode = "symlink"
+        elif slot.is_dir() and (slot / _MARKER).exists():
+            base_mode = "copy"
+        else:
+            # Slot absent or unrecognized — fall back to the install's link_mode.
+            base_mode = link_mode
+
+        # Remove the verbatim slot (mirrors _link_or_copy's own idempotency signal).
+        try:
+            if slot.is_symlink():
+                slot.unlink()
+            elif slot.is_dir() and (slot / _MARKER).exists():
+                shutil.rmtree(slot)
+            elif slot.exists():
+                # Non-kata dir — skip to avoid data loss (fail-closed on ambiguity).
+                print(
+                    f"NOTE: overlay for '{name}': host slot exists but is not "
+                    f"kata-managed — skipped to avoid data loss"
+                )
+                continue
+        except OSError as exc:
+            print(
+                f"NOTE: overlay for '{name}': failed to remove verbatim slot: {exc} — skipped"
+            )
+            continue
+
+        # Copy the base skill dir into the slot, then overwrite SKILL.md.
+        try:
+            shutil.copytree(base_dir, slot)
+            (slot / "SKILL.md").write_text(composed_text, encoding="utf-8")
+        except OSError as exc:
+            print(
+                f"NOTE: overlay for '{name}': failed to materialize slot: {exc} — skipped"
+            )
+            continue
+
+        # Write both markers.
+        (slot / _MARKER).write_text(
+            "kata-managed materialized overlay — safe to delete on uninstall.\n",
+            encoding="utf-8",
+        )
+        (slot / _OVERLAY_MATERIALIZED_MARKER).write_text(
+            "kata overlay materialization marker — factory-reset restores pristine link.\n",
+            encoding="utf-8",
+        )
+
+        # Compute SHA256 of the composed SKILL.md and record the slot.
+        applied_sha = hashlib.sha256(composed_text.encode("utf-8")).hexdigest()
+        _ko.record_slot(
+            home,
+            name,
+            {
+                "hostPath": str(slot),
+                "baseMode": base_mode,
+                "source": "overlay",
+                "appliedSha": applied_sha,
+            },
+        )
 
 
 def _sweep_managed_slots(
@@ -713,6 +956,16 @@ def main(argv: list[str] | None = None) -> int:
             "recorded in .kata-version. Omit for plain installs → gitSha:'unknown'."
         ),
     )
+    parser.add_argument(
+        "--ref",
+        default="master",
+        metavar="REF",
+        help=(
+            "git ref the bootstrap resolved to (e.g. 'master', 'v0.2.0'); "
+            "recorded in .kata-version stamp. Passed by the bootstraps via $KATA_REF. "
+            "Default: 'master'."
+        ),
+    )
     args = parser.parse_args(argv)
 
     use_json: bool = args.use_json
@@ -870,7 +1123,7 @@ def main(argv: list[str] | None = None) -> int:
                 _home_upd,
                 git_sha=_git_sha_upd,
                 suite_semver=_kv_upd.suite_semver(_home_upd),
-                ref="master",
+                ref=args.ref,
                 link_mode=_link_mode_upd,
                 platform=args.platform or "",
             )
@@ -895,7 +1148,7 @@ def main(argv: list[str] | None = None) -> int:
                 as_json=use_json,
             )
             if args.hard:
-                _emit("dry-run: --hard would clear the overlay store (Phase B+; no-op in Phase A)", as_json=use_json)
+                _emit("dry-run: --hard would clear the overlay store", as_json=use_json)
             return 0
 
         import kata_version as _kv_fr
@@ -920,27 +1173,32 @@ def main(argv: list[str] | None = None) -> int:
             else ("mixed" if len(_methods_fr) > 1 else "unknown")
         )
 
-        # Post-link materialize pass (no-op in Phase A)
-        _p_fr = (args.platform or "").strip().casefold()
-        _hd_raw_fr = args.host_dir
-        if _p_fr == "claude":
-            _hd_fr = (
-                _safe_abs(_hd_raw_fr)
-                if _hd_raw_fr is not None
-                else (Path.home() / ".claude")
-            )
-            _materialize_pass(_home_fr, _hd_fr / "skills", _link_mode_fr)
-        elif _p_fr in _BEST_EFFORT and _hd_raw_fr is not None:
-            _hd_fr = _safe_abs(_hd_raw_fr)
-            _materialize_pass(_home_fr, _hd_fr / ".agents" / "skills", _link_mode_fr)
-
-        # --hard: clear overlay store (Phase B+); in Phase A the overlay does not exist →
-        # this is a documented no-op passthrough (wire the flag, acknowledge it, skip).
-        if args.hard:
-            _emit(
-                "NOTE: --hard clears the overlay store (Phase B+); no overlay exists yet — no-op",
-                as_json=use_json,
-            )
+        # Factory-reset: drop materializations (Phase B).
+        # install() above already restored pristine links (it rmtree'd any .kata-managed
+        # materialized slot via _link_or_copy's existing .kata-managed guard).
+        # We still need to clear materialized.json so the record isn't stale, and
+        # --hard additionally clears the overlay store itself.
+        # DO NOT call _materialize_pass here — factory-reset drops materializations
+        # back to pristine links; a later --update will re-apply the preserved overlay.
+        try:
+            import kata_overlay as _ko_fr_drop
+            _ko_fr_drop.write_materialized(_home_fr, {"schema": 1, "slots": {}})
+            if args.hard:
+                # --hard: clear overlay store (write an empty store).
+                _od_fr = _ko_fr_drop.overlay_dir(_home_fr)
+                _od_fr.mkdir(parents=True, exist_ok=True)
+                (_od_fr / "overlay.json").write_text(
+                    json.dumps({"schema": 1, "skills": {}}, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                _emit("NOTE: --hard: overlay store cleared", as_json=use_json)
+        except ImportError:
+            # kata_overlay not present (Phase A behavior — nothing to clear)
+            if args.hard:
+                _emit(
+                    "NOTE: --hard: no overlay store present — no-op",
+                    as_json=use_json,
+                )
 
         # Re-stamp + re-manifest
         _git_sha_fr = args.git_sha or "unknown"
@@ -949,7 +1207,7 @@ def main(argv: list[str] | None = None) -> int:
                 _home_fr,
                 git_sha=_git_sha_fr,
                 suite_semver=_kv_fr.suite_semver(_home_fr),
-                ref="master",
+                ref=args.ref,
                 link_mode=_link_mode_fr,
                 platform=args.platform or "",
             )
@@ -980,42 +1238,48 @@ def main(argv: list[str] | None = None) -> int:
     # §12 Phase-A live-proof step 1 passes.  gitSha is "unknown" when --git-sha is
     # absent (plain install.sh path — the engine never computes a SHA).  Stays additive
     # and git-free: the stamp write is appended post-install, never inside the 5 frozen fns.
+    #
+    # Fold-in #2: _materialize_pass is called OUTSIDE the stamp's except block so a
+    # structural materialize failure surfaces instead of being silently discarded.
+    # Per-skill failures are handled fail-soft (NOTE + continue) inside _materialize_pass.
     if result.get("ok"):
-        try:
-            import kata_version as _kv_inst
+        import kata_version as _kv_inst
 
-            _home_inst = _safe_abs(args.home) if args.home is not None else _default_home()
-            _methods_inst = result.get("method", [])
-            _link_mode_inst = (
-                _methods_inst[0]
-                if len(_methods_inst) == 1
-                else ("mixed" if len(_methods_inst) > 1 else "unknown")
-            )
-            _git_sha_inst = args.git_sha or "unknown"
+        _home_inst = _safe_abs(args.home) if args.home is not None else _default_home()
+        _methods_inst = result.get("method", [])
+        _link_mode_inst = (
+            _methods_inst[0]
+            if len(_methods_inst) == 1
+            else ("mixed" if len(_methods_inst) > 1 else "unknown")
+        )
+        _git_sha_inst = args.git_sha or "unknown"
+        try:
             _kv_inst.write_stamp(
                 _home_inst,
                 git_sha=_git_sha_inst,
                 suite_semver=_kv_inst.suite_semver(_home_inst),
-                ref="master",
+                ref=args.ref,
                 link_mode=_link_mode_inst,
                 platform=args.platform or "",
             )
             _kv_inst.write_manifest(_home_inst, git_sha=_git_sha_inst)
-            # Post-link materialize pass (no-op stub in Phase A)
-            _p_inst = (args.platform or "").strip().casefold()
-            _hd_raw_inst = args.host_dir
-            if _p_inst == "claude":
-                _hd_inst = (
-                    _safe_abs(_hd_raw_inst)
-                    if _hd_raw_inst is not None
-                    else (Path.home() / ".claude")
-                )
-                _materialize_pass(_home_inst, _hd_inst / "skills", _link_mode_inst)
-            elif _p_inst in _BEST_EFFORT and _hd_raw_inst is not None:
-                _hd_inst = _safe_abs(_hd_raw_inst)
-                _materialize_pass(_home_inst, _hd_inst / ".agents" / "skills", _link_mode_inst)
         except Exception:  # noqa: BLE001 — stamp write failure is non-fatal for install
             pass
+        # Post-link materialize pass — OUTSIDE the stamp except (fold-in #2).
+        # Structural errors from _materialize_pass propagate; per-skill errors are
+        # caught inside _materialize_pass itself (fail-soft NOTE + continue).
+        _p_inst = (args.platform or "").strip().casefold()
+        _hd_raw_inst = args.host_dir
+        if _p_inst == "claude":
+            _hd_inst = (
+                _safe_abs(_hd_raw_inst)
+                if _hd_raw_inst is not None
+                else (Path.home() / ".claude")
+            )
+            _materialize_pass(_home_inst, _hd_inst / "skills", _link_mode_inst)
+        elif _p_inst in _BEST_EFFORT and _hd_raw_inst is not None:
+            _hd_inst = _safe_abs(_hd_raw_inst)
+            _materialize_pass(_home_inst, _hd_inst / ".agents" / "skills", _link_mode_inst)
 
     if use_json:
         print(json.dumps(result))

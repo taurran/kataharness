@@ -1,18 +1,18 @@
 # STATE — KataHarness
 
-> **CURRENT (2026-06-29, D128 SHIPPED — install-update-polish Phase A · pytest 1844 · 47 skills/0 · Snyk med+ 0):**
-> Installable/testable core of the hybrid update system: one-command update/factory-reset/uninstall with an
-> install-level version stamp + manifest. All additive — the 5 frozen `kata_install.py` engine fns
-> byte-unchanged; never-git guarantee holds (all git in `update.{sh,ps1}`; engine fed only `--git-sha`).
-> A1 `tools/kata_version.py`: `.kata-version` stamp + `.kata-manifest.json` + `is_pristine`. A2
-> `kata_install.py`: `--update` / `--factory-reset` / `--dry-run` / `--git-sha`, install-stamp (M1),
-> fail-closed orphan sweep, materialize no-op stub. A3 `update.sh` + `update.ps1`: git fetch/reset, M2
-> dirty-guard + `--discard-local`, `--check`, non-git-clone detection, `--hard` confirm-gated. A4 `.gitignore`
-> + `SETUP.md` + README docs. Live proof 11/11 (install→update→factory-reset→uninstall, bootstrap chain wired).
-> **Phase B (overlay) IN PROGRESS next**, then Phase C (fork). Files: `tools/kata_version.py`,
-> `tools/tests/test_kata_version.py`, `tools/kata_install.py`, `tools/tests/test_install_update.py`,
-> `update.sh`, `update.ps1`, `.gitignore`, `docs/SETUP.md`, `README.md`,
-> `.planning/specs/install-update-polish/{SPIKE-learning-overlay,DESIGN,PLAN}.md`. Records: `DECISIONS.md` D128.
+> **CURRENT (2026-06-29, D129 SHIPPED — install-update-polish Phase B+C · pytest 1991 · 47 skills/0 · Snyk med+ 0):**
+> install-update-polish FEATURE-COMPLETE (Phase A+B+C all live-proven). Hybrid update system fully landed:
+> local adaptation is an OVERLAY (parametric, `kata_overlay.py`) or a FORK (deep, `kata_supersede.py`),
+> never mutating the installed base. Phase B: B1 stdlib-only overlay store + M4 frontmatter composer;
+> B2 `_materialize_pass` (`.kata-overlay-materialized` marker, M3 fail-soft, split out of stamp except);
+> B3 `kata-improve` local-adaptation mode; B4 `SETUP.md` overlay docs. Phase C: C1 stdlib-only
+> `kata_supersede.py` (resolve/validate shadows, fail-closed); C2 fork > overlay > pristine precedence,
+> validate-STOPs-before-materialize, factory-reset un-shadows; C3 `kata-promote` shadow-binding note; C4
+> `STANDARDS` supersedes-now-wired; `update.{sh,ps1}` `--ref` passthrough. Deployment blocker fixed:
+> overlay/supersede are stdlib-only — no pyyaml — so the install path works under real `uv run`-from-home-root
+> bootstrap. Live proofs: overlay 15/15, fork 8/8 (real no-yaml env). The 5 frozen engine fns
+> byte-unchanged; `kata_settings.py` untouched. Records: `DECISIONS.md` D129.
+> **REMAINING:** cross-phase final gate + clean-install capstone, then operator merge/push gate.
 
 > **CURRENT (2026-06-29, SESSION END — BOTH FEATURES SHIPPED + PUSHED · tip `8d84125` in sync; pytest 1765 ·
 > 47 skills/0 · Snyk med+ 0):** Two features built, gated, committed AND pushed this session — `master` tip is

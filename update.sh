@@ -93,6 +93,10 @@ case " ${_engine_args} " in
     *) _engine_args="--platform claude${_engine_args:+ }${_engine_args}" ;;
 esac
 
+# Pass the git ref through so the engine stamps the ACTUAL ref (not hardcoded
+# "master") into .kata-version — stamp-ref honesty (DESIGN B2 --ref).
+_engine_args="${_engine_args} --ref ${KATA_REF}"
+
 # --------------------------------------------------------------------------
 # Step 1 — resolve the harness home (no cloning — must already be present)
 # --------------------------------------------------------------------------

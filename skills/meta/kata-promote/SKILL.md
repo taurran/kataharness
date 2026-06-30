@@ -65,6 +65,18 @@ candidate that did not clear grounding is not promotable at any autonomy level. 
 (D9/D56); until then the dial sits at `always-human` and this skill is purely a human review. Reuses the
 sprint-cadence `auto-continue-while-green` pattern + engram invariants C2/C4/C5/C6.
 
+## Shadow eligibility (`supersedes:` binding)
+
+A promoted toolkit skill (now under `<agentSkills.dir>/skills/<category>/`) that carries
+`supersedes: <upstream-name>` becomes **shadow-eligible at the next install or `--update`**: the
+materialize pass serves the fork body into that upstream skill's host slot (precedence:
+fork > overlay > pristine base — DESIGN §7). **Only `skills/`-promoted forks shadow**; a fork
+still in `candidates/` is sandboxed and never shadows regardless of its `supersedes:` field.
+This makes the `kata-promote` human gate the **precondition for shadowing** — nothing shadows an
+upstream skill until a human has approved it here. The upstream base remains in the repo and in the
+`validate_skills` scan (count stays 47/0); shadowing replaces only the host-slot binding, not the
+base file.
+
 ## Boundary (vs neighbors)
 - vs [[kata-write-skill]]: write-skill **authors** the candidate (stage 1, the *how* of making it); promote
   **decides persistence** (stage 2, the human gate). vs [[kata-improve]]: improve edits the **repo's** skills

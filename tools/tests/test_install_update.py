@@ -546,3 +546,941 @@ def test_uninstall_sweep_leaves_non_kata_intact(fake_home, tmp_path):
     assert result["ok"] is True
     assert non_kata.is_dir(), "non-kata dir must survive uninstall"
     assert (non_kata / "my.md").read_text(encoding="utf-8") == "precious"
+
+
+# ---------------------------------------------------------------------------
+# B2 — _materialize_pass: real overlay materialization (Phase B)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def fake_home_with_overlay(fake_home):
+    """fake_home extended with an overlay entry for kata-bootstrap.
+
+    Overlay: overrides ``tags`` (frontmatterOverrides) + appends a block at
+    end-of-body (anchor=None).  The base SKILL.md already exists in fake_home,
+    so apply_overlay can compose without triggering M3.
+    """
+    import kata_overlay as ko  # available now that Phase B is done
+
+    entry = {
+        "frontmatterOverrides": {"tags": ["meta", "overlay-applied"]},
+        "prepend": [],
+        "append": [
+            {
+                "anchor": None,
+                "markdown": "\n## Overlay Section\nThis block was appended by overlay.",
+            }
+        ],
+    }
+    ko.write_overlay_entry(fake_home, "kata-bootstrap", entry)
+    return fake_home
+
+
+def test_materialize_overlaid_slot_is_concrete_dir(fake_home_with_overlay, tmp_path):
+    """A skill with an overlay entry materializes to a concrete (non-symlink) dir."""
+    host = tmp_path / "dot-claude"
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    assert rc == 0
+    slot = host / "skills" / "kata-bootstrap"
+    assert slot.is_dir(), "overlaid slot must be a directory"
+    assert not slot.is_symlink(), "overlaid slot must NOT be a symlink"
+
+
+def test_materialize_overlaid_slot_has_both_markers(fake_home_with_overlay, tmp_path):
+    """The materialized slot carries .kata-managed AND .kata-overlay-materialized."""
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    slot = host / "skills" / "kata-bootstrap"
+    assert (slot / ".kata-managed").exists(), "materialized slot must have .kata-managed"
+    assert (slot / ".kata-overlay-materialized").exists(), (
+        "materialized slot must have .kata-overlay-materialized"
+    )
+
+
+def test_materialize_slot_recorded_in_materialized_json(fake_home_with_overlay, tmp_path):
+    """The materialized slot is recorded in materialized.json."""
+    import kata_overlay as ko
+
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    mat = ko.read_materialized(fake_home_with_overlay)
+    slots = mat.get("slots", {})
+    assert "kata-bootstrap" in slots, "materialized slot must be recorded in materialized.json"
+    info = slots["kata-bootstrap"]
+    assert info["source"] == "overlay"
+    assert info["baseMode"] in ("symlink", "copy")
+    assert "appliedSha" in info
+
+
+def test_materialize_composed_skill_md_reflects_frontmatter_override(
+    fake_home_with_overlay, tmp_path
+):
+    """The materialized SKILL.md has the overlay's frontmatterOverrides applied."""
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    composed = (host / "skills" / "kata-bootstrap" / "SKILL.md").read_text(encoding="utf-8")
+    assert "overlay-applied" in composed, (
+        "composed SKILL.md must contain the overridden tag"
+    )
+
+
+def test_materialize_composed_skill_md_reflects_appended_block(
+    fake_home_with_overlay, tmp_path
+):
+    """The materialized SKILL.md contains the overlay's appended block."""
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    composed = (host / "skills" / "kata-bootstrap" / "SKILL.md").read_text(encoding="utf-8")
+    assert "Overlay Section" in composed, (
+        "composed SKILL.md must contain the overlay's appended block"
+    )
+
+
+def test_materialize_non_overlaid_skills_stay_verbatim(fake_home_with_overlay, tmp_path):
+    """Skills WITHOUT an overlay remain as pristine symlinks or .kata-managed copies."""
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    # kata-grill-standard has NO overlay — must stay verbatim (symlink or copy)
+    verbatim_slot = host / "skills" / "kata-grill-standard"
+    assert verbatim_slot.exists()
+    # Must NOT carry the overlay materialized marker
+    assert not (verbatim_slot / ".kata-overlay-materialized").exists(), (
+        "non-overlaid skill must not carry .kata-overlay-materialized"
+    )
+
+
+def test_materialize_m3_missing_base_emits_note_and_skips(fake_home, tmp_path, capsys):
+    """M3: overlay for a non-existent base skill → NOTE + SKIP, no crash, entry retained."""
+    import kata_overlay as ko
+
+    # Write overlay for a skill that does NOT exist in fake_home
+    entry = {
+        "frontmatterOverrides": {"tags": ["meta"]},
+        "append": [{"anchor": None, "markdown": "appended"}],
+    }
+    ko.write_overlay_entry(fake_home, "kata-nonexistent-skill", entry)
+
+    host = tmp_path / "dot-claude"
+    capsys.readouterr()
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+    ])
+    assert rc == 0, "M3: missing-base overlay must not crash the install"
+
+    out, err = capsys.readouterr()
+    combined = out + err
+    assert "NOTE" in combined, "M3: must emit a NOTE for the missing base skill"
+    assert "kata-nonexistent-skill" in combined or "no longer exists" in combined.lower(), (
+        "M3: NOTE must mention the skill or the 'no longer exists' reason"
+    )
+
+    # Stale overlay entry must be PRESERVED (not cleared by the skip)
+    assert ko.has_overlay(fake_home, "kata-nonexistent-skill"), (
+        "M3: stale overlay entry must remain in the store after a skip"
+    )
+
+
+def test_update_rematerializes_from_updated_base(fake_home_with_overlay, tmp_path):
+    """--update re-materializes the overlaid slot from the (now-updated) base."""
+    host = tmp_path / "dot-claude"
+    # First install — materializes
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+
+    # Update the base skill content in the home tree
+    base_md = (
+        fake_home_with_overlay
+        / "skills" / "coordinate" / "kata-bootstrap" / "SKILL.md"
+    )
+    base_md.write_text(
+        "---\nname: kata-bootstrap\ntags: [meta]\n---\nupdated body\n",
+        encoding="utf-8",
+    )
+
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+        "--update",
+    ])
+    assert rc == 0
+    composed = (host / "skills" / "kata-bootstrap" / "SKILL.md").read_text(encoding="utf-8")
+    assert "updated body" in composed, (
+        "--update must re-materialize from the updated base"
+    )
+    assert "Overlay Section" in composed, (
+        "--update must still apply the overlay after re-materializing"
+    )
+
+
+def test_factory_reset_drops_materialization_marker(fake_home_with_overlay, tmp_path):
+    """--factory-reset restores the materialized slot to a pristine link (no overlay marker)."""
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    slot = host / "skills" / "kata-bootstrap"
+    assert (slot / ".kata-overlay-materialized").exists(), "must be materialized after install"
+
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+        "--factory-reset",
+    ])
+    assert rc == 0
+    # After reset the slot is re-linked pristinely — the overlay-materialized marker must be gone
+    assert not (slot / ".kata-overlay-materialized").exists(), (
+        "--factory-reset must drop the .kata-overlay-materialized marker"
+    )
+    # Skill must still be accessible (pristine symlink or copy)
+    assert (slot / "SKILL.md").exists()
+
+
+def test_factory_reset_clears_materialized_json(fake_home_with_overlay, tmp_path):
+    """--factory-reset clears the materialized.json record."""
+    import kata_overlay as ko
+
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    assert ko.read_materialized(fake_home_with_overlay).get("slots"), (
+        "slots must be recorded before factory-reset"
+    )
+
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+        "--factory-reset",
+    ])
+    mat = ko.read_materialized(fake_home_with_overlay)
+    assert not mat.get("slots"), (
+        "--factory-reset must clear the materialized.json record"
+    )
+
+
+def test_factory_reset_preserves_overlay_json(fake_home_with_overlay, tmp_path):
+    """--factory-reset preserves overlay.json so --update can re-materialize later."""
+    import kata_overlay as ko
+
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    assert ko.has_overlay(fake_home_with_overlay, "kata-bootstrap")
+
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+        "--factory-reset",
+    ])
+    assert ko.has_overlay(fake_home_with_overlay, "kata-bootstrap"), (
+        "--factory-reset must preserve the overlay store"
+    )
+
+
+def test_factory_reset_hard_clears_overlay_store(fake_home_with_overlay, tmp_path):
+    """--factory-reset --hard empties the overlay store."""
+    import kata_overlay as ko
+
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+    assert ko.has_overlay(fake_home_with_overlay, "kata-bootstrap")
+
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+        "--factory-reset", "--hard",
+    ])
+    assert rc == 0
+    assert not ko.has_overlay(fake_home_with_overlay, "kata-bootstrap"), (
+        "--factory-reset --hard must clear the overlay store"
+    )
+
+
+def test_factory_reset_hard_also_clears_materialized_json(fake_home_with_overlay, tmp_path):
+    """--factory-reset --hard clears both overlay store and materialized.json."""
+    import kata_overlay as ko
+
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+    ])
+
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_overlay),
+        "--host-dir", str(host),
+        "--factory-reset", "--hard",
+    ])
+    assert rc == 0
+    mat = ko.read_materialized(fake_home_with_overlay)
+    assert not mat.get("slots"), (
+        "--factory-reset --hard must also clear materialized.json"
+    )
+
+
+def test_no_overlay_install_materialize_is_noop(fake_home, tmp_path):
+    """Install with no overlay: _materialize_pass is a no-op, Phase-A behavior preserved."""
+    import kata_overlay as ko
+
+    host = tmp_path / "dot-claude"
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+    ])
+    assert rc == 0
+    mat = ko.read_materialized(fake_home)
+    assert not mat.get("slots"), (
+        "no-overlay install must not write any materialized slots"
+    )
+    # All skills accessible (Phase-A behavior unchanged)
+    assert (host / "skills" / "kata-bootstrap" / "SKILL.md").exists()
+    assert (host / "skills" / "kata-grill-standard" / "SKILL.md").exists()
+
+
+def test_materialize_error_not_swallowed_by_stamp_except(fake_home, tmp_path, monkeypatch):
+    """Fold-in #2: a structural materialize error surfaces (not swallowed by stamp except)."""
+    host = tmp_path / "dot-claude"
+
+    def _raising_materialize(home, host_skills_dir, link_mode):
+        raise RuntimeError("simulated structural materialize failure")
+
+    monkeypatch.setattr(ki, "_materialize_pass", _raising_materialize)
+
+    # After fold-in #2 the RuntimeError propagates — it is NOT caught by the stamp except
+    with pytest.raises(RuntimeError, match="simulated structural"):
+        ki.main([
+            "--platform", "claude",
+            "--home", str(fake_home),
+            "--host-dir", str(host),
+        ])
+
+
+def test_stamp_write_error_stays_non_fatal(fake_home, tmp_path, monkeypatch):
+    """Stamp write failures remain non-fatal (install exits 0); they are still in their own except."""
+    host = tmp_path / "dot-claude"
+
+    original_write_stamp = kv.write_stamp
+
+    def _failing_write_stamp(*args, **kwargs):
+        raise OSError("disk full — stamp write test")
+
+    monkeypatch.setattr(kv, "write_stamp", _failing_write_stamp)
+
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+    ])
+    assert rc == 0, "stamp write failure must remain non-fatal (install still exits 0)"
+
+
+# ---------------------------------------------------------------------------
+# B2 fold-in #1 — --ref arg recorded in stamp
+# ---------------------------------------------------------------------------
+
+
+def test_ref_recorded_in_stamp_when_passed(fake_home, tmp_path):
+    """--ref is recorded verbatim in the version stamp."""
+    host = tmp_path / "dot-claude"
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+        "--ref", "v0.2.0",
+    ])
+    assert rc == 0
+    stamp = kv.read_stamp(fake_home)
+    assert stamp["ref"] == "v0.2.0", "--ref must be recorded in the stamp"
+
+
+def test_ref_defaults_to_master_when_omitted(fake_home, tmp_path):
+    """When --ref is not passed, the stamp records 'master' (the default)."""
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+    ])
+    stamp = kv.read_stamp(fake_home)
+    assert stamp["ref"] == "master", "default ref must be 'master'"
+
+
+def test_ref_recorded_on_update(fake_home, tmp_path):
+    """--update --ref records the ref in the stamp."""
+    host = tmp_path / "dot-claude"
+    ki.main(["--platform", "claude", "--home", str(fake_home), "--host-dir", str(host)])
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+        "--update", "--ref", "v0.3.0",
+    ])
+    assert rc == 0
+    stamp = kv.read_stamp(fake_home)
+    assert stamp["ref"] == "v0.3.0", "--update --ref must record the ref"
+
+
+def test_ref_recorded_on_factory_reset(fake_home, tmp_path):
+    """--factory-reset --ref records the ref in the stamp."""
+    host = tmp_path / "dot-claude"
+    ki.main(["--platform", "claude", "--home", str(fake_home), "--host-dir", str(host)])
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+        "--factory-reset", "--ref", "v0.1.1",
+    ])
+    assert rc == 0
+    stamp = kv.read_stamp(fake_home)
+    assert stamp["ref"] == "v0.1.1", "--factory-reset --ref must record the ref"
+
+
+# ---------------------------------------------------------------------------
+# C2 — Fork-shadow precedence in the materialize pass (DESIGN §7 / PLAN C2)
+# ---------------------------------------------------------------------------
+#
+# Fixtures
+# --------
+# fake_agentskills_dir: a minimal promoted-fork toolkit where kata-bootstrap-fork
+#   carries ``supersedes: kata-bootstrap``.  Lives at tmp_path/agentskills-toolkit.
+# fake_home_with_fork: fake_home with .kata-settings.json pointing agentSkills.dir
+#   at fake_agentskills_dir so the engine sees the shadow.
+#
+# TDD: all C2 tests FAIL before the engine wiring in kata_install.py is implemented.
+# After C2 they must all pass (along with every existing test).
+
+
+@pytest.fixture()
+def fake_agentskills_dir(tmp_path):
+    """Minimal agentSkills toolkit with ONE promoted fork.
+
+    Fork: skills/custom/kata-bootstrap-fork/SKILL.md carries
+    ``supersedes: kata-bootstrap`` — shadows the kata-bootstrap base skill.
+    Fork body contains the marker string ``FORK BODY`` so tests can confirm
+    which SKILL.md is materialized in the host slot.
+    """
+    asd = tmp_path / "agentskills-toolkit"
+    fork_dir = asd / "skills" / "custom" / "kata-bootstrap-fork"
+    fork_dir.mkdir(parents=True)
+    (fork_dir / "SKILL.md").write_text(
+        "---\nname: kata-bootstrap-fork\nsupersedes: kata-bootstrap\n---\n"
+        "FORK BODY — this is the promoted fork, not the base skill.\n",
+        encoding="utf-8",
+    )
+    return asd
+
+
+@pytest.fixture()
+def fake_home_with_fork(fake_home, fake_agentskills_dir):
+    """fake_home with .kata-settings.json wired to fake_agentskills_dir.
+
+    The engine reads agentSkills.dir from .kata-settings.json during
+    _materialize_pass (C2) to resolve fork shadows.
+    """
+    import json as _json_fhf
+
+    (fake_home / ".kata-settings.json").write_text(
+        _json_fhf.dumps({"agentSkills": {"dir": str(fake_agentskills_dir)}}),
+        encoding="utf-8",
+    )
+    return fake_home
+
+
+# ---------------------------------------------------------------------------
+# C2 — Test set 1: promoted fork body materialises into the shadowed slot
+# ---------------------------------------------------------------------------
+
+
+def test_c2_fork_shadow_slot_serves_fork_body(fake_home_with_fork, tmp_path):
+    """A promoted fork (supersedes: kata-bootstrap) → slot SKILL.md is the fork body."""
+    host = tmp_path / "dot-claude"
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    assert rc == 0
+    skill_md = host / "skills" / "kata-bootstrap" / "SKILL.md"
+    assert skill_md.exists()
+    content = skill_md.read_text(encoding="utf-8")
+    assert "FORK BODY" in content, (
+        "the shadowed host slot must serve the fork body, not the base body"
+    )
+
+
+def test_c2_fork_shadow_slot_is_concrete_dir(fake_home_with_fork, tmp_path):
+    """Fork-materialized slot is a concrete dir (not a raw symlink to the base)."""
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    slot = host / "skills" / "kata-bootstrap"
+    assert slot.is_dir()
+    assert not slot.is_symlink(), "fork-materialized slot must be a concrete dir, not a symlink"
+
+
+def test_c2_fork_shadow_has_both_markers(fake_home_with_fork, tmp_path):
+    """Fork-materialized slot carries .kata-managed AND .kata-overlay-materialized."""
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    slot = host / "skills" / "kata-bootstrap"
+    assert (slot / ki._MARKER).exists(), "fork slot must carry .kata-managed"
+    assert (slot / ki._OVERLAY_MATERIALIZED_MARKER).exists(), (
+        "fork slot must carry .kata-overlay-materialized"
+    )
+
+
+def test_c2_fork_shadow_materialized_json_source_is_fork(fake_home_with_fork, tmp_path):
+    """Fork-shadowed slot is recorded in materialized.json with source:'fork'."""
+    import kata_overlay as ko
+
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    mat = ko.read_materialized(fake_home_with_fork)
+    slots = mat.get("slots", {})
+    assert "kata-bootstrap" in slots, "fork-shadowed skill must be recorded in materialized.json"
+    info = slots["kata-bootstrap"]
+    assert info["source"] == "fork", "materialized.json source must be 'fork' for fork shadow"
+    assert info["baseMode"] in ("symlink", "copy"), "baseMode must be recorded for factory-reset"
+    assert "appliedSha" in info, "appliedSha must be recorded"
+
+
+def test_c2_fork_shadow_non_shadowed_skills_unaffected(fake_home_with_fork, tmp_path):
+    """Skills NOT shadowed by a fork remain as pristine verbatim slots."""
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    # kata-grill-standard and kata-closeout are NOT in the fork's supersedes list
+    for name in ("kata-grill-standard", "kata-closeout"):
+        slot = host / "skills" / name
+        assert slot.exists()
+        assert not (slot / ki._OVERLAY_MATERIALIZED_MARKER).exists(), (
+            f"non-shadowed skill '{name}' must NOT carry .kata-overlay-materialized"
+        )
+
+
+# ---------------------------------------------------------------------------
+# C2 — Test set 2: fork > overlay precedence + dormant-overlay NOTE
+# ---------------------------------------------------------------------------
+
+
+def test_c2_fork_wins_over_overlay_fork_body_in_slot(
+    fake_home_with_fork, tmp_path
+):
+    """When a skill has BOTH a fork shadow AND an overlay, fork body wins in the slot."""
+    import kata_overlay as ko
+
+    # Add overlay entry for kata-bootstrap (same skill the fork shadows)
+    ko.write_overlay_entry(fake_home_with_fork, "kata-bootstrap", {
+        "frontmatterOverrides": {"tags": ["meta", "overlay-tag"]},
+        "append": [{"anchor": None, "markdown": "\n## Overlay Section\nOverlay content."}],
+    })
+
+    host = tmp_path / "dot-claude"
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    assert rc == 0
+
+    content = (host / "skills" / "kata-bootstrap" / "SKILL.md").read_text(encoding="utf-8")
+    assert "FORK BODY" in content, "fork must win over overlay when both present"
+    assert "Overlay Section" not in content, (
+        "overlay content must NOT appear when fork wins"
+    )
+
+
+def test_c2_dormant_overlay_note_emitted(fake_home_with_fork, tmp_path, capsys):
+    """When fork wins over overlay, the dormant-overlay NOTE is emitted (DESIGN §3/PLAN C2 minor-b)."""
+    import kata_overlay as ko
+
+    ko.write_overlay_entry(fake_home_with_fork, "kata-bootstrap", {
+        "frontmatterOverrides": {},
+        "append": [],
+    })
+
+    host = tmp_path / "dot-claude"
+    capsys.readouterr()
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    out, err = capsys.readouterr()
+    combined = out + err
+    # PLAN C2 minor-b: exact NOTE string from DESIGN §3
+    assert "is dormant" in combined, (
+        "dormant-overlay NOTE must contain 'is dormant'"
+    )
+    assert "superseding fork" in combined, (
+        "dormant-overlay NOTE must mention 'superseding fork'"
+    )
+
+
+def test_c2_dormant_overlay_note_exact_string(fake_home_with_fork, tmp_path, capsys):
+    """The dormant-overlay NOTE matches the exact PLAN/DESIGN phrase."""
+    import kata_overlay as ko
+
+    ko.write_overlay_entry(fake_home_with_fork, "kata-bootstrap", {
+        "frontmatterOverrides": {},
+        "append": [],
+    })
+
+    host = tmp_path / "dot-claude"
+    capsys.readouterr()
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    out, err = capsys.readouterr()
+    combined = out + err
+    # PLAN C2 minor-b: "overlay for '<name>' is dormant — a superseding fork shadows it"
+    assert "overlay for 'kata-bootstrap' is dormant" in combined, (
+        "NOTE must name the skill and say 'is dormant'"
+    )
+    assert "a superseding fork shadows it" in combined, (
+        "NOTE must say 'a superseding fork shadows it'"
+    )
+
+
+def test_c2_overlay_entry_preserved_when_fork_wins(fake_home_with_fork, tmp_path):
+    """When fork shadows a skill with overlay, overlay entry is PRESERVED in overlay.json."""
+    import kata_overlay as ko
+
+    ko.write_overlay_entry(fake_home_with_fork, "kata-bootstrap", {
+        "frontmatterOverrides": {"tags": ["meta", "keep-me"]},
+        "append": [],
+    })
+
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    # The overlay entry must survive (not dropped) so it re-activates if fork is removed
+    assert ko.has_overlay(fake_home_with_fork, "kata-bootstrap"), (
+        "overlay entry must be preserved in overlay.json even when dormant"
+    )
+
+
+def test_c2_fork_source_in_materialized_json_when_overlay_also_present(
+    fake_home_with_fork, tmp_path
+):
+    """materialized.json records source:'fork' (not 'overlay') when fork wins."""
+    import kata_overlay as ko
+
+    ko.write_overlay_entry(fake_home_with_fork, "kata-bootstrap", {
+        "frontmatterOverrides": {},
+        "append": [],
+    })
+
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    mat = ko.read_materialized(fake_home_with_fork)
+    info = mat.get("slots", {}).get("kata-bootstrap", {})
+    assert info.get("source") == "fork", (
+        "source must be 'fork' when fork wins over overlay"
+    )
+
+
+# ---------------------------------------------------------------------------
+# C2 — Test set 3: validate_shadows failure → STOP, no partial shadow
+# ---------------------------------------------------------------------------
+
+
+def test_c2_validate_unknown_base_stops_install(fake_home, tmp_path):
+    """validate_shadows: unknown supersedes target → install STOPS (raises ValueError)."""
+    import json as _j_ub
+    import kata_overlay as ko
+
+    asd = tmp_path / "bad-toolkit-ub"
+    bad_fork = asd / "skills" / "cat" / "bad-fork"
+    bad_fork.mkdir(parents=True)
+    (bad_fork / "SKILL.md").write_text(
+        "---\nname: bad-fork\nsupersedes: nonexistent-skill-xyz\n---\nbody\n",
+        encoding="utf-8",
+    )
+    (fake_home / ".kata-settings.json").write_text(
+        _j_ub.dumps({"agentSkills": {"dir": str(asd)}}),
+        encoding="utf-8",
+    )
+
+    host = tmp_path / "dot-claude"
+    with pytest.raises(ValueError, match="shadow validation failed"):
+        ki.main([
+            "--platform", "claude",
+            "--home", str(fake_home),
+            "--host-dir", str(host),
+        ])
+
+    # NO slot materialised — even the invalid shadow must not appear
+    mat = ko.read_materialized(fake_home)
+    assert not mat.get("slots"), (
+        "no slot must be materialized when shadow validation fails (no partial shadow)"
+    )
+
+
+def test_c2_validate_double_supersede_stops_install(fake_home, tmp_path):
+    """validate_shadows: two forks claim same upstream → install STOPS (raises ValueError)."""
+    import json as _j_ds
+    import kata_overlay as ko
+
+    asd = tmp_path / "conflict-toolkit"
+    for cat in ("cat1", "cat2"):
+        fd = asd / "skills" / cat / f"fork-{cat}"
+        fd.mkdir(parents=True)
+        (fd / "SKILL.md").write_text(
+            f"---\nname: fork-{cat}\nsupersedes: kata-bootstrap\n---\nbody\n",
+            encoding="utf-8",
+        )
+    (fake_home / ".kata-settings.json").write_text(
+        _j_ds.dumps({"agentSkills": {"dir": str(asd)}}),
+        encoding="utf-8",
+    )
+
+    host = tmp_path / "dot-claude"
+    with pytest.raises(ValueError, match="shadow validation failed"):
+        ki.main([
+            "--platform", "claude",
+            "--home", str(fake_home),
+            "--host-dir", str(host),
+        ])
+
+    mat = ko.read_materialized(fake_home)
+    assert not mat.get("slots"), (
+        "no slot must be materialized on double-supersede error (no partial shadow)"
+    )
+
+
+def test_c2_validate_failure_on_update_stops(fake_home, tmp_path):
+    """validate_shadows failure on --update also STOPS (raises ValueError)."""
+    import json as _j_fu
+
+    host = tmp_path / "dot-claude"
+    # First plain install (no agentSkills.dir → shadow-free)
+    (fake_home / ".kata-settings.json").write_text(
+        _j_fu.dumps({}), encoding="utf-8"
+    )
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+    ])
+    assert rc == 0
+
+    # Now configure a bad fork (unknown base)
+    asd = tmp_path / "bad-toolkit-upd"
+    bad_fork = asd / "skills" / "cat" / "bad-fork-upd"
+    bad_fork.mkdir(parents=True)
+    (bad_fork / "SKILL.md").write_text(
+        "---\nname: bad-fork-upd\nsupersedes: nonexistent-xyz\n---\nbody\n",
+        encoding="utf-8",
+    )
+    (fake_home / ".kata-settings.json").write_text(
+        _j_fu.dumps({"agentSkills": {"dir": str(asd)}}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="shadow validation failed"):
+        ki.main([
+            "--platform", "claude",
+            "--home", str(fake_home),
+            "--host-dir", str(host),
+            "--update",
+        ])
+
+
+# ---------------------------------------------------------------------------
+# C2 — Test set 4: BC — no agentSkills.dir → Phase-B overlay behavior
+# ---------------------------------------------------------------------------
+
+
+def test_c2_bc_no_agentskills_dir_overlay_still_applies(fake_home, tmp_path):
+    """BC: no agentSkills.dir configured → shadows={}, Phase-B overlay behavior unchanged."""
+    import kata_overlay as ko
+
+    # Write an overlay for kata-bootstrap (Phase-B style; no fork config)
+    ko.write_overlay_entry(fake_home, "kata-bootstrap", {
+        "frontmatterOverrides": {"tags": ["meta", "bc-only-overlay"]},
+        "append": [],
+    })
+    # NO .kata-settings.json / no agentSkills.dir → purely Phase-B territory
+
+    host = tmp_path / "dot-claude"
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+    ])
+    assert rc == 0
+
+    # Phase-B: overlay must materialise (no fork to preempt it)
+    composed = (host / "skills" / "kata-bootstrap" / "SKILL.md").read_text(encoding="utf-8")
+    assert "bc-only-overlay" in composed, (
+        "Phase-B overlay must still apply when agentSkills.dir is not configured"
+    )
+
+    mat = ko.read_materialized(fake_home)
+    info = mat.get("slots", {}).get("kata-bootstrap", {})
+    assert info.get("source") == "overlay", (
+        "source must be 'overlay' (Phase-B BC) when no agentSkills.dir"
+    )
+
+
+def test_c2_bc_no_agentskills_dir_install_exits_zero(fake_home, tmp_path):
+    """BC: no agentSkills.dir → install exits 0 (no shadow machinery engaged)."""
+    host = tmp_path / "dot-claude"
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home),
+        "--host-dir", str(host),
+    ])
+    assert rc == 0
+
+
+# ---------------------------------------------------------------------------
+# C2 — Test set 5: factory-reset un-shadows a fork slot back to the base
+# ---------------------------------------------------------------------------
+
+
+def test_c2_factory_reset_unshadows_fork_slot_clears_record(
+    fake_home_with_fork, tmp_path
+):
+    """factory-reset un-shadows: materialized.json cleared (fork slot record gone)."""
+    import kata_overlay as ko
+
+    host = tmp_path / "dot-claude"
+    # Install with fork shadow active — C2 must materialise the fork
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    # Guard: fork must be recorded (requires C2 — will fail before implementation)
+    mat_before = ko.read_materialized(fake_home_with_fork)
+    assert "kata-bootstrap" in mat_before.get("slots", {}), (
+        "C2 dependency: fork slot must be recorded before factory-reset test can run"
+    )
+
+    # Factory-reset
+    rc = ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+        "--factory-reset",
+    ])
+    assert rc == 0
+
+    # Record must be cleared
+    mat_after = ko.read_materialized(fake_home_with_fork)
+    assert not mat_after.get("slots"), (
+        "factory-reset must clear materialized.json (fork record gone)"
+    )
+
+
+def test_c2_factory_reset_unshadows_fork_slot_restores_base(
+    fake_home_with_fork, tmp_path
+):
+    """factory-reset un-shadows: slot restores to base content (SKILL.md not the fork)."""
+    import kata_overlay as ko
+
+    host = tmp_path / "dot-claude"
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+    ])
+    # Guard: requires C2
+    mat_before = ko.read_materialized(fake_home_with_fork)
+    assert "kata-bootstrap" in mat_before.get("slots", {}), (
+        "C2 dependency: fork must be materialized before factory-reset test can run"
+    )
+
+    ki.main([
+        "--platform", "claude",
+        "--home", str(fake_home_with_fork),
+        "--host-dir", str(host),
+        "--factory-reset",
+    ])
+
+    # No .kata-overlay-materialized marker (pristine slot)
+    slot = host / "skills" / "kata-bootstrap"
+    assert not (slot / ki._OVERLAY_MATERIALIZED_MARKER).exists(), (
+        "factory-reset must remove .kata-overlay-materialized from the fork-shadowed slot"
+    )
+
+    # Skill accessible via pristine base (not the fork body)
+    assert (slot / "SKILL.md").exists()
+    content = (slot / "SKILL.md").read_text(encoding="utf-8")
+    assert "FORK BODY" not in content, (
+        "factory-reset must restore base content — fork body must NOT remain"
+    )

@@ -59,6 +59,43 @@ These are durable files; load them when improving, not into the loop.
 A small, cited set of skill/doc edits + version bumps + an index update, and a one-line "expected effect to
 verify next run." The harness is now incrementally better; the loop continues.
 
+## Local-adaptation mode (install context)
+
+A **separate operating mode** from the authoring-upstream path above. When `kata-improve` runs against a
+**user install** (rather than the maintainer's dev checkout), it must never edit the installed base — that base
+is immutable from the user's side and any in-place edit is clobbered by the next `--update`. This mode emits
+local adaptations without touching `skills/**`, `protocol/`, or `docs/`.
+
+**Context detection.** Before entering kata mode, determine the context via
+`kata_overlay.adaptation_context(home)`:
+- **`"install"`** — a `.kata-version` stamp is present in the home (written by every successful install or
+  `--update`, git-ignored). Every real user install self-identifies; the safety rail below is on by default.
+- **`"dev-repo"`** — no stamp; a canonical maintainer checkout that has never been installed into a host.
+  Use the authoring-upstream path (edit `skills/**` in place, bump semver, update the README index).
+
+**Install-context safety rail.** When the context is `"install"`, the kata mode above **refuses to run**
+unless the operator has explicitly passed `improve.allowUpstreamEdit`. The default in an install is *never*
+to mutate the installed base. The edge case of a maintainer who installed from their own dev checkout (so
+the dev tree carries a stamp) is handled by that conscious override — failing toward not-mutating.
+
+**What local-adapt writes and where (by change shape):**
+
+| Change shape | Emission target | Mechanism |
+|---|---|---|
+| Frontmatter knob · appended guard/lesson/rubric (the ~60–70% bulk) | **Overlay entry** in `<home>/.kata-overlay/overlay.json` | `kata_overlay.write_overlay_entry(home, name, entry)` — read-merge-write one skill; all others preserved |
+| Mid-body wording/threshold — expressible as a frontmatter override or append block | **Overlay** — state the choice and record why | same as above |
+| Mid-body wording/threshold — NOT expressible as overlay | **Fork** (route as below) | [[kata-write-skill]] → toolkit candidate |
+| Deep prose/contract rewrite (~10–15% of changes) | **Fork** authored to the user's toolkit, never the base | [[kata-write-skill]] → `<agentSkills.dir>/candidates/<name>/` (carrying `supersedes: <upstream>`) → [[kata-promote]] human gate before it can shadow |
+| Whole new skill | Toolkit candidate (orthogonal) | Existing [[kata-write-skill]] path — no collision |
+
+**Pinned writable footprint (install context).** Local-adapt mode's writable footprint is pinned to exactly:
+1. `<home>/.kata-overlay/overlay.json` — via `kata_overlay.write_overlay_entry` (overlay entries).
+2. `<agentSkills.dir>/candidates/<name>/` — via [[kata-write-skill]] (fork candidates, pre-promote-gate).
+
+It writes **nothing** under `<home>/skills/`, `protocol/`, or `docs/`. A fork candidate does not shadow the
+upstream until it passes the [[kata-promote]] human gate and lands in `<agentSkills.dir>/skills/<category>/`.
+No new `allowed-tools` — `Write`/`Edit` (already in the frontmatter) cover both emission targets.
+
 ## LEARN-feed emit sub-mode (β — emit-only, the primary fingerprint feed; D66/D72)
 A **separate sub-mode** from the kata above (which edits skills). This one **only emits**: it mines the run's
 durable decision artifacts into **synthesis pages** for the second-brain LEARN feed, so a future cognitive
