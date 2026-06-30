@@ -411,6 +411,13 @@ def _compute_arm_q(
             "mutation_multiplier": mut_multiplier,
             "f2p_results": f2p_results,
             "p2p_results": p2p_results,
+            # Metric-honesty: distinguish vacuous 1.0 (zero tests) from a real all-pass.
+            # f2p_rate is 1.0 both when f2p_total==0 (vacuous shortcut) AND when all
+            # tests pass.  f2p_evaluated=False is the unambiguous signal for the former.
+            "f2p_total": f2p_total,       # count of F2P tests declared
+            "f2p_evaluated": f2p_total > 0,  # False → rate is vacuous shortcut, not a real result
+            "p2p_total": p2p_total,       # count of P2P tests declared (symmetric)
+            "p2p_evaluated": p2p_total > 0,  # False → p2p_rate is vacuous shortcut
         }
     )
     return q, detail
@@ -722,6 +729,12 @@ def score_arms(
             "p2p_pass_rate": q_detail.get("p2p_pass_rate", 0.0),
             "dual_gate_both_green": q_detail.get("dual_gate_both_green", False),
             "dual_gate_evaluated": q_detail.get("dual_gate_evaluated", False),  # FIX 1
+            # Metric-honesty fields: allow callers to distinguish vacuous 1.0 from real all-pass.
+            # When the gate was not evaluated (floor-fail or both empty), these default to 0/False.
+            "f2p_total": q_detail.get("f2p_total", 0),
+            "f2p_evaluated": q_detail.get("f2p_evaluated", False),
+            "p2p_total": q_detail.get("p2p_total", 0),
+            "p2p_evaluated": q_detail.get("p2p_evaluated", False),
             "detail": q_detail,
         }
         usage_list.append(usage_json)

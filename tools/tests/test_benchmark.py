@@ -117,6 +117,15 @@ TestMutationProof:
     test_mutation_proof_no_free_dual_score     (c) FIX 1 gate-not-evaluated Q=0 line
     test_mutation_proof_traversal_guard        (d) FIX 2 _guard_node_id call
     test_mutation_proof_partial_floor          (e) FIX 5 failed_present check line
+
+TestF2PEvaluatedFlag (FIX metric-honesty):
+    test_empty_f2p_with_p2p_vacuous_flag      vacuous 1.0 → f2p_evaluated=False, f2p_total=0
+    test_real_f2p_is_evaluated                real F2P → f2p_evaluated=True, f2p_total=N
+    test_real_all_pass_f2p_distinguishable    all-pass + f2p_evaluated=True ≠ vacuous
+    test_p2p_evaluated_symmetry               empty p2p → p2p_evaluated=False, p2p_total=0
+
+TestDurableF2PProof (@pytest.mark.integration):
+    test_f2p_zero_to_one_transition           real 0→1 via broken→fixed synthetic control
 """
 
 from __future__ import annotations
@@ -1944,3 +1953,232 @@ class TestMutationProofNewFixes:
             "test_same_definition_true_via_benchmark_id go red"
         )
         assert verdict["nonVacuous"]
+
+
+# ===========================================================================
+# FIX metric-honesty — f2p_evaluated / p2p_evaluated
+# ===========================================================================
+
+
+class TestF2PEvaluatedFlag:
+    """Metric-honesty: f2p_evaluated / p2p_evaluated distinguish vacuous 1.0 from a real all-pass.
+
+    The root problem: when f2p_results is empty the engine computes
+    f2p_rate = 1.0 (the vacuous shortcut), making a zero-test run look
+    identical to a genuine all-pass.  Adding f2p_evaluated (= f2p_total > 0)
+    and f2p_total lets a caller tell the difference without breaking the BC
+    f2p_pass_rate field.
+    """
+
+    def test_empty_f2p_with_p2p_vacuous_flag(self, tmp_path):
+        """Empty f2p + non-empty p2p: gate_evaluated=True but f2p_evaluated=False.
+
+        f2p_pass_rate is 1.0 (vacuous shortcut — BC preserved), but
+        f2p_evaluated=False and f2p_total=0 expose that no F2P tests ran.
+        """
+        root = _make_arm(tmp_path, "arm-a")
+        sc = bm.score_arms(
+            {"arm-a": root},
+            f2p_p2p_results={
+                "arm-a": {"f2p": {}, "p2p": {"t1": True}},
+            },
+        )
+        arm = _arm_by_label(sc, "arm-a")
+        assert arm["dual_gate_evaluated"] is True, (
+            "gate is evaluated because p2p has entries"
+        )
+        assert arm["f2p_evaluated"] is False, (
+            "Empty f2p → f2p_evaluated must be False (vacuous shortcut, not a real all-pass)"
+        )
+        assert arm["f2p_total"] == 0, "f2p_total must be 0 when f2p is empty"
+        assert arm["f2p_pass_rate"] == 1.0, "BC: f2p_pass_rate is still 1.0 (unchanged)"
+
+    def test_real_f2p_is_evaluated(self, tmp_path):
+        """Non-empty f2p → f2p_evaluated=True, f2p_total=N, rate correct."""
+        root = _make_arm(tmp_path, "arm-a")
+        sc = bm.score_arms(
+            {"arm-a": root},
+            f2p_p2p_results={
+                "arm-a": {
+                    "f2p": {"t1": True, "t2": True, "t3": False},
+                    "p2p": {},
+                },
+            },
+        )
+        arm = _arm_by_label(sc, "arm-a")
+        assert arm["f2p_evaluated"] is True, "f2p has 3 entries → f2p_evaluated=True"
+        assert arm["f2p_total"] == 3, "f2p_total must equal the number of F2P entries"
+        assert arm["f2p_pass_rate"] == pytest.approx(2 / 3)
+
+    def test_real_all_pass_f2p_distinguishable(self, tmp_path):
+        """All F2P pass → f2p_evaluated=True distinguishes from vacuous 1.0.
+
+        Both vacuous (f2p={}) and real-all-pass produce f2p_pass_rate=1.0.
+        f2p_evaluated=True here signals this is a genuine result.
+        """
+        root = _make_arm(tmp_path, "arm-a")
+        sc = bm.score_arms(
+            {"arm-a": root},
+            f2p_p2p_results={
+                "arm-a": {"f2p": {"t1": True, "t2": True}, "p2p": {}},
+            },
+        )
+        arm = _arm_by_label(sc, "arm-a")
+        assert arm["f2p_evaluated"] is True, (
+            "f2p has 2 entries → f2p_evaluated=True (real all-pass, not vacuous)"
+        )
+        assert arm["f2p_total"] == 2
+        assert arm["f2p_pass_rate"] == 1.0
+
+    def test_p2p_evaluated_symmetry(self, tmp_path):
+        """Empty p2p with non-empty f2p → p2p_evaluated=False, p2p_total=0 (symmetric)."""
+        root = _make_arm(tmp_path, "arm-a")
+        sc = bm.score_arms(
+            {"arm-a": root},
+            f2p_p2p_results={
+                "arm-a": {"f2p": {"t1": True}, "p2p": {}},
+            },
+        )
+        arm = _arm_by_label(sc, "arm-a")
+        assert arm["p2p_evaluated"] is False, (
+            "Empty p2p → p2p_evaluated=False (symmetric vacuous shortcut)"
+        )
+        assert arm["p2p_total"] == 0
+        assert arm["p2p_pass_rate"] == 1.0  # BC: vacuous shortcut unchanged
+
+
+# ===========================================================================
+# FIX durable-f2p-proof — permanent reproducible 0→1 proof
+# ===========================================================================
+
+
+class TestDurableF2PProof:
+    """Durable real-F2P proof: the 0→1 transition is a permanent, reproducible assertion.
+
+    Builds a tiny synthetic control with:
+      (a) a genuinely-FAILING F2P test on the broken baseline (add returns a - b)
+      (b) a P2P regression guard that passes even on the broken baseline (add(0,0)==0)
+
+    Proves dual-gate on the broken baseline gives f2p_pass_rate=0.0 and
+    dual_both_green=False, then proves the fixed baseline gives f2p_pass_rate=1.0,
+    dual_both_green=True, and Q=1.0.
+
+    This permanently prevents the F2P leg from silently regressing to vacuous-pass
+    by anchoring the 0→1 transition in a real subprocess run.
+    """
+
+    @pytest.mark.integration
+    def test_f2p_zero_to_one_transition(self, tmp_path):
+        """Integration: F2P 0→1 transition via real dual-gate over a synthetic control.
+
+        BROKEN baseline:  add(a,b) returns a-b  → F2P test (add(1,2)==3) FAILS
+                          Q = 0.6*0.0 + 0.4*1.0 = 0.4, dual_gate_both_green=False
+        FIXED  baseline:  add(a,b) returns a+b  → F2P test PASSES
+                          Q = 1.0, dual_gate_both_green=True
+
+        The P2P guard (add(0,0)==0) passes in both states because 0-0==0.
+        """
+        import textwrap
+
+        # ── BUILD SYNTHETIC CONTROL ───────────────────────────────────────────
+        clone = tmp_path / "control"
+        src_dir = clone / "src"
+        src_dir.mkdir(parents=True)
+        (src_dir / "__init__.py").write_text("", encoding="utf-8")
+
+        # BROKEN implementation: subtraction instead of addition
+        calc_py = src_dir / "calculator.py"
+        calc_py.write_text(
+            "def add(a: int, b: int) -> int:\n    return a - b  # deliberate bug\n",
+            encoding="utf-8",
+        )
+
+        tests_dir = clone / "tests"
+        tests_dir.mkdir()
+        (tests_dir / "__init__.py").write_text("", encoding="utf-8")
+        (tests_dir / "test_calc.py").write_text(
+            textwrap.dedent("""\
+                from src.calculator import add
+
+                def test_f2p_add_basic():
+                    # F2P test: fails on the broken impl (1-2 == -1, not 3)
+                    assert add(1, 2) == 3
+
+                def test_p2p_add_zero():
+                    # P2P regression guard: passes even on broken impl (0-0 == 0)
+                    assert add(0, 0) == 0
+            """),
+            encoding="utf-8",
+        )
+
+        kata = clone / ".kata"
+        kata.mkdir()
+        (kata / "RESULT.json").write_text(
+            json.dumps({"exitCode": 0, "failed": 0, "passed": 2}), encoding="utf-8"
+        )
+        (kata / "mutation.json").write_text(
+            json.dumps({"allNonVacuous": True, "records": []}), encoding="utf-8"
+        )
+        (kata / "usage.json").write_text(
+            json.dumps(_usage("control")), encoding="utf-8"
+        )
+
+        f2p_ids = ["tests/test_calc.py::test_f2p_add_basic"]
+        p2p_ids = ["tests/test_calc.py::test_p2p_add_zero"]
+
+        # ── BROKEN BASELINE ───────────────────────────────────────────────────
+        gate_broken = bm.run_dual_gate(clone, f2p_ids, p2p_ids)
+
+        assert gate_broken["f2p"]["tests/test_calc.py::test_f2p_add_basic"] is False, (
+            "Broken impl (a-b): F2P test must FAIL — add(1,2) returns -1, not 3"
+        )
+        assert gate_broken["p2p"]["tests/test_calc.py::test_p2p_add_zero"] is True, (
+            "Broken impl: P2P guard must PASS — add(0,0) returns 0 for any a-b when a==b==0"
+        )
+
+        sc_broken = bm.score_arms(
+            {"control": clone},
+            f2p_p2p_results={"control": gate_broken},
+        )
+        arm_broken = _arm_by_label(sc_broken, "control")
+
+        assert arm_broken["f2p_pass_rate"] == 0.0, (
+            f"Broken: f2p_pass_rate must be 0.0 (F2P test failed); got {arm_broken['f2p_pass_rate']}"
+        )
+        assert arm_broken["dual_gate_both_green"] is False, (
+            "Broken: dual_gate_both_green must be False (F2P failed)"
+        )
+        # Q = 0.6*f2p_rate + 0.4*p2p_rate = 0.6*0.0 + 0.4*1.0 = 0.4
+        assert arm_broken["q"] == pytest.approx(0.4), (
+            f"Broken: Q must be 0.4 (only p2p weight contributes); got {arm_broken['q']}"
+        )
+
+        # ── APPLY MINIMAL FIX ─────────────────────────────────────────────────
+        calc_py.write_text(
+            "def add(a: int, b: int) -> int:\n    return a + b  # fixed\n",
+            encoding="utf-8",
+        )
+
+        # ── FIXED BASELINE ────────────────────────────────────────────────────
+        gate_fixed = bm.run_dual_gate(clone, f2p_ids, p2p_ids)
+
+        assert gate_fixed["f2p"]["tests/test_calc.py::test_f2p_add_basic"] is True, (
+            "Fixed impl (a+b): F2P test must PASS — add(1,2) returns 3"
+        )
+        assert gate_fixed["p2p"]["tests/test_calc.py::test_p2p_add_zero"] is True
+
+        sc_fixed = bm.score_arms(
+            {"control": clone},
+            f2p_p2p_results={"control": gate_fixed},
+        )
+        arm_fixed = _arm_by_label(sc_fixed, "control")
+
+        assert arm_fixed["f2p_pass_rate"] == 1.0, (
+            f"Fixed: f2p_pass_rate must be 1.0 (F2P test passes); got {arm_fixed['f2p_pass_rate']}"
+        )
+        assert arm_fixed["dual_gate_both_green"] is True, (
+            "Fixed: dual_gate_both_green must be True (both gates pass)"
+        )
+        assert arm_fixed["q"] == pytest.approx(1.0), (
+            f"Fixed: Q must be 1.0 (both gates green, allNonVacuous); got {arm_fixed['q']}"
+        )
