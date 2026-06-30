@@ -72,8 +72,10 @@ if ($env:KATA_SRC) {
 # Step 2 — sanity check
 # --------------------------------------------------------------------------
 if (-not (Test-Path (Join-Path "$_KataHome" 'tools\kata_install.py'))) {
-    Write-Error "kata-install: tools/kata_install.py not found in $_KataHome"
-    exit 1
+    # 'throw' (not 'exit'): piped via `irm | iex` this runs in the caller's
+    # session, where 'exit' would terminate the host WINDOW. 'throw' surfaces
+    # the error without closing it; as a file it still stops with a failure code.
+    throw "kata-install: tools/kata_install.py not found in $_KataHome"
 }
 
 # --------------------------------------------------------------------------
@@ -98,11 +100,18 @@ try {
     } elseif (Get-Command python -ErrorAction SilentlyContinue) {
         & python tools/kata_install.py @_PassArgs
     } else {
-        Write-Error 'kata-install: Python not found. Install uv (https://docs.astral.sh/uv/) or Python 3.12+.'
-        exit 1
+        throw 'kata-install: Python not found. Install uv (https://docs.astral.sh/uv/) or Python 3.12+.'
     }
     $_ExitCode = $LASTEXITCODE
 } finally {
     Set-Location "$_OrigLocation"
 }
-exit $_ExitCode
+
+# Propagate the engine's exit code WITHOUT 'exit' — under `irm | iex` this script
+# runs in the caller's session, so a bare 'exit' (even 'exit 0') closes the host
+# WINDOW. Set $LASTEXITCODE for the download-then-run path; 'throw' only on a real
+# failure (surfaces in red, window stays open). Success simply falls off the end.
+$global:LASTEXITCODE = $_ExitCode
+if ($_ExitCode -ne 0) {
+    throw "kata-install: engine exited with code $_ExitCode"
+}

@@ -78,11 +78,12 @@ def _parse_result_json(stdout: str) -> dict:
 
 
 def test_no_flag_stdout_golden(fake_home, tmp_path, capsys):
-    """Without any new flag, stdout is pretty-JSON + note lines only; stderr is empty.
+    """Without any new flag, stdout is pretty-JSON + note lines + the next-steps
+    banner; stderr is empty.
 
     This is the BC regression anchor (PLAN §Slice B test 7 + BUILD NIT 1).
-    Verifies the default mixed-stdout path (:360-362) is byte-for-byte preserved
-    after the Slice B refactor.
+    Verifies the default mixed-stdout path is byte-for-byte the JSON+notes shape,
+    now followed by the post-install human guidance banner (human mode only).
     """
     host = tmp_path / "dot-claude"
     rc = ki.main(
@@ -104,7 +105,23 @@ def test_no_flag_stdout_golden(fake_home, tmp_path, capsys):
     expected_notes = "".join(
         f"  - {n}\n" for n in reinstall_result.get("notes", [])
     )
-    expected_stdout = expected_json + "\n" + expected_notes
+    # ...then the next-steps banner (human mode only), exactly as main() composes it.
+    _methods = reinstall_result.get("method", [])
+    _link_mode = (
+        _methods[0]
+        if len(_methods) == 1
+        else ("mixed" if len(_methods) > 1 else "unknown")
+    )
+    expected_banner = (
+        ki._next_steps_banner(
+            "claude",
+            str(ki._safe_abs(fake_home)),
+            _link_mode,
+            len(reinstall_result.get("linked", [])),
+        )
+        + "\n"
+    )
+    expected_stdout = expected_json + "\n" + expected_notes + expected_banner
     assert out == expected_stdout  # byte-identical to the current format
 
     # Nothing on stderr in non-json mode

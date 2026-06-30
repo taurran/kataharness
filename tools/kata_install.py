@@ -841,6 +841,80 @@ def _sweep_managed_slots(
 # ---------------------------------------------------------------------------
 
 
+def _next_steps_banner(
+    platform: str, home: str | Path, link_mode: str, skill_count: int
+) -> str:
+    """Compose the post-install human guidance shown after a successful install.
+
+    ASCII-only (Windows legacy-console safe — no box-drawing or emoji), and
+    platform-aware. Returned as a plain string so ``main`` owns routing; this is
+    NEVER emitted in ``--json`` mode (the JSON stdout contract stays clean).
+    Lives in the engine (not the shell bootstraps) so install.sh, install.ps1,
+    and the download-then-run path all inherit one tested copy.
+    """
+    p = (platform or "").strip().casefold()
+    home_disp = str(home)
+    bar = "=" * 60
+    if p == "claude":
+        skills_path = "~/.claude/skills"
+        restart = "Claude Code: exit and reopen (start a fresh session)."
+        step2 = [
+            '  2) Start a run. In Claude Code, either just ask:',
+            '        "Start a KataHarness run on <your project>"',
+            "     or invoke a skill directly:",
+            "        /kata-initiate    start a run (the front door)",
+            "        /kata-onboard     guided tour on an existing repo",
+            "        /kata-bootstrap   configure and launch a run",
+        ]
+    elif p in _BEST_EFFORT:  # codex / kiro
+        skills_path = "<host>/.agents/skills"
+        restart = f"Restart {platform} so it rescans its skills directory."
+        step2 = [
+            "  2) Start a run. Ask your agent to begin a KataHarness run, or",
+            "     invoke the kata-initiate / kata-onboard skill if your tool",
+            "     exposes installed skills as commands.",
+        ]
+    else:
+        skills_path = "your host's skills directory"
+        restart = "Restart your tool so it loads the new skills."
+        step2 = [
+            "  2) Start a run. Ask your agent to begin a KataHarness run",
+            "     (the kata-initiate skill is the front door).",
+        ]
+
+    head = (
+        f"  KataHarness installed   [{platform} * {skill_count} skills"
+        f" * mode: {link_mode}]"
+        if skill_count
+        else f"  KataHarness installed   [{platform} * mode: {link_mode}]"
+    )
+    lines = [
+        "",
+        bar,
+        head,
+        bar,
+        "",
+        "NEXT STEPS",
+        "",
+        "  1) Restart your tool so it loads the new skills.",
+        f"     {restart}",
+        f"     Skills live in {skills_path} and load at startup.",
+        "",
+        *step2,
+        "",
+        "  3) Your first run helps you bind a project folder + vault.",
+        "",
+        "LEARN MORE",
+        f"  Quickstart & modes .... {home_disp}/docs/SETUP.md",
+        f"  What each skill does .. {home_disp}/README.md",
+        "  Update later .......... update.ps1 | update.sh  (--check to preview)",
+        "",
+        f"Home: {home_disp}",
+        bar,
+    ]
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     """Install (or uninstall) KataHarness into a platform; optionally record settings.
 
@@ -1287,6 +1361,18 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result, indent=2))
     for note in result.get("notes", []):
         _emit(f"  - {note}", as_json=use_json)
+    # Professional post-install next-steps guidance (human mode only; suppressed
+    # under --json so the machine contract stays clean). Only on a successful
+    # install — _home_inst / _link_mode_inst are in scope iff result.get("ok").
+    if result.get("ok") and not use_json:
+        print(
+            _next_steps_banner(
+                args.platform or "",
+                _home_inst,
+                _link_mode_inst,
+                len(result.get("linked", [])),
+            )
+        )
     return _exit_code_for(result)
 
 
