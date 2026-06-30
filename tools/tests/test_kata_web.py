@@ -317,19 +317,19 @@ class TestSafePath:
         """build_web_view must reject kata_dir containing '..'."""
         import kata_web
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError):
             kata_web.build_web_view("../some/escape")
 
     def test_dotdot_in_middle_raises(self):
         import kata_web
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError):
             kata_web.build_web_view("valid/../../escape")
 
     def test_plain_path_does_not_raise(self, tmp_path):
         import kata_web
 
-        # Should not raise SystemExit (returns waiting=True since dir is absent)
+        # Should not raise ValueError (returns waiting=True since dir is absent)
         kata_dir = tmp_path / "safe_dir"
         result = kata_web.build_web_view(str(kata_dir))
         assert isinstance(result, dict)

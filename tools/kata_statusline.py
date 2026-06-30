@@ -34,7 +34,7 @@ def _safe_path(raw: Union[str, Path]) -> Path:
     """
     p = Path(raw)
     if any(part == ".." for part in p.parts):
-        raise SystemExit(
+        raise ValueError(
             f"kata_statusline: refusing path with '..' traversal: {raw!r}"
         )
     return p.resolve()
@@ -182,8 +182,8 @@ def statusline_from_event(stdin_text: str) -> str:
         return build_statusline(kata_dir)
 
     except (Exception, SystemExit):  # noqa: BLE001
-        # fail-soft: never crash Claude's statusline. SystemExit is included
-        # because the shared _safe_path .. guard raises it (matching the
-        # kata_board/kata_dash/gate_emit pattern); a traversal cwd must degrade
-        # to a blank line, not exit(1) — aligns fail-soft with fail-secure.
+        # fail-soft: never crash Claude's statusline. The shared _safe_path ..
+        # guard now raises ValueError (subclass of Exception, so caught above).
+        # SystemExit is retained for defense-in-depth — any traversal cwd must
+        # degrade to a blank line, not exit(1) — aligns fail-soft with fail-secure.
         return ""

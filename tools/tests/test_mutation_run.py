@@ -12,12 +12,11 @@ Coverage:
 - restore on raise: file bytes identical even when runner raises mid-way
 - ValueError propagation: apply_line_removal of a missing line surfaces cleanly,
   no mutation left behind
-- path-traversal guard: '..' in source_path → SystemExit
+- path-traversal guard: '..' in source_path → ValueError
 """
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import pytest
@@ -148,12 +147,12 @@ def test_missing_line_raises_and_file_unchanged(tmp_path):
 
 
 def test_path_traversal_guard_raises(tmp_path):
-    """A source_path containing '..' must be rejected with SystemExit (CWE-23)."""
+    """A source_path containing '..' must be rejected with ValueError (CWE-23)."""
     import mutation_run
 
     traversal = str(tmp_path / ".." / "evil.py")
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(ValueError):
         mutation_run.prove_non_vacuous(
             traversal, "anything", "dummy-cmd", runner=lambda _: True
         )

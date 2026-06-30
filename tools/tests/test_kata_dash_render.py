@@ -454,3 +454,26 @@ class TestProgressLabelInRow:
         console.print(frame)
         output = buf.getvalue()
         assert "running validators" in output
+
+
+# ---------------------------------------------------------------------------
+# kata_dash._safe_path — path-traversal guard (CWE-23)
+# ---------------------------------------------------------------------------
+
+
+class TestSafePath:
+    def test_dotdot_segment_raises(self):
+        """_safe_path must raise ValueError for '..' traversal."""
+        with pytest.raises(ValueError, match="refusing path with '\\.\\.'" ):
+            kata_dash._safe_path("../../etc/passwd")
+
+    def test_dotdot_in_middle_raises(self):
+        """_safe_path must reject '..' even when embedded mid-path."""
+        with pytest.raises(ValueError):
+            kata_dash._safe_path("valid/../../escape")
+
+    def test_normal_path_does_not_raise(self, tmp_path):
+        """_safe_path must resolve a clean path without raising."""
+        from pathlib import Path
+        result = kata_dash._safe_path(str(tmp_path / "sub" / "dir"))
+        assert isinstance(result, Path)

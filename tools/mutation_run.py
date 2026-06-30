@@ -36,11 +36,11 @@ def _safe_source_path(raw: str) -> Path:
     before any filesystem sink.
 
     Raises:
-        SystemExit: if ``raw`` contains a ``..`` segment.
+        ValueError: if ``raw`` contains a ``..`` segment.
     """
     p = Path(raw)
     if any(part == ".." for part in p.parts):
-        raise SystemExit(
+        raise ValueError(
             f"mutation_run: refusing source_path with '..' traversal: {raw!r}"
         )
     return p.resolve()
@@ -101,7 +101,7 @@ def prove_non_vacuous(
         ``mutation_check.mutation_verdict``.
 
     Raises:
-        SystemExit:  if ``source_path`` contains a ``..`` traversal segment.
+        ValueError:  if ``source_path`` contains a ``..`` traversal segment.
         ValueError:  if ``asserted_line`` is not found in the source text
                      (propagated from ``apply_line_removal``; file is restored).
         Any exception the runner raises is propagated; the file is still restored.

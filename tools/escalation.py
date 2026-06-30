@@ -1,7 +1,7 @@
 """escalation.py — machine-readable escalation + research-finding emitters.
 
 stdlib only.  Fail-closed: every builder validates its inputs and raises
-ValueError (or SystemExit for the path-traversal guard) on any violation.
+ValueError on any violation (including the path-traversal guard).
 
 Public API
 ----------
@@ -12,8 +12,8 @@ build_finding(...)       -> dict   — validates + builds {claim, source, confid
 Security
 --------
 write_escalation rejects any kata_dir containing a '..' segment (CWE-23, mirroring
-gate_emit._safe_path).  Only the path-traversal guard raises SystemExit; all other
-validation raises ValueError so callers can catch it specifically.
+the intent_scaffold pattern).  All validation raises ValueError so callers can catch
+it specifically.
 """
 
 from __future__ import annotations
@@ -153,8 +153,8 @@ def build_escalation(
 def write_escalation(kata_dir: str, payload: dict) -> str:
     """Write the escalation payload to ``<kata_dir>/escalations/<taskId>.json``.
 
-    Mirrors gate_emit._safe_path: rejects any ``kata_dir`` containing a ``..``
-    segment (CWE-23) by raising SystemExit.  All other errors raise ValueError.
+    Rejects any ``kata_dir`` containing a ``..`` segment (CWE-23) by raising
+    ValueError.  All other errors also raise ValueError.
 
     Parameters
     ----------
@@ -170,7 +170,7 @@ def write_escalation(kata_dir: str, payload: dict) -> str:
 
     Raises
     ------
-    SystemExit
+    ValueError
         If ``kata_dir`` contains a ``..`` segment.
     """
     _safe_kata_dir(kata_dir)
@@ -289,11 +289,11 @@ def _safe_kata_dir(raw: str) -> Path:
     """Reject path-traversal (CWE-23) in operator-supplied kata_dir.
 
     Blocks any ``..`` segment — the traversal-escape primitive — so a crafted
-    argument cannot climb out of the intended tree.  Mirrors gate_emit._safe_path.
+    argument cannot climb out of the intended tree.  Mirrors intent_scaffold._safe_path.
     """
     p = Path(raw)
     if any(part == ".." for part in p.parts):
-        raise SystemExit(
+        raise ValueError(
             f"escalation: refusing kata_dir with '..' traversal: {raw!r}"
         )
     return p.resolve()

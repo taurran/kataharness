@@ -46,7 +46,7 @@ def _safe_path(raw: Union[str, Path]) -> Path:
     """
     p = Path(raw)
     if any(part == ".." for part in p.parts):
-        raise SystemExit(
+        raise ValueError(
             f"kata_board: refusing path with '..' traversal: {raw!r}"
         )
     return p.resolve()

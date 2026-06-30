@@ -593,14 +593,14 @@ class TestEmitLoad:
         from validation_report import emit_findings
 
         traversal = str(tmp_path / ".." / "escaped_findings.json")
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError):
             emit_findings(traversal, {"passed": False, "findings": []})
 
     def test_traversal_guard_rejects_dotdot_in_segment(self, tmp_path: Path):
         from validation_report import emit_findings
 
         traversal = str(tmp_path) + "/../../../etc/findings.json"
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError):
             emit_findings(traversal, {"passed": False, "findings": []})
 
     def test_accepts_normal_nested_path(self, tmp_path: Path):

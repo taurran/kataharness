@@ -298,7 +298,7 @@ def test_safe_path_rejects_dotdot():
     """Demo must refuse a --kata-dir containing '..' segments."""
     import kata_dash_demo
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(ValueError):
         kata_dash_demo.main(["--kata-dir", "../escape", "--once"])
 
 

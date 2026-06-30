@@ -17,7 +17,7 @@ Coverage
 - remove_stanza removes exactly the marked block; surrounding content byte-identical
 - remove_stanza is a no-op when the file has no marked block (no crash, file unchanged)
 - remove_stanza is a no-op when the file is absent (no crash, no spurious file)
-- _safe_path rejects paths containing '..' (raises SystemExit)
+- _safe_path rejects paths containing '..' (raises ValueError)
 
 Mutation-proof targets
 ----------------------
@@ -370,16 +370,16 @@ def test_remove_stanza_noop_when_file_absent(tmp_path):
 
 
 def test_safe_path_rejects_dotdot_in_write_stanza(tmp_path):
-    """write_stanza must raise SystemExit for a path containing '..'."""
+    """write_stanza must raise ValueError for a path containing '..'."""
     malicious = str(tmp_path) + "/../../../escape/AGENTS.md"
-    with pytest.raises(SystemExit):
+    with pytest.raises(ValueError):
         kata_router.write_stanza(malicious)
 
 
 def test_safe_path_rejects_dotdot_in_remove_stanza(tmp_path):
-    """remove_stanza must raise SystemExit for a path containing '..'."""
+    """remove_stanza must raise ValueError for a path containing '..'."""
     malicious = str(tmp_path) + "/../../../escape/AGENTS.md"
-    with pytest.raises(SystemExit):
+    with pytest.raises(ValueError):
         kata_router.remove_stanza(malicious)
 
 

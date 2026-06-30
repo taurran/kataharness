@@ -28,7 +28,7 @@ Security note (CWE-23)
 -----------------------
 Operator-supplied paths are sanitised by ``_safe_path`` before any filesystem
 sink is reached.  Mirrors ``kata_board._safe_path`` and
-``grounding_gate._safe_path`` — raises ``SystemExit`` on traversal.
+``grounding_gate._safe_path`` — raises ``ValueError`` on traversal.
 """
 
 from __future__ import annotations
@@ -57,12 +57,12 @@ def _safe_path(raw: Union[str, Path]) -> Path:
     argument cannot climb out of the intended tree, while still allowing the
     absolute and nested-relative paths the operator legitimately targets.
 
-    Raises ``SystemExit`` on violation (mirrors ``kata_board._safe_path`` and
+    Raises ``ValueError`` on violation (mirrors ``kata_board._safe_path`` and
     ``grounding_gate._safe_path``).
     """
     p = Path(raw)
     if any(part == ".." for part in p.parts):
-        raise SystemExit(
+        raise ValueError(
             f"kata_router: refusing path with '..' traversal: {raw!r}"
         )
     return p.resolve()

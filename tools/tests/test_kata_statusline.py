@@ -286,16 +286,16 @@ class TestBuildStatusline:
 class TestSafePath:
     def test_dotdot_in_path_raises(self, tmp_path: Path):
         evil_path = tmp_path / ".." / "evil"
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError):
             kata_statusline.build_statusline(evil_path)
 
     def test_dotdot_in_string_path_raises(self):
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError):
             kata_statusline.build_statusline(Path("../etc/passwd"))
 
     def test_double_dotdot_raises(self, tmp_path: Path):
         evil = tmp_path / ".." / ".." / "etc"
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError):
             kata_statusline.build_statusline(evil)
 
 
@@ -387,14 +387,30 @@ class TestStatuslineFromEvent:
             result = kata_statusline.statusline_from_event(payload)
         assert result == ""
 
-    def test_systemexit_in_build_returns_empty(self, monkeypatch):
-        """SystemExit (raised by the shared _safe_path .. guard) must also be
+    def test_valueerror_in_build_returns_empty(self, monkeypatch):
+        """ValueError (raised by the shared _safe_path .. guard) must be
         caught and degrade to "" — fail-soft aligns with fail-secure so a
-        traversal cwd never crashes Claude's statusline (regression: the bare
-        `except Exception` did not catch SystemExit)."""
+        traversal cwd never crashes Claude's statusline."""
+
+        def _raising_build(kata_dir):
+            raise ValueError("kata_statusline: refusing path with '..' traversal")
+
+        monkeypatch.setattr(kata_statusline, "build_statusline", _raising_build)
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            kata_dir = Path(d) / ".kata"
+            kata_dir.mkdir()
+            payload = json.dumps({"cwd": d})
+            result = kata_statusline.statusline_from_event(payload)
+        assert result == ""
+
+    def test_systemexit_in_build_returns_empty(self, monkeypatch):
+        """SystemExit in build_statusline must also degrade to "" — the handler
+        retains (Exception, SystemExit) for defense-in-depth."""
 
         def _exiting_build(kata_dir):
-            raise SystemExit("kata_statusline: refusing path with '..' traversal")
+            raise SystemExit("unexpected exit")
 
         monkeypatch.setattr(kata_statusline, "build_statusline", _exiting_build)
 

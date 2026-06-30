@@ -11,7 +11,7 @@ Coverage
 - write_state round-trips JSON correctly
 - write_state is atomic (no leftover temp file after a successful write)
 - update_task changes one task's status, preserves others, and sets updatedUtc
-- _safe_path rejects a kata_dir containing ".." (raises SystemExit)
+- _safe_path rejects a kata_dir containing ".." (raises ValueError)
 """
 
 from __future__ import annotations
@@ -49,8 +49,8 @@ def _board_lines(kata_dir: Path) -> list[str]:
 
 
 def test_safe_path_rejects_dotdot_traversal(tmp_path):
-    """A kata_dir containing '..' must raise SystemExit."""
-    with pytest.raises(SystemExit):
+    """A kata_dir containing '..' must raise ValueError."""
+    with pytest.raises(ValueError):
         kata_board._safe_path(str(tmp_path / ".." / "escape"))
 
 

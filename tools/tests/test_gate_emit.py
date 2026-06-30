@@ -372,6 +372,36 @@ def test_summary_dict_shape(tmp_path):
     assert not missing, f"Summary dict missing keys: {missing}"
 
 
+# ---------------------------------------------------------------------------
+# Path-traversal guard (CWE-23)
+# ---------------------------------------------------------------------------
+
+
+def test_safe_path_rejects_dotdot_traversal():
+    """_safe_path must raise ValueError for any path containing '..'."""
+    import gate_emit
+
+    with pytest.raises(ValueError, match="refusing path with '\\.\\.'" ):
+        gate_emit._safe_path("../../etc/passwd")
+
+
+def test_safe_path_rejects_dotdot_in_middle():
+    """_safe_path must reject '..' even when embedded mid-path."""
+    import gate_emit
+
+    with pytest.raises(ValueError):
+        gate_emit._safe_path("valid/../../escape")
+
+
+def test_safe_path_accepts_normal_path(tmp_path):
+    """_safe_path must resolve a clean path without raising."""
+    import gate_emit
+
+    result = gate_emit._safe_path(str(tmp_path / "sub" / "dir"))
+    from pathlib import Path
+    assert isinstance(result, Path)
+
+
 def test_summary_dict_paths_are_pathlike(tmp_path):
     """resultPath and footprintPath in the summary must point to existing files."""
     import gate_emit

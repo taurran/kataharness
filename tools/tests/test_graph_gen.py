@@ -361,6 +361,35 @@ def test_incremental_detects_change(tmp_path):
     )
 
 
+# ---------------------------------------------------------------------------
+# Path-traversal guard (CWE-23)
+# ---------------------------------------------------------------------------
+
+
+def test_safe_path_rejects_dotdot_traversal():
+    """_safe_path must raise ValueError for any path containing '..'."""
+    from graph_gen import _safe_path
+
+    with pytest.raises(ValueError, match="refusing path with '\\.\\.'" ):
+        _safe_path("../../etc/passwd")
+
+
+def test_safe_path_rejects_dotdot_in_middle():
+    """_safe_path must reject '..' even when embedded mid-path."""
+    from graph_gen import _safe_path
+
+    with pytest.raises(ValueError):
+        _safe_path("valid/../../escape")
+
+
+def test_safe_path_accepts_normal_path(tmp_path):
+    """_safe_path must resolve a clean path without raising."""
+    from graph_gen import _safe_path
+    from pathlib import Path
+
+    result = _safe_path(str(tmp_path / "sub" / "dir"))
+    assert isinstance(result, Path)
+
 def test_skips_venv_pycache(tmp_path):
     """build_graph skips .venv and __pycache__ directories."""
     write_fixtures(tmp_path)

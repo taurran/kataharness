@@ -7,7 +7,6 @@ Run from the tools/ directory:
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 import pytest
@@ -234,14 +233,14 @@ class TestSafePathGuard:
         from grounding_gate import write_grounding
 
         traversal = str(tmp_path / ".." / "escaped")
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError):
             write_grounding(traversal, [])
 
     def test_rejects_double_dotdot_segment(self, tmp_path: Path):
         from grounding_gate import write_grounding
 
         traversal = str(tmp_path) + "/../../../etc/passwd"
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError):
             write_grounding(traversal, [])
 
     def test_accepts_normal_path(self, tmp_path: Path):

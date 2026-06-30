@@ -42,7 +42,7 @@ def _safe_path(raw: str) -> Path:
     """
     p = Path(raw)
     if any(part == ".." for part in p.parts):
-        raise SystemExit(
+        raise ValueError(
             f"grounding_gate: refusing path with '..' traversal: {raw!r}"
         )
     return p.resolve()

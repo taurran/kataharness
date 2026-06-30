@@ -4,7 +4,7 @@ Covers:
 - build_escalation: full valid payload; missing required field → ValueError;
   bad kind → ValueError; bad status → ValueError; empty optionsConsidered → ValueError.
 - write_escalation: creates dir + writes <kata_dir>/escalations/<taskId>.json;
-  round-trips via json.load; ..‑guard rejects traversal (SystemExit).
+  round-trips via json.load; ..‑guard rejects traversal (ValueError).
 - build_finding: returns correct dict; empty source → ValueError;
   bad confidence → ValueError; bad grounds_to_plan → ValueError.
 """
@@ -12,7 +12,6 @@ Covers:
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 import pytest
@@ -264,7 +263,7 @@ def test_write_escalation_returns_str(tmp_path):
 
 
 def test_write_escalation_rejects_traversal_double_dot(tmp_path):
-    """A kata_dir containing '..' must raise SystemExit (mirror gate_emit pattern)."""
+    """A kata_dir containing '..' must raise ValueError (CWE-23 path-traversal guard)."""
     from escalation import build_escalation, write_escalation
 
     payload = build_escalation(
@@ -276,12 +275,12 @@ def test_write_escalation_rejects_traversal_double_dot(tmp_path):
         rationale="R.",
     )
     evil_dir = str(tmp_path / ".." / "escape")
-    with pytest.raises(SystemExit):
+    with pytest.raises(ValueError):
         write_escalation(evil_dir, payload)
 
 
 def test_write_escalation_rejects_traversal_in_middle(tmp_path):
-    """'..'' in any segment of the path must be rejected."""
+    """'..'' in any segment of the path must be rejected with ValueError."""
     from escalation import build_escalation, write_escalation
 
     payload = build_escalation(
@@ -293,7 +292,7 @@ def test_write_escalation_rejects_traversal_in_middle(tmp_path):
         rationale="R.",
     )
     evil_dir = str(tmp_path / "sub" / ".." / "escape")
-    with pytest.raises(SystemExit):
+    with pytest.raises(ValueError):
         write_escalation(evil_dir, payload)
 
 
