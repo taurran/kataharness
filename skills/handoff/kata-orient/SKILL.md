@@ -7,7 +7,7 @@ description: >-
   (routed: answer-inline / research-needed / human-required). Invoke from kata-orchestrate per dispatch so a
   worker starts oriented, not cold.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: handoff
 status: experimental
 agnostic: true
@@ -62,6 +62,71 @@ or dispatch. The full contract is **`protocol/orientation.md`** — this skill i
    - **LOCKED-tension / preference** ⇒ surface as an **open question for the human / grill** (never auto-resolve,
      D1/C4).
 5. **Return** the assembled orientation + the routed-question flags to [[kata-orchestrate]]. No writes.
+
+## Resume / restore flow (D134 — restore-hardening B2)
+
+When invoked via `kata-resume` (rather than `kata-orchestrate` per-task dispatch), orient detects the
+*lost-run* variant and assembles a restore-specific orientation instead of a normal task brief.
+
+### Detect a lost run
+Check whether `.kata/board.md` is absent or empty AND `refs/kata/trail` is present
+(`git rev-parse --verify refs/kata/trail`).  If yes → lost run; proceed with the steps below.
+If no trail → no durable state to restore from; surface as WARN and offer a cold-start.
+
+### Read the durable board
+`git cat-file -p refs/kata/trail:board.md` reads the last durably committed board snapshot.
+Fold it to a frontier view with the canonical concurrency reduce (`fold_board` in `tools/kata_restore.py`,
+which implements the `protocol/board.md` canonical snippet).  The folded frontier shows which tasks had
+in-flight CLAIMs and which had completed CLAIM+DONE at the point of loss.
+
+### Compute the re-dispatch set (PLAN-minus-integration)
+Re-dispatch set = all task-ids in the frozen PLAN **minus** tasks that have a durable integration commit
+on the integration branch.  Integration commits are identified by the `Kata-Task: <id>` conventional-commit
+trailer written by [[kata-orchestrate]] step 5 (`collect_integrated_tasks` in `tools/kata_restore.py`).
+
+**Precedence rule (tier-2 authoritative for DONE):**
+- A task with an integration commit → NOT re-dispatched, regardless of board state.
+- A task with board `DONE` but no integration commit → IS re-dispatched (tier-2 wins over board).
+- A task not on the board at all → IS re-dispatched (PLAN-derived, not board-gated).
+
+The folded board CORROBORATES in-flight ownership (which task a dead worker held) but **never limits the
+re-dispatch set.**  Gating on board CLAIMs would silently drop early-wave tasks a crash never durably
+recorded (e.g. a wide first wave that crashed before any board write).
+
+### C2 cleanup before re-dispatch
+For each task in the re-dispatch set, call `cleanup_stale_task(repo_root, task_id)` which:
+1. Runs `git worktree prune` to remove stale `.git/worktrees/<name>` metadata (dead-session paths).
+2. Force-deletes `task/<task_id>` branch so a fresh `git worktree add -b task/<task_id>` never collides.
+Half-written artifacts in the dead worktree are **discarded, not reused.**
+
+### No rotation on resume
+The resume path calls `kata_restore.restore(...)` which writes the trail board back to `.kata/board.md`
+**without rotation** — no `.kata/board.<utc>.archive.md` is created.  Rotation is a run-start action
+([[kata-orchestrate]] loop preamble); resuming skips it entirely.  Rotating would archive the recovered
+CLAIM/DONE lines and empty the live board.
+
+### Caller contract — resolving plan_path and integration_branch
+
+`kata_restore.restore()` requires two caller-resolved values:
+
+- **`plan_path`** — the run's frozen PLAN under `.planning/specs/<spec-name>/PLAN.md`.  The
+  caller (this skill, via `kata-resume`) reads the active spec name from `kata.config` or the
+  most recent frozen PLAN under `.planning/specs/`.  Pass the absolute path; `kata_restore`
+  resolves it relative to `repo_root` internally for git commands.
+- **`integration_branch`** — the branch holding durable integration commits (kata-orchestrate
+  step 5).  Defaults to `"integration"` for all standard kata runs; pass an explicit value only
+  when `kata.config` names a different branch.
+
+### Return to the orchestrator
+Surface the restore result as the volatile tier of the orientation brief:
+- `lost_run: true`
+- `redispatch`: the PLAN-minus-integration re-dispatch set (the tasks to restart)
+- `board_frontier`: the folded board snapshot (corroborating context for in-flight ownership)
+- `integrated`: task-ids already durable (do not re-dispatch)
+
+The orchestrator (`kata-resume` → [[kata-orchestrate]]) acts on this to re-dispatch the incomplete tasks.
+
+---
 
 ## Discipline
 - **Pointers over payload.** Adjacency + most references are *pointers* (path + why), lazy-loaded — rot-proof,
