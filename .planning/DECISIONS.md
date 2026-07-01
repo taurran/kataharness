@@ -1925,3 +1925,25 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   *Why:* the board is already proven (all workers write to it, the concurrency reduce folds it, the evaluator
   reads it); adding a second log creates two sources of truth that can diverge; C1 (CUT) removes the
   highest-complexity piece of the original scope with no loss of capability the gap analysis requires.
+- **D136 — default-FAIL generalizes to built decision-code (silent-permissive-default guard) — FROZEN
+  2026-06-30; member of the D33 never-tiered structural-invariant family.** When a decision-bearing computation
+  the loop BUILDS (a dispatch set, a resolver output, a pass/fail gate verdict) reads or parses an EXTERNAL
+  ARTIFACT to drive that decision, an ABSENT or UNPARSEABLE artifact must hard-fail (raise), never fall through
+  to a permissive default (empty set, None-inherit, vacuous-pass). A legitimately EMPTY COMPUTED result (e.g.
+  "all tasks already integrated → nothing to re-dispatch") is valid — this governs unread/unparsed INPUTS, not
+  empty OUTPUTS. **Designed, documented fail-safe fallbacks are EXEMPT** (e.g. the D131 model-tiering resolver's
+  deliberate clamp-to-floor / availability step-down) — the rule targets ACCIDENTAL silent-permissive defaults,
+  not intentional ones. This **generalizes default-FAIL** — which already governs the harness's OWN gates
+  (`kata-evaluate` hard-fails on absent/malformed `RESULT.json`/`mutation.json`) — to the decision-code the loop
+  emits into target artifacts. **Never-tiered** (D33: a tier varies depth, never relaxes a structural invariant).
+  **Enforced by prose guards, NOT a validator** — the property is semantic, not statically detectable; a static
+  check would create false-HOLD friction (deliberately rejected). Two guards: (1) `kata-tdd` requires ONE
+  absent/malformed-input test proving loud failure for such a function (composes with the non-vacuity PROVE
+  step); (2) `kata-review` attack-surface 4 names the silent-permissive-default class for the fresh-context
+  adversarial pass. *Why:* ~6–7 real bugs across D131 (vacuous 0-of-0 → 1.0 PASS; full-model-id anchor silently
+  DISABLING tiering) and restore-hardening (brittle heading-parse → PARTIAL task set; unbounded history →
+  OVER-exclude; missing PLAN → EMPTY re-dispatch set) shared this exact signature — each failed in the lenient
+  direction, each PASSED its build tests (fixtures matched the code's happy path), each was caught ONLY by a
+  fresh-context adversarial review. This is a D101 recurrence-hardening ruling on a confirmed recurring failure
+  CLASS. Follows the `protocol/reuse-claims.md` precedent (semantic guard + by-path skill pointers + no
+  behavioral validator). Follow-ups #14–#16 (BACKLOG) are unrelated restore polish, not part of this guard.
