@@ -169,7 +169,7 @@ def _walk_verify(node: ast.expr) -> None:  # noqa: C901
 
     if isinstance(node, ast.Name):
         if not isinstance(node.ctx, ast.Load):
-            raise ValueError(f"Non-load Name context rejected in assertion")
+            raise ValueError("Non-load Name context rejected in assertion")
         return  # id checked at eval time when namespace is known
 
     if isinstance(node, ast.BoolOp):
@@ -256,7 +256,7 @@ def _walk_verify(node: ast.expr) -> None:  # noqa: C901
         raise ValueError("Attribute access rejected in assertion")
 
     if isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
-        raise ValueError(f"Comprehension/generator rejected in assertion")
+        raise ValueError("Comprehension/generator rejected in assertion")
 
     if isinstance(node, ast.Lambda):
         raise ValueError("Lambda rejected in assertion")

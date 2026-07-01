@@ -455,8 +455,6 @@ def build_graph(
         for e in prev.get("edges", []):
             src = e.get("src", "")
             dst = e.get("dst", "")
-            # Edge belongs to reused file if its src file path is reused
-            src_file = src.split("::")[0] if "::" not in src or e.get("kind") == "def" else src.split("::")[0]
             # Import edges: src is a file id (== path for file nodes)
             edge_kind = e.get("kind")
             if edge_kind == "import":
@@ -501,7 +499,6 @@ def build_graph(
 
         syms_with_ids = new_file_symbols.get(rel_path, [])
         for sym in syms_with_ids:
-            sym_data = data[:]  # we have the full file bytes
             sym_node: dict = {
                 "id": sym["id"],
                 "kind": "symbol",
