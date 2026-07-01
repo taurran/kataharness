@@ -22,6 +22,18 @@ essential-critical at `anchor−1`). It is NOT "work-class == critical → None.
 This freeze folds the adversarial-review (dval) + grounding-research outcomes **R1–R8**, which **supersede any
 conflicting text in `ASSESSMENT.md`** (deltas noted inline).
 
+> **POST-FREEZE ADDENDUM (2026-07-01, operator decision — Fable 5 re-release).** Two operator-approved re-tunes,
+> implemented in `tools/kata_models.py` (authoritative) + `tests/test_kata_models.py`:
+> 1. **Sonnet id → `claude-sonnet-5`** (was `claude-sonnet-4-6`; Sonnet 5 re-release).
+> 2. **Per-family step tables.** The **Anthropic** family deepens the **economy** column by one rung —
+>    `advanced −1 · standard −2 · essential −2` (was `0 / −1 / −1`), so Anthropic economy lands on **Opus**
+>    (advanced) and **Sonnet 5** (standard/essential). `critical` + `coding` are **unchanged**. Every
+>    **non-Anthropic** family keeps the original table (`0 / −1 / −1` economy) via `_STEPS_DEFAULT`.
+> R1/R2/R3/R7 invariants are preserved unchanged (critical zero-step cells still inherit-by-omission;
+> `essential-coding ≤ standard-coding ≤ anchor` still holds; economy monotonicity intact). This addendum
+> overrides the **economy** column of the §1 Mode→model table — and supersedes **R8**'s "essential 'other
+> economy' stays `anchor−1` (`==standard`)" clause — for **Anthropic only** (non-Anthropic keeps the R8 table).
+
 ---
 
 ## 0. Locked decisions (R1–R8 — operator-approved)

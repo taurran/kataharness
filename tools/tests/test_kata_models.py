@@ -101,15 +101,27 @@ class TestMonotonicity:
 class TestPerCellModeTable:
     """Verify explicit None / ID per (anchor, mode, work_class)."""
 
-    # ---- advanced: all cells None regardless of work-class ----
+    # ---- advanced: critical + coding are 0-step (None); economy steps −1 (anthropic) ----
 
     @pytest.mark.parametrize("anchor", ANCHORS)
-    @pytest.mark.parametrize("skill", [_CRITICAL_SKILL, _CODING_SKILL, _ECONOMY_SKILL])
-    def test_advanced_all_cells_none(self, anchor: str, skill: str) -> None:
+    @pytest.mark.parametrize("skill", [_CRITICAL_SKILL, _CODING_SKILL])
+    def test_advanced_critical_coding_none(self, anchor: str, skill: str) -> None:
         result = km.resolve(skill, "advanced", anchor, family=ANTHROPIC, coder_floor=None)
         assert result is None, (
             f"advanced/{anchor}/{skill}: expected None (zero-step), got {result!r}"
         )
+
+    def test_advanced_economy_fable_returns_opus(self) -> None:
+        """anthropic advanced/economy steps −1: fable → opus (advanced keeps high+mid on Fable)."""
+        result = km.resolve(_ECONOMY_SKILL, "advanced", "fable",
+                            family=ANTHROPIC, coder_floor=None)
+        assert result == km.ID_MAP["opus"]
+
+    def test_advanced_economy_haiku_none(self) -> None:
+        """anthropic advanced/economy at the floor clamps to anchor → None."""
+        result = km.resolve(_ECONOMY_SKILL, "advanced", "haiku",
+                            family=ANTHROPIC, coder_floor=None)
+        assert result is None
 
     # ---- standard-critical: always None (0 steps) ----
 
@@ -140,7 +152,7 @@ class TestPerCellModeTable:
                             family=ANTHROPIC, coder_floor=None)
         assert result == km.ID_MAP["opus"]
 
-    # ---- standard-economy (step −1, same shape as coding) ----
+    # ---- standard-economy (anthropic step −2) ----
 
     def test_standard_economy_haiku_none(self) -> None:
         assert km.resolve(_ECONOMY_SKILL, "standard", "haiku",
@@ -151,10 +163,11 @@ class TestPerCellModeTable:
                             family=ANTHROPIC, coder_floor=None)
         assert result == km.ID_MAP["haiku"]
 
-    def test_standard_economy_fable_returns_opus(self) -> None:
+    def test_standard_economy_fable_returns_sonnet(self) -> None:
+        # anthropic standard/economy = −2: fable (idx3) → sonnet (idx1)
         result = km.resolve(_ECONOMY_SKILL, "standard", "fable",
                             family=ANTHROPIC, coder_floor=None)
-        assert result == km.ID_MAP["opus"]
+        assert result == km.ID_MAP["sonnet"]
 
     # ---- essential-critical (step −1) ----
 
@@ -177,7 +190,7 @@ class TestPerCellModeTable:
                             family=ANTHROPIC, coder_floor=None)
         assert result == km.ID_MAP["opus"]
 
-    # ---- essential-economy (step −1) ----
+    # ---- essential-economy (anthropic step −2) ----
 
     def test_essential_economy_haiku_none(self) -> None:
         assert km.resolve(_ECONOMY_SKILL, "essential", "haiku",
@@ -187,6 +200,12 @@ class TestPerCellModeTable:
         result = km.resolve(_ECONOMY_SKILL, "essential", "sonnet",
                             family=ANTHROPIC, coder_floor=None)
         assert result == km.ID_MAP["haiku"]
+
+    def test_essential_economy_fable_returns_sonnet(self) -> None:
+        # anthropic essential/economy = −2: fable (idx3) → sonnet (idx1)
+        result = km.resolve(_ECONOMY_SKILL, "essential", "fable",
+                            family=ANTHROPIC, coder_floor=None)
+        assert result == km.ID_MAP["sonnet"]
 
     # ---- essential-coding (step −2, R1 floor) ----
 
@@ -542,11 +561,11 @@ class TestWorkClassMapCoverage:
         )
 
     def test_spot_check_economy_steps_down_at_standard(self) -> None:
-        """Economy class / standard mode: −1 step → explicit id strictly below anchor."""
+        """Economy class / standard mode (anthropic −2): opus → haiku (two rungs below)."""
         result = km.resolve("kata-report", "standard", "opus",
                             family=ANTHROPIC, coder_floor=None)
-        assert result == km.ID_MAP["sonnet"], (
-            f"economy/standard/opus: expected sonnet id, got {result!r}"
+        assert result == km.ID_MAP["haiku"], (
+            f"economy/standard/opus: expected haiku id, got {result!r}"
         )
 
 
@@ -634,3 +653,53 @@ class TestFullIdAnchorNormalization:
         assert result == km.ID_MAP["sonnet"], (
             f"Short-name anchor 'opus' regressed: expected {km.ID_MAP['sonnet']!r}, got {result!r}"
         )
+
+
+# ===========================================================================
+# 9. Per-family step tables (Anthropic economy-deepened; default preserved)
+# ===========================================================================
+
+class TestPerFamilyStepTables:
+    """Anthropic uses the economy-deepened matrix; every other family keeps the
+    generic default. critical + coding are identical across both tables — only
+    the economy column differs (one rung deeper for Anthropic)."""
+
+    def test_anthropic_economy_column_is_deepened(self) -> None:
+        assert km._STEPS_ANTHROPIC[("advanced", "economy")] == -1
+        assert km._STEPS_ANTHROPIC[("standard", "economy")] == -2
+        assert km._STEPS_ANTHROPIC[("essential", "economy")] == -2
+
+    def test_default_table_unchanged(self) -> None:
+        """Non-Anthropic families keep the original layout (0 / −1 / −1 economy)."""
+        assert km._STEPS_DEFAULT[("advanced", "economy")] == 0
+        assert km._STEPS_DEFAULT[("standard", "economy")] == -1
+        assert km._STEPS_DEFAULT[("essential", "economy")] == -1
+
+    def test_critical_and_coding_identical_across_tables(self) -> None:
+        for mode in MODES:
+            for wc in ("critical", "coding"):
+                assert km._STEPS_ANTHROPIC[(mode, wc)] == km._STEPS_DEFAULT[(mode, wc)], (
+                    f"({mode},{wc}) must match across tables"
+                )
+
+    def test_anthropic_family_selects_anthropic_table(self) -> None:
+        assert km._STEPS_BY_FAMILY.get("anthropic") is km._STEPS_ANTHROPIC
+
+    def test_absent_family_falls_back_to_default(self) -> None:
+        assert km._STEPS_BY_FAMILY.get("openai", km._STEPS_DEFAULT) is km._STEPS_DEFAULT
+
+
+# ===========================================================================
+# 10. Sonnet 5 id freshness
+# ===========================================================================
+
+class TestSonnetFiveId:
+    """The sonnet rung maps to Sonnet 5 (re-release), not the stale 4-6 id."""
+
+    def test_sonnet_id_is_sonnet_5(self) -> None:
+        assert km.ID_MAP["sonnet"] == "claude-sonnet-5"
+
+    def test_fable_essential_coding_lands_sonnet_5(self) -> None:
+        result = km.resolve(_CODING_SKILL, "essential", "fable",
+                            family=ANTHROPIC, coder_floor=None)
+        assert result == "claude-sonnet-5"

@@ -45,7 +45,7 @@ FAMILY_LADDERS: dict[str, list[str]] = {
 # these constants directly so a bump is caught automatically.
 ID_MAP: dict[str, str] = {
     "haiku":  "claude-haiku-4-5-20251001",
-    "sonnet": "claude-sonnet-4-6",
+    "sonnet": "claude-sonnet-5",
     "opus":   "claude-opus-4-8",
     "fable":  "claude-fable-5",
     "mythos": "claude-mythos-5",  # gated — deliberate fallback-test anchor
@@ -166,11 +166,20 @@ SKILL_WORK_CLASS: dict[str, str] = {
 }
 
 # ---------------------------------------------------------------------------
-# Step-count table — (mode, work_class) → steps (≤ 0)
+# Step-count tables — (mode, work_class) → steps (≤ 0), PER FAMILY.
 # Negative value = rungs to descend from the anchor index.
 # ---------------------------------------------------------------------------
 #
-# Table:
+# Anthropic (Fable-anchored; economy tiers one rung deeper than the generic
+# default so standard/essential economy lands on Sonnet 5, and advanced economy
+# on Opus — advanced keeps critical + coding on the Fable anchor):
+#              critical  coding  economy
+#   advanced      0        0      -1
+#   standard      0       -1      -2
+#   essential    -1       -2*     -2
+#
+# Default (every non-Anthropic family — empty-ladder placeholders today, so this
+# table is currently unreachable; preserved unchanged for when those adapters land):
 #              critical  coding  economy
 #   advanced      0        0       0
 #   standard      0       -1      -1
@@ -178,7 +187,7 @@ SKILL_WORK_CLASS: dict[str, str] = {
 #
 # * coding/essential applies R1 coder-floor on top (see resolve()).
 
-_STEPS: dict[tuple[str, str], int] = {
+_STEPS_DEFAULT: dict[tuple[str, str], int] = {
     ("advanced",  "critical"): 0,
     ("advanced",  "coding"):   0,
     ("advanced",  "economy"):  0,
@@ -188,6 +197,23 @@ _STEPS: dict[tuple[str, str], int] = {
     ("essential", "critical"): -1,
     ("essential", "coding"):  -2,
     ("essential", "economy"): -1,
+}
+
+_STEPS_ANTHROPIC: dict[tuple[str, str], int] = {
+    ("advanced",  "critical"): 0,
+    ("advanced",  "coding"):   0,
+    ("advanced",  "economy"): -1,
+    ("standard",  "critical"): 0,
+    ("standard",  "coding"):  -1,
+    ("standard",  "economy"): -2,
+    ("essential", "critical"): -1,
+    ("essential", "coding"):  -2,
+    ("essential", "economy"): -2,
+}
+
+# Family → step table.  Absent family falls back to the generic default (BC).
+_STEPS_BY_FAMILY: dict[str, dict[tuple[str, str], int]] = {
+    "anthropic": _STEPS_ANTHROPIC,
 }
 
 # ---------------------------------------------------------------------------
@@ -346,8 +372,10 @@ def resolve(
     # Work-class: unknown skill → critical (default)
     work_class: str = SKILL_WORK_CLASS.get(skill, "critical")
 
-    # Step count: unknown mode → None
-    steps = _STEPS.get((mode, work_class))
+    # Step count: per-family table (anthropic tiers economy one rung deeper);
+    # absent family falls back to the generic default. Unknown mode → None.
+    steps_table = _STEPS_BY_FAMILY.get(family, _STEPS_DEFAULT)
+    steps = steps_table.get((mode, work_class))
     if steps is None:
         return None
 
@@ -392,7 +420,7 @@ def fallback_chain(id: str, family: str) -> list[str | None]:
     Example
     -------
     >>> fallback_chain("claude-opus-4-8", "anthropic")
-    ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001', None]
+    ['claude-sonnet-5', 'claude-haiku-4-5-20251001', None]
     """
     ladder = FAMILY_LADDERS.get(family)
     if not ladder:

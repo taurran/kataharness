@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.1.1
+version: 0.1.2
 category: coordinate
 status: experimental
 agnostic: true
@@ -163,8 +163,8 @@ Note: `"session"` is a deferred sentinel; the orchestrator substitutes it with t
 **R7 contract:** zero-step critical work (advanced-critical and standard-critical cells, resolved rung
 `== anchor_index`) resolves to `None`/OMIT regardless — these cells **never read the anchor name** and
 inherit by omission, always running at the current session model. Only **below-anchor cells** read the
-anchor name to step down a rung: economy tier-down (`standard-coding`, `standard-economy`, all `essential`
-work). An unknown anchor (id not found in the family ladder) → `resolve()` returns `None` → inherit —
+anchor name to step down a rung: economy tier-down (`standard-coding`, `standard-economy`, `advanced-economy`
+*(Anthropic, `−1`)*, all `essential` work). An unknown anchor (id not found in the family ladder) → `resolve()` returns `None` → inherit —
 never a crash, never a forced model.
 
 **BC:** the **absent-block path still inherits** (today's behavior, byte-for-byte). Writing the `models`

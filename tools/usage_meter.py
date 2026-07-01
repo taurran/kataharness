@@ -315,7 +315,8 @@ def build_usage(
 # to override these defaults; see default_rate_table() below.
 _DEFAULT_RATE_TABLE: dict = {
     # --- Claude (Anthropic) ------------------------------------------------
-    # claude-sonnet-4-x: $3.00 input / $15.00 output per 1M tokens
+    # claude-sonnet-5 / 4-x: $3.00 input / $15.00 output per 1M tokens
+    "claude-sonnet-5":      {"input": 3.00e-6,  "output": 15.00e-6},
     "claude-sonnet-4-6":    {"input": 3.00e-6,  "output": 15.00e-6},
     "claude-sonnet-4-5":    {"input": 3.00e-6,  "output": 15.00e-6},
     # claude-opus-4-x: $15.00 input / $75.00 output per 1M tokens
