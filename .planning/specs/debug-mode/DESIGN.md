@@ -1,10 +1,10 @@
 ---
 title: "Debug Mode — FROZEN DESIGN contract"
-status: FROZEN + freeze-gate kata-review SHIP (2026-06-25). Build PARKED behind install-portability + kata-preflight.
+status: FROZEN + freeze-gate kata-review SHIP (2026-06-25). BUILT — P1–P3 shipped (CHANGELOG D103/D113–D117); blockers cleared.
 date: 2026-06-25
 spec: debug-mode
 compiled-by: kata-design-doc (from GRILL-LEDGER.md + RESEARCH.md)
-build-gate: BLOCKED on install-portability (built first, LD-S2) + kata-preflight — build is PARKED
+build-gate: CLEARED — install-portability (D104) + kata-preflight (D109) both built; Debug Mode P1–P3 shipped and wired (module `kata/module/debug`)
 ---
 
 # Debug Mode — FROZEN DESIGN
@@ -49,7 +49,7 @@ offered-backout** (`modules/closeout`) · **Snyk** MCP code scan.
 
 **Forward dependencies (must exist before build; H6):** full **`install-portability`** (built FIRST, LD-S2;
 the convert-to-loop surface is pinned by *its* DESIGN, referenced not invented here) · **`kata-preflight`**
-(D29, planned-not-built) for the runnable-env provisioning of DG-1b-edge.
+(D29; now built, D109) for the runnable-env provisioning of DG-1b-edge.
 
 ## 3. LOCKED decisions
 *Structure is locked; values marked `[TUNABLE]` may be calibrated without re-freezing.*
@@ -116,7 +116,7 @@ the convert-to-loop surface is pinned by *its* DESIGN, referenced not invented h
   promise (F3) is **behaviorally** enforced in v1; full structural enforcement arrives with the fast-follow.
 - Single-host / existing modes are unaffected — `debug` is an additive run-shape; absent selection, nothing changes.
 
-## 6. Acceptance criteria (default-FAIL, runnable) — for the eventual build
+## 6. Acceptance criteria (default-FAIL, runnable) — met by the P1–P3 build
 - `kata-comprehend` emits a schema-valid `function_model` per module; spec-wrapper executes the pre/post.
 - The 7-step pipeline: a finding reaches "auto-fix eligible" ONLY with ≥1 objective corroborator + ≥2/3
   self-consistency + surviving adversarial refute (verifiable on a seeded fixture with a known deviation).
@@ -133,9 +133,10 @@ the convert-to-loop surface is pinned by *its* DESIGN, referenced not invented h
 - **Drift gate**: testable by injecting an unrelated regression (must BLOCK) vs. the nominated fix (must PASS).
 - **Run-shape wiring**: `kata.config` round-trip + bootstrap selection, mirroring version-up's tests.
 
-## Build sequencing (PARKED)
-**Build is BLOCKED** until **`install-portability` is built first** (LD-S2/DG-10b) and **`kata-preflight`** exists.
-When unblocked: grill is done → this DESIGN → `kata-plan` partitions the NEW capabilities (`kata-comprehend` ·
+## Build sequencing (COMPLETE — built P1–P3)
+**Build COMPLETE.** The blockers (`install-portability`, `kata-preflight`) were cleared and Debug Mode shipped
+P1–P3 (CHANGELOG D103/D113–D117), wired into `kata-orchestrate` and gated on module `kata/module/debug`. The
+historical sequencing that produced it: grill done → this DESIGN → `kata-plan` partitions the NEW capabilities (`kata-comprehend` ·
 deviation pipeline · characterization-gen · behavioral drift gate · run-shape wiring · onboarding path) into
 disjoint slices → build through the loop (the recipe). Fast-follows after v1: confidence calibration (LD5) ·
 the surface/AST structural drift layer (LD-H4).

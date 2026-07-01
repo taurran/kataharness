@@ -4,11 +4,10 @@
 |---|---|---|---|---|
 | individual | standard | [] | greenfield | the D24c default→go floor; one one-shot |
 | batch | standard | [bakeoff] | greenfield | best-of-N (Spec B); asks `bakeoff.n` |
-| version-up | standard | [graph] | existing | feature-add to an existing repo; asks `target.path` + `baselineGate`. **Execution = A4** (kata-graph not built yet — bootstrap writes the config, flags execution as A4-pending) |
-| debug | standard | [graph, kata/module/debug] | existing | systematic whole-codebase debug (peer of version-up); asks `target.path` + `baselineGate`. **Execution-pending (P1 foundation only)** — readiness flags this execution-pending; bootstrap writes a valid config so it lights up when the full debug pipeline (P2: deviation pipeline + drift gate) lands. |
+| version-up | standard | [graph] | existing | feature-add to an existing repo; asks `target.path` + `baselineGate`. **Built + wired** — execution via `kata-graph` ingestion. |
+| debug | standard | [graph, kata/module/debug] | existing | systematic whole-codebase debug (peer of version-up); asks `target.path` + `baselineGate`. **Built + wired (P1–P3)** — comprehension (`kata-comprehend`) → deviation pipeline (`kata-deviate`) → characterization + drift gate (`kata-characterize`) → debrief (`kata-debrief`), gated on module `kata/module/debug`. |
 | advanced | advanced | [] | greenfield | top of the ladder; surfaces cross-tier picks + external ingest |
 
-A preset only pre-fills capability that exists. `batch` (Spec B), `version-up` (Spec A4), and `debug` (P1
-foundation only — P2 wires the full deviation pipeline + drift gate) are **configurable now, executable later**
-— readiness reports them as not-yet-wired; bootstrap still writes a valid config so they light up when the
-respective capabilities land. (GB5)
+A preset only pre-fills capability that exists. `version-up` and `debug` are **built and wired** (P1–P3 for debug).
+`batch` (Spec B) writes a valid config now, but its **concurrent** best-of-N arms remain execution-pending
+(sequential + k-repeat is built) — it lights up fully when the concurrent-arm capability lands. (GB5)

@@ -167,3 +167,18 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
   failures; D98 investigates those failures with full context. Correct gate sequence: integration gate → live proof →
   D98 adversarial sweep. *Baked in:* `kata-orchestrate` Final-gate ordering must list live-proof before adversarial
   sweep on any code/contract-bearing build.
+
+- **L17 — A built feature that isn't signposted at the front door is an unbuilt feature to the user. (2026-07-01)**
+  Surfaced live during the first Debug Mode dogfood: a fresh agent driving the harness struggled to
+  find and understand Debug Mode because (a) the `/kata` command index, `/kata-start`, and `kata-initiate` never
+  named run-shapes at all, (b) the INTENT `kind` enum (`project/research/version-up`) has no `debug`, so the
+  "debug run = `kind: version-up` + `target.kind: existing` + `runShape: debug` + module `kata/module/debug`"
+  mapping had to be reverse-engineered from `protocol/config.md`, and (c) the bootstrap on-ramp *actively* told
+  the agent debug was "execution-pending — describe in prose only, do not wikilink" when it had shipped P1–P3.
+  Stale build-status prose in the on-ramp (`kata-bootstrap` SKILL + `run-shapes.md` + the frozen
+  `debug-mode/DESIGN.md` header) outlived the build; `README` was refreshed but the config-time surface the user
+  actually hits was not. *Ties to:* [[L7]] "converse, don't pop up" (discoverability is a UX property, not just
+  a code property). *Baked in:* the front-door command index + `kata-initiate` now name the run-shapes and the
+  `kind`↔run-shape mapping; **bump-on-build must refresh status prose across the on-ramp** (`run-shapes.md`,
+  `kata-bootstrap` SKILL, spec DESIGN headers), not only `README` — a feature is "done" only when its entry
+  point is discoverable, not merely when its code is wired.

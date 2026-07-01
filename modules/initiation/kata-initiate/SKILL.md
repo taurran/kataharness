@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.2.0
+version: 0.2.1
 category: coordinate
 status: experimental
 agnostic: true
@@ -57,6 +57,14 @@ Classify **`kind`** — the single most important routing decision:
 | `project` | Building something new (greenfield or new feature set). No prior harness run to compare against. |
 | `research` | Producing a structured findings/recommendation artifact, not executable code. |
 | `version-up` | Improving something that already ran through the harness. A prior `RESULT.json` / DESIGN exists. |
+
+> **Run-shapes vs `kind`.** `kind` is the INTENT-level classification; the *run-shape* (`individual / batch /
+> version-up / debug / advanced`) is a separate bootstrap concern that pre-fills `mode`+`modules`+`target`. A
+> **debug run** — "systematically debug / bug-hunt my repo in confidence" — is filed as `kind: version-up` with
+> `target.kind: existing`; [[kata-bootstrap]] then sets `runShape: debug` + module `kata/module/debug` (the gate
+> for the [[kata-comprehend]] → [[kata-deviate]] → [[kata-characterize]] → [[kata-debrief]] pipeline). Recognise
+> a debug/bug-hunt request here and carry it forward to bootstrap. `batch` / `advanced` are likewise run-shapes,
+> not `kind` values.
 
 For **`version-up`**: explicitly evaluate the **actual goal** — the gap being closed — not the surface
 change. Ask: "What is missing or broken in the prior run's output that this version-up addresses?"
@@ -212,7 +220,7 @@ uninspected does not count (see the gate checklist below).
 | target.kind | When to infer it |
 |---|---|
 | `self` | KataHarness is improving itself (dogfood run). |
-| `existing` | An existing repo/project on disk. Collect `target.path` from the brief or ask. |
+| `existing` | An existing repo/project on disk. Collect `target.path` from the brief or ask. Used by both **version-up** and **debug** run-shapes (see the run-shape note in Phase 1). |
 | `greenfield` | A brand-new repo to be created. Collect name + destination. |
 
 **Vault:**

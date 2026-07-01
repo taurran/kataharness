@@ -40,6 +40,17 @@ and **closeout** (`kata-closeout` + `kata-understand`). On a "run again (version
 loop-back re-enters `kata-initiate` carrying the prior run's context — new baseline SHA, understand-map,
 lessons, and prior `INTENT.md` — so the next cycle starts informed. A platform may swap any module.
 
+## Commands & run-shapes (Claude adapter)
+
+`/kata` prints the index. `/kata-start` → `kata-initiate` (the front door); `/kata-onboard` onboards an
+existing repo (and is the on-ramp for **Debug Mode**); `/kata-resume`, `/kata-status`, `/kata-validate`.
+
+A run's **run-shape** is chosen at bootstrap (it pre-fills `mode`+`modules`+`target`): `individual` · `batch`
+(best-of-N) · `version-up` (improve a repo that already ran the loop) · **`debug`** (systematically debug an
+existing repo in confidence) · `advanced`. A **debug run** is filed as `kind: version-up` + `target.kind:
+existing`; bootstrap sets `runShape: debug` + module `kata/module/debug`. To start one, ask for it at
+`/kata-start` ("debug my repo") or use `/kata-onboard`.
+
 ## The spine (non-negotiable principles)
 
 1. **The plan does not drift.** The orchestrator is the **plan-guardian**: it owns the frozen

@@ -74,8 +74,9 @@ approaches at once, judge, and promote the winner — is the next planned capabi
 Point it at a failing or mysterious codebase and it's *designed* to work like an engineer, not a guesser: build a
 **function model** of the code, run a **deviation-discovery** pass to surface where behavior diverges from intent,
 generate a **characterization suite** that pins current behavior, **diagnose** root cause (light or full depth),
-and hand back a **debrief** with confidence and an optional version-up offer. *(Skills built; the end-to-end
-pipeline run is the next dogfood milestone.)*
+and hand back a **debrief** with confidence and an optional version-up offer. *(Built and wired — P1–P3, gated on
+`kata/module/debug`; proven on seeded fixtures. Launch it with `/kata-onboard` on a fresh repo, or just ask for a
+**debug run** at `/kata-start` — "debug my repo".)*
 
 ### ☁️ Specialized Infrastructure-as-Code agents
 First-class IaC specialists for **Terraform** and **CloudFormation**, injected automatically when a task touches
@@ -126,8 +127,8 @@ is the machine source of truth for what exists and at what version.
 | `kata-plan-standard` | 0.1.0 | 3 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
 | `kata-research` | 0.1.0 | 3 | plan | experimental | new (KataHarness original, loop-cognition RS-GB1/2/3, D62) — fresh-context no-write evaluator pattern (L4/L5) applied to in-loop research; escalation-routed like kata-orchestrate's no-re-plan escape valve (D52) | Research a must-deliver gap with no in-plan solution; ground every claim; return findings for the grounding gate, never re-plan |
 | `kata-board` | 0.1.0 | 2 | coordinate | experimental | adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3 | Append-only mailbox/message board for lateral peer comms |
-| `kata-bootstrap` | 0.1.0 | 2 | coordinate | experimental | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
-| `kata-initiate` | 0.2.0 | 3 | coordinate | experimental | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
+| `kata-bootstrap` | 0.1.1 | 2 | coordinate | experimental | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
+| `kata-initiate` | 0.2.1 | 3 | coordinate | experimental | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
 | `kata-loop` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
 | `kata-onboard` | 0.2.0 | 3 | coordinate | experimental | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
 | `kata-orchestrate` | 0.3.0 | 5 | coordinate | experimental | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |

@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: coordinate
 status: experimental
 agnostic: true
@@ -63,11 +63,12 @@ confirms, corrects, or continues — not reads a config form.
 **What is inferred:**
 - **Run-shape** (`individual / batch / version-up / debug / advanced`) from the goal's character — is it a new build, a
   change to an existing repo, a batch job, a systematic debug pass? Each is a **preset** (see `resources/run-shapes.md`) that pre-fills
-  `mode` + `modules` + `target`. `batch` (Spec B), `version-up` (Spec A4), and `debug` (P1 foundation; full
-  pipeline in P2) are configurable now but flagged **execution-pending** by readiness; bootstrap still writes a
-  valid config. For **version-up** and **debug**, additionally collect `target.path` (the existing repo) and
-  `target.baselineGate` (the command that must be green before *and* after). Describe the version-up and debug
-  execution engines in prose only; do **not** wikilink them (A4/P1, execution-pending).
+  `mode` + `modules` + `target`. **`version-up` and `debug` are built and wired** — `debug` runs the P1–P3
+  pipeline ([[kata-comprehend]] → [[kata-deviate]] → [[kata-characterize]] → [[kata-debrief]], gated on module
+  `kata/module/debug`); `version-up` uses [[kata-graph]] ingestion. `batch` (Spec B) writes a valid config now,
+  but its **concurrent** best-of-N arms remain execution-pending (sequential + k-repeat is built). For
+  **version-up** and **debug**, additionally collect `target.path` (the existing repo) and `target.baselineGate`
+  (the command that must be green before *and* after).
 - **Mode** (`essential / standard / advanced`) from goal complexity and stated urgency.
 - **Grill-depth** (`skip / light / standard / full`) from priming-prompt richness and ambiguity — [[kata-readiness]]'s
   Scope-3 recommendation is the starting point.
