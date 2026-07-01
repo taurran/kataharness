@@ -106,6 +106,7 @@ def ensure_plugin_manifest(harness_home: str | Path) -> Path:
 
 _MARKER = ".kata-managed"
 _OVERLAY_MATERIALIZED_MARKER = ".kata-overlay-materialized"
+_COMMANDS_MANIFEST = ".kata-commands.json"
 
 
 def _link_or_copy(src_dir: Path, dst_dir: Path) -> str:
@@ -138,6 +139,138 @@ def _link_or_copy(src_dir: Path, dst_dir: Path) -> str:
         return "copy"
 
 
+def _link_or_copy_file(
+    src_file: Path,
+    dst_file: Path,
+    harness_home: Path,
+    managed_names: set[str],
+) -> str | None:
+    """Link (or copy) a single command file to dst_file; apply the file-collision policy.
+
+    Unlike ``_link_or_copy`` (directory-only), this primitive operates on individual
+    files so it can install into a SHARED directory (e.g. ``~/.claude/commands/``) one
+    file at a time without touching other tools' files that live alongside ours.
+
+    Collision policy (DESIGN §A2 — FROZEN)
+    ----------------------------------------
+    (a) **Replace only files we own** — a symlink whose resolved target is under
+        ``harness_home``, or a name already recorded in ``managed_names``.
+    (b) **Skip (print NOTE) any real pre-existing file we did NOT write** — never
+        clobber a user's own ``~/.claude/commands/<name>.md``.
+
+    Parameters
+    ----------
+    src_file:
+        Source ``.md`` file inside the harness home.
+    dst_file:
+        Destination path (typically inside the host's ``commands/`` dir).
+    harness_home:
+        Resolved harness home; used to determine whether an existing symlink is ours.
+    managed_names:
+        Set of filenames (with ``.md`` extension) recorded in the kata commands
+        manifest — names KataHarness placed on a prior install.
+
+    Returns
+    -------
+    ``'symlink'``, ``'copy'``, or ``None`` (skipped — non-kata file in the way).
+    """
+    name = dst_file.name
+    home_resolved = harness_home.resolve()
+
+    if dst_file.is_symlink():
+        # Determine ownership by resolving the symlink target.
+        try:
+            resolved = dst_file.resolve()
+        except (OSError, RuntimeError):
+            print(
+                f"NOTE: {name}: cannot resolve existing symlink — "
+                f"skipping to avoid data loss"
+            )
+            return None
+        if resolved.is_relative_to(home_resolved):
+            dst_file.unlink()  # ours — safe to replace
+        else:
+            print(
+                f"NOTE: {name}: existing symlink points outside KataHarness — "
+                f"skipping to avoid data loss"
+            )
+            return None
+    elif dst_file.exists():
+        # Real file — check manifest ownership.
+        if name in managed_names:
+            dst_file.unlink()  # we placed it — safe to replace
+        else:
+            print(
+                f"NOTE: {name}: pre-existing file not managed by KataHarness — "
+                f"skipping to avoid data loss"
+            )
+            return None
+
+    dst_file.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        os.symlink(src_file, dst_file)
+        return "symlink"
+    except (OSError, NotImplementedError):
+        # Windows without Developer Mode / unsupported FS → copy.
+        shutil.copy2(src_file, dst_file)
+        return "copy"
+
+
+def _flat_link_commands(home: Path, host_dir: Path) -> dict:
+    """Flat-link every command file from ``adapters/claude/commands/`` into ``<host_dir>/commands/``.
+
+    Links **per-FILE** (never the whole directory) into the shared ``~/.claude/commands/``
+    so other tools' command files already present are left untouched.  Tracks managed
+    command filenames in ``<host_dir>/<_COMMANDS_MANIFEST>`` for idempotent re-install
+    and clean uninstall.
+
+    Mirrors ``_flat_link_skills`` in shape but operates on individual ``.md`` files
+    rather than skill directories.
+    """
+    src_commands_dir = home / "adapters" / "claude" / "commands"
+    commands_dst = host_dir / "commands"
+    manifest_path = host_dir / _COMMANDS_MANIFEST
+
+    # Load existing manifest so re-install can recognise its own prior copies.
+    managed_names: set[str] = set()
+    if manifest_path.exists():
+        try:
+            data = json.loads(manifest_path.read_text(encoding="utf-8"))
+            managed_names = set(data.get("managed", []))
+        except (json.JSONDecodeError, OSError):
+            pass  # corrupt manifest — treat as empty; will be overwritten below
+
+    if not src_commands_dir.is_dir():
+        return {"commandsDir": str(commands_dst), "linked": [], "method": []}
+
+    commands_dst.mkdir(parents=True, exist_ok=True)
+    linked: list[str] = []
+    methods: set[str] = set()
+    newly_managed: set[str] = set()
+
+    for src_file in sorted(src_commands_dir.glob("*.md")):
+        dst_file = commands_dst / src_file.name
+        method = _link_or_copy_file(src_file, dst_file, home, managed_names)
+        if method is not None:
+            linked.append(src_file.name)
+            methods.add(method)
+            newly_managed.add(src_file.name)
+
+    # Write manifest with exactly the names successfully placed in this run.
+    # Prior entries that were skipped (non-kata collision) are intentionally dropped
+    # so the manifest stays accurate and the uninstall list stays safe.
+    manifest_path.write_text(
+        json.dumps({"managed": sorted(newly_managed)}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    return {
+        "commandsDir": str(commands_dst),
+        "linked": linked,
+        "method": sorted(methods),
+    }
+
+
 def _flat_link_skills(home: Path, host_dir: Path, skills_subdir: str = "skills") -> dict:
     """Flat-link every skill dir into ``<host_dir>/<skills_subdir>/<name>`` (symlink, copy fallback).
 
@@ -166,12 +299,18 @@ def _flat_link_skills(home: Path, host_dir: Path, skills_subdir: str = "skills")
 def _install_claude(home: Path, host_dir: Path) -> dict:
     manifest = ensure_plugin_manifest(home)
     res = _flat_link_skills(home, host_dir)
+    cmds = _flat_link_commands(home, host_dir)
     return {
         "platform": "claude",
         "ok": True,
         "manifest": str(manifest),
         **res,
-        "notes": [f"{len(res['linked'])} skills linked into {res['skillsDir']}"],
+        "commandsDir": cmds["commandsDir"],
+        "commandsLinked": cmds["linked"],
+        "notes": [
+            f"{len(res['linked'])} skills linked into {res['skillsDir']}",
+            f"{len(cmds['linked'])} commands linked into {cmds['commandsDir']}",
+        ],
     }
 
 
