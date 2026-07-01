@@ -2,14 +2,19 @@
 
 Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED.md` → `kata-improve`.
 
-- [ ] **v0.1 — Claude-only one-shot core.** Prove the loop one-shots a complex task from a frozen
-  design+plan. Skills: `kata-grill`, `kata-context`, `kata-design-doc`, `kata-plan`, `kata-orchestrate`
-  (plan-guardian), `kata-board`, `kata-worktree`, `kata-tdd`, `kata-evaluate`, `kata-handoff`.
-  Frontmatter/versioning/naming standard applied. **Dogfood: KataHarness builds itself**, then validate
-  via the D16 planning-varied A/B on small one-shottable test projects (D57). No multi-tool adapters yet.
-  - **RELEASE CHECKLIST — on v0.1 ship:** flip the versioning policy from **hold-at-`0.1.0`** to
-    **bump-on-modify** (STANDARDS §3). Until then every skill stays `0.1.0`; after, every skill modification
-    bumps semver. Easy to forget — this is the trigger point.
+- [x] **v0.1 — Claude-only one-shot core.** ✅ **SHIPPED 2026-06-30 (tag `v0.1.0`).** Prove the loop
+  one-shots a complex task from a frozen design+plan. Skills: `kata-grill`, `kata-context`,
+  `kata-design-doc`, `kata-plan`, `kata-orchestrate` (plan-guardian), `kata-board`, `kata-worktree`,
+  `kata-tdd`, `kata-evaluate`, `kata-handoff`. Frontmatter/versioning/naming standard applied.
+  **Dogfood: KataHarness builds itself**, then validate via the D16 planning-varied A/B on small
+  one-shottable test projects (D57). No multi-tool adapters yet.
+  - **RELEASE CHECKLIST — DONE 2026-06-30:** versioning policy flipped from **hold-at-`0.1.0`** to
+    **bump-on-modify** (STANDARDS §3 — active). v0.1 cluster (items 1–5) ALL COMPLETE; remaining
+    backlog explicitly deferred to v0.1.x (see `BACKLOG.md` "Explicitly deferred to v0.1.x" section).
+    **Cluster gates met:** (1) sprint-cadence D15/A5 fresh-context `kata-review` SHIP ✅ · (2)
+    wiring-completeness interim pin ✅ · (3) guard-consistency repo-wide ✅ · (4) CWE-23 `.snyk`
+    record ✅ · (5) benchmark n=0→n=1 live ✅. **Final full adval: 2141 pytest PASS / validate 47/0
+    / Snyk medium+ 0.**
 - [~] **v0.2 — Self-handoff + concurrency.** PULLED FORWARD into the v0.1 build: `kata-selfhandoff`,
   `kata-diagnose`, `kata-review`, `kata-improve` (+ meta `kata-write-skill`) all built. **Remaining for v0.2:**
   `kata-tasklist` (file-locked self-claim) + the multi-agent self-claim model — deferred until workers
@@ -93,14 +98,14 @@ borrow mechanisms, keep our gates. Freeze-gate audited HOLD→SHIP.
   Endgame (α–ε): build fully → full tests → **dogfood version-up on KataHarness itself**, CONSULT-enabled once β
   has matured the fingerprint.
 
-**Pre-v0.1 (now):** **Modes Spec A (A1–A4) COMPLETE + merged.** **D16-as-RCT is RETIRED (D70, L11)** — the
-autonomous grill-vs-baseline A/B tests the wrong axis; **autonomous reliability is demonstrated** instead, and
-the v0.1 gate is re-scoped to that + the **Priming-and-Grill architecture (D71/D72):** grill is an *optional*
-human certainty layer over the priming prompt (autonomous-reliability floor when skipped), and grill ledgers
-feed the cognitive fingerprint. **The D16-first lock is dissolved → the full build is unblocked.** Build path
-(HANDOFF §4): wire D71 ✅ → build loop-cognition β (LEARN feed) ✅ → RS/AO/ML ✅ → **build sprint-cadence ✅
-(D78–D85, 2026-06-19)** → **next: dogfood version-up on KataHarness itself** (the endgame; exercises the
-deferred-runtime BACKLOG). Pending on sprint-cadence: the fresh-context `kata-review` (D15/A5) before "done".
+**v0.1 SHIPPED 2026-06-30 (tag `v0.1.0`).** **Modes Spec A (A1–A4) COMPLETE + merged.** **D16-as-RCT is
+RETIRED (D70, L11)** — the autonomous grill-vs-baseline A/B tests the wrong axis; **autonomous reliability is
+demonstrated** instead, and the v0.1 gate was re-scoped to that + the **Priming-and-Grill architecture
+(D71/D72).** Build path (HANDOFF §4): wire D71 ✅ → build loop-cognition β (LEARN feed) ✅ → RS/AO/ML ✅ →
+**build sprint-cadence ✅ (D78–D85, 2026-06-19)** → **v0.1 cluster items 1–5 ✅ (2026-06-30)** → **tag
+v0.1.0**. Sprint-cadence D15/A5 fresh-context `kata-review`: **SHIP ✅**. Remaining backlog explicitly
+deferred to v0.1.x. **Next milestone: v0.2** (tasklist + multi-agent worker self-select; adapters;
+post-v0.1 deferred items).
 
 **Pre-public workstreams (post-loop-hardening, 2026-06-21 → 06-24) — COMPLETE:** **WS-1** IP separation (`42e884b`;
 work-project name scrubbed, Quick kept as ACP seam, Codex added) · **WS-2** inner-loop autonomy + parallelism
@@ -115,9 +120,9 @@ benchmark → recursive parallelism (DAG-within-DAG).
 ## Progress
 | Milestone | Status |
 |---|---|
-| v0.1 core | 11 skills built; reviewed; execution half field-proven (A/B **tied**, L10) — planning A/B (D16) still pending; target reshaped to small one-shot test projects (D57) |
+| v0.1 core | ✅ **SHIPPED 2026-06-30 (tag `v0.1.0`)** — 47 skills; 2141 pytest; validate 47/0; Snyk medium+ 0. Cluster items 1–5 all done. Remaining backlog explicitly deferred to v0.1.x. |
 | Modes Spec A (A1–A4) | **COMPLETE + merged** — validator + tiers + bootstrap/readiness + version-up/kata-graph + frontier/async-escalation; **25 skills**; D1–D56 |
-| sprint-cadence | **BUILT 2026-06-19** (D78–D85; 11 tasks / 5 waves; validator **31/0**, pytest **37**, Snyk 0). NEW: `kata-plan` roadmap layer (`ROADMAP.md`) + `kata-sprint` (G1–G4 boundary) + `kata-report` v1; EXTEND config/state/handoff/escalation + selfhandoff/readiness/handoff; orchestrate stays sprint-blind (BC2). Pending: fresh-context `kata-review` (D15/A5) |
-| loop-cognition | **DESIGN FROZEN 2026-06-18** (D60–D69, audit HOLD→SHIP); 3 new skills (research/orient/promote); β feed builds ∥ D16, rest after D16 |
+| sprint-cadence | **COMPLETE + SHIPPED 2026-06-30** (D78–D85 + D15/A5 review SHIP). NEW: `kata-plan` roadmap layer (`ROADMAP.md`) + `kata-sprint` (G1–G4 boundary) + `kata-report` v1; EXTEND config/state/handoff/escalation + selfhandoff/readiness/handoff; orchestrate stays sprint-blind (BC2). D15/A5 fresh-context `kata-review`: **SHIP ✅** |
+| loop-cognition | **COMPLETE + merged** (D60–D69 design + RS/AO/ML all built; 3 new skills; β feed DONE 2026-06-18) |
 | v0.2 (pulled fwd) | diagnose/selfhandoff/improve/write-skill built; tasklist deferred (needs worker self-select) |
 | v0.3–v0.4 | Not started (adapters; ACP/Quick + kata-engram) |

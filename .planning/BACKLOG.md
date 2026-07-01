@@ -2,6 +2,70 @@
 
 Promote to ROADMAP milestones when ready.
 
+## ✅ v0.1 cluster — COMPLETE (2026-06-30, tag `v0.1.0`)
+
+All five items committed, pushed, and gated before the release tag. Final full adval:
+**2141 pytest PASSED / validate 47/0 / Snyk medium+ 0**.
+
+1. **Sprint-cadence D15/A5 review SHIP** ✅ — fresh-context `kata-review` of the sprint-cadence build
+   (D78–D85); SHIP verdict clears the final pending gate on the sprint-cadence milestone.
+2. **Wiring-completeness interim pin** ✅ — prose pointers added to `kata-evaluate` item 9 and
+   `kata-review` 6(b) marking the full produced-vs-consumed sweep as a post-v0.1 ORCHESTRATOR
+   INTEGRATION-GATE step (supersedes ad-hoc discovery; the full build is SCHEDULED for v0.1.x).
+3. **Guard-consistency repo-wide** ✅ — `_safe_path` guards in `mutation_run`, `grounding_gate`,
+   `escalation`, and `intent_scaffold` unified to raise `ValueError` (the more catchable/consistent
+   choice) on `..` traversal; eliminates the mixed `SystemExit`/`ValueError` class.
+4. **CWE-23 `.snyk` record** ✅ — standing `.snyk` policy entry for the 17-LOW operator-supplies-own-path
+   class in `kata_install.py`; below the medium+ gate; accepted as a known standing item.
+5. **Benchmark n=0→n=1 live** ✅ — first live benchmark run on a real control fixture (D5,
+   operator-supplied), proving the benchmark engine is not synthetic-fixture-only.
+
+## ↳ Explicitly deferred to v0.1.x (post-v0.1 release)
+
+These items were in-flight or identified during the v0.1 build. None blocks the v0.1 core contract;
+each is a hardening, quality, or audit item safe to ship as a patch. Deferral is intentional and
+operator-approved.
+
+- **#6 — Benchmark→improve hook (D3):** wire `kata-loop-benchmark` results into `kata-improve` T2
+  optimization proposals. *Safe to defer: benchmark engine is live and useful standalone; the hook is an
+  efficiency improvement, not a correctness gate.*
+- **#7 — Planning-approach ↔ delivery-mode alignment audit:** confirm `kata-plan` tiers + roadmap layer
+  align coherently with one-shot / sprint / version-up delivery modes; surface any bootstrap/orchestrate
+  routing mismatch. *Safe to defer: the three modes work today; the audit is a consistency check, not a
+  functional gap.*
+- **#8 — Debug Mode live run (n=0→1):** first end-to-end live run of Debug Mode on a real repo.
+  *Safe to defer: Debug Mode is functionally complete at the skill/seam level (P1+P2+P3 built, gated,
+  reviewed); the live run is the confidence exercise, not a build item.*
+- **#9 — AO lateral/module-rollup test seam:** add a pytest seam proving `kata-orient`'s nearest-module
+  rollup + `kata-graph` adjacency pointers resolve correctly on a real multi-module target. *Safe to defer:
+  AO degrades correctly to root-only today; the seam exercises forward-wiring that is inert until a
+  multi-module consumer exists.*
+- **#10 — Recurrence-hardening: `kata-promote` gate + T3 auto-author.** The T2 detector
+  (`tools/recurrence_detect.py`) + the `kata-improve` v0.2.0 auto-DRAFT proposal loop **shipped in
+  v0.1.0 (D118)**. Remaining: wire the proposal through `kata-promote` (D118 deliberately routed it to
+  `kata-review`→human-merge) and T3 (auto-authoring the guard itself, C-arc-gated). *Safe to defer —
+  the detect→draft→human-merge loop is live; promote-gating + auto-authoring are enhancements, not
+  missing safety.*
+- **#11 — β redaction filter:** add an automated redaction filter + pytest seam to the LEARN-feed emit
+  path (C3 structural enforcement). *Safe to defer: the β LEARN feed is emit-only with no CONSULT; the
+  current guarantee rests on agent obedience — the same risk class as all Write-capable skills. Risk
+  rises only when a real second-brain backend is bound.*
+- **#12 — Validator deeper checks (A1 REVIEW backlog):** structural checks for
+  `check_protocol_schemas`/`check_taxonomy_present` (substring → structural) + `kata/...` prefix
+  allowlist for `check_tags_namespace`. *Safe to defer: current checks catch the common cases; the
+  deeper checks prevent edge-case erasure/bogus-namespace that have not bitten in practice.*
+- **#13 — A3 REVIEW carry-overs:** (a) `tools/` example-`kata.config` coherence check; (b)
+  `kata-readiness` Scope-1 wording for version-up on existing codebases; (c) `tiers`-key format
+  enforcement (bare-verb vs `kata-<verb>`). *Safe to defer: three doc/validator polish items; none
+  affects runtime correctness.*
+
+**Also post-v0.1: wiring-completeness full build** (SCHEDULED) — `tools/` produced-vs-consumed sweep
+helper + tests + mutation bite + realistic-fixture e2e trace as an ORCHESTRATOR INTEGRATION-GATE step.
+Supersedes the interim prose-pin (cluster item 2 above). Size M; grill → freeze → build. Refs:
+`.planning/PROPOSAL-phantom-reuse.md` + `specs/recurrence-hardening/`.
+
+---
+
 ## ⟳ 2026-06-24 strategy + hardening session (D98–D101) — pointers
 - **D98** standing adversarial red-team wired + `kata-evaluate` item 9 (reproduce-don't-trust). **DONE.**
 - **D99** loop-learning strategy: A-now / C-destination / B-trap; **Second brain + Recall + Reason** model
@@ -15,6 +79,8 @@ Promote to ROADMAP milestones when ready.
   `kata-design-doc`/`kata-plan` RUBRIC/`kata-tdd` + validator regression rule + T-fire proof-of-fire (full recipe,
   D98 red-team SHIP). Record: `specs/recurrence-hardening/{PLAN-phantom,REPORT-phantom}.md`. **REMAINING (general
   build):** the detector + `kata-improve` proposal loop + `kata-promote` gate — **grill → freeze → build** the BRIEF.
+  *(⚠ SUPERSEDED by D118/v0.1.0: the detector (`tools/recurrence_detect.py`) + `kata-improve` v0.2.0 auto-DRAFT
+  proposal loop SHIPPED in D118. Only the `kata-promote` gate + T3 auto-authoring remain — see #10 above.)*
 - **★ wiring-completeness gate — full build (SCHEDULED, after v0.1 cluster).** A `tools/` produced-vs-consumed
   sweep helper + tests + mutation bite (mirror `test_exec_safety.py` registry-completeness check) + a
   realistic-fixture end-to-end trace — run as an **ORCHESTRATOR INTEGRATION-GATE step** (NOT a no-write

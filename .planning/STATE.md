@@ -2,11 +2,26 @@
 gsd_state_version: 1.0
 milestone: v0.1
 milestone_name: milestone
-status: unknown
+status: shipped
 last_updated: "2026-06-30T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-06-30, v0.1 RELEASED — tag `v0.1.0`):** v0.1 cluster COMPLETE. All five items done,
+> committed, and pushed before tagging: **(1)** sprint-cadence D15/A5 fresh-context `kata-review` SHIP —
+> clears the last pending gate on the sprint-cadence milestone. **(2)** wiring-completeness interim pin —
+> prose pointers in `kata-evaluate` item 9 + `kata-review` 6(b) marking the full sweep as a post-v0.1
+> ORCHESTRATOR INTEGRATION-GATE step. **(3)** guard-consistency repo-wide — `_safe_path` guards unified
+> to `ValueError` across `mutation_run`/`grounding_gate`/`escalation`/`intent_scaffold`. **(4)** CWE-23
+> `.snyk` record — standing policy entry for the 17-LOW operator-supplies-own-path class in
+> `kata_install.py`. **(5)** benchmark n=0→n=1 live — first live run on real control fixture (D5).
+> **Final full adval: 2141 pytest PASSED / validate 47/0 / Snyk medium+ 0.** Versioning policy flipped:
+> bump-on-modify active (STANDARDS §3). Remaining backlog items (#6–#13 + wiring-completeness full build)
+> explicitly deferred to v0.1.x — none blocks the v0.1 core contract; see `BACKLOG.md` "Explicitly
+> deferred to v0.1.x" section. **NEXT milestone: v0.2** (tasklist + worker self-select; adapters;
+> post-v0.1 deferred items). Records: `BACKLOG.md`, `ROADMAP.md` Progress table, `docs/STANDARDS.md` §3,
+> `CHANGELOG.md` v0.1.0 entry.
 
 > **CURRENT (2026-06-30, D131 model-tiering COMPLETE — built, gated, ready to commit; builds on D130 `8af2e37`):**
 > D131 = **relative, mode-driven model-tiering** — DONE across **3 waves**, all via subagents. **W1:**
