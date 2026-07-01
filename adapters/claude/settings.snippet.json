@@ -4,5 +4,17 @@
     "command": "python \"<repo>/adapters/claude/statusline.py\"",
     "padding": 1,
     "refreshInterval": 1
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"<repo>/tools/.venv/Scripts/python.exe\" \"<repo>/adapters/claude/hooks/kata-precompact.py\""
+          }
+        ]
+      }
+    ]
   }
 }

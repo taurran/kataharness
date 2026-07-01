@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -327,8 +327,18 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
       Tier-1 IaC runs (author/review/gate, the `escalate` verdict, `.kata/iac.json`) are **byte-for-byte unchanged**.
 4. **Integrate.** Merge each completed task branch into the integration branch ([[kata-worktree]] — disjoint
    files merge cleanly by construction). Re-run the gate on the integration branch, then recompute the frontier.
-5. **Commit at the checkpoint** (conventional commit + project trailer) so compaction can't lose work.
+5. **Commit at the checkpoint** (conventional commit + `Kata-Task: <task-id>` trailer) so compaction
+   can't lose work and restore can map each integration commit back to its task.
    Completions integrate **in completion order** — a linear integration-branch history, not a wave-batched one.
+
+   **Board durability (cadence 1 — D133/B1):** immediately after the integration commit lands, call
+   `kata_trail.snapshot_board(repo_root)` (`tools/kata_trail.py`) to commit the current
+   `.kata/board.md` to `refs/kata/trail`. This is a mechanical, git-plumbing-only call — it writes
+   ONLY the board to the orphan ref, never touches the working tree or index, never pushes, and
+   returns a skip sentinel on any non-fatal condition (absent board, busy lock, subprocess error).
+   A skip result is logged at `NOTE` level on the board and does NOT block integration — it is a
+   durability enhancement, not a gate. This call site closes Gap 2/3 (D132) at integration
+   granularity, independently of the PreCompact auto-checkpoint hook (built last in the same spec).
 
 ## Dispatch-time model selection (D59 / R2)
 

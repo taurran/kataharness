@@ -7,7 +7,7 @@ description: >-
   (skip|light|standard|full, D71). Invoke from kata-bootstrap before composing a run, or standalone as
   an "is my kata environment ready?" doctor.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -51,6 +51,37 @@ each a checklist; report PASS / WARN / BLOCK per item and an overall verdict.
   is authoritative. Report the rebuilt `{sprintIndex, gateStatus, boundary: dirty|gated}` in the verdict.
   **Read-only:** readiness *computes* the rebuilt state and hands it to the orchestrator (the single writer,
   L3) — it never writes `.kata/` itself. One-shot runs (no `delivery` / `shape: one-shot`) skip this entirely.
+- **Lost-run detection (R5 extension — restore-hardening B2, D134).** When the sprint-progression rebuild
+  (above) finds `.kata/` absent or stale but `refs/kata/trail` is present, treat this as a *lost-run* condition
+  and extend the rebuild to include the durable board:
+  1. Read `board.md` from `refs/kata/trail` (`git cat-file -p refs/kata/trail:board.md`) and fold it to the
+     frontier using the canonical concurrency reduce (`protocol/board.md` canonical snippet, `fold_board` in
+     `tools/kata_restore.py`).  The folded board CORROBORATES in-flight ownership but **never gates** the
+     re-dispatch set.
+  2. Re-dispatch set = all task-ids in the frozen PLAN **minus** those with an integration commit on the
+     integration branch (mapped via the `Kata-Task: <id>` trailer in each commit — `collect_integrated_tasks`
+     in `tools/kata_restore.py`).  **Tier-2 (integration history) is AUTHORITATIVE for DONE.**
+     A task absent from the board (not even a CLAIM) but non-integrated is re-dispatched; a task with a board
+     `DONE` but no integration commit is also re-dispatched.  Gating on board CLAIMs would silently drop
+     early-wave tasks a crash never durably recorded — the PLAN + integration history are the only always-durable
+     sources.
+  3. Report the re-dispatch set + board frontier in the verdict (flagged as `lost_run: true`).  Call
+     `kata_restore.restore(repo_root, plan_path, integration_branch)` to materialize the cleanup (C2 stale
+     branch + worktree prune) and write the board back to `.kata/board.md` **without rotation** (no archive
+     file — see R5-norotate below).
+
+     **Caller contract for `kata_restore.restore()`:**
+     - `plan_path` — resolved to the run's frozen PLAN at `.planning/specs/<spec-name>/PLAN.md`.
+       Read the active spec name from `kata.config` or discover the most recent frozen PLAN under
+       `.planning/specs/`.  Pass the absolute path.
+     - `integration_branch` — defaults to `"integration"` for all standard kata runs.  Override
+       only when `kata.config` names a different branch.
+  **Read-only on the verdict path:** readiness calls `kata_restore.restore` which handles the `.kata/` writes
+  only on the confirmed lost-run code path; the readiness verdict itself stays read-only.
+- **R5-norotate:** a *resume* MUST NOT rotate `.kata/board.md` to `.kata/board.<utc>.archive.md`.  Rotation
+  is a run-start action ([[kata-orchestrate]] loop preamble); a resume restores the orphan-ref board into
+  place and skips rotation entirely.  Rotating would archive the recovered CLAIM/DONE lines and empty the
+  live board, defeating the restore.
 
 ## Scope 3 — priming-prompt richness → recommended grill depth (D71)
 Assess the **priming prompt** (the human's original spec for this run) and recommend a starting **grill-depth

@@ -66,6 +66,29 @@ Supersedes the interim prose-pin (cluster item 2 above). Size M; grill → freez
 
 ---
 
+## ⟳ 2026-06-30 restore-hardening (D132–D135) — BUILT + follow-ups
+
+Restore-hardening spec (`specs/restore-hardening/`) built + committed on `phase-2/restore-hardening`
+(Increment A `8a020e2` commands+installer; Increment B `0e160c2` durable board + PreCompact hook +
+task-granular restore). **D133** recovery-ref git carve-out · **D134** task-granular re-dispatch ·
+**D135** board-is-the-trail (supersedes D132's continuous-replay-SPINE scope). Gate: pytest 2170 /
+validate 47/0 / Snyk medium+ 0 / frozen install untouched; adversarial sweep SHIP after catching +
+fixing 3 silent-under-dispatch bugs (heading-parse, unbounded history, unreadable-plan swallow).
+
+Non-blocking follow-ups (surfaced by the SHIP sweep — all safe-direction, none a correctness gate):
+- **#14 — Restore fork-point same-commit edge.** `collect_integrated_tasks` uses an exclusive
+  `<fork>..<head>` range; a task whose `Kata-Task:` trailer sits on the SAME commit as a squashed
+  plan-freeze is re-dispatched (over-dispatch — safe; canonical flow commits plan-freeze standalone so
+  it doesn't arise). *Consider: include-the-boundary or detect squashed-freeze.*
+- **#15 — Nested `waves:` value guard.** `parse_plan_tasks` handles canonical flat `waves: {w: [ids]}`;
+  a nested `{w: [[a,b]]}` value would `str(list)` a bogus id into the set (over-dispatch — safe;
+  ownership keys remain authoritative). *Consider: validate waves value shape.*
+- **#16 — Restore degraded-mode signal is stdout-only.** The unbounded-fork-point fallback prints a
+  NOTE but returns no structured field; a programmatic caller can't detect degraded mode. *Consider:
+  add `bounded: false` / `warnings: [...]` to the `restore()` return dict.*
+
+---
+
 ## ⟳ 2026-06-24 strategy + hardening session (D98–D101) — pointers
 - **D98** standing adversarial red-team wired + `kata-evaluate` item 9 (reproduce-don't-trust). **DONE.**
 - **D99** loop-learning strategy: A-now / C-destination / B-trap; **Second brain + Recall + Reason** model

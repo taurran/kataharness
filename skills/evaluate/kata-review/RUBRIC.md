@@ -29,7 +29,13 @@ findings, not fixes; findings seed a deliberate orchestrator decision.
 3. **Assumptions & contradictions.** Surface assumptions the spec rests on; check them against code/docs/data.
    Flag anything that contradicts a prior decision, the glossary, or reality.
 4. **Security & failure surface.** Attacker-reachable inputs, escaping, and what happens on malformed/edge
-   input. Confirm threats in the plan's model are actually mitigated, not just claimed.
+   input. Confirm threats in the plan's model are actually mitigated, not just claimed. **Hunt the
+   silent-permissive-default class (D136):** any decision-bearing function that reads/parses an external
+   artifact to drive a dispatch set / resolver output / gate verdict and, on ABSENT or UNPARSEABLE input, falls
+   through to a permissive default (empty set, `None`-inherit, vacuous-pass) instead of hard-failing — the
+   lenient-direction failure that passes happy-path tests. Confirm such functions RAISE and that the required
+   absent/malformed-input test exists (kata-tdd D136). A legitimately empty COMPUTED result and a designed,
+   documented fail-safe fallback are NOT findings — the target is accidental silent-permissive defaults.
 5. **Second-order effects.** What does this change *downstream* that no one looked at?
 6. **Reproduction & seam-liveness (L12 — the signature failure mode).** Do not trust that a thing *exists*
    because a doc says so. (a) **Derived artifacts:** for anything the run *computed or rendered* (a board-derived

@@ -6,7 +6,7 @@ description: >-
   acceptance criteria — red→green→refactor, behavior over implementation, escalate unknowns instead of
   improvising.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: execute
 status: experimental
 agnostic: true
@@ -56,6 +56,14 @@ pure data/config tasks with no new logic, "test" = the project's structural/vali
 
 **A code-bearing task is not done until `.kata/mutation.json` exists with `allNonVacuous: true`.**
 Pure data/config/docs tasks with no new executable logic are exempt from this requirement.
+
+**Silent-permissive-default guard (D136).** If your task builds a **decision-bearing** function that reads or
+parses an EXTERNAL artifact to drive a dispatch set, a resolver output, or a gate verdict, add ONE test proving
+it **hard-fails (raises) on an ABSENT or UNPARSEABLE input** — it must never silently return a permissive default
+(empty set, `None`-inherit, vacuous-pass). This is the one hostile-input behavior happy-path fixtures miss (it
+caused ~6–7 real lenient-direction bugs that passed their build tests); it composes with the non-vacuity PROVE
+step above. Scope is narrow: a legitimately empty COMPUTED result is fine (this guards unread INPUTS, not empty
+OUTPUTS), and a **designed, documented fail-safe fallback is exempt** — do not defensively wrap every function.
 
 ### Running the PROVE step with mutation_run
 

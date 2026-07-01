@@ -1884,3 +1884,66 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   extends tier-3?); how mid-wave worker commits interact with the worktree / integration-branch model; what the
   PreCompact hook writes + commits and whether it can finish before the window closes; adapter-vs-core boundary
   for each piece. **★ FIRST ACTION next session: grill → freeze the design BEFORE any build.**
+- **D133 — recovery-ref git carve-out: narrow mechanical exception to the no-autonomous-git rule (kata-loop) —
+  FROZEN 2026-06-30.** `.planning/specs/restore-hardening/DESIGN.md` §3 + L5 (C1–C2). `kata-loop` forbids the
+  conductor from carrying out git actions autonomously (those require explicit human approval inside
+  `kata-closeout`). The durable board + PreCompact hook (B1/B2) necessarily commit without a turn-by-turn human
+  approval, so this DESIGN carves out a **narrow, mechanical exception**: a mechanical helper MAY commit
+  `.kata/board.md` to the dedicated orphan ref `refs/kata/trail` without per-event human approval, PROVIDED it
+  (a) writes ONLY to `refs/kata/trail`, never a branch and never the integration ref; (b) NEVER pushes; (c)
+  commits ONLY the board (no source, no `state.json`); (d) is recovery-only and self-pruning (squashed/dropped at
+  task integration). All *integration* commits remain under the existing human-approval gate. This exception
+  exists so a mid-build loss is recoverable; it does NOT loosen the integration-branch approval rule at all.
+  Implementation: `tools/kata_trail.py` (`snapshot_board`); call site at `kata-orchestrate` step 5;
+  PreCompact hook wired in B2. Gates: `tools/tests/test_kata_trail.py` (5 tests, all green); validate 47/0
+  (kata-orchestrate v0.3.0); Snyk medium+ 0. Supersedes nothing; extends D81 (the three-tier model adds a
+  mechanical durability layer; tier-3 stays the hot cache). Does NOT supersede D132; it is the first
+  implementation decision under D132's Option 2 scope.
+- **D134 — restore = task-granular re-dispatch; no mid-wave re-attach — FROZEN 2026-06-30.**
+  `.planning/specs/restore-hardening/DESIGN.md` §0 C2 + L5. The task is the restart unit. If a task held a
+  `CLAIM` with no `DONE` at the point of loss, restore **re-dispatches that task from scratch** — every input it
+  needs is already durable (frozen DESIGN, PLAN, disjoint file ownership). We do NOT record branch/worktree
+  paths, do NOT build a mid-wave commit protocol, and do NOT re-attach a half-finished worktree (which is often
+  unrecoverable after a session death anyway). Workers MAY commit to their own task-branch as normal git hygiene,
+  but nothing load-bearing depends on it. The re-dispatch set = every task in the frozen PLAN that has no
+  integration commit (tier-2 is AUTHORITATIVE for DONE; the board CORROBORATES, never gates). *Why:* tasks are
+  TDD-sized to make re-run cheap; mid-wave re-attach machinery adds complexity for bytes that are usually gone
+  after a crash; the frozen PLAN + disjoint file ownership make re-dispatch safe and deterministic. Implemented
+  in B2 (restore read, `kata-orient`/`kata-readiness` + `kata_restore.py`). Supersedes the "continuous-replay is
+  the SPINE" re-attach implication of D132 (the re-attach machinery described there is dropped; D132 itself is
+  NOT edited — supersede-never-rewrite).
+- **D135 — board-is-the-trail; no separate continuous-replay journal — FROZEN 2026-06-30; supersedes D132's
+  "continuous-replay is the SPINE" scope.** `.planning/specs/restore-hardening/DESIGN.md` §0 C1 + L5. Building
+  a second append-only log alongside the board doubles the write + parse + divergence surface for a capability
+  that already exists: `protocol/board.md` is *already* an append-only, worker-stamped event log
+  (`CLAIM/DONE/BLOCK/ESCALATE/NOTE/DECISION/PROGRESS`, one line each), folded to a frontier snapshot by the
+  existing concurrency reduce. Its **only** deficiency for restore is that it lives in gitignored tier-3. So the
+  feature is **durability of the board**, not a parallel journal. This decision directly reverses D132's
+  "continuous-replay is the SPINE, not a bolt-on" scope: we make the existing board durable via the orphan ref
+  (D133); we do NOT invent a continuous-replay journal subsystem. D132 is NOT edited (supersede-never-rewrite);
+  the D132 text stands as the historical record of the pre-DESIGN decision point and its open questions.
+  *Why:* the board is already proven (all workers write to it, the concurrency reduce folds it, the evaluator
+  reads it); adding a second log creates two sources of truth that can diverge; C1 (CUT) removes the
+  highest-complexity piece of the original scope with no loss of capability the gap analysis requires.
+- **D136 — default-FAIL generalizes to built decision-code (silent-permissive-default guard) — FROZEN
+  2026-06-30; member of the D33 never-tiered structural-invariant family.** When a decision-bearing computation
+  the loop BUILDS (a dispatch set, a resolver output, a pass/fail gate verdict) reads or parses an EXTERNAL
+  ARTIFACT to drive that decision, an ABSENT or UNPARSEABLE artifact must hard-fail (raise), never fall through
+  to a permissive default (empty set, None-inherit, vacuous-pass). A legitimately EMPTY COMPUTED result (e.g.
+  "all tasks already integrated → nothing to re-dispatch") is valid — this governs unread/unparsed INPUTS, not
+  empty OUTPUTS. **Designed, documented fail-safe fallbacks are EXEMPT** (e.g. the D131 model-tiering resolver's
+  deliberate clamp-to-floor / availability step-down) — the rule targets ACCIDENTAL silent-permissive defaults,
+  not intentional ones. This **generalizes default-FAIL** — which already governs the harness's OWN gates
+  (`kata-evaluate` hard-fails on absent/malformed `RESULT.json`/`mutation.json`) — to the decision-code the loop
+  emits into target artifacts. **Never-tiered** (D33: a tier varies depth, never relaxes a structural invariant).
+  **Enforced by prose guards, NOT a validator** — the property is semantic, not statically detectable; a static
+  check would create false-HOLD friction (deliberately rejected). Two guards: (1) `kata-tdd` requires ONE
+  absent/malformed-input test proving loud failure for such a function (composes with the non-vacuity PROVE
+  step); (2) `kata-review` attack-surface 4 names the silent-permissive-default class for the fresh-context
+  adversarial pass. *Why:* ~6–7 real bugs across D131 (vacuous 0-of-0 → 1.0 PASS; full-model-id anchor silently
+  DISABLING tiering) and restore-hardening (brittle heading-parse → PARTIAL task set; unbounded history →
+  OVER-exclude; missing PLAN → EMPTY re-dispatch set) shared this exact signature — each failed in the lenient
+  direction, each PASSED its build tests (fixtures matched the code's happy path), each was caught ONLY by a
+  fresh-context adversarial review. This is a D101 recurrence-hardening ruling on a confirmed recurring failure
+  CLASS. Follows the `protocol/reuse-claims.md` precedent (semantic guard + by-path skill pointers + no
+  behavioral validator). Follow-ups #14–#16 (BACKLOG) are unrelated restore polish, not part of this guard.
