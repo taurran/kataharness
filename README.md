@@ -1,61 +1,112 @@
 # KataHarness
 
-**A tool-agnostic, skills-based agent harness that one-shots complex coding tasks.** It front-loads deep,
-doc-grounded planning, **freezes the plan**, executes it faithfully across one or many subagents, and gates
-"done" behind a **fresh-context, default-FAIL evaluator** — then folds every run's lessons back into itself.
-The name is the method: the **Improvement Kata** — *every loop sharpens the loop.*
+### One-shot complex coding tasks — with the guardrails that make autonomy trustworthy.
 
-> **Status: pre-v0.1, experimental.** The single-model Claude core is the proven path; multi-model routing
-> and the Codex/Kiro adapters are partially built. Honest about maturity — see [Docs / status](#docs--status).
-> New here? Start with [`AGENTS.md`](./AGENTS.md) (the vision + the spine).
+KataHarness front-loads deep, doc-grounded planning, **freezes the plan**, executes it faithfully across one or
+many subagents, and refuses to call anything "done" until a **fresh-context, default-FAIL evaluator** proves it —
+then folds every run's lessons back into itself. The name *is* the method: the **Improvement Kata** — *every loop
+sharpens the loop.*
 
----
-
-## What makes it different
-
-Most "agentic loops" are a thin wrapper around *prompt → generate → done*. KataHarness adds the guardrails
-that make autonomy trustworthy:
-
-- **The plan doesn't drift.** The plan is *frozen* after planning; the orchestrator is its guardian; worker
-  subagents execute and talk laterally but **never re-plan**. An unknown escalates or parks — it's never silently guessed.
-- **Nothing is "done" until proven.** A **fresh-context, no-write, default-FAIL** evaluator independently reads
-  the evidence and must return PASS. *Nothing certifies its own work.*
-- **Tool-agnostic core + thin adapters.** One agnostic core (protocol, skills, planning engine, quality loop)
-  with per-tool adapters (`claude` today; `codex`/`kiro` next) — not locked to one vendor.
-- **Everything is versioned.** Every skill carries a semver in its frontmatter; the generated catalog is the
-  machine source of truth for what exists and at what version.
-- **Self-improvement folds into the skills.** Lessons from each run are distilled back into the *skills
-  themselves* (through a human promotion gate) — not just appended to a ledger.
-- **Adapt without forking upstream.** Customize any skill via a local **overlay** or a promoted **fork** — your
-  changes survive every update; the upstream base stays pristine and is never edited or lost.
-- **Zero-dependency install.** Pure-stdlib Python engine; one command drops it into your agent host.
+> **v0.1.0 · experimental.** The single-model Claude core is the proven, dogfooded path (KataHarness builds
+> itself); multi-model routing and the Codex/Kiro adapters are partially built; IaC *apply* is gated and not yet
+> shipped runnable. We're honest about maturity — that honesty is the product. New here? Start with
+> [`AGENTS.md`](./AGENTS.md) (the vision + the spine).
 
 ---
 
-## Features — what's in the box
+## Why it stands apart
 
-**The Kata Loop** runs six phases, with every run feeding the next:
+Most "agentic loops" are a thin wrapper around *prompt → generate → hope*. KataHarness is a disciplined system:
+
+- **🧊 The plan doesn't drift.** The plan is *frozen* after planning; the orchestrator guards it; worker
+  subagents execute and talk laterally but **never re-plan.** An unknown escalates or parks — it is never
+  silently guessed.
+- **🛡️ Nothing certifies its own work.** A **fresh-context, no-write, default-FAIL** evaluator independently
+  reads the evidence and must return PASS — backed by an **adversarial review** before every merge. In this
+  project's own build, that fresh-context review caught bugs the passing test suite had blessed.
+- **🔁 Crash-proof resume.** Lose a session to a crash or a context compaction and pick up **exactly where you
+  left off** — see below. Most harnesses just lose the work.
+- **🏁 It benchmarks itself.** A built-in scoring engine ranks candidate approaches on real pass/fail evidence
+  and produces an **honest scorecard** — quality you can measure, not vibes. *(v0.1 scores single-arm + k-repeat
+  runs; the parallel multi-arm bake-off driver is next.)*
+- **🧩 Tool-agnostic core + thin adapters.** One agnostic core (protocol, skills, planning engine, quality loop)
+  with per-tool adapters — not locked to one vendor.
+- **🪶 Zero-dependency install.** A pure-stdlib Python engine; one command drops it into your agent host.
+
+---
+
+## The Kata Loop
+
+Six phases, every run feeding the next:
 
 ```
-GRILL → FREEZE → EXECUTE → EVALUATE → HANDOFF → IMPROVE
-interrogate  lock the   plan-faithful  fresh-context  durable,    distil + promote
-the spec     design +   parallel       no-write,      two-way,    + fold lessons
-             plan       workers         DEFAULT-FAIL   git-committed   → next run
+GRILL   →   FREEZE   →   EXECUTE   →   EVALUATE   →   HANDOFF   →   IMPROVE
+interrogate  lock the    plan-faithful  fresh-context   durable,     distil + promote
+the spec     design +    parallel       no-write,       two-way,     lessons back into
+             the plan    workers        DEFAULT-FAIL    git-committed  the skills → next run
 ```
 
-- **47 skills** across six families — `plan` · `coordinate` · `execute` · `evaluate` · `handoff` · `meta` —
-  plus the `initiation` / `closeout` modules. The full catalog is below.
-- **Modes & tiers.** Three modes (**Essential · Standard · Advanced**) set breadth and depth; tiered skill
-  families (`kata-grill`, `kata-plan`, `kata-review`, `kata-diagnose`) share one rubric and expose a depth dial.
-  A **bake-off** runs N variants in parallel, judges them, and refines the winner up a tier.
-- **The quality loop.** A **default-FAIL** evaluator owns "done," backed by an **adversarial review** before
-  every merge and an optional **AI-slop check** that fails a run for spiraling / over-claiming signals.
-- **Install lifecycle.** One-command install, `--update` (with `--check`), `--factory-reset`, a clean
-  uninstaller, and a version stamp + skill manifest.
-- **Local adaptation.** An **overlay store** customizes skills in place; deeper rewrites route through a
-  **supersedes/fork** candidate and a human promotion gate — upstream is never touched.
+---
 
-See [`docs/SETUP.md`](./docs/SETUP.md) for the install/update/overlay/factory-reset depth.
+## What's in the box
+
+### 🔁 Crash-proof resume *(new)*
+A session death — a crash, a killed terminal, an auto-compaction that wipes context mid-build — no longer costs
+you the run. KataHarness keeps a **durable, git-committed progress trail** and restores the exact frontier:
+
+- **Durable board.** The live work-board is snapshotted to a dedicated git ref (`refs/kata/trail`) with pure git
+  plumbing — it never touches your working tree, never pushes, and can't corrupt a thing.
+- **Auto-checkpoint before compaction.** A pre-compaction hook is wired to checkpoint the board *before* the
+  context window is squeezed. *(Being live-verified: that Claude's PreCompact hook fires synchronously with a
+  usable budget. Even if it doesn't, your progress is already durable at every integration checkpoint — above.)*
+- **Task-granular restore.** On resume, `/kata-resume` re-derives which tasks were finished (from the git
+  history, the authoritative source) and re-dispatches only the ones that weren't — no double work, no dropped
+  work, no manual reconstruction.
+
+### 🏁 Built-in benchmarking
+Quality you can *measure*, not assert. A complete two-axis scoring engine ranks candidate build artifacts on real
+**fail-to-pass / pass-to-pass** test evidence (weighted by a mutation-non-vacuity multiplier) and produces an
+**honest scorecard** — it distinguishes a genuine all-pass from a vacuous one, with **no free credit for tests
+that never ran**. *(v0.1 scores single-arm + k-repeat runs; the parallel multi-arm bake-off driver — launch N
+approaches at once, judge, and promote the winner — is the next planned capability.)*
+
+### 🐞 Debug Mode — a bug-hunting pipeline
+Point it at a failing or mysterious codebase and it's *designed* to work like an engineer, not a guesser: build a
+**function model** of the code, run a **deviation-discovery** pass to surface where behavior diverges from intent,
+generate a **characterization suite** that pins current behavior, **diagnose** root cause (light or full depth),
+and hand back a **debrief** with confidence and an optional version-up offer. *(Skills built; the end-to-end
+pipeline run is the next dogfood milestone.)*
+
+### ☁️ Specialized Infrastructure-as-Code agents
+First-class IaC specialists for **Terraform** and **CloudFormation**, injected automatically when a task touches
+infra. They share a **safety contract** (`protocol/iac-safety.md`): structured plan-only argv, a **Snyk IaC**
+scan gate, an explicit approval-artifact gate, and **no destructive `-target`**. Authoring, review, and planning
+are live; *apply* is deliberately gated behind approval and not yet shipped runnable — safety before convenience.
+
+### 🎚️ Modes, tiers & relative model routing
+Three **modes** (**Essential · Standard · Advanced**) set breadth and depth. Tiered skill families
+(`kata-grill`, `kata-plan`, `kata-review`, `kata-diagnose`) share one rubric and expose a depth dial. Model
+selection is **relative** — critical work runs at your session's anchor model, economy work tiers *down* a rung —
+so a gated or renamed model never breaks the loop, and no model ID is ever hard-baked into a skill.
+
+### 🛡️ The quality loop
+A **default-FAIL** evaluator owns the definition of "done." An **adversarial review** attacks the design before
+every merge. Every code behavior is **mutation-proven non-vacuous** (a test that stays green when its assertion
+is removed doesn't count). An optional **AI-slop check** fails a run for spiraling or over-claiming. And a
+standing **silent-permissive-default guard** forbids decision-code from quietly degrading on bad input.
+
+### 🔧 Adapt without forking upstream
+Customize any skill via a local **overlay** or a promoted **fork** — your changes survive every update; the
+upstream base stays pristine and is never edited or lost.
+
+### 🗂️ Discoverable slash-commands *(Claude)*
+`/kata` prints the index; `/kata-start`, `/kata-onboard`, `/kata-resume`, `/kata-status`, and `/kata-validate`
+route straight to the right skill — no logic to drift, always in sync with the toolkit.
+
+### 📚 47 versioned skills
+Across six families — `plan` · `coordinate` · `execute` · `evaluate` · `handoff` · `meta` — plus the
+`initiation` / `closeout` modules. Every skill carries a semver in its frontmatter; the generated catalog below
+is the machine source of truth for what exists and at what version.
 
 <details>
 <summary><b>Full skill catalog</b> — name · version · cost · category · status · source · use (auto-generated from frontmatter; the versioning source of truth)</summary>
@@ -116,98 +167,134 @@ See [`docs/SETUP.md`](./docs/SETUP.md) for the install/update/overlay/factory-re
 
 ---
 
-## Installation
+## Install
 
-**Prerequisites:** `git` and either [`uv`](https://docs.astral.sh/uv/) **or** Python 3.12+. Both installers
-clone KataHarness to `~/.kata-home` (`%USERPROFILE%\.kata-home` on Windows) and link/copy the skills into your
-agent host. Default platform is **`claude`**.
+**Prerequisites:** `git`, and either [`uv`](https://docs.astral.sh/uv/) **or** Python 3.12+. The installer clones
+KataHarness to `~/.kata-home` (`%USERPROFILE%\.kata-home` on Windows) and links (or copies) the skills into your
+agent host. Default platform is **`claude`**; `--platform` also accepts `codex` and `kiro`.
 
-### Windows (PowerShell) — primary route
-
+**Windows (PowerShell):**
 ```powershell
 irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 | iex
 ```
 
-To choose a platform, download-then-run:
-
-```powershell
-irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 -OutFile install.ps1; .\install.ps1 --platform codex
-```
-
-### macOS / Linux (and Git Bash on Windows)
-
+**macOS / Linux (and Git Bash on Windows):**
 ```sh
 curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh | sh
 ```
 
-Pass a platform via the piped POSIX form:
-
+**Choose a platform** (download-then-run so you can pass a flag — and inspect the script first):
+```powershell
+# Windows
+irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 -OutFile install.ps1; .\install.ps1 --platform codex
+```
 ```sh
-curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh | sh -s -- --platform codex
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh -o install.sh; sh install.sh --platform codex
 ```
 
-`--platform` accepts `claude` · `codex` · `kiro`.
+---
 
-### Update & uninstall
+## Lifecycle — update · factory-reset · wipe & reinstall · uninstall
+
+Every command below is copy-paste ready. Windows uses the scripts in `%USERPROFILE%\.kata-home\`; macOS/Linux
+uses the mirrors in `~/.kata-home/`.
+
+### ↻ Update — pull the latest engine + skills
+Fast-forwards your clone and re-links the skills. Add `--check` to preview without changing anything; set
+`KATA_REF` to pin a branch/tag/SHA (default `master`).
 
 ```powershell
-# PowerShell
-& "$env:USERPROFILE\.kata-home\update.ps1"            # add --check to report without changing anything
-& "$env:USERPROFILE\.kata-home\uninstall.ps1"
+# Windows
+& "$env:USERPROFILE\.kata-home\update.ps1"            # apply the update
+& "$env:USERPROFILE\.kata-home\update.ps1" --check    # preview only, no changes
 ```
-
 ```sh
-# POSIX
-sh ~/.kata-home/update.sh                             # add --check to report without changing anything
-sh ~/.kata-home/uninstall.sh
+# macOS / Linux
+sh ~/.kata-home/update.sh                             # apply the update
+sh ~/.kata-home/update.sh --check                    # preview only, no changes
 ```
+> If you customized tracked base files, update **aborts** rather than clobbering them — re-run with
+> `--discard-local` to overwrite, or commit/stash first. (Your overlays and forks are safe; they're separate.)
 
-### Reinstall / refresh
-
-`install.ps1` / `install.sh` **reuse an existing `~/.kata-home`** (they do not re-clone). To pull the latest
-engine *and* skills, either run `update` (above), or do a clean reinstall:
+### ⟲ Factory-reset — restore pristine skills
+Re-links the shipped skills without touching your clone's git history. Add `--hard` to also **clear the overlay
+store** and reset the base tree (destructive — requires `--yes` when non-interactive).
 
 ```powershell
-# Windows — clean reinstall (safe: ~/.kata-home is just the clone; your vault is separate)
+# Windows
+& "$env:USERPROFILE\.kata-home\update.ps1" --factory-reset
+& "$env:USERPROFILE\.kata-home\update.ps1" --factory-reset --hard --yes   # also wipe overlays/forks
+```
+```sh
+# macOS / Linux
+sh ~/.kata-home/update.sh --factory-reset
+sh ~/.kata-home/update.sh --factory-reset --hard --yes                    # also wipe overlays/forks
+```
+
+### ⤾ Wipe & reinstall — nuke the clone and start fresh
+Deletes `~/.kata-home` entirely and reinstalls from scratch. Safe: `~/.kata-home` is just the harness clone —
+your projects and vault live elsewhere.
+
+```powershell
+# Windows
 Remove-Item -Recurse -Force "$env:USERPROFILE\.kata-home"; irm https://raw.githubusercontent.com/taurran/kataharness/master/install.ps1 | iex
 ```
-
 ```sh
-# POSIX — clean reinstall
+# macOS / Linux
 rm -rf ~/.kata-home && curl -fsSL https://raw.githubusercontent.com/taurran/kataharness/master/install.sh | sh
 ```
 
-### Start a run
+### ✖ Uninstall — remove KataHarness from a project/host
+Removes the flat-linked skills, the settings entry, and the router stanza from the **given** project. Run once
+per project you installed into (the harness keeps no registry of every target). Add `--yes` to skip the prompt.
 
-Restart your agent so it loads the skills, then begin a run (Claude Code shown):
+```powershell
+# Windows
+& "$env:USERPROFILE\.kata-home\uninstall.ps1" --platform claude --target-dir "C:\path\to\project" --yes
+```
+```sh
+# macOS / Linux
+sh ~/.kata-home/uninstall.sh --platform claude --target-dir /path/to/project --yes
+```
+> To remove the harness itself as well, follow up with the **wipe** command above
+> (`Remove-Item …\.kata-home` / `rm -rf ~/.kata-home`).
+
+---
+
+## Start a run
+
+Restart your agent so it loads the skills, then use a slash-command (Claude Code shown) — or just ask:
 
 ```text
-/kata-initiate     start a run (the front door)
-/kata-onboard      guided tour on an existing repo
-/kata-bootstrap    configure and launch a run
+/kata            show the command index
+/kata-start      start a run (the front door → kata-initiate)
+/kata-onboard    guided tour / convert an existing repo
+/kata-status     show the live run board
+/kata-resume     pick up a crashed or compacted run where it left off
+/kata-validate   run the skill-conformance validator
 ```
 
-…or just ask: **“Start a KataHarness run on `<your project>`.”** The installer prints these same next steps.
-
-### Notes
-
-- **Security:** `curl … | sh` and `irm … | iex` execute bytes as they stream — there is nothing to verify
-  until after it runs. Pin a known ref with the `KATA_REF` env var, or download-then-run to inspect first; see
-  [`docs/SETUP.md`](./docs/SETUP.md) for the full tradeoff and audit-friendly git-clone path.
-- **Windows symlinks:** without Developer Mode, the installer falls back to **copy-mode** (works fine; just
-  re-run `update.ps1` after each update to refresh copied skills). Detail in [`docs/SETUP.md`](./docs/SETUP.md).
+> **“Start a KataHarness run on `<your project>`.”** — plain English works too; the installer prints these same
+> next steps on success.
 
 ---
 
 ## Docs / status
 
-**Pre-v0.1, experimental.** The single-model Claude core is the proven path; multi-model routing and the
-Codex/Kiro adapters are partially built. Read next:
+**v0.1.0, experimental.** The single-model Claude core is the proven path; multi-model routing and the
+Codex/Kiro adapters are partially built; IaC *apply* is gated and not shipped runnable. Read next:
 
 - [`AGENTS.md`](./AGENTS.md) — the vision, the spine, how to work in the repo (canonical).
-- [`docs/SETUP.md`](./docs/SETUP.md) — install / update / overlay / factory-reset / uninstall in depth.
+- [`docs/SETUP.md`](./docs/SETUP.md) — install / update / overlay / factory-reset / uninstall in depth, plus the
+  `curl | sh` security tradeoff and the audit-friendly git-clone path.
 - [`docs/STANDARDS.md`](./docs/STANDARDS.md) — frontmatter, versioning, and naming conventions.
 
+> **Security note.** `curl … | sh` and `irm … | iex` execute bytes as they stream — there's nothing to verify
+> until after it runs. Pin a known ref with `KATA_REF`, or download-then-run to inspect first (see
+> [`docs/SETUP.md`](./docs/SETUP.md)). On Windows without Developer Mode, the installer falls back to copy-mode
+> (works fine; re-run `update` after each change to refresh copied skills).
+
 Built on Anthropic's long-running-agent harness guidance and the best of
-[mattpocock/skills](https://github.com/mattpocock/skills), GSD, BMAD, and DDD's ubiquitous language —
-attributed per skill in the `source` column. We stand on shoulders.
+[mattpocock/skills](https://github.com/mattpocock/skills), GSD, BMAD, and DDD's ubiquitous language — attributed
+per skill in the `source` column. We stand on shoulders.
