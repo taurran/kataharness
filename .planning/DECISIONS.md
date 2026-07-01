@@ -1848,3 +1848,39 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   all-`None` ⇒ today's behavior byte-for-byte. **W3-B gates:** pytest green (coverage test asserts every skill
   from `load_skills()` is in the map — count-agnostic, derives the set dynamically), validate 47/0 with A1 guard
   active, Snyk medium+ 0. Spec: `.planning/specs/model-tiering/{ASSESSMENT,DESIGN,PLAN}.md`.
+- **D132 — restore-hardening + continuous-replay + Claude slash-command surface (Option 2) — DECIDED 2026-06-30;
+  design PENDING (grill → freeze next session).** Does NOT supersede D131; it is the next initiative after v0.1.0
+  ships. Two read-only assessments were run on 2026-06-30, both confirmed before the v0.1.0 tag was pushed:
+  **(Assessment 1 — slash-command surface)** KataHarness ships **0** true Claude slash commands (the `/kata-*`
+  in the README are skills rendered with a slash prefix, not `.claude/commands/` files). Gap = **discoverability**
+  (a user typing `/` in the Claude UI sees nothing). Fix = a small set of THIN, pointer-only commands living in
+  `adapters/claude/commands/` that each simply route to an existing skill (DRY-by-pointer — no logic duplication).
+  Recommended 6 must-have: `/kata` (help/index — the one genuinely new artifact), `/kata-start` → kata-initiate,
+  `/kata-onboard` → kata-onboard, `/kata-resume` → kata-orient / kata-handoff, `/kata-status` → kata-board,
+  `/kata-validate` → kata-validate.
+  **(Assessment 2 — mid-build loss / restore)** State is held in a three-tier model (D81): durable git trail
+  (tier-2) commits only at task INTEGRATION, not mid-task; `.kata/state.json` (tier-3) is gitignored / disposable.
+  Self-handoff is NOT automatic — it is a skill the agent must consciously invoke at the ~0.40 prime-frame
+  threshold; `kata-orchestrate` never calls it in-loop; nothing enforces it. Result: planned restore = GOOD-but-
+  manual; **unplanned mid-task loss = POOR** (stale handoff, uncommitted work redone, recovery hint board.md is
+  gitignored); subagent-dies-mid-wave = MEDIUM-to-POOR. A `/kata-resume` command alone cannot fix three root gaps:
+  (Gap 1) no automatic pre-compaction checkpoint; (Gap 2) per-task-integration checkpoint granularity is too coarse
+  — mid-wave worker progress is lost; (Gap 3) in-flight task ownership is not durable (the `tasks{}` claim map
+  is in-memory / gitignored, so a fresh conductor cannot rebuild the frontier).
+  **Operator decision = Option 2 (close ALL gaps) PLUS a continuous-replay capability.** Full scope:
+  **(Adapter — Claude-only, never touches core):** the 6 thin pointer commands + a NEW helper installer (mirrors
+  `_flat_link_skills`, the 5 frozen engine fns stay byte-unchanged) + an **auto-handoff hook** wired via
+  `adapters/claude/settings.snippet.json` (Claude PreCompact-style hook fires `kata-selfhandoff`, writes + commits
+  a handoff artifact BEFORE auto-compaction) — closes Gap 1.
+  **(Core — careful; touches the loop spine + state protocol; new D-numbers required):** Gap 2 = mid-wave
+  checkpoint granularity — workers commit progress to their task branch as-they-go, not only at orchestrator
+  integration; Gap 3 = durable in-flight ownership — the `tasks{}` / board CLAIM map is persisted into the
+  git-committed tier-2 trail so a fresh conductor can rebuild the active frontier, not just the integrated task
+  list. **Continuous-replay:** a capability that saves loop progress CONTINUOUSLY as the loop executes (an
+  incremental checkpoint / event-log the loop appends to), so the run can be replayed/restored from near the
+  point of loss — this unifies and deepens Gaps 2 + 3 and is the SPINE of the restore-hardening, not a bolt-on.
+  Design questions that must be resolved before build: how the continuous-replay log is structured (event log?
+  append-only journal? where — committed vs gitignored?); how it reconciles with the three-tier model (replaces /
+  extends tier-3?); how mid-wave worker commits interact with the worktree / integration-branch model; what the
+  PreCompact hook writes + commits and whether it can finish before the window closes; adapter-vs-core boundary
+  for each piece. **★ FIRST ACTION next session: grill → freeze the design BEFORE any build.**

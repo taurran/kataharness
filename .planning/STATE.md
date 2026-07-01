@@ -1,12 +1,27 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.1
-milestone_name: milestone
-status: shipped
+milestone: v0.2
+milestone_name: restore-hardening + continuous-replay + slash-commands
+status: design-pending
 last_updated: "2026-06-30T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-06-30, SESSION END — v0.1.0 TAGGED + PUSHED · tip `365c7f1` in sync; pytest 2141 · validate 47/0
+> · Snyk medium+ 0):** Two read-only assessments ran this session after the v0.1.0 tag was pushed. Assessment 1
+> (slash-command surface): KataHarness ships 0 true Claude slash commands — the `/kata-*` names in the README are
+> skill aliases, not `.claude/commands/` files; gap = discoverability; fix = 6 thin pointer-only adapter commands
+> (DRY-by-pointer, adapter-only, never core). Assessment 2 (mid-build loss/restore): planned restore is GOOD-but-
+> manual; unplanned mid-task loss is POOR (gitignored tier-3, stale handoff, no automatic checkpoint); three root
+> gaps identified (Gap 1 = no auto pre-compaction checkpoint; Gap 2 = per-integration checkpoint too coarse; Gap 3
+> = in-flight ownership not durable in tier-2). **Operator decision = D132 Option 2: close ALL gaps + add
+> continuous-replay spine.** Scope: Adapter (6 slash-command pointers + installer + auto-handoff PreCompact hook
+> for Gap 1) + Core (Gap 2 mid-wave worker progress commits + Gap 3 durable CLAIM map in tier-2 + continuous-
+> replay event-log as the unified spine). **Design PENDING** — next session grills + freezes the design BEFORE
+> any build. Bump-on-modify is now ACTIVE (STANDARDS §3, flipped at v0.1.0): every skill modification requires a
+> semver bump (new capability → minor; fix → patch); new skills enter at 0.1.0. Working tree clean after handoff
+> commit. See `.planning/HANDOFF.md` + `.planning/NEXT-SESSION-ORIENTATION.md`. Records: `DECISIONS.md` D132.
 
 > **CURRENT (2026-06-30, v0.1 RELEASED — tag `v0.1.0`):** v0.1 cluster COMPLETE. All five items done,
 > committed, and pushed before tagging: **(1)** sprint-cadence D15/A5 fresh-context `kata-review` SHIP —

@@ -1,128 +1,109 @@
 ---
-date: 2026-06-30 (D131 model-tiering — SHIPPED + PUSHED commit `fac090b`, master in sync. Builds on D130 `8af2e37`. Final baseline: pytest 2126 pass / 2 skip / 0 fail · validate 47/0 WITH the A1 guard · Snyk medium+ 0.)
-branch: master — private remote github.com/taurran/kataharness, tip `fac090b` (D131 model-tiering — SHIPPED + PUSHED + in sync). The D131 spec docs (`.planning/specs/model-tiering/{ASSESSMENT,DESIGN,PLAN}.md`) are COMMITTED.
-green: validator 47 skills / 0 errors · pytest 2126 passed / 2 skip / 0 fail (WITH kata_models + A1-guard + roles tests) · Snyk medium+ 0 on new/changed Python (pre-existing `tools/kata_install.py` 17 LOW CWE-23 still below gate — STANDING hardening item)
-tags: model-tiering · D131 · relative-model-selection · anchor-differential · resolver-contract · R1-R8 · SHIPPED · v0.1-Claude-only-core
+date: 2026-06-30 (v0.1.0 TAGGED + PUSHED · tip `365c7f1` · two assessments run · D132 DECIDED · design PENDING)
+branch: master — private remote github.com/taurran/kataharness, tip `365c7f1` (v0.1.0 tag, tree clean)
+green: validator 47 skills / 0 errors · pytest 2141 passed / 2 skip / 0 fail · Snyk medium+ 0
+tags: v0.1.0 · D132 · restore-hardening · continuous-replay · slash-commands · design-pending · handoff
 authored-for: kata-orient (sections map to the orientation tiers)
-★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained). D131 is COMPLETE (commit `fac090b`, pushed master). Next = a series of new Kata Loop cycles over the backlog (toward v0.1). Two standing items: `kata_install.py` 17 LOW CWE-23 hardening; benchmark v1 n=0 → live with a real control fixture. The conductor grills/freezes/plans/executes each.
+★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained paste-ready). v0.1.0 is
+  TAGGED + PUSHED. Next initiative = D132 Option-2 restore-hardening + continuous-replay + slash-commands.
+  FIRST ACTION: grill → freeze the design BEFORE any build. Do NOT jump to build.
 ---
 
-> **★ 2026-06-30 (D131 model-tiering — SHIPPED + PUSHED `fac090b`, master in sync):** D131 makes model
-> selection **relative + mode-driven** — at dispatch, the model is resolved as a **differential off the operator's current
-> session model (the anchor)**, never a hard-baked `model:` ID. Built directly on **D130** (strip hard-coded `model:`
-> frontmatter — SHIPPED + PUSHED, commit `8af2e37`, master in sync). This session, ALL via subagents: adversarial dval
-> (HOLD, 3 blockers) + grounding research → synthesized into the resolved decision ledger **R1–R8** → freeze (DESIGN + PLAN
-> authored) → freeze-gate adversarial review (HOLD: 2 blockers + 1 major) → fixes applied → freeze re-confirmed (SHIP) →
-> build W1–W3 → integration gate → **LIVE PROOF passed** (D124 thesis confirmed live: LIVE PROOF + D98 adversarial sweep
-> caught two real defects that unit tests blessed — advanced/coding coder-floor not gated to essential; full-id anchor
-> silently disabling tiering) → commit `fac090b` pushed master. **Final baseline: pytest 2126 pass / 2 skip / 0 fail ·
-> validate 47/0 WITH the A1 guard · Snyk medium+ 0.** Spec docs (ASSESSMENT/DESIGN/PLAN) are **COMMITTED**. **Next: series
-> of new Kata Loop cycles over the backlog (toward v0.1).**
+> **★ 2026-06-30 (v0.1.0 SHIPPED · two assessments run · D132 DECIDED · design PENDING):** This session
+> completed the v0.1 hardening cluster (items 1–5: sprint-cadence D15/A5 review SHIP; wiring-completeness
+> interim pin; guard-consistency ValueError repo-wide; CWE-23 .snyk record; benchmark n=0→n=1 live), pushed
+> the v0.1.0 annotated tag at commit `365c7f1`, and ran two read-only assessments. **Assessment 1** revealed
+> KataHarness ships 0 true Claude slash commands; the 47 skills are aliases, not `.claude/commands/` files.
+> **Assessment 2** confirmed planned restore is GOOD-but-manual but unplanned mid-task loss is POOR (three
+> structural root gaps). **Operator decision = D132 Option 2** (close ALL gaps + continuous-replay). Design is
+> PENDING — next session grills + freezes before building. Bump-on-modify is now ACTIVE.
 
-# HANDOFF — KataHarness — 2026-06-30 (D131 model-tiering — SHIPPED + PUSHED `fac090b`)
-
-> **This session: ONE feature (D131 model-tiering), driven ENTIRELY through subagents, taken from grill to SHIPPED master.**
-> All waves (W1–W3) built and gated. Integration gate green; LIVE PROOF passed; D98 adversarial sweep caught and fixed two
-> real defects (advanced/coding coder-floor not gated to essential; full-id anchor silently disabling tiering); committed
-> `fac090b` + pushed master. **Final baseline: pytest 2126 pass / 2 skip / 0 fail · validate 47/0 WITH the A1 guard · Snyk
-> medium+ 0.** Spec docs committed. Next: series of new Kata Loop cycles over the backlog (toward v0.1). Drive every step
-> via subagents. Commit/merge/push ONLY on explicit operator approval.
+# HANDOFF — KataHarness — 2026-06-30 (v0.1.0 · D132 DECIDED · design PENDING)
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
 **★ Context-lean rule: do NOT inline-read STATE.md or AGENTS.md.** Resume from:
-1. `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained, paste-able) · 2. `.planning/BACKLOG.md` (the current queue of
-   work toward v0.1; this is the primary next-action source now that D131 is complete) · 3. `.planning/specs/model-tiering/
-   DESIGN.md` + `PLAN.md` (COMMITTED — reference only if backlog work touches the model-tiering contracts).
-- If deeper context is genuinely needed: `.planning/specs/model-tiering/ASSESSMENT.md` (pre-grill input), STATE.md TOP
-  box only, `CLAUDE.md` (the D59 relative-routing note D131 implements).
-⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated, harness-injected). "mindbridge" in any public-facing text = KataHarness.
+1. `.planning/NEXT-SESSION-ORIENTATION.md` — paste-ready self-contained brief for the D132 initiative.
+2. `.planning/DECISIONS.md` D132 entry — the full assessment conclusions + Option-2 scope.
+3. `protocol/state.md` — the three-tier state model (D81) the restore-hardening extends.
+4. `adapters/claude/` — the existing Claude adapter directory (commands will land here).
+5. `tools/kata_install.py` — the 5 frozen engine fns (`_flat_link_skills` etc.); read to confirm they are
+   BYTE-UNCHANGED after any installer additions.
+- If deeper context is genuinely needed: `skills/coordinate/kata-orchestrate/SKILL.md` (steps 4–5 + final gate,
+  the loop spine the continuous-replay log threads through); `skills/handoff/kata-selfhandoff/SKILL.md` (the
+  auto-handoff hook will fire this); `protocol/config.md` (the `kata.config` schema the hook wires into);
+  `.planning/BACKLOG.md` (any items that interact with the restore-hardening scope).
+- ⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated). "mindbridge" in public-facing text = KataHarness.
 
-## 2. State *(orientation: VOLATILE)*
-- Branch `master`, tip **`fac090b`** (D131 SHIPPED + PUSHED + in sync). **47 skills / 0 · pytest 2126 pass / 2 skip / 0 fail · Snyk med+ 0.**
-  `kata_install.py` carries **17 LOW CWE-23** (operator-supplies-own-path class, below the medium+ gate → STANDING item).
-- The D131 spec docs in `.planning/specs/model-tiering/` (`ASSESSMENT.md`, `DESIGN.md`, `PLAN.md`) are **COMMITTED** (commit `fac090b`).
-- **LOOP POSITION:** D131 **COMPLETE**. Design FROZEN; freeze re-confirmed SHIP; build W1–W3 executed; integration gate
-  green; LIVE PROOF passed; D98 adversarial sweep passed (caught and fixed 2 real defects — see block quote above);
-  committed + pushed master. Next = series of new Kata Loop cycles over the backlog.
-- **Two standing items:** (a) `kata_install.py` 17 LOW CWE-23 hardening (operator-supplies-own-path, CWE-23); (b) benchmark
-  v1 n=0 → live with a real control fixture (n=0 means the benchmark is wired but not yet exercised with a real run).
+## 2. State  *(orientation: VOLATILE)*
+- Branch `master`, annotated tag **`v0.1.0`** at commit **`365c7f1`** (PUSHED, in sync). Working tree CLEAN.
+- **Baseline: pytest 2141 passed / 2 skip / 0 fail · validate 47 skills / 0 errors · Snyk medium+ 0.**
+  Pre-existing `tools/kata_install.py` 17 LOW CWE-23 (operator-supplies-own-path class, below the medium+ gate)
+  — STANDING hardening item, unchanged.
+- **LOOP POSITION:** v0.1.0 COMPLETE. Two assessments run (read-only, no code changes). D132 DECIDED.
+  Design PENDING — the grill / freeze / plan loop has NOT started yet.
+- **Bump-on-modify now ACTIVE** (STANDARDS §3): every skill edit requires a semver bump (minor for new
+  capability; patch for a fix). New skills enter at 0.1.0.
+- Confirm green before any work: `uv run --with pyyaml python tools/validate_skills.py` → expect 47/0.
 
-## 3. NEXT ACTION — series of new Kata Loop cycles over the backlog *(VOLATILE)*
-**D131 is COMPLETE** (commit `fac090b`, pushed master). The next work is a series of new Kata Loop cycles over the
-backlog toward v0.1. See `.planning/BACKLOG.md` for the current queue. For each item: the conductor grills / freezes /
-plans / executes (subagents only). Two standing items to work in at appropriate points: (a) `kata_install.py` 17 LOW
-CWE-23 hardening; (b) benchmark v1 n=0 → live with a real control fixture. Commit/merge/push ONLY on explicit operator
-approval (does NOT carry across contexts — re-ask each session).
+## 3. What shipped  *(orientation: VOLATILE — recent history)*
+**v0.1 hardening cluster (D131 model-tiering → tag v0.1.0):**
+- D131 model-tiering (`fac090b`): relative model-selection resolver; A1 guard; R1–R8 locked; LIVE PROOF passed;
+  D98 adversarial sweep caught + fixed 2 real defects. Final baseline at D131: pytest 2126/2/0 · validate 47/0.
+- v0.1 cluster (5 items, committed before `365c7f1` tag): sprint-cadence D15/A5 review → SHIP; wiring-
+  completeness interim pin; guard-consistency ValueError repo-wide; CWE-23 .snyk record; benchmark n=0→n=1 live.
+  Bumped baseline to pytest 2141/2/0.
+- v0.1.0 annotated tag pushed. Versioning policy flipped: bump-on-modify ACTIVE.
 
-## 4. RESOLVED DECISION LEDGER (R1–R8) + the resolver contract — carry VERBATIM *(the zero-re-derivation core)*
-- **R1 (coder-floor):** invariant `essential-coding ≤ standard-coding ≤ anchor` for every anchor; `coder_floor` raises a
-  tier only when `floor_index ≤ anchor_index−1`. The −2 win lands at a fable/top anchor (→sonnet); opus/sonnet/haiku
-  collapse to ==standard or ==anchor, never invert. Unit-tested as a full anchor×mode matrix.
-- **R2 (fallback):** never string-match the error; ANY dispatch failure on a **NON-INHERITED** model steps down, EXCEPT
-  HTTP **401/403** (auth/quota) which RAISE (never silent-downgrade on billing). Terminus = **OMIT** the model param (host
-  default), NEVER inherit-anchor. **≤2 step-downs** then omit.
-- **R3 (BC):** omitting Agent `model` inherits the session model — CONFIRMED for the Claude host (v0.1 Claude-only core).
-  Byte-for-byte BC grounded for the built path; other hosts scoped to adapters.
-- **R4 (ladder):** family ladders are **PLAIN STRING lists**, not alias lists. Anthropic = `[haiku, sonnet, opus, fable,
-  mythos]`. fable & mythos are DISTINCT models (mythos = higher, gated for most accounts → the natural live-fallback test).
-  Exact IDs (`claude-haiku-4-5`, `claude-sonnet-4-6`, `claude-opus-4-8`, `claude-fable-5`, `claude-mythos-5`) are **DATA
-  verified at build**; OpenAI/Gemini = ladder shape only, IDs re-pulled at build.
-- **R5 (work-class coverage):** the work-class map must EXPLICITLY classify ALL loaded skills (`skills/` + the 3 `modules/`
-  skills; ~47 total via `load_skills`) as `critical|coding|economy`. `unknown→critical` is the safe default for
-  genuinely-new skills only.
-- **R6 (architecture):** family ladders = **DATA registry** inside core `tools/kata_models.py` (data, not provider logic),
-  extensible via `kata.config.models`. Deliberate v0.1 decision (precedent: `kata_dispatch` carries codex/kiro in core).
-  NOT an adapter indirection.
-- **R7 (anchor):** anchor = **operator session model**. Zero-step cells inherit by omission (`None`) — always current,
-  immune to staleness AND a gated top rung. Only below-anchor cells need the anchor NAME (from `kata.config.models.anchor`,
-  default = platform latest top rung). Stale anchor only mis-tiers economy COST, never critical correctness.
-  Bootstrap/initiate sets/confirms it.
-- **R8 (guard + minors):** validator A1 hard-fail scoped to **`SKILL.md` frontmatter ONLY** (adapters/config MAY pin).
-  Fallback cap **≤2**. essential "other economy" = anchor−1 (==standard) per the operator's locked table; essential's
-  savings come from critical→anchor−1 + coding→anchor−2-floored.
+**Two assessments (read-only, no code changes, same session as tag):**
+- Assessment 1 (slash-command surface): confirmed 0 true slash commands; 6 pointer-only adapter commands
+  recommended.
+- Assessment 2 (mid-build loss/restore): three root gaps identified (no auto checkpoint; coarse per-integration
+  granularity; gitignored in-flight ownership). Operator chose Option 2.
 
-**★ CRITICAL RESOLVER CONTRACT (the freeze-gate fix — MUST hold):** `resolve()` returns **`None`** (=OMIT → inherit anchor
-by omission) whenever resolved rung index **== anchor_index**; returns an explicit **id string ONLY** for a rung **strictly
-BELOW** the anchor. The determinant is **STEP-COUNT** (step==0 → `None`; step<0 → explicit id), **NOT work-class**. So
-**essential-critical (=anchor−1) returns an explicit id**; **advanced cells + standard-critical return `None`**.
+## 4. NEXT STEP — in order  *(VOLATILE — act on this)*
+**D132 Option-2 design loop — DO NOT jump to build.**
 
-**MODE→MODEL TABLE** (columns: critical / non-critical-coding / other-economy):
-- advanced  = anchor / anchor / anchor
-- standard  = anchor / anchor−1 / anchor−1
-- essential = anchor−1 / anchor−2 (coder-floored) / anchor−1
+1. **Re-load context** — read this file top-to-bottom + `NEXT-SESSION-ORIENTATION.md`. Confirm green numbers.
+2. **Grill the D132 design** — run `kata-grill` (or equivalent at Opus) against the Option-2 scope. Resolve the
+   open design questions listed in `DECISIONS.md` D132 (continuous-replay log structure; tier-3 reconciliation;
+   mid-wave worker commit / worktree interaction; PreCompact hook timing; adapter-vs-core boundary per piece).
+3. **Author the DESIGN doc** — freeze the architecture into `.planning/specs/restore-hardening/DESIGN.md`.
+4. **Freeze-gate** — `kata-review` (fresh context, adversarial) on the DESIGN doc. HOLD → fix → SHIP before
+   the PLAN is authored.
+5. **Author the PLAN doc** — wave DAG + disjoint file-ownership map + operator-approval gate points.
+6. Only after a SHIP freeze-gate: begin the build loop (subagents, disjoint ownership, TDD, integration gate,
+   LIVE PROOF, D98 adversarial sweep, operator merge gate).
+7. Every skill modification requires a version bump (bump-on-modify ACTIVE). The 5 frozen `kata_install.py`
+   engine fns stay BYTE-UNCHANGED. Adapter pieces (commands / hook) live only in `adapters/claude/`; core pieces
+   (gaps 2/3 + replay spine) get new D-numbers.
 
-## 5. THE BUILD WAVE DAG (from PLAN.md — SHIPPED commit `fac090b`) *(historical record — D131 COMPLETE)*
-- **W1 (parallel, disjoint OWNS):**
-  - **W1-A** `tools/kata_models.py` + `tools/tests/test_kata_models.py` — resolver, ladders, `fallback_chain`, R1 matrix test.
-  - **W1-B** `tools/validate_skills.py` + `tools/tests/test_validate_model_guard.py` + `docs/STANDARDS.md` — the A1 guard.
-  - **W1-C** `update.ps1` — bare `exit`→`throw`/`$global:LASTEXITCODE` (the same `iex` bug as `install.ps1`).
-  - **W1-D** `protocol/config.md` — the `kata.config.models` schema.
-- **W2 (needs W1-A / W1-D):**
-  - **W2-A** `tools/kata_roles.py` + tests — relative tokens.
-  - **W2-B** `skills/coordinate/kata-orchestrate/SKILL.md` — dispatch + ≤2-fallback wiring + prose rework.
-  - **W2-C** `skills/coordinate/kata-bootstrap/SKILL.md` + `modules/initiation/kata-initiate/SKILL.md` — anchor-write.
-- **W3:**
-  - **W3-A** `skills/meta/kata-write-skill/SKILL.md` — authoring note.
-  - **W3-B** `.planning/DECISIONS.md` (D131) + the work-class-map region of `kata_models.py` (sequenced AFTER W1-A merges;
-    coverage test in `test_kata_models.py`).
-- **GATES — PASSED:** integration gate (pytest 2126/2/0 · validate **47/0 WITH the A1 guard** · Snyk medium+ 0) ✓ →
-  **LIVE PROOF** ✓ → D98 adversarial sweep ✓ (caught + fixed 2 real defects: advanced/coding coder-floor not gated to
-  essential; full-id anchor silently disabling tiering) → operator merge gate ✓ → checkpoint committed `fac090b`.
+## 5. Suggested next skills  *(orientation: CONTEXT)*
+- `kata-grill` or `kata-grill-advanced` — to open the D132 design loop (the first action).
+- `kata-orient` — to fully re-anchor context from HANDOFF + ORIENTATION on session resume.
+- `kata-design-doc` — to author the DESIGN spec once grilling resolves the open questions.
+- `kata-review` — for the freeze-gate adversarial pass on the DESIGN doc.
+- `kata-plan-advanced` or `kata-plan-standard` — to author the PLAN from the frozen DESIGN.
 
-## 6. STANDING CONSTRAINTS (must persist) *(orientation: HARD RULES)*
-- **Drive EVERY step via subagents** — the conductor judges liveness by **disk progress** (the diff growing), NOT a process
-  snapshot. Resume a finished subagent via `SendMessage(agentId)`.
-- **Commit / merge / push ONLY on explicit operator approval** — this does NOT carry across contexts; re-ask each session.
-- **Snyk** on all new/changed first-party Python; fix + rescan until clean.
-- Repo is **PRIVATE**; no secrets / PII. "mindbridge" in public-facing text = KataHarness.
-- **The install/materialize/shadow path is STDLIB-ONLY** — never import `yaml` there (and never import `validate_skills`,
-  which imports yaml).
-- The **5 frozen `kata_install.py` engine functions stay BYTE-UNCHANGED** and never run git.
-- Run `validate_skills.py --write` centrally BEFORE pytest when a skill/version changed (README-sync; README is
-  conductor/validator-owned).
-- **Decisions are SUPERSEDED with new D-numbers, never rewritten** (preserve provenance with dated notes).
-- ⚠️ **Context-lean:** do NOT inline-read STATE.md / AGENTS.md; resume from DESIGN.md + PLAN.md + the orientation, drive via
-  subagents.
+## 6. Open decisions for the human
+These must be resolved in the grill session before the DESIGN is frozen:
+
+1. **Continuous-replay log format:** event log (one record per loop step)? append-only structured journal?
+   or a rolling checkpoint file? Which format makes replay and restore cheapest to implement and verify?
+2. **Tier reconciliation:** does the replay log live in tier-2 (git-committed, durable) or tier-3 (gitignored,
+   disposable)? If tier-2, how does frequent appending interact with the commit trail? Is a new "tier-2.5"
+   (committed-but-ephemeral replay file, squashed at task integration) the right model?
+3. **Mid-wave worker commit model:** when workers commit progress as-they-go, do they commit to their
+   task-branch directly, or to a separate progress-branch the conductor merges? How does this interact with the
+   existing disjoint-ownership / worktree model?
+4. **PreCompact hook timing:** the Claude PreCompact hook fires just before auto-compaction. Can
+   `kata-selfhandoff` write + commit a valid handoff artifact within that window? What is the minimal artifact
+   that is useful even if incomplete?
+5. **Adapter-vs-core boundary for each piece:** are the command-installer additions truly adapter-only (no core
+   change), or do they require a new install-registration protocol? Does the auto-handoff hook live purely in
+   `adapters/claude/settings.snippet.json`, or does it need a core pre-compaction seam?
+6. **DRY-by-pointer contract for the 6 commands:** how thin is thin? Should each command file contain only a
+   literal skill invocation line, or may it carry a brief usage hint? What is the right format for
+   `.claude/commands/` files that routes reliably to a KataHarness skill?
 
 ## 7. Redaction
-No secrets / keys / PII in any artifact this session. Repo is PRIVATE. Nothing to redact.
+No secrets / keys / PII in any artifact this session. Repo is PRIVATE. Working tree clean. Nothing to redact.
