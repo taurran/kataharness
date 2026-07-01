@@ -1,12 +1,24 @@
 ---
 gsd_state_version: 1.0
 milestone: v0.2
-milestone_name: restore-hardening + continuous-replay + slash-commands
-status: design-pending
-last_updated: "2026-06-30T00:00:00.000Z"
+milestone_name: restore-hardening (durable board + auto-checkpoint + task-granular restore) + /kata commands
+status: shipped
+last_updated: "2026-07-01T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-01, SESSION END — restore-hardening SHIPPED + MERGED to master · tip `16007f7` in sync ·
+> pytest 2170 passed / 3 skip / 2 integration-deselected · validate 47/0 · Snyk medium+ 0):** The D132 Option-2
+> restore-hardening initiative was designed (3-pass adversarial freeze-gate), built (Increments A + B), and
+> MERGED to master via **PR #1** (`0bc2a0e`). A recurrence-hardening guard (**D136**) and a salesy README refresh
+> (**PR #2**, `16007f7`) also merged. Decisions **D133** (recovery-ref git carve-out), **D134** (task-granular
+> re-dispatch), **D135** (board-is-the-trail; supersedes D132's continuous-replay-SPINE scope), **D136**
+> (silent-permissive-default guard, D33 never-tiered family) all recorded; D132 un-edited. Working tree clean,
+> everything pushed. **No next initiative is chosen yet** — see `.planning/HANDOFF.md` §4/§6 for the open options.
+> The one real-world unknown is live-proof #2 (does Claude's PreCompact hook fire synchronously? — confirmable
+> only in a live session; if not, Gaps 2/3 still close via the integration-cadence checkpoint). *(Prior CURRENT
+> block below is superseded history.)*
 
 > **CURRENT (2026-06-30, SESSION END — v0.1.0 TAGGED + PUSHED · tip `365c7f1` in sync; pytest 2141 · validate 47/0
 > · Snyk medium+ 0):** Two read-only assessments ran this session after the v0.1.0 tag was pushed. Assessment 1

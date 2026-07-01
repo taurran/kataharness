@@ -1,109 +1,96 @@
 ---
-date: 2026-06-30 (v0.1.0 TAGGED + PUSHED · tip `365c7f1` · two assessments run · D132 DECIDED · design PENDING)
-branch: master — private remote github.com/taurran/kataharness, tip `365c7f1` (v0.1.0 tag, tree clean)
-green: validator 47 skills / 0 errors · pytest 2141 passed / 2 skip / 0 fail · Snyk medium+ 0
-tags: v0.1.0 · D132 · restore-hardening · continuous-replay · slash-commands · design-pending · handoff
-authored-for: kata-orient (sections map to the orientation tiers)
-★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained paste-ready). v0.1.0 is
-  TAGGED + PUSHED. Next initiative = D132 Option-2 restore-hardening + continuous-replay + slash-commands.
-  FIRST ACTION: grill → freeze the design BEFORE any build. Do NOT jump to build.
+date: 2026-07-01 (restore-hardening SHIPPED + MERGED to master · tip `16007f7` · no next initiative chosen)
+branch: master — private remote github.com/taurran/kataharness, tip `16007f7` (tree clean, everything pushed)
+green: validator 47 skills / 0 errors · pytest 2170 passed / 3 skip / 2 integration-deselected / 0 fail · Snyk medium+ 0
+tags: v0.1.0 · restore-hardening · D133-D136 · /kata-commands · readme-refresh · SHIPPED · handoff
+authored-for: a fresh coding-agent window (sections map to the kata-orient tiers)
+★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained, paste-ready). The big
+  restore-hardening initiative is DONE + merged. There is NO forced next build — re-anchor, confirm green, then
+  pick the next initiative WITH the operator (options in §4/§6). Do NOT start a build without operator direction.
 ---
 
-> **★ 2026-06-30 (v0.1.0 SHIPPED · two assessments run · D132 DECIDED · design PENDING):** This session
-> completed the v0.1 hardening cluster (items 1–5: sprint-cadence D15/A5 review SHIP; wiring-completeness
-> interim pin; guard-consistency ValueError repo-wide; CWE-23 .snyk record; benchmark n=0→n=1 live), pushed
-> the v0.1.0 annotated tag at commit `365c7f1`, and ran two read-only assessments. **Assessment 1** revealed
-> KataHarness ships 0 true Claude slash commands; the 47 skills are aliases, not `.claude/commands/` files.
-> **Assessment 2** confirmed planned restore is GOOD-but-manual but unplanned mid-task loss is POOR (three
-> structural root gaps). **Operator decision = D132 Option 2** (close ALL gaps + continuous-replay). Design is
-> PENDING — next session grills + freezes before building. Bump-on-modify is now ACTIVE.
+> **★ 2026-07-01 (restore-hardening SHIPPED):** This session designed (3-pass adversarial freeze-gate), built
+> (Increments A + B), and MERGED the D132 Option-2 restore-hardening initiative to master (**PR #1**, `0bc2a0e`),
+> then shipped a recurrence-hardening guard (**D136**) and a salesy README refresh (**PR #2**, `16007f7`).
+> Everything is committed, pushed, and green. The loop caught + fixed **4 silent-under-dispatch bugs** across the
+> build that the passing tests had blessed — all via fresh-context adversarial sweeps (the D124/D136 discipline
+> proving itself live). No next initiative is chosen.
 
-# HANDOFF — KataHarness — 2026-06-30 (v0.1.0 · D132 DECIDED · design PENDING)
+# HANDOFF — KataHarness — 2026-07-01 (restore-hardening SHIPPED · pick next initiative)
 
 ## 1. Read-in order  *(orientation: CONTEXT)*
-**★ Context-lean rule: do NOT inline-read STATE.md or AGENTS.md.** Resume from:
-1. `.planning/NEXT-SESSION-ORIENTATION.md` — paste-ready self-contained brief for the D132 initiative.
-2. `.planning/DECISIONS.md` D132 entry — the full assessment conclusions + Option-2 scope.
-3. `protocol/state.md` — the three-tier state model (D81) the restore-hardening extends.
-4. `adapters/claude/` — the existing Claude adapter directory (commands will land here).
-5. `tools/kata_install.py` — the 5 frozen engine fns (`_flat_link_skills` etc.); read to confirm they are
-   BYTE-UNCHANGED after any installer additions.
-- If deeper context is genuinely needed: `skills/coordinate/kata-orchestrate/SKILL.md` (steps 4–5 + final gate,
-  the loop spine the continuous-replay log threads through); `skills/handoff/kata-selfhandoff/SKILL.md` (the
-  auto-handoff hook will fire this); `protocol/config.md` (the `kata.config` schema the hook wires into);
-  `.planning/BACKLOG.md` (any items that interact with the restore-hardening scope).
-- ⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated). "mindbridge" in public-facing text = KataHarness.
+**★ Context-lean rule: do NOT inline-read STATE.md (1000+ lines) or AGENTS.md wholesale.** Resume from:
+1. `.planning/NEXT-SESSION-ORIENTATION.md` — paste-ready self-contained brief (current state + the open options).
+2. `.planning/BACKLOG.md` — the candidate next-work list (v0.1.x deferrals #6–#13, restore follow-ups #14–#16,
+   scheduled builds). This is where the next initiative comes from.
+3. `.planning/DECISIONS.md` — skim the tail (D131 model-tiering → D136 silent-permissive-default). D133/D134/D135
+   are the restore-hardening rulings; **D136** is the new never-tiered guard every future build must obey.
+4. `.planning/specs/restore-hardening/{DESIGN,PLAN}.md` — the frozen spec, if touching restore code.
+- If deeper context is genuinely needed: `AGENTS.md` (the spine + conventions), `protocol/state.md` (three-tier
+  state D81), `README.md` (the just-refreshed landing page — honest-maturity claims; do not re-inflate them).
+- ⚠️ Ignore `C:\Dev\CLAUDE.md` (Mise — unrelated). Follow `AGENTS.md` + repo `CLAUDE.md` only.
 
 ## 2. State  *(orientation: VOLATILE)*
-- Branch `master`, annotated tag **`v0.1.0`** at commit **`365c7f1`** (PUSHED, in sync). Working tree CLEAN.
-- **Baseline: pytest 2141 passed / 2 skip / 0 fail · validate 47 skills / 0 errors · Snyk medium+ 0.**
-  Pre-existing `tools/kata_install.py` 17 LOW CWE-23 (operator-supplies-own-path class, below the medium+ gate)
-  — STANDING hardening item, unchanged.
-- **LOOP POSITION:** v0.1.0 COMPLETE. Two assessments run (read-only, no code changes). D132 DECIDED.
-  Design PENDING — the grill / freeze / plan loop has NOT started yet.
-- **Bump-on-modify now ACTIVE** (STANDARDS §3): every skill edit requires a semver bump (minor for new
-  capability; patch for a fix). New skills enter at 0.1.0.
-- Confirm green before any work: `uv run --with pyyaml python tools/validate_skills.py` → expect 47/0.
+- Branch `master`, tip **`16007f7`** (merge of PR #2). **Everything pushed, working tree CLEAN.** Tag `v0.1.0`
+  stands at `365c7f1`.
+- **Green: pytest 2170 passed / 3 skip / 0 fail · validate 47 skills / 0 errors · Snyk medium+ 0.**
+  - ⚠️ **2 tests are `@pytest.mark.integration` and FAIL in an offline sandbox** (`test_benchmark.py::TestRunDualGateCwd::test_importing_fixture_gives_q_one` + `::TestDurableF2PProof::test_f2p_zero_to_one_transition`). Root cause: they spawn `uv run pytest` over a temp clone, which cannot build an ephemeral env offline. They PASS with network/uv available. Run the honest gate with `-m "not integration"`. NOT a regression.
+  - Pre-existing `kata_install.py` LOW CWE-23 (operator-supplies-own-path) stays below the medium+ gate (`.snyk`).
+- **Run tests via the repo venv:** `tools/.venv/Scripts/python.exe -m pytest tools/tests -q -m "not integration"`
+  (bare `python` / `uv run` are NOT reliable offline here). Validator: `... -m validate_skills` (add `--write` to regen the README index).
+- **Bump-on-modify is ACTIVE** (STANDARDS §3): every SKILL.md edit needs a semver bump. Editing a shared
+  `RUBRIC.md` needs NO peer bump (verified: the validator does not flag it). New skills enter at 0.1.0.
+- **★ D136 is now a LOAD-BEARING build rule** (see §4 hard rules).
 
 ## 3. What shipped  *(orientation: VOLATILE — recent history)*
-**v0.1 hardening cluster (D131 model-tiering → tag v0.1.0):**
-- D131 model-tiering (`fac090b`): relative model-selection resolver; A1 guard; R1–R8 locked; LIVE PROOF passed;
-  D98 adversarial sweep caught + fixed 2 real defects. Final baseline at D131: pytest 2126/2/0 · validate 47/0.
-- v0.1 cluster (5 items, committed before `365c7f1` tag): sprint-cadence D15/A5 review → SHIP; wiring-
-  completeness interim pin; guard-consistency ValueError repo-wide; CWE-23 .snyk record; benchmark n=0→n=1 live.
-  Bumped baseline to pytest 2141/2/0.
-- v0.1.0 annotated tag pushed. Versioning policy flipped: bump-on-modify ACTIVE.
+**PR #1 (`0bc2a0e`) — restore-hardening (D132 Option 2, lean scope):**
+- Increment A (`8a020e2`): 6 pointer-only `/kata` slash-commands (`adapters/claude/commands/`) + additive
+  `_flat_link_commands`/`_link_or_copy_file` installer (5 frozen `kata_install.py` engine fns byte-identical;
+  `.kata-commands.json` manifest; never clobbers a user's own command file).
+- Increment B (`0e160c2`): `tools/kata_trail.py` (durable board → orphan ref `refs/kata/trail`, git-plumbing only,
+  fail-soft) · `kata-orchestrate` step-5 integration-cadence checkpoint + `Kata-Task:<id>` trailer (→0.3.0) ·
+  `tools/kata_restore.py` task-granular restore (re-dispatch = frozen-PLAN-ownership MINUS integration-committed;
+  tier-2 authoritative for DONE; board corroborates, never gates) · `kata-orient`/`kata-readiness` restore prose
+  (→0.2.0) · PreCompact auto-checkpoint hook (`adapters/claude/hooks/kata-precompact.py`).
+- Decisions D133 (recovery-ref git carve-out), D134 (task-granular re-dispatch), D135 (board-is-the-trail).
 
-**Two assessments (read-only, no code changes, same session as tag):**
-- Assessment 1 (slash-command surface): confirmed 0 true slash commands; 6 pointer-only adapter commands
-  recommended.
-- Assessment 2 (mid-build loss/restore): three root gaps identified (no auto checkpoint; coarse per-integration
-  granularity; gitignored in-flight ownership). Operator chose Option 2.
+**`70542a0` — D136 silent-permissive-default guard** (D33 never-tiered family): prose guards in `kata-tdd`
+(→0.1.1) + `kata-review` RUBRIC. Baked from the session's dominant error pattern.
+
+**PR #2 (`16007f7`) — README salesy refresh:** landing-page rewrite (standout features + explicit per-platform
+install/update/factory-reset/wipe/uninstall lifecycle). A fresh-context accuracy pass caught + fixed 3 over-claims.
 
 ## 4. NEXT STEP — in order  *(VOLATILE — act on this)*
-**D132 Option-2 design loop — DO NOT jump to build.**
-
-1. **Re-load context** — read this file top-to-bottom + `NEXT-SESSION-ORIENTATION.md`. Confirm green numbers.
-2. **Grill the D132 design** — run `kata-grill` (or equivalent at Opus) against the Option-2 scope. Resolve the
-   open design questions listed in `DECISIONS.md` D132 (continuous-replay log structure; tier-3 reconciliation;
-   mid-wave worker commit / worktree interaction; PreCompact hook timing; adapter-vs-core boundary per piece).
-3. **Author the DESIGN doc** — freeze the architecture into `.planning/specs/restore-hardening/DESIGN.md`.
-4. **Freeze-gate** — `kata-review` (fresh context, adversarial) on the DESIGN doc. HOLD → fix → SHIP before
-   the PLAN is authored.
-5. **Author the PLAN doc** — wave DAG + disjoint file-ownership map + operator-approval gate points.
-6. Only after a SHIP freeze-gate: begin the build loop (subagents, disjoint ownership, TDD, integration gate,
-   LIVE PROOF, D98 adversarial sweep, operator merge gate).
-7. Every skill modification requires a version bump (bump-on-modify ACTIVE). The 5 frozen `kata_install.py`
-   engine fns stay BYTE-UNCHANGED. Adapter pieces (commands / hook) live only in `adapters/claude/`; core pieces
-   (gaps 2/3 + replay spine) get new D-numbers.
+**There is NO forced next build. The restore-hardening initiative is complete + merged.**
+1. **Re-anchor** — read this file + `NEXT-SESSION-ORIENTATION.md`. Confirm green (`-m "not integration"`).
+2. **Pick the next initiative WITH the operator** — do NOT assume one. Present the §6 options and let the operator
+   steer. The strongest candidates (operator's call): (a) **live-proof #2** — verify the PreCompact hook actually
+   fires in a real Claude session (the one unproven seam; only confirmable live); (b) **restore follow-ups
+   #14–#16** (safe-direction polish); (c) a **v0.1.x deferral** (#6–#13, e.g. Debug Mode live run, benchmark→improve
+   hook); (d) the **wiring-completeness full build** (scheduled) or the **second-brain-learning** spec (D99).
+3. **When a build is chosen** — run the full loop: grill → freeze DESIGN → adversarial freeze-gate (HOLD→SHIP) →
+   PLAN → subagent build (disjoint ownership, TDD, LIVE PROOF) → fresh-context adversarial sweep → operator merge
+   gate. **Drive via subagents** (Sonnet build / Opus judgment); the fresh-context sweep is non-negotiable.
 
 ## 5. Suggested next skills  *(orientation: CONTEXT)*
-- `kata-grill` or `kata-grill-advanced` — to open the D132 design loop (the first action).
-- `kata-orient` — to fully re-anchor context from HANDOFF + ORIENTATION on session resume.
-- `kata-design-doc` — to author the DESIGN spec once grilling resolves the open questions.
-- `kata-review` — for the freeze-gate adversarial pass on the DESIGN doc.
-- `kata-plan-advanced` or `kata-plan-standard` — to author the PLAN from the frozen DESIGN.
+- `kata-orient` — re-anchor from HANDOFF + ORIENTATION on resume.
+- `kata-grill-standard` / `-advanced` — to open a design loop once the next initiative is chosen.
+- `kata-design-doc` → `kata-review` (freeze-gate) → `kata-plan-*` → `kata-orchestrate` — the build spine.
+- `/kata-resume` (or `kata-orient`) — if a run was interrupted, this now restores it (the feature just shipped).
 
 ## 6. Open decisions for the human
-These must be resolved in the grill session before the DESIGN is frozen:
-
-1. **Continuous-replay log format:** event log (one record per loop step)? append-only structured journal?
-   or a rolling checkpoint file? Which format makes replay and restore cheapest to implement and verify?
-2. **Tier reconciliation:** does the replay log live in tier-2 (git-committed, durable) or tier-3 (gitignored,
-   disposable)? If tier-2, how does frequent appending interact with the commit trail? Is a new "tier-2.5"
-   (committed-but-ephemeral replay file, squashed at task integration) the right model?
-3. **Mid-wave worker commit model:** when workers commit progress as-they-go, do they commit to their
-   task-branch directly, or to a separate progress-branch the conductor merges? How does this interact with the
-   existing disjoint-ownership / worktree model?
-4. **PreCompact hook timing:** the Claude PreCompact hook fires just before auto-compaction. Can
-   `kata-selfhandoff` write + commit a valid handoff artifact within that window? What is the minimal artifact
-   that is useful even if incomplete?
-5. **Adapter-vs-core boundary for each piece:** are the command-installer additions truly adapter-only (no core
-   change), or do they require a new install-registration protocol? Does the auto-handoff hook live purely in
-   `adapters/claude/settings.snippet.json`, or does it need a core pre-compaction seam?
-6. **DRY-by-pointer contract for the 6 commands:** how thin is thin? Should each command file contain only a
-   literal skill invocation line, or may it carry a brief usage hint? What is the right format for
-   `.claude/commands/` files that routes reliably to a KataHarness skill?
+**The only open decision is: what to build next.** Candidates (from BACKLOG; none is forced):
+1. **Live-proof #2 (recommended first):** confirm the PreCompact hook fires synchronously with a usable budget in
+   a real Claude Code session. This is the single unproven seam of the shipped restore feature; if it does NOT
+   fire as assumed, Gaps 2/3 still close via the integration-cadence checkpoint (so it degrades safely), but the
+   compaction-window floor of Gap 1 would need a different trigger. Only confirmable live.
+2. **Restore follow-ups #14–#16:** fork-point same-commit edge; nested-`waves` value guard; restore degraded-mode
+   structured signal. All safe-direction (over-dispatch / observability), small.
+3. **v0.1.x deferrals #6–#13:** benchmark→improve hook; planning↔delivery-mode alignment audit; Debug Mode live
+   run (n=0→1); AO module-rollup test seam; recurrence-hardening promote-gate + T3; β redaction filter; validator
+   deeper checks; A3 carry-overs.
+4. **Scheduled larger builds:** wiring-completeness full build (produced-vs-consumed sweep gate); second-brain-
+   learning spec (D99, the Recall contract); v0.2 milestone proper (self-handoff + concurrency).
 
 ## 7. Redaction
 No secrets / keys / PII in any artifact this session. Repo is PRIVATE. Working tree clean. Nothing to redact.
