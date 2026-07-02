@@ -1,13 +1,25 @@
 ---
-date: 2026-07-01 (restore-hardening SHIPPED + MERGED to master · tip `16007f7` · no next initiative chosen)
-branch: master — private remote github.com/taurran/kataharness, tip `16007f7` (tree clean, everything pushed)
-green: validator 47 skills / 0 errors · pytest 2170 passed / 3 skip / 2 integration-deselected / 0 fail · Snyk medium+ 0
-tags: v0.1.0 · restore-hardening · D133-D136 · /kata-commands · readme-refresh · SHIPPED · handoff
+date: 2026-07-02 (Milestone 1 hardening PR #4 OPEN · Freeze/Float M1-P0 engine built + reviewed · HELD by operator)
+branch: freeze-float/m1-contract-edges (stacked on hardening/kenjiri-lessons; both ahead of master 653f501)
+green: validator 47/0 · pytest 2219 passed / 3 skip (-m "not integration") · Snyk medium+ 0  (at the freeze-float tip)
+tags: kenjiri-lessons · release-hardening · D137 · freeze-float · contract-edges · M1-P0 · two-freeze-gates · handoff
 authored-for: a fresh coding-agent window (sections map to the kata-orient tiers)
-★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained, paste-ready). The big
-  restore-hardening initiative is DONE + merged. There is NO forced next build — re-anchor, confirm green, then
-  pick the next initiative WITH the operator (options in §4/§6). Do NOT start a build without operator direction.
+★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained, paste-ready). TWO
+  initiatives are in flight on STACKED branches (see §2). Milestone 1 (hardening) is done + PR #4 OPEN; Freeze/Float
+  M1-P0 (the contract_edges engine) is built + reviewed + HELD. Do NOT start P1/P2 without confirming the operator
+  wants to proceed; first action is usually: merge PR #4 → rebase this branch onto master → then build M1-P1.
 ---
+
+> **★ 2026-07-02 (Milestone 1 SHIPPED to PR; Freeze/Float M1-P0 built + reviewed):** This session (a) built +
+> shipped **Milestone 1 — Release Hardening** (F1–F6 from the Kenjiri one-shot + a tool-agnostic security gate),
+> **PR #4 OPEN** on `hardening/kenjiri-lessons` — every code fix mutation-proven, WS-A/WS-D adversarially reviewed
+> (D137, LOCKED L1–L10); and (b) opened **Milestone 2 — Freeze/Float**, taking sub-milestone **M1 (contract edges)**
+> from doctrine → 3-investigator grounding → **two adversarial freeze-gates** (both HOLD; the second caught that a
+> `.kata/` durability fix would be lost on a crash → moved to git-durable commit trailers) → a **phased split
+> P0/P1/P2** → the **P0 engine `tools/contract_edges.py` built (5 fns, 36 tests, all mutation-proven, Snyk 0) +
+> adversarially reviewed (SHIP-WITH-FIXES → fixed: async false-negative, whitespace false-positive)**. The two
+> freeze-gates stopping an unsound architecture *before any code* is the headline — the discipline paying for
+> itself on the project's own hardest feature. **HELD at P0 by operator.** No forced next build; see §2/§4.
 
 > **★ 2026-07-01 (restore-hardening SHIPPED):** This session designed (3-pass adversarial freeze-gate), built
 > (Increments A + B), and MERGED the D132 Option-2 restore-hardening initiative to master (**PR #1**, `0bc2a0e`),

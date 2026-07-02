@@ -8,6 +8,22 @@ last_updated: "2026-07-01T00:00:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-07-02, SESSION END — TWO initiatives in flight on stacked branches; hold at Freeze/Float M1-P0):**
+> This session shipped **Milestone 1 — Release Hardening** (six field-verified fixes from the Kenjiri one-shot,
+> F1–F6 + a tool-agnostic security gate) as **PR #4 (OPEN, not yet merged)** on branch `hardening/kenjiri-lessons`,
+> then opened **Milestone 2 — Freeze/Float**, whose first sub-milestone **M1 (contract edges `builds_against`)** was
+> grounded, designed through **two adversarial freeze-gates** (both HOLD → all findings folded), split into a
+> **phased program P0/P1/P2**, and had its **P0 engine (`tools/contract_edges.py`) BUILT + adversarially reviewed**
+> on the stacked branch `freeze-float/m1-contract-edges` (current tip). **Branch topology (important):** `master`
+> (`653f501`, pre-hardening) → `hardening/kenjiri-lessons` (Milestone 1, PR #4 open) → `freeze-float/m1-contract-edges`
+> (P0 engine, stacked). **Green at the freeze-float tip:** pytest **2219 passed / 3 skip** (`-m "not integration"`),
+> validate **47/0**, Snyk medium+ 0. **Decision D137** records Milestone 1 (LOCKED L1–L10); Freeze/Float M1 is
+> recorded in `.planning/specs/freeze-float-m1/DESIGN.md` (LOCKED M1-L1…L9, phased P0/P1/P2). **HELD here by operator
+> — no more building this session.** Next: merge PR #4 → rebase freeze-float onto master → build **M1-P1** (durable
+> `Kata-Invalidated`/`Kata-Supersede` trailer substrate + restore union), then **M1-P2** (wiring + the actual float,
+> re-gated before merge). Full orientation: `.planning/NEXT-SESSION-ORIENTATION.md`. *(Prior CURRENT block below is
+> superseded history.)*
+
 > **CURRENT (2026-07-01, SESSION END — restore-hardening SHIPPED + MERGED to master · tip `16007f7` in sync ·
 > pytest 2170 passed / 3 skip / 2 integration-deselected · validate 47/0 · Snyk medium+ 0):** The D132 Option-2
 > restore-hardening initiative was designed (3-pass adversarial freeze-gate), built (Increments A + B), and

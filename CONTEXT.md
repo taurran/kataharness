@@ -651,3 +651,38 @@ importing `validate_skills`, which imports yaml) — because a real `uv run`/pla
 where **pyyaml is absent** (pyproject lives under `tools/`, not root). `kata_overlay.py` + `kata_supersede.py` were made
 stdlib-only for exactly this reason; without it, overlays/forks **silently no-op** in a real install. _Avoid_: adding a
 yaml import to any install-path module (it restores a silent-no-op deployment bug).
+
+## Freeze/Float — contract edges (M1, spec `freeze-float-m1`, 2026-07-02; P0 engine BUILT, P1/P2 planned)
+
+The Freeze/Float doctrine's first sub-milestone. **Principle:** float only **layer C (scheduling)**; layers A (intent)
++ B (contracts) stay frozen + human-gated — *drift lives entirely in the WHAT*. The win: a contract-only dependent
+dispatches at freeze (parallel) instead of waiting for its provider. Sound only with 3 companions (pin+invalidation,
+stub lifecycle, edge-honesty). Phased **P0 (engine, done) → P1 (durable substrate) → P2 (wiring + the float)**.
+
+**`builds_against`** (PLAN frontmatter, planned P2): `{ "<task>": [ "<contractId>@<surfaceHash>" ] }` — a **contract
+edge** alongside `depends_on`. Treated as **satisfied at freeze** (the contract is pinned), so the dependent dispatches
+immediately. Distinct from `depends_on` ("wait for the provider to integrate"). _Avoid_: an edge whose dependent tests
+import provider *implementation* — that is really a `depends_on` (the M1-L5 edge-honesty check catches it).
+
+**`contracts/<id>/`** (planned P2): a contract is one subdirectory, **owned by the PROVIDER** (one writer — preserves
+disjoint-ownership). The provider authors a stub carrying the sentinel **`# KATA-CONTRACT-STUB`** at freeze and fills
+real behavior in its own task, deleting the sentinel. The DEPENDENT only *imports* it. _Avoid_: giving the dependent
+write-ownership of the contract (the original design collision the freeze-gate caught).
+
+**surface-hash** (`contract_edges.surface_hash`, BUILT): the pin is the contract's **interface surface** — fn/method
+signatures + return annotations + decorators + class headers — **not raw bytes**. Bodies are excluded, so a stub
+body-fill does NOT flip the pin (M1-L8); an *interface* edit does. Format-invariant (autoformatter whitespace is a
+no-op) and async-aware. **Residual (NOT machine-pinned, review-backstopped):** module constants, type aliases,
+`__all__`, re-exports. _Avoid_: claiming a pinned constant is machine-enforced — it is not.
+
+**`Kata-Supersede: <id>@<hash>` / `Kata-Invalidated: <task-id>`** (git commit trailers, planned P1): the **git-durable**
+authorization + invalidation records (symmetric with `Kata-Task:`). A contract surface change is authorized by a
+`Kata-Supersede:` trailer; a re-opened integrated dependent gets a `Kata-Invalidated:` trailer that
+`kata_restore.collect_integrated_tasks` **subtracts** from the integrated set (so a crash mid-invalidation
+re-dispatches it). _Avoid_: putting invalidation state in `.kata/` — it is gitignored and lost on the canonical
+lost-run (the v2 freeze-gate's headline catch).
+
+**`tools/contract_edges.py`** (BUILT, P0): the pure engine — `invert`, `invalidation_set` (both raise-on-malformed
+`builds_against`, M1-L9), `surface_hash`, `surviving_stubs` (sentinel content scan; the dangling-import half is P2),
+`edge_honesty`. **Zero wiring today → zero behavioral change (BC).** _Avoid_: wiring it into a run before P1's durable
+substrate + P2's freeze-gate exist.
