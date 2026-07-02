@@ -7,7 +7,7 @@ description: >-
   they steer, or standalone after any gated run. It REPORTS; it does not gate (kata-evaluate owns the
   default-FAIL gate) — so a one-shot run can reuse it too. Voice: protocol/persona.md.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: evaluate
 status: experimental
 agnostic: true
@@ -220,7 +220,11 @@ plain-language sentence + the `<code>command</code>`, not the wrapping `<div>`.
 The gate counts, quoted verbatim from `.kata/RESULT.json`:
 - Tests: `<pass> passed / <fail> failed / <skip> skipped`
 - Build hash (deterministic): `<hash>` (if present)
-- Security: Snyk count (or "N/A — non-code-bearing" if applicable)
+- Security: the scan's terminal **state** — tool-agnostic (F6): `clean` (0 findings) · `accepted`
+  (documented `.snyk` acceptance + board DECISION, reason + expiry — quote the acceptance, not just a count)
+  · `degraded` (scanner unavailable / toolchain unsupported under `securityScan: when-available`, surfaced)
+  · `off` (policy opt-out) · or "N/A — non-code-bearing". Report the **state**, not merely a raw count —
+  a nonzero count with a sound documented-acceptance is a passing terminal state, not a failure.
 
 Never re-computed; always quoted from the artifact.
 

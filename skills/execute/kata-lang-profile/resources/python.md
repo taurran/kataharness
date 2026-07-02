@@ -46,3 +46,25 @@ fix the seed (`random.seed`, `PYTHONHASHSEED=0`) and pin the clock before snapsh
   `uuid`) before snapshotting so the drift gate compares behavior, not noise.
 - Pin the **public** contract (return values, raised exceptions, side effects on passed-in mutables), not
   private helper internals — that keeps the suite stable across a body-only fix.
+
+## Greenfield src-layout seeding (BUILD context — F4; not debug)
+
+Satisfies the orchestrator's generic **"the project's own package is importable before wave-1 dispatch"**
+precondition for a new Python project. Skips the Kenjiri failure where `uv init --bare` wrote no
+`[build-system]`, the package was not importable, and three workers independently added `sys.path` shims
+to their test files before it was root-caused.
+
+Before dispatching wave-1 on a greenfield Python **src-layout** project, the orchestrator (or the seeding
+step it owns) ensures:
+1. `uv init` (**not `--bare`** — bare omits the build backend), or otherwise author `pyproject.toml`.
+2. A **`[build-system]`** table is present (e.g. `requires = ["setuptools>=61"]`,
+   `build-backend = "setuptools.build_meta"`).
+3. For src-layout, **`[tool.setuptools.packages.find]` with `where = ["src"]`** so the package under
+   `src/<pkg>/` is discoverable.
+4. **Verify importability**: `uv run python -c "import <pkg>"` exits 0 **before** any worker is dispatched.
+   A non-zero exit is a seeding failure → fix the packaging at the orchestrator/root layer, never by a
+   per-worker `sys.path` shim (that is cross-lane drift and masks the real gap).
+
+Flat-layout projects (package at repo root) need only steps 1–2 + the import verify. Non-`uv` toolchains
+(`poetry`, `hatch`) supply their own build backend — the invariant is the same: **the package imports
+cleanly before wave-1**, however the toolchain gets there.

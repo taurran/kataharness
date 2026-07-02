@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.3.0
+version: 0.4.2
 category: coordinate
 status: experimental
 agnostic: true
@@ -75,6 +75,14 @@ does not drift.**
 3. The target repo is **green at the fork point** (run its test/build gate; record the baseline numbers).
 4. The **file-ownership partition is disjoint** — no file appears under two tasks. If it isn't, the plan is
    not executable concurrently; escalate to re-freeze, do not improvise.
+5. **The project's own package is importable before wave-1 (F4 — greenfield seeding).** For a greenfield
+   build, verify the project package imports cleanly (its build backend / packaging is seeded) **before**
+   dispatching any worker — otherwise workers each patch packaging locally (e.g. `sys.path` shims), which is
+   cross-lane drift that masks the real gap (the Kenjiri F4 failure). This is **language-agnostic in the
+   core**; the concrete checklist lives in the language overlay ([[kata-lang-profile]] `resources/<lang>.md`
+   — e.g. Python: `[build-system]` + `[tool.setuptools.packages.find] where=["src"]` + `import <pkg>` exits
+   0). A packaging failure ⇒ fix at the root/orchestrator layer, never via a per-worker shim. (Version-up /
+   existing-repo runs already import cleanly — this precondition is a greenfield no-op there, BC.)
 
 ## Comprehension phase (ADDITIVE — debug run only; BC: absent `kata/module/debug` ⇒ silent no-op)
 
@@ -257,10 +265,41 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      (see `protocol/board.md` → Concurrency evidence). The shared root is the integration/target-repo root,
      not the per-task worktree (S3b lesson: per-task worktrees have their own `.kata/` paths; only the
      integration root's `.kata/board.md` is the shared board the orchestrator and evaluator read).
+   - **emit a `PROGRESS` heartbeat (F3 — mandated, not optional):** append a `PROGRESS` line to the shared
+     board **per owned-module completed**, with `msg` = `<modulesDone>/<modulesOwned> <label>`. This is the
+     worker's liveness signal (a worker that CLAIMs and then works silently for tens of minutes is
+     indistinguishable from a hung one — the Kenjiri F3 failure). `PROGRESS` is excluded from coordination
+     and concurrency evidence; it exists for the liveness monitor and the M4 slack-timing estimator.
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
+
+   **Liveness monitor (F3 — dark-worker detection; NO blind kill).** While workers run, the orchestrator
+   watches the shared board for staleness: a worker with a `CLAIM` but no `DONE` and no `PROGRESS` line for
+   longer than a configurable deadline (`livenessDeadline`, default 10 min) is **stale**. On
+   staleness, DO NOT SIGKILL and DO NOT silently re-dispatch. Instead route it through the **existing
+   escalation machinery**: (1) **nudge** — surface the stale worker to the operator (breakthrough-alert);
+   (2) if it stays dark past a second interval, treat it as a `kind: orchestrator-resolvable` **ESCALATE**
+   and drive it through [[kata-diagnose]] / the normal escalation → `DECISION` path; (3) **re-dispatch only
+   through that human-gated decision**, never automatically. A blind kill risks murdering a healthy-but-slow
+   worker mid-write; the heartbeat + escalation path preserves the dual-control spine. (Bounds mirror the
+   existing thrash valve — repeated staleness on one task routes to `kata-diagnose`, no new valve.)
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
-   verify (tests + security scan). Not done until evidence is read and passes. Confirm it touched **only its
-   owned files** (drift check).
+   verify (tests + **the security scan**). Not done until evidence is read and passes. Confirm it touched
+   **only its owned files** (drift check).
+   **Security scan is tool-agnostic + posture-driven (Lever 2 / F6).** Use whatever scanner the toolchain
+   provides — never assume a vendor, never shim tooling to force a scan. Honor `kata.config.securityScan`
+   (absent ⇒ `when-available`, BC): `required` ⇒ fail-closed; `when-available` ⇒ run if a scanner is wired
+   and the toolchain supported, else mark the task's scan `degraded` and **surface it** (never a silent
+   clean, never a hard-block on scanner-absence); `off` ⇒ skip by policy, surfaced. A finding that cannot
+   converge to zero has a **documented-acceptance terminal state**: genuine hardening → in-repo acceptance
+   (`.snyk` reason + expiry) → a board **DECISION** → [[kata-evaluate]] grades the acceptance's *soundness*,
+   not the raw count. (This is the generic first-party gate. The **debug-mode** `snyk_code_scan` fix-gate and
+   the **IaC** `snyk_iac_scan` gate are intentional named integrations — unchanged.)
+   **Lane-check must be commit-scoped, NOT branch-range (F5).** Compute the task's changed files with
+   `footprint.changed_in_task(integration_ref, task_ref)` — a **three-dot** `git diff base...task`
+   (merge-base-scoped: only what the task's own commits changed since it diverged). Do **NOT** use a
+   two-dot `git diff integration..task`: if the task forked from an earlier integration head, the two-dot
+   diff lists every file integration changed afterward as a *foreign* file and falsely trips the drift
+   check. Feed the commit-scoped set to `footprint.is_within_footprint(changed, ownership)`.
    **IaC gate (IaC-classed tasks only; ADDITIVE — non-IaC tasks unchanged):** for any task marked
    IaC-classed at dispatch (step 2), also run the **IaC gate** per `protocol/iac-safety.md §3` as part
    of this task's verify. The five ordered gate steps (all creds-free, Tier 1):

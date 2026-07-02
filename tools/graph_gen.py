@@ -189,7 +189,12 @@ def _assign_collision_ids(symbols: list[dict], rel_path: str) -> list[dict]:
 # Import resolution (best-effort)
 # ---------------------------------------------------------------------------
 
-def _extract_imports(source_bytes: bytes, rel_path: str, all_rel_paths: set[str]) -> list[tuple[str, str]]:
+def _extract_imports(
+    source_bytes: bytes,
+    rel_path: str,
+    all_rel_paths: set[str],
+    source_roots: "list[str] | None" = None,
+) -> list[tuple[str, str]]:
     """Return list of (src_rel_path, dst_rel_path) file→file import edges.
 
     Handles:
@@ -198,7 +203,11 @@ def _extract_imports(source_bytes: bytes, rel_path: str, all_rel_paths: set[str]
       from foo import bar
       from foo.bar import baz
     Resolves module name → repo-relative path if the corresponding .py file exists.
+    ``source_roots`` (F2 src-layout) is discovered once from ``all_rel_paths``
+    when not supplied — build_graph passes a precomputed set to avoid rework.
     """
+    if source_roots is None:
+        source_roots = _discover_source_roots(all_rel_paths)
     tree = _PARSER.parse(source_bytes)
     edges = []
     src_dir = str(Path(rel_path).parent)
@@ -209,7 +218,7 @@ def _extract_imports(source_bytes: bytes, rel_path: str, all_rel_paths: set[str]
             for child in node.children:
                 if child.type in ("dotted_name", "aliased_import"):
                     mod_text = _node_text(child.children[0] if child.type == "aliased_import" else child)
-                    dst = _resolve_module(mod_text, src_dir, all_rel_paths)
+                    dst = _resolve_module(mod_text, src_dir, all_rel_paths, source_roots)
                     if dst:
                         edges.append((rel_path, dst))
         elif node.type == "import_from_statement":
@@ -217,7 +226,7 @@ def _extract_imports(source_bytes: bytes, rel_path: str, all_rel_paths: set[str]
             mod_node = node.child_by_field_name("module_name")
             if mod_node:
                 mod_text = _node_text(mod_node)
-                dst = _resolve_module(mod_text, src_dir, all_rel_paths)
+                dst = _resolve_module(mod_text, src_dir, all_rel_paths, source_roots)
                 if dst:
                     edges.append((rel_path, dst))
         for child in node.children:
@@ -227,8 +236,39 @@ def _extract_imports(source_bytes: bytes, rel_path: str, all_rel_paths: set[str]
     return edges
 
 
-def _module_to_path(module_name: str, src_dir: str) -> list[str]:
-    """Convert dotted module name to candidate repo-relative .py paths."""
+def _discover_source_roots(all_rel_paths: set[str]) -> list[str]:
+    """Discover non-root source roots for src-layout import resolution (F2).
+
+    A *source root* is the parent directory of a TOP-LEVEL package — a dir
+    holding an ``__init__.py`` whose own parent is NOT itself a package. On a
+    src-layout project (``src/pkg/__init__.py``) this yields ``["src"]``; on a
+    flat layout it yields ``[]`` (repo-root packages are already covered by the
+    absolute candidates, so they are deliberately excluded here). This is what
+    lets ``from pkg.mod import x`` resolve to ``src/pkg/mod.py``.
+    """
+    package_dirs = {
+        Path(p).parent.as_posix()
+        for p in all_rel_paths
+        if Path(p).name == "__init__.py"
+    }
+    roots: set[str] = set()
+    for pkg in package_dirs:
+        parent = Path(pkg).parent.as_posix()
+        # top-level package ⇒ its parent dir is not itself a package
+        if parent not in package_dirs and parent not in ("", "."):
+            roots.add(parent)
+    return sorted(roots)
+
+
+def _module_to_path(
+    module_name: str, src_dir: str, source_roots: "list[str] | tuple[str, ...]" = ()
+) -> list[str]:
+    """Convert dotted module name to candidate repo-relative .py paths.
+
+    Candidate order (first-match-wins in ``_resolve_module``): import-relative,
+    then repo-root-absolute, then source-root-prefixed (F2). Appending the
+    src-layout candidates LAST preserves flat-layout resolution byte-for-byte.
+    """
     parts = module_name.split(".")
     # Relative: try src_dir / module.py and src_dir / module/__init__.py
     if src_dir and src_dir != ".":
@@ -243,12 +283,28 @@ def _module_to_path(module_name: str, src_dir: str) -> list[str]:
         "/".join(parts) + ".py",
         "/".join(parts) + "/__init__.py",
     ]
-    return rel_candidates + abs_candidates
+    # Source-root-prefixed (src-layout): appended last so flat layout is unchanged
+    src_candidates: list[str] = []
+    for root in source_roots:
+        src_candidates.append(root + "/" + "/".join(parts) + ".py")
+        src_candidates.append(root + "/" + "/".join(parts) + "/__init__.py")
+    return rel_candidates + abs_candidates + src_candidates
 
 
-def _resolve_module(module_name: str, src_dir: str, all_rel_paths: set[str]) -> str | None:
-    """Try to find a matching repo-relative path for a module name."""
-    for candidate in _module_to_path(module_name, src_dir):
+def _resolve_module(
+    module_name: str,
+    src_dir: str,
+    all_rel_paths: set[str],
+    source_roots: "list[str] | None" = None,
+) -> str | None:
+    """Try to find a matching repo-relative path for a module name.
+
+    ``source_roots`` is discovered lazily from ``all_rel_paths`` when not
+    supplied, so direct callers get src-layout resolution without threading it.
+    """
+    if source_roots is None:
+        source_roots = _discover_source_roots(all_rel_paths)
+    for candidate in _module_to_path(module_name, src_dir, source_roots):
         if candidate in all_rel_paths:
             return candidate
     return None
@@ -523,9 +579,10 @@ def build_graph(
 
     # 7. Build import edges for new files
     # (import edges involving changed files; reused import edges already added above)
+    source_roots = _discover_source_roots(all_rel_paths)  # F2: src-layout, computed once
     for rel_path in new_file_paths:
         data = file_bytes_map[rel_path]
-        import_pairs = _extract_imports(data, rel_path, all_rel_paths)
+        import_pairs = _extract_imports(data, rel_path, all_rel_paths, source_roots)
         for src_path, dst_path in import_pairs:
             all_edges.append({
                 "src": src_path,

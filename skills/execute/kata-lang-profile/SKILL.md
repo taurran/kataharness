@@ -7,7 +7,7 @@ description: >-
   overlay LAYERS via the orchestrator's dispatch — it never forks or edits kata-tdd/kata-diagnose, adds no
   Python, and is prompt guidance only (it relaxes no gate). No matching profile ⇒ no overlay (BC).
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: execute
 status: experimental
 agnostic: true

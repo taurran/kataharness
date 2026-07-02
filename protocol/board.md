@@ -16,11 +16,16 @@ Machine state — kept separate from durable Obsidian docs ([[STANDARDS]] §5).
   | `ESCALATE` | worker | the frozen plan is unclear/wrong — needs an orchestrator decision (never re-plan) |
   | `NOTE` | worker | lateral info for peers |
   | `DECISION` | orchestrator only | a deliberate ruling resolving a BLOCK/ESCALATE |
-  | `PROGRESS` | worker | granular progress heartbeat; `msg` carries `<step>/<n> <label>` (e.g. `3/5 writing tests`) |
+  | `PROGRESS` | worker | mandated liveness heartbeat (F3); `msg` carries `<modulesDone>/<modulesOwned> <label>` (e.g. `3/5 writing tests`) — the structured progress signal the liveness monitor and Freeze/Float M4 slack-timing read |
 
 `CLAIM`/`DONE` are the worker-self-stamped start/end of a task; because the worker authors them with its own process clock, the board is the artifact-of-record for concurrency (it does not depend on orchestrator-written timestamps).
 
-- **PROGRESS is opt-in, ignored by the coordination logic, and read only by the dashboard** — the DECISION/BLOCK/ESCALATE invariants are unchanged.
+- **PROGRESS is a mandated liveness heartbeat (F3)** — the worker emits one per owned-module completed —
+  but it remains **excluded from the coordination logic and from concurrency evidence**: it is read by the
+  dashboard, the orchestrator's **liveness monitor**, and (later) the Freeze/Float M4 slack-timing
+  estimator. The DECISION/BLOCK/ESCALATE invariants are unchanged; a **missing** PROGRESS never gates a
+  task — it only triggers the liveness monitor's staleness path (nudge → escalate → human-gated
+  re-dispatch; never a blind kill).
 - **Invariants:** workers never author `DECISION`; every `BLOCK`/`ESCALATE` is answered by a `DECISION`
   before the task resumes; the board is the countable audit trail for the drift ledger.
 

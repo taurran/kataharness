@@ -304,6 +304,51 @@ class TestManifestHashCheck:
 
 
 # ---------------------------------------------------------------------------
+# run_preflight — manifest SHAPE validation (F1)
+# ---------------------------------------------------------------------------
+
+def _setup_repo_raw(repo: Path, manifest_obj: object) -> tuple[Path, Path]:
+    """Write an ARBITRARY manifest object (possibly malformed) + matching freeze
+    approval, so the hash gate passes and execution reaches shape validation."""
+    mp = repo / "kata.dependencies.json"
+    mp.write_text(json.dumps(manifest_obj), encoding="utf-8")
+    ap = repo / ".kata" / "kata.freeze-approval.json"
+    _write_freeze_approval(ap, mp)
+    return mp, ap
+
+
+class TestManifestShapeValidation:
+    """F1: a manifest that EXISTS and matches its freeze hash but is malformed
+    (misspelled / absent / wrong-typed top-level `dependencies` key) must FAIL
+    CLOSED, not pass VACUOUSLY as ready. A present-but-empty list stays ready
+    (L2 — it is a legitimate, supported state)."""
+
+    def test_misspelled_key_blocks(self, repo: Path, fake_home: Path):
+        _, ap = _setup_repo_raw(repo, {"deps": [_PIP_DEP]})
+        result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
+        assert result["status"] == "blocked"
+        assert any("manifest-shape" in b for b in result["blockers"])
+
+    def test_absent_key_blocks(self, repo: Path, fake_home: Path):
+        _, ap = _setup_repo_raw(repo, {})
+        result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
+        assert result["status"] == "blocked"
+        assert any("manifest-shape" in b for b in result["blockers"])
+
+    def test_wrong_type_blocks(self, repo: Path, fake_home: Path):
+        _, ap = _setup_repo_raw(repo, {"dependencies": "requests"})
+        result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
+        assert result["status"] == "blocked"
+        assert any("manifest-shape" in b for b in result["blockers"])
+
+    def test_present_empty_list_stays_ready(self, repo: Path, fake_home: Path):
+        # Regression guard (L2): empty deps is a legitimate state, NOT malformed.
+        _, ap = _setup_repo_raw(repo, {"dependencies": []})
+        result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
+        assert result["status"] == "ready"
+
+
+# ---------------------------------------------------------------------------
 # run_preflight — sandbox branch (LD4)
 # ---------------------------------------------------------------------------
 

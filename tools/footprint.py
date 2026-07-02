@@ -1,12 +1,15 @@
 """Footprint manifest and diff-stat helpers for KataHarness runs.
 
 Pure core functions (partition, is_within_footprint, manifest) do NOT call git.
-Thin git wrappers (changed_since, diff_stat) are provided separately and are
-not covered by the unit tests.
+Thin git wrappers (changed_since, diff_stat, changed_in_task) are provided
+separately; changed_in_task and file_content_hashes are exercised by real-git /
+tmp-dir tests, while changed_since/diff_stat remain thin pass-throughs.
 """
 
 from __future__ import annotations
 
+import hashlib
+import os
 import subprocess
 
 
@@ -155,6 +158,64 @@ def changed_since(ref: str) -> list[str]:
     )
     lines = [_normalize(line) for line in result.stdout.splitlines() if line.strip()]
     return sorted(lines)
+
+
+def changed_in_task(base_ref: str, task_ref: str = "HEAD") -> list[str]:
+    """Return files a task changed **relative to its own fork point** (F5).
+
+    The per-task lane check must NOT use a branch-range diff like
+    ``git diff integration..task`` — if the task forked from an EARLIER
+    integration head, that two-dot diff lists every file integration changed
+    afterward as a foreign file, falsely tripping the drift check.
+
+    This uses the **three-dot** form ``git diff base...task``, which diffs from
+    ``merge-base(base, task)`` to ``task`` — i.e. only what the task's own
+    commits changed since it diverged. Foreign integration-side changes are
+    excluded by construction.
+
+    Args:
+        base_ref: The integration branch/ref the task will merge into.
+        task_ref: The task branch/commit tip (default ``HEAD``).
+
+    Returns:
+        Sorted, forward-slash-normalized list of the task's own changed files.
+    """
+    result = subprocess.run(
+        ["git", "diff", "--name-only", f"{base_ref}...{task_ref}"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    lines = [_normalize(line) for line in result.stdout.splitlines() if line.strip()]
+    return sorted(lines)
+
+
+def file_content_hashes(paths: list[str], repo_root: str = ".") -> dict[str, str | None]:
+    """Return ``{path: sha256-hex}`` for each path under *repo_root* (F5 / M4).
+
+    The **evidence-validity substrate** for the Freeze/Float M4 inline
+    evaluator: an inline verdict is stamped with the content hashes of the
+    files its verify exercised; at the final gate the evidence is valid iff
+    those exact files are byte-unchanged. A missing path maps to ``None`` so a
+    deletion is detectable (never silently treated as unchanged).
+
+    Args:
+        paths: Repo-relative paths (any separator) to hash.
+        repo_root: Directory the paths are relative to (default cwd).
+
+    Returns:
+        Mapping of normalized path → sha256 hex digest, or ``None`` if absent.
+    """
+    result: dict[str, str | None] = {}
+    for raw in paths:
+        norm = _normalize(raw)
+        full = os.path.join(repo_root, norm)
+        try:
+            with open(full, "rb") as fh:
+                result[norm] = hashlib.sha256(fh.read()).hexdigest()
+        except OSError:
+            result[norm] = None
+    return result
 
 
 def diff_stat(ref: str) -> str:

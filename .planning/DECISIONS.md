@@ -1947,3 +1947,47 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   fresh-context adversarial review. This is a D101 recurrence-hardening ruling on a confirmed recurring failure
   CLASS. Follows the `protocol/reuse-claims.md` precedent (semantic guard + by-path skill pointers + no
   behavioral validator). Follow-ups #14–#16 (BACKLOG) are unrelated restore polish, not part of this guard.
+
+<!-- Release Hardening — Milestone 1: six field-verified Kenjiri one-shot lessons. Spec: specs/kenjiri-lessons/. -->
+- **D137 — Release Hardening Milestone 1 (Kenjiri one-shot lessons F1–F6) — 2026-07-02.** Six harness
+  defects surfaced by the Kenjiri v1.0.0 one-shot, each **verified against the code by a fresh-context
+  investigator before the fix** (reproduce-don't-trust); **three fixes reshaped** from the run's proposal
+  because the naive fix would have regressed. Built **directly (not dogfooded, L8)** — self-certifying the
+  repair of a safety gate with that same gate violates the fresh-context discipline; the *next* milestone
+  dogfoods the hardened harness. Spec `specs/kenjiri-lessons/{DESIGN,PLAN}.md`; branch
+  `hardening/kenjiri-lessons`; baseline `653f501` (pytest 2177) → **2190 pytest / 3 skip**, validate 47/0,
+  Snyk medium+ 0. **LOCKED L1–L10:**
+  - **L1** — Lever 1 (external): softened the operator's global `~/.claude/CLAUDE.md` Snyk mandate to
+    conditional + toolchain-aware (the actual cause of the Kenjiri mid-run Snyk derailment). Not a harness change.
+  - **L2 · F1** — preflight fails closed on a malformed manifest (top-level `dependencies` key **absent /
+    misspelled / wrong-typed**); a present-but-**empty** `[]` stays `ready` (legit, tested state — the run's
+    "block on empty" would have regressed it). `kata-preflight` 0.1.1.
+  - **L3 · F2** — `graph_gen._module_to_path` appends src-root-prefixed candidates **last** (flat layout
+    byte-for-byte unchanged); source roots from `__init__.py` dirs; import edges only.
+  - **L4 · F5** — lane-check is **commit-scoped** (`footprint.changed_in_task`, three-dot merge-base diff),
+    not branch-range; `file_content_hashes` added as the Freeze/Float **M4 evidence-validity substrate**.
+    `kata-orchestrate`, `kata-evaluate` 0.2.0.
+  - **L5 · F3** — mandated structured `PROGRESS` heartbeat (`modulesDone/modulesOwned` — also M4 slack-timing)
+    + a liveness monitor routing stale workers through the **existing escalation path** (nudge → escalate →
+    human-gated re-dispatch); **NO blind kill**. New top-level `livenessDeadline` (keeps orchestrate
+    sprint-blind, BC2 — caught by `test_sc_orchestrate_stays_sprint_blind` when first mis-namespaced under `delivery`).
+  - **L6 · F6 + Lever 2** — green-gate security scan is **tool-agnostic** + posture-configurable
+    (`securityScan: required|when-available|off`; **absent ⇒ when-available**, BC); documented-acceptance
+    terminal state graded for **soundness** (worker proposes → orchestrator `DECISION` → fresh-context
+    evaluator grades → three-party control), not raw count. Debug-mode/IaC Snyk wirings untouched.
+    `kata-report` 0.1.1, `kata-bootstrap` 0.1.3.
+  - **L7 · F4** — greenfield seeding: generic "own package importable before wave-1" precondition in the
+    agnostic core; Python src-layout specifics (`[build-system]` + `packages.find where=src` + import verify)
+    in the `kata-lang-profile` overlay. `kata-lang-profile` 0.1.1.
+  - **L8** — direct build + mandatory fresh-context adversarial review on WS-A + WS-D.
+  - **L9** — Freeze/Float doctrine (M1–M4) deferred to **Milestone 2**, staged M1→M4→M2→M3 (M3 behind its
+    own review). Milestone 1 built as its substrate (F5 file-hashing + F3 heartbeat).
+  - **L10** — Kenjiri Part-3 backlog routed to the `kenjiri` repo, out of scope.
+  **Every code-bearing fix (F1/F2/F5) is mutation-proven** (guard disabled → the right test goes red →
+  reverted); +13 tests. **Adversarial review:** WS-D **SHIP** (three-dot correctness confirmed empirically,
+  incl. no-common-ancestor raising vs silent-permissive), WS-A **SHIP-WITH-FIXES** — caught a LOW-MED
+  fail-open (evaluate's `required` posture was silent on scanner-absence → could degrade-and-pass; tightened
+  to fail closed on scanner-absence). Fixes: `2c159aa`. **Meta:** the harness's own sprint-blind test and the
+  fresh-context adversarial pass each caught a real defect the author's green tests did not — the
+  reproduce-don't-trust + fresh-context discipline earning its keep on a repair of the harness's own
+  instruments.

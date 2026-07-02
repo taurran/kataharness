@@ -785,7 +785,35 @@ def run_preflight(
         _write_preflight(repo_root_p, result)
         return result
 
-    deps: list[dict] = manifest_data.get("dependencies", [])
+    # =========================================================================
+    # Manifest shape validation (F1) — fail-closed on a malformed manifest.
+    # The `dependencies` key MUST be present AND a list. A misspelled/renamed
+    # key (e.g. "deps"), an absent key, or a wrong-typed value would otherwise
+    # collapse to an empty list via `.get(..., [])` and pass VACUOUSLY as
+    # `ready` (the F1 hole). A present-but-EMPTY list is a legitimate, supported
+    # state and must still proceed to `ready` — do NOT block empty.
+    # =========================================================================
+    if "dependencies" not in manifest_data or not isinstance(
+        manifest_data["dependencies"], list
+    ):
+        result = {
+            "status": "blocked",
+            "deps": [],
+            "installed": [],
+            "targetEnv": None,
+            "warnings": [],
+            "blockers": [
+                "manifest-shape: top-level 'dependencies' key must be present "
+                "and a list (a misspelled/renamed/absent key would pass "
+                "vacuously as ready)"
+            ],
+            "sandbox": sandbox_status,
+            "cleanup": [],
+        }
+        _write_preflight(repo_root_p, result)
+        return result
+
+    deps: list[dict] = manifest_data["dependencies"]
 
     # =========================================================================
     # Process each dependency
