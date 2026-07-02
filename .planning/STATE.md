@@ -1,12 +1,23 @@
 ---
 gsd_state_version: 1.0
 milestone: M2-freeze-float
-milestone_name: "Freeze/Float (operator-directed, D138) — M1 contract edges; ship order M1→M4→M2→M3; M1-P0 engine done, M1-P1 next"
+milestone_name: "Freeze/Float (operator-directed, D138) — M1 contract edges; ship order M1→M4→M2→M3; M1-P0 + M1-P1 done, M1-P2 (the float) next, re-gated"
 status: in-progress
 last_updated: "2026-07-02T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-02c — M1-P1 durable substrate BUILT + reviewed SHIP; committed):** `kata_restore.py`
+> now unions `builds_against` keys (M1-L2), subtracts `Kata-Invalidated:` (set-based/over-dispatch-safe), and
+> provides `parse_supersede_trailers` for the P2 gate (all trailer parsing in `kata_restore.py`, NOT a new
+> `kata_supersede.py`). +10 tests (union + subtract mutation-proven; malformed-invalidation surfaced-not-
+> swallowed). Fresh-context adversarial review: **SHIP** (over-dispatch-only + hash-symmetry verified; one LOW
+> folded). **Green: pytest 2236 / 3 skip, validate 47/0, Snyk medium+ 0.** Committed on
+> `freeze-float/m1-contract-edges` (unpushed). **Next: M1-P2 — wiring + THE FLOAT** (dispatchable-at-freeze
+> clause, supersede enumerate+route, final-gate independent re-derivation, `builds_against` schema, edge-honesty
+> review surface). **P2 is the behavior change and MUST get its own adversarial freeze-gate before merge — HELD
+> for operator go.** *(Prior CURRENT blocks below are superseded history.)*
 
 > **CURRENT (2026-07-02b — Milestone 1 MERGED; Freeze/Float sanctioned + reconciled; building toward M1-P1):**
 > **Milestone 1 (Release Hardening) is MERGED to master** — PR #4 merged as merge commit `8653faf` (SHAs

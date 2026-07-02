@@ -186,6 +186,19 @@ def fold_board(board_content: str) -> dict[str, Any]:
 # Written by kata-orchestrate step 5.  Case-insensitive for robustness.
 _KATA_TASK_RE = re.compile(r"^\s*Kata-Task:\s*(\S+)\s*$", re.IGNORECASE)
 
+# Freeze/Float M1-P1 durable trailers (git-durable, survive the .kata/ wipe on the
+# canonical lost-run).  Written by the P2 supersede path; parsed here.
+#   Kata-Invalidated: <task-id>            — a re-opened integrated dependent (M1-L3/F5)
+#   Kata-Supersede:   <contractId>@<hash>  — an authorized contract surface change (M1-L3/L8)
+_KATA_INVALIDATED_RE = re.compile(r"^\s*Kata-Invalidated:\s*(\S+)\s*$", re.IGNORECASE)
+# Loose prefix — used ONLY to detect a malformed invalidation trailer (looks like the
+# key but fails the strict single-token match) so it is surfaced, never silently
+# swallowed into an under-dispatch.
+_KATA_INVALIDATED_PREFIX_RE = re.compile(r"^\s*Kata-Invalidated:", re.IGNORECASE)
+_KATA_SUPERSEDE_RE = re.compile(
+    r"^\s*Kata-Supersede:\s*([A-Za-z0-9._-]+)@([0-9a-fA-F]{8,64})\s*$", re.IGNORECASE
+)
+
 # Frontmatter fence pattern — matches the opening --- and its closing ---
 _FM_RE = re.compile(r"^---[ \t]*\n(.*?)\n---", re.DOTALL)
 
@@ -267,6 +280,15 @@ def parse_plan_tasks(plan_path: Union[str, Path]) -> set[str]:
             if isinstance(wave_tasks, list):
                 task_ids.update(str(t) for t in wave_tasks)
 
+    # Keys of builds_against: dict (Freeze/Float M1-P1 / M1-L2 — contract-edge
+    # dependents).  A contract-only dependent may appear ONLY under builds_against in
+    # some plan shapes; unioning its keys guarantees it is never dropped from the
+    # restore re-dispatch set.  Absent / not-a-dict ⇒ no-op (BC — no builds_against
+    # edge exists in any run today).
+    builds_against = fm.get("builds_against") or {}
+    if isinstance(builds_against, dict):
+        task_ids.update(str(k) for k in builds_against.keys())
+
     if not task_ids:
         raise ValueError(
             "kata_restore: cannot determine the run's task set — frozen PLAN has no "
@@ -313,6 +335,59 @@ def collect_integrated_tasks(
         Task-ids that have a durable integration commit on the branch (within
         this run's window when ``plan_path`` is provided).  Returns an empty set
         when the branch doesn't exist, has no commits, or on any git error.
+    """
+    lines = _scan_integration_commit_bodies(repo_root, integration_branch, plan_path)
+    if lines is None:
+        return set()
+
+    integrated: set[str] = set()
+    invalidated: set[str] = set()
+    for line in lines:
+        mt = _KATA_TASK_RE.match(line)
+        if mt:
+            integrated.add(mt.group(1))
+            continue
+        mi = _KATA_INVALIDATED_RE.match(line)
+        if mi:
+            invalidated.add(mi.group(1))
+        elif _KATA_INVALIDATED_PREFIX_RE.match(line):
+            # A line that LOOKS like an invalidation trailer but fails the strict
+            # single-token match cannot be subtracted (its task-id is unrecoverable) —
+            # so the task stays "integrated" and would NOT be re-dispatched, the one
+            # under-dispatch vector on this path.  Surface it loudly rather than
+            # swallow it silently.  The AUTHORITATIVE fail-closed handling of a
+            # malformed invalidation record is the P2 final-gate re-derivation
+            # (DESIGN M1-L9); this restore subtract is a best-effort corroborator.
+            print(
+                "NOTE: kata_restore: malformed Kata-Invalidated trailer "
+                f"{line.strip()!r} — cannot subtract (task-id unrecoverable); the P2 "
+                "final gate is the fail-closed authority. Resolve manually if this run "
+                "under-dispatches.",
+                flush=True,
+            )
+
+    # Set-based subtract (Freeze/Float M1-P1, D138): OVER-DISPATCH-SAFE.  A task
+    # integrated → invalidated → re-integrated bears BOTH trailers and is subtracted
+    # (⇒ redundantly re-dispatched — the SAFE direction, D134/D135).  A run with no
+    # Kata-Invalidated: trailer returns the byte-identical integrated set (BC).
+    return integrated - invalidated
+
+
+def _scan_integration_commit_bodies(
+    repo_root: str,
+    integration_branch: str,
+    plan_path: Union[str, Path, None] = None,
+) -> "list[str] | None":
+    """Return the commit-body lines of THIS run's integration commits, or ``None`` on
+    a git error.
+
+    The shared bounded scan behind ``collect_integrated_tasks`` (Kata-Task /
+    Kata-Invalidated) and ``parse_supersede_trailers`` (Kata-Supersede).  Resolves the
+    fork-point from ``plan_path`` (the most recent integration commit that touched the
+    frozen PLAN) and bounds ``git log --format=%B`` to commits AFTER it; falls back to
+    the full history with a loud NOTE when the fork-point can't be resolved (mirrors
+    the prior collect_integrated_tasks behaviour byte-for-byte).  Returns ``None`` on a
+    git ``CalledProcessError``/``OSError`` so callers fail safe.
     """
     root = Path(repo_root).resolve()
 
@@ -379,14 +454,38 @@ def collect_integrated_tasks(
             check=True,
         )
     except (subprocess.CalledProcessError, OSError):
-        return set()
+        return None
 
-    task_ids: set[str] = set()
-    for line in result.stdout.splitlines():
-        m = _KATA_TASK_RE.match(line)
+    return result.stdout.splitlines()
+
+
+def parse_supersede_trailers(
+    repo_root: str,
+    integration_branch: str,
+    plan_path: Union[str, Path, None] = None,
+) -> dict[str, str]:
+    """Parse ``Kata-Supersede: <contractId>@<newSurfaceHash>`` trailers → ``{id: hash}``.
+
+    Provided in M1-P1; CONSUMED by the P2 final-gate independent re-derivation (with
+    ``contract_edges.invalidation_set`` + ``Kata-Invalidated:`` coverage).  The hash is
+    normalized to **lowercase** to match ``contract_edges._EDGE_RE``'s lowercase-hex
+    pin — a case mismatch would silently fail the P2 re-derivation.  ``git log`` is
+    newest-first **for the linear, append-only integration history this system
+    produces**, so the FIRST occurrence per id (the most-recent supersede) wins (a
+    future caller running this against a merge-laden branch would need an explicit
+    ``--date-order``).  No trailer ⇒ ``{}`` (BC).
+    """
+    lines = _scan_integration_commit_bodies(repo_root, integration_branch, plan_path)
+    if lines is None:
+        return {}
+    out: dict[str, str] = {}
+    for line in lines:
+        m = _KATA_SUPERSEDE_RE.match(line)
         if m:
-            task_ids.add(m.group(1))
-    return task_ids
+            cid = m.group(1)
+            if cid not in out:  # newest-first ⇒ keep the most-recent supersede per id
+                out[cid] = m.group(2).lower()
+    return out
 
 
 def compute_redispatch_set(

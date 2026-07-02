@@ -179,10 +179,15 @@ float clause (the behavior change) ships only in P2, after its safety substrate 
   P2 final-gate wiring where DESIGN M1-L4 already locates the combined scan; amended after the P0 engine
   review, D-recorded), `edge_honesty`. Self-contained; adversarially reviewed as built code. No behavioral
   change to any run (nothing calls it yet). **This is the foundation and lands first.**
-- **M1-P1 — durable substrate.** `Kata-Invalidated:` + `Kata-Supersede:` commit-trailer parsing;
-  `kata_restore.parse_plan_tasks` unions `builds_against` keys; `collect_integrated_tasks` subtracts
-  `Kata-Invalidated:` ids. Restore-correctness tests (lost-run re-dispatch). Still no float — additive,
-  BC.
+- **M1-P1 — durable substrate. ✅ DONE (2026-07-02, `PLAN-p1-substrate.md`).** `Kata-Invalidated:` +
+  `Kata-Supersede:` commit-trailer parsing in `kata_restore.py` (NOT `kata_supersede.py` — name taken);
+  `parse_plan_tasks` unions `builds_against` keys; `collect_integrated_tasks` subtracts `Kata-Invalidated:`
+  ids (set-based, over-dispatch-safe) via a shared `_scan_integration_commit_bodies` helper;
+  `parse_supersede_trailers` provided for the P2 gate (hash lowercased to match `_EDGE_RE`). +10 tests
+  (union + subtract mutation-proven; malformed-invalidation surfaced-not-swallowed). Additive, BC, no float.
+  Fresh-context adversarial review: **SHIP** (over-dispatch-only direction + hash symmetry verified
+  empirically); the one LOW (malformed-trailer under-dispatch vector) folded as a loud surface + P2-gate
+  backstop note.
 - **M1-P2 — wiring + the float.** The `builds_against` schema in `kata-plan/RUBRIC.md`; the
   dispatchable-at-freeze clause (`kata-orchestrate:211,481`); the supersede enumerate+trailer+route
   (`:507-509`); the final-gate independent re-derivation + surviving-stub + surface-drift checks

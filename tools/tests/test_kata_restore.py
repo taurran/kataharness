@@ -676,3 +676,207 @@ def test_fold_board_parity_canonical_reduce():
     # T3: corrupted row skipped — must not appear in frontier
     assert "T3" not in frontier["starts"], "corrupted row must be silently skipped"
     assert "T3" not in frontier["in_flight"]
+
+
+# ---------------------------------------------------------------------------
+# Freeze/Float M1-P1 — durable trailer substrate (builds_against union +
+# Kata-Invalidated subtract + Kata-Supersede parser).  Additive/BC.
+# ---------------------------------------------------------------------------
+
+def _make_plan_with_builds_against(
+    repo: Path, ownership_ids: list[str], builds_against: dict[str, list[str]]
+) -> Path:
+    """PLAN whose frontmatter has ownership: + builds_against: (M1-L2 union target)."""
+    plan_dir = repo / ".planning"
+    plan_dir.mkdir(exist_ok=True)
+    own = "\n".join(f"  {t}: []" for t in ownership_ids)
+    ba = "\n".join(
+        f"  {t}:\n" + "\n".join(f"    - {e}" for e in edges)
+        for t, edges in builds_against.items()
+    )
+    content = f"---\nownership:\n{own}\nbuilds_against:\n{ba}\n---\n\n# Plan\n"
+    plan_path = plan_dir / "PLAN.md"
+    plan_path.write_text(content, encoding="utf-8")
+    return plan_path
+
+
+def _add_invalidation_commit(repo: Path, branch: str, task_id: str) -> None:
+    """Add a re-open commit carrying a Kata-Invalidated: trailer (M1-L3/F5)."""
+    _git(["checkout", branch], repo)
+    art = repo / f"invalidated_{task_id}.txt"
+    art.write_text(f"reopened {task_id}\n", encoding="utf-8")
+    _git(["add", art.name], repo)
+    _git(["commit", "-m", f"chore: re-open {task_id}\n\nKata-Invalidated: {task_id}"], repo)
+
+
+def _add_supersede_commit(repo: Path, branch: str, cid: str, new_hash: str) -> None:
+    """Add a commit carrying a Kata-Supersede: <id>@<hash> trailer (M1-L3/L8)."""
+    _git(["checkout", branch], repo)
+    art = repo / f"supersede_{cid}_{new_hash}.txt"
+    art.write_text("surface change\n", encoding="utf-8")
+    _git(["add", art.name], repo)
+    _git(["commit", "-m", f"chore: supersede {cid}\n\nKata-Supersede: {cid}@{new_hash}"], repo)
+
+
+# --- Slice A: parse_plan_tasks unions builds_against keys ----------------------
+
+def test_parse_plan_tasks_unions_builds_against(tmp_path):
+    # A contract-only dependent (D1) appears ONLY under builds_against — it must be in
+    # the task set or restore silently drops it (M1-L2).  Mutation: drop the union
+    # block → D1 missing → this test goes red.
+    repo = _make_git_repo(tmp_path)
+    plan = _make_plan_with_builds_against(repo, ["P1"], {"D1": ["C1@abcd1234"]})
+    ids = kata_restore.parse_plan_tasks(plan)
+    assert ids == {"P1", "D1"}
+
+
+def test_parse_plan_tasks_no_builds_against_is_bc(tmp_path):
+    # BC: a PLAN with no builds_against yields exactly the ownership keys (unchanged).
+    repo = _make_git_repo(tmp_path)
+    plan = _make_plan(repo, ["A1", "A2"])
+    assert kata_restore.parse_plan_tasks(plan) == {"A1", "A2"}
+
+
+# --- Slice B: collect_integrated_tasks subtracts Kata-Invalidated --------------
+
+def test_collect_integrated_subtracts_invalidated(tmp_path):
+    # T1 integrated then invalidated (crash mid-invalidation) → NOT in integrated set
+    # (⇒ re-dispatched).  T2 (untouched) stays.  Mutation: `return integrated` instead
+    # of `integrated - invalidated` → T1 present → this test goes red.
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1", "T2"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+    _add_integration_commit(repo, "integration", "T2")
+    _add_invalidation_commit(repo, "integration", "T1")
+
+    integrated = kata_restore.collect_integrated_tasks(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert "T2" in integrated
+    assert "T1" not in integrated, "invalidated integrated task must be subtracted"
+
+
+def test_collect_integrated_no_invalidated_is_bc(tmp_path):
+    # BC: with no Kata-Invalidated trailer, the integrated set is the pre-P1 result.
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1", "T2"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+    integrated = kata_restore.collect_integrated_tasks(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert integrated == {"T1"}
+
+
+def test_restore_redispatches_invalidated_integrated_task(tmp_path):
+    # Crash mid-invalidation: T1 has BOTH Kata-Task: and Kata-Invalidated: → restore
+    # must re-dispatch it (the durable trailer survives the .kata/ wipe).  T2 stays done.
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1", "T2"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+    _add_integration_commit(repo, "integration", "T2")
+    _add_invalidation_commit(repo, "integration", "T1")
+
+    board = (
+        "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+        "2024-01-01T10:00:01+00:00 | worker-2 | CLAIM | T2 | starting T2\n"
+    )
+    _write_board_and_snapshot(repo, board)
+    _delete_tier3(repo)
+
+    result = kata_restore.restore(
+        repo_root=str(repo), plan_path=str(plan), integration_branch="integration"
+    )
+    assert result["lost_run"] is True
+    assert "T1" in result["redispatch"], "invalidated integrated task must be re-opened"
+    assert "T2" not in result["redispatch"], "T2 integrated, not invalidated → done"
+
+
+def test_collect_integrated_surfaces_malformed_invalidated(tmp_path, capsys):
+    # A malformed Kata-Invalidated trailer (multi-token, task-id unrecoverable) cannot
+    # be subtracted → the task stays integrated (the documented LOW under-dispatch
+    # vector; P2's final gate is the fail-closed authority per DESIGN M1-L9).  It must
+    # be SURFACED, never silently swallowed.
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+    # Malformed: strict regex requires a lone token; "T1 oops extra" has spaces.
+    art = repo / "bad_inv.txt"
+    art.write_text("x\n", encoding="utf-8")
+    _git(["add", art.name], repo)
+    _git(["commit", "-m", "chore: bad reopen\n\nKata-Invalidated: T1 oops extra"], repo)
+
+    integrated = kata_restore.collect_integrated_tasks(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert "T1" in integrated, "malformed trailer cannot subtract — task stays (documented)"
+    out = capsys.readouterr().out
+    assert "malformed Kata-Invalidated" in out, "malformed trailer must be surfaced, not silent"
+
+
+# --- Slice C: parse_supersede_trailers (provided in P1, consumed by P2) --------
+
+def test_parse_supersede_trailers_basic(tmp_path):
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_supersede_commit(repo, "integration", "C1", "abcd1234ef")
+    out = kata_restore.parse_supersede_trailers(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert out == {"C1": "abcd1234ef"}
+
+
+def test_parse_supersede_trailers_lowercases_hash(tmp_path):
+    # Hash normalized to lowercase to match contract_edges._EDGE_RE's lowercase-hex pin.
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_supersede_commit(repo, "integration", "C1", "ABCD1234")
+    out = kata_restore.parse_supersede_trailers(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert out == {"C1": "abcd1234"}
+
+
+def test_parse_supersede_trailers_most_recent_wins(tmp_path):
+    # Two supersedes of C1; git log is newest-first, so the most-recent hash wins.
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_supersede_commit(repo, "integration", "C1", "11111111")
+    _add_supersede_commit(repo, "integration", "C1", "22222222")
+    out = kata_restore.parse_supersede_trailers(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert out == {"C1": "22222222"}
+
+
+def test_parse_supersede_trailers_empty_when_none(tmp_path):
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+    out = kata_restore.parse_supersede_trailers(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert out == {}
