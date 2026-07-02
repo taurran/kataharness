@@ -2,7 +2,7 @@
 
 > Paste-ready, self-contained. You are a fresh coding-agent window resuming KataHarness. Read this top to bottom
 > before touching anything. Milestone 1 is **merged to master**; Freeze/Float **M1-P0 + M1-P1 are built, reviewed
-> SHIP, and committed** on `freeze-float/m1-contract-edges` (unpushed); nothing is broken; the operator has **HELD**
+> SHIP, and committed** on `freeze-float/m1-contract-edges` (PUSHED, tracking origin); nothing is broken; the operator has **HELD**
 > before **M1-P2 (the float)**. Your first job is to re-anchor and confirm state, not to start a build. **P2 is the
 > behavior change and requires its own adversarial freeze-gate + operator go before it is built or merged.**
 
@@ -21,11 +21,11 @@
 ## 1. ★ BRANCH TOPOLOGY
 ```
 master  8653faf  (Milestone 1 "Release Hardening" MERGED — PR #4, merge commit)
-   └── freeze-float/m1-contract-edges   ← Freeze/Float M1 P0+P1 DONE  ·  CURRENT TIP (rebased onto master, UNPUSHED)
+   └── freeze-float/m1-contract-edges   ← Freeze/Float M1 P0+P1 DONE  ·  CURRENT TIP (rebased onto master, PUSHED)
 ```
 - **Milestone 1 (Release Hardening): MERGED** to master `8653faf` (F1–F6 + tool-agnostic security gate, D137/L18).
   The `hardening/kenjiri-lessons` branch was deleted local+remote after merge.
-- **Freeze/Float M1-P0 + M1-P1 (`freeze-float/m1-contract-edges`, current, UNPUSHED):** the pure `contract_edges`
+- **Freeze/Float M1-P0 + M1-P1 (`freeze-float/m1-contract-edges`, current, PUSHED):** the pure `contract_edges`
   engine (P0) + the `kata_restore` durable-trailer substrate (P1). Rebased cleanly onto the merged master. Both
   fresh-context adversarially reviewed **SHIP**. Consumes M1's `footprint.file_content_hashes` + PROGRESS heartbeat.
 - **The branch is a clean P0+P1 checkpoint.** The PR for Freeze/Float should wait until **P2** lands so the float

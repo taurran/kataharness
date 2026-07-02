@@ -2012,3 +2012,49 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `ownership→provider-paths` resolution lives in the P2 caller (M1-L5 prose is the intent). *P0 hardening:*
   the two `except OSError: continue` fail-opens in `surviving_stubs`/`edge_honesty` closed to fail-closed
   (M1-L9) — +2 mutation-proven tests (38 total in `test_contract_edges.py`). No skill edits; tool + spec only.
+
+<!-- Integrated adversarial validation of Milestone 1 → Freeze/Float M1-P1, pre-P2. -->
+- **D139 — Integrated cross-seam adval of 653f501..8902fb0 (9 fresh-context reviewers) + fold —
+  2026-07-02.** Before building M1-P2 (the float), the operator directed a comprehensive fresh-context
+  adversarial validation of EVERY change from Milestone 1 through M1-P1 — one reviewer per module/group
+  (F1 preflight, F2 graph, F3 liveness, F4 seeding, F5 footprint, F6 security posture, P0 contract_edges,
+  P1 kata_restore, docs/specs), each told to BREAK the change vs its spec. **Result: 9× SHIP-WITH-FIXES,
+  0 HOLD — every spine held; every finding was a fail-open at a seam, an over-claim, or a missing pin**
+  (5 HIGH / ~15 MED / ~20 LOW; L19). All HIGHs + MEDs folded on `freeze-float/m1-contract-edges`:
+  - **P0/P1 (Freeze/Float):** `parse_supersede_trailers` now RAISES on git error (was `{}` — a D136
+    silent-permissive default the P2 gate would have consumed as "no supersede"); malformed
+    supersede/invalidation trailers loudly surfaced (prefix detectors; key-whitespace `\s*:` tolerance on
+    the subtract-side regexes only — `Kata-Task:` stays strict, the deliberate asymmetry: tolerance there
+    would err toward under-dispatch); phantom invalidation ids (no matching integration trailer) surfaced;
+    `surviving_stubs` extension-blind + UTF-16-aware (was `*.py`-only vs the DESIGN's language-agnostic
+    claim); `surface_hash` raises on a no-`.py` contract dir (was a silent empty pin); `_canon` comment
+    strip is quote-aware (a `#` in a string default masked ALL subsequent param edits) + black's magic
+    trailing comma normalized; `edge_honesty` relative-import blindness fixed at the root
+    (`graph_gen._module_to_path` leading-dot resolution + submodule `from X import mod` edges).
+  - **M1 fixes:** preflight blocks (not crashes) on a scalar JSON manifest; `changed_in_task` gains
+    `--no-renames` (rename detection hid cross-lane `git mv` AND made the gate git-config-dependent) +
+    raises on multiple merge-bases (criss-cross = ambiguous evidence, D136) — no-common-ancestor raise now
+    test-pinned; `graph_gen` gains the L3-mandated `src/` fallback (PEP-420 namespace layouts had zero
+    edges) + `_NON_SOURCE_ROOTS` exclusion (a `tests/`-nested package manufactured false edges).
+  - **Prose:** liveness stale-worker escalation is `kind: human-required` with recorded operator approval
+    (was `orchestrator-resolvable` — whose lifecycle "never reaches a human" let the monitor self-approve a
+    re-dispatch, violating L5); heartbeat cadence gains a wall-clock floor (`livenessDeadline`/2) + a
+    zero-module form (`0/1`); staleness clock measured from the LAST heartbeat; orchestrator files the
+    dark worker's ESCALATE on its behalf; evaluate's `when-available` no longer lists "cannot converge" as
+    cannot-run (it routed real findings around the three-party acceptance control); report's section-3 gate
+    line quotes the security STATE (was "Snyk count"); orchestrate's `required` posture states
+    scanner-absence blocks; seeding precondition no-ops for no-package-concept greenfields + the Python
+    example leak removed from the agnostic core (L7); kata-lang-profile's scope admits its BUILD-context
+    seeding role (was blanket "debug-only, never injected" — disclaiming the exact context F4 needs);
+    PROGRESS "opt-in/dashboard-only" residue purged (CONTEXT.md, kata_board.py, narration.md).
+  - **Docs:** ROADMAP/BACKLOG P1 status corrected (said "next", was DONE — the exact stale-doc class D138
+    closed); CHANGELOG 2189→2190 (+3→+4 F5 tests); ORIENTATION push-state; PLAN-p0 edge_honesty signature
+    annotated per D138#3; DESIGN acceptance dangling-import attribution → P2 gate; **P2 gate obligations
+    recorded in the DESIGN Phasing** (supersede-id cross-check, contracts/ anchor, raise-consumption,
+    dangling-import half, ownership-dir expansion).
+  - **Deferred (accepted, tracked):** BACKLOG #17 RESULT.json security-state carrier; #18 `.snyk`
+    vendor-specific acceptance artifact (L6 amendment); #19 sprint-blind guard config-namespace coverage;
+    #20 preflight cleanup-helper raw manifest read. AC-3's "byte-for-byte BC test" for `securityScan` is
+    acknowledged unfalsifiable as written (prose skills; noted, not shimmed).
+  Skill bumps: kata-orchestrate 0.4.3, kata-evaluate 0.2.1, kata-report 0.1.2, kata-lang-profile 0.1.2,
+  kata-preflight 0.1.2. Suite 2236 → **2270** (+34 adval tests, each code-bearing fix mutation-proven: 13 guards disabled → red → reverted). Snyk medium+ 0. Fixes committed only on operator approval.

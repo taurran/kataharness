@@ -187,12 +187,24 @@ float clause (the behavior change) ships only in P2, after its safety substrate 
   (union + subtract mutation-proven; malformed-invalidation surfaced-not-swallowed). Additive, BC, no float.
   Fresh-context adversarial review: **SHIP** (over-dispatch-only direction + hash symmetry verified
   empirically); the one LOW (malformed-trailer under-dispatch vector) folded as a loud surface + P2-gate
-  backstop note.
+  backstop note. **Adval hardening (2026-07-02 integrated sweep):** `parse_supersede_trailers` RAISES on a
+  git error (a `{}` would be indistinguishable from "no supersede" and vacuously pass the P2 audit —
+  D136); malformed supersede/invalidation trailers are loudly surfaced (prefix detectors, key-whitespace
+  tolerant); a phantom invalidation id (matches no integration trailer) is surfaced as the under-dispatch
+  signature.
 - **M1-P2 — wiring + the float.** The `builds_against` schema in `kata-plan/RUBRIC.md`; the
   dispatchable-at-freeze clause (`kata-orchestrate:211,481`); the supersede enumerate+trailer+route
   (`:507-509`); the final-gate independent re-derivation + surviving-stub + surface-drift checks
   (`:525-540`); the `kata-review` edge-honesty surface. Re-gated on its own before merge. **Only here does
   a contract-only dependent actually dispatch early** — and only with every companion live.
+  **P2 gate OBLIGATIONS (adval 2026-07-02 — the engine/substrate residuals the P2 wiring MUST close):**
+  (i) cross-check every `Kata-Supersede:` contract id against the frozen plan's pinned contract-id set — a
+  typo'd/case-variant id has an empty `invalidation_set` and would be vacuously "fully covered" (P0-F11);
+  (ii) anchor/exclude the `contracts/` match for `surviving_stubs` (any-depth match will spuriously flag
+  vendored trees, fail-closed direction but noisy — P0-F7); (iii) consume `parse_supersede_trailers`
+  knowing it RAISES on git error — the gate must fail closed on that raise, not catch-and-continue;
+  (iv) the dangling-import half of the stub scan (deferred from P0); (v) expand `ownership:` dirs to file
+  lists before calling `edge_honesty` (it matches exact file paths — P0-F10).
 
 Each phase is its own freeze→build→gate cycle. P0 is buildable now against this DESIGN; P1/P2 re-freeze
 their own PLAN slices as they come.
@@ -230,7 +242,8 @@ their own PLAN slices as they come.
    parse_plan_tasks unions `builds_against` (restore under-dispatch guard) + subtracts `Kata-Invalidated:` trailer ids;
    `surface_hash` stable across body-fill, changes on interface edit + rename; `invert`/`invalidation_set`
    correctness incl. **RAISE on malformed** + empty-well-formed BC; `surviving_stubs` catches a surviving
-   sentinel AND a dangling import, passes when retired; `edge_honesty` flags an impl-import + passes a
+   sentinel (extension-blind, any `contracts/` file), passes when retired; the dangling-import half is the
+   P2 final gate's (per the #3 amendment — not `surviving_stubs`); `edge_honesty` flags an impl-import + passes a
    contract-only dependent; the final-gate independent re-derivation returns NEEDS_WORK when a supersede
    touched a contract with no covering record.
 3. **BC:** a run with no `builds_against` edge is byte-for-byte unchanged (parser, frontier, supersede,

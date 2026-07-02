@@ -36,7 +36,7 @@ Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED
   - **M1 — contract edges (`builds_against`) + 3 companions.** Two adversarial freeze-gates on the DESIGN (both
     HOLD → all folded); phased so the behavior change lands last: **P0 engine ✅ DONE** (`tools/contract_edges.py`
     — `invert`/`invalidation_set`/`surface_hash`/`surviving_stubs`/`edge_honesty`; 38 tests, mutation-proven,
-    **zero-wired ⇒ BC**) → **P1 ⏳** durable substrate (`Kata-Invalidated:`/`Kata-Supersede:` commit-trailer
+    **zero-wired ⇒ BC**) → **P1 ✅ DONE** durable substrate (`Kata-Invalidated:`/`Kata-Supersede:` commit-trailer
     parsing + `kata_restore` union/subtract) → **P2 ⏳** wiring + the actual float (re-gated before merge).
     Spec `specs/freeze-float-m1/` (LOCKED M1-L1…L9 + D138 amendment). Branch `freeze-float/m1-contract-edges`
     (stacked on master).
@@ -142,7 +142,7 @@ benchmark → recursive parallelism (DAG-within-DAG).
 |---|---|
 | v0.1 core | ✅ **SHIPPED 2026-06-30 (tag `v0.1.0`)** — 47 skills; 2141 pytest; validate 47/0; Snyk medium+ 0. Cluster items 1–5 all done. Remaining backlog explicitly deferred to v0.1.x. |
 | Milestone 1 — Release Hardening | ✅ **SHIPPED 2026-07-02** (PR #4, merge `8653faf`; D137, L1–L10) — F1–F6 + tool-agnostic security gate; 2190 pytest; validate 47/0; Snyk 0. |
-| Milestone 2 — Freeze/Float (D138) | **IN PROGRESS (operator-directed)** — ship order M1→M4→M2→M3. M1-P0 engine DONE (`contract_edges.py`, 38 tests, zero-wired/BC); M1-P1 (durable trailer substrate) next; M1-P2 (float) re-gated. |
+| Milestone 2 — Freeze/Float (D138) | **IN PROGRESS (operator-directed)** — ship order M1→M4→M2→M3. M1-P0 engine DONE (`contract_edges.py`, zero-wired/BC) + M1-P1 durable trailer substrate DONE (`kata_restore` union/subtract/supersede-parser, reviewed SHIP); **M1-P2 (the float) is NEXT, re-gated**. |
 | Modes Spec A (A1–A4) | **COMPLETE + merged** — validator + tiers + bootstrap/readiness + version-up/kata-graph + frontier/async-escalation; **25 skills**; D1–D56 |
 | sprint-cadence | **COMPLETE + SHIPPED 2026-06-30** (D78–D85 + D15/A5 review SHIP). NEW: `kata-plan` roadmap layer (`ROADMAP.md`) + `kata-sprint` (G1–G4 boundary) + `kata-report` v1; EXTEND config/state/handoff/escalation + selfhandoff/readiness/handoff; orchestrate stays sprint-blind (BC2). D15/A5 fresh-context `kata-review`: **SHIP ✅** |
 | loop-cognition | **COMPLETE + merged** (D60–D69 design + RS/AO/ML all built; 3 new skills; β feed DONE 2026-06-18) |

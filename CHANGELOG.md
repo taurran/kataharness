@@ -14,7 +14,7 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 Six field-verified harness fixes from the Kenjiri v1.0.0 one-shot, each verified against the code by
 fresh-context investigators before the fix (three reshaped from the run's proposal to avoid regressions).
-Spec: `.planning/specs/kenjiri-lessons/`. Baseline `653f501` (pytest 2177) → **2189 pytest**, validate
+Spec: `.planning/specs/kenjiri-lessons/`. Baseline `653f501` (pytest 2177) → **2190 pytest**, validate
 47/0, Snyk medium+ 0.
 
 - **F1 · Preflight fail-closed on malformed manifest** (`kata-preflight` 0.1.1) — a misspelled/absent/
@@ -26,7 +26,7 @@ Spec: `.planning/specs/kenjiri-lessons/`. Baseline `653f501` (pytest 2177) → *
 - **F5 · Commit-scoped lane-check + file-hash stamping** (`kata-orchestrate` 0.4.x, `kata-evaluate` 0.2.0,
   `footprint.py`) — the drift check prescribed no git method; a task forked from an earlier integration
   head false-flagged foreign files. New `changed_in_task` (three-dot merge-base diff) + `file_content_hashes`
-  (Freeze/Float M4 evidence substrate). +3 tests incl. a real-git fork scenario, mutation-proven.
+  (Freeze/Float M4 evidence substrate). +4 tests incl. a real-git fork scenario, mutation-proven.
 - **F3 · Structured PROGRESS heartbeat + liveness monitor** (`kata-orchestrate`, `protocol/board.md`) —
   workers stamped only CLAIM/DONE (Kenjiri: 37 min dark). Mandated per-owned-module PROGRESS
   (`modulesDone/modulesOwned`, also the M4 slack-timing signal) + a liveness monitor routing stale workers

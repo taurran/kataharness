@@ -197,3 +197,15 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
   **directly, not dogfooded** — self-certifying a gate's repair with that same gate is the anti-pattern the
   fresh-context discipline exists to prevent; and indeed both the harness's own sprint-blind test and the WS-A
   adversarial pass each caught a real defect the author's green tests missed.
+
+- **L19 — Unit-reviewed ≠ integration-reviewed: run one fresh-context adversarial sweep over the WHOLE
+  merged body of work before wiring anything on top of it. (2026-07-02)** Every Milestone-1 fix and both
+  Freeze/Float phases had passed their own build-time adversarial review — and the integrated 9-reviewer
+  sweep still surfaced 5 HIGHs, all at SEAMS no unit review owned: a gate consuming a parser's error
+  default (`parse_supersede_trailers` `{}` on git error), a shared resolver's blind spot inherited by a
+  new gate (`edge_honesty` × relative imports), a scan whose extension filter contradicted the DESIGN's
+  language-agnostic claim (`surviving_stubs` × `*.py`), an escalation KIND that self-approved what the
+  spine said was human-gated (liveness × `orchestrator-resolvable`), and a git config-dependent diff
+  (`--no-renames`). The unit reviews were all honest and all passed honestly — the holes lived between
+  the units. Corollary: reviewer prompts must name the ADJACENT seams (what consumes this? what does this
+  reuse?), not just the module's own spec.

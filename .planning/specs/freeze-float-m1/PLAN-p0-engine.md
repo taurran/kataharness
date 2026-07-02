@@ -46,7 +46,11 @@ Edge grammar (M1-L1): `builds_against: { "<task>": [ "<contractId>@<surfaceHash>
   where the dependent file-set + merged integration tree exist (DESIGN M1-L4 already locates the combined
   sentinel+dangling scan there). P0 delivers the sentinel primitive only; the descope is recorded here
   and in the DESIGN Phasing, not silently taken.
-- `edge_honesty(builds_against, ownership, repo_root) -> [violation]` — for each `builds_against`
+- `edge_honesty(builds_against, ownership, repo_root) -> [violation]`
+  **AMENDED (D138 Amendment #3):** built as the lowered primitive
+  `edge_honesty(dependent_files, provider_paths, repo_root)` — the `builds_against→dependent-files` +
+  `ownership→provider-paths` resolution lives in the P2 caller. A P2 builder wires the BUILT signature,
+  not this line's shorthand. — for each `builds_against`
   dependent, a violation if any of its test files imports a path owned by the provider (from `ownership`)
   rather than only `contracts/<id>/`. Reuses `_extract_imports`/`_resolve_module`.
 - Tests: surviving sentinel caught; retired ⇒ clean; a non-`contracts/` sentinel ignored; an impl-import
