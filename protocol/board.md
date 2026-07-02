@@ -20,8 +20,11 @@ Machine state — kept separate from durable Obsidian docs ([[STANDARDS]] §5).
 
 `CLAIM`/`DONE` are the worker-self-stamped start/end of a task; because the worker authors them with its own process clock, the board is the artifact-of-record for concurrency (it does not depend on orchestrator-written timestamps).
 
-- **PROGRESS is a mandated liveness heartbeat (F3)** — the worker emits one per owned-module completed —
-  but it remains **excluded from the coordination logic and from concurrency evidence**: it is read by the
+- **PROGRESS is a mandated liveness heartbeat (F3)** — the worker emits one per owned-module completed
+  AND at least once per `livenessDeadline`/2 of wall-clock (a long single module must not read as dark);
+  a task with no countable modules heartbeats as `0/1 <label>`. Staleness is measured from the **most
+  recent** CLAIM/PROGRESS line (a worker that heartbeats once then hangs is still detected). PROGRESS
+  remains **excluded from the coordination logic and from concurrency evidence**: it is read by the
   dashboard, the orchestrator's **liveness monitor**, and (later) the Freeze/Float M4 slack-timing
   estimator. The DECISION/BLOCK/ESCALATE invariants are unchanged; a **missing** PROGRESS never gates a
   task — it only triggers the liveness monitor's staleness path (nudge → escalate → human-gated

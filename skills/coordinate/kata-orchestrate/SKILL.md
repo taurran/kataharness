@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.4.2
+version: 0.4.3
 category: coordinate
 status: experimental
 agnostic: true
@@ -76,13 +76,17 @@ does not drift.**
 4. The **file-ownership partition is disjoint** — no file appears under two tasks. If it isn't, the plan is
    not executable concurrently; escalate to re-freeze, do not improvise.
 5. **The project's own package is importable before wave-1 (F4 — greenfield seeding).** For a greenfield
-   build, verify the project package imports cleanly (its build backend / packaging is seeded) **before**
+   build **whose language/toolchain has a package concept** (a matching [[kata-lang-profile]] overlay
+   exists), verify the project package imports cleanly (its build backend / packaging is seeded) **before**
    dispatching any worker — otherwise workers each patch packaging locally (e.g. `sys.path` shims), which is
    cross-lane drift that masks the real gap (the Kenjiri F4 failure). This is **language-agnostic in the
-   core**; the concrete checklist lives in the language overlay ([[kata-lang-profile]] `resources/<lang>.md`
-   — e.g. Python: `[build-system]` + `[tool.setuptools.packages.find] where=["src"]` + `import <pkg>` exits
-   0). A packaging failure ⇒ fix at the root/orchestrator layer, never via a per-worker shim. (Version-up /
-   existing-repo runs already import cleanly — this precondition is a greenfield no-op there, BC.)
+   core**; the concrete seeding checklist AND the verify command live in the language overlay
+   ([[kata-lang-profile]] `resources/<lang>.md`). **No matching overlay / no package concept** (static site,
+   shell tooling, docs repo) ⇒ this precondition is a **no-op** — do not block a legitimate greenfield run
+   on a package it cannot have. A packaging failure ⇒ fix at the root/orchestrator layer, never via a
+   per-worker shim; if the orchestrator cannot seed it (unknown build backend), **escalate** (`kind:
+   human-required`) — do not dispatch wave-1 over broken packaging. (Version-up / existing-repo runs already
+   import cleanly — this precondition is a greenfield no-op there, BC.)
 
 ## Comprehension phase (ADDITIVE — debug run only; BC: absent `kata/module/debug` ⇒ silent no-op)
 
@@ -266,28 +270,39 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      not the per-task worktree (S3b lesson: per-task worktrees have their own `.kata/` paths; only the
      integration root's `.kata/board.md` is the shared board the orchestrator and evaluator read).
    - **emit a `PROGRESS` heartbeat (F3 — mandated, not optional):** append a `PROGRESS` line to the shared
-     board **per owned-module completed**, with `msg` = `<modulesDone>/<modulesOwned> <label>`. This is the
-     worker's liveness signal (a worker that CLAIMs and then works silently for tens of minutes is
-     indistinguishable from a hung one — the Kenjiri F3 failure). `PROGRESS` is excluded from coordination
-     and concurrency evidence; it exists for the liveness monitor and the M4 slack-timing estimator.
+     board **per owned-module completed AND at least once per `livenessDeadline`/2 of wall-clock** (a long
+     single module must not read as dark), with `msg` = `<modulesDone>/<modulesOwned> <label>`; a task with
+     no countable modules (docs/config-only) heartbeats as `0/1 <label>` until its single unit completes.
+     The dispatch prompt tells the worker the deadline. This is the worker's liveness signal (a worker that
+     CLAIMs and then works silently for tens of minutes is indistinguishable from a hung one — the Kenjiri
+     F3 failure). `PROGRESS` is excluded from coordination and concurrency evidence; it exists for the
+     liveness monitor and the M4 slack-timing estimator.
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 
    **Liveness monitor (F3 — dark-worker detection; NO blind kill).** While workers run, the orchestrator
-   watches the shared board for staleness: a worker with a `CLAIM` but no `DONE` and no `PROGRESS` line for
-   longer than a configurable deadline (`livenessDeadline`, default 10 min) is **stale**. On
-   staleness, DO NOT SIGKILL and DO NOT silently re-dispatch. Instead route it through the **existing
-   escalation machinery**: (1) **nudge** — surface the stale worker to the operator (breakthrough-alert);
-   (2) if it stays dark past a second interval, treat it as a `kind: orchestrator-resolvable` **ESCALATE**
-   and drive it through [[kata-diagnose]] / the normal escalation → `DECISION` path; (3) **re-dispatch only
-   through that human-gated decision**, never automatically. A blind kill risks murdering a healthy-but-slow
-   worker mid-write; the heartbeat + escalation path preserves the dual-control spine. (Bounds mirror the
-   existing thrash valve — repeated staleness on one task routes to `kata-diagnose`, no new valve.)
+   watches the shared board for staleness: a worker with a `CLAIM` but no `DONE` whose **most recent
+   `CLAIM`/`PROGRESS` line is older than** a configurable deadline (`livenessDeadline`, default 10 min) is
+   **stale** — the clock measures time since the LAST heartbeat, so a worker that heartbeats once and then
+   hangs is still detected. On staleness, DO NOT SIGKILL and DO NOT silently re-dispatch. Instead route it
+   through the **existing escalation machinery**: (1) **nudge** — surface the stale worker to the operator
+   (breakthrough-alert); (2) if it stays dark for a further `livenessDeadline`, the ORCHESTRATOR files the
+   **ESCALATE** on the dark worker's behalf (the worker, being dark, cannot author its own payload) as
+   `kind: human-required` — staleness is a dual-control decision, NOT orchestrator-resolvable (an
+   orchestrator-resolvable kind never reaches a human, which would let the monitor self-approve a
+   re-dispatch); drive it through [[kata-diagnose]] / the normal escalation → `DECISION` path, where the
+   DECISION must record the operator's approval; (3) **re-dispatch only through that human-approved
+   decision**, never automatically — the original worker may be healthy-but-slow and still writing its owned
+   files (double-writer hazard). A blind kill risks murdering a healthy-but-slow worker mid-write; the
+   heartbeat + escalation path preserves the dual-control spine. (Bounds mirror the existing thrash valve,
+   N=2: two staleness escalations on one task ⇒ route to [[kata-diagnose]], no new valve.)
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
    verify (tests + **the security scan**). Not done until evidence is read and passes. Confirm it touched
    **only its owned files** (drift check).
    **Security scan is tool-agnostic + posture-driven (Lever 2 / F6).** Use whatever scanner the toolchain
    provides — never assume a vendor, never shim tooling to force a scan. Honor `kata.config.securityScan`
-   (absent ⇒ `when-available`, BC): `required` ⇒ fail-closed; `when-available` ⇒ run if a scanner is wired
+   (absent ⇒ `when-available`, BC): `required` ⇒ fail-closed — **under `required`, scanner-absence or an
+   unsupported toolchain BLOCKS the task; it never degrades-and-proceeds** (the degrade-and-surface
+   carve-out below is `when-available`-only); `when-available` ⇒ run if a scanner is wired
    and the toolchain supported, else mark the task's scan `degraded` and **surface it** (never a silent
    clean, never a hard-block on scanner-absence); `off` ⇒ skip by policy, surfaced. A finding that cannot
    converge to zero has a **documented-acceptance terminal state**: genuine hardening → in-repo acceptance

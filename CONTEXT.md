@@ -206,9 +206,11 @@ Single-writer current-truth snapshot owned by the orchestrator (`protocol/state.
 wavesDone. Written ONLY via `kata_board.write_state`/`update_task`. _Avoid_: a worker writing it (corruption, L3).
 
 **PROGRESS heartbeat**:
-The opt-in board TYPE added in S1 for smooth dashboard bars — `… | PROGRESS | <task> | <step>/<n> <label>`. Read
-ONLY by the dashboard; ignored by coordination logic. Maps to `percent = round(step/n*100)`. _Avoid_: treating it
-as a coordination signal.
+Originally the opt-in S1 board TYPE for dashboard bars; since Milestone 1 (F3) it is the **mandated liveness
+heartbeat** — `… | PROGRESS | <task> | <modulesDone>/<modulesOwned> <label>`, one per owned-module completed and
+at least once per `livenessDeadline`/2 wall-clock (see `protocol/board.md`). Read by the dashboard AND the
+orchestrator's liveness monitor; still **excluded from coordination logic and concurrency evidence**. Maps to
+`percent = round(done/owned*100)`. _Avoid_: treating it as a coordination signal — or as optional (F3).
 
 **kata_board**:
 `tools/kata_board.py` — the single telemetry emitter both orchestrator and workers use; self-creates `.kata/`,

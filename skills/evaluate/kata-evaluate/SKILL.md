@@ -6,7 +6,7 @@ description: >-
   cannot rubber-stamp the builder's work. Checks acceptance criteria, the green gate, drift against LOCKED
   decisions, and scope.
 license: Apache-2.0
-version: 0.2.0
+version: 0.2.1
 category: evaluate
 status: experimental
 agnostic: true
@@ -54,12 +54,15 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
    - **`required`** — fail-closed: a scan that is not clean — **or that cannot run (no scanner wired /
      unsupported toolchain)** — AND has no sound documented-acceptance ⇒ NEEDS_WORK. Under `required`,
      scanner-absence **never** degrades-and-passes (the degrade-and-surface carve-out is `when-available`-only).
-   - **`when-available`** — run the scan if a scanner is wired AND the toolchain is supported; if it cannot run
-     (no scanner / unsupported toolchain / cannot converge), record it **`degraded` and surface it** — never a
+   - **`when-available`** — run the scan if a scanner is wired AND the toolchain is supported; if it cannot RUN
+     (no scanner / unsupported toolchain), record it **`degraded` and surface it** — never a
      silent "clean", never a NEEDS_WORK purely for scanner-absence, never shim tooling to force a scan.
+     A scan that RUNS and finds issues is NEVER `degraded` — findings that cannot converge to zero route
+     ONLY through the documented-acceptance path below (adval F6-1: "cannot converge" is not a
+     cannot-run condition; degrading it would bypass the three-party acceptance control).
    - **`off`** — operator opt-out; note it was skipped by policy (surfaced at handoff), do not fabricate a result.
    **Documented-acceptance is graded for SOUNDNESS, not raw count (F6).** A finding that cannot be driven to
-   zero (e.g. a scanner that does not credit a custom sanitizer) may terminate as: genuine hardening →
+   zero (e.g. a scanner that does not credit a custom sanitizer) terminates ONLY as: genuine hardening →
    in-repo acceptance (`.snyk` with reason + expiry) → a board DECISION. When such acceptance is present,
    grade whether it is **sound** — the reason is truthful, the residual risk is genuinely low, the expiry is
    set — NOT whether the raw finding count is zero. An unsound or undocumented suppression ⇒ NEEDS_WORK; a

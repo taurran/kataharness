@@ -1,13 +1,15 @@
 ---
 name: kata-lang-profile
 description: >-
-  Debug-mode language specialist pack: given the detected stack, apply the matching prose prompt-profile
-  as an execute-phase overlay on kata-tdd (debug fix-loop) and kata-diagnose (diagnosis). Selection key
-  is the footprint's file extensions (primary); FM derivation_sources is a weak secondary hint only. The
-  overlay LAYERS via the orchestrator's dispatch — it never forks or edits kata-tdd/kata-diagnose, adds no
+  Language specialist pack with two roles: (1) DEBUG-mode prompt overlay — given the detected stack,
+  apply the matching prose profile as an execute-phase overlay on kata-tdd (debug fix-loop) and
+  kata-diagnose (diagnosis); (2) BUILD-context seeding reference (F4) — the greenfield seeding checklist
+  the kata-orchestrate wave-1 precondition delegates to, readable in ANY run shape. Selection key is the
+  footprint's file extensions (primary); FM derivation_sources is a weak secondary hint only. The overlay
+  LAYERS via the orchestrator's dispatch — it never forks or edits kata-tdd/kata-diagnose, adds no
   Python, and is prompt guidance only (it relaxes no gate). No matching profile ⇒ no overlay (BC).
 license: Apache-2.0
-version: 0.1.1
+version: 0.1.2
 category: execute
 status: experimental
 agnostic: true
@@ -58,9 +60,14 @@ Where IaC injects `[[kata-iac-terraform]]` / `[[kata-iac-cloudformation]]`, debu
 - **Prompt guidance, not a gate.** Profiles raise the floor on idiom, test-runner, and diagnosis quality.
   They **never** relax the **default-FAIL** verify gate or the **behavioral drift gate**, and they confer
   no confidence. A profile cannot make a finding auto-fix-eligible; only the deviation pipeline's gates can.
-- **Debug-only, never-tiered.** This pack is part of the debug spine (tags `kata/spine` + `kata/module/debug`).
-  Absent `kata/module/debug` it is never injected. There are no depth tiers — the profile is the same at
-  every depth (the *base* skill carries the depth via its own tiers).
+- **Debug-only OVERLAY, never-tiered — with one build-context exception.** The prompt-OVERLAY role is part
+  of the debug spine (tags `kata/spine` + `kata/module/debug`): absent `kata/module/debug` the overlay is
+  never injected. The **greenfield seeding sections** of the resources (marked "BUILD context — F4") are the
+  reference the [[kata-orchestrate]] wave-1 importability precondition delegates to and apply to ANY
+  greenfield build of a matching language — they are a checklist the ORCHESTRATOR reads, not a worker
+  overlay, so the debug-only injection rule does not gate them (adval F4-2: the previous blanket
+  "debug-only, never injected" disclaimed the exact context F4 needs). There are no depth tiers — the
+  profile is the same at every depth (the *base* skill carries the depth via its own tiers).
 - **Honest scope (§5 carry-forward).** A profile is a lens, not a guarantee. It does not assert structure-
   preservation and does not calibrate confidence; those honesty contracts live in the drift gate and the
   LD12 closeout report, not here.
