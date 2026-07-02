@@ -264,3 +264,22 @@ def test_file_content_hashes_roundtrip_and_change(tmp_path):
 def test_file_content_hashes_missing_is_none(tmp_path):
     h = footprint.file_content_hashes(["gone.py"], str(tmp_path))
     assert h["gone.py"] is None
+
+
+def test_changed_since_single_ref_unchanged(tmp_path, monkeypatch):
+    """BC guard: changed_since keeps its single-ref (two-dot) semantics — diff
+    HEAD against the given ref. Untouched by the F5 changed_in_task addition."""
+    repo = tmp_path
+    _git(["init"], repo)
+    _git(["checkout", "-b", "main"], repo)
+    _git(["config", "user.email", "t@t"], repo)
+    _git(["config", "user.name", "t"], repo)
+    (repo / "base.txt").write_text("base", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "base"], repo)
+    (repo / "second.txt").write_text("second", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "second"], repo)
+
+    monkeypatch.chdir(repo)
+    assert footprint.changed_since("HEAD~1") == ["second.txt"]

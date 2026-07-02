@@ -1,8 +1,9 @@
 """Footprint manifest and diff-stat helpers for KataHarness runs.
 
 Pure core functions (partition, is_within_footprint, manifest) do NOT call git.
-Thin git wrappers (changed_since, diff_stat) are provided separately and are
-not covered by the unit tests.
+Thin git wrappers (changed_since, diff_stat, changed_in_task) are provided
+separately; changed_in_task and file_content_hashes are exercised by real-git /
+tmp-dir tests, while changed_since/diff_stat remain thin pass-throughs.
 """
 
 from __future__ import annotations

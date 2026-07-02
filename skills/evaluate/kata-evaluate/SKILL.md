@@ -51,7 +51,9 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
    build (identical size on re-run where claimed), and **the security scan** — **tool-agnostic** (whatever
    scanner the project/toolchain provides; never assume a specific vendor). Paste the numbers. The verdict
    depends on `kata.config.securityScan` (Lever 2 / F6; **absent ⇒ `when-available`**, BC):
-   - **`required`** — fail-closed: a scan that is not clean AND has no sound documented-acceptance ⇒ NEEDS_WORK.
+   - **`required`** — fail-closed: a scan that is not clean — **or that cannot run (no scanner wired /
+     unsupported toolchain)** — AND has no sound documented-acceptance ⇒ NEEDS_WORK. Under `required`,
+     scanner-absence **never** degrades-and-passes (the degrade-and-surface carve-out is `when-available`-only).
    - **`when-available`** — run the scan if a scanner is wired AND the toolchain is supported; if it cannot run
      (no scanner / unsupported toolchain / cannot converge), record it **`degraded` and surface it** — never a
      silent "clean", never a NEEDS_WORK purely for scanner-absence, never shim tooling to force a scan.
