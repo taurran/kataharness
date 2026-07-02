@@ -75,6 +75,12 @@ def test_invert_raises_hash_too_short():
         ce.invert({"T2": ["C1@dead"]})  # < 8 hex
 
 
+def test_invert_raises_on_trailing_newline():
+    # \Z (not $) anchor: a trailing newline is malformed, not silently accepted.
+    with pytest.raises(ValueError):
+        ce.invert({"T2": [f"C1@{_H}\n"]})
+
+
 # --- invalidation_set ---------------------------------------------------------
 
 def test_invalidation_set_returns_bound_tasks():
@@ -165,6 +171,52 @@ def test_surface_hash_deferred_residual_constant(tmp_path):
     a = _contract(tmp_path, "MAX = 5\ndef foo(x):\n    ...\n", "a")
     b = _contract(tmp_path, "MAX = 10\ndef foo(x):\n    ...\n", "b")
     assert ce.surface_hash(a) == ce.surface_hash(b)  # residual: constants unseen
+
+
+def test_surface_hash_distinguishes_async(tmp_path):
+    # async is an interface change (callers must await) — must move the pin (#1).
+    a = _contract(tmp_path, "def foo(x):\n    ...\n", "a")
+    b = _contract(tmp_path, "async def foo(x):\n    ...\n", "b")
+    assert ce.surface_hash(a) != ce.surface_hash(b)
+
+
+def test_surface_hash_format_invariant_whitespace(tmp_path):
+    # Autoformatter whitespace must NOT flip the pin (#2 — M1-L8 no-op guarantee).
+    a = _contract(tmp_path, "def foo(x,y):\n    ...\n", "a")
+    b = _contract(tmp_path, "def foo(x,  y):\n    ...\n", "b")
+    c = _contract(tmp_path, "def foo( x , y ):\n    ...\n", "c")
+    assert ce.surface_hash(a) == ce.surface_hash(b) == ce.surface_hash(c)
+
+
+def test_surface_hash_format_invariant_comment(tmp_path):
+    a = _contract(tmp_path, "def foo(x, y):\n    ...\n", "a")
+    b = _contract(tmp_path, "def foo(x,  # note\n        y):\n    ...\n", "b")
+    assert ce.surface_hash(a) == ce.surface_hash(b)
+
+
+def test_surface_hash_excludes_nested_defs(tmp_path):
+    # A nested def/class inside a body is implementation, not surface (M1-L8 core).
+    a = _contract(tmp_path, "def foo(x):\n    ...\n", "a")
+    b = _contract(
+        tmp_path,
+        "def foo(x):\n    def helper():\n        return 1\n"
+        "    class Inner:\n        pass\n    return helper\n",
+        "b",
+    )
+    assert ce.surface_hash(a) == ce.surface_hash(b)
+
+
+def test_surface_hash_distinguishes_keyword_only(tmp_path):
+    a = _contract(tmp_path, "def foo(x, y):\n    ...\n", "a")
+    b = _contract(tmp_path, "def foo(x, *, y):\n    ...\n", "b")
+    assert ce.surface_hash(a) != ce.surface_hash(b)
+
+
+def test_surface_hash_is_valid_edge_hash(tmp_path):
+    # Internal consistency: a real surface_hash satisfies the builds_against grammar.
+    d = _contract(tmp_path, "def foo(x):\n    ...\n", "a")
+    h = ce.surface_hash(d)
+    ce.invert({"T1": [f"C1@{h}"]})  # must not raise
 
 
 # --- Slice C: surviving_stubs -------------------------------------------------

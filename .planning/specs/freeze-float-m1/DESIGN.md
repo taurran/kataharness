@@ -150,8 +150,10 @@ Two HOLDs converged on "M1 is a multi-milestone program." It is delivered as thr
 float clause (the behavior change) ships only in P2, after its safety substrate is built and gated:**
 
 - **M1-P0 — the `contract_edges` engine (pure, tested, NO wiring).** `surface_hash` (narrowed extractor,
-  fail-closed), `invert`, `invalidation_set` (raise-on-malformed), `surviving_stubs` (sentinel +
-  dangling-import), `edge_honesty`. Self-contained; adversarially reviewed as built code. No behavioral
+  fail-closed), `invert`, `invalidation_set` (raise-on-malformed), `surviving_stubs` (**sentinel content
+  check only** — the dangling-import half needs the dependent file-set + merged tree, so it lands with the
+  P2 final-gate wiring where DESIGN M1-L4 already locates the combined scan; amended after the P0 engine
+  review, D-recorded), `edge_honesty`. Self-contained; adversarially reviewed as built code. No behavioral
   change to any run (nothing calls it yet). **This is the foundation and lands first.**
 - **M1-P1 — durable substrate.** `Kata-Invalidated:` + `Kata-Supersede:` commit-trailer parsing;
   `kata_restore.parse_plan_tasks` unions `builds_against` keys; `collect_integrated_tasks` subtracts

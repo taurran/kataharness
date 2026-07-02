@@ -31,7 +31,8 @@ _PARSER = Parser(_PY_LANG)
 _FUNC_TYPES = ("function_definition", "async_function_definition")
 
 # <contractId>@<surfaceHash> — id is a path-safe slug; hash is lowercase hex (8–64).
-_EDGE_RE = re.compile(r"^(?P<id>[A-Za-z0-9._-]+)@(?P<hash>[0-9a-f]{8,64})$")
+# \Z (not $) so a trailing newline is rejected, not silently accepted (M1-L9).
+_EDGE_RE = re.compile(r"^(?P<id>[A-Za-z0-9._-]+)@(?P<hash>[0-9a-f]{8,64})\Z")
 
 
 def _parse_edge(entry: object) -> tuple[str, str]:
@@ -123,22 +124,45 @@ def _decorators_of(defn, src: bytes) -> list[str]:
     return []
 
 
+_COMMENT_RE = re.compile(r"#[^\n\r]*")
+_PUNCT_RE = re.compile(r"\s*(->|[(),:\[\]{}=|/*])\s*")
+
+
+def _canon(text: str) -> str:
+    """Canonicalize a signature fragment so cosmetic reformatting does NOT flip the
+    surface hash (M1-L8: a body-fill + autoformatter must be a no-op): strip line
+    comments, collapse whitespace, and remove whitespace around structural
+    punctuation. Applied symmetrically to both sides, so genuine token differences
+    still differ. (Residual: a `#` inside a string default is rare and treated as a
+    comment — a documented micro-residual, review-backstopped.)"""
+    t = _COMMENT_RE.sub("", text)
+    t = re.sub(r"\s+", " ", t).strip()
+    t = _PUNCT_RE.sub(r"\1", t)
+    return t
+
+
 def _emit_surface(defn, class_stack: list[str], src: bytes) -> str:
     """Build the surface string for one function/class definition (bodies excluded)."""
     name_node = defn.child_by_field_name("name")
     name = _text(name_node, src) if name_node else "?"
     qual = ".".join(class_stack + [name])
-    decs = _decorators_of(defn, src)
+    decs = [_canon(d) for d in _decorators_of(defn, src)]
     if defn.type in _FUNC_TYPES:
+        # async may be a distinct node type OR an `async` child token, depending on
+        # the tree-sitter-python grammar version — detect both.
+        is_async = defn.type == "async_function_definition" or any(
+            c.type == "async" for c in defn.children
+        )
+        kw = "async def" if is_async else "def"
         params = defn.child_by_field_name("parameters")
         ret = defn.child_by_field_name("return_type")
-        sig = f"def {qual}{_text(params, src) if params else '()'}"
+        sig = f"{kw} {qual}{_canon(_text(params, src)) if params else '()'}"
         if ret is not None:
-            sig += f" -> {_text(ret, src)}"
+            sig += f"->{_canon(_text(ret, src))}"
         line = sig
     else:  # class_definition
         supers = defn.child_by_field_name("superclasses")
-        line = f"class {qual}{_text(supers, src) if supers else ''}"
+        line = f"class {qual}{_canon(_text(supers, src)) if supers else ''}"
     return "\n".join(decs + [line])
 
 

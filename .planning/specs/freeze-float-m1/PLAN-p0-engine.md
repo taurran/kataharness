@@ -39,14 +39,19 @@ Edge grammar (M1-L1): `builds_against: { "<task>": [ "<contractId>@<surfaceHash>
   gap, not a bug — the review backstop owns it).
 
 ## Slice C — `surviving_stubs` + `edge_honesty` (scans, fail-closed)
-- `surviving_stubs(builds_against, repo_root, sentinel="# KATA-CONTRACT-STUB") -> [finding]` — a finding
-  for (a) any `contracts/` file still bearing the sentinel, and (b) any `builds_against` contract import
-  that fails to resolve (dangling, reuse `graph_gen._extract_imports`/`_resolve_module`). Empty ⇒ clean.
+- `surviving_stubs(repo_root, sentinel="# KATA-CONTRACT-STUB") -> [path]` — sorted `contracts/` files
+  still bearing the sentinel (language-agnostic content check). Empty ⇒ clean.
+  **AMENDED (post P0-engine-review, #3):** the **dangling-import** half — a `builds_against` contract
+  import that fails to resolve after retire-by-deletion — is **moved to M1-P2**, the final-gate wiring
+  where the dependent file-set + merged integration tree exist (DESIGN M1-L4 already locates the combined
+  sentinel+dangling scan there). P0 delivers the sentinel primitive only; the descope is recorded here
+  and in the DESIGN Phasing, not silently taken.
 - `edge_honesty(builds_against, ownership, repo_root) -> [violation]` — for each `builds_against`
   dependent, a violation if any of its test files imports a path owned by the provider (from `ownership`)
   rather than only `contracts/<id>/`. Reuses `_extract_imports`/`_resolve_module`.
-- Tests: surviving sentinel caught; dangling import caught; retired+resolved ⇒ clean; an impl-import
-  dependent flagged; a contract-only dependent clean. Mutation on each.
+- Tests: surviving sentinel caught; retired ⇒ clean; a non-`contracts/` sentinel ignored; an impl-import
+  dependent flagged; a contract-only dependent clean. Mutation on each. (Dangling-import tests move to
+  P2 with that primitive — #3 amendment.)
 
 ## Gate (P0 closeout)
 - `validate_skills` 0/0 (no skill edits in P0 — engine only); `pytest` green + new `test_contract_edges.py`;
