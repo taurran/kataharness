@@ -242,6 +242,10 @@ def surviving_stubs(repo_root: str | Path, sentinel: str = STUB_SENTINEL) -> lis
     half (a dependent still importing a deleted contract) needs the full dependent
     file set + merged-tree resolution context and is wired at the P2 final gate — it
     is NOT silently covered here.
+
+    Fail-closed (M1-L9): an unreadable `contracts/` file RAISES (`OSError`) — a file
+    the gate cannot read cannot be certified sentinel-free, so it is never silently
+    skipped (that would let a surviving stub pass). Mirrors ``surface_hash``.
     """
     root = Path(repo_root)
     found: list[str] = []
@@ -249,10 +253,7 @@ def surviving_stubs(repo_root: str | Path, sentinel: str = STUB_SENTINEL) -> lis
         rel = py.relative_to(root)
         if "contracts" not in rel.parts:
             continue
-        try:
-            text = py.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            continue
+        text = py.read_text(encoding="utf-8", errors="replace")  # raises → fail-closed
         if sentinel in text:
             found.append(rel.as_posix())
     return sorted(found)
@@ -272,6 +273,10 @@ def edge_honesty(
     it early is unsound). Residual (DESIGN M1-L5): import-surface honesty ≠ semantic
     honesty — a dependent importing only the contract can still lean on provider
     internals the contract under-specifies; that judgment is the review backstop's.
+
+    Fail-closed (M1-L9): an unreadable/absent dependent file RAISES (`OSError`) — a
+    file the gate cannot read cannot be certified honest, so it is never silently
+    deemed a non-violation.
     """
     from graph_gen import _extract_imports  # reuse the sole import scanner
 
@@ -281,10 +286,7 @@ def edge_honesty(
     violations: list[dict] = []
     for f in dependent_files:
         f_norm = f.replace("\\", "/")
-        try:
-            src = (root / f_norm).read_bytes()
-        except OSError:
-            continue
+        src = (root / f_norm).read_bytes()  # raises → fail-closed
         for _src_rel, dst_rel in _extract_imports(src, f_norm, all_rel):
             if dst_rel in forbidden:
                 violations.append({"file": f_norm, "imported": dst_rel})

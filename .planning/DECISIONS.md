@@ -1991,3 +1991,24 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   fresh-context adversarial pass each caught a real defect the author's green tests did not — the
   reproduce-don't-trust + fresh-context discipline earning its keep on a repair of the harness's own
   instruments.
+- **D138 — Freeze/Float is the sanctioned Milestone 2 (operator-directed); + M1 DESIGN reconciliation
+  before P1 — 2026-07-02.** *Sanction:* the operator explicitly ingested the **Freeze/Float doctrine
+  (validated draft v2)** into the Milestone-1 pass ("ingest the following into this pass"), directed shipping
+  M1 and opening M2 ("lets continue forward with this"), and greenlit building the P0 engine ("yes").
+  Freeze/Float is therefore a **first-class, operator-directed initiative — Milestone 2**, ship order
+  **M1→M4→M2→M3** (per L9). *Why this decision exists:* the sanction previously lived only in session prose +
+  `specs/freeze-float-m1/`; `ROADMAP.md`/`BACKLOG.md`/`STATE.milestone` still said "v0.2 = self-handoff +
+  concurrency", so every fresh/compacted context re-derived "what's next" from stale tracked docs and wrongly
+  concluded Freeze/Float was unsanctioned. Recorded here + written into ROADMAP/BACKLOG/STATE so it is never
+  re-litigated. *Milestone-1 landed:* PR #4 merged to master (`8653faf`, merge commit — SHAs preserved for the
+  stacked rebase); `freeze-float/m1-contract-edges` rebased onto master (clean, 2224 pytest green); hardening
+  branch deleted local+remote. *M1 DESIGN reconciled (folded as a dated amendment in the spec):* (i) the last
+  `.kata/invalidated.json` residue in the coverage table / change-map / acceptance-criteria replaced by the
+  git-durable `Kata-Invalidated:`/`Kata-Supersede:` commit trailers (M1-L3) — the DESIGN was internally
+  contradictory and would have mis-guided a P1 builder; (ii) `collect_integrated_tasks` subtract is
+  **set-based, over-dispatch-safe** (a re-integrated invalidated task may redundantly re-dispatch — the SAFE
+  direction per D134/D135; recency-precise subtraction deferred); (iii) the built `edge_honesty(dependent_files,
+  provider_paths, repo_root)` signature is the lowered P0 primitive — `builds_against→dependent-files` +
+  `ownership→provider-paths` resolution lives in the P2 caller (M1-L5 prose is the intent). *P0 hardening:*
+  the two `except OSError: continue` fail-opens in `surviving_stubs`/`edge_honesty` closed to fail-closed
+  (M1-L9) — +2 mutation-proven tests (38 total in `test_contract_edges.py`). No skill edits; tool + spec only.

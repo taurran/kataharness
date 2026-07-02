@@ -1,12 +1,28 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.2
-milestone_name: restore-hardening (durable board + auto-checkpoint + task-granular restore) + /kata commands
-status: shipped
-last_updated: "2026-07-01T00:00:00.000Z"
+milestone: M2-freeze-float
+milestone_name: "Freeze/Float (operator-directed, D138) — M1 contract edges; ship order M1→M4→M2→M3; M1-P0 engine done, M1-P1 next"
+status: in-progress
+last_updated: "2026-07-02T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-02b — Milestone 1 MERGED; Freeze/Float sanctioned + reconciled; building toward M1-P1):**
+> **Milestone 1 (Release Hardening) is MERGED to master** — PR #4 merged as merge commit `8653faf` (SHAs
+> preserved), `freeze-float/m1-contract-edges` **rebased onto master** (clean, tip after this doc pass), the
+> `hardening/kenjiri-lessons` branch deleted local+remote. **Freeze/Float is now RECORDED as the operator-directed
+> Milestone 2 (D138)** in ROADMAP/BACKLOG + this frontmatter — it was operator-directed all along (the doctrine
+> was ingested into the M1 pass); the earlier "unsanctioned" reading came from stale tracked docs, now fixed.
+> **Pre-P1 reconciliation done:** the M1 DESIGN's last `.kata/invalidated.json` residue replaced by git-durable
+> `Kata-Invalidated:`/`Kata-Supersede:` trailers (it was self-contradictory); `edge_honesty` signature +
+> `collect_integrated_tasks` set-based-subtract semantics documented; the two P0 `except OSError: continue`
+> fail-opens closed to fail-closed (M1-L9, +2 mutation-proven tests → **38 in `test_contract_edges.py`**).
+> **Green:** pytest **2226 passed / 3 skip** (`-m "not integration"`), validate 47/0, Snyk medium+ 0. **Next:
+> M1-P1** — durable trailer substrate (`Kata-Invalidated:`/`Kata-Supersede:` parsing, natural home `kata_restore.py`
+> NOT the pre-existing `kata_supersede.py`; `parse_plan_tasks` unions `builds_against`; `collect_integrated_tasks`
+> subtracts). Then **M1-P2** (wiring + the float, re-gated). Full brief: `.planning/NEXT-SESSION-ORIENTATION.md`.
+> *(Prior CURRENT blocks below are superseded history.)*
 
 > **CURRENT (2026-07-02, SESSION END — TWO initiatives in flight on stacked branches; hold at Freeze/Float M1-P0):**
 > This session shipped **Milestone 1 — Release Hardening** (six field-verified fixes from the Kenjiri one-shot,

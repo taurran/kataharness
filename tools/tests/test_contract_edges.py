@@ -242,6 +242,23 @@ def test_surviving_stubs_ignores_non_contract_files(tmp_path):
     assert ce.surviving_stubs(tmp_path) == []
 
 
+def test_surviving_stubs_raises_on_unreadable(tmp_path, monkeypatch):
+    # Fail-closed (M1-L9): a contracts/ file the gate cannot read must RAISE, never be
+    # silently skipped (that would let a surviving sentinel pass the final gate).
+    import pathlib
+
+    d = tmp_path / "contracts" / "c1"
+    d.mkdir(parents=True)
+    (d / "__init__.py").write_text("def foo():\n    ...\n", encoding="utf-8")
+
+    def _boom(self, *a, **k):
+        raise OSError("unreadable contract file")
+
+    monkeypatch.setattr(pathlib.Path, "read_text", _boom)
+    with pytest.raises(OSError):
+        ce.surviving_stubs(tmp_path)
+
+
 # --- Slice C: edge_honesty ----------------------------------------------------
 
 def _honesty_repo(tmp_path, test_body: str) -> None:
@@ -262,3 +279,11 @@ def test_edge_honesty_clean_when_contract_only(tmp_path):
     _honesty_repo(tmp_path, "from contracts.c1 import foo\n\ndef test_x():\n    foo()\n")
     v = ce.edge_honesty(["test_dep.py"], ["provider.py"], tmp_path)
     assert v == []
+
+
+def test_edge_honesty_raises_on_unreadable_dependent(tmp_path):
+    # Fail-closed (M1-L9): an absent/unreadable dependent file cannot be certified
+    # honest — RAISE, never silently deem it a non-violation.
+    _honesty_repo(tmp_path, "from contracts.c1 import foo\n")
+    with pytest.raises(OSError):
+        ce.edge_honesty(["does_not_exist.py"], ["provider.py"], tmp_path)

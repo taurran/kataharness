@@ -144,6 +144,30 @@ The frontier float clause lands LAST, only after its safety companions are wired
   M1-L5 review backstop for mock-shielded tests. The scans prove *structure* (no surviving sentinel, no
   dangling import, no un-superseded surface drift); *behavior* is proven by the existing green gate.
 
+## Amendment (2026-07-02, post-P0 · D138) — reconciliation before P1 opens
+
+Three corrections folded after the P0 engine landed and the full-context grounding pass, so the frozen
+DESIGN is internally consistent before P1 builds against it:
+
+1. **Durability is git-durable trailers — everywhere, including the change-map + acceptance criteria.** The
+   v2 re-gate moved invalidation off the disposable `.kata/invalidated.json` onto the `Kata-Invalidated:` /
+   `Kata-Supersede:` commit trailers (M1-L3), but the coverage table, change-map, and acceptance criteria
+   still named the rejected file. Reconciled: the ONLY durable invalidation record is the trailer; no
+   `.kata/*.json` invalidation artifact exists. (Line 39 keeps the file name — it is the narrative of *why*
+   the file was rejected, not a live mechanism.)
+2. **`collect_integrated_tasks` subtract is SET-BASED and over-dispatch-safe (P1 contract).** A task can be
+   integrated (`Kata-Task:`) → invalidated (`Kata-Invalidated:`) → re-integrated (`Kata-Task:` again). The
+   subtract removes any task-id bearing a `Kata-Invalidated:` trailer from the integrated set **by set
+   membership, not commit recency** — so a validly re-integrated task may be redundantly re-dispatched. That
+   is deliberate: over-dispatch is the SAFE direction (D134/D135 — tier-2 authoritative, board corroborates
+   never gates, err toward redoing). Recency-precise subtraction is a deferred optimization, not a
+   correctness requirement.
+3. **`edge_honesty` built signature is `(dependent_files, provider_paths, repo_root)`** (P0), NOT the
+   DESIGN M1-L5 `edge_honesty(plan)` shorthand nor the PLAN Slice-C `(builds_against, ownership, repo_root)`.
+   The `builds_against → dependent-files` and `ownership → provider-paths` resolution lives in the **P2
+   caller** (where the plan + ownership blocks are in hand), keeping the P0 engine a pure primitive over
+   explicit file lists. The M1-L5 prose is the intent; this is the lowered signature P2 wires.
+
 ## Phasing (v2 #6 — the milestone is split; the float lands LAST)
 
 Two HOLDs converged on "M1 is a multi-milestone program." It is delivered as three phases; **the frontier
@@ -179,7 +203,7 @@ their own PLAN slices as they come.
 | gate F2 ownership collision | M1-L4 provider-owns-contract (one writer) |
 | gate F3 unenforced BLOCK | M1-L3 independent final-gate re-derivation, fail-closed |
 | gate F4 un-superseded drift | M1-L8 surface-hash re-verification |
-| gate F5 restore re-ships invalidated | M1-L3 `.kata/invalidated.json` subtracted on restore |
+| gate F5 restore re-ships invalidated | M1-L3 `Kata-Invalidated:` trailer subtracted on restore |
 | gate F6 whole-dir hash | M1-L1 one-contract-per-subdir |
 | gate F7 silent-permissive set | M1-L3 `invalidation_set` RAISES on malformed |
 
@@ -188,7 +212,7 @@ their own PLAN slices as they come.
 | Surface | File | Change | Kind |
 |---|---|---|---|
 | Engine (new) | `tools/contract_edges.py` (+tests) | `surface_hash`, `invert`, `invalidation_set` (raise-on-malformed), `surviving_stubs`, `edge_honesty`, drift re-verify | **code** |
-| Restore | `tools/kata_restore.py` | union `builds_against` keys; subtract `.kata/invalidated.json` from integrated (+tests) | **code** |
+| Restore | `tools/kata_restore.py` | union `builds_against` keys; subtract `Kata-Invalidated:` trailer task-ids from integrated (set-based, over-dispatch-safe) (+tests) | **code** |
 | Schema | `skills/plan/kata-plan/RUBRIC.md` | `builds_against:` + provider-owned `contracts/<id>/` + sentinel + retirement obligation | prose |
 | Frontier | `skills/coordinate/kata-orchestrate/SKILL.md:211,481` | dispatchable-at-freeze clause | prose |
 | Supersede + gates | `skills/coordinate/kata-orchestrate/SKILL.md:507-509,525-540` | enumerate+durable-record+route; final-gate independent re-derivation + surviving-stub + surface-drift checks, fail-closed | prose |
@@ -198,7 +222,7 @@ their own PLAN slices as they come.
 
 1. `validate_skills` 0/0; README in sync; edited skills semver-bumped.
 2. `pytest` green + new tests, each code-bearing change **mutation-proven**:
-   parse_plan_tasks unions `builds_against` (restore under-dispatch guard) + subtracts `invalidated.json`;
+   parse_plan_tasks unions `builds_against` (restore under-dispatch guard) + subtracts `Kata-Invalidated:` trailer ids;
    `surface_hash` stable across body-fill, changes on interface edit + rename; `invert`/`invalidation_set`
    correctness incl. **RAISE on malformed** + empty-well-formed BC; `surviving_stubs` catches a surviving
    sentinel AND a dangling import, passes when retired; `edge_honesty` flags an impl-import + passes a
@@ -207,7 +231,7 @@ their own PLAN slices as they come.
 3. **BC:** a run with no `builds_against` edge is byte-for-byte unchanged (parser, frontier, supersede,
    final gate) — explicit BC tests.
 4. **Restore:** a crash mid-invalidation re-dispatches the correct set (integrated-but-invalidated task
-   re-opened via `.kata/invalidated.json`) — proven against `kata_restore` tests.
+   re-opened via the durable `Kata-Invalidated:` commit trailer) — proven against `kata_restore` tests.
 5. Snyk medium+ 0 on `contract_edges.py` + `kata_restore.py` (or documented-acceptance).
 6. **Re-gate:** the adversarial freeze-gate (`kata-review`, fresh context) on THIS revised DESIGN → SHIP
    before the PLAN freezes. Plus a fresh-context adversarial review of the built invalidation + drift-gate
