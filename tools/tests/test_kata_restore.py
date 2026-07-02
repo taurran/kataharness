@@ -880,3 +880,129 @@ def test_parse_supersede_trailers_empty_when_none(tmp_path):
         repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
     )
     assert out == {}
+
+
+# --- Adval fold (2026-07-02): P1-F1..F4, F8 -------------------------------------
+
+def _invalidation_body_commit(repo: Path, branch: str, body: str, tag: str) -> None:
+    """Commit an arbitrary trailer body onto the integration branch."""
+    _git(["checkout", branch], repo)
+    art = repo / f"body_{tag}.txt"
+    art.write_text("x\n", encoding="utf-8")
+    _git(["add", art.name], repo)
+    _git(["commit", "-m", body], repo)
+
+
+def test_collect_integrated_space_before_colon_is_surfaced(tmp_path, capsys):
+    # P1-F1: `Kata-Invalidated : T1` (key-whitespace variant) previously missed BOTH
+    # regexes and vanished SILENTLY (under-dispatch, no NOTE). It must now either
+    # subtract (tolerant strict match — over-dispatch-safe) or be loudly surfaced.
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+    _invalidation_body_commit(
+        repo, "integration", "chore: re-open T1\n\nKata-Invalidated : T1", "sp"
+    )
+    integrated = kata_restore.collect_integrated_tasks(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    out = capsys.readouterr().out
+    assert "T1" not in integrated or "Kata-Invalidated" in out, (
+        "a whitespace-variant invalidation trailer must never vanish silently"
+    )
+    # with the tolerant strict regex the subtract itself happens (safe direction)
+    assert "T1" not in integrated
+
+
+def test_collect_integrated_notes_phantom_invalidation_id(tmp_path, capsys):
+    # P1-F2: an invalidation id that never matched ANY integration trailer (typo /
+    # case-variant / comma-joined) is the under-dispatch signature — loud NOTE.
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+    _add_invalidation_commit(repo, "integration", "t1")  # case-variant: matches nothing
+    integrated = kata_restore.collect_integrated_tasks(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    out = capsys.readouterr().out
+    assert integrated == {"T1"}  # the subtract itself finds no match (verbatim ids)
+    assert "no matching Kata-Task" in out and "'t1'" in out
+
+
+def test_parse_supersede_trailers_raises_on_git_error(tmp_path):
+    # P1-F3 (HIGH): a git error must RAISE, never return {} — to the P2 gate {}
+    # means "no supersede this run" and would vacuously PASS the coverage audit
+    # (D136/M1-L9 silent-permissive default).
+    repo = _make_git_repo(tmp_path)  # no 'integration' branch exists
+    with pytest.raises(ValueError, match="refusing to report"):
+        kata_restore.parse_supersede_trailers(
+            repo_root=str(repo), integration_branch="integration"
+        )
+
+
+def test_parse_supersede_trailers_surfaces_malformed(tmp_path, capsys):
+    # P1-F4: a malformed supersede (bad hash length / non-hex) must be surfaced,
+    # never silently invisible to the P2 coverage audit.
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _invalidation_body_commit(
+        repo, "integration", "chore: supersede\n\nKata-Supersede: C1@dead", "short"
+    )
+    got = kata_restore.parse_supersede_trailers(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    out = capsys.readouterr().out
+    assert got == {}
+    assert "malformed Kata-Supersede" in out
+
+
+def test_parse_plan_tasks_builds_against_only_plan(tmp_path):
+    # F8(5): a PLAN whose ONLY task source is builds_against passes the
+    # not-empty gate (no spurious refusing-to-under-dispatch raise).
+    repo = _make_git_repo(tmp_path)
+    plan_dir = repo / ".planning"
+    plan_dir.mkdir(exist_ok=True)
+    plan = plan_dir / "PLAN.md"
+    plan.write_text(
+        "---\nbuilds_against:\n  D1:\n    - C1@abcd1234\n---\n\n# Plan\n",
+        encoding="utf-8",
+    )
+    assert kata_restore.parse_plan_tasks(plan) == {"D1"}
+
+
+def test_parse_plan_tasks_scalar_builds_against_is_bc_noop(tmp_path):
+    # F8(6): builds_against present but not a dict ⇒ no-op union (BC), and the
+    # remaining maps still provide the task set.
+    repo = _make_git_repo(tmp_path)
+    plan_dir = repo / ".planning"
+    plan_dir.mkdir(exist_ok=True)
+    plan = plan_dir / "PLAN.md"
+    plan.write_text(
+        "---\nownership:\n  A1: []\nbuilds_against: nonsense\n---\n\n# Plan\n",
+        encoding="utf-8",
+    )
+    assert kata_restore.parse_plan_tasks(plan) == {"A1"}
+
+
+def test_fold_board_ignores_progress_lines():
+    # F8(7): a PROGRESS heartbeat line (F3) must never enter starts/ends/owners —
+    # the board reduce is CLAIM/DONE only (corroboration stays uncorrupted).
+    board = (
+        "2026-07-02T10:00:00 | w1 | CLAIM | T1 | starting\n"
+        "2026-07-02T10:05:00 | w1 | PROGRESS | T1 | 1/3 modules\n"
+        "2026-07-02T10:06:00 | w2 | PROGRESS | T9 | 2/2 modules\n"
+    )
+    folded = kata_restore.fold_board(board)
+    assert set(folded["starts"]) == {"T1"}
+    assert folded["ends"] == {}
+    assert "T9" not in folded["owners"]
+    assert folded["in_flight"] == frozenset({"T1"})

@@ -124,20 +124,68 @@ def _decorators_of(defn, src: bytes) -> list[str]:
     return []
 
 
-_COMMENT_RE = re.compile(r"#[^\n\r]*")
 _PUNCT_RE = re.compile(r"\s*(->|[(),:\[\]{}=|/*])\s*")
+
+
+def _strip_comments(text: str) -> str:
+    """Strip `#` line comments QUOTE-AWARELY: a `#` inside a string literal
+    (including triple-quoted) is content, not a comment. The previous regex strip
+    truncated everything after a `#` in a string default, masking every subsequent
+    parameter edit in that signature — the exact edit class the pin exists to
+    catch (adval P0-F3)."""
+    out: list[str] = []
+    i, n = 0, len(text)
+    quote: str | None = None  # None, or the active quote token (' " ''' \"\"\")
+    while i < n:
+        c = text[i]
+        if quote is not None:
+            if c == "\\" and len(quote) == 1:  # escapes only end 1-char quotes
+                out.append(text[i : i + 2])
+                i += 2
+                continue
+            if text.startswith(quote, i):
+                out.append(quote)
+                i += len(quote)
+                quote = None
+                continue
+            out.append(c)
+            i += 1
+            continue
+        if c in ("'", '"'):
+            quote = text[i : i + 3] if text.startswith(c * 3, i) else c
+            out.append(quote)
+            i += len(quote)
+            continue
+        if c == "#":  # real comment — drop to end of line
+            j = i
+            while j < n and text[j] not in "\n\r":
+                j += 1
+            i = j
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
 
 
 def _canon(text: str) -> str:
     """Canonicalize a signature fragment so cosmetic reformatting does NOT flip the
     surface hash (M1-L8: a body-fill + autoformatter must be a no-op): strip line
-    comments, collapse whitespace, and remove whitespace around structural
-    punctuation. Applied symmetrically to both sides, so genuine token differences
-    still differ. (Residual: a `#` inside a string default is rare and treated as a
-    comment — a documented micro-residual, review-backstopped.)"""
-    t = _COMMENT_RE.sub("", text)
+    comments (quote-aware — a `#` in a string default is content, adval P0-F3),
+    collapse whitespace, remove whitespace around structural punctuation, and drop
+    a single magic trailing comma before the closing `)`/`]` (black's multiline
+    explode, adval P0-F5). Applied symmetrically to both sides, so genuine token
+    differences still differ. (Residual, documented: whitespace INSIDE a string
+    default is also collapsed — `"a, b"` and `"a,b"` canonicalize identically; a
+    genuine-difference micro-collision, review-backstopped.)"""
+    t = _strip_comments(text)
     t = re.sub(r"\s+", " ", t).strip()
     t = _PUNCT_RE.sub(r"\1", t)
+    # magic trailing comma at the very end of the fragment only — inner tuple
+    # defaults like `x=(1,)` are untouched
+    if t.endswith(",)"):
+        t = t[:-2] + ")"
+    elif t.endswith(",]"):
+        t = t[:-2] + "]"
     return t
 
 
@@ -212,13 +260,26 @@ def surface_hash(contract_dir: str | Path) -> str:
     class headers across every ``.py`` under *contract_dir*, each attributed to its
     relative path (so moving a symbol between files changes the hash). Bodies are
     excluded, so filling a stub body does not flip the pin (M1-L8). RAISES on a
-    missing directory or any unparseable contract file (M1-L9).
+    missing directory, any unparseable contract file, or a directory containing
+    NO ``.py`` file at all (adval P0-F4: an empty hash would be a vacuous pin —
+    an absent input to a decision hash hard-fails per D136/M1-L9).
+
+    Residual (documented, review-backstopped): only ``.py`` files contribute to
+    the pin — a ``.pyi``/non-Python interface file is NOT machine-pinned (it is
+    still sentinel-scanned by ``surviving_stubs``).
     """
     root = Path(contract_dir)
     if not root.is_dir():
         raise ValueError(f"contract dir not found: {contract_dir!r}")
     items: list[str] = []
-    for py in sorted(root.rglob("*.py")):
+    py_files = sorted(root.rglob("*.py"))
+    if not py_files:
+        raise ValueError(
+            f"contract dir {contract_dir!r} contains no .py file — refusing a "
+            f"vacuous surface pin (M1-L9/D136); a non-Python contract surface is "
+            f"not machine-pinnable yet"
+        )
+    for py in py_files:
         src = py.read_bytes()
         rel = py.relative_to(root).as_posix()
         for surface in _extract_surface(src):  # raises on parse error
@@ -246,15 +307,30 @@ def surviving_stubs(repo_root: str | Path, sentinel: str = STUB_SENTINEL) -> lis
     Fail-closed (M1-L9): an unreadable `contracts/` file RAISES (`OSError`) — a file
     the gate cannot read cannot be certified sentinel-free, so it is never silently
     skipped (that would let a surviving stub pass). Mirrors ``surface_hash``.
+
+    Scope: EVERY file under a `contracts/` dir is scanned, not just `.py` — the
+    DESIGN's "zero `contracts/` files may still bear the sentinel" is extension-
+    blind (adval P0-F2: a `.pyi`/`.ts`/`.md` stub must not survive invisibly).
+    The byte-level check also matches UTF-16-encoded sentinels (adval P0-F8).
+    Note: `contracts` is matched at ANY path depth; a vendored tree containing a
+    `contracts/` dir will be scanned too (fail-closed direction — the P2 wiring
+    anchors/excludes ignore-dirs).
     """
     root = Path(repo_root)
+    needles = (
+        sentinel.encode("utf-8"),
+        sentinel.encode("utf-16-le"),
+        sentinel.encode("utf-16-be"),
+    )
     found: list[str] = []
-    for py in root.rglob("*.py"):
-        rel = py.relative_to(root)
+    for f in root.rglob("*"):
+        if not f.is_file():
+            continue
+        rel = f.relative_to(root)
         if "contracts" not in rel.parts:
             continue
-        text = py.read_text(encoding="utf-8", errors="replace")  # raises → fail-closed
-        if sentinel in text:
+        data = f.read_bytes()  # raises → fail-closed
+        if any(n in data for n in needles):
             found.append(rel.as_posix())
     return sorted(found)
 
@@ -268,11 +344,16 @@ def edge_honesty(
     surface, never a PROVIDER-owned implementation path. Returns sorted violations
     ``[{"file": <dependent file>, "imported": <provider path>}]``; empty ⇒ honest.
 
-    Reuses ``graph_gen._extract_imports``/``_resolve_module`` for resolution. A
+    Reuses ``graph_gen._extract_imports``/``_resolve_module`` for resolution
+    (static ``import``/``from`` forms, including relative and submodule imports). A
     violation means the edge should be `depends_on`, not `builds_against` (dispatching
-    it early is unsound). Residual (DESIGN M1-L5): import-surface honesty ≠ semantic
-    honesty — a dependent importing only the contract can still lean on provider
-    internals the contract under-specifies; that judgment is the review backstop's.
+    it early is unsound). Residuals (DESIGN M1-L5, documented — review-backstopped):
+    import-surface honesty ≠ semantic honesty — a dependent importing only the
+    contract can still lean on provider internals the contract under-specifies; and
+    DYNAMIC imports (``importlib.import_module``/``__import__``) are a mechanical
+    bypass this scan cannot see (adval P0-F9). ``provider_paths`` must be exact
+    repo-relative FILE paths — a directory entry matches nothing (adval P0-F10);
+    the P2 caller expands ``ownership:`` dirs to files before calling.
 
     Fail-closed (M1-L9): an unreadable/absent dependent file RAISES (`OSError`) — a
     file the gate cannot read cannot be certified honest, so it is never silently

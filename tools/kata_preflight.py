@@ -792,9 +792,14 @@ def run_preflight(
     # collapse to an empty list via `.get(..., [])` and pass VACUOUSLY as
     # `ready` (the F1 hole). A present-but-EMPTY list is a legitimate, supported
     # state and must still proceed to `ready` — do NOT block empty.
+    # The manifest itself must be a JSON OBJECT first (adval F1-1): json.loads
+    # can return None/int/float/bool, and `"dependencies" not in <scalar>` would
+    # raise an uncaught TypeError instead of the contracted `blocked` status.
     # =========================================================================
-    if "dependencies" not in manifest_data or not isinstance(
-        manifest_data["dependencies"], list
+    if (
+        not isinstance(manifest_data, dict)
+        or "dependencies" not in manifest_data
+        or not isinstance(manifest_data["dependencies"], list)
     ):
         result = {
             "status": "blocked",
@@ -803,8 +808,9 @@ def run_preflight(
             "targetEnv": None,
             "warnings": [],
             "blockers": [
-                "manifest-shape: top-level 'dependencies' key must be present "
-                "and a list (a misspelled/renamed/absent key would pass "
+                "manifest-shape: manifest must be a JSON object whose top-level "
+                "'dependencies' key is present and a list (a scalar manifest or "
+                "a misspelled/renamed/absent key would otherwise crash or pass "
                 "vacuously as ready)"
             ],
             "sandbox": sandbox_status,

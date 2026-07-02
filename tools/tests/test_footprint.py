@@ -283,3 +283,98 @@ def test_changed_since_single_ref_unchanged(tmp_path, monkeypatch):
 
     monkeypatch.chdir(repo)
     assert footprint.changed_since("HEAD~1") == ["second.txt"]
+
+
+import pytest
+
+# --- Adval fold (2026-07-02): F5-1..F5-3 -----------------------------------------
+
+def _seed_repo(repo) -> None:
+    _git(["init"], repo)
+    _git(["checkout", "-b", "integration"], repo)
+    _git(["config", "user.email", "t@t"], repo)
+    _git(["config", "user.name", "t"], repo)
+    (repo / "base.txt").write_text("base", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "base"], repo)
+
+
+def test_changed_in_task_sees_renames_as_add_plus_delete(tmp_path, monkeypatch):
+    """F5-1 (HIGH): a `git mv foreign -> owned/` must report BOTH paths — with
+    rename detection on (the git default) only the destination appears, hiding
+    the cross-lane deletion AND making the gate depend on operator git config."""
+    repo = tmp_path
+    _seed_repo(repo)
+    (repo / "foreign_orig.txt").write_text("foreign content that is long enough\n", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "foreign file"], repo)
+
+    _git(["checkout", "-b", "task/T7"], repo)
+    _git(["mv", "foreign_orig.txt", "owned_moved.txt"], repo)
+    _git(["commit", "-m", "task: steal a foreign file into own lane"], repo)
+
+    monkeypatch.chdir(repo)
+    got = footprint.changed_in_task("integration", "task/T7")
+    assert got == ["foreign_orig.txt", "owned_moved.txt"], (
+        "rename must surface as add+delete; destination-only hides the lane violation"
+    )
+
+
+def test_changed_in_task_raises_on_criss_cross(tmp_path, monkeypatch):
+    """F5-2: multiple merge-bases make the three-dot base timestamp-dependent —
+    ambiguous evidence must RAISE (D136 fail-closed), never drive the lane check."""
+    repo = tmp_path
+    _seed_repo(repo)
+    # Build a criss-cross: two branches, each merges the other's tip once.
+    _git(["checkout", "-b", "task/T8"], repo)
+    (repo / "t8_a.txt").write_text("a", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "t8 a"], repo)
+
+    _git(["checkout", "integration"], repo)
+    (repo / "int_b.txt").write_text("b", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "int b"], repo)
+
+    # cross-merge both ways (no-ff so both parents survive)
+    _git(["merge", "--no-ff", "-m", "int merges t8", "task/T8"], repo)
+    _git(["checkout", "task/T8"], repo)
+    _git(["merge", "--no-ff", "-m", "t8 merges old int", "integration~1"], repo)
+
+    # advance both again so the criss-cross bases are distinct
+    (repo / "t8_c.txt").write_text("c", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "t8 c"], repo)
+    _git(["checkout", "integration"], repo)
+    (repo / "int_d.txt").write_text("d", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "int d"], repo)
+    _git(["checkout", "task/T8"], repo)
+
+    monkeypatch.chdir(repo)
+    import subprocess as sp
+    bases = sp.run(
+        ["git", "merge-base", "--all", "integration", "task/T8"],
+        capture_output=True, text=True, check=True,
+    ).stdout.split()
+    if len(bases) > 1:
+        with pytest.raises(ValueError, match="merge-bases"):
+            footprint.changed_in_task("integration", "task/T8")
+    else:
+        pytest.skip("topology did not produce multiple merge-bases on this git")
+
+
+def test_changed_in_task_raises_on_no_common_ancestor(tmp_path, monkeypatch):
+    """F5-3: an orphan branch (no merge base) must RAISE — a silent empty list
+    would read as 'no drift' (the D136 silent-permissive default)."""
+    repo = tmp_path
+    _seed_repo(repo)
+    _git(["checkout", "--orphan", "task/T9"], repo)
+    (repo / "orphan.txt").write_text("o", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "orphan"], repo)
+
+    monkeypatch.chdir(repo)
+    import subprocess as sp
+    with pytest.raises((sp.CalledProcessError, ValueError)):
+        footprint.changed_in_task("integration", "task/T9")

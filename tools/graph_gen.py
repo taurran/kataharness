@@ -202,6 +202,8 @@ def _extract_imports(
       import foo.bar
       from foo import bar
       from foo.bar import baz
+      from .foo import bar / from ..pkg import baz   (relative — adval P0-F1)
+      from foo import mod / from . import mod        (submodule file targets)
     Resolves module name → repo-relative path if the corresponding .py file exists.
     ``source_roots`` (F2 src-layout) is discovered once from ``all_rel_paths``
     when not supplied — build_graph passes a precomputed set to avoid rework.
@@ -229,11 +231,34 @@ def _extract_imports(
                 dst = _resolve_module(mod_text, src_dir, all_rel_paths, source_roots)
                 if dst:
                     edges.append((rel_path, dst))
+                # Submodule imports: `from pkg import mod` / `from . import mod`
+                # bind a MODULE, not a symbol — when `<module>.<name>` resolves to
+                # a real file, that file is the true edge target (adval P0-F1: the
+                # package __init__.py alone under-reports the dependency).
+                if dst is None or dst.endswith("/__init__.py") or dst == "__init__.py":
+                    for name_node in node.children_by_field_name("name"):
+                        base = (
+                            name_node.children[0]
+                            if name_node.type == "aliased_import"
+                            else name_node
+                        )
+                        # pure-dot module ("." / "..") already ends in its joiner
+                        joiner = "" if mod_text.endswith(".") else "."
+                        sub = f"{mod_text}{joiner}{_node_text(base)}"
+                        sub_dst = _resolve_module(sub, src_dir, all_rel_paths, source_roots)
+                        if sub_dst:
+                            edges.append((rel_path, sub_dst))
         for child in node.children:
             _collect_imports(child)
 
     _collect_imports(tree.root_node)
     return edges
+
+
+# Conventional non-source top-level dirs: a package inside these is not on
+# sys.path in any standard layout, so promoting them to source roots would
+# manufacture import edges that cannot resolve at runtime (adval F2 finding 2).
+_NON_SOURCE_ROOTS = {"tests", "test", "docs", "doc", "examples", "example"}
 
 
 def _discover_source_roots(all_rel_paths: set[str]) -> list[str]:
@@ -245,6 +270,15 @@ def _discover_source_roots(all_rel_paths: set[str]) -> list[str]:
     flat layout it yields ``[]`` (repo-root packages are already covered by the
     absolute candidates, so they are deliberately excluded here). This is what
     lets ``from pkg.mod import x`` resolve to ``src/pkg/mod.py``.
+
+    Two refinements (L3 + adval):
+    - Conventional non-source dirs (``tests/``, ``docs/``, …) are never promoted
+      to roots — a package under them is not on sys.path, so a root there would
+      manufacture false import edges.
+    - Fallback (L3 verbatim): when no ``__init__.py``-derived root exists but a
+      literal ``src/`` directory does (PEP-420 namespace src-layout), ``src`` is
+      the root — candidates only ever match existing files, so this cannot
+      create a false edge on a repo without ``src/``.
     """
     package_dirs = {
         Path(p).parent.as_posix()
@@ -255,8 +289,14 @@ def _discover_source_roots(all_rel_paths: set[str]) -> list[str]:
     for pkg in package_dirs:
         parent = Path(pkg).parent.as_posix()
         # top-level package ⇒ its parent dir is not itself a package
-        if parent not in package_dirs and parent not in ("", "."):
+        if (
+            parent not in package_dirs
+            and parent not in ("", ".")
+            and Path(parent).parts[0] not in _NON_SOURCE_ROOTS
+        ):
             roots.add(parent)
+    if not roots and any(p.startswith("src/") for p in all_rel_paths):
+        return ["src"]
     return sorted(roots)
 
 
@@ -269,6 +309,27 @@ def _module_to_path(
     then repo-root-absolute, then source-root-prefixed (F2). Appending the
     src-layout candidates LAST preserves flat-layout resolution byte-for-byte.
     """
+    # Explicit relative import (from .mod / from ..pkg.mod): leading dots walk up
+    # from the importing file's dir. Handled first and exclusively — the previous
+    # naive split produced interior-slash candidates ("pkg//mod.py") that never
+    # matched, silently dropping every relative-import edge (adval P0-F1).
+    if module_name.startswith("."):
+        n_dots = len(module_name) - len(module_name.lstrip("."))
+        rest = module_name.lstrip(".")
+        base = src_dir if src_dir not in ("", ".") else ""
+        for _ in range(n_dots - 1):
+            base = Path(base).parent.as_posix() if base else ""
+            if base == ".":
+                base = ""
+        prefix = (base + "/") if base else ""
+        if rest:
+            rest_path = "/".join(rest.split("."))
+            return [prefix + rest_path + ".py", prefix + rest_path + "/__init__.py"]
+        # bare `from . import name` — resolve to the package itself (its
+        # __init__.py); the sibling-module half is resolved by the caller
+        # (_extract_imports submodule candidates).
+        return [prefix + "__init__.py"] if prefix else ["__init__.py"]
+
     parts = module_name.split(".")
     # Relative: try src_dir / module.py and src_dir / module/__init__.py
     if src_dir and src_dir != ".":

@@ -111,9 +111,11 @@ def append_progress(
     Convenience wrapper around append_event with type=``"PROGRESS"`` and
     msg formatted as ``"<step>/<n> <label>"`` (e.g. ``"3/5 writing tests"``).
 
-    PROGRESS lines are opt-in heartbeats for smooth dashboard progress bars.
+    PROGRESS lines are the MANDATED worker liveness heartbeat (Milestone-1 F3;
+    see protocol/board.md) — read by the dashboard and the orchestrator's
+    liveness monitor, excluded from coordination and concurrency evidence.
     They are IGNORED by coordination logic (DECISION/BLOCK/ESCALATE invariants
-    are unchanged).  Only the dashboard reads and renders them.
+    are unchanged).
 
     Single-writer rule: WORKERS call this function (and append_event).
     ONLY the orchestrator calls write_state/update_task.
