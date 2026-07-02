@@ -8,6 +8,16 @@ last_updated: "2026-07-02T00:00:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-07-02d — context fully synced + PUSHED; next session = fable5 ADVAL → M1-P2):** All context
+> docs synced to the true state; the v0.1.0 benchmark honesty over-claim corrected (synthetic control, not a real
+> fixture — benchmark-D5 still deferred). Branch `freeze-float/m1-contract-edges` **pushed** (tip `d26a0ba`,
+> tracking origin), no PR (holding for P2). **Detailed session brief: `.planning/HANDOFF-FABLE5-ADVAL-P2.md`**
+> (float-assessment logic + the enumerated Milestone-1→P1 adval target set). **PLAN for the next (Fable 5)
+> session:** load all end-to-end context → run a comprehensive fresh-context **ADVAL over every code-bearing
+> change from Milestone 1 through M1-P1** (F1 `kata_preflight`, F2 `graph_gen`, F5 `footprint`, F3/F6/F4 prose,
+> P0 `contract_edges`, P1 `kata_restore`) → fix any issues → **then build M1-P2 (the float)** under its own
+> adversarial freeze-gate. Green: pytest 2236 / validate 47/0 / Snyk 0. *(Prior CURRENT blocks below are history.)*
+
 > **CURRENT (2026-07-02c — M1-P1 durable substrate BUILT + reviewed SHIP; committed):** `kata_restore.py`
 > now unions `builds_against` keys (M1-L2), subtracts `Kata-Invalidated:` (set-based/over-dispatch-safe), and
 > provides `parse_supersede_trailers` for the P2 gate (all trailer parsing in `kata_restore.py`, NOT a new

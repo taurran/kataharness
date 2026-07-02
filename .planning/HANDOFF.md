@@ -1,14 +1,15 @@
 ---
-date: 2026-07-02c (Milestone 1 MERGED to master · Freeze/Float M1 P0+P1 built + reviewed SHIP · HELD before M1-P2)
-branch: freeze-float/m1-contract-edges (rebased onto merged master 8653faf; UNPUSHED; tip 46c7601)
+date: 2026-07-02d (Milestone 1 MERGED · Freeze/Float M1 P0+P1 built + reviewed SHIP + PUSHED · next: ADVAL then M1-P2)
+branch: freeze-float/m1-contract-edges (rebased onto merged master 8653faf; PUSHED, tracking origin; tip d26a0ba)
 green: validator 47/0 · pytest 2236 passed / 3 skip (-m "not integration") · Snyk medium+ 0  (at the freeze-float tip)
-tags: kenjiri-lessons · D137 · freeze-float · contract-edges · M1-P0 · M1-P1 · D138 · sanctioned-M2 · handoff
-authored-for: a fresh coding-agent window (sections map to the kata-orient tiers)
-★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (self-contained, paste-ready). Milestone 1
-  is MERGED. **Freeze/Float is the OPERATOR-DIRECTED Milestone 2 (D138) — do NOT re-question its legitimacy** (it is
-  now recorded in ROADMAP/BACKLOG/STATE). M1-P0 (contract_edges engine) + M1-P1 (kata_restore durable substrate) are
-  built + reviewed SHIP + committed (unpushed). Next is M1-P2 (the float) — HELD; it needs its own adversarial
-  freeze-gate + operator go. First actions: confirm green → ask operator (push branch? open P2?) → do NOT shortcut P2's freeze-gate.
+tags: kenjiri-lessons · D137 · freeze-float · contract-edges · M1-P0 · M1-P1 · D138 · sanctioned-M2 · adval · fable5 · handoff
+authored-for: a fresh coding-agent window (Fable 5 next session; sections map to the kata-orient tiers)
+★ NEXT-SESSION START HERE: read **`.planning/HANDOFF-FABLE5-ADVAL-P2.md`** (the detailed brief — float-assessment
+  logic + the enumerated adval target set) + `.planning/NEXT-SESSION-ORIENTATION.md`. Milestone 1 is MERGED.
+  **Freeze/Float is the OPERATOR-DIRECTED Milestone 2 (D138) — do NOT re-question it** (recorded in ROADMAP/BACKLOG/
+  STATE). M1-P0 + M1-P1 built + reviewed SHIP + PUSHED. **THE PLAN: load context → run a comprehensive fresh-context
+  ADVAL over all Milestone-1→P1 changes → fix any issues → then build M1-P2 (the float) under its own freeze-gate.**
+  Do NOT jump to P2 with an open HOLD; do NOT shortcut P2's freeze-gate.
 ---
 
 > **★ 2026-07-02c (Milestone 1 MERGED; Freeze/Float sanctioned + reconciled; M1-P1 built + reviewed SHIP):**

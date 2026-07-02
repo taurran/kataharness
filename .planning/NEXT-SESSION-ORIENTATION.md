@@ -124,18 +124,25 @@ dispatches *at freeze* (in parallel) instead of waiting for its provider task �
 - **Complex commit messages via `git commit -F <file>`** — PowerShell mangles here-strings containing `|`, `>`,
   `->`, `=>`, or quotes; write the message to a scratch file and `-F` it (learned the hard way this session).
 
-## 7. FIRST ACTIONS (in order)
-1. Confirm green at the freeze-float tip (§2). Confirm `git status` clean, `git branch --show-current` =
-   `freeze-float/m1-contract-edges`, tip `46c7601`.
-2. **Ask the operator two things:** (a) push the branch now (clean P0+P1 checkpoint, no PR yet)? (b) open M1-P2?
-   Do NOT assume either — the operator HELD before P2.
-3. **On operator go for P2, run the FULL freeze-gate recipe (§6) — P2 is the behavior change:** grill/freeze
-   `PLAN-p2` (schema + dispatchable-at-freeze clause + supersede enumerate/route + final-gate re-derivation +
-   edge-honesty review surface) → **fresh-context adversarial freeze-gate on the DESIGN/PLAN (HOLD→SHIP)** →
-   build (TDD, mutation-proof, M1-L9 fail-closed, bump every edited SKILL) → integration gate → **fresh-context
-   adversarial sweep of the built code** → operator merge gate. The P1 substrate it consumes is ready:
-   `parse_supersede_trailers`, the `Kata-Invalidated:` subtract, the `builds_against` union.
-4. **P2 is the ONLY place a contract-only dependent actually dispatches early.** It touches the dispatch core —
+## 7. FIRST ACTIONS (in order) — ★ ADVAL FIRST, THEN P2
+> **★ The detailed session brief is `.planning/HANDOFF-FABLE5-ADVAL-P2.md`** — it carries the float-assessment
+> logic + the enumerated adval target set. Read it. The plan is: **adval all Milestone-1→P1 changes → fix → P2.**
+1. Confirm green at the freeze-float tip (§2). `git status` clean, branch `freeze-float/m1-contract-edges`, tip
+   `d26a0ba` (PUSHED, tracking origin).
+2. **Run the comprehensive fresh-context adval** over **every code-bearing change from Milestone 1 → M1-P1**
+   (enumerated in `HANDOFF-FABLE5-ADVAL-P2.md` §6: F1 `kata_preflight`, F2 `graph_gen`, F5 `footprint`, F3/F6/F4
+   prose in orchestrate/board/config/evaluate/report/bootstrap/lang-profile, P0 `contract_edges`, P1
+   `kata_restore`). Each was reviewed as built; this is the **integrated cross-seam sweep before the risky P2.**
+   Fresh-context reviewers, one per module/group, told to BREAK the change vs its spec. Prioritize the
+   Freeze/Float pair (P0+P1) and the spine-gate prose (F6 security, F3 sprint-blindness).
+3. **Fix every real finding** (fix → mutation-re-prove → Snyk re-scan → keep green). **Do NOT proceed to P2 with
+   an open HOLD.**
+4. **Only then build M1-P2 (the float)** via the FULL freeze-gate recipe (§6): grill/freeze `PLAN-p2` → **fresh-
+   context adversarial freeze-gate on the DESIGN/PLAN (HOLD→SHIP)** → build (TDD, mutation-proof, M1-L9
+   fail-closed, **bump every edited SKILL** — P2 touches kata-plan RUBRIC + kata-orchestrate + kata-review) →
+   integration gate → **fresh-context adversarial sweep of built code** → operator merge gate. The P1 substrate
+   it consumes is ready: `parse_supersede_trailers`, the `Kata-Invalidated:` subtract, the `builds_against` union.
+5. **P2 is the ONLY place a contract-only dependent actually dispatches early.** It touches the dispatch core —
    do not shortcut its freeze-gate.
 
 ## 8. THE THREE THINGS MOST LIKELY TO BITE (in P2)
