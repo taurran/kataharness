@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.4.1
+version: 0.4.2
 category: coordinate
 status: experimental
 agnostic: true
@@ -75,6 +75,14 @@ does not drift.**
 3. The target repo is **green at the fork point** (run its test/build gate; record the baseline numbers).
 4. The **file-ownership partition is disjoint** — no file appears under two tasks. If it isn't, the plan is
    not executable concurrently; escalate to re-freeze, do not improvise.
+5. **The project's own package is importable before wave-1 (F4 — greenfield seeding).** For a greenfield
+   build, verify the project package imports cleanly (its build backend / packaging is seeded) **before**
+   dispatching any worker — otherwise workers each patch packaging locally (e.g. `sys.path` shims), which is
+   cross-lane drift that masks the real gap (the Kenjiri F4 failure). This is **language-agnostic in the
+   core**; the concrete checklist lives in the language overlay ([[kata-lang-profile]] `resources/<lang>.md`
+   — e.g. Python: `[build-system]` + `[tool.setuptools.packages.find] where=["src"]` + `import <pkg>` exits
+   0). A packaging failure ⇒ fix at the root/orchestrator layer, never via a per-worker shim. (Version-up /
+   existing-repo runs already import cleanly — this precondition is a greenfield no-op there, BC.)
 
 ## Comprehension phase (ADDITIVE — debug run only; BC: absent `kata/module/debug` ⇒ silent no-op)
 
