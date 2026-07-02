@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.3.1
+version: 0.4.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -257,7 +257,23 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      (see `protocol/board.md` → Concurrency evidence). The shared root is the integration/target-repo root,
      not the per-task worktree (S3b lesson: per-task worktrees have their own `.kata/` paths; only the
      integration root's `.kata/board.md` is the shared board the orchestrator and evaluator read).
+   - **emit a `PROGRESS` heartbeat (F3 — mandated, not optional):** append a `PROGRESS` line to the shared
+     board **per owned-module completed**, with `msg` = `<modulesDone>/<modulesOwned> <label>`. This is the
+     worker's liveness signal (a worker that CLAIMs and then works silently for tens of minutes is
+     indistinguishable from a hung one — the Kenjiri F3 failure). `PROGRESS` is excluded from coordination
+     and concurrency evidence; it exists for the liveness monitor and the M4 slack-timing estimator.
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
+
+   **Liveness monitor (F3 — dark-worker detection; NO blind kill).** While workers run, the orchestrator
+   watches the shared board for staleness: a worker with a `CLAIM` but no `DONE` and no `PROGRESS` line for
+   longer than a configurable deadline (`livenessDeadline`, default 10 min) is **stale**. On
+   staleness, DO NOT SIGKILL and DO NOT silently re-dispatch. Instead route it through the **existing
+   escalation machinery**: (1) **nudge** — surface the stale worker to the operator (breakthrough-alert);
+   (2) if it stays dark past a second interval, treat it as a `kind: orchestrator-resolvable` **ESCALATE**
+   and drive it through [[kata-diagnose]] / the normal escalation → `DECISION` path; (3) **re-dispatch only
+   through that human-gated decision**, never automatically. A blind kill risks murdering a healthy-but-slow
+   worker mid-write; the heartbeat + escalation path preserves the dual-control spine. (Bounds mirror the
+   existing thrash valve — repeated staleness on one task routes to `kata-diagnose`, no new valve.)
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
    verify (tests + security scan). Not done until evidence is read and passes. Confirm it touched **only its
    owned files** (drift check).
