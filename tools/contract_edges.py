@@ -200,3 +200,68 @@ def surface_hash(contract_dir: str | Path) -> str:
         for surface in _extract_surface(src):  # raises on parse error
             items.append(f"{rel}::{surface}")
     return _netstring_hash(items)
+
+
+# ---------------------------------------------------------------------------
+# Slice C — surviving_stubs + edge_honesty (scans, fail-closed)
+# ---------------------------------------------------------------------------
+
+STUB_SENTINEL = "# KATA-CONTRACT-STUB"
+
+
+def surviving_stubs(repo_root: str | Path, sentinel: str = STUB_SENTINEL) -> list[str]:
+    """Return sorted repo-relative paths of `contracts/` files still bearing the
+    stub sentinel (M1-L4). A surviving sentinel ⇒ the provider never retired the
+    stub ⇒ the final gate must fail. Language-agnostic (a content grep); empty ⇒ clean.
+
+    Honest scope: this is the sentinel (content) half of M1-L4. The *dangling-import*
+    half (a dependent still importing a deleted contract) needs the full dependent
+    file set + merged-tree resolution context and is wired at the P2 final gate — it
+    is NOT silently covered here.
+    """
+    root = Path(repo_root)
+    found: list[str] = []
+    for py in root.rglob("*.py"):
+        rel = py.relative_to(root)
+        if "contracts" not in rel.parts:
+            continue
+        try:
+            text = py.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if sentinel in text:
+            found.append(rel.as_posix())
+    return sorted(found)
+
+
+def edge_honesty(
+    dependent_files: list[str],
+    provider_paths: list[str],
+    repo_root: str | Path,
+) -> list[dict]:
+    """M1-L5: a `builds_against` dependent's (test) files may import ONLY the contract
+    surface, never a PROVIDER-owned implementation path. Returns sorted violations
+    ``[{"file": <dependent file>, "imported": <provider path>}]``; empty ⇒ honest.
+
+    Reuses ``graph_gen._extract_imports``/``_resolve_module`` for resolution. A
+    violation means the edge should be `depends_on`, not `builds_against` (dispatching
+    it early is unsound). Residual (DESIGN M1-L5): import-surface honesty ≠ semantic
+    honesty — a dependent importing only the contract can still lean on provider
+    internals the contract under-specifies; that judgment is the review backstop's.
+    """
+    from graph_gen import _extract_imports  # reuse the sole import scanner
+
+    root = Path(repo_root)
+    all_rel = {p.relative_to(root).as_posix() for p in root.rglob("*.py")}
+    forbidden = {p.replace("\\", "/") for p in provider_paths}
+    violations: list[dict] = []
+    for f in dependent_files:
+        f_norm = f.replace("\\", "/")
+        try:
+            src = (root / f_norm).read_bytes()
+        except OSError:
+            continue
+        for _src_rel, dst_rel in _extract_imports(src, f_norm, all_rel):
+            if dst_rel in forbidden:
+                violations.append({"file": f_norm, "imported": dst_rel})
+    return sorted(violations, key=lambda v: (v["file"], v["imported"]))

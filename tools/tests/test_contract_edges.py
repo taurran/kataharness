@@ -165,3 +165,48 @@ def test_surface_hash_deferred_residual_constant(tmp_path):
     a = _contract(tmp_path, "MAX = 5\ndef foo(x):\n    ...\n", "a")
     b = _contract(tmp_path, "MAX = 10\ndef foo(x):\n    ...\n", "b")
     assert ce.surface_hash(a) == ce.surface_hash(b)  # residual: constants unseen
+
+
+# --- Slice C: surviving_stubs -------------------------------------------------
+
+def test_surviving_stubs_flags_sentinel(tmp_path):
+    d = tmp_path / "contracts" / "c1"
+    d.mkdir(parents=True)
+    (d / "__init__.py").write_text("def foo():\n    ...  # KATA-CONTRACT-STUB\n", encoding="utf-8")
+    assert ce.surviving_stubs(tmp_path) == ["contracts/c1/__init__.py"]
+
+
+def test_surviving_stubs_clean_when_retired(tmp_path):
+    d = tmp_path / "contracts" / "c1"
+    d.mkdir(parents=True)
+    (d / "__init__.py").write_text("def foo():\n    return 1\n", encoding="utf-8")
+    assert ce.surviving_stubs(tmp_path) == []
+
+
+def test_surviving_stubs_ignores_non_contract_files(tmp_path):
+    # A sentinel outside a contracts/ dir is not a contract stub — not flagged.
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "x.py").write_text("# KATA-CONTRACT-STUB\n", encoding="utf-8")
+    assert ce.surviving_stubs(tmp_path) == []
+
+
+# --- Slice C: edge_honesty ----------------------------------------------------
+
+def _honesty_repo(tmp_path, test_body: str) -> None:
+    (tmp_path / "provider.py").write_text("def foo():\n    return 1\n", encoding="utf-8")
+    cdir = tmp_path / "contracts" / "c1"
+    cdir.mkdir(parents=True)
+    (cdir / "__init__.py").write_text("def foo():\n    ...  # KATA-CONTRACT-STUB\n", encoding="utf-8")
+    (tmp_path / "test_dep.py").write_text(test_body, encoding="utf-8")
+
+
+def test_edge_honesty_flags_provider_import(tmp_path):
+    _honesty_repo(tmp_path, "import provider\n\ndef test_x():\n    assert provider.foo()\n")
+    v = ce.edge_honesty(["test_dep.py"], ["provider.py"], tmp_path)
+    assert v == [{"file": "test_dep.py", "imported": "provider.py"}]
+
+
+def test_edge_honesty_clean_when_contract_only(tmp_path):
+    _honesty_repo(tmp_path, "from contracts.c1 import foo\n\ndef test_x():\n    foo()\n")
+    v = ce.edge_honesty(["test_dep.py"], ["provider.py"], tmp_path)
+    assert v == []
