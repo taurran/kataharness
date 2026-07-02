@@ -85,7 +85,7 @@ last_updated: "2026-07-02T00:00:00.000Z"
 > ORCHESTRATOR INTEGRATION-GATE step. **(3)** guard-consistency repo-wide — `_safe_path` guards unified
 > to `ValueError` across `mutation_run`/`grounding_gate`/`escalation`/`intent_scaffold`. **(4)** CWE-23
 > `.snyk` record — standing policy entry for the 17-LOW operator-supplies-own-path class in
-> `kata_install.py`. **(5)** benchmark n=0→n=1 live — first live run on real control fixture (D5).
+> `kata_install.py`. **(5)** benchmark **machinery** n=0→n=1 live — clone→dual-gate→score chain ran on a cloned *synthetic* control; the real operator-supplied control fixture (benchmark-D5) remains deferred (not "on a real fixture" — earlier over-claim corrected 2026-07-02).
 > **Final full adval: 2141 pytest PASSED / validate 47/0 / Snyk medium+ 0.** Versioning policy flipped:
 > bump-on-modify active (STANDARDS §3). Remaining backlog items (#6–#13 + wiring-completeness full build)
 > explicitly deferred to v0.1.x — none blocks the v0.1 core contract; see `BACKLOG.md` "Explicitly

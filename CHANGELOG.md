@@ -247,7 +247,10 @@ These five items closed the v0.1 gate:
    `mutation_run`, `grounding_gate`, `escalation`, and `intent_scaffold`.
 4. **CWE-23 `.snyk` record** — standing policy entry for the 17-LOW operator-supplies-own-path
    class in `kata_install.py`; below the medium+ gate; accepted as a known item.
-5. **Benchmark n=0→n=1 live** — first live benchmark run on a real control fixture (D5).
+5. **Benchmark machinery n=0→n=1 live** — the clone→dual-gate→score→scorecard chain ran clean on a
+   cloned **synthetic** control with real `uv run pytest` subprocesses (`0d3e729`). The **real
+   operator-supplied control fixture (benchmark-D5) remains DEFERRED** — the engine is not yet proven on a
+   real control repo (CONTEXT.md honesty-pin; do not claim otherwise).
 
 **Versioning policy change:** STANDARDS §3 flipped from the pre-release hold (all skills held at
 `0.1.0`, 2026-06-08 policy) to **bump-on-modify** (mandatory for all skill modifications going

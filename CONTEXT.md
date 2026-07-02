@@ -652,12 +652,14 @@ where **pyyaml is absent** (pyproject lives under `tools/`, not root). `kata_ove
 stdlib-only for exactly this reason; without it, overlays/forks **silently no-op** in a real install. _Avoid_: adding a
 yaml import to any install-path module (it restores a silent-no-op deployment bug).
 
-## Freeze/Float — contract edges (M1, spec `freeze-float-m1`, 2026-07-02; P0 engine BUILT, P1/P2 planned)
+## Freeze/Float — contract edges (M1, spec `freeze-float-m1`, 2026-07-02; **operator-directed Milestone 2, D138**; P0 + P1 BUILT, P2 planned + re-gated)
 
-The Freeze/Float doctrine's first sub-milestone. **Principle:** float only **layer C (scheduling)**; layers A (intent)
-+ B (contracts) stay frozen + human-gated — *drift lives entirely in the WHAT*. The win: a contract-only dependent
-dispatches at freeze (parallel) instead of waiting for its provider. Sound only with 3 companions (pin+invalidation,
-stub lifecycle, edge-honesty). Phased **P0 (engine, done) → P1 (durable substrate) → P2 (wiring + the float)**.
+The Freeze/Float doctrine's first sub-milestone — the **operator-directed Milestone 2** (D138; the doctrine was
+ingested into the M1 pass — do NOT re-question its legitimacy). **Principle:** float only **layer C (scheduling)**;
+layers A (intent) + B (contracts) stay frozen + human-gated — *drift lives entirely in the WHAT*. The win: a
+contract-only dependent dispatches at freeze (parallel) instead of waiting for its provider. Sound only with 3
+companions (pin+invalidation, stub lifecycle, edge-honesty). Phased **P0 (engine, done) → P1 (durable substrate,
+done) → P2 (wiring + THE FLOAT — the behavior change; its own adversarial freeze-gate before merge)**.
 
 **`builds_against`** (PLAN frontmatter, planned P2): `{ "<task>": [ "<contractId>@<surfaceHash>" ] }` — a **contract
 edge** alongside `depends_on`. Treated as **satisfied at freeze** (the contract is pinned), so the dependent dispatches
@@ -675,14 +677,20 @@ body-fill does NOT flip the pin (M1-L8); an *interface* edit does. Format-invari
 no-op) and async-aware. **Residual (NOT machine-pinned, review-backstopped):** module constants, type aliases,
 `__all__`, re-exports. _Avoid_: claiming a pinned constant is machine-enforced — it is not.
 
-**`Kata-Supersede: <id>@<hash>` / `Kata-Invalidated: <task-id>`** (git commit trailers, planned P1): the **git-durable**
-authorization + invalidation records (symmetric with `Kata-Task:`). A contract surface change is authorized by a
-`Kata-Supersede:` trailer; a re-opened integrated dependent gets a `Kata-Invalidated:` trailer that
-`kata_restore.collect_integrated_tasks` **subtracts** from the integrated set (so a crash mid-invalidation
-re-dispatches it). _Avoid_: putting invalidation state in `.kata/` — it is gitignored and lost on the canonical
-lost-run (the v2 freeze-gate's headline catch).
+**`Kata-Supersede: <id>@<hash>` / `Kata-Invalidated: <task-id>`** (git commit trailers, **BUILT P1** in
+`kata_restore.py` — NOT a new `kata_supersede.py`, that name is the unrelated install-domain skill-fork resolver):
+the **git-durable** authorization + invalidation records (symmetric with `Kata-Task:`). A contract surface change is
+authorized by a `Kata-Supersede:` trailer (parsed by `parse_supersede_trailers` → `{id: hash}`, hash lowercased to
+match `contract_edges._EDGE_RE`; consumed by the P2 final gate). A re-opened integrated dependent gets a
+`Kata-Invalidated:` trailer that `collect_integrated_tasks` **subtracts** (set-based, **over-dispatch-safe** per
+D138 — a re-integrated invalidated task redundantly re-dispatches, never under-dispatches). A *malformed*
+`Kata-Invalidated:` trailer is **surfaced with a loud NOTE, never silently swallowed**; the fail-closed authority for
+malformed records is the P2 final-gate re-derivation (M1-L9). `parse_plan_tasks` also unions `builds_against` keys
+(M1-L2) so a contract-only dependent is never dropped from restore. _Avoid_: putting invalidation state in `.kata/`
+(gitignored, lost on the canonical lost-run — the v2 freeze-gate's headline catch); a new `kata_supersede.py`.
 
 **`tools/contract_edges.py`** (BUILT, P0): the pure engine — `invert`, `invalidation_set` (both raise-on-malformed
 `builds_against`, M1-L9), `surface_hash`, `surviving_stubs` (sentinel content scan; the dangling-import half is P2),
-`edge_honesty`. **Zero wiring today → zero behavioral change (BC).** _Avoid_: wiring it into a run before P1's durable
-substrate + P2's freeze-gate exist.
+`edge_honesty`. Both scans **fail closed** on an unreadable file (D138 — `OSError` propagates, mirrors `surface_hash`).
+**Zero wiring today → zero behavioral change (BC).** _Avoid_: wiring it into a run before P2's freeze-gate exists
+(P1's durable substrate is now built).

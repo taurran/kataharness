@@ -13,7 +13,8 @@ Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED
     backlog explicitly deferred to v0.1.x (see `BACKLOG.md` "Explicitly deferred to v0.1.x" section).
     **Cluster gates met:** (1) sprint-cadence D15/A5 fresh-context `kata-review` SHIP ✅ · (2)
     wiring-completeness interim pin ✅ · (3) guard-consistency repo-wide ✅ · (4) CWE-23 `.snyk`
-    record ✅ · (5) benchmark n=0→n=1 live ✅. **Final full adval: 2141 pytest PASS / validate 47/0
+    record ✅ · (5) benchmark **machinery** n=0→n=1 live ✅ (cloned *synthetic* control; the real
+    operator-supplied control fixture, benchmark-D5, remains deferred). **Final full adval: 2141 pytest PASS / validate 47/0
     / Snyk medium+ 0.**
 - [~] **v0.2 — Self-handoff + concurrency.** PULLED FORWARD into the v0.1 build: `kata-selfhandoff`,
   `kata-diagnose`, `kata-review`, `kata-improve` (+ meta `kata-write-skill`) all built. **Remaining for v0.2:**

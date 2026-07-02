@@ -1,8 +1,10 @@
-# KataHarness — NEXT-SESSION ORIENTATION (2026-07-02 · two initiatives in flight · HELD at Freeze/Float M1-P0)
+# KataHarness — NEXT-SESSION ORIENTATION (2026-07-02c · Milestone 1 MERGED · Freeze/Float M1 P0+P1 DONE · HELD before M1-P2)
 
 > Paste-ready, self-contained. You are a fresh coding-agent window resuming KataHarness. Read this top to bottom
-> before touching anything. Two initiatives are in flight on **stacked branches**; nothing is broken; the operator
-> has **HELD** further building. Your first job is to re-anchor and confirm state, not to start a build.
+> before touching anything. Milestone 1 is **merged to master**; Freeze/Float **M1-P0 + M1-P1 are built, reviewed
+> SHIP, and committed** on `freeze-float/m1-contract-edges` (unpushed); nothing is broken; the operator has **HELD**
+> before **M1-P2 (the float)**. Your first job is to re-anchor and confirm state, not to start a build. **P2 is the
+> behavior change and requires its own adversarial freeze-gate + operator go before it is built or merged.**
 
 ---
 
@@ -16,22 +18,22 @@
   repo's own `CLAUDE.md` only. ⚠️ The global `~/.claude/CLAUDE.md` Snyk block was softened this session to
   conditional/toolchain-aware — Snyk no longer hard-blocks a run when unavailable.
 
-## 1. ★ BRANCH TOPOLOGY (read this twice — two initiatives are stacked)
+## 1. ★ BRANCH TOPOLOGY
 ```
-master  653f501  (pre-hardening; the last thing actually merged is v0.1.x restore-hardening)
-   └── hardening/kenjiri-lessons   ← Milestone 1 "Release Hardening"  ·  PR #4 OPEN (not merged)
-          └── freeze-float/m1-contract-edges   ← Milestone 2 / Freeze-Float M1-P0  ·  CURRENT TIP (stacked)
+master  8653faf  (Milestone 1 "Release Hardening" MERGED — PR #4, merge commit)
+   └── freeze-float/m1-contract-edges   ← Freeze/Float M1 P0+P1 DONE  ·  CURRENT TIP (rebased onto master, UNPUSHED)
 ```
-- **Milestone 1 (`hardening/kenjiri-lessons`, PR #4 OPEN):** six field-verified fixes from the Kenjiri one-shot
-  (F1–F6) + a tool-agnostic security gate. Done, reviewed, pushed; **awaiting operator merge.**
-- **Freeze/Float M1-P0 (`freeze-float/m1-contract-edges`, current):** the pure `contract_edges` engine, stacked on
-  the hardening substrate (it consumes Milestone 1's `footprint.file_content_hashes` + the PROGRESS heartbeat).
-- **First action after green-check:** merge PR #4 to master, then **rebase `freeze-float/m1-contract-edges` onto
-  master** (`git rebase master`), then continue. Doing this before P1 avoids a messy stacked history.
+- **Milestone 1 (Release Hardening): MERGED** to master `8653faf` (F1–F6 + tool-agnostic security gate, D137/L18).
+  The `hardening/kenjiri-lessons` branch was deleted local+remote after merge.
+- **Freeze/Float M1-P0 + M1-P1 (`freeze-float/m1-contract-edges`, current, UNPUSHED):** the pure `contract_edges`
+  engine (P0) + the `kata_restore` durable-trailer substrate (P1). Rebased cleanly onto the merged master. Both
+  fresh-context adversarially reviewed **SHIP**. Consumes M1's `footprint.file_content_hashes` + PROGRESS heartbeat.
+- **The branch is a clean P0+P1 checkpoint.** The PR for Freeze/Float should wait until **P2** lands so the float
+  ships reviewed-as-a-unit. Pushing the branch (no PR yet) is an operator call — HELD.
 
 ## 2. GREEN (at the freeze-float tip)
-- `pytest 2219 passed / 3 skip` — run `-m "not integration"` (2 benchmark integration tests need `uv run pytest`
-  over a temp clone → fail offline; NOT a regression). Baseline arc: 653f501=2177 → hardening=2190 → +engine=2219.
+- `pytest 2236 passed / 3 skip` — run `-m "not integration"` (2 benchmark integration tests need `uv run pytest`
+  over a temp clone → fail offline; NOT a regression). Arc: 653f501=2177 → M1=2190 → +P0=2219 → +P1/hardening=2236.
 - `validate_skills` **47 / 0 / 0** · Snyk medium+ **0**.
 - **Run tests via the repo venv from `tools/`:** `cd tools; uv run pytest tests -q -m "not integration"`;
   validator `uv run python validate_skills.py` (add `--write` to regen the README skill-index).
@@ -40,16 +42,19 @@ master  653f501  (pre-hardening; the last thing actually merged is v0.1.x restor
 1. **This file** (you're in it) + `.planning/HANDOFF.md` (frontmatter + the ★2026-07-02 block + §2/§4).
 2. `AGENTS.md` — the spine (plan-no-drift, default-FAIL, agnostic-via-adapters, two-way handoff, everything versioned).
    `CLAUDE.md` is a thin pointer to it.
-3. **Milestone 1 (context for PR #4, if touching it):** `.planning/specs/kenjiri-lessons/{DESIGN,PLAN}.md` +
-   `DECISIONS.md` **D137** (LOCKED L1–L10) + `LESSONS-LEARNED.md` **L18** (verify field-lessons before freezing).
+3. **Milestone 1 (background — MERGED):** `.planning/specs/kenjiri-lessons/{DESIGN,PLAN}.md` + `DECISIONS.md`
+   **D137** (LOCKED L1–L10) + `LESSONS-LEARNED.md` **L18** (verify field-lessons before freezing).
 4. **★ Freeze/Float M1 (the active initiative):** `.planning/specs/freeze-float-m1/DESIGN.md` (LOCKED **M1-L1…L9**,
-   the two freeze-gate histories, the **Phasing** section) + `PLAN-p0-engine.md`. This is the current design.
-5. **The built P0 engine:** `tools/contract_edges.py` + `tools/tests/test_contract_edges.py` (36 tests). Understand
-   `invert` / `invalidation_set` / `surface_hash` / `surviving_stubs` / `edge_honesty` before wiring them.
+   the two freeze-gate histories, the **D138 amendment**, the **Phasing** section — P0+P1 marked DONE, P2 pending) +
+   `PLAN-p0-engine.md` + `PLAN-p1-substrate.md`. **D138** (`DECISIONS.md`) = the sanction + reconciliation record.
+5. **The built engine + substrate (P0+P1):** `tools/contract_edges.py` + `tools/tests/test_contract_edges.py`
+   (38 tests) — pure predicates; and `tools/kata_restore.py` P1 additions (`parse_plan_tasks` union,
+   `collect_integrated_tasks` subtract via `_scan_integration_commit_bodies`, `parse_supersede_trailers`) +
+   `tools/tests/test_kata_restore.py` (the "Freeze/Float M1-P1" section). Understand these before wiring P2.
 6. **The source doctrine** (the north star for M1→M4): the **Freeze/Float doctrine (validated draft v2)** — the
    operator has it; it defines M1 (contract edges), M4 (inline evaluator/reroll), M2 (shadow tasks), M3 (runtime
    re-partition). Ship order **M1 → M4 → M2 → M3**; M3 earns the most scrutiny (its own review).
-7. Only if touching restore/durability: `tools/kata_restore.py`, `tools/kata_trail.py`, `protocol/board.md`.
+7. Restore/durability context (P1 lives here): `tools/kata_restore.py`, `tools/kata_trail.py`, `protocol/board.md`.
 
 ## 4. THE CURRENT DESIGN — Freeze/Float M1 (contract edges)
 **Principle:** *Control governs WHAT gets built; efficiency governs WHEN and BY WHOM. Drift lives entirely in the
@@ -78,16 +83,18 @@ dispatches *at freeze* (in parallel) instead of waiting for its provider task �
   behavior is proven by the final-gate full-suite re-run, not the scan.
 
 ## 5. WHAT'S BUILT vs WHAT'S PLANNED (the phased program)
-- **M1-P0 — the engine — ✅ DONE (this session).** `tools/contract_edges.py`: `invert`, `invalidation_set`
-  (both raise-on-malformed), `surface_hash` (narrowed extractor, fail-closed, format-invariant, async-aware),
-  `surviving_stubs` (sentinel content scan — **language-agnostic**), `edge_honesty` (import-surface check). 36 tests,
-  every predicate mutation-proven, Snyk 0, **zero wiring → zero behavioral change (BC by construction)**.
-  Adversarially reviewed (SHIP-WITH-FIXES → fixed). Commits `429556a`→`c68ec1d`→`4c78dc3`→`1c65045`.
-- **M1-P1 — durable substrate — ⏳ NEXT.** Parse `Kata-Invalidated:` + `Kata-Supersede:` commit trailers;
-  `kata_restore.parse_plan_tasks` unions `builds_against` keys; `collect_integrated_tasks` **subtracts**
-  `Kata-Invalidated:` ids (so a crash mid-invalidation re-dispatches the task). Lost-run re-dispatch tests.
-  **Still additive, still no float.** Freeze a `PLAN-p1` slice → build (TDD/mutation) → engine-review before merge.
-- **M1-P2 — wiring + THE FLOAT — ⏳ AFTER P1, re-gated.** The `builds_against` schema in `kata-plan/RUBRIC.md`
+- **M1-P0 — the engine — ✅ DONE.** `tools/contract_edges.py`: `invert`, `invalidation_set` (both
+  raise-on-malformed), `surface_hash` (narrowed extractor, fail-closed, format-invariant, async-aware),
+  `surviving_stubs` (sentinel content scan — **language-agnostic**), `edge_honesty` (import-surface check). 38 tests
+  (incl. 2 fail-closed for the OSError paths closed under D138), every predicate mutation-proven, Snyk 0, **zero
+  wiring → BC by construction**. Adversarially reviewed (SHIP-WITH-FIXES → fixed).
+- **M1-P1 — durable substrate — ✅ DONE (`PLAN-p1-substrate.md`, commit `46c7601`).** All in `kata_restore.py`
+  (NOT a new `kata_supersede.py` — that name is taken): `parse_plan_tasks` unions `builds_against` keys (M1-L2);
+  `collect_integrated_tasks` subtracts `Kata-Invalidated:` (set-based, **over-dispatch-safe** per D138) via the
+  extracted `_scan_integration_commit_bodies` helper; `parse_supersede_trailers` provided for the P2 gate (hash
+  lowercased to match `_EDGE_RE`). +10 tests (union + subtract mutation-proven; malformed-invalidation surfaced,
+  not swallowed). Fresh-context adversarial review: **SHIP** (over-dispatch-only + hash symmetry verified). BC, no float.
+- **M1-P2 — wiring + THE FLOAT — ⏳ NEXT, re-gated.** The `builds_against` schema in `kata-plan/RUBRIC.md`
   (provider-owned `contracts/<id>/` + sentinel + retirement obligation); the dispatchable-at-freeze clause
   (`kata-orchestrate:211`,`:481`); the supersede enumerate+trailer+route (`:507-509`); the final-gate independent
   re-derivation + surviving-stub (incl. the **dangling-import** half, moved here from P0 per the #3 amendment) +
@@ -111,24 +118,31 @@ dispatches *at freeze* (in parallel) instead of waiting for its provider task �
 - **5 frozen `kata_install.py` engine fns stay byte-identical**; **stdlib-only on the install/materialize path.**
 - **Commit only on explicit operator approval** (re-ask each session — it does not carry across contexts).
   GitHub-flow: branch per feature/phase → PR → merge → delete branch; never commit straight to master.
-- **Supersede-never-rewrite** decisions (new D-numbers ≥ D138; never edit a prior D-entry). D137 = Milestone 1.
+- **Supersede-never-rewrite** decisions (new D-numbers ≥ D139; never edit a prior D-entry). D137 = Milestone 1;
+  **D138 = Freeze/Float sanction (operator-directed M2) + M1 DESIGN reconciliation** (do not re-question the sanction).
 - **Model routing:** judgment/plan/grill/eval/gate = Opus (anchor); build/encode/workers = Sonnet (economy).
 - **Complex commit messages via `git commit -F <file>`** — PowerShell mangles here-strings containing `|`, `>`,
   `->`, `=>`, or quotes; write the message to a scratch file and `-F` it (learned the hard way this session).
 
 ## 7. FIRST ACTIONS (in order)
 1. Confirm green at the freeze-float tip (§2). Confirm `git status` clean, `git branch --show-current` =
-   `freeze-float/m1-contract-edges`.
-2. **Ask the operator:** merge PR #4 (Milestone 1) now? If yes → merge → `git checkout freeze-float/m1-contract-edges;
-   git rebase master` → re-confirm green.
-3. **Then, on operator go, build M1-P1** via the recipe (§6): freeze `PLAN-p1` → build the trailer substrate + the
-   `kata_restore` union/subtract (TDD, mutation-proof, M1-L9 fail-closed) → engine-review → merge gate.
-4. **Do NOT jump to P2** (the float) without its own freeze-gate — it is the behavior change and the highest-risk
-   phase; the DESIGN requires it re-gated.
+   `freeze-float/m1-contract-edges`, tip `46c7601`.
+2. **Ask the operator two things:** (a) push the branch now (clean P0+P1 checkpoint, no PR yet)? (b) open M1-P2?
+   Do NOT assume either — the operator HELD before P2.
+3. **On operator go for P2, run the FULL freeze-gate recipe (§6) — P2 is the behavior change:** grill/freeze
+   `PLAN-p2` (schema + dispatchable-at-freeze clause + supersede enumerate/route + final-gate re-derivation +
+   edge-honesty review surface) → **fresh-context adversarial freeze-gate on the DESIGN/PLAN (HOLD→SHIP)** →
+   build (TDD, mutation-proof, M1-L9 fail-closed, bump every edited SKILL) → integration gate → **fresh-context
+   adversarial sweep of the built code** → operator merge gate. The P1 substrate it consumes is ready:
+   `parse_supersede_trailers`, the `Kata-Invalidated:` subtract, the `builds_against` union.
+4. **P2 is the ONLY place a contract-only dependent actually dispatches early.** It touches the dispatch core —
+   do not shortcut its freeze-gate.
 
-## 8. THE THREE THINGS MOST LIKELY TO BITE
-- **Stacked-branch hygiene:** if PR #4 merges via squash, the stacked history needs a rebase; do it early.
+## 8. THE THREE THINGS MOST LIKELY TO BITE (in P2)
 - **The `surface_hash` residual:** constants/type-aliases/re-exports are NOT machine-pinned (M1-L1) — if a P2
   contract leans on a pinned constant, it MUST be flagged to the `kata-review` edge-honesty backstop, not assumed.
 - **Provider-owns-contract ownership:** the `contracts/<id>/` fileset is owned by the PROVIDER only (M1-L4) — the
   disjoint-ownership invariant depends on it; the dependent never writes the contract.
+- **The restore subtract is best-effort, the P2 gate is the authority:** a *malformed* `Kata-Invalidated:` trailer
+  is surfaced (loud NOTE) but not subtracted at restore — the fail-closed handling of malformed/partial
+  invalidation records is P2's final-gate independent re-derivation (M1-L9). Wire that as the real gate.

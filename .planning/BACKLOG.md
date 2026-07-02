@@ -23,8 +23,11 @@ All five items committed, pushed, and gated before the release tag. Final full a
    choice) on `..` traversal; eliminates the mixed `SystemExit`/`ValueError` class.
 4. **CWE-23 `.snyk` record** ✅ — standing `.snyk` policy entry for the 17-LOW operator-supplies-own-path
    class in `kata_install.py`; below the medium+ gate; accepted as a known standing item.
-5. **Benchmark n=0→n=1 live** ✅ — first live benchmark run on a real control fixture (D5,
-   operator-supplied), proving the benchmark engine is not synthetic-fixture-only.
+5. **Benchmark machinery n=0→n=1 live** ✅ — the clone→dual-gate→score→scorecard chain ran clean on a
+   cloned **synthetic** control (`0d3e729`, real `uv run pytest` subprocesses). **Correction (2026-07-02):
+   the earlier wording "on a real control fixture, proving not synthetic-fixture-only" was an over-claim —
+   it ran on a SYNTHETIC control.** The **real operator-supplied control fixture (benchmark-D5) is still
+   DEFERRED**; the engine is not yet proven on a real control repo (CONTEXT.md honesty-pin).
 
 ## ↳ Explicitly deferred to v0.1.x (post-v0.1 release)
 
