@@ -18,7 +18,17 @@ set driving abort/re-open must never silently under-invalidate.
 
 from __future__ import annotations
 
+import hashlib
 import re
+from pathlib import Path
+
+import tree_sitter_python as tsp
+from tree_sitter import Language, Parser
+
+_PY_LANG = Language(tsp.language())
+_PARSER = Parser(_PY_LANG)
+
+_FUNC_TYPES = ("function_definition", "async_function_definition")
 
 # <contractId>@<surfaceHash> — id is a path-safe slug; hash is lowercase hex (8–64).
 _EDGE_RE = re.compile(r"^(?P<id>[A-Za-z0-9._-]+)@(?P<hash>[0-9a-f]{8,64})$")
@@ -84,3 +94,109 @@ def invalidation_set(builds_against: object, changed_contract_id: str) -> list[s
         raise ValueError("changed_contract_id must be a non-empty string")
     inverted = invert(builds_against)
     return inverted.get(changed_contract_id, [])
+
+
+# ---------------------------------------------------------------------------
+# Slice B — surface_hash (narrowed interface-surface extractor, fail-closed)
+# ---------------------------------------------------------------------------
+#
+# M1-L1 (F4-narrowed): the pinned surface is function/method SIGNATURES including
+# return annotations + decorator lists + class headers — the robustly extractable
+# set. A body-fill must NOT change the hash (M1-L8: bodies are excluded); an
+# interface edit (param / return annotation / decorator / class header) MUST.
+#
+# DEFERRED residual (NOT machine-pinned, review-backstopped): module constants,
+# type aliases, __all__, re-exports. A contract relying on a pinned constant is
+# flagged to the kata-review edge-honesty backstop until a later milestone lands
+# the export visitor. Documented in DESIGN M1-L1 — do not silently claim coverage.
+
+
+def _text(node, src: bytes) -> str:
+    return src[node.start_byte : node.end_byte].decode("utf-8", "replace")
+
+
+def _decorators_of(defn, src: bytes) -> list[str]:
+    """Decorator texts if *defn* is wrapped in a decorated_definition, else []."""
+    parent = defn.parent
+    if parent is not None and parent.type == "decorated_definition":
+        return [_text(c, src) for c in parent.children if c.type == "decorator"]
+    return []
+
+
+def _emit_surface(defn, class_stack: list[str], src: bytes) -> str:
+    """Build the surface string for one function/class definition (bodies excluded)."""
+    name_node = defn.child_by_field_name("name")
+    name = _text(name_node, src) if name_node else "?"
+    qual = ".".join(class_stack + [name])
+    decs = _decorators_of(defn, src)
+    if defn.type in _FUNC_TYPES:
+        params = defn.child_by_field_name("parameters")
+        ret = defn.child_by_field_name("return_type")
+        sig = f"def {qual}{_text(params, src) if params else '()'}"
+        if ret is not None:
+            sig += f" -> {_text(ret, src)}"
+        line = sig
+    else:  # class_definition
+        supers = defn.child_by_field_name("superclasses")
+        line = f"class {qual}{_text(supers, src) if supers else ''}"
+    return "\n".join(decs + [line])
+
+
+def _walk_surface(node, class_stack: list[str], src: bytes, out: list[str]) -> None:
+    """Collect surface strings. Never descends into a function body (impl, not surface)."""
+    for child in node.children:
+        if child.type in _FUNC_TYPES:
+            out.append(_emit_surface(child, class_stack, src))
+            # do NOT recurse — nested defs inside a body are implementation
+        elif child.type == "class_definition":
+            out.append(_emit_surface(child, class_stack, src))
+            name_node = child.child_by_field_name("name")
+            cname = _text(name_node, src) if name_node else "?"
+            _walk_surface(child, class_stack + [cname], src, out)  # capture methods
+        else:
+            # structural containers (module, block, decorated_definition, if/try, …)
+            _walk_surface(child, class_stack, src, out)
+
+
+def _extract_surface(src: bytes) -> list[str]:
+    """Extract the interface surface of one source file. RAISE on any parse ERROR
+    node (M1-L9 — no partial hash could hide an interface change in a broken region)."""
+    tree = _PARSER.parse(src)
+    if tree.root_node.has_error:
+        raise ValueError(
+            "contract file has a parse error (ERROR node) — surface_hash fails closed (M1-L9)"
+        )
+    out: list[str] = []
+    _walk_surface(tree.root_node, [], src, out)
+    return out
+
+
+def _netstring_hash(items: list[str]) -> str:
+    """Order-independent sha256 over netstring length-prefixed items (D98 collision-safe)."""
+    h = hashlib.sha256()
+    for s in sorted(items):
+        b = s.encode("utf-8")
+        h.update(f"{len(b)}:".encode("ascii"))
+        h.update(b)
+    return h.hexdigest()
+
+
+def surface_hash(contract_dir: str | Path) -> str:
+    """Content-hash the INTERFACE SURFACE of a contract directory (M1-L1).
+
+    Hashes function/method signatures (params + return annotations) + decorators +
+    class headers across every ``.py`` under *contract_dir*, each attributed to its
+    relative path (so moving a symbol between files changes the hash). Bodies are
+    excluded, so filling a stub body does not flip the pin (M1-L8). RAISES on a
+    missing directory or any unparseable contract file (M1-L9).
+    """
+    root = Path(contract_dir)
+    if not root.is_dir():
+        raise ValueError(f"contract dir not found: {contract_dir!r}")
+    items: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        src = py.read_bytes()
+        rel = py.relative_to(root).as_posix()
+        for surface in _extract_surface(src):  # raises on parse error
+            items.append(f"{rel}::{surface}")
+    return _netstring_hash(items)
