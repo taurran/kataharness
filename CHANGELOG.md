@@ -10,6 +10,43 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ## [Unreleased]
 
+### Release Hardening — Milestone 1 (Kenjiri one-shot lessons) — 2026-07-02
+
+Six field-verified harness fixes from the Kenjiri v1.0.0 one-shot, each verified against the code by
+fresh-context investigators before the fix (three reshaped from the run's proposal to avoid regressions).
+Spec: `.planning/specs/kenjiri-lessons/`. Baseline `653f501` (pytest 2177) → **2189 pytest**, validate
+47/0, Snyk medium+ 0.
+
+- **F1 · Preflight fail-closed on malformed manifest** (`kata-preflight` 0.1.1) — a misspelled/absent/
+  wrong-typed top-level `dependencies` key collapsed to `[]` and passed vacuously as `ready`. Now shape-
+  validated (key present + list); a present-but-empty `[]` stays `ready` (legit state). +4 tests, mutation-proven.
+- **F2 · Graph src-layout import resolution** (`graph_gen.py`) — `from pkg.mod import x` on a `src/` layout
+  resolved to nothing → flat PageRank. Source roots discovered from `__init__.py` dirs; src-prefixed
+  candidates appended last (flat layout byte-for-byte unchanged). +5 tests, mutation-proven.
+- **F5 · Commit-scoped lane-check + file-hash stamping** (`kata-orchestrate` 0.4.x, `kata-evaluate` 0.2.0,
+  `footprint.py`) — the drift check prescribed no git method; a task forked from an earlier integration
+  head false-flagged foreign files. New `changed_in_task` (three-dot merge-base diff) + `file_content_hashes`
+  (Freeze/Float M4 evidence substrate). +3 tests incl. a real-git fork scenario, mutation-proven.
+- **F3 · Structured PROGRESS heartbeat + liveness monitor** (`kata-orchestrate`, `protocol/board.md`) —
+  workers stamped only CLAIM/DONE (Kenjiri: 37 min dark). Mandated per-owned-module PROGRESS
+  (`modulesDone/modulesOwned`, also the M4 slack-timing signal) + a liveness monitor routing stale workers
+  through the existing escalation path (nudge → escalate → human-gated re-dispatch; **no blind kill**). New
+  top-level `livenessDeadline` config (keeps orchestrate sprint-blind, BC2).
+- **F6 + Lever 2 · Tool-agnostic security-gate posture** (`kata-evaluate` 0.2.0, `kata-orchestrate`,
+  `kata-report` 0.1.1, `kata-bootstrap` 0.1.3, `protocol/config.md`) — the gate said "security scan clean"
+  (fix-until-zero) and graded a raw Snyk count, but Snyk can't converge on custom sanitizers and a run may
+  have no scanner. New `securityScan: required|when-available|off` (absent ⇒ `when-available`, BC);
+  documented-acceptance terminal state graded for **soundness**, not raw count. Debug-mode/IaC Snyk wirings
+  untouched.
+- **F4 · Greenfield src-layout seeding precondition** (`kata-orchestrate`, `kata-lang-profile` 0.1.1) —
+  `uv init --bare` wrote no `[build-system]`; workers added `sys.path` shims. Generic "own package
+  importable before wave-1" precondition in the core, Python specifics (build-system + `packages.find
+  where=src` + import verify) in the language overlay.
+
+_Also: softened the operator's global `~/.claude/CLAUDE.md` Snyk mandate to conditional + toolchain-aware
+(Lever 1, external — the actual cause of the Kenjiri mid-run Snyk derailment). Freeze/Float doctrine
+(M1–M4) deferred to Milestone 2._
+
 ## [0.1.0] — 2026-06-30
 
 **First public release of the KataHarness agent harness — the single-model Claude core.**

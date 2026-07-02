@@ -182,3 +182,18 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
   `kind`↔run-shape mapping; **bump-on-build must refresh status prose across the on-ramp** (`run-shapes.md`,
   `kata-bootstrap` SKILL, spec DESIGN headers), not only `README` — a feature is "done" only when its entry
   point is discoverable, not merely when its code is wired.
+- **L18 — A field-run's proposed fix is a hypothesis; verify it against the code before you freeze it. (2026-07-02)**
+  Milestone 1 (D137) ingested six fixes (F1–F6) proposed by the agent that ran the Kenjiri one-shot. Fresh-context
+  investigators checking each against the actual code found **three of the six proposals were wrong as written**:
+  F1's "block on an empty `dependencies` list" would have regressed a first-class, heavily-tested legit state
+  (empty-deps ⇒ `ready`) — the real hole was a *malformed* key, not an empty list; F2's "0 ref edges" symptom
+  conflated the import-edge bug with a separate name-match heuristic (fix targets import edges only); F4's checklist
+  belonged in the language overlay, not the agnostic core. A run that PASSES its own gates still misdiagnoses its
+  own fixes — the run's prose is a lead, not a spec. *Ties to:* [[L15]] (treat seams as untrusted), the
+  reproduce-don't-trust evaluator rubric. *Baked in:* the plan-freeze step for ingested field-lessons requires a
+  code-grounded verification pass **before** the DESIGN LOCKs the fix shape; the LOCKED decision records the
+  *reshaped* fix, not the reported one. **Corollary (also this milestone):** the fixes repaired the harness's own
+  safety instruments (a vacuous-pass gate, a wrong-scope drift check, the security gate), so they were built
+  **directly, not dogfooded** — self-certifying a gate's repair with that same gate is the anti-pattern the
+  fresh-context discipline exists to prevent; and indeed both the harness's own sprint-blind test and the WS-A
+  adversarial pass each caught a real defect the author's green tests missed.
