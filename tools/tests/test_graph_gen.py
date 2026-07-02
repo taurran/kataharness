@@ -295,6 +295,78 @@ def test_import_edge_file_to_file(tmp_path):
         assert dst in file_ids, f"import edge dst {dst!r} is not a file node id"
 
 
+# ---------------------------------------------------------------------------
+# F2 — src-layout import resolution
+# ---------------------------------------------------------------------------
+
+def _write_src_layout(tmp_path: Path) -> None:
+    """A src-layout package: src/mypkg/{__init__,core,app}.py where app imports core."""
+    pkg = tmp_path / "src" / "mypkg"
+    pkg.mkdir(parents=True)
+    (pkg / "__init__.py").write_text("", encoding="utf-8")
+    (pkg / "core.py").write_text("def helper():\n    return 1\n", encoding="utf-8")
+    (pkg / "app.py").write_text(
+        "from mypkg.core import helper\n\ndef run():\n    return helper()\n",
+        encoding="utf-8",
+    )
+
+
+def test_src_layout_import_edge_resolves(tmp_path):
+    """F2: `from mypkg.core import helper` under a src/ layout resolves to
+    src/mypkg/core.py (previously produced ZERO import edges → flat PageRank)."""
+    _write_src_layout(tmp_path)
+    from graph_gen import build_graph
+
+    g = build_graph(tmp_path)
+    import_edges = {(e["src"], e["dst"]) for e in g["edges"] if e["kind"] == "import"}
+    assert ("src/mypkg/app.py", "src/mypkg/core.py") in import_edges, (
+        f"src-layout import edge missing; import edges: {sorted(import_edges)}"
+    )
+
+
+def test_discover_source_roots_src_layout():
+    from graph_gen import _discover_source_roots
+
+    roots = _discover_source_roots({"src/mypkg/__init__.py", "src/mypkg/core.py"})
+    assert roots == ["src"]
+
+
+def test_discover_source_roots_flat_is_empty():
+    """Flat layout (repo-root package or bare modules) yields no extra source
+    root — repo-root packages are already covered by absolute candidates."""
+    from graph_gen import _discover_source_roots
+
+    assert _discover_source_roots({"pkg/__init__.py", "pkg/mod.py"}) == []
+    assert _discover_source_roots({"fixture_a.py", "fixture_b.py"}) == []
+
+
+def test_module_to_path_appends_src_candidates_last():
+    """Flat-layout candidate order is preserved (src candidates appended last)."""
+    from graph_gen import _module_to_path
+
+    cands = _module_to_path("mypkg.core", "src/mypkg", source_roots=["src"])
+    assert cands[:4] == [
+        "src/mypkg/mypkg/core.py",
+        "src/mypkg/mypkg/core/__init__.py",
+        "mypkg/core.py",
+        "mypkg/core/__init__.py",
+    ]
+    assert "src/mypkg/core.py" in cands[4:]
+
+
+def test_no_phantom_edge_when_target_missing(tmp_path):
+    """A module with no matching file produces no import edge (no false edges)."""
+    from graph_gen import build_graph
+
+    (tmp_path / "solo.py").write_text(
+        "from nonexistent.module import thing\n\ndef f():\n    return 1\n",
+        encoding="utf-8",
+    )
+    g = build_graph(tmp_path)
+    import_edges = [e for e in g["edges"] if e["kind"] == "import"]
+    assert import_edges == []
+
+
 def test_meta_backend(tmp_path):
     """meta.backend == 'tree-sitter'."""
     write_fixtures(tmp_path)
