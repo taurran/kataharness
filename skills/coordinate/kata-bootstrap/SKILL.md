@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.1.2
+version: 0.1.3
 category: coordinate
 status: experimental
 agnostic: true
@@ -137,9 +137,15 @@ line in the plain-language statement ("this is a medium-cost run").
 
 ## Phase 3 — write kata.config + launch
 Write `kata.config` (JSON, branch root) per `protocol/config.md`: `mode`, `modules`, `effort`, `tiers`,
-`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**. Bootstrap writes the config
+`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**, **`securityScan`**. Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;
 a second validation pass here would be redundant bloat). Then hand off to the loop ([[kata-orchestrate]]).
+
+**Security-scan posture (`securityScan`, Lever 2 / F6):** write `"when-available"` by default — run a
+scan when a scanner is wired and the toolchain supports it, else degrade-and-surface (never a silent skip,
+never a toolchain-shim fight). Write `"required"` only when the operator asks for a fail-closed security
+gate; write `"off"` only on an explicit, surfaced opt-out. **Omitting the field is equivalent to
+`"when-available"`** (BC) — so a run written without it behaves exactly as today.
 
 **Multi-model routing (`roles`):** if the mirror conversation (via `kata-initiate` Phase 2e or the grill)
 produced a confirmed per-role platform assignment, write it as the `roles` block per `protocol/config.md:27`:

@@ -6,7 +6,7 @@ description: >-
   cannot rubber-stamp the builder's work. Checks acceptance criteria, the green gate, drift against LOCKED
   decisions, and scope.
 license: Apache-2.0
-version: 0.1.1
+version: 0.2.0
 category: evaluate
 status: experimental
 agnostic: true
@@ -48,7 +48,20 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
    or a gate_emit that pre-dates MAJOR-3), fall back to the explicit-statement behavior above (backward-
    compatible).
 2. **Green gate.** Run it yourself: the project's full test command (count + 0 fail + 0 skip), a deterministic
-   build (identical size on re-run where claimed), and the security scan clean. Paste the numbers.
+   build (identical size on re-run where claimed), and **the security scan** — **tool-agnostic** (whatever
+   scanner the project/toolchain provides; never assume a specific vendor). Paste the numbers. The verdict
+   depends on `kata.config.securityScan` (Lever 2 / F6; **absent ⇒ `when-available`**, BC):
+   - **`required`** — fail-closed: a scan that is not clean AND has no sound documented-acceptance ⇒ NEEDS_WORK.
+   - **`when-available`** — run the scan if a scanner is wired AND the toolchain is supported; if it cannot run
+     (no scanner / unsupported toolchain / cannot converge), record it **`degraded` and surface it** — never a
+     silent "clean", never a NEEDS_WORK purely for scanner-absence, never shim tooling to force a scan.
+   - **`off`** — operator opt-out; note it was skipped by policy (surfaced at handoff), do not fabricate a result.
+   **Documented-acceptance is graded for SOUNDNESS, not raw count (F6).** A finding that cannot be driven to
+   zero (e.g. a scanner that does not credit a custom sanitizer) may terminate as: genuine hardening →
+   in-repo acceptance (`.snyk` with reason + expiry) → a board DECISION. When such acceptance is present,
+   grade whether it is **sound** — the reason is truthful, the residual risk is genuinely low, the expiry is
+   set — NOT whether the raw finding count is zero. An unsound or undocumented suppression ⇒ NEEDS_WORK; a
+   sound, dated, board-recorded acceptance ⇒ PASS on this item.
 3. **No drift.** The LOCKED decisions were honored verbatim (e.g. a frozen classification/contract was not
    re-decided). Diff the result against each LOCKED decision. Any unauthorized deviation = NEEDS_WORK.
 4. **Ownership respected.** Each task touched only its owned files; concurrent merges were conflict-free.

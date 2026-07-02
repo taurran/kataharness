@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.4.0
+version: 0.4.1
 category: coordinate
 status: experimental
 agnostic: true
@@ -275,8 +275,17 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    worker mid-write; the heartbeat + escalation path preserves the dual-control spine. (Bounds mirror the
    existing thrash valve — repeated staleness on one task routes to `kata-diagnose`, no new valve.)
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
-   verify (tests + security scan). Not done until evidence is read and passes. Confirm it touched **only its
-   owned files** (drift check).
+   verify (tests + **the security scan**). Not done until evidence is read and passes. Confirm it touched
+   **only its owned files** (drift check).
+   **Security scan is tool-agnostic + posture-driven (Lever 2 / F6).** Use whatever scanner the toolchain
+   provides — never assume a vendor, never shim tooling to force a scan. Honor `kata.config.securityScan`
+   (absent ⇒ `when-available`, BC): `required` ⇒ fail-closed; `when-available` ⇒ run if a scanner is wired
+   and the toolchain supported, else mark the task's scan `degraded` and **surface it** (never a silent
+   clean, never a hard-block on scanner-absence); `off` ⇒ skip by policy, surfaced. A finding that cannot
+   converge to zero has a **documented-acceptance terminal state**: genuine hardening → in-repo acceptance
+   (`.snyk` reason + expiry) → a board **DECISION** → [[kata-evaluate]] grades the acceptance's *soundness*,
+   not the raw count. (This is the generic first-party gate. The **debug-mode** `snyk_code_scan` fix-gate and
+   the **IaC** `snyk_iac_scan` gate are intentional named integrations — unchanged.)
    **Lane-check must be commit-scoped, NOT branch-range (F5).** Compute the task's changed files with
    `footprint.changed_in_task(integration_ref, task_ref)` — a **three-dot** `git diff base...task`
    (merge-base-scoped: only what the task's own commits changed since it diverged). Do **NOT** use a
