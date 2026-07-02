@@ -1,3 +1,5 @@
+import subprocess
+
 import footprint
 
 
@@ -196,3 +198,69 @@ def test_manifest_code_bearing_false_for_empty():
     result = footprint.manifest([], [])
     assert "codeBearing" in result
     assert result["codeBearing"] is False
+
+
+# ---------------------------------------------------------------------------
+# F5 — commit-scoped lane-check (changed_in_task) + file-hash stamping
+# ---------------------------------------------------------------------------
+
+def _git(args: list[str], cwd) -> None:
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True)
+
+
+def test_changed_in_task_excludes_foreign_fork(tmp_path, monkeypatch):
+    """A task forked from an EARLIER integration head must report only its own
+    changed files — the three-dot (merge-base) diff excludes files integration
+    changed after the fork. Contrast: the two-dot diff would list them (the
+    exact F5 hazard)."""
+    repo = tmp_path
+    _git(["init"], repo)
+    _git(["checkout", "-b", "integration"], repo)
+    _git(["config", "user.email", "t@t"], repo)
+    _git(["config", "user.name", "t"], repo)
+    (repo / "base.txt").write_text("base", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "base"], repo)
+
+    # Fork the task branch at the base commit.
+    _git(["checkout", "-b", "task/T5"], repo)
+
+    # Integration advances with a FOREIGN file (after the task forked).
+    _git(["checkout", "integration"], repo)
+    (repo / "foreign.txt").write_text("foreign", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "foreign"], repo)
+
+    # The task commits its OWN file, still forked from the earlier head.
+    _git(["checkout", "task/T5"], repo)
+    (repo / "task_owned.txt").write_text("owned", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "task"], repo)
+
+    monkeypatch.chdir(repo)
+
+    # Commit-scoped (three-dot) lane check → ONLY the task's own file.
+    assert footprint.changed_in_task("integration", "task/T5") == ["task_owned.txt"]
+
+    # Demonstrate the hazard the fix avoids: the two-dot diff lists foreign.txt.
+    two_dot = footprint.changed_since("integration")
+    assert "foreign.txt" in two_dot
+
+
+def test_file_content_hashes_roundtrip_and_change(tmp_path):
+    (tmp_path / "a.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_path / "b.py").write_text("y = 2\n", encoding="utf-8")
+    h1 = footprint.file_content_hashes(["a.py", "b.py"], str(tmp_path))
+    assert set(h1) == {"a.py", "b.py"}
+    assert all(v for v in h1.values())
+
+    # A byte change is detected; the untouched file's hash is stable.
+    (tmp_path / "a.py").write_text("x = 2\n", encoding="utf-8")
+    h2 = footprint.file_content_hashes(["a.py", "b.py"], str(tmp_path))
+    assert h2["a.py"] != h1["a.py"]
+    assert h2["b.py"] == h1["b.py"]
+
+
+def test_file_content_hashes_missing_is_none(tmp_path):
+    h = footprint.file_content_hashes(["gone.py"], str(tmp_path))
+    assert h["gone.py"] is None

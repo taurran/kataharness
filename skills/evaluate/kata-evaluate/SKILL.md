@@ -6,7 +6,7 @@ description: >-
   cannot rubber-stamp the builder's work. Checks acceptance criteria, the green gate, drift against LOCKED
   decisions, and scope.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: evaluate
 status: experimental
 agnostic: true
@@ -52,6 +52,9 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
 3. **No drift.** The LOCKED decisions were honored verbatim (e.g. a frozen classification/contract was not
    re-decided). Diff the result against each LOCKED decision. Any unauthorized deviation = NEEDS_WORK.
 4. **Ownership respected.** Each task touched only its owned files; concurrent merges were conflict-free.
+   Ownership is judged **commit-scoped** (the task's own changes vs. its fork point — `withinFootprint`
+   fed by `footprint.changed_in_task`, a three-dot merge-base diff), **not** a branch-range
+   `integration..task` diff (which falsely flags files integration changed after the task forked — F5).
 5. **No scope creep.** Nothing built beyond the plan; no speculative features; no unrelated edits.
 6. **Backward-compatibility.** Pre-existing behavior/tests preserved where the plan promised it.
    **Version-up regression contract:** for an existing-repo feature add, the gate is the **baseline suite still

@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.3.0
+version: 0.3.1
 category: coordinate
 status: experimental
 agnostic: true
@@ -261,6 +261,12 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
    verify (tests + security scan). Not done until evidence is read and passes. Confirm it touched **only its
    owned files** (drift check).
+   **Lane-check must be commit-scoped, NOT branch-range (F5).** Compute the task's changed files with
+   `footprint.changed_in_task(integration_ref, task_ref)` — a **three-dot** `git diff base...task`
+   (merge-base-scoped: only what the task's own commits changed since it diverged). Do **NOT** use a
+   two-dot `git diff integration..task`: if the task forked from an earlier integration head, the two-dot
+   diff lists every file integration changed afterward as a *foreign* file and falsely trips the drift
+   check. Feed the commit-scoped set to `footprint.is_within_footprint(changed, ownership)`.
    **IaC gate (IaC-classed tasks only; ADDITIVE — non-IaC tasks unchanged):** for any task marked
    IaC-classed at dispatch (step 2), also run the **IaC gate** per `protocol/iac-safety.md §3` as part
    of this task's verify. The five ordered gate steps (all creds-free, Tier 1):
