@@ -56,7 +56,7 @@ granular live view for whoever wants to watch; they are the firehose, not the co
 
 **What does not warrant a narration message:**
 
-- Individual PROGRESS heartbeats (board TYPE `PROGRESS` — dashboard only).
+- Individual PROGRESS heartbeats (board TYPE `PROGRESS` — mandated liveness signal (F3), read by the dashboard + the liveness monitor; still never narrated individually).
 - Internal state updates, board appends, or file writes the user has no action on.
 - Routine forward motion within a phase (a worker is running; the plan has not changed).
 

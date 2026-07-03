@@ -186,6 +186,29 @@ def fold_board(board_content: str) -> dict[str, Any]:
 # Written by kata-orchestrate step 5.  Case-insensitive for robustness.
 _KATA_TASK_RE = re.compile(r"^\s*Kata-Task:\s*(\S+)\s*$", re.IGNORECASE)
 
+# Freeze/Float M1-P1 durable trailers (git-durable, survive the .kata/ wipe on the
+# canonical lost-run).  Written by the P2 supersede path; parsed here.
+#   Kata-Invalidated: <task-id>            — a re-opened integrated dependent (M1-L3/F5)
+#   Kata-Supersede:   <contractId>@<hash>  — an authorized contract surface change (M1-L3/L8)
+_KATA_INVALIDATED_RE = re.compile(r"^\s*Kata-Invalidated\s*:\s*(\S+)\s*$", re.IGNORECASE)
+# Loose prefix — used ONLY to detect a malformed invalidation trailer (looks like the
+# key but fails the strict single-token match) so it is surfaced, never silently
+# swallowed into an under-dispatch.  `\s*` before the colon: a key-whitespace
+# variant (`Kata-Invalidated : T1`) previously missed BOTH regexes and vanished
+# silently — the exact under-dispatch class this detector exists for (adval P1-F1).
+_KATA_INVALIDATED_PREFIX_RE = re.compile(r"^\s*Kata-Invalidated\s*:", re.IGNORECASE)
+_KATA_SUPERSEDE_RE = re.compile(
+    r"^\s*Kata-Supersede\s*:\s*([A-Za-z0-9._-]+)@([0-9a-fA-F]{8,64})\s*$", re.IGNORECASE
+)
+# Malformed-supersede detector (adval P1-F4): a line that looks like the key but
+# fails the strict `<id>@<8-64 hex>` match must be surfaced — an invisible
+# supersede would let the P2 coverage audit pass vacuously (M1-L9).
+_KATA_SUPERSEDE_PREFIX_RE = re.compile(r"^\s*Kata-Supersede\s*:", re.IGNORECASE)
+# NOTE the deliberate asymmetry: `Kata-Task:` stays STRICT with no tolerant
+# colon-spacing — tolerating a sloppy Kata-Task would move a task INTO the
+# integrated set (toward under-dispatch); missing it merely re-dispatches
+# (over-dispatch, the safe direction, D134/D135).
+
 # Frontmatter fence pattern — matches the opening --- and its closing ---
 _FM_RE = re.compile(r"^---[ \t]*\n(.*?)\n---", re.DOTALL)
 
@@ -193,23 +216,24 @@ _FM_RE = re.compile(r"^---[ \t]*\n(.*?)\n---", re.DOTALL)
 def parse_plan_tasks(plan_path: Union[str, Path]) -> set[str]:
     """Parse task-ids from a frozen PLAN.md's YAML frontmatter.
 
-    The YAML frontmatter ``ownership:``, ``waves:``, and ``depends_on:`` keys are
-    AUTHORITATIVE for the complete task-id set.  The three maps cover every
-    per-task key the orchestrator reads (RUBRIC.md / kata-orchestrate precondition 2).
+    The YAML frontmatter ``ownership:``, ``waves:``, ``depends_on:``, and
+    ``builds_against:`` (Freeze/Float M1-L2) keys are AUTHORITATIVE for the
+    complete task-id set.  The four maps cover every per-task key the orchestrator
+    reads (RUBRIC.md / kata-orchestrate precondition 2).
     Heading-based scraping is NOT used — it was a drift-prone second source of truth
     that silently dropped tasks with colon separators or non-standard hash levels.
 
     Returns
     -------
     set[str]
-        Union of task-ids from ``ownership:`` keys, ``depends_on:`` keys, and
-        task-ids in ``waves:`` value lists.
+        Union of task-ids from ``ownership:`` keys, ``depends_on:`` keys,
+        ``builds_against:`` keys, and task-ids in ``waves:`` value lists.
 
     Raises
     ------
     ValueError
         When the PLAN has no YAML frontmatter, the frontmatter is not valid YAML,
-        or the frontmatter contains no ownership/waves/depends_on task structure.
+        or the frontmatter contains no ownership/waves/depends_on/builds_against task structure.
         Never returns an empty or partial set silently — a silent empty set is the
         under-dispatch bug this function is designed to prevent.
     """
@@ -229,7 +253,7 @@ def parse_plan_tasks(plan_path: Union[str, Path]) -> set[str]:
     if not fm_match:
         raise ValueError(
             "kata_restore: cannot determine the run's task set — frozen PLAN has no "
-            "ownership/waves/depends_on frontmatter; refusing to under-dispatch. "
+            "ownership/waves/depends_on/builds_against frontmatter; refusing to under-dispatch. "
             "Resolve manually."
         )
 
@@ -244,7 +268,7 @@ def parse_plan_tasks(plan_path: Union[str, Path]) -> set[str]:
     if not isinstance(fm, dict):
         raise ValueError(
             "kata_restore: cannot determine the run's task set — frozen PLAN has no "
-            "ownership/waves/depends_on frontmatter; refusing to under-dispatch. "
+            "ownership/waves/depends_on/builds_against frontmatter; refusing to under-dispatch. "
             "Resolve manually."
         )
 
@@ -267,10 +291,19 @@ def parse_plan_tasks(plan_path: Union[str, Path]) -> set[str]:
             if isinstance(wave_tasks, list):
                 task_ids.update(str(t) for t in wave_tasks)
 
+    # Keys of builds_against: dict (Freeze/Float M1-P1 / M1-L2 — contract-edge
+    # dependents).  A contract-only dependent may appear ONLY under builds_against in
+    # some plan shapes; unioning its keys guarantees it is never dropped from the
+    # restore re-dispatch set.  Absent / not-a-dict ⇒ no-op (BC — no builds_against
+    # edge exists in any run today).
+    builds_against = fm.get("builds_against") or {}
+    if isinstance(builds_against, dict):
+        task_ids.update(str(k) for k in builds_against.keys())
+
     if not task_ids:
         raise ValueError(
             "kata_restore: cannot determine the run's task set — frozen PLAN has no "
-            "ownership/waves/depends_on frontmatter; refusing to under-dispatch. "
+            "ownership/waves/depends_on/builds_against frontmatter; refusing to under-dispatch. "
             "Resolve manually."
         )
 
@@ -313,6 +346,75 @@ def collect_integrated_tasks(
         Task-ids that have a durable integration commit on the branch (within
         this run's window when ``plan_path`` is provided).  Returns an empty set
         when the branch doesn't exist, has no commits, or on any git error.
+    """
+    lines = _scan_integration_commit_bodies(repo_root, integration_branch, plan_path)
+    if lines is None:
+        return set()
+
+    integrated: set[str] = set()
+    invalidated: set[str] = set()
+    for line in lines:
+        mt = _KATA_TASK_RE.match(line)
+        if mt:
+            integrated.add(mt.group(1))
+            continue
+        mi = _KATA_INVALIDATED_RE.match(line)
+        if mi:
+            invalidated.add(mi.group(1))
+        elif _KATA_INVALIDATED_PREFIX_RE.match(line):
+            # A line that LOOKS like an invalidation trailer but fails the strict
+            # single-token match cannot be subtracted (its task-id is unrecoverable) —
+            # so the task stays "integrated" and would NOT be re-dispatched, the one
+            # under-dispatch vector on this path.  Surface it loudly rather than
+            # swallow it silently.  The AUTHORITATIVE fail-closed handling of a
+            # malformed invalidation record is the P2 final-gate re-derivation
+            # (DESIGN M1-L9); this restore subtract is a best-effort corroborator.
+            print(
+                "NOTE: kata_restore: malformed Kata-Invalidated trailer "
+                f"{line.strip()!r} — cannot subtract (task-id unrecoverable); the P2 "
+                "final gate is the fail-closed authority. Resolve manually if this run "
+                "under-dispatches.",
+                flush=True,
+            )
+
+    # Corroboration (adval P1-F2): an invalidation id that never matched ANY
+    # integration trailer is the under-dispatch signature — a typo'd/garbled id
+    # (`T1,T2`, case-variant `t1`) subtracts nothing while the REAL task stays
+    # "integrated".  Surface it loudly; the P2 final gate is the fail-closed
+    # authority (M1-L9), this restore subtract is a best-effort corroborator.
+    phantom = invalidated - integrated
+    if phantom:
+        print(
+            "NOTE: kata_restore: Kata-Invalidated id(s) with no matching Kata-Task "
+            f"integration trailer: {sorted(phantom)!r} — a typo'd/case-variant id "
+            "subtracts nothing and the real task would NOT re-dispatch. Verify "
+            "against the frozen PLAN's task-ids; the P2 final gate is the "
+            "fail-closed authority. Resolve manually if this run under-dispatches.",
+            flush=True,
+        )
+
+    # Set-based subtract (Freeze/Float M1-P1, D138): OVER-DISPATCH-SAFE.  A task
+    # integrated → invalidated → re-integrated bears BOTH trailers and is subtracted
+    # (⇒ redundantly re-dispatched — the SAFE direction, D134/D135).  A run with no
+    # Kata-Invalidated: trailer returns the byte-identical integrated set (BC).
+    return integrated - invalidated
+
+
+def _scan_integration_commit_bodies(
+    repo_root: str,
+    integration_branch: str,
+    plan_path: Union[str, Path, None] = None,
+) -> "list[str] | None":
+    """Return the commit-body lines of THIS run's integration commits, or ``None`` on
+    a git error.
+
+    The shared bounded scan behind ``collect_integrated_tasks`` (Kata-Task /
+    Kata-Invalidated) and ``parse_supersede_trailers`` (Kata-Supersede).  Resolves the
+    fork-point from ``plan_path`` (the most recent integration commit that touched the
+    frozen PLAN) and bounds ``git log --format=%B`` to commits AFTER it; falls back to
+    the full history with a loud NOTE when the fork-point can't be resolved (mirrors
+    the prior collect_integrated_tasks behaviour byte-for-byte).  Returns ``None`` on a
+    git ``CalledProcessError``/``OSError`` so callers fail safe.
     """
     root = Path(repo_root).resolve()
 
@@ -379,14 +481,66 @@ def collect_integrated_tasks(
             check=True,
         )
     except (subprocess.CalledProcessError, OSError):
-        return set()
+        return None
 
-    task_ids: set[str] = set()
-    for line in result.stdout.splitlines():
-        m = _KATA_TASK_RE.match(line)
+    return result.stdout.splitlines()
+
+
+def parse_supersede_trailers(
+    repo_root: str,
+    integration_branch: str,
+    plan_path: Union[str, Path, None] = None,
+) -> dict[str, str]:
+    """Parse ``Kata-Supersede: <contractId>@<newSurfaceHash>`` trailers → ``{id: hash}``.
+
+    Provided in M1-P1; CONSUMED by the P2 final-gate independent re-derivation (with
+    ``contract_edges.invalidation_set`` + ``Kata-Invalidated:`` coverage).  The hash is
+    normalized to **lowercase** to match ``contract_edges._EDGE_RE``'s lowercase-hex
+    pin — a case mismatch would silently fail the P2 re-derivation.  Contract IDS are
+    NOT case-normalized (two ids differing only by case are distinct per the edge
+    grammar) — the P2 gate must cross-check every trailer id against the pinned
+    contract-id set, or a typo'd/case-variant supersede is vacuously "fully covered"
+    (adval P1-F5/P0-F11).  ``git log`` is newest-first **for the linear, append-only
+    integration history this system produces**, so the FIRST occurrence per id (the
+    most-recent supersede) wins (a future caller running this against a merge-laden
+    branch would need an explicit ``--date-order``); within a SINGLE commit body the
+    first (topmost) line wins (adval P1-F6).  No trailer ⇒ ``{}`` (BC).
+
+    Fail-closed (adval P1-F3, D136/M1-L9): a git error RAISES ``ValueError`` instead
+    of returning ``{}`` — to the P2 gate, ``{}`` means "no supersede this run" and a
+    git failure returning it would vacuously PASS the coverage audit (the silent
+    permissive default this family of code must never produce).  Contrast
+    ``collect_integrated_tasks``, where the same helper failure maps to an EMPTY
+    integrated set ⇒ redispatch-everything ⇒ over-dispatch-SAFE.  A malformed-looking
+    supersede line (key matches, grammar doesn't) is surfaced with a loud NOTE
+    (adval P1-F4) — the M1-L8 surface-drift check is the backstop that catches the
+    unauthorized change itself.
+    """
+    lines = _scan_integration_commit_bodies(repo_root, integration_branch, plan_path)
+    if lines is None:
+        raise ValueError(
+            "kata_restore: cannot read integration history for Kata-Supersede "
+            f"trailers (branch {integration_branch!r}) — refusing to report 'no "
+            "supersede' on unreadable input (M1-L9/D136); the P2 coverage audit "
+            "must not vacuously pass. Resolve manually."
+        )
+    out: dict[str, str] = {}
+    for line in lines:
+        m = _KATA_SUPERSEDE_RE.match(line)
         if m:
-            task_ids.add(m.group(1))
-    return task_ids
+            cid = m.group(1)
+            if cid not in out:  # newest-first ⇒ keep the most-recent supersede per id
+                out[cid] = m.group(2).lower()
+        elif _KATA_SUPERSEDE_PREFIX_RE.match(line):
+            print(
+                "NOTE: kata_restore: malformed Kata-Supersede trailer "
+                f"{line.strip()!r} — expected '<contractId>@<8-64 hex>'; this "
+                "supersede is INVISIBLE to the coverage audit. The M1-L8 "
+                "surface-drift check is the backstop for the unauthorized change "
+                "itself. Resolve manually.",
+                flush=True,
+            )
+    return out
 
 
 def compute_redispatch_set(
@@ -525,7 +679,7 @@ def restore(
     ------
     ValueError
         When ``plan_path`` is provided but the PLAN has no frontmatter or no
-        ownership/waves/depends_on task structure.  Propagated from
+        ownership/waves/depends_on/builds_against task structure.  Propagated from
         ``parse_plan_tasks`` — silently swallowing it would cause under-dispatch.
     """
     _empty: dict[str, Any] = {

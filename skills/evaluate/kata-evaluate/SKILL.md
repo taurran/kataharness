@@ -6,7 +6,7 @@ description: >-
   cannot rubber-stamp the builder's work. Checks acceptance criteria, the green gate, drift against LOCKED
   decisions, and scope.
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: evaluate
 status: experimental
 agnostic: true
@@ -54,12 +54,15 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
    - **`required`** — fail-closed: a scan that is not clean — **or that cannot run (no scanner wired /
      unsupported toolchain)** — AND has no sound documented-acceptance ⇒ NEEDS_WORK. Under `required`,
      scanner-absence **never** degrades-and-passes (the degrade-and-surface carve-out is `when-available`-only).
-   - **`when-available`** — run the scan if a scanner is wired AND the toolchain is supported; if it cannot run
-     (no scanner / unsupported toolchain / cannot converge), record it **`degraded` and surface it** — never a
+   - **`when-available`** — run the scan if a scanner is wired AND the toolchain is supported; if it cannot RUN
+     (no scanner / unsupported toolchain), record it **`degraded` and surface it** — never a
      silent "clean", never a NEEDS_WORK purely for scanner-absence, never shim tooling to force a scan.
+     A scan that RUNS and finds issues is NEVER `degraded` — findings that cannot converge to zero route
+     ONLY through the documented-acceptance path below (adval F6-1: "cannot converge" is not a
+     cannot-run condition; degrading it would bypass the three-party acceptance control).
    - **`off`** — operator opt-out; note it was skipped by policy (surfaced at handoff), do not fabricate a result.
    **Documented-acceptance is graded for SOUNDNESS, not raw count (F6).** A finding that cannot be driven to
-   zero (e.g. a scanner that does not credit a custom sanitizer) may terminate as: genuine hardening →
+   zero (e.g. a scanner that does not credit a custom sanitizer) terminates ONLY as: genuine hardening →
    in-repo acceptance (`.snyk` with reason + expiry) → a board DECISION. When such acceptance is present,
    grade whether it is **sound** — the reason is truthful, the residual risk is genuinely low, the expiry is
    set — NOT whether the raw finding count is zero. An unsound or undocumented suppression ⇒ NEEDS_WORK; a
@@ -201,6 +204,27 @@ re-derive** whether the run touched IaC: classify the footprint's changed files 
   did not run / did not emit — it cannot pass as "no IaC"; symmetric with the malformed-RESULT.json rule above).
 - no changed file classifies as IaC **and** `.kata/iac.json` absent ⇒ **N/A — not a failure** (BC, MINOR-7).
 Do not fail a genuinely non-IaC run on the absence of this artifact.
+
+**Contract-gate evidence (M1-L3, the independence leg — mirrors the IaC presence rule):** when the
+frozen PLAN declares `builds_against` (contract-only dependents that dispatch at freeze, in parallel
+with their provider), the run MUST have executed the final-gate contract re-derivation. Its durable
+artifact is `.kata/contract-gate.json` (emitted by `tools/contract_gate.py` `write_contract_gate` —
+schema = the `verify_contract_gate` dict `{passed, vacuous, findings}` PLUS `utc`, `branch`, and the two
+companion arrays `surviving_stubs` and `danglers`). Apply these default-FAIL rules — soundness never
+rests on orchestrator compliance (an orchestrator that skipped the contract step cannot pass):
+- `builds_against` declared **and** `.kata/contract-gate.json` is absent, malformed (not parseable, or
+  missing `passed` / either companion array), or its `passed` is not `true` ⇒ **NEEDS_WORK** (the gate
+  did not run / did not clear — it cannot pass as "no contract"; symmetric with the malformed-`RESULT.json`
+  and IaC rules above).
+- `builds_against` declared **and** the artifact's companion `surviving_stubs` array is non-empty (a
+  contract stub sentinel survived the merged tree) **or** its `danglers` array is non-empty (a dependent
+  still imports a deleted/renamed contract module) ⇒ **NEEDS_WORK** — the artifact must prove ALL THREE
+  final-gate contract checks came back clean (the re-derivation, the sentinel scan, and the
+  dangling-import scan), not just `passed`.
+- no `builds_against` in the plan **and** `.kata/contract-gate.json` absent ⇒ **N/A — not a failure**
+  (BC — mirrors the IaC no-op clause; every contract surface no-ops when no edge is declared, which is
+  every run today).
+Do not fail a genuinely non-contract run on the absence of this artifact.
 
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,

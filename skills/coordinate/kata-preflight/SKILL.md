@@ -6,7 +6,7 @@ description: >-
   manifest-hash checked), records installs to the machine-global D-registry, probes the target environment,
   and emits .kata/preflight.json. Default-FAIL; never tiered (D29/D33).
 license: Apache-2.0
-version: 0.1.1
+version: 0.1.2
 category: coordinate
 status: experimental
 agnostic: true
@@ -37,7 +37,8 @@ a depth dial.
   provisioning ⇒ `blocked`. Nothing silently passes.
 - **Manifest shape validated (F1)**: after parse and before dependency extraction, the top-level
   `dependencies` key MUST be present AND a list. A misspelled/renamed key (e.g. `deps`), an absent
-  key, or a wrong-typed value ⇒ `blocked` (`manifest-shape` blocker) — never a vacuous `ready`. A
+  key, a wrong-typed value, or a non-object manifest (JSON scalar: `null`/number/bool) ⇒ `blocked`
+  (`manifest-shape` blocker) — never a vacuous `ready` and never an uncaught crash. A
   present-but-**empty** list is a legitimate state and still proceeds to `ready` (do NOT block empty).
 - **No freeform string is ever executed**: presence is checked via the structured `verifyImport`
   identifier (compiled to a safe argv), NOT the freeform `dep["verify"]` shell string — which, like

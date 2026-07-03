@@ -5,7 +5,7 @@ description: >-
   rigor is required — high-stakes decisions, security-sensitive surfaces, or any result where a Standard
   review found HOLDs and the re-reviewed surface still warrants deeper scrutiny.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: evaluate
 status: experimental
 agnostic: true
@@ -23,13 +23,13 @@ tags:
 ---
 # kata-review-advanced — exhaustive adversarial review
 
-**Method:** see [`../kata-review/RUBRIC.md`](../kata-review/RUBRIC.md) — the tier-invariant method (5 attack
+**Method:** see [`../kata-review/RUBRIC.md`](../kata-review/RUBRIC.md) — the tier-invariant method (the numbered attack
 surfaces, cite-evidence rule, SHIP/HOLD output, the "attack before you trust" framing). This file sets ONLY
 the depth.
 
 ## Depth contract (Advanced)
 
-Run the **full Standard method** (all 5 surfaces, cited evidence, SHIP/HOLD) **plus**:
+Run the **full Standard method** (ALL surfaces, cited evidence, SHIP/HOLD) **plus**:
 
 - **Threat-model deep-dive.** Go beyond surface-level security checks: enumerate the attacker's goal, build
   an explicit threat register (asset · threat actor · attack vector · mitigation · residual risk), and confirm

@@ -13,7 +13,8 @@ Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED
     backlog explicitly deferred to v0.1.x (see `BACKLOG.md` "Explicitly deferred to v0.1.x" section).
     **Cluster gates met:** (1) sprint-cadence D15/A5 fresh-context `kata-review` SHIP ✅ · (2)
     wiring-completeness interim pin ✅ · (3) guard-consistency repo-wide ✅ · (4) CWE-23 `.snyk`
-    record ✅ · (5) benchmark n=0→n=1 live ✅. **Final full adval: 2141 pytest PASS / validate 47/0
+    record ✅ · (5) benchmark **machinery** n=0→n=1 live ✅ (cloned *synthetic* control; the real
+    operator-supplied control fixture, benchmark-D5, remains deferred). **Final full adval: 2141 pytest PASS / validate 47/0
     / Snyk medium+ 0.**
 - [~] **v0.2 — Self-handoff + concurrency.** PULLED FORWARD into the v0.1 build: `kata-selfhandoff`,
   `kata-diagnose`, `kata-review`, `kata-improve` (+ meta `kata-write-skill`) all built. **Remaining for v0.2:**
@@ -23,6 +24,24 @@ Improvement-Kata cadence: each milestone ends with a retro into `LESSONS-LEARNED
   across tools; skill-format mapping; portability tests.
 - [ ] **v0.4 — ACP/Quick + cognition.** `adapters/acp-quick` (orchestrator-in-desktop via ACP);
   `cognition/kata-engram` tie-in (gated on a mature kiban/kagami engram).
+
+### Post-v0.1 hardening + efficiency track (operator-directed; D137/D138)
+- [x] **Milestone 1 — Release Hardening (Kenjiri one-shot lessons).** ✅ **SHIPPED 2026-07-02** (PR #4,
+  merge `8653faf`). Six field-verified fixes **F1–F6** + a tool-agnostic security-gate posture (D137, LOCKED
+  L1–L10); three proposals reshaped after code-grounded verification (L18). Baseline `653f501` (2177) → **2190
+  pytest**, validate 47/0, Snyk medium+ 0. Spec `specs/kenjiri-lessons/`.
+- [~] **Milestone 2 — Freeze/Float (operator-directed, D138; the doctrine ingested into the M1 pass).** Float
+  only **layer C (work partition/scheduling)** under machine-checked, fail-closed invariants; layers A (intent)
+  + B (contracts) stay frozen + human-gated (*drift lives in the WHAT*). **Ship order M1→M4→M2→M3.**
+  - **M1 — contract edges (`builds_against`) + 3 companions.** Two adversarial freeze-gates on the DESIGN (both
+    HOLD → all folded); phased so the behavior change lands last: **P0 engine ✅ DONE** (`tools/contract_edges.py`
+    — `invert`/`invalidation_set`/`surface_hash`/`surviving_stubs`/`edge_honesty`; 38 tests, mutation-proven,
+    **zero-wired ⇒ BC**) → **P1 ✅ DONE** durable substrate (`Kata-Invalidated:`/`Kata-Supersede:` commit-trailer
+    parsing + `kata_restore` union/subtract) → **P2 ⏳** wiring + the actual float (re-gated before merge).
+    Spec `specs/freeze-float-m1/` (LOCKED M1-L1…L9 + D138 amendment). Branch `freeze-float/m1-contract-edges`
+    (stacked on master).
+  - **M4 (next per ship order)** inline evaluator/reroll · **M2** shadow tasks · **M3** runtime re-partition
+    (`partition_gate.py`, own adversarial review). Each its own freeze→build→gate cycle.
 
 ### Modes & Cost-Tiering track (design DONE 2026-06-07 — `docs/MODES-DESIGN.md`; major new capability)
 Operating modes that trade effort/thoroughness/cost, all one-shot; consistency-first. Sequence:
@@ -104,8 +123,9 @@ demonstrated** instead, and the v0.1 gate was re-scoped to that + the **Priming-
 (D71/D72).** Build path (HANDOFF §4): wire D71 ✅ → build loop-cognition β (LEARN feed) ✅ → RS/AO/ML ✅ →
 **build sprint-cadence ✅ (D78–D85, 2026-06-19)** → **v0.1 cluster items 1–5 ✅ (2026-06-30)** → **tag
 v0.1.0**. Sprint-cadence D15/A5 fresh-context `kata-review`: **SHIP ✅**. Remaining backlog explicitly
-deferred to v0.1.x. **Next milestone: v0.2** (tasklist + multi-agent worker self-select; adapters;
-post-v0.1 deferred items).
+deferred to v0.1.x. **Post-v0.1 active work is the operator-directed hardening + efficiency track above:**
+Milestone 1 (Release Hardening) SHIPPED; **Milestone 2 (Freeze/Float) is the current initiative** — M1-P0
+done, M1-P1 next (D138). The core v0.2/v0.3/v0.4 line (tasklist, adapters, ACP/cognition) resumes after it.
 
 **Pre-public workstreams (post-loop-hardening, 2026-06-21 → 06-24) — COMPLETE:** **WS-1** IP separation (`42e884b`;
 work-project name scrubbed, Quick kept as ACP seam, Codex added) · **WS-2** inner-loop autonomy + parallelism
@@ -121,6 +141,8 @@ benchmark → recursive parallelism (DAG-within-DAG).
 | Milestone | Status |
 |---|---|
 | v0.1 core | ✅ **SHIPPED 2026-06-30 (tag `v0.1.0`)** — 47 skills; 2141 pytest; validate 47/0; Snyk medium+ 0. Cluster items 1–5 all done. Remaining backlog explicitly deferred to v0.1.x. |
+| Milestone 1 — Release Hardening | ✅ **SHIPPED 2026-07-02** (PR #4, merge `8653faf`; D137, L1–L10) — F1–F6 + tool-agnostic security gate; 2190 pytest; validate 47/0; Snyk 0. |
+| Milestone 2 — Freeze/Float (D138) | **IN PROGRESS (operator-directed)** — ship order M1→M4→M2→M3. M1-P0 engine DONE (`contract_edges.py`, zero-wired/BC) + M1-P1 durable trailer substrate DONE (`kata_restore` union/subtract/supersede-parser, reviewed SHIP); **M1-P2 (the float) is NEXT, re-gated**. |
 | Modes Spec A (A1–A4) | **COMPLETE + merged** — validator + tiers + bootstrap/readiness + version-up/kata-graph + frontier/async-escalation; **25 skills**; D1–D56 |
 | sprint-cadence | **COMPLETE + SHIPPED 2026-06-30** (D78–D85 + D15/A5 review SHIP). NEW: `kata-plan` roadmap layer (`ROADMAP.md`) + `kata-sprint` (G1–G4 boundary) + `kata-report` v1; EXTEND config/state/handoff/escalation + selfhandoff/readiness/handoff; orchestrate stays sprint-blind (BC2). D15/A5 fresh-context `kata-review`: **SHIP ✅** |
 | loop-cognition | **COMPLETE + merged** (D60–D69 design + RS/AO/ML all built; 3 new skills; β feed DONE 2026-06-18) |

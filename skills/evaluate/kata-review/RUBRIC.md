@@ -54,6 +54,17 @@ findings, not fixes; findings seed a deliberate orchestrator decision.
    > in the wiring files and assert handoff shapes match; it CANNOT build or run the fixture itself. The
    > build-and-run leg is enforced by the orchestrator integration gate (the scheduled wiring-completeness build
    > — see BACKLOG), not by this no-write item.
+7. **Contract-edge honesty (any plan/run declaring `builds_against`).** The freeze-time machine check proves
+   *import-surface* honesty only; the deeper judgment is yours. Hunt: (a) **Semantic honesty** — a dependent that
+   imports ONLY the `contracts/<id>/` surface can still lean at runtime on provider INTERNALS the contract
+   under-specifies (ordering, mutation, error taxonomy, side-effects the signature doesn't pin). The machine check
+   is blind to this by construction (M1-L5 residual — the reviewer owns this judgment); read the dependent's actual
+   use of the imported surface, not just its import lines. (b) **Pinned-constant reliance** — does any contract's
+   consumer depend on a constant, `TypeAlias`, or `__all__` entry? These are NOT machine-pinned (M1-L1 residual —
+   the surface hash covers signatures + defined `def`/`class` names — re-exports/aliases and constant VALUES are invisible to it); a value flip ships silently green.
+   (c) **`depends_on` in disguise** — is a `builds_against` edge really a hard `depends_on`? Probe for mock-shielded
+   dependent tests: green against a stub or mock but would FAIL against the provider's real integrated body. Such an
+   edge dispatched early at freeze is a false float — reclassify before trusting the run.
 
 ## Injected-knowledge soundness mode (the grounding gate's adversarial leg — RS findings / ML candidates; D33)
 When invoked on **injected knowledge** rather than a built phase, run this surface as the adversarial half of the

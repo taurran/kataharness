@@ -1991,3 +1991,110 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   fresh-context adversarial pass each caught a real defect the author's green tests did not — the
   reproduce-don't-trust + fresh-context discipline earning its keep on a repair of the harness's own
   instruments.
+- **D138 — Freeze/Float is the sanctioned Milestone 2 (operator-directed); + M1 DESIGN reconciliation
+  before P1 — 2026-07-02.** *Sanction:* the operator explicitly ingested the **Freeze/Float doctrine
+  (validated draft v2)** into the Milestone-1 pass ("ingest the following into this pass"), directed shipping
+  M1 and opening M2 ("lets continue forward with this"), and greenlit building the P0 engine ("yes").
+  Freeze/Float is therefore a **first-class, operator-directed initiative — Milestone 2**, ship order
+  **M1→M4→M2→M3** (per L9). *Why this decision exists:* the sanction previously lived only in session prose +
+  `specs/freeze-float-m1/`; `ROADMAP.md`/`BACKLOG.md`/`STATE.milestone` still said "v0.2 = self-handoff +
+  concurrency", so every fresh/compacted context re-derived "what's next" from stale tracked docs and wrongly
+  concluded Freeze/Float was unsanctioned. Recorded here + written into ROADMAP/BACKLOG/STATE so it is never
+  re-litigated. *Milestone-1 landed:* PR #4 merged to master (`8653faf`, merge commit — SHAs preserved for the
+  stacked rebase); `freeze-float/m1-contract-edges` rebased onto master (clean, 2224 pytest green); hardening
+  branch deleted local+remote. *M1 DESIGN reconciled (folded as a dated amendment in the spec):* (i) the last
+  `.kata/invalidated.json` residue in the coverage table / change-map / acceptance-criteria replaced by the
+  git-durable `Kata-Invalidated:`/`Kata-Supersede:` commit trailers (M1-L3) — the DESIGN was internally
+  contradictory and would have mis-guided a P1 builder; (ii) `collect_integrated_tasks` subtract is
+  **set-based, over-dispatch-safe** (a re-integrated invalidated task may redundantly re-dispatch — the SAFE
+  direction per D134/D135; recency-precise subtraction deferred); (iii) the built `edge_honesty(dependent_files,
+  provider_paths, repo_root)` signature is the lowered P0 primitive — `builds_against→dependent-files` +
+  `ownership→provider-paths` resolution lives in the P2 caller (M1-L5 prose is the intent). *P0 hardening:*
+  the two `except OSError: continue` fail-opens in `surviving_stubs`/`edge_honesty` closed to fail-closed
+  (M1-L9) — +2 mutation-proven tests (38 total in `test_contract_edges.py`). No skill edits; tool + spec only.
+
+<!-- Integrated adversarial validation of Milestone 1 → Freeze/Float M1-P1, pre-P2. -->
+- **D139 — Integrated cross-seam adval of 653f501..8902fb0 (9 fresh-context reviewers) + fold —
+  2026-07-02.** Before building M1-P2 (the float), the operator directed a comprehensive fresh-context
+  adversarial validation of EVERY change from Milestone 1 through M1-P1 — one reviewer per module/group
+  (F1 preflight, F2 graph, F3 liveness, F4 seeding, F5 footprint, F6 security posture, P0 contract_edges,
+  P1 kata_restore, docs/specs), each told to BREAK the change vs its spec. **Result: 9× SHIP-WITH-FIXES,
+  0 HOLD — every spine held; every finding was a fail-open at a seam, an over-claim, or a missing pin**
+  (5 HIGH / ~15 MED / ~20 LOW; L19). All HIGHs + MEDs folded on `freeze-float/m1-contract-edges`:
+  - **P0/P1 (Freeze/Float):** `parse_supersede_trailers` now RAISES on git error (was `{}` — a D136
+    silent-permissive default the P2 gate would have consumed as "no supersede"); malformed
+    supersede/invalidation trailers loudly surfaced (prefix detectors; key-whitespace `\s*:` tolerance on
+    the subtract-side regexes only — `Kata-Task:` stays strict, the deliberate asymmetry: tolerance there
+    would err toward under-dispatch); phantom invalidation ids (no matching integration trailer) surfaced;
+    `surviving_stubs` extension-blind + UTF-16-aware (was `*.py`-only vs the DESIGN's language-agnostic
+    claim); `surface_hash` raises on a no-`.py` contract dir (was a silent empty pin); `_canon` comment
+    strip is quote-aware (a `#` in a string default masked ALL subsequent param edits) + black's magic
+    trailing comma normalized; `edge_honesty` relative-import blindness fixed at the root
+    (`graph_gen._module_to_path` leading-dot resolution + submodule `from X import mod` edges).
+  - **M1 fixes:** preflight blocks (not crashes) on a scalar JSON manifest; `changed_in_task` gains
+    `--no-renames` (rename detection hid cross-lane `git mv` AND made the gate git-config-dependent) +
+    raises on multiple merge-bases (criss-cross = ambiguous evidence, D136) — no-common-ancestor raise now
+    test-pinned; `graph_gen` gains the L3-mandated `src/` fallback (PEP-420 namespace layouts had zero
+    edges) + `_NON_SOURCE_ROOTS` exclusion (a `tests/`-nested package manufactured false edges).
+  - **Prose:** liveness stale-worker escalation is `kind: human-required` with recorded operator approval
+    (was `orchestrator-resolvable` — whose lifecycle "never reaches a human" let the monitor self-approve a
+    re-dispatch, violating L5); heartbeat cadence gains a wall-clock floor (`livenessDeadline`/2) + a
+    zero-module form (`0/1`); staleness clock measured from the LAST heartbeat; orchestrator files the
+    dark worker's ESCALATE on its behalf; evaluate's `when-available` no longer lists "cannot converge" as
+    cannot-run (it routed real findings around the three-party acceptance control); report's section-3 gate
+    line quotes the security STATE (was "Snyk count"); orchestrate's `required` posture states
+    scanner-absence blocks; seeding precondition no-ops for no-package-concept greenfields + the Python
+    example leak removed from the agnostic core (L7); kata-lang-profile's scope admits its BUILD-context
+    seeding role (was blanket "debug-only, never injected" — disclaiming the exact context F4 needs);
+    PROGRESS "opt-in/dashboard-only" residue purged (CONTEXT.md, kata_board.py, narration.md).
+  - **Docs:** ROADMAP/BACKLOG P1 status corrected (said "next", was DONE — the exact stale-doc class D138
+    closed); CHANGELOG 2189→2190 (+3→+4 F5 tests); ORIENTATION push-state; PLAN-p0 edge_honesty signature
+    annotated per D138#3; DESIGN acceptance dangling-import attribution → P2 gate; **P2 gate obligations
+    recorded in the DESIGN Phasing** (supersede-id cross-check, contracts/ anchor, raise-consumption,
+    dangling-import half, ownership-dir expansion).
+  - **Deferred (accepted, tracked):** BACKLOG #17 RESULT.json security-state carrier; #18 `.snyk`
+    vendor-specific acceptance artifact (L6 amendment); #19 sprint-blind guard config-namespace coverage;
+    #20 preflight cleanup-helper raw manifest read. AC-3's "byte-for-byte BC test" for `securityScan` is
+    acknowledged unfalsifiable as written (prose skills; noted, not shimmed).
+  Skill bumps: kata-orchestrate 0.4.3, kata-evaluate 0.2.1, kata-report 0.1.2, kata-lang-profile 0.1.2,
+  kata-preflight 0.1.2. Suite 2236 → **2270** (+34 adval tests, each code-bearing fix mutation-proven: 13 guards disabled → red → reverted). Snyk medium+ 0. Fixes committed only on operator approval.
+
+<!-- Freeze/Float M1-P2: the float — built via the dogfooded loop, triple-gated. -->
+- **D140 — M1-P2 (the float) built: contract-edge scheduling wired, triple-freeze-gated, dogfooded —
+  2026-07-02.** The Freeze/Float behavior change landed: a `builds_against` dependent dispatches at
+  freeze in parallel with its provider (M1-L2), with every companion live. *Process:* `PLAN-p2-float.md`
+  was frozen only after THREE fresh-context adversarial freeze-gates — v1 HOLD (18 findings; headline:
+  the trailer-placement contradiction deadlocked the compliant flow AND defeated the locked
+  crash-mid-invalidation guarantee → resolved by the ROUTE-TIME rule, DESIGN Amendment #2 #1), v2 HOLD
+  (10 findings; headline: the temporal-coverage clause was unimplementable from the flat `%B` stream →
+  the NUL-delimited commit scan; the dangler scan needed base-module semantics + the `__init__.py`
+  mandate), v3 SHIP-WITH-FIXES (7 folded, incl. the freeze-commit precondition that guarantees the
+  gate's scan bound). Four gates on this initiative have now held/caught real unsoundness before code —
+  the discipline's strongest showing. *Build:* dogfooded via kata-orchestrate (5 workers, disjoint
+  ownership, wave DAG T1,T2,T4 → T3,T5; conductor-gated per task; T6 conductor closeout).
+  *Delivered:* `tools/contract_gate.py` (fail-closed re-derivation decision-code per D136 —
+  supersede-id cross-check, pin/newest-supersede surface drift, commit-granular temporal invalidation
+  coverage, base-module dangler scan, ownership expansion, `.kata/contract-gate.json` artifact; 28
+  tests, 6 mutation-proven guards, Snyk 0); `surviving_stubs` additive `exclude_dirs`;
+  `kata-plan/RUBRIC.md` schema + authoring rules; `kata-orchestrate` 0.5.0 (frontier clause,
+  precondition 6, provider re-verify, canonical supersede route, final-gate step 3 + renumber,
+  fix-loop trio); `kata-evaluate` 0.3.0 (contract-gate evidence independence rule);
+  `kata-review/RUBRIC.md` attack surface 7. *Accepted deviation (gated, not silent):* T1 added one
+  descriptive registry row to `protocol/exec-safety.md` for `contract_gate._scan_integration_commits`
+  — mandated by the `protocol/exec-safety.md` sink-registry contract (the conformance test mechanically enforces only shell=True sinks; the registry prose covers all), an ownership-list omission in the
+  frozen plan (the plan's own NUL-delimited git scan design necessitated the sink). *BC:* every P2
+  surface no-ops absent a `builds_against` edge; zero edges exist in any run today. *Fresh-context adversarial sweep (2 reviewers, code + prose): both SHIP-WITH-FIXES, all folded* —
+  code: bare-`contracts` namespace import false-dangler exempted (PEP-420 — dir-exists check);
+  R3 pin-revert-after-supersede now mutation-PINNED (the sweep proved the correct code was one
+  unpinned mutation from regressing); the defensive scan-divergence `continue` hardened to a raise;
+  dot-only contract ids rejected at the pins choke point; the malformed-invalidated NOTE branch
+  test-pinned. Prose: the declared-but-EMPTY `builds_against` no-op parenthetical removed (it would
+  have wedged the evaluator with nothing fixable); "exported names" overstatement corrected to
+  "defined `def`/`class` names (re-exports/aliases NOT pinned)" in both RUBRICs; the kata-review
+  tier skills' hardcoded surface counts ("all five"/"5 attack") made count-free — the RUBRIC now has
+  seven surfaces and the count would have silently skipped the contract-honesty backstop
+  (kata-review-standard/-advanced/-essential 0.1.1, a plan-gap fold approved by the conductor);
+  the garbled `contract_gate`→`contract_edges.surviving_stubs` ref fixed; artifact key names stated
+  in the orchestrate step. Known-stale left per append-only convention: the D98 record's
+  "step 6" anchor (now step 7). Suite 2270 → **2306** (+36 incl. 5 sweep-fold tests); validator
+  47/0/0; Snyk medium+ 0. Awaiting the operator merge gate.

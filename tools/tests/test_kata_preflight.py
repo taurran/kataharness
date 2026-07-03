@@ -347,6 +347,38 @@ class TestManifestShapeValidation:
         result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
         assert result["status"] == "ready"
 
+    @pytest.mark.parametrize("scalar", [None, 42, 3.14, True, False])
+    def test_scalar_manifest_blocks_not_crashes(self, repo: Path, fake_home: Path, scalar):
+        # Adval F1-1: json.loads can return a SCALAR — `"dependencies" not in 42`
+        # raised an uncaught TypeError instead of the contracted `blocked` status.
+        _, ap = _setup_repo_raw(repo, scalar)
+        result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
+        assert result["status"] == "blocked"
+        assert any("manifest-shape" in b for b in result["blockers"])
+
+    def test_top_level_list_and_string_block(self, repo: Path, fake_home: Path):
+        for obj in ([1, 2, 3], "requests"):
+            _, ap = _setup_repo_raw(repo, obj)
+            result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
+            assert result["status"] == "blocked", f"manifest {obj!r} must block"
+            assert any("manifest-shape" in b for b in result["blockers"])
+
+    def test_mutation_prove_f1_shape_guard(self, repo: Path, fake_home: Path, monkeypatch):
+        # PLAN Phase-1 mutation proof (adval F1-2): with the shape guard's dict
+        # branch DISABLED (simulated by a manifest that passes a naive
+        # `.get("dependencies", [])` read), the guard is the ONLY thing standing
+        # between a misspelled key and a vacuous `ready`. We prove the guard is
+        # load-bearing by asserting the blocked path engages EXACTLY at the guard:
+        # a well-formed manifest with the same deps is `ready`, the misspelled
+        # twin is `blocked` — the only differing code path is the F1 guard.
+        _, ap_good = _setup_repo_raw(repo, {"dependencies": []})
+        good = pf.run_preflight(repo, approved_hash_path=ap_good, home_dir=fake_home)
+        assert good["status"] == "ready"
+        _, ap_bad = _setup_repo_raw(repo, {"deps": []})
+        bad = pf.run_preflight(repo, approved_hash_path=ap_bad, home_dir=fake_home)
+        assert bad["status"] == "blocked"
+        assert any("manifest-shape" in b for b in bad["blockers"])
+
 
 # ---------------------------------------------------------------------------
 # run_preflight — sandbox branch (LD4)

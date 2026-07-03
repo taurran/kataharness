@@ -56,7 +56,9 @@ to their test files before it was root-caused.
 
 Before dispatching wave-1 on a greenfield Python **src-layout** project, the orchestrator (or the seeding
 step it owns) ensures:
-1. `uv init` (**not `--bare`** — bare omits the build backend), or otherwise author `pyproject.toml`.
+1. `uv init --package` or `uv init --lib` (**plain `uv init` and `--bare` BOTH omit `[build-system]`** —
+   only the packaged variants include a build backend), or otherwise author `pyproject.toml`; steps 2-3
+   are the load-bearing check either way.
 2. A **`[build-system]`** table is present (e.g. `requires = ["setuptools>=61"]`,
    `build-backend = "setuptools.build_meta"`).
 3. For src-layout, **`[tool.setuptools.packages.find]` with `where = ["src"]`** so the package under

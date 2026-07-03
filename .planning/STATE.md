@@ -1,12 +1,65 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.2
-milestone_name: restore-hardening (durable board + auto-checkpoint + task-granular restore) + /kata commands
-status: shipped
-last_updated: "2026-07-01T00:00:00.000Z"
+milestone: M2-freeze-float
+milestone_name: "Freeze/Float (operator-directed, D138) — M1 contract edges; ship order M1→M4→M2→M3; M1-P0 + M1-P1 done, M1-P2 (the float) next, re-gated"
+status: in-progress
+last_updated: "2026-07-02T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-02d — context fully synced + PUSHED; next session = fable5 ADVAL → M1-P2):** All context
+> docs synced to the true state; the v0.1.0 benchmark honesty over-claim corrected (synthetic control, not a real
+> fixture — benchmark-D5 still deferred). Branch `freeze-float/m1-contract-edges` **pushed** (tip `d26a0ba`,
+> tracking origin), no PR (holding for P2). **Detailed session brief: `.planning/HANDOFF-FABLE5-ADVAL-P2.md`**
+> (float-assessment logic + the enumerated Milestone-1→P1 adval target set). **PLAN for the next (Fable 5)
+> session:** load all end-to-end context → run a comprehensive fresh-context **ADVAL over every code-bearing
+> change from Milestone 1 through M1-P1** (F1 `kata_preflight`, F2 `graph_gen`, F5 `footprint`, F3/F6/F4 prose,
+> P0 `contract_edges`, P1 `kata_restore`) → fix any issues → **then build M1-P2 (the float)** under its own
+> adversarial freeze-gate. Green: pytest 2236 / validate 47/0 / Snyk 0. *(Prior CURRENT blocks below are history.)*
+
+> **CURRENT (2026-07-02c — M1-P1 durable substrate BUILT + reviewed SHIP; committed):** `kata_restore.py`
+> now unions `builds_against` keys (M1-L2), subtracts `Kata-Invalidated:` (set-based/over-dispatch-safe), and
+> provides `parse_supersede_trailers` for the P2 gate (all trailer parsing in `kata_restore.py`, NOT a new
+> `kata_supersede.py`). +10 tests (union + subtract mutation-proven; malformed-invalidation surfaced-not-
+> swallowed). Fresh-context adversarial review: **SHIP** (over-dispatch-only + hash-symmetry verified; one LOW
+> folded). **Green: pytest 2236 / 3 skip, validate 47/0, Snyk medium+ 0.** Committed on
+> `freeze-float/m1-contract-edges` (unpushed). **Next: M1-P2 — wiring + THE FLOAT** (dispatchable-at-freeze
+> clause, supersede enumerate+route, final-gate independent re-derivation, `builds_against` schema, edge-honesty
+> review surface). **P2 is the behavior change and MUST get its own adversarial freeze-gate before merge — HELD
+> for operator go.** *(Prior CURRENT blocks below are superseded history.)*
+
+> **CURRENT (2026-07-02b — Milestone 1 MERGED; Freeze/Float sanctioned + reconciled; building toward M1-P1):**
+> **Milestone 1 (Release Hardening) is MERGED to master** — PR #4 merged as merge commit `8653faf` (SHAs
+> preserved), `freeze-float/m1-contract-edges` **rebased onto master** (clean, tip after this doc pass), the
+> `hardening/kenjiri-lessons` branch deleted local+remote. **Freeze/Float is now RECORDED as the operator-directed
+> Milestone 2 (D138)** in ROADMAP/BACKLOG + this frontmatter — it was operator-directed all along (the doctrine
+> was ingested into the M1 pass); the earlier "unsanctioned" reading came from stale tracked docs, now fixed.
+> **Pre-P1 reconciliation done:** the M1 DESIGN's last `.kata/invalidated.json` residue replaced by git-durable
+> `Kata-Invalidated:`/`Kata-Supersede:` trailers (it was self-contradictory); `edge_honesty` signature +
+> `collect_integrated_tasks` set-based-subtract semantics documented; the two P0 `except OSError: continue`
+> fail-opens closed to fail-closed (M1-L9, +2 mutation-proven tests → **38 in `test_contract_edges.py`**).
+> **Green:** pytest **2226 passed / 3 skip** (`-m "not integration"`), validate 47/0, Snyk medium+ 0. **Next:
+> M1-P1** — durable trailer substrate (`Kata-Invalidated:`/`Kata-Supersede:` parsing, natural home `kata_restore.py`
+> NOT the pre-existing `kata_supersede.py`; `parse_plan_tasks` unions `builds_against`; `collect_integrated_tasks`
+> subtracts). Then **M1-P2** (wiring + the float, re-gated). Full brief: `.planning/NEXT-SESSION-ORIENTATION.md`.
+> *(Prior CURRENT blocks below are superseded history.)*
+
+> **CURRENT (2026-07-02, SESSION END — TWO initiatives in flight on stacked branches; hold at Freeze/Float M1-P0):**
+> This session shipped **Milestone 1 — Release Hardening** (six field-verified fixes from the Kenjiri one-shot,
+> F1–F6 + a tool-agnostic security gate) as **PR #4 (OPEN, not yet merged)** on branch `hardening/kenjiri-lessons`,
+> then opened **Milestone 2 — Freeze/Float**, whose first sub-milestone **M1 (contract edges `builds_against`)** was
+> grounded, designed through **two adversarial freeze-gates** (both HOLD → all findings folded), split into a
+> **phased program P0/P1/P2**, and had its **P0 engine (`tools/contract_edges.py`) BUILT + adversarially reviewed**
+> on the stacked branch `freeze-float/m1-contract-edges` (current tip). **Branch topology (important):** `master`
+> (`653f501`, pre-hardening) → `hardening/kenjiri-lessons` (Milestone 1, PR #4 open) → `freeze-float/m1-contract-edges`
+> (P0 engine, stacked). **Green at the freeze-float tip:** pytest **2219 passed / 3 skip** (`-m "not integration"`),
+> validate **47/0**, Snyk medium+ 0. **Decision D137** records Milestone 1 (LOCKED L1–L10); Freeze/Float M1 is
+> recorded in `.planning/specs/freeze-float-m1/DESIGN.md` (LOCKED M1-L1…L9, phased P0/P1/P2). **HELD here by operator
+> — no more building this session.** Next: merge PR #4 → rebase freeze-float onto master → build **M1-P1** (durable
+> `Kata-Invalidated`/`Kata-Supersede` trailer substrate + restore union), then **M1-P2** (wiring + the actual float,
+> re-gated before merge). Full orientation: `.planning/NEXT-SESSION-ORIENTATION.md`. *(Prior CURRENT block below is
+> superseded history.)*
 
 > **CURRENT (2026-07-01, SESSION END — restore-hardening SHIPPED + MERGED to master · tip `16007f7` in sync ·
 > pytest 2170 passed / 3 skip / 2 integration-deselected · validate 47/0 · Snyk medium+ 0):** The D132 Option-2
@@ -42,7 +95,7 @@ last_updated: "2026-07-01T00:00:00.000Z"
 > ORCHESTRATOR INTEGRATION-GATE step. **(3)** guard-consistency repo-wide — `_safe_path` guards unified
 > to `ValueError` across `mutation_run`/`grounding_gate`/`escalation`/`intent_scaffold`. **(4)** CWE-23
 > `.snyk` record — standing policy entry for the 17-LOW operator-supplies-own-path class in
-> `kata_install.py`. **(5)** benchmark n=0→n=1 live — first live run on real control fixture (D5).
+> `kata_install.py`. **(5)** benchmark **machinery** n=0→n=1 live — clone→dual-gate→score chain ran on a cloned *synthetic* control; the real operator-supplied control fixture (benchmark-D5) remains deferred (not "on a real fixture" — earlier over-claim corrected 2026-07-02).
 > **Final full adval: 2141 pytest PASSED / validate 47/0 / Snyk medium+ 0.** Versioning policy flipped:
 > bump-on-modify active (STANDARDS §3). Remaining backlog items (#6–#13 + wiring-completeness full build)
 > explicitly deferred to v0.1.x — none blocks the v0.1 core contract; see `BACKLOG.md` "Explicitly

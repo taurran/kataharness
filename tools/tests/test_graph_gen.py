@@ -516,3 +516,64 @@ def test_pagerank_nonzero(tmp_path):
     ranks = [n["rank"] for n in g["nodes"]]
     assert all(isinstance(r, float) for r in ranks), "not all ranks are float"
     assert any(r > 0 for r in ranks), "all ranks are 0 — PageRank not computed"
+
+
+# --- Adval fold (2026-07-02): F2-1, F2-2, P0-F1 seam ------------------------------
+
+def test_discover_source_roots_namespace_src_fallback():
+    # F2-1 (L3 verbatim): a PEP-420 namespace src-layout (no __init__.py anywhere)
+    # falls back to the literal `src/` root — else the repo gets ZERO import edges
+    # (the exact flat-PageRank symptom F2 exists to fix).
+    from graph_gen import _discover_source_roots
+    roots = _discover_source_roots({"src/pkg/mod.py", "src/pkg/app.py", "README.md"})
+    assert roots == ["src"]
+
+
+def test_discover_source_roots_no_src_no_fallback():
+    # The fallback must not fire on a repo without src/ (no phantom root).
+    from graph_gen import _discover_source_roots
+    assert _discover_source_roots({"app.py", "lib/util.py"}) == []
+
+
+def test_discover_source_roots_excludes_test_dirs():
+    # F2-2: a package under tests/ (tests/helpers/__init__.py with no
+    # tests/__init__.py) must NOT promote `tests` to a source root — that
+    # manufactures import edges that cannot resolve at runtime.
+    from graph_gen import _discover_source_roots
+    roots = _discover_source_roots(
+        {"tests/helpers/__init__.py", "tests/helpers/db.py", "app.py"}
+    )
+    assert roots == []
+
+
+def test_namespace_src_layout_import_edge_resolves(tmp_path):
+    # End-to-end: namespace src-layout now produces the import edge via the
+    # src/ fallback root.
+    from graph_gen import _extract_imports
+    paths = {"src/pkg/mod.py", "src/pkg/app.py"}
+    edges = _extract_imports(b"from pkg.mod import h\n", "src/pkg/app.py", paths)
+    assert ("src/pkg/app.py", "src/pkg/mod.py") in edges
+
+
+def test_relative_import_edge_resolves(tmp_path):
+    # P0-F1 seam: `from .provider import foo` resolves to the sibling file
+    # (previously produced a `pkg//provider.py` candidate that never matched).
+    from graph_gen import _extract_imports
+    paths = {"pkg/__init__.py", "pkg/provider.py", "pkg/consumer.py"}
+    edges = _extract_imports(b"from .provider import foo\n", "pkg/consumer.py", paths)
+    assert ("pkg/consumer.py", "pkg/provider.py") in edges
+    # two-dot parent-relative
+    paths2 = {"a/__init__.py", "a/b/__init__.py", "a/b/mod.py", "a/other.py"}
+    edges2 = _extract_imports(b"from ..other import x\n", "a/b/mod.py", paths2)
+    assert ("a/b/mod.py", "a/other.py") in edges2
+
+
+def test_submodule_import_edge_resolves(tmp_path):
+    # P0-F1 seam: `from pkg import mod` / `from . import mod` bind a MODULE —
+    # the module file is the true edge target, not just the package __init__.
+    from graph_gen import _extract_imports
+    paths = {"pkg/__init__.py", "pkg/mod.py", "user.py"}
+    edges = _extract_imports(b"from pkg import mod\n", "user.py", paths)
+    assert ("user.py", "pkg/mod.py") in edges
+    edges2 = _extract_imports(b"from . import mod\n", "pkg/__init__.py", paths)
+    assert ("pkg/__init__.py", "pkg/mod.py") in edges2

@@ -8,13 +8,39 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [Unreleased] — Freeze/Float M1-P2: the float (contract-edge scheduling)
+
+**The behavior change of the Freeze/Float program (D138): a contract-only dependent now dispatches at
+freeze, in parallel with its provider — free wall-clock, same tokens.** BC: every surface no-ops when no
+`builds_against` edge is declared (which is every existing run). Frozen `PLAN-p2-float.md` survived THREE
+adversarial freeze-gates (v1 HOLD 18 findings, v2 HOLD 10, v3 SHIP-WITH-FIXES) before any code.
+
+- `tools/contract_gate.py` (NEW, 460 lines): the final-gate independent re-derivation as fail-closed,
+  mutation-proven decision code — `verify_contract_gate` (supersede-id cross-check, surface-drift vs
+  pin/newest-supersede, commit-granular temporal invalidation coverage), `dangling_contract_imports`
+  (base-module semantics), `expand_ownership_paths`, `parse_trailer_events` over a NUL-delimited commit
+  scan, `write_contract_gate` → `.kata/contract-gate.json`. 28 tests, 6 guards mutation-proven, Snyk 0.
+- `contract_edges.surviving_stubs` gains additive `exclude_dirs` (vendored trees; never excludes
+  at-or-under `contracts/`).
+- `kata-plan/RUBRIC.md`: the `builds_against:` schema + contract authoring rules (provider-owned
+  `contracts/<id>/` + `__init__.py`, sentinel lifecycle, freeze-time pin + plan commit).
+- `kata-orchestrate` 0.5.0: dispatchable-at-freeze frontier clause; freeze-time companion checks
+  (materialization, pin verify, edge honesty); provider-integration surface re-verify; the canonical
+  supersede route (durable trailers at ROUTE TIME on the superseding commit); the contract final-gate
+  step; fix-loop contract re-verification.
+- `kata-evaluate` 0.3.0: contract-gate evidence rule (artifact absent/malformed/failed/non-empty
+  companions ⇒ NEEDS_WORK — the independence leg; orchestrator compliance is never trusted).
+- `kata-review/RUBRIC.md`: contract-edge-honesty attack surface (semantic honesty, pinned-constant
+  reliance, `depends_on`-in-disguise).
+- Adval D139 preceded this build: 9-reviewer integrated sweep of Milestone 1 → P1, 5 HIGHs folded.
+
 ## [Unreleased]
 
 ### Release Hardening — Milestone 1 (Kenjiri one-shot lessons) — 2026-07-02
 
 Six field-verified harness fixes from the Kenjiri v1.0.0 one-shot, each verified against the code by
 fresh-context investigators before the fix (three reshaped from the run's proposal to avoid regressions).
-Spec: `.planning/specs/kenjiri-lessons/`. Baseline `653f501` (pytest 2177) → **2189 pytest**, validate
+Spec: `.planning/specs/kenjiri-lessons/`. Baseline `653f501` (pytest 2177) → **2190 pytest**, validate
 47/0, Snyk medium+ 0.
 
 - **F1 · Preflight fail-closed on malformed manifest** (`kata-preflight` 0.1.1) — a misspelled/absent/
@@ -26,7 +52,7 @@ Spec: `.planning/specs/kenjiri-lessons/`. Baseline `653f501` (pytest 2177) → *
 - **F5 · Commit-scoped lane-check + file-hash stamping** (`kata-orchestrate` 0.4.x, `kata-evaluate` 0.2.0,
   `footprint.py`) — the drift check prescribed no git method; a task forked from an earlier integration
   head false-flagged foreign files. New `changed_in_task` (three-dot merge-base diff) + `file_content_hashes`
-  (Freeze/Float M4 evidence substrate). +3 tests incl. a real-git fork scenario, mutation-proven.
+  (Freeze/Float M4 evidence substrate). +4 tests incl. a real-git fork scenario, mutation-proven.
 - **F3 · Structured PROGRESS heartbeat + liveness monitor** (`kata-orchestrate`, `protocol/board.md`) —
   workers stamped only CLAIM/DONE (Kenjiri: 37 min dark). Mandated per-owned-module PROGRESS
   (`modulesDone/modulesOwned`, also the M4 slack-timing signal) + a liveness monitor routing stale workers
@@ -247,7 +273,10 @@ These five items closed the v0.1 gate:
    `mutation_run`, `grounding_gate`, `escalation`, and `intent_scaffold`.
 4. **CWE-23 `.snyk` record** — standing policy entry for the 17-LOW operator-supplies-own-path
    class in `kata_install.py`; below the medium+ gate; accepted as a known item.
-5. **Benchmark n=0→n=1 live** — first live benchmark run on a real control fixture (D5).
+5. **Benchmark machinery n=0→n=1 live** — the clone→dual-gate→score→scorecard chain ran clean on a
+   cloned **synthetic** control with real `uv run pytest` subprocesses (`0d3e729`). The **real
+   operator-supplied control fixture (benchmark-D5) remains DEFERRED** — the engine is not yet proven on a
+   real control repo (CONTEXT.md honesty-pin; do not claim otherwise).
 
 **Versioning policy change:** STANDARDS §3 flipped from the pre-release hold (all skills held at
 `0.1.0`, 2026-06-08 policy) to **bump-on-modify** (mandatory for all skill modifications going

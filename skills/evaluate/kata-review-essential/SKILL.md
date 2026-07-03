@@ -5,7 +5,7 @@ description: >-
   cheap one-shot where exhaustive adversarial coverage is not required — e.g., early drafts, time-boxed
   spikes, or when a full adversarial pass is planned later.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: evaluate
 status: experimental
 agnostic: true
@@ -23,7 +23,7 @@ tags:
 ---
 # kata-review-essential — smell-test (top-risk surfaces only)
 
-**Method:** see [`../kata-review/RUBRIC.md`](../kata-review/RUBRIC.md) — the tier-invariant method (5 attack
+**Method:** see [`../kata-review/RUBRIC.md`](../kata-review/RUBRIC.md) — the tier-invariant method (the numbered attack
 surfaces, cite-evidence rule, SHIP/HOLD output, the "attack before you trust" framing). This file sets ONLY
 the depth.
 

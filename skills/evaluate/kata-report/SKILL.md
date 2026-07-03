@@ -7,7 +7,7 @@ description: >-
   they steer, or standalone after any gated run. It REPORTS; it does not gate (kata-evaluate owns the
   default-FAIL gate) — so a one-shot run can reuse it too. Voice: protocol/persona.md.
 license: Apache-2.0
-version: 0.1.1
+version: 0.1.2
 category: evaluate
 status: experimental
 agnostic: true
@@ -273,8 +273,11 @@ Rules for this section:
 ### 3. Gate result
 
 The `kata-evaluate` verdict + the green numbers verbatim: tests (pass/fail/skip), build
-(deterministic hash), security (Snyk count). **Never re-compute — quote the gate** (from
-`.kata/RESULT.json`). A NEEDS_WORK is quoted as-is; it is not softened or reframed.
+(deterministic hash), security — the scan's terminal **state** (`clean` / `accepted` / `degraded` /
+`off`, tool-agnostic, per `{{GATE_NUMBERS}}` above), never a vendor-named raw count. **Never
+re-compute — quote the gate** (from `.kata/RESULT.json` and the board DECISION for an acceptance).
+If the artifact carries no security record, report it as **`unrecorded`** — NEVER fabricate a count
+or a "clean" (adval F6-2/F6-4). A NEEDS_WORK is quoted as-is; it is not softened or reframed.
 
 ### 4. What shipped — by path
 

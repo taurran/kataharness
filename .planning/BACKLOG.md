@@ -2,6 +2,12 @@
 
 Promote to ROADMAP milestones when ready.
 
+> **★ ACTIVE INITIATIVE (2026-07-02, D138): Milestone 2 — Freeze/Float (operator-directed).** This is the
+> current focus, NOT any item below. Milestone 1 (Release Hardening) shipped (PR #4). Freeze/Float ship order
+> **M1→M4→M2→M3**; M1-P0 engine + M1-P1 durable substrate done (reviewed SHIP), **M1-P2 (the float) is next, re-gated**. See `ROADMAP.md`
+> "Post-v0.1 hardening + efficiency track" + `specs/freeze-float-m1/`. The items below remain deferred/optional
+> and are picked up only when the operator redirects there.
+
 ## ✅ v0.1 cluster — COMPLETE (2026-06-30, tag `v0.1.0`)
 
 All five items committed, pushed, and gated before the release tag. Final full adval:
@@ -17,8 +23,11 @@ All five items committed, pushed, and gated before the release tag. Final full a
    choice) on `..` traversal; eliminates the mixed `SystemExit`/`ValueError` class.
 4. **CWE-23 `.snyk` record** ✅ — standing `.snyk` policy entry for the 17-LOW operator-supplies-own-path
    class in `kata_install.py`; below the medium+ gate; accepted as a known standing item.
-5. **Benchmark n=0→n=1 live** ✅ — first live benchmark run on a real control fixture (D5,
-   operator-supplied), proving the benchmark engine is not synthetic-fixture-only.
+5. **Benchmark machinery n=0→n=1 live** ✅ — the clone→dual-gate→score→scorecard chain ran clean on a
+   cloned **synthetic** control (`0d3e729`, real `uv run pytest` subprocesses). **Correction (2026-07-02):
+   the earlier wording "on a real control fixture, proving not synthetic-fixture-only" was an over-claim —
+   it ran on a SYNTHETIC control.** The **real operator-supplied control fixture (benchmark-D5) is still
+   DEFERRED**; the engine is not yet proven on a real control repo (CONTEXT.md honesty-pin).
 
 ## ↳ Explicitly deferred to v0.1.x (post-v0.1 release)
 
@@ -86,6 +95,26 @@ Non-blocking follow-ups (surfaced by the SHIP sweep — all safe-direction, none
 - **#16 — Restore degraded-mode signal is stdout-only.** The unbounded-fork-point fallback prints a
   NOTE but returns no structured field; a programmatic caller can't detect degraded mode. *Consider:
   add `bounded: false` / `warnings: [...]` to the `restore()` return dict.*
+
+### Adval deferrals (2026-07-02 integrated M1→P1 sweep, D139)
+
+- **#17 — RESULT.json has no security-state carrier field (adval F6-4).** `kata-report` must quote the
+  security terminal state (`clean|accepted|degraded|off`) "verbatim from `.kata/RESULT.json`", but
+  `run_result.build_result` carries no security field of any shape — the reporter is ordered to quote a
+  field that does not exist (interim: report prose says `unrecorded`, never fabricate). *Fix: add an
+  optional `security` state field to `build_result` + evaluate writes it + dash model consumes the state
+  (test_kata_dash_model still count-shaped).*
+- **#18 — `.snyk` named as THE acceptance artifact in a tool-agnostic gate (adval F6-6).** L6-verbatim, so
+  compliant with the freeze — but incoherent when the wired scanner isn't Snyk. *Fix: future L6 amendment —
+  "the scanner's native suppression/policy file (e.g. `.snyk`)".*
+- **#19 — Sprint-blind guard doesn't cover config namespacing (adval F3-8).** `test_sc_orchestrate_stays_
+  sprint_blind` pins orchestrate PROSE only; `REQUIRED_PROTOCOL["config.md"]` lists neither
+  `livenessDeadline` nor `securityScan` — re-namespacing either under `delivery.` in config.md would pass
+  every test. *Fix: extend validator/protocol schema checks (composes with #12).*
+- **#20 — Preflight cleanup-recommendation helper bypasses the F1 shape guard (adval F1-3).**
+  `kata_preflight.py` cleanup path reads `manifest.get("dependencies", [])` raw — a misspelled-key manifest
+  collapses to `[]` and could mark a still-needed package `safe_to_remove`. Advisory-only, pre-existing.
+  *Fix: route the helper through the same shape validation.*
 
 ---
 
