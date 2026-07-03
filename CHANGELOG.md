@@ -8,6 +8,32 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [Unreleased] — Freeze/Float M1-P2: the float (contract-edge scheduling)
+
+**The behavior change of the Freeze/Float program (D138): a contract-only dependent now dispatches at
+freeze, in parallel with its provider — free wall-clock, same tokens.** BC: every surface no-ops when no
+`builds_against` edge is declared (which is every existing run). Frozen `PLAN-p2-float.md` survived THREE
+adversarial freeze-gates (v1 HOLD 18 findings, v2 HOLD 10, v3 SHIP-WITH-FIXES) before any code.
+
+- `tools/contract_gate.py` (NEW, 460 lines): the final-gate independent re-derivation as fail-closed,
+  mutation-proven decision code — `verify_contract_gate` (supersede-id cross-check, surface-drift vs
+  pin/newest-supersede, commit-granular temporal invalidation coverage), `dangling_contract_imports`
+  (base-module semantics), `expand_ownership_paths`, `parse_trailer_events` over a NUL-delimited commit
+  scan, `write_contract_gate` → `.kata/contract-gate.json`. 28 tests, 6 guards mutation-proven, Snyk 0.
+- `contract_edges.surviving_stubs` gains additive `exclude_dirs` (vendored trees; never excludes
+  at-or-under `contracts/`).
+- `kata-plan/RUBRIC.md`: the `builds_against:` schema + contract authoring rules (provider-owned
+  `contracts/<id>/` + `__init__.py`, sentinel lifecycle, freeze-time pin + plan commit).
+- `kata-orchestrate` 0.5.0: dispatchable-at-freeze frontier clause; freeze-time companion checks
+  (materialization, pin verify, edge honesty); provider-integration surface re-verify; the canonical
+  supersede route (durable trailers at ROUTE TIME on the superseding commit); the contract final-gate
+  step; fix-loop contract re-verification.
+- `kata-evaluate` 0.3.0: contract-gate evidence rule (artifact absent/malformed/failed/non-empty
+  companions ⇒ NEEDS_WORK — the independence leg; orchestrator compliance is never trusted).
+- `kata-review/RUBRIC.md`: contract-edge-honesty attack surface (semantic honesty, pinned-constant
+  reliance, `depends_on`-in-disguise).
+- Adval D139 preceded this build: 9-reviewer integrated sweep of Milestone 1 → P1, 5 HIGHs folded.
+
 ## [Unreleased]
 
 ### Release Hardening — Milestone 1 (Kenjiri one-shot lessons) — 2026-07-02

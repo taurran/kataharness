@@ -108,7 +108,9 @@ The frontier float clause lands LAST, only after its safety companions are wired
   path, deleting the sentinel. The DEPENDENT only IMPORTS `contracts/<id>/`. **F1 content-decidable final
   scan** (`contract_edges.surviving_stubs`, `kata-orchestrate:525-540`): on the merged tree, **zero
   `contracts/` files may still bear the sentinel** AND every `builds_against` contract import must resolve
-  (no dangling after a retire-by-deletion). Surviving sentinel or dangling import ⇒ NEEDS_WORK,
+  (no dangling after a retire-by-deletion — **[Amendment #2 #2: whole-DIR retirement is out of M1
+  scope; in M1 the dangling check guards file-level deletions/renames inside a surviving contract
+  dir]**). Surviving sentinel or dangling import ⇒ NEEDS_WORK,
   fail-closed like absent `.kata/iac.json`. (Sentinel grep + `_extract_imports` resolution *together* —
   neither alone suffices: path-resolution can't see stub-ness; grep can't see danglers.) Sentinel grep is
   language-agnostic; import-resolution is Python-only (non-Python resolution deferred, flagged).
@@ -168,6 +170,36 @@ DESIGN is internally consistent before P1 builds against it:
    caller** (where the plan + ownership blocks are in hand), keeping the P0 engine a pure primitive over
    explicit file lists. The M1-L5 prose is the intent; this is the lowered signature P2 wires.
 
+## Amendment #2 (2026-07-02, pre-P2 · PLAN-p2 freeze-gate v1 HOLD) — four rulings folded before the float builds
+
+The P2 freeze-gate (fresh-context, 18 findings) surfaced ambiguities in this DESIGN that two plans
+resolved differently; ruled here so the frozen text is single-voiced before P2 code exists:
+
+1. **Trailer placement is ROUTE-TIME, on the superseding commit, for EVERY routed member (F1/F2).**
+   M1-L3's "(in-flight members) + re-dispatch" phrasing was garbled: the superseding integration
+   commit carries `Kata-Supersede: <id>@<newHash>` AND one `Kata-Invalidated: <task-id>` line per
+   member of `invalidation_set(C)` — both in-flight-aborted and integrated-re-opened. This is what
+   makes (a) the crash-mid-invalidation restore subtract work at ANY crash point (acceptance 4) and
+   (b) the final-gate coverage check satisfiable by a compliant execution. Coverage additionally
+   requires the covering invalidation event to be at-or-newer-than the contract's newest supersede
+   event (double-supersede is not covered by a stale round-1 trailer — F7).
+2. **Whole-dir contract retirement is OUT of M1 scope (F10).** A pinned `contracts/<id>/` dir must
+   survive the run with its stub bodies filled; M1 "retirement" = sentinel retirement only. The
+   dangling-import scan guards file-level deletions/renames INSIDE a surviving contract dir (and
+   future whole-dir retirement, which needs a retirement-record design in a later milestone — a
+   `Kata-Supersede:` hash cannot express "deleted", and `surface_hash` correctly raises on a missing
+   dir rather than vacuously passing it).
+3. **`tools/contract_gate.py` is a sanctioned new decision-code module (F9).** M1-L2's "the restore
+   parser union is the only hard base-code" governed P0/P1; the P2 final-gate re-derivation is
+   decision-code and per D136 belongs in mutation-provable code, not prose — relocated from the
+   change-map's "drift re-verify in contract_edges.py" to a composed module importing the pure engine
+   + the git parsers, plus `.kata/contract-gate.json` as the durable artifact for kata-evaluate's
+   independence leg (the IaC-gate pattern's evaluator half, which the original change-map omitted).
+4. **`surviving_stubs` gains an additive `exclude_dirs` param (F8).** Default `()` = current
+   any-depth behavior byte-for-byte (BC); the P2 caller excludes vendored trees
+   (`.venv`/`node_modules`/`vendor`/`.git`) — scan-root choice alone cannot exclude in-tree vendored
+   dirs.
+
 ## Phasing (v2 #6 — the milestone is split; the float lands LAST)
 
 Two HOLDs converged on "M1 is a multi-milestone program." It is delivered as three phases; **the frontier
@@ -192,7 +224,7 @@ float clause (the behavior change) ships only in P2, after its safety substrate 
   D136); malformed supersede/invalidation trailers are loudly surfaced (prefix detectors, key-whitespace
   tolerant); a phantom invalidation id (matches no integration trailer) is surfaced as the under-dispatch
   signature.
-- **M1-P2 — wiring + the float.** The `builds_against` schema in `kata-plan/RUBRIC.md`; the
+- **M1-P2 — wiring + the float. ✅ DONE (2026-07-02, `PLAN-p2-float.md` — frozen after 3 gates: v1 HOLD 18 findings, v2 HOLD R1-R10, v3 SHIP-WITH-FIXES; built T1-T5 + closeout; see D140).** The `builds_against` schema in `kata-plan/RUBRIC.md`; the
   dispatchable-at-freeze clause (`kata-orchestrate:211,481`); the supersede enumerate+trailer+route
   (`:507-509`); the final-gate independent re-derivation + surviving-stub + surface-drift checks
   (`:525-540`); the `kata-review` edge-honesty surface. Re-gated on its own before merge. **Only here does

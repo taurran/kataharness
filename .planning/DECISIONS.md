@@ -2058,3 +2058,43 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
     acknowledged unfalsifiable as written (prose skills; noted, not shimmed).
   Skill bumps: kata-orchestrate 0.4.3, kata-evaluate 0.2.1, kata-report 0.1.2, kata-lang-profile 0.1.2,
   kata-preflight 0.1.2. Suite 2236 → **2270** (+34 adval tests, each code-bearing fix mutation-proven: 13 guards disabled → red → reverted). Snyk medium+ 0. Fixes committed only on operator approval.
+
+<!-- Freeze/Float M1-P2: the float — built via the dogfooded loop, triple-gated. -->
+- **D140 — M1-P2 (the float) built: contract-edge scheduling wired, triple-freeze-gated, dogfooded —
+  2026-07-02.** The Freeze/Float behavior change landed: a `builds_against` dependent dispatches at
+  freeze in parallel with its provider (M1-L2), with every companion live. *Process:* `PLAN-p2-float.md`
+  was frozen only after THREE fresh-context adversarial freeze-gates — v1 HOLD (18 findings; headline:
+  the trailer-placement contradiction deadlocked the compliant flow AND defeated the locked
+  crash-mid-invalidation guarantee → resolved by the ROUTE-TIME rule, DESIGN Amendment #2 #1), v2 HOLD
+  (10 findings; headline: the temporal-coverage clause was unimplementable from the flat `%B` stream →
+  the NUL-delimited commit scan; the dangler scan needed base-module semantics + the `__init__.py`
+  mandate), v3 SHIP-WITH-FIXES (7 folded, incl. the freeze-commit precondition that guarantees the
+  gate's scan bound). Four gates on this initiative have now held/caught real unsoundness before code —
+  the discipline's strongest showing. *Build:* dogfooded via kata-orchestrate (5 workers, disjoint
+  ownership, wave DAG T1,T2,T4 → T3,T5; conductor-gated per task; T6 conductor closeout).
+  *Delivered:* `tools/contract_gate.py` (fail-closed re-derivation decision-code per D136 —
+  supersede-id cross-check, pin/newest-supersede surface drift, commit-granular temporal invalidation
+  coverage, base-module dangler scan, ownership expansion, `.kata/contract-gate.json` artifact; 28
+  tests, 6 mutation-proven guards, Snyk 0); `surviving_stubs` additive `exclude_dirs`;
+  `kata-plan/RUBRIC.md` schema + authoring rules; `kata-orchestrate` 0.5.0 (frontier clause,
+  precondition 6, provider re-verify, canonical supersede route, final-gate step 3 + renumber,
+  fix-loop trio); `kata-evaluate` 0.3.0 (contract-gate evidence independence rule);
+  `kata-review/RUBRIC.md` attack surface 7. *Accepted deviation (gated, not silent):* T1 added one
+  descriptive registry row to `protocol/exec-safety.md` for `contract_gate._scan_integration_commits`
+  — mandated by the `protocol/exec-safety.md` sink-registry contract (the conformance test mechanically enforces only shell=True sinks; the registry prose covers all), an ownership-list omission in the
+  frozen plan (the plan's own NUL-delimited git scan design necessitated the sink). *BC:* every P2
+  surface no-ops absent a `builds_against` edge; zero edges exist in any run today. *Fresh-context adversarial sweep (2 reviewers, code + prose): both SHIP-WITH-FIXES, all folded* —
+  code: bare-`contracts` namespace import false-dangler exempted (PEP-420 — dir-exists check);
+  R3 pin-revert-after-supersede now mutation-PINNED (the sweep proved the correct code was one
+  unpinned mutation from regressing); the defensive scan-divergence `continue` hardened to a raise;
+  dot-only contract ids rejected at the pins choke point; the malformed-invalidated NOTE branch
+  test-pinned. Prose: the declared-but-EMPTY `builds_against` no-op parenthetical removed (it would
+  have wedged the evaluator with nothing fixable); "exported names" overstatement corrected to
+  "defined `def`/`class` names (re-exports/aliases NOT pinned)" in both RUBRICs; the kata-review
+  tier skills' hardcoded surface counts ("all five"/"5 attack") made count-free — the RUBRIC now has
+  seven surfaces and the count would have silently skipped the contract-honesty backstop
+  (kata-review-standard/-advanced/-essential 0.1.1, a plan-gap fold approved by the conductor);
+  the garbled `contract_gate`→`contract_edges.surviving_stubs` ref fixed; artifact key names stated
+  in the orchestrate step. Known-stale left per append-only convention: the D98 record's
+  "step 6" anchor (now step 7). Suite 2270 → **2306** (+36 incl. 5 sweep-fold tests); validator
+  47/0/0; Snyk medium+ 0. Awaiting the operator merge gate.
