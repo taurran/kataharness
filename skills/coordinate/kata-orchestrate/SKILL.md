@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.4.3
+version: 0.5.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -87,6 +87,37 @@ does not drift.**
    per-worker shim; if the orchestrator cannot seed it (unknown build backend), **escalate** (`kind:
    human-required`) — do not dispatch wave-1 over broken packaging. (Version-up / existing-repo runs already
    import cleanly — this precondition is a greenfield no-op there, BC.)
+6. **Contract-edge companion checks (ADDITIVE — only when the frozen PLAN declares `builds_against`; BC: absent
+   it ⇒ this precondition is a silent no-op, byte-for-byte as before).** These make the freeze-time float sound
+   (the dependent dispatches early against a frozen, materialized, honest contract). Run **before** any wave-1
+   dispatch; all three **fail closed**:
+   - **(a) Contract materialized + PLAN committed at freeze.** Every referenced `contracts/<id>/` must exist on
+     the integration branch under the PROVIDER task's `ownership:`, carrying the `# KATA-CONTRACT-STUB` sentinel
+     and an `__init__.py` (the T2 mandate — makes the import namespace and the dangling scan's base-module
+     candidates well-defined; the `__init__.py` is sentinel-EXEMPT). **If a contract dir is absent, YOU (the
+     orchestrator / plan-guardian) MATERIALIZE it:** author the interface + sentinel stub bodies from the plan's
+     contract spec and commit them to the integration branch (the SAME commit authority as your step-5
+     integration commits — you are the one writer of the contract at freeze; dependent worktrees fork with the
+     stubs present). **STOP + escalate (`kind: human-required`) only if the plan carries no authorable interface
+     spec** to materialize from. **AND** verify the frozen PLAN itself (with its recorded pins) is **COMMITTED on
+     the integration branch** — the 6(a) materialization commit may carry it — else **STOP at freeze**. (This is
+     not ceremony: the final gate's bounded trailer scan hard-fails on an unresolvable PLAN fork-point; committing
+     the frozen PLAN here makes the freeze commit the perfect scan bound and costs nothing.)
+   - **(b) Pins are fresh.** `contract_edges.surface_hash(contracts/<id>)` must equal the plan's recorded pin for
+     each contract dir. A stale pin ⇒ **STOP, re-freeze** (the recorded pin no longer describes the frozen
+     surface; dispatching a dependent against it is unsound).
+   - **(c) The edge is honest, not `depends_on` in disguise.** `contract_edges.edge_honesty(<dependent test
+     files>, contract_gate.expand_ownership_paths(<provider ownership>, repo_root, exclude_prefixes=<resolved
+     `contracts/` dirs>), repo_root)` must be empty. The exclusion keeps the provider-owned contract itself OUT
+     of the forbidden set (F5 — an honest contract-only dependent must pass; it legitimately imports the
+     contract). A non-empty result ⇒ a dependent test imports a provider IMPL path ⇒ the edge is really
+     `depends_on`: **STOP, reclassify before freeze** (dispatching it early is unsound).
+     **Dependent-test-file derivation (R6):** `<dependent test files>` = the files in the dependent task's
+     `ownership:` matching the project's test convention — **derived from pytest config (`testpaths` /
+     `python_files`) where present, defaulting to** `tests/` + `test_*.py` / `*_test.py` (M1-L5's locked scope is
+     TEST files). A nonstandard convention that yields an **EMPTY** dependent-test set is **surfaced to the
+     [[kata-review]] backstop, never silently treated as vacuously honest** (an empty forbidden-set scan proves
+     nothing).
 
 ## Comprehension phase (ADDITIVE — debug run only; BC: absent `kata/module/debug` ⇒ silent no-op)
 
@@ -213,7 +244,12 @@ exists.) -->
 
 ## The loop
 **Maintain a rolling frontier.** A task is **dispatchable** iff (all its `depends_on` are integrated) ∧ (its
-owned files are disjoint from every in-flight task). Dispatch every dispatchable task concurrently (each in its
+owned files are disjoint from every in-flight task) ∧ (its `builds_against` edges are satisfied at freeze — they
+NEVER wait on provider integration). A dependent whose only unmet edges are `builds_against` **dispatches at
+freeze, in parallel with its provider** (the contract is frozen + materialized at freeze — companion checks
+precondition 6 below; the provider merely fills bodies behind the same import paths). This is the ONLY behavior
+change: absent any `builds_against` edge the predicate is `depends_on` ∧ ownership-disjoint, byte-for-byte as
+before (BC). Dispatch every dispatchable task concurrently (each in its
 own [[kata-worktree]]); as each integrates, **recompute the frontier** and dispatch newly-eligible tasks. The
 `waves:` in the plan are a *derived view* of this frontier, not a hard gate — independent work never waits on
 an unrelated wave.
@@ -315,6 +351,16 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    two-dot `git diff integration..task`: if the task forked from an earlier integration head, the two-dot
    diff lists every file integration changed afterward as a *foreign* file and falsely trips the drift
    check. Feed the commit-scoped set to `footprint.is_within_footprint(changed, ownership)`.
+   **Provider-integration surface re-verify (ADDITIVE — only when the plan declares `builds_against` AND this
+   task PROVIDES a contract; BC: absent it ⇒ unchanged).** When a PROVIDER task integrates, re-run
+   `contract_edges.surface_hash` on each contract dir it owns. A mismatch against the frozen pin is authorized
+   **ONLY** by a `Kata-Supersede: <id>@<newHash>` trailer whose `<newHash>` **equals the re-computed
+   `surface_hash`** (a stale round-1 trailer must not authorize arbitrary later drift), present **on the
+   candidate integration commit itself OR in prior bounded history** (the evaluation point is the
+   candidate-commit body ∪ the bounded trailer scan). An unauthorized mismatch ⇒ **BLOCK the integration and
+   escalate** (a deliberate supersede routes through the supersede route in `## Escalation`). A pure body-fill
+   (sentinel retired, surface unchanged) leaves the surface hash equal to the pin and **passes untouched** —
+   filling stubs is the intended fulfillment, never a trip.
    **IaC gate (IaC-classed tasks only; ADDITIVE — non-IaC tasks unchanged):** for any task marked
    IaC-classed at dispatch (step 2), also run the **IaC gate** per `protocol/iac-safety.md §3` as part
    of this task's verify. The five ordered gate steps (all creds-free, Tier 1):
@@ -487,13 +533,13 @@ This section is **additive** — the host/`Agent`-tool path (step 2 of the loop 
 
 | Role | Dispatch site in this skill | Notes |
 |---|---|---|
-| `validator` | the **Adversarial red-team before merge** step (`## Final gate` step 6) + the **Research-needed → grounding gate** review (`## Escalation`) | Read-only; **stub-test-proven v1 path** (validator→codex; live-CLI flags pinned at build, guarded by the confirm-probe). |
+| `validator` | the **Adversarial red-team before merge** step (`## Final gate` step 7) + the **Research-needed → grounding gate** review (`## Escalation`) | Read-only; **stub-test-proven v1 path** (validator→codex; live-CLI flags pinned at build, guarded by the confirm-probe). |
 | `researcher` | `kata-research` on a **Research-needed** escalation (`## Escalation`) | Read-only; **stub-test-proven v1 path** (researcher→kiro; live-CLI flags pinned at build, guarded by the confirm-probe). |
 | `coder` | the per-task **worker dispatch** (`## The loop` step 2, sandbox=write) | Supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`); **NOT a path this build proves** (honest scope). |
 | `evaluator` | Host only | The accept/send-back/reroll mechanism is **DEFERRED** (DESIGN §8 *Deferred / fast-follow*, MM-1). |
 | `orchestrator` | Host only in v1 | Non-Claude orchestrator host is **DEFERRED** (LD11). |
 
-**LD6 — Concurrency:** Off-host dispatches run as **concurrent background subprocesses** reconciled with the rolling frontier and `.kata/concurrency.json`. Disjoint file-ownership ensures no races; the same frontier invariants (dispatchable iff `depends_on` drained + owned files disjoint from in-flight tasks) apply equally to cross-model tasks.
+**LD6 — Concurrency:** Off-host dispatches run as **concurrent background subprocesses** reconciled with the rolling frontier and `.kata/concurrency.json`. Disjoint file-ownership ensures no races; the same frontier invariants (dispatchable iff `depends_on` drained + owned files disjoint from in-flight tasks + `builds_against` edges satisfied at freeze, never waiting on provider integration) apply equally to cross-model tasks.
 
 **LD7 — Host fallback:** When the RESULT envelope carries `status ∈ {failed, timeout, fallback}`, **fall back to the host's `Agent`-tool path** (the existing subagent dispatch), **log the failure** (a board `ESCALATE` or `BLOCK` event), and **surface it** in the conversation. A routed platform failing repeatedly within a run is **flagged unconfirmed for that run** — all subsequent dispatch sites for that platform revert to the host path, and the incident is recorded in the drift ledger. The next run's preflight re-evaluates `confirmedPlatforms`.
 
@@ -526,10 +572,27 @@ payload). You then **park** the escalating task **and its DAG-dependents** (remo
     re-classify **human-required**.
   - **ESCALATE / can't-ground** (LOCKED tension, or no authoritative answer) → re-classify **human-required**.
   Research that can't ground is **never** improvised into the build.
+
+  **Contract-surface supersede route (canonical — applies to ANY deliberate contract-surface supersede,
+  regardless of which path produced it: a grounded re-plan here, a human-required resolution, or a fix-loop
+  re-plan; only relevant when the plan declares `builds_against`).** When a deliberate decision changes a frozen
+  contract surface C:
+  - **(a) Enumerate** `contract_edges.invalidation_set(builds_against, C)` — the tasks bound to C that the change
+    strands.
+  - **(b) Write the DURABLE RECORD FIRST** (before routing any member): the superseding integration commit
+    carries `Kata-Supersede: <id>@<newHash>` **AND** one `Kata-Invalidated: <task-id>` line **per member** of the
+    invalidation set — **both** dispositions (in-flight-aborted AND integrated-re-opened). Recording first is what
+    makes a crash at ANY point after the supersede commit re-dispatch every routed member on restore
+    (`kata_restore.collect_integrated_tasks` subtracts them) and makes the final-gate coverage check satisfiable.
+  - **(c) Then route each member:** in-flight ⇒ **abort its worktree** ([[kata-worktree]] remove+prune) + re-dispatch
+    against the new surface — **an abort FAILURE ⇒ escalate `kind: human-required`, NEVER proceed-and-re-dispatch**
+    over a possibly-live worker (double-writer hazard); integrated ⇒ **force re-open via the fix loop** (its
+    re-integration commit carries `Kata-Task:` as normal — the invalidation record already exists at route time).
 - **Human-required** — a LOCKED-decision conflict. **Only this surfaces to a human.** A LOCKED-decision
   conflict is escalated to the human, **never silently re-decided** (that is the exact drift the harness
   exists to prevent). *(Consulting an engram to auto-resolve before a hard-wait is a future capability — not
-  wired here.)*
+  wired here.)* **(If the human resolution changes a contract surface, execute the contract-surface supersede
+  route above.)**
 
 **Hard-wait for the human IFF the frontier is empty ∧ open human-required escalations remain.** Being
 "frontier-blocked" **is** the criticality test — there is no separate criticality knob. As long as unrelated
@@ -546,7 +609,7 @@ After the frontier drains (all tasks integrated), on the integration branch:
    integration `.kata/mutation.json` carries the proof the gate ([[kata-evaluate]] rubric item 1) requires for
    code-bearing work. The `python -m gate_emit` CLI emits RESULT+footprint; **to include mutation records call the
    Python API** `gate_emit.emit_gate_artifacts(..., mutation_records=<union>)` (the CLI form omits mutation).
-   **IaC-bearing runs:** additionally ensure `.kata/iac.json` is present before step 4 — it is emitted at
+   **IaC-bearing runs:** additionally ensure `.kata/iac.json` is present before step 5 — it is emitted at
    each IaC task's verify (step 3 above, one entry per IaC-classed task, merged into a single `tasks` array).
    Absent `.kata/iac.json` on a run with **no IaC tasks** ⇒ safe no-op (BC, MINOR-7,
    `protocol/iac-safety.md §7`). **This is not self-certifying:** [[kata-evaluate]] independently re-derives
@@ -565,10 +628,33 @@ After the frontier drains (all tasks integrated), on the integration branch:
    ```
    The emitter composes `run_result`, `footprint`, and `mutation_check` — it does not reimplement them.
    Pass `--out .kata` so [[kata-evaluate]] finds artifacts at the conventional paths.
-   **Precondition (do not skip):** `.kata/RESULT.json` MUST exist before step 4. If it is absent, run
+   **Precondition (do not skip):** `.kata/RESULT.json` MUST exist before step 5. If it is absent, run
    `gate_emit.py` first — never dispatch [[kata-evaluate]] with no artifacts to read (it would default-FAIL to
    NEEDS_WORK anyway; emit first so the gate grades real evidence, not a missing file).
-3. **Emit the concurrency evidence** — run the canonical snippet from `protocol/board.md`
+3. **Contract-edge final gate (ADDITIVE — only when the frozen PLAN declares `builds_against`; BC: absent it ⇒
+   silent no-op, NO artifact written, byte-for-byte unchanged).** Independently re-derive contract-edge soundness
+   from git-durable trailers + the frozen plan (soundness never rests on orchestrator compliance, M1-L3). All
+   three checks run from the **integration root**:
+   1. `verdict = contract_gate.verify_contract_gate(repo_root, integration_branch, builds_against, plan_path)`
+      — the re-derivation (unknown-supersede-id, unauthorized-surface-drift, invalidation-coverage-gap +
+      temporal). A well-formed EMPTY `builds_against` returns a vacuous pass — **still persist the artifact** (sweep P1: [[kata-evaluate]] reads "declared" as key-present; a declared-but-empty map with no artifact would wedge NEEDS_WORK with nothing fixable).
+   2. `stubs = contract_edges.surviving_stubs(root, exclude_dirs=(".venv", "node_modules", "vendor", ".git"))`
+      via `contract_edges` — zero surviving `# KATA-CONTRACT-STUB` sentinels expected (the excludes skip
+      vendored trees that merely CONTAIN a `contracts/` dir; a contract id literally named `vendor` stays
+      scanned).
+   3. `danglers = contract_gate.dangling_contract_imports(<dependent files>, root)` — zero danglers expected.
+      **Dependent-file derivation (R6):** `<dependent files>` = **ALL** files in every `builds_against` task's
+      `ownership:` (the dangling scan is not test-scoped — any dependent file importing a deleted/renamed
+      contract module is a strand).
+   Then **ALWAYS** persist the artifact — even on a clean pass: fold the results as the artifact keys `surviving_stubs` and `danglers` (exact key names — [[kata-evaluate]] rejects a missing companion array as malformed) (and the integration
+   `branch`) into `verdict` and call `contract_gate.write_contract_gate(kata_dir, verdict)` → `.kata/contract-gate.json`,
+   so the artifact proves all THREE checks ran (its **absence** is the evaluator's independence-leg signal that
+   the gate was skipped — F4). **ANY** finding, **ANY** raise (the supersede-parser / scan git-error raise
+   **PROPAGATES** — never catch-and-continue; a swallowed error would vacuously pass), a surviving sentinel, or a
+   dangler ⇒ **NEEDS_WORK** (route to the fix loop below). **Sentinel-absence ≠ implemented** (M1-L9): these
+   scans prove *structure* only; real behavior is proven by the full default-FAIL suite re-run on the merged
+   tree (which exercises each dependent's tests against the provider's integrated body).
+4. **Emit the concurrency evidence** — run the canonical snippet from `protocol/board.md`
    (section: "Concurrency evidence (`.kata/concurrency.json`)") against the run's `.kata/` to produce
    `.kata/concurrency.json`. The snippet body lives only in `protocol/board.md` (K3 — do not duplicate it
    here). This is parallelism evidence the evaluator reads to corroborate rubric item 4; a legitimately
@@ -576,7 +662,7 @@ After the frontier drains (all tasks integrated), on the integration branch:
    never fails a sequential run (K6). Preconditions the snippet relies on (see `protocol/board.md`): the board
    was rotated to be **per-run** (run-start hygiene above), and workers **share a synchronized clock** — flag
    the latter as a known limitation for any future multi-host run before trusting `overlaps`.
-4. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
+5. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
    low-grill run, point it at the priming prompt as the frozen spec and at any [[kata-defer]] `ASSUMPTIONS.md`,
    so the autonomous floor's assumption log is graded for prompt-contradiction (rubric item 8) — not just asserted.
    Point it at `.kata/` so it reads the emitted artifacts directly.
@@ -584,13 +670,21 @@ After the frontier drains (all tasks integrated), on the integration branch:
    fresh-context, no-write check **alongside** [[kata-evaluate]] (concurrent). A `SLOP-DETECTED` verdict is
    **default-FAIL** (treated as NEEDS_WORK) — never advisory-only. When `kata/module/slop` is absent this is a
    silent no-op (the module degrades gracefully, like every optional module).
-5. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
+6. NEEDS_WORK → a **targeted fix against the same plan** (not a re-plan); loop to PASS.
 
    ### Fix-loop — material re-verification + thrash budget (fix-loop-hardening L1/L2/L3/L5)
 
    **Staged cascade (L5 / reaffirmed):** within each judge's findings, collect **all** findings → fix in **one
    batch** → re-verify that judge. The cheap deterministic gate (tests / validator / lint / scan) always runs
    first; a red cheap gate never reaches a fresh-context judge (the cascade ordering is invariant).
+
+   **Contract-trio re-verification (ADDITIVE — only when the plan declares `builds_against`; BC: absent it ⇒
+   unchanged).** When `builds_against` is declared, the step-3 contract trio (`contract_gate.verify_contract_gate`
+   + `contract_edges.surviving_stubs` + `contract_gate.dangling_contract_imports`) is **PART of the cheap
+   deterministic gate** — it runs in each per-batch re-verify AND in the confirmation pass below. A fix-worker
+   edit to any `contracts/<id>/` or dependent file re-runs the trio, so **post-gate contract drift cannot ship
+   green** (a fix that re-introduces a surviving sentinel, a dangler, or an unauthorized surface change is caught
+   before the confirmation pass settles).
 
    **Material re-verification after each fix (L1 — LOCKED):**
    - **Always re-run the cheap deterministic gate** — fast, idempotent, required on every fix cycle.
@@ -602,7 +696,7 @@ After the frontier drains (all tasks integrated), on the integration branch:
      material and re-run the judge.
    - **After the *final* batch of fixes, run exactly ONE confirmation pass:** cheap gate **+ a re-run of
      `kata-evaluate`** (cross-fix interaction is a conformance question). Do **not** run multiple confirmation
-     passes. The D98 `kata-review` (step 6 below) runs **once, after the confirmation pass settles, on the final
+     passes. The D98 `kata-review` (step 7 below) runs **once, after the confirmation pass settles, on the final
      post-fix artifact — never inside the fix loop.** A fix made in response to the red-team re-enters at the
      confirmation pass (so what was attacked is what ships), governed by the thrash budget.
 
@@ -649,9 +743,10 @@ After the frontier drains (all tasks integrated), on the integration branch:
    4. **Plan-problem verdict:** escalate a **re-plan candidate** via the existing `kind: "human-required"`
       (no enum change — L6). Carry the thrash distinction in `decisionNeeded`/`rationale` (note that
       `kata-diagnose` ran first and returned plan-problem). Park the task + DAG-dependents; frontier keeps
-      draining. Deliberate, human-gated, supersede-not-rewrite, never silent.
+      draining. Deliberate, human-gated, supersede-not-rewrite, never silent. **(If the re-plan changes a
+      contract surface, execute the contract-surface supersede route in `## Escalation`.)**
 
-6. **Adversarial red-team before merge — on a code/contract-bearing build (L12).** After [[kata-evaluate]]
+7. **Adversarial red-team before merge — on a code/contract-bearing build (L12).** After [[kata-evaluate]]
    returns PASS, and **before merge-to-master**, dispatch [[kata-review]] (**≥ standard tier** — a merge-gate
    warrants depth; do not red-team a contract change at `essential`) as a **separate fresh-context, no-write**
    adversarial subagent whose job is to *break* the result — not re-grade conformance, but hunt the failure modes
@@ -711,7 +806,7 @@ After the frontier drains (all tasks integrated), on the integration branch:
        non-fatal NOTE.
      - The detector is also **on-demand-invocable** — an operator can run
        `recurrence_detect.detect_from_paths(...)` (or the [[kata-improve]] sub-mode) outside the Final gate.
-7. Commit; if a handoff is needed, [[kata-handoff]].
+8. Commit; if a handoff is needed, [[kata-handoff]].
 
 ## Benchmark closeout phase (ADDITIVE — benchmark run only; BC: absent `kata/module/benchmark` ⇒ silent no-op)
 

@@ -6,7 +6,7 @@ description: >-
   cannot rubber-stamp the builder's work. Checks acceptance criteria, the green gate, drift against LOCKED
   decisions, and scope.
 license: Apache-2.0
-version: 0.2.1
+version: 0.3.0
 category: evaluate
 status: experimental
 agnostic: true
@@ -204,6 +204,27 @@ re-derive** whether the run touched IaC: classify the footprint's changed files 
   did not run / did not emit — it cannot pass as "no IaC"; symmetric with the malformed-RESULT.json rule above).
 - no changed file classifies as IaC **and** `.kata/iac.json` absent ⇒ **N/A — not a failure** (BC, MINOR-7).
 Do not fail a genuinely non-IaC run on the absence of this artifact.
+
+**Contract-gate evidence (M1-L3, the independence leg — mirrors the IaC presence rule):** when the
+frozen PLAN declares `builds_against` (contract-only dependents that dispatch at freeze, in parallel
+with their provider), the run MUST have executed the final-gate contract re-derivation. Its durable
+artifact is `.kata/contract-gate.json` (emitted by `tools/contract_gate.py` `write_contract_gate` —
+schema = the `verify_contract_gate` dict `{passed, vacuous, findings}` PLUS `utc`, `branch`, and the two
+companion arrays `surviving_stubs` and `danglers`). Apply these default-FAIL rules — soundness never
+rests on orchestrator compliance (an orchestrator that skipped the contract step cannot pass):
+- `builds_against` declared **and** `.kata/contract-gate.json` is absent, malformed (not parseable, or
+  missing `passed` / either companion array), or its `passed` is not `true` ⇒ **NEEDS_WORK** (the gate
+  did not run / did not clear — it cannot pass as "no contract"; symmetric with the malformed-`RESULT.json`
+  and IaC rules above).
+- `builds_against` declared **and** the artifact's companion `surviving_stubs` array is non-empty (a
+  contract stub sentinel survived the merged tree) **or** its `danglers` array is non-empty (a dependent
+  still imports a deleted/renamed contract module) ⇒ **NEEDS_WORK** — the artifact must prove ALL THREE
+  final-gate contract checks came back clean (the re-derivation, the sentinel scan, and the
+  dangling-import scan), not just `passed`.
+- no `builds_against` in the plan **and** `.kata/contract-gate.json` absent ⇒ **N/A — not a failure**
+  (BC — mirrors the IaC no-op clause; every contract surface no-ops when no edge is declared, which is
+  every run today).
+Do not fail a genuinely non-contract run on the absence of this artifact.
 
 ## Output
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,

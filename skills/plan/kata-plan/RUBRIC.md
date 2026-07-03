@@ -32,10 +32,43 @@ the file; never let ownership overlap.
 ownership:      { T1: [files...], T2: [files...], ... }   # disjoint across all tasks
 waves:          { wave1: [T1], wave2: [T2, T3], ... }     # parallelizable sets
 depends_on:     { T2: [T1], T3: [T1], T4: [T1, T2] }      # the DAG
+builds_against: { D1: ["C1@<64-hex surfaceHash>"] }       # dependent -> contract pins (OPTIONAL)
 ```
 
 Derive waves from the DAG: a wave is the set of tasks whose dependencies are all satisfied and whose file
 sets are disjoint. Sequential single-task waves are fine; parallel waves are the payoff.
+
+## Contract edges (`builds_against`) — Freeze/Float M1
+
+**OPTIONAL.** Declares that a dependent task builds against a *frozen interface surface* it does not own, so
+it can dispatch at freeze in parallel with its provider instead of waiting on provider integration. Absent
+this key, every surface below no-ops (BC). Edge grammar — dependent-task ⇒ list of `contractId@surfaceHash`
+pins:
+
+```yaml
+builds_against: { D1: ["C1@<64-hex surfaceHash>"] }
+```
+
+- **One contract = one `contracts/<id>/` subdir containing an `__init__.py`** — the `__init__.py` makes the
+  import namespace and the dangling-import scan's base-module candidates well-defined. It is
+  **sentinel-EXEMPT**: it may be empty namespace glue, and requiring a body-less sentinel there would make
+  retirement ambiguous.
+- **The PROVIDER owns the contract dir.** It appears in the provider task's `ownership:` (one writer). The
+  dependent NEVER writes `contracts/<id>/` — it only imports it.
+- **Stub materialization is the plan-guardian's ([[kata-orchestrate]]) job, AT FREEZE, before any worker
+  exists:** it commits the contract interface + stub bodies (each bearing the `# KATA-CONTRACT-STUB`
+  sentinel) to the integration branch, so dependent worktrees fork with the stubs present. It also computes
+  the pin `contract_edges.surface_hash(contracts/<id>)` at freeze, records it in the edge, and commits the
+  frozen PLAN to the integration branch **in the same freeze step** — the final gate's bounded scan
+  hard-fails on an unresolvable plan fork-point, so the freeze commit is its scan bound.
+- **The provider fills real behavior** behind the same import paths in its own worktree, **deleting the
+  sentinel lines** (sentinel retirement — the ONLY M1 retirement; whole-dir contract deletion is OUT of
+  scope, DESIGN Amendment #2).
+- **Edge honesty:** a dependent's test files import ONLY `contracts/<id>/`, never provider impl paths. A
+  violation means the edge is really a `depends_on` in disguise — reclassify before freeze.
+- **M1-L1 residual:** module constants, `TypeAlias` declarations, and `__all__` are NOT machine-pinned (only
+  signatures + return annotations + decorators + defined `def`/`class` names are; re-exports/aliases are NOT pinned) — a contract relying on them is flagged
+  for the [[kata-review]] backstop until a later milestone lands the export visitor.
 
 ## Version-up ownership (existing-repo runs)
 
