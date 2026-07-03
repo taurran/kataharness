@@ -406,3 +406,53 @@ def test_edge_honesty_catches_local_deferred_import(tmp_path):
     _honesty_repo(tmp_path, "def test_x():\n    import provider\n    assert provider.foo()\n")
     v = ce.edge_honesty(["test_dep.py"], ["provider.py"], tmp_path)
     assert v == [{"file": "test_dep.py", "imported": "provider.py"}]
+
+
+# --- Freeze/Float M1-P2 (Amendment #2 #4 / T1 R4): surviving_stubs exclude_dirs ---
+
+def test_surviving_stubs_exclude_dirs_skips_vendored_sentinel(tmp_path):
+    # R4: an excluded component BEFORE the first `contracts` part skips the path —
+    # a vendored tree that CONTAINS a contracts/ dir (`.venv/.../contracts/`) is a
+    # false positive the P2 caller excludes.
+    nested = tmp_path / ".venv" / "lib" / "contracts" / "c1"
+    nested.mkdir(parents=True)
+    (nested / "__init__.py").write_text(
+        "def foo():\n    ...  # KATA-CONTRACT-STUB\n", encoding="utf-8"
+    )
+    # Without exclusion the any-depth scan flags it (fail-closed default, BC).
+    assert ce.surviving_stubs(tmp_path) == [".venv/lib/contracts/c1/__init__.py"]
+    # With `.venv` excluded it is skipped.
+    assert ce.surviving_stubs(tmp_path, exclude_dirs=(".venv",)) == []
+
+
+def test_surviving_stubs_exclude_dirs_never_skips_under_contracts(tmp_path):
+    # R4: a component AT-OR-UNDER contracts/ is NEVER excluded — a contract id
+    # literally named `vendor`, or a `vendor/` subdir inside a contract, stays
+    # scanned even when "vendor" is in exclude_dirs (exclusion must never
+    # fail-open the sentinel invariant).
+    idir = tmp_path / "contracts" / "vendor"          # contract id == "vendor"
+    idir.mkdir(parents=True)
+    (idir / "__init__.py").write_text(
+        "def a():\n    ...  # KATA-CONTRACT-STUB\n", encoding="utf-8"
+    )
+    subdir = tmp_path / "contracts" / "c1" / "vendor"  # vendor/ under a contract
+    subdir.mkdir(parents=True)
+    (subdir / "__init__.py").write_text(
+        "def b():\n    ...  # KATA-CONTRACT-STUB\n", encoding="utf-8"
+    )
+    got = ce.surviving_stubs(tmp_path, exclude_dirs=("vendor",))
+    assert got == [
+        "contracts/c1/vendor/__init__.py",
+        "contracts/vendor/__init__.py",
+    ]
+
+
+def test_surviving_stubs_default_exclude_dirs_is_byte_for_byte_bc(tmp_path):
+    # Amendment #2 #4: default () == current any-depth behavior byte-for-byte.
+    d = tmp_path / "sub" / "contracts" / "c1"
+    d.mkdir(parents=True)
+    (d / "__init__.py").write_text(
+        "def foo():\n    ...  # KATA-CONTRACT-STUB\n", encoding="utf-8"
+    )
+    assert ce.surviving_stubs(tmp_path) == ["sub/contracts/c1/__init__.py"]
+    assert ce.surviving_stubs(tmp_path, exclude_dirs=()) == ["sub/contracts/c1/__init__.py"]

@@ -294,15 +294,19 @@ def surface_hash(contract_dir: str | Path) -> str:
 STUB_SENTINEL = "# KATA-CONTRACT-STUB"
 
 
-def surviving_stubs(repo_root: str | Path, sentinel: str = STUB_SENTINEL) -> list[str]:
+def surviving_stubs(
+    repo_root: str | Path,
+    sentinel: str = STUB_SENTINEL,
+    exclude_dirs: tuple[str, ...] = (),
+) -> list[str]:
     """Return sorted repo-relative paths of `contracts/` files still bearing the
     stub sentinel (M1-L4). A surviving sentinel ⇒ the provider never retired the
     stub ⇒ the final gate must fail. Language-agnostic (a content grep); empty ⇒ clean.
 
     Honest scope: this is the sentinel (content) half of M1-L4. The *dangling-import*
     half (a dependent still importing a deleted contract) needs the full dependent
-    file set + merged-tree resolution context and is wired at the P2 final gate — it
-    is NOT silently covered here.
+    file set + merged-tree resolution context and is wired at the P2 final gate
+    (``contract_gate.dangling_contract_imports``) — it is NOT silently covered here.
 
     Fail-closed (M1-L9): an unreadable `contracts/` file RAISES (`OSError`) — a file
     the gate cannot read cannot be certified sentinel-free, so it is never silently
@@ -312,9 +316,15 @@ def surviving_stubs(repo_root: str | Path, sentinel: str = STUB_SENTINEL) -> lis
     DESIGN's "zero `contracts/` files may still bear the sentinel" is extension-
     blind (adval P0-F2: a `.pyi`/`.ts`/`.md` stub must not survive invisibly).
     The byte-level check also matches UTF-16-encoded sentinels (adval P0-F8).
-    Note: `contracts` is matched at ANY path depth; a vendored tree containing a
-    `contracts/` dir will be scanned too (fail-closed direction — the P2 wiring
-    anchors/excludes ignore-dirs).
+
+    ``exclude_dirs`` (Amendment #2 #4 / M1-P2-T1 R4, additive-BC): a path is skipped
+    iff an excluded component appears **BEFORE the first `contracts` component** in
+    its parts — a vendored tree that CONTAINS a `contracts/` dir (e.g.
+    ``.venv/.../contracts/``). Components AT-OR-UNDER `contracts/` are NEVER excluded:
+    a contract id literally named ``vendor``, or a ``vendor/`` subdir inside a
+    contract, stays scanned even with ``"vendor"`` excluded — exclusion must never
+    fail-open the sentinel invariant. Default ``()`` = the prior any-depth behavior
+    byte-for-byte (BC): every ``contracts/`` file at any depth is scanned.
     """
     root = Path(repo_root)
     needles = (
@@ -322,13 +332,21 @@ def surviving_stubs(repo_root: str | Path, sentinel: str = STUB_SENTINEL) -> lis
         sentinel.encode("utf-16-le"),
         sentinel.encode("utf-16-be"),
     )
+    excluded = set(exclude_dirs)
     found: list[str] = []
     for f in root.rglob("*"):
         if not f.is_file():
             continue
         rel = f.relative_to(root)
-        if "contracts" not in rel.parts:
+        parts = rel.parts
+        if "contracts" not in parts:
             continue
+        # An excluded component only skips a path when it appears BEFORE the first
+        # `contracts` part; at-or-under contracts/ is never excluded (R4).
+        if excluded:
+            first_contracts = parts.index("contracts")
+            if any(p in excluded for p in parts[:first_contracts]):
+                continue
         data = f.read_bytes()  # raises → fail-closed
         if any(n in data for n in needles):
             found.append(rel.as_posix())
