@@ -1,16 +1,34 @@
 ---
-date: 2026-07-02d (Milestone 1 MERGED · Freeze/Float M1 P0+P1 built + reviewed SHIP + PUSHED · next: ADVAL then M1-P2)
-branch: freeze-float/m1-contract-edges (rebased onto merged master 8653faf; PUSHED, tracking origin; tip d26a0ba)
-green: validator 47/0 · pytest 2236 passed / 3 skip (-m "not integration") · Snyk medium+ 0  (at the freeze-float tip)
-tags: kenjiri-lessons · D137 · freeze-float · contract-edges · M1-P0 · M1-P1 · D138 · sanctioned-M2 · adval · fable5 · handoff
-authored-for: a fresh coding-agent window (Fable 5 next session; sections map to the kata-orient tiers)
-★ NEXT-SESSION START HERE: read **`.planning/HANDOFF-FABLE5-ADVAL-P2.md`** (the detailed brief — float-assessment
-  logic + the enumerated adval target set) + `.planning/NEXT-SESSION-ORIENTATION.md`. Milestone 1 is MERGED.
-  **Freeze/Float is the OPERATOR-DIRECTED Milestone 2 (D138) — do NOT re-question it** (recorded in ROADMAP/BACKLOG/
-  STATE). M1-P0 + M1-P1 built + reviewed SHIP + PUSHED. **THE PLAN: load context → run a comprehensive fresh-context
-  ADVAL over all Milestone-1→P1 changes → fix any issues → then build M1-P2 (the float) under its own freeze-gate.**
-  Do NOT jump to P2 with an open HOLD; do NOT shortcut P2's freeze-gate.
----
+date: 2026-07-02e (FREEZE/FLOAT M1 COMPLETE + MERGED — PR #5 to master 0c82bc4; next: operator test-path decision, then M4)
+branch: master (clean; freeze-float/m1-contract-edges deleted local+remote after merge)
+green: pytest 2306 passed / 3 skip (-m "not integration") · validator 47/0/0 · Snyk medium+ 0 · 21 mutation-proven guards
+tags: freeze-float · M1-complete · the-float · D139-adval · D140 · PR5 · test-path · M4-next · handoff
+authored-for: a fresh coding-agent window (next session; sections map to the kata-orient tiers)
+★ NEXT-SESSION START HERE: read `.planning/NEXT-SESSION-ORIENTATION.md` (rewritten for the test-path
+  decision). Freeze/Float M1 is DONE and MERGED (P0+P1+D139 adval+P2 the float; D137–D140). The float is
+  live-in-code but has ZERO live runs. The session OPENS WITH AN OPERATOR BRAINSTORM, not a build: (a) a
+  NEW-project one-shot test path (the natural first float live-proof — plan a real provider/dependent
+  contract edge), (b) version-up assessment of an existing project (Kenjiri is PAUSED mid-run), or (c) a
+  bug-fix/debug-mode review run on an existing repo. M4 (inline evaluator/reroll) follows per ship order.
+
+
+> **★ 2026-07-02e (Fable 5 session — M1 COMPLETE + MERGED):** Executed the full ADVAL→P2 plan end-to-end.
+> **(1) D139 integrated adval:** 9 fresh-context reviewers over 653f501..8902fb0 → 9× SHIP-WITH-FIXES, 0 HOLD;
+> 5 HIGHs (supersede-parser fail-open, edge_honesty relative-import blindness, surviving_stubs *.py-only,
+> liveness self-approving escalation kind, lane-check rename blindness) + ~15 MEDs folded, 13 guards
+> mutation-proven; L19 recorded (unit-reviewed ≠ integration-reviewed — the HIGHs lived at seams).
+> **(2) D140 M1-P2 THE FLOAT built** via the dogfooded loop: PLAN-p2-float.md frozen only after THREE
+> adversarial freeze-gates (v1 HOLD 18 findings — route-time-trailer rule + DESIGN Amendment #2; v2 HOLD 10 —
+> NUL-delimited commit scan + base-module dangler semantics; v3 SHIP-WITH-FIXES 7 — freeze-commit scan bound);
+> 5 build workers (T1 `contract_gate.py` 33 tests · T2 kata-plan RUBRIC schema · T3 kata-orchestrate 0.5.0 ·
+> T4 kata-review surface 7 · T5 kata-evaluate 0.3.0), each conductor-gated; ONE gated deviation (exec-safety
+> registry row, recorded in D140); 2 built-work sweeps (code + prose) both SHIP-WITH-FIXES, all folded
+> (bare-`contracts` namespace exemption; R3 pin-revert mutation-pinned; declared-but-empty edges evaluator
+> wedge; review-tier hardcoded surface counts made count-free → -standard/-advanced/-essential 0.1.1).
+> **(3) MERGED:** PR #5 → master `0c82bc4` (merge commit, SHAs preserved); branch deleted local+remote.
+> **Seven adversarial gates caught real unsoundness on this initiative — the discipline's strongest showing.**
+> BC: every float surface no-ops absent a `builds_against` edge (zero exist in any run today).
+> *(Prior blocks are history.)*
 
 > **★ 2026-07-02c (Milestone 1 MERGED; Freeze/Float sanctioned + reconciled; M1-P1 built + reviewed SHIP):**
 > On "just proceed": **merged PR #4** (Milestone 1) to master `8653faf` (merge commit — SHAs preserved),

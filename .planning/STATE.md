@@ -1,12 +1,25 @@
 ---
 gsd_state_version: 1.0
 milestone: M2-freeze-float
-milestone_name: "Freeze/Float (operator-directed, D138) — M1 contract edges; ship order M1→M4→M2→M3; M1-P0 + M1-P1 done, M1-P2 (the float) next, re-gated"
+milestone_name: "Freeze/Float (operator-directed, D138) — ship order M1→M4→M2→M3; M1 COMPLETE + MERGED (PR #5, D137-D140); M4 (inline evaluator/reroll) next — pending operator direction on the interim test path"
 status: in-progress
 last_updated: "2026-07-02T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-02e — FREEZE/FLOAT M1 COMPLETE + MERGED to master `0c82bc4` (PR #5); next session =
+> test-path decision):** The Fable 5 session executed the full plan: (1) **D139 integrated adval** — 9
+> fresh-context reviewers over every Milestone-1→P1 change, 9× SHIP-WITH-FIXES, 5 HIGHs + ~15 MEDs folded +
+> mutation-proven (L19: unit-reviewed ≠ integration-reviewed); (2) **D140 M1-P2 (THE FLOAT) built** via the
+> dogfooded loop — PLAN-p2-float.md survived THREE freeze-gates (v1 HOLD 18, v2 HOLD 10, v3 SHIP-WITH-FIXES),
+> 5 build workers conductor-gated, 2 adversarial sweeps folded; (3) **PR #5 merged** (merge commit, SHAs
+> preserved), branch deleted local+remote. Master green: **pytest 2306 / 3 skip · validator 47/0/0 · Snyk
+> medium+ 0 · 21 mutation-proven guards**. The float is live-in-code but has ZERO live runs (no plan declares
+> `builds_against` yet). **Next session opens with an operator brainstorm: a NEW-project one-shot test path
+> (natural float live-proof candidate) vs. version-up / bug-fix review of an existing project (Kenjiri is
+> PAUSED mid-run; see `.planning/NEXT-SESSION-ORIENTATION.md` §NEXT).** Then M4 per ship order.
+> *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-02d — context fully synced + PUSHED; next session = fable5 ADVAL → M1-P2):** All context
 > docs synced to the true state; the v0.1.0 benchmark honesty over-claim corrected (synthetic control, not a real
