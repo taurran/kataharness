@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-07-02e): this brief was EXECUTED IN FULL — adval done (D139), P2 built + merged (D140, PR #5). Historical record only; current orientation = `.planning/NEXT-SESSION-ORIENTATION.md`.**
+
 # DETAILED HANDOFF — fable5 session: adval all Milestone-1→P1 changes, then build M1-P2 (the float)
 
 > **Paste-ready, self-contained.** You are a fresh coding-agent window (model: **Fable 5**) resuming KataHarness

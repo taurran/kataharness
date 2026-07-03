@@ -4,7 +4,7 @@ Promote to ROADMAP milestones when ready.
 
 > **★ ACTIVE INITIATIVE (2026-07-02, D138): Milestone 2 — Freeze/Float (operator-directed).** This is the
 > current focus, NOT any item below. Milestone 1 (Release Hardening) shipped (PR #4). Freeze/Float ship order
-> **M1→M4→M2→M3**; M1-P0 engine + M1-P1 durable substrate done (reviewed SHIP), **M1-P2 (the float) is next, re-gated**. See `ROADMAP.md`
+> **M1→M4→M2→M3**; **M1 COMPLETE + MERGED (PR #5, D137-D140)** — P0+P1+adval+P2 all shipped; **M4 (inline evaluator/reroll) is next**, after the operator-directed test path (new-project one-shot / version-up / debug run — the float needs its first live proof). See `ROADMAP.md`
 > "Post-v0.1 hardening + efficiency track" + `specs/freeze-float-m1/`. The items below remain deferred/optional
 > and are picked up only when the operator redirects there.
 
