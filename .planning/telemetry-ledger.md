@@ -17,3 +17,4 @@
 > ≥5 samples per class (A1-Q3).
 
 <!-- rows below this line — append only, never edit or delete a row -->
+{"v":1,"utc":"2026-07-04T19:03:44Z","runId":"m4p0-t5-calibration-2026-07-04","target":"scratch/strutil (calibration exercise)","tasks":2,"checkpoints":4,"zeroCheckpointTasks":0,"firstPassAcceptanceByClassTier":{"code\u00d7sonnet":1.0},"streaksByClass":{"code":[2,2]},"fixCycles":0,"gateRejections":0,"taskDurationsByClass":{"code":[2.21,3.5]},"wallClockS":342.9,"tokensIn":null,"tokensOut":116105,"effectiveModes":{"T-A":"telemetry","T-B":"telemetry"},"calibration":true}

@@ -452,6 +452,20 @@ unextended, kata-evaluate not-a-surface claim, attempt-branch × concurrency-sni
 folded). LOCKED set = M4-L1..L10 as amended + A1-Q1..Q5 + the Amendment #2/#3 bindings. Pending the
 operator commit gate (branch `m4/inline-eval`, commits on approval only).**
 
+**P0 status (dated note, 2026-07-04):** P0 BUILT + instrumented calibration run #1 COMPLETE.
+PLAN-p0-telemetry frozen (own double gate: v1 HOLD incl. a kill-switch-relocation BLOCKER; v2
+SHIP-WITH-FIXES; all folded). T1 `fb0568a` (kata_telemetry, +70 tests → 2376/3, 7 mutation proofs,
+Snyk 0), T3 `b281a71`, T2 `18ff54a` (orchestrate 0.6.0), T4 `af5d6dc` (committed ledger + locator).
+T5: 2-arm calibration A/B (off vs telemetry, same 2-task plan, same model) — all 4 stamped evidence
+digests re-derived MATCH from the commit trees, zero lane drift, 4/4 worker mandate compliance,
+first ledger row appended (`calibration: true`, median-excluded, verified). Measured mechanical
+overhead ≈ +1.9k tokens / ~+5 tool calls per checkpoint (n=1, toy-module scale — see the P0 report
+in the session record + `.planning/telemetry-ledger.md` row 1). Kill-switch call: PROCEED to P1 —
+break-even clears comfortably (cost ~1–3% extrapolated vs 5–10% payoff); the M4-L1 <1% green-run
+cap is flagged AT-RISK at owned-module chunking and is re-measured on the P1 dogfooded build
+(instrumented run #2, real module sizes); named remediation if it misses: coarsen the chunk unit
+(checkpoint every N modules — the A1-Q2 `[TUNABLE]`), never a silent cap change.
+
 ## Open questions for the grill (before freeze)
 
 > **RESOLVED 2026-07-04** — see *Grill resolutions (Amendment #1)* above. Retained verbatim below per
