@@ -2162,3 +2162,34 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   The P0+P0.1 fresh-context evaluation (2026-07-04) returned NEEDS_WORK on exactly two record-keeping items —
   this addendum + the T5 approval board `DECISION` — both closed same-day; all nine rubric surfaces otherwise
   PASS on independent re-derivation incl. 4/4 evidence-digest MATCH and a live mutation spot-check.)*
+
+- **D143 — M4-P1 built (the code-class mechanism): risk score + inline evaluator + ladder + reroll,
+  dogfooded + instrumented — 2026-07-04.** PLAN-p1-code-class frozen after a double gate (v1 HOLD 4
+  HIGH/4 MED/5 LOW — headline: the resolver-None never-anchor leg missing from implementing text, the
+  THIRD resurfacing of that defect class, caught again; re-gate v2 SHIP-WITH-FIXES 1 HIGH/3 MED/3 LOW —
+  headline: a mode-less object config silently coercing to `off`; all 20 folded). *Delivered:*
+  `tools/kata_risk.py` (one-dial capped-sum score, STRICT `>` comparator mutation-pinned, A1-Q4
+  arithmetic test-pinned, VALUE-object override resolver with mode-REQUIRED raise; 57 tests, 4 mutation
+  proofs: unknown-signal, unknown-class, tau-range, `>`→`>=`; pure/no-subprocess structurally pinned;
+  Snyk 0); `skills/evaluate/kata-inline-eval/SKILL.md` (48th skill — one-page fresh-context no-write
+  chunk evaluator, VERDICT: continue|correct|reroll first-line contract) + SKILL_WORK_CLASS economy
+  registration + the never-anchor pin test (15 cells RED under the hardcode mutation);
+  kata-orchestrate 0.7.0 (M4 scheduler — scan at liveness passes + DONE, cursor + recovery rule,
+  SCAN-ERR once-per-window; the corrective-action ladder — DECISION lines with @sha, both never-anchor
+  carve-outs "never OMIT-inherit", ONE batch slack rule + stop-at-first-kill-verdict, grounding pass,
+  trigger #3 human-required, A1-Q5 arbitration, failureKinds area:<name> convention + task-id guard,
+  active-attempt-branch at loop steps 3/4/5, per-platform kill bindings); config.md inlineEval v2
+  (object-or-string, mode REQUIRED, `on` flipped live); adapters/ADAPTER-CONTRACT-M4.md (M4-L9
+  normative); kata-tdd 0.2.1. *Dogfood telemetry (instrumented run #2, ledger row 2, real):* 4 tasks /
+  10 checkpoints, 10/10 evidence digests re-derived MATCH at gate time, zero lane drift, first-pass
+  acceptance 4/4 (code×opus 1.0), streaks 3/2/3/2 clean. *Honesty notes:* (a) W2's module-2 trailer
+  reported failed=0 while the suite carried the pre-declared out-of-lane README-sync red — trailers
+  must carry raw counts; carve-outs belong to the gate (worker-prose hardening candidate, L19 sweep
+  input); (b) the conductor's first closeout telemetry scan ran POST-merge (rev-list vacuous ⇒
+  checkpoints:0) — caught by read-back before commit, corrected against fork refs; the orchestrate
+  text already mandates the scan at GATE time (step 3) — the deviation was the conductor's, the prose
+  was right; the erroneous row never committed (append-only applies to committed rows). *Gauntlet:*
+  suite 2469/3 (2396 + 57 W1 + 16 W2), validator 48/0/0, Snyk medium+ 0. <1% re-measurement: bracketed
+  (mechanical-ceremony lower bound ~0.4–0.8% run-level vs P0-calibrated upper bound ~1.9%) —
+  INCONCLUSIVE without a controlled real-scale A/B; the live-proof D16 A/B is the clean measurement;
+  remediation (coarsen chunk unit) remains named. L19 integrated sweep next; P2 adapters after.
