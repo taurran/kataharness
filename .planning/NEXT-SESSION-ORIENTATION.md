@@ -46,7 +46,14 @@
    `tools/contract_gate.py` + the `kata-plan/RUBRIC.md` contract-edges section.
 5. The doctrine (operator holds it): Freeze/Float validated draft v2 — ship order **M1 ✅ → M4 → M2 → M3**.
 
-## 4. ★ THE SESSION OPENER — the TEST-PATH brainstorm (operator decision, NOT a build)
+## 4. ★ THE SESSION OPENER — SUPERSEDED (2026-07-04): the operator DIRECTED M4
+**Start at `.planning/HANDOFF-M4-INLINE-EVAL.md`** — the M4 inline-evaluator milestone is the directed
+work (DESIGN drafted at `specs/inline-eval-m4/DESIGN.md`, pending grill + freeze-gate; execute to FINAL
+STATE v0.2.0 per the brief's recipe; anchor = Fable). The test-path options below are RETAINED because
+the M4 recipe consumes one: the live-proof run (recipe step 6) should be the new-project one-shot with a
+real `builds_against` edge — one run, two deferred proofs (the float's n=0→1 AND M4's).
+
+### (superseded original) the TEST-PATH brainstorm
 The operator directed: open by brainstorming the test path together, conversational prose (no popup menus).
 The three candidate paths, with what each proves:
 
