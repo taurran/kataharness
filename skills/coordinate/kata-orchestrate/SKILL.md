@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.7.0
+version: 0.8.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -558,8 +558,10 @@ new checkpoint into a trigger decision.
 - **Per new checkpoint:** compute drift + slack via the SAME P0 machinery — `kata_telemetry.checkpoint_lane_drift`
   for the out-of-footprint set; `kata_telemetry.parse_progress_events` → `kata_telemetry.resolve_estimate` →
   `kata_telemetry.slack_ratio` for slack — then call
-  `kata_risk.should_trigger(record_or_none, lane_drift, slack_ratio, task_class=<class>, weights=<resolved>, tau=<resolved>)`
-  with the run's resolved `{weights, tau}` (precondition 0 object-form leg).
+  `kata_risk.should_trigger(record_or_none, lane_drift, slack_ratio, task_class=<class>, weights=<resolved>, tau=<resolved>, class_signals=<class-signal dict or None>)`
+  with the run's resolved `{weights, tau}` (precondition 0 object-form leg); `<class>` = the task's
+  plan-frontmatter `class:` (default `code`; never `runShape`) and `class_signals` is the per-class
+  producer dict per **§ M4-L6 class adapters** below (`None` on `code` and whenever no producer exists).
   - `triggered: false` ⇒ **record to telemetry, done** (the happy path costs zero LLM calls — M4-L1).
   - `triggered: true` ⇒ enter *The corrective-action ladder* below.
 - **Raise ⇒ treat-as-triggered + surface (the A1-Q2 documented fail-safe).** A `scan_checkpoints` /
@@ -570,6 +572,38 @@ new checkpoint into a trigger decision.
   adjudication covers THAT SCAN WINDOW and counts ONCE on the ladder** — a persistent git error must not re-fire
   per conductor restart into an unbounded loop; the ≤3 ladder bound applies to raise-triggers exactly as to scored
   ones.
+
+### M4-L6 class adapters (P2 — ADAPTERS on the one scheduler; ABSENT-by-default extras, producers named-deferred)
+
+M4-L6 is **one scheduler, three signal sets** — the scheduler, ladder, reroll, kill bindings, and cursor
+machinery above are UNCHANGED; the class adapters add only **which signals a class scores** and **at which
+leash**. **Class detection = the task's plan-frontmatter `class:`** (default `code`; **never `runShape`** —
+`runShape` is provenance-only, LOW-14b). This resolves the `task_class=<class>` argument in the call above,
+selecting BOTH the τ leash and the weight table (`kata_risk.DEFAULT_TAU` / `kata_risk.DEFAULT_WEIGHTS_BY_CLASS`,
+`tools/kata_risk.py`). Every class table carries the UNIVERSAL base hard trio (`verify_fail` / `lane_drift` /
+`missing_record`, each .60) + the `slack_ge_2x` soft term (.30), scored by the SAME P0 machinery; the adapters
+add the per-class EXTRAS and the per-class leash (research/debug at τ **0.45** vs code's 0.50).
+
+- **research** (`class: research`): the class per-checkpoint VERIFY **IS** the citation-integrity check — its
+  exit rides the trailer's `verify.exit` (the existing `verify_fail` signal; there is **NO separate
+  `citation_fail` key**, gate v1 HIGH-3). Grounding-gate REJECT verdicts and coverage remain **GATE-TIME
+  inputs** (telemetry / calibration), NOT trigger inputs — `.kata/grounding.json` is gate-time, gitignored
+  tier-3, and has no chunk mapping. `coverage_gap` / `scope_drift` are **ABSENT in v1** (named deferrals — no
+  mechanical comparator/producer exists; a future brief-pinned scope-list comparator arrives via its own gated
+  amendment). Their weights are DATA'd in `DEFAULT_WEIGHTS_BY_CLASS["research"]` awaiting that producer, never a
+  silent LLM judgment pre-trigger (M4-L3).
+- **debug** (`class: debug`): `hypothesis_cycles` / `repro_regression` / `same_hypothesis_reentry` are **ABSENT
+  in v1** (named deferral — the diagnose discipline emits no durable per-hypothesis records today; adding that
+  durable per-hypothesis-record emission is a new worker emission that must arrive via its own gated amendment,
+  never a silent claim). Debug tasks trigger on the **base trio + slack, at the shorter 0.45 leash**.
+
+**Signal plumbing (X1 contract).** The scheduler passes `class_signals` per class — research:
+`{coverage_gap: bool, scope_drift: bool}`; debug: `{hypothesis_cycles: int, repro_regression: bool,
+same_hypothesis_reentry: bool}`; **`code` carries none ⇒ `None`**. **ABSENT class artifacts ⇒ absent signals ⇒
+0** (trigger-shy fail-safe — the **only quiet leg**, documented). A **present-but-MALFORMED class artifact
+RAISES → treat-as-triggered + surface** (gate v1 LOW-8 — the A1-Q2/D136 posture; the SAME fail-safe as the
+`should_trigger` RAISE bullet above — only absence is quiet). A wrong-class or unknown `class_signals` key is a
+producer bug and RAISES loudly (`kata_risk._derive_class_extras`, `tools/kata_risk.py`).
 
 ## The corrective-action ladder (ADDITIVE — M4-P1; M4-L5 / A1-Q1 / A1-Q5 verbatim — reuse, don't invent)
 
