@@ -8,6 +8,18 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [Unreleased] — Freeze/Float M4-P2: research + debug adapters (per-class leashes)
+
+**One scheduler, three signal sets — honestly scoped.** The freeze-gate's HOLD caught both new
+signal sets pointing at artifacts that don't exist in the claimed shapes; v2 shrank the phase:
+per-class τ leashes (0.45 vs 0.50) ship LIVE on the universal base trio + slack; the class extras
+(coverage/scope/hypothesis signals) are DATA'd at A1-Q4 weights with ABSENT-by-default,
+NAMED-DEFERRED producers. `kata_risk` DEFAULT_WEIGHTS_BY_CLASS + class_signals overlay plumbing
+(+35 tests, 3 mutation proofs); orchestrate 0.8.0 (class adapters subsection + the one declared
+call-line edit); kata-plan RUBRIC `class:` field + the `area:` task-id freeze guard (tiers 0.1.2).
+Instrumented run #3: 4/4 evidence MATCH; **the ledger's ≥3-run threshold for offering
+`inlineEval: on` is met.** Suite 2505/3; validator 48/0/0. D144.
+
 ## [Unreleased] — Freeze/Float M4-P1: the code-class mechanism (`inlineEval: on` live)
 
 **Detection now acts.** PLAN double-gated (v1 HOLD 4H/4M/5L; re-gate v2 SHIP-WITH-FIXES 1H/3M/3L —

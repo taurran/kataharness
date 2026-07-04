@@ -486,6 +486,15 @@ read as `failure kinds unclassified / cost null`, never fabricated):**
 new per-checkpoint worker emissions (M4-L1 holds); D136 fail-closed only where a field drives a
 decision; every item has a named consumer (none dropped).
 
+**P1+P2 status (dated note, 2026-07-04):** P1 BUILT (dogfooded+instrumented, run #2, D143;
+L19 cross-seam sweep SHIP-WITH-FIXES 0 HIGH, all folded) — kata_risk, kata-inline-eval (48th
+skill), orchestrate 0.7.0 scheduler+ladder, adapter contract. P2 BUILT (D144) — per-class leashes
+live; class extras DATA'd with named-deferred producers (gate-caught: the originally-specced
+sources did not exist); orchestrate 0.8.0. A1-Q4's research citation-integrity hard signal is
+REALIZED as the research-class verify riding verify.exit (P2 gate HIGH-3 fold — arithmetically
+identical, recorded here as the DESIGN-text reconciliation). Ledger ≥3 instrumented runs: the
+M4-L8 offer-`on` threshold is MET. Remaining: live proof + closeout.
+
 **P0 status (dated note, 2026-07-04):** P0 BUILT + instrumented calibration run #1 COMPLETE.
 PLAN-p0-telemetry frozen (own double gate: v1 HOLD incl. a kill-switch-relocation BLOCKER; v2
 SHIP-WITH-FIXES; all folded). T1 `fb0568a` (kata_telemetry, +70 tests → 2376/3, 7 mutation proofs,

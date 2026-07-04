@@ -2208,3 +2208,29 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   LOW-9): the W5 commit message overclaimed "class_median now live" — row 2 holds 4 code samples and
   the documented threshold is ≥5, so class_median correctly returns None at the shipped default; the
   8.35 figure was a below-threshold preview, not a live median.)*
+
+- **D144 — M4-P2 built (research + debug adapters): per-class leashes live, class extras DATA'd with
+  named-deferred producers — 2026-07-04.** PLAN-p2-adapters frozen after a double gate (v1 HOLD 3
+  HIGH/4 MED/1 LOW — the milestone's most valuable catch: BOTH new signal sets pointed at artifacts
+  that DO NOT EXIST in the claimed shapes (the deviation-funnel schema carries no hypothesis records;
+  grounding.json is gate-time + gitignored tier-3; coverage_gap named a nonexistent trailer field),
+  and the class tables had dropped the universal hard trio — a missing checkpoint record on a
+  research task would have scored GREEN; re-gate v2 SHIP-WITH-FIXES 2 MED/2 LOW). The folds SHRANK
+  the phase per the operator's anti-overcomplication mandate. *Delivered:* `kata_risk`
+  `DEFAULT_WEIGHTS_BY_CLASS` (base hard trio in EVERY class; research/debug extras DATA'd at A1-Q4
+  weights; `DEFAULT_WEIGHTS` aliased BY REFERENCE, is-identity-pinned), `class_signals` kwarg
+  (overlay-not-replacement weights semantics — P1 tests pass with 0 deletions; cross-class
+  contamination raises; union-validated overrides deliberately inert for classes lacking the key —
+  documented, not a bug), +35 tests (suite 2470 → 2505), 3 mutation proofs (cross-class guard, >=3
+  boundary, research-pair weight), Snyk 0; kata-orchestrate 0.8.0 (the ONE declared scheduler
+  call-line edit + the M4-L6 class-adapters subsection: research verify IS the citation-integrity
+  check riding verify.exit — no separate signal; ALL class extras ABSENT-by-default v1 with
+  NAMED-DEFERRED producers — the durable per-hypothesis diagnose record and the brief-pinned
+  scope/coverage comparators each require their own gated amendment, never a silent claim; ABSENT
+  quiet / MALFORMED raises→treat-as-triggered); kata-plan RUBRIC `class:` field (default code, never
+  runShape) + the task-ids-never-begin-`area:` freeze guard (tier skills 0.1.2). *What P2 ships
+  LIVE:* per-class τ leashes (0.45 research/debug vs 0.50 code) on the base trio + slack; the
+  plumbing awaits producers. *Dogfood telemetry (instrumented run #3, ledger row 3):* 2 tasks / 4
+  checkpoints, 4/4 evidence MATCH, zero drift, first-pass 2/2. **The ledger now holds 3 instrumented
+  runs — the M4-L8 ≥3 threshold for bootstrap to OFFER `inlineEval: on` is met.** Gauntlet: 2505/3,
+  validator 48/0/0 post-regen, Snyk 0.
