@@ -184,3 +184,116 @@ def should_trigger(
         "signals": signals,
         "tau": tau_class,
     }
+
+
+# ---------------------------------------------------------------------------
+# 3. resolve_inline_eval_params — the config override resolver (load-guard STOP material)
+# ---------------------------------------------------------------------------
+
+# The keys a valid object-form ``inlineEval`` value may carry. Anything else (notably a
+# whole-config dict carrying an ``inlineEval`` key passed by mistake) is a producer bug.
+_INLINE_EVAL_KEYS: frozenset[str] = frozenset({"mode", "tau", "weights"})
+
+
+def resolve_inline_eval_params(value: Any) -> dict:
+    """Resolve effective ``{weights, tau}`` from the ``inlineEval`` VALUE.
+
+    **The argument is the ``inlineEval`` VALUE itself (string, dict, or ``None`` when the
+    field is absent) — NEVER the whole ``kata.config``** (re-gate v2 MED-2: passing the
+    whole config would hit the absent-block quiet path and silently ignore every
+    override). A dict carrying an ``inlineEval`` key is therefore a whole-config mistake
+    and RAISES via the unknown-key guard.
+
+    - ``None`` (field absent) or a string mode ⇒ the ``DEFAULT_WEIGHTS``/``DEFAULT_TAU``
+      defaults (BC: the string form gains no override surface).
+    - A dict: the ``mode`` key is **REQUIRED** — a mode-less object RAISES (re-gate v2
+      HIGH-1: ``validate_inline_eval(None)``'s BC "off" leg is for an ABSENT FIELD, not a
+      present-but-mode-less object — the classic hand-edit error must STOP, never
+      silently run ``off``). Optional ``tau: {class: float}`` / ``weights: {signal:
+      float}`` sub-fields override the defaults; a present-but-malformed value
+      (non-numeric, unknown class key, unknown signal key, tau outside ``(0, 1]``) RAISES.
+
+    Args:
+        value: The ``inlineEval`` value (string, dict, or ``None``).
+
+    Returns:
+        ``{"weights": {...}, "tau": {...}}`` — full dicts (defaults with overrides
+        applied), safe to pass straight to :func:`should_trigger`.
+
+    Raises:
+        RiskError: On a mode-less object, an unknown top-level / class / signal key, a
+            non-dict override block, a non-numeric override, or a tau outside ``(0, 1]``
+            — load-guard STOP material (GB12/D45), the ``validate_inline_eval`` posture.
+    """
+    weights = dict(DEFAULT_WEIGHTS)
+    tau = dict(DEFAULT_TAU)
+
+    if value is None or isinstance(value, str):
+        return {"weights": weights, "tau": tau}
+
+    if not isinstance(value, dict):
+        raise RiskError(
+            f"resolve_inline_eval_params: inlineEval value must be a string, dict, or "
+            f"None (got {type(value).__name__}) — STOP + escalate (GB12/D45)."
+        )
+
+    if "mode" not in value:
+        raise RiskError(
+            "resolve_inline_eval_params: object-form inlineEval requires a 'mode' key — "
+            "a mode-less object must STOP, never silently run 'off' (re-gate v2 HIGH-1)."
+        )
+
+    unknown = set(value) - _INLINE_EVAL_KEYS
+    if unknown:
+        raise RiskError(
+            f"resolve_inline_eval_params: unknown inlineEval key(s) {sorted(unknown)} — "
+            f"a valid value object carries only {sorted(_INLINE_EVAL_KEYS)}. Passing the "
+            "whole kata.config (an 'inlineEval' key) is the classic mistake (MED-2). STOP."
+        )
+
+    weight_override = value.get("weights")
+    if weight_override is not None:
+        if not isinstance(weight_override, dict):
+            raise RiskError(
+                f"resolve_inline_eval_params: 'weights' must be an object (got "
+                f"{type(weight_override).__name__}) — STOP (GB12/D45)."
+            )
+        for key, override in weight_override.items():
+            if key not in DEFAULT_WEIGHTS:
+                raise RiskError(
+                    f"resolve_inline_eval_params: unknown weights signal key {key!r} — "
+                    f"known: {sorted(DEFAULT_WEIGHTS)}. STOP."
+                )
+            if not _is_number(override):
+                raise RiskError(
+                    f"resolve_inline_eval_params: weights[{key!r}] must be numeric (got "
+                    f"{override!r}) — STOP (GB12/D45)."
+                )
+            weights[key] = float(override)
+
+    tau_override = value.get("tau")
+    if tau_override is not None:
+        if not isinstance(tau_override, dict):
+            raise RiskError(
+                f"resolve_inline_eval_params: 'tau' must be an object (got "
+                f"{type(tau_override).__name__}) — STOP (GB12/D45)."
+            )
+        for key, override in tau_override.items():
+            if key not in DEFAULT_TAU:
+                raise RiskError(
+                    f"resolve_inline_eval_params: unknown tau class key {key!r} — "
+                    f"known: {sorted(DEFAULT_TAU)}. STOP."
+                )
+            if not _is_number(override):
+                raise RiskError(
+                    f"resolve_inline_eval_params: tau[{key!r}] must be numeric (got "
+                    f"{override!r}) — STOP (GB12/D45)."
+                )
+            if not (0.0 < override <= 1.0):
+                raise RiskError(
+                    f"resolve_inline_eval_params: tau[{key!r}] = {override!r} is outside "
+                    "(0, 1] — STOP (GB12/D45)."
+                )
+            tau[key] = float(override)
+
+    return {"weights": weights, "tau": tau}

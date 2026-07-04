@@ -248,6 +248,152 @@ class TestShouldTriggerGuards:
 
 
 # ---------------------------------------------------------------------------
+# Module 3 — resolve_inline_eval_params (the inlineEval VALUE, never the whole config)
+# ---------------------------------------------------------------------------
+
+
+class TestResolveDefaults:
+    """String / None values ⇒ the untouched defaults (BC: no override surface)."""
+
+    def test_none_value_returns_defaults(self):
+        result = kata_risk.resolve_inline_eval_params(None)
+        assert result == {"weights": kata_risk.DEFAULT_WEIGHTS, "tau": kata_risk.DEFAULT_TAU}
+
+    @pytest.mark.parametrize("mode", ["off", "telemetry", "on"])
+    def test_string_value_returns_defaults(self, mode):
+        result = kata_risk.resolve_inline_eval_params(mode)
+        assert result == {"weights": kata_risk.DEFAULT_WEIGHTS, "tau": kata_risk.DEFAULT_TAU}
+
+    def test_defaults_are_copies_not_aliases(self):
+        result = kata_risk.resolve_inline_eval_params(None)
+        result["weights"]["verify_fail"] = 0.99
+        result["tau"]["code"] = 0.99
+        # Mutating the returned dicts must not corrupt the module constants.
+        assert kata_risk.DEFAULT_WEIGHTS["verify_fail"] == 0.60
+        assert kata_risk.DEFAULT_TAU["code"] == 0.50
+
+
+class TestResolveOverrides:
+    """Object-form values with valid overrides merge onto the defaults."""
+
+    def test_mode_only_object_returns_defaults(self):
+        result = kata_risk.resolve_inline_eval_params({"mode": "on"})
+        assert result == {"weights": kata_risk.DEFAULT_WEIGHTS, "tau": kata_risk.DEFAULT_TAU}
+
+    def test_weights_override_merges(self):
+        result = kata_risk.resolve_inline_eval_params(
+            {"mode": "on", "weights": {"slack_ge_2x": 0.40}}
+        )
+        assert result["weights"]["slack_ge_2x"] == 0.40
+        # Untouched signals keep their default.
+        assert result["weights"]["verify_fail"] == 0.60
+
+    def test_tau_override_merges(self):
+        result = kata_risk.resolve_inline_eval_params(
+            {"mode": "on", "tau": {"code": 0.70}}
+        )
+        assert result["tau"]["code"] == 0.70
+        assert result["tau"]["research"] == 0.45
+
+    def test_tau_boundary_one_is_valid(self):
+        result = kata_risk.resolve_inline_eval_params({"mode": "on", "tau": {"code": 1.0}})
+        assert result["tau"]["code"] == 1.0
+
+    def test_int_override_coerced_to_float(self):
+        result = kata_risk.resolve_inline_eval_params({"mode": "on", "tau": {"code": 1}})
+        assert result["tau"]["code"] == 1.0
+
+
+class TestResolveGuards:
+    """Fail-closed guards — load-guard STOP material (GB12/D45)."""
+
+    def test_mode_less_object_raises(self):
+        # NAMED: re-gate v2 HIGH-1 — a present-but-mode-less object must STOP.
+        with pytest.raises(kata_risk.RiskError, match=r"requires a 'mode' key"):
+            kata_risk.resolve_inline_eval_params({"tau": {"code": 0.40}})
+
+    def test_whole_config_by_mistake_raises(self):
+        # NAMED: a dict carrying an `inlineEval` key is a whole-config mistake ⇒
+        # unknown-key raise (has `mode`, so it passes the mode check first).
+        with pytest.raises(kata_risk.RiskError, match=r"unknown inlineEval key"):
+            kata_risk.resolve_inline_eval_params(
+                {"mode": "on", "inlineEval": "on", "runShape": "project"}
+            )
+
+    def test_unknown_top_level_key_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"unknown inlineEval key"):
+            kata_risk.resolve_inline_eval_params({"mode": "on", "bogus": 1})
+
+    def test_non_dict_value_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"must be a string, dict, or"):
+            kata_risk.resolve_inline_eval_params(42)
+
+    def test_unknown_weights_signal_key_raises(self):
+        # NAMED: malformed-override guard mutation target (unknown signal key leg).
+        with pytest.raises(kata_risk.RiskError, match=r"unknown weights signal key"):
+            kata_risk.resolve_inline_eval_params(
+                {"mode": "on", "weights": {"citation_integrity": 0.60}}
+            )
+
+    def test_unknown_tau_class_key_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"unknown tau class key"):
+            kata_risk.resolve_inline_eval_params({"mode": "on", "tau": {"marketing": 0.40}})
+
+    def test_non_numeric_weight_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"must be numeric"):
+            kata_risk.resolve_inline_eval_params(
+                {"mode": "on", "weights": {"verify_fail": "high"}}
+            )
+
+    def test_bool_weight_rejected_as_non_numeric(self):
+        # bool subclasses int — must be rejected, not silently accepted as 1.0.
+        with pytest.raises(kata_risk.RiskError, match=r"must be numeric"):
+            kata_risk.resolve_inline_eval_params(
+                {"mode": "on", "weights": {"verify_fail": True}}
+            )
+
+    def test_non_numeric_tau_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"must be numeric"):
+            kata_risk.resolve_inline_eval_params({"mode": "on", "tau": {"code": "low"}})
+
+    def test_tau_zero_raises(self):
+        # NAMED: malformed-override guard mutation target (tau range leg).
+        with pytest.raises(kata_risk.RiskError, match=r"outside"):
+            kata_risk.resolve_inline_eval_params({"mode": "on", "tau": {"code": 0.0}})
+
+    def test_tau_above_one_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"outside"):
+            kata_risk.resolve_inline_eval_params({"mode": "on", "tau": {"code": 1.5}})
+
+    def test_non_dict_weights_block_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"'weights' must be an object"):
+            kata_risk.resolve_inline_eval_params({"mode": "on", "weights": [0.6]})
+
+    def test_non_dict_tau_block_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"'tau' must be an object"):
+            kata_risk.resolve_inline_eval_params({"mode": "on", "tau": 0.5})
+
+
+class TestResolveIntegration:
+    """The resolver's output feeds should_trigger directly."""
+
+    def test_resolved_override_drives_trigger(self):
+        params = kata_risk.resolve_inline_eval_params(
+            {"mode": "on", "tau": {"code": 0.25}}
+        )
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=2.0,
+            task_class="code",
+            weights=params["weights"],
+            tau=params["tau"],
+        )
+        # slack 0.30 > lowered code tau 0.25 ⇒ triggers.
+        assert result["triggered"] is True
+
+
+# ---------------------------------------------------------------------------
 # Exec-safety — source-scan structural pin (mirrors TestExecSafety in test_benchmark.py)
 # ---------------------------------------------------------------------------
 
