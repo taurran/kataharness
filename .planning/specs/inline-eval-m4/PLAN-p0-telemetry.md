@@ -314,3 +314,63 @@ append-to-missing-ledger raise; zero-progress slack None; ≥6 mutation proofs o
 Risk score, τ, weights, triggers, the inline evaluator skill + its SKILL_WORK_CLASS registration,
 the ladder/reroll/grounding pass, attempt branches, kill bindings, `on`-mode consumption, adapter
 contract docs, research/debug adapters.
+
+---
+
+## P0.1 — observability schema bump (operator-directed, DESIGN Amendment #4; routing branch 3)
+
+Status: draft-pending-delta-gate → build after gate. Additive-only; ledger row v1 → v2; no
+backfill (v1 rows read as `unclassified`/null); zero new per-checkpoint worker emissions (M4-L1).
+
+### U1 — `tools/kata_telemetry.py` schema v2 (code; TDD + mutation proofs)
+- `FAILURE_KINDS` frozenset: `{test-regression, lane-drift, spec-misread, integration-conflict,
+  packaging, security, other}` (producer vocabulary; `unclassified` is READER-side only, never
+  producible).
+- `build_ledger_row` emits `v: 2` + three additive fields: `perTask: {taskId: {tokensIn,
+  tokensOut, wallClockS}}` (explicit nulls where the host surfaces nothing — never fabricated);
+  `failureKinds: [{taskId, kind, at}]` — an unknown/missing `kind` at BUILD time RAISES
+  `TelemetryError` (producer bug, loud; `at` = ISO-UTC); `degraded: [{scope, reason}]`.
+- Reader tolerance: `read_ledger` accepts v1 AND v2 rows (unknown-version RAISES); a documented
+  accessor (`failure_kinds_of(row)`) maps v1/absent → `[{kind: "unclassified"}]`-equivalent and
+  absent cost → nulls. `class_median` unchanged (duration source untouched; calibration exclusion
+  untouched).
+- Tests: v2 round-trip; v1-row read-back tolerance (the committed row 1 shape verbatim as a
+  fixture); unknown-kind build raise; unknown-version raise. Mutation proofs on the two new
+  guards (unknown-kind, unknown-version): disable → named test RED → revert.
+
+### U2 — `tools/kata_restore.py` structured degraded signal (code; BACKLOG #16 fold)
+- Additive `collect_integrated_tasks_ex(repo_root, integration_branch, plan_path) ->
+  {"tasks": set, "degraded": bool, "reasons": list[str]}` — `degraded: true` + a reason exactly
+  when the unbounded-fallback NOTE fires (and for the malformed-trailer / phantom-id NOTEs, same
+  additive pattern); `collect_integrated_tasks` delegates to it and returns `["tasks"]`
+  (byte-identical behavior + prints, BC — existing tests untouched and green).
+- `restore()` gains additive keys `degraded: bool` + `degraded_reasons: list[str]` (dict-additive
+  BC). NOTE prints stay verbatim (the human leg).
+- Tests: unbounded-fallback sets degraded+reason; bounded path degraded=false; restore() carries
+  the keys; existing suite untouched. Mutation proof: degraded-flag guard (disable → RED → revert).
+
+### U3 — prose (conductor): orchestrate 0.6.0 → 0.6.1 (gate-time failure-kind classification —
+orchestrator classifies from the gate evidence, never the worker, D33; ledger v2 fields named in
+the closeout step; every degrade path records a `degraded` entry); telemetry-ledger.md header
+notes schema v2 (rows append-only, v1 row 1 stands); CHANGELOG; D142 (disposition + delivery).
+
+### Acceptance
+Full gauntlet (suite grown; validator 0/0; Snyk 0 on changed tools); v1 row 1 still parses via
+read_ledger; mutation proofs listed; D142 + board DECISION recorded; same done-bar as every phase.
+
+### P0.1 delta-gate history (2026-07-04): SHIP-WITH-FIXES — FROZEN after fold (all 5 folded)
+- **HIGH-1 (the seam, named):** `_scan_integration_commit_bodies` widens its return to
+  `(lines, degraded_reasons: list[str])`; BOTH internal callers (`collect_integrated_tasks`,
+  `parse_supersede_trailers`) unpack it; every NOTE print stays at its current site verbatim.
+- **MED-2 (git-error false-clean closed):** `lines is None` (integration history unreadable — the
+  MOST degraded path, which today prints no NOTE) ⇒ `degraded: true, reason:
+  "integration-history-unreadable"`. `parse_supersede_trailers`' malformed-supersede NOTE stays
+  stdout-only — deliberately OUT of the #16 fold (it feeds the P2 contract gate's own raise path).
+- **MED-3 (taskId pinned):** P0.1 `failureKinds` covers PER-TASK gate rejections only (taskId
+  well-defined); final-gate fix-loop (per-AREA) + M4 ladder-event classification are DEFERRED to P1,
+  which widens the entry to `{taskId|area, kind, at}` — deferred, stated, never silently skipped.
+- **LOW-4 (provenance fixed):** the unmeasured failure-type-mix parameter cite is HANDOFF §1
+  ("3 unmeasured parameters: acceptance rate, failure-type mix, trigger precision"), not the DESIGN.
+- **LOW-5 (contract edges pinned):** a row with ABSENT `v` reads as v1 (accessor rule); an unknown
+  PRESENT version RAISES; `restore()`'s non-lost-run `_empty` early return also carries
+  `degraded: False` + `degraded_reasons: []` (stable dict contract).

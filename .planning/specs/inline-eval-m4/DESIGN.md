@@ -452,6 +452,40 @@ unextended, kata-evaluate not-a-surface claim, attempt-branch × concurrency-sni
 folded). LOCKED set = M4-L1..L10 as amended + A1-Q1..Q5 + the Amendment #2/#3 bindings. Pending the
 operator commit gate (branch `m4/inline-eval`, commits on approval only).**
 
+## Amendment #4 (2026-07-04, OPERATOR-DIRECTED scope addition — M4 observability fields; routed
+via the supersede/amendment path, deliberate and human-gated)
+
+**Disposition (routing rule applied against VERIFIED phase state):** at receipt, the DESIGN
+freeze-gate had passed (`1cd1a60`), PLAN-p0 was frozen (`75ac522`), the ledger schema v1 was built
+and merged (T1 `fb0568a`), and ledger rows existed (row 1, `32bd7f2`) ⇒ **routing branch 3: no
+mid-phase retrofit; P0.1 schema-bump queued immediately after P0 completion** (P0 completed at
+`32bd7f2`; P0.1 executes next, before P1). Recorded as a board `DECISION` + **D142**.
+
+**The addition (extends M4-L10; ADDITIVE-ONLY; ledger row schema v1 → v2; no backfill — v1 rows
+read as `failure kinds unclassified / cost null`, never fabricated):**
+1. **Ledger cost columns:** per-task `{tokensIn, tokensOut, wallClockS}` in the ledger row —
+   populated where the platform exposes them, **explicit nulls** where not (usage_meter honesty).
+   *Named consumers:* the M4-L7 acceptance-driven routing break-even; post-July-7 anchor-metering
+   budgeting.
+2. **Failure-kind enum:** one structured field per gate rejection (and per M4 ladder event, P1+),
+   enum `{test-regression, lane-drift, spec-misread, integration-conflict, packaging, security,
+   other}` (+ the reader-side `unclassified` for v1/legacy rows) — classified by the ORCHESTRATOR
+   at gate time, **never worker self-classified** (D33). An unknown kind at row-BUILD time RAISES
+   (producer bug, loud); at READ time unknown/absent maps to `unclassified` (observability,
+   fail-soft with explicit sentinel). *Named consumers:* the τ-calibration failure-type-mix
+   parameter (§1 named it unmeasured); recurrence/L19 failure-class hardening.
+3. **Structured degraded-mode signal (folds BACKLOG #16 into M4):** the stdout-only NOTE fallbacks
+   gain a machine-readable leg — `kata_restore`: additive `collect_integrated_tasks_ex(...) ->
+   {tasks, degraded, reasons}` (the bare-set `collect_integrated_tasks` delegates, byte-identical
+   BC) + additive `restore()` keys `degraded: bool` / `degraded_reasons: [str]`; the ledger row v2
+   gains `degraded: [{scope, reason}]` covering every M4 degrade path (resolver-None, missing kill
+   binding, tools-dir unresolvable, absent-locator pending row). NOTEs stay (the human leg).
+   *Named consumers:* degraded-run exclusion in calibration/A-B analysis; programmatic restore
+   callers (kata-orient/kata-readiness).
+**Constraints honored:** all fields orchestrator/gate-side or on already-emitted artifacts — zero
+new per-checkpoint worker emissions (M4-L1 holds); D136 fail-closed only where a field drives a
+decision; every item has a named consumer (none dropped).
+
 **P0 status (dated note, 2026-07-04):** P0 BUILT + instrumented calibration run #1 COMPLETE.
 PLAN-p0-telemetry frozen (own double gate: v1 HOLD incl. a kill-switch-relocation BLOCKER; v2
 SHIP-WITH-FIXES; all folded). T1 `fb0568a` (kata_telemetry, +70 tests → 2376/3, 7 mutation proofs,
