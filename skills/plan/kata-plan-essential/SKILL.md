@@ -4,7 +4,7 @@ description: >-
   Coarse vertical slices with disjoint ownership and a runnable gate per task. Pick this for PoC-grade plans,
   time-boxed spikes, or any context where a lightweight DAG is enough and full threat modeling is not warranted.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: plan
 status: experimental
 agnostic: true

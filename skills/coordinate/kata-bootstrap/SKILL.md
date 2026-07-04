@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.1.3
+version: 0.2.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -137,7 +137,7 @@ line in the plain-language statement ("this is a medium-cost run").
 
 ## Phase 3 — write kata.config + launch
 Write `kata.config` (JSON, branch root) per `protocol/config.md`: `mode`, `modules`, `effort`, `tiers`,
-`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**, **`securityScan`**. Bootstrap writes the config
+`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**, **`securityScan`**, **`inlineEval`**. Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;
 a second validation pass here would be redundant bloat). Then hand off to the loop ([[kata-orchestrate]]).
 
@@ -178,3 +178,11 @@ block is ADDITIVE — it supplies inputs to `kata_models.resolve()` but never al
 A run written without a `models` block continues to behave exactly as before; adding the block only
 activates the relative-tier resolver for below-anchor cells. Never write the block in a way that could
 break the no-block path.
+
+**Inline-eval mode (`inlineEval`, M4-L8 bootstrap default):** write `"telemetry"` for every new-run config.
+`telemetry` is record-only — per-task checkpoint records plus the git-durable calibration ledger, with NO
+triggers, ladder, or kills (all P1). Its one behavior delta is the worker checkpoint-commit mandate added to
+the dispatch brief; that mandate's cost is exactly what the M4-P0 instrument measures. **Absent ⇒ `"off"`
+(byte-for-byte BC)** — omitting the field on an existing run leaves that run unchanged. **Forward rule:**
+offer `"on"` (the P1 scheduling/reroll mode) only once the harness telemetry ledger holds **≥3 instrumented
+runs** — until that calibration data exists, stay on `"telemetry"`.

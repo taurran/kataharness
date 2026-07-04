@@ -94,6 +94,11 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
   classification or magnitude — restate verbatim so a worker can't drift).
 - **verify** — the runnable, default-FAIL command(s) that prove the task done.
 - **acceptance_criteria** — falsifiable checks a fresh-context evaluator can confirm.
+- **estimate** *(OPTIONAL, minutes)* — a per-task time estimate feeding the M4 slack signal (A1-Q3, the
+  ledger-median → frontmatter → absent precedence). Omit it freely; a task with no `estimate:` simply falls
+  through to the next source. When present it MUST be numeric (minutes) — a present-but-non-numeric
+  `estimate:` **fails plan freeze** (freeze-time raise, not a mid-run surprise); the runtime
+  `kata_telemetry.resolve_estimate` raise is the second-line backstop.
 
 ## Quality bar (the invariant — all tiers must meet this)
 
@@ -105,6 +110,8 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
   the surface is cited with a concrete `file:line`, or the capability is labeled NEW.
 - The Dependency Manifest (`kata.dependencies.json`) is present at freeze per `protocol/dependencies.md` (D29);
   the PRE-FLIGHT phase provisions the approved set before `kata-orchestrate` dispatches.
+- Any per-task `estimate:` present is numeric (minutes); a present-but-non-numeric `estimate:` **fails the
+  freeze** (A1-Q3 freeze-time validation — bootstrap does not validate plans, so the freeze is the gate).
 
 When these hold, **freeze the plan** and hand to [[kata-orchestrate]].
 
