@@ -8,6 +8,31 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [Unreleased] — Freeze/Float M4-P1: the code-class mechanism (`inlineEval: on` live)
+
+**Detection now acts.** PLAN double-gated (v1 HOLD 4H/4M/5L; re-gate v2 SHIP-WITH-FIXES 1H/3M/3L —
+all 20 folded); built dogfooded + instrumented (ledger row #2: 4 tasks / 10 checkpoints, 10/10
+evidence digests re-derived MATCH, zero drift, first-pass 4/4); L19 integrated cross-seam sweep
+over the whole M4 body: SHIP-WITH-FIXES 0 HIGH / 4 MED / 6 LOW, all folded.
+
+- `tools/kata_risk.py` (NEW): the one-dial capped-sum risk score (A1-Q4 weights/τ as `[TUNABLE]`
+  data; STRICT `>` trigger comparator, mutation-pinned), `should_trigger` decision function,
+  VALUE-object `resolve_inline_eval_params` (object form REQUIRES `mode`); pure/no-subprocess,
+  57 tests, 4 mutation proofs, Snyk 0.
+- `kata-inline-eval` 0.1.0 (NEW, 48th skill): one-page fresh-context no-write chunk evaluator
+  (`VERDICT: continue|correct|reroll`); registered `economy` in D131 with a 15-cell never-anchor
+  pin test.
+- `kata-orchestrate` 0.7.0: the M4 scheduler (scan at liveness passes + DONE, sha-carrying ladder
+  `DECISION` lines, cursor recovery, SCAN-ERR once-per-window, ONE batch slack rule) + the
+  corrective-action ladder (inline eval at strictly-below-anchor with BOTH never-anchor carve-outs
+  incl. the R2 reciprocal exception; correct/reroll = one kill-and-restart primitive on attempt
+  branches with confirmed-dead + index-continuity + liveness-reset semantics; grounding pass before
+  reroll #2; trigger #3 = existing `human-required`; A1-Q5 arbitration verbatim; per-platform kill
+  bindings); `inlineEval` object form live (`{mode, tau?, weights?}`).
+- `adapters/ADAPTER-CONTRACT-M4.md` (NEW, M4-L9 normative; LD7 fallback named-deferred);
+  `kata-tdd` 0.2.1; config.md `inlineEval` v2 row; +1 restore seam pin test (checkpoint-trailer
+  bodies inert through --no-ff merges). Suite 2396 → 2470; validator 48/0/0. D143.
+
 ## [Unreleased] — Freeze/Float M4-P0: telemetry (the inline-evaluator measurement substrate)
 
 **Pure measurement — record everything, act on nothing.** M4 DESIGN frozen through a double
