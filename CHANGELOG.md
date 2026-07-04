@@ -8,6 +8,34 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [Unreleased] — Freeze/Float M4-P0: telemetry (the inline-evaluator measurement substrate)
+
+**Pure measurement — record everything, act on nothing.** M4 DESIGN frozen through a double
+fresh-context freeze-gate (v1 HOLD 4 HIGH/7 MED/3 LOW; v2 SHIP-WITH-FIXES 2 HIGH/4 MED/4 LOW — all
+folded); PLAN-p0 likewise double-gated (v1 HOLD incl. a relocated kill-switch BLOCKER; v2
+SHIP-WITH-FIXES incl. a wrong-repo CWD bug and a git-config-dependent digest). BC:
+`kata.config.inlineEval` absent ⇒ `off` ⇒ byte-for-byte today's behavior.
+
+- `tools/kata_telemetry.py` (NEW): fail-closed (D136) `Kata-Checkpoint:` trailer parser +
+  checkpoint scanner (duplicate/merge-commit trailers raise), evidence digest over git blob hashes
+  (stamp = index, verify = commit tree + parent-tree deletion semantics; `--no-renames` +
+  `core.quotepath=off` pinned), slack substrate (PROGRESS events, ledger class-median with
+  calibration-row exclusion, zero-progress guard), per-task telemetry records, ledger rows, and the
+  worker CLI `emit-trailer` (required `--repo-root`). Suite 2306 → 2376 (+70, incl. a real-git
+  round-trip with deletion + rename); 7 mutation proofs; Snyk medium+ 0.
+- `kata-orchestrate` 0.6.0: `inlineEval` load-guard (malformed ⇒ STOP, never coerced); the
+  conditional worker checkpoint mandate (concrete injected CLI invocation; tools-dir-unresolvable ⇒
+  `effectiveMode: "off"` + NOTE); per-task telemetry step (detection-only — the existing lane
+  check's blocking posture untouched); ledger closeout with D141(b) board-`DECISION` approval gate.
+- `kata-tdd` 0.2.0 (checkpoint cadence: stage → emit → commit, mechanical outputs only, D33);
+  `kata-bootstrap` 0.2.0 (`inlineEval: "telemetry"` new-run default; offer `on` at ≥3 ledger runs);
+  `kata-plan` RUBRIC `estimate:` authoring + freeze-time validation (tier skills 0.1.1).
+- `protocol/config.md` `inlineEval` row; 4 new exec-safety sink registry rows;
+  `.planning/telemetry-ledger.md` (NEW — the committed calibration ledger, human-gated appends);
+  `.kata-settings.json` gains the `telemetryLedger` locator (documented in `kata_settings.py`).
+- D141: partial supersede of D134 (worker checkpoint commits become load-bearing for M4 reroll
+  anchoring; restore semantics unchanged) + the ledger commit-authority ruling.
+
 ## [Unreleased] — Freeze/Float M1-P2: the float (contract-edge scheduling)
 
 **The behavior change of the Freeze/Float program (D138): a contract-only dependent now dispatches at

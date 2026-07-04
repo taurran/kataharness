@@ -6,6 +6,12 @@ settings** so each run can find the project to work on:
 - ``parentDir`` — the default parent project folder (overridable per run).
 - ``vaultDir``  — where the vault / second brain sits (optional; the learning
   component reads/writes here). Absent ⇒ learning is a no-op (BC1).
+- ``telemetryLedger`` — absolute path to the harness repo's committed M4
+  telemetry ledger (``.planning/telemetry-ledger.md``); the locator target-repo
+  runs use to READ (slack class-medians) and APPEND (closeout row) — identical
+  resolution both directions (M4-P0 T4, gate v2 F4). Absent ⇒ the ledger source
+  is absent: medians fall through per A1-Q3 and closeout rows land in
+  ``.kata/telemetry/ledger-row.pending.json``, surfaced (never silent).
 
 The settings file is ``<harness_home>/.kata-settings.json`` (git-ignored). These
 values SEED the per-run ``kata.config`` path-fields (``target.path``,
