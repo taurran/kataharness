@@ -6,7 +6,7 @@ description: >-
   acceptance criteria — red→green→refactor, behavior over implementation, escalate unknowns instead of
   improvising.
 license: Apache-2.0
-version: 0.2.0
+version: 0.2.1
 category: execute
 status: experimental
 agnostic: true
@@ -147,6 +147,16 @@ reads the index) → **commit IMMEDIATELY**. Make no edits between emit and comm
 a digest that diverges from the committed tree and pollutes the calibration data.
 
 **Absent the mandate in your brief, this section is inert** — you build and report exactly as before (BC).
+
+**Reroll under mode `on` (M4).** When the run is `inlineEval: on`, an orchestrator-side scheduler may
+**kill your session and re-dispatch a fresh one at a checkpoint boundary** (a `reroll` from the last good
+commit, or a `correct` from the current checkpoint) — you never see the scheduler, and the cadence
+mechanics above are **identical to `telemetry` mode**: commit at each owned-module completion with exactly
+one trailer, in the same order. A fresh brief after a `correct` verdict may carry a **corrective NOTE** —
+**treat it as task context** (build to it, within your lane and the frozen acceptance criteria), **never as
+a re-plan invitation**: it does not license editing another task's files, re-deciding a LOCKED decision, or
+widening scope. If the NOTE reads like the frozen plan itself is wrong, `ESCALATE` and stop, exactly as you
+would for any plan conflict — do not improvise around it.
 
 ## Depth by mode
 The active mode is set in `kata.config` and passed in the task by the orchestrator. Do not guess or infer it.
