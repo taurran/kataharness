@@ -94,6 +94,16 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
   classification or magnitude — restate verbatim so a worker can't drift).
 - **verify** — the runnable, default-FAIL command(s) that prove the task done.
 - **acceptance_criteria** — falsifiable checks a fresh-context evaluator can confirm.
+- **estimate** *(OPTIONAL, minutes)* — a per-task time estimate feeding the M4 slack signal (A1-Q3, the
+  ledger-median → frontmatter → absent precedence). Omit it freely; a task with no `estimate:` simply falls
+  through to the next source. When present it MUST be numeric (minutes) — a present-but-non-numeric
+  `estimate:` **fails plan freeze** (freeze-time raise, not a mid-run surprise); the runtime
+  `kata_telemetry.resolve_estimate` raise is the second-line backstop.
+- **class** *(OPTIONAL, one of `code | research | debug`; default `code`)* — the task's work-class, read by
+  [[kata-orchestrate]]'s M4 inline-eval scheduler to select the per-class risk leash + weight table
+  (`kata_risk.DEFAULT_TAU` / `kata_risk.DEFAULT_WEIGHTS_BY_CLASS`). Omit it ⇒ `code`. An **unknown value**
+  (anything other than the three) **fails plan freeze** (freeze-time raise, not a mid-run surprise — the same
+  freeze-gate posture as `estimate:`). `class:` is **never** derived from `runShape` (provenance-only, LOW-14b).
 
 ## Quality bar (the invariant — all tiers must meet this)
 
@@ -105,6 +115,13 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
   the surface is cited with a concrete `file:line`, or the capability is labeled NEW.
 - The Dependency Manifest (`kata.dependencies.json`) is present at freeze per `protocol/dependencies.md` (D29);
   the PRE-FLIGHT phase provisions the approved set before `kata-orchestrate` dispatches.
+- Any per-task `estimate:` present is numeric (minutes); a present-but-non-numeric `estimate:` **fails the
+  freeze** (A1-Q3 freeze-time validation — bootstrap does not validate plans, so the freeze is the gate).
+- Any per-task `class:` present is one of `code | research | debug`; an unknown value **fails the freeze**
+  (same freeze-time validation gate as `estimate:`).
+- **No plan task id begins `area:`** — that prefix is reserved for [[kata-orchestrate]]'s M4 per-area
+  `failureKinds` attribution convention, so a colliding task id would corrupt closeout attribution; a task id
+  starting `area:` **fails the freeze** (re-gate v2 LOW-6).
 
 When these hold, **freeze the plan** and hand to [[kata-orchestrate]].
 

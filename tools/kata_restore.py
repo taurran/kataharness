@@ -346,10 +346,44 @@ def collect_integrated_tasks(
         Task-ids that have a durable integration commit on the branch (within
         this run's window when ``plan_path`` is provided).  Returns an empty set
         when the branch doesn't exist, has no commits, or on any git error.
+
+    Notes
+    -----
+    Delegates to :func:`collect_integrated_tasks_ex` and returns its ``["tasks"]`` —
+    byte-identical behaviour and NOTE prints (BC, P0.1 U2); the structured degraded
+    signal is available via the ``_ex`` variant.
     """
-    lines = _scan_integration_commit_bodies(repo_root, integration_branch, plan_path)
+    return collect_integrated_tasks_ex(repo_root, integration_branch, plan_path)["tasks"]
+
+
+def collect_integrated_tasks_ex(
+    repo_root: str,
+    integration_branch: str,
+    plan_path: Union[str, Path, None] = None,
+) -> dict[str, Any]:
+    """Like :func:`collect_integrated_tasks`, but returns a structured degraded signal.
+
+    Returns
+    -------
+    dict
+        ``{"tasks": set[str], "degraded": bool, "reasons": list[str]}`` — ``degraded``
+        is true iff ``reasons`` is non-empty (P0.1 U2 / delta-gate).  Reasons aggregate
+        the widened ``_scan_integration_commit_bodies`` signal (``"integration-scan-
+        unbounded"``), the ``lines is None`` git-error reason
+        (``"integration-history-unreadable"``, MED-2 — the MOST degraded path, which
+        today prints no NOTE), and the malformed-Kata-Invalidated / phantom-id NOTE
+        sites (their verbatim prints stay).  ``collect_integrated_tasks`` returns this
+        dict's ``["tasks"]`` unchanged (BC).
+    """
+    lines, reasons = _scan_integration_commit_bodies(repo_root, integration_branch, plan_path)
+    reasons = list(reasons)
     if lines is None:
-        return set()
+        # Git error: the MOST degraded path (integration history unreadable). Today it
+        # prints no NOTE; the structured reason closes that false-clean gap (MED-2).
+        # collect stays over-dispatch-SAFE (empty set ⇒ redispatch everything); only
+        # parse_supersede_trailers RAISES on this path (out of the #16 fold).
+        reasons.append("integration-history-unreadable")
+        return {"tasks": set(), "degraded": True, "reasons": reasons}
 
     integrated: set[str] = set()
     invalidated: set[str] = set()
@@ -376,6 +410,7 @@ def collect_integrated_tasks(
                 "under-dispatches.",
                 flush=True,
             )
+            reasons.append("malformed-invalidated-trailer")
 
     # Corroboration (adval P1-F2): an invalidation id that never matched ANY
     # integration trailer is the under-dispatch signature — a typo'd/garbled id
@@ -392,30 +427,41 @@ def collect_integrated_tasks(
             "fail-closed authority. Resolve manually if this run under-dispatches.",
             flush=True,
         )
+        reasons.append("phantom-invalidation-id")
 
     # Set-based subtract (Freeze/Float M1-P1, D138): OVER-DISPATCH-SAFE.  A task
     # integrated → invalidated → re-integrated bears BOTH trailers and is subtracted
     # (⇒ redundantly re-dispatched — the SAFE direction, D134/D135).  A run with no
     # Kata-Invalidated: trailer returns the byte-identical integrated set (BC).
-    return integrated - invalidated
+    return {"tasks": integrated - invalidated, "degraded": bool(reasons), "reasons": reasons}
 
 
 def _scan_integration_commit_bodies(
     repo_root: str,
     integration_branch: str,
     plan_path: Union[str, Path, None] = None,
-) -> "list[str] | None":
-    """Return the commit-body lines of THIS run's integration commits, or ``None`` on
-    a git error.
+) -> "tuple[list[str] | None, list[str]]":
+    """Return ``(lines, degraded_reasons)`` for THIS run's integration commits.
 
     The shared bounded scan behind ``collect_integrated_tasks`` (Kata-Task /
     Kata-Invalidated) and ``parse_supersede_trailers`` (Kata-Supersede).  Resolves the
     fork-point from ``plan_path`` (the most recent integration commit that touched the
     frozen PLAN) and bounds ``git log --format=%B`` to commits AFTER it; falls back to
     the full history with a loud NOTE when the fork-point can't be resolved (mirrors
-    the prior collect_integrated_tasks behaviour byte-for-byte).  Returns ``None`` on a
-    git ``CalledProcessError``/``OSError`` so callers fail safe.
+    the prior collect_integrated_tasks behaviour byte-for-byte).
+
+    Return contract (P0.1 U2 / delta-gate HIGH-1 — the named seam):
+    - ``lines``: the commit-body lines, or ``None`` on a git
+      ``CalledProcessError``/``OSError`` (the MOST degraded path — callers fail safe).
+    - ``degraded_reasons``: a structured signal ADDITIVE to the verbatim NOTE prints
+      (which stay at their current sites).  The unbounded fallback (fork-point
+      unresolvable with a ``plan_path`` provided) appends ``"integration-scan-
+      unbounded"``.  The ``lines is None`` git-error reason
+      (``"integration-history-unreadable"``, MED-2) is appended by
+      :func:`collect_integrated_tasks_ex`, since ``parse_supersede_trailers`` RAISES on
+      that path instead (deliberately OUT of the #16 fold).
     """
+    reasons: list[str] = []
     root = Path(repo_root).resolve()
 
     # ------------------------------------------------------------------
@@ -467,6 +513,10 @@ def _scan_integration_commit_bodies(
                 "under-dispatch. Resolve manually.",
                 flush=True,
             )
+            # Structured degraded signal ADDITIVE to the NOTE (P0.1 U2). Only when a
+            # plan_path was provided — an unbounded scan with no plan_path is BY DESIGN
+            # (no NOTE, not degraded).
+            reasons.append("integration-scan-unbounded")
         # `--` at end = end-of-options / no path filter (defense-in-depth).
         git_cmd = [
             "git", "log", "--format=%B", integration_branch, "--",
@@ -481,9 +531,9 @@ def _scan_integration_commit_bodies(
             check=True,
         )
     except (subprocess.CalledProcessError, OSError):
-        return None
+        return None, reasons
 
-    return result.stdout.splitlines()
+    return result.stdout.splitlines(), reasons
 
 
 def parse_supersede_trailers(
@@ -516,7 +566,7 @@ def parse_supersede_trailers(
     (adval P1-F4) — the M1-L8 surface-drift check is the backstop that catches the
     unauthorized change itself.
     """
-    lines = _scan_integration_commit_bodies(repo_root, integration_branch, plan_path)
+    lines, _reasons = _scan_integration_commit_bodies(repo_root, integration_branch, plan_path)
     if lines is None:
         raise ValueError(
             "kata_restore: cannot read integration history for Kata-Supersede "
@@ -673,7 +723,13 @@ def restore(
             "integrated":     set[str],   # task-ids with integration commits
             "board_frontier": dict,       # folded board (corroborating only)
             "board_content":  str,        # raw board text from trail
+            "degraded":         bool,       # true iff a degraded-scan reason fired (P0.1 U2)
+            "degraded_reasons": list[str],  # aggregated reasons (empty on a clean scan)
         }``
+
+    The ``degraded``/``degraded_reasons`` keys are ADDITIVE (dict-BC) and are present
+    on BOTH paths — the non-lost-run ``_empty`` early return carries
+    ``degraded=False`` + ``degraded_reasons=[]`` (LOW-5, the stable dict contract).
 
     Raises
     ------
@@ -683,12 +739,14 @@ def restore(
         ``parse_plan_tasks`` — silently swallowing it would cause under-dispatch.
     """
     _empty: dict[str, Any] = {
-        "lost_run":       False,
-        "redispatch":     set(),
-        "plan_tasks":     set(),
-        "integrated":     set(),
-        "board_frontier": {},
-        "board_content":  "",
+        "lost_run":         False,
+        "redispatch":       set(),
+        "plan_tasks":       set(),
+        "integrated":       set(),
+        "board_frontier":   {},
+        "board_content":    "",
+        "degraded":         False,
+        "degraded_reasons": [],
     }
 
     # Step 1 — detect lost run
@@ -714,7 +772,10 @@ def restore(
         # invalid YAML, no task maps); let it — and any unexpected error — propagate.
         plan_tasks = parse_plan_tasks(plan_path)
 
-    integrated = collect_integrated_tasks(repo_root, integration_branch, plan_path=plan_path)
+    integrated_ex = collect_integrated_tasks_ex(
+        repo_root, integration_branch, plan_path=plan_path
+    )
+    integrated = integrated_ex["tasks"]
     redispatch = compute_redispatch_set(plan_tasks, integrated)
 
     # Step 4 — C2 cleanup for each task to be re-dispatched
@@ -730,10 +791,12 @@ def restore(
         (kata_dir / "board.md").write_text(board_content, encoding="utf-8")
 
     return {
-        "lost_run":       True,
-        "redispatch":     redispatch,
-        "plan_tasks":     plan_tasks,
-        "integrated":     integrated,
-        "board_frontier": frontier,
-        "board_content":  board_content,
+        "lost_run":         True,
+        "redispatch":       redispatch,
+        "plan_tasks":       plan_tasks,
+        "integrated":       integrated,
+        "board_frontier":   frontier,
+        "board_content":    board_content,
+        "degraded":         integrated_ex["degraded"],
+        "degraded_reasons": integrated_ex["reasons"],
     }

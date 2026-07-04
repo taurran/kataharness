@@ -2098,3 +2098,165 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   in the orchestrate step. Known-stale left per append-only convention: the D98 record's
   "step 6" anchor (now step 7). Suite 2270 → **2306** (+36 incl. 5 sweep-fold tests); validator
   47/0/0; Snyk medium+ 0. Awaiting the operator merge gate.
+
+<!-- Freeze/Float M4: the inline evaluator/reroll. Spec: specs/inline-eval-m4/. -->
+- **D141 — M4 worker checkpoint-commit cadence: a deliberate PARTIAL SUPERSEDE of D134's "nothing
+  load-bearing depends on worker task-branch commits" + the telemetry-ledger commit authority — 2026-07-04
+  (design-time ruling, folded at the M4 freeze-gate; supersede-never-rewrite, D134 NOT edited).**
+  (a) **Commit-cadence supersede (gate HIGH-1):** M4 (specs/inline-eval-m4/DESIGN.md, M4-L2 as amended)
+  INTRODUCES a mandated per-chunk worker checkpoint commit on the task branch, carrying a one-line
+  `Kata-Checkpoint:` trailer (the M4 signal record). This makes worker task-branch commits LOAD-BEARING for
+  M4 reroll anchoring and inline-eval scheduling — which D134 expressly disclaimed ("workers MAY commit …
+  but nothing load-bearing depends on it"). The supersede is PARTIAL and additive: **D134's restore
+  semantics stand unchanged** (restore = task-granular re-dispatch from the frozen PLAN; a mid-task loss
+  still re-dispatches from scratch; no mid-wave re-attach). M4 adds a NEW consumer of the commit stream
+  (reroll = kill + fresh dispatch from an existing commit — an anchor choice, not a re-attach; the killed
+  worktree is removed+pruned and a fresh one opens at the anchor on a new attempt branch). BC: the cadence
+  mandate rides the dispatch brief ONLY when `kata.config.inlineEval ≠ off`; absent the field ⇒ off ⇒
+  today's dispatch template byte-for-byte (M4-L8).
+  (b) **Ledger commit authority (gate HIGH-4):** the M4 telemetry ledger (`.planning/telemetry-ledger.md`,
+  HARNESS repo) is appended at closeout and rides the existing HUMAN-GATED closeout commit. This creates NO
+  new autonomous-git path: D133's mechanical carve-out remains board→`refs/kata/trail` ONLY. Target-repo
+  runs locate the ledger via `.kata-settings.json` `telemetryLedger`; absent ⇒ ledger source absent (the
+  documented A1-Q3 fail-safe), hot `.kata/telemetry/` still accumulates. When the ledger resolves OUTSIDE
+  the run's target repo (the normal target-repo case), closeout requests a SECOND explicitly human-gated
+  commit in the ledger's repo (same human, same gate, ledger row only); declined/failed ⇒ surfaced as
+  pending-uncommitted, never silent (gate v2 #2).
+  *Why:* the M4 freeze-gate (v1 HOLD, 2026-07-04) caught the DESIGN inheriting a checkpoint cadence that
+  did not exist (kata-orchestrate step 5 is the ORCHESTRATOR's integration commit; kata-tdd never commits)
+  — building on the false premise would have either silently no-opped M4 or forced an ungated ad-hoc
+  mandate mid-build, and making commits load-bearing without recording the D134 tension would be silent
+  drift on a FROZEN decision.
+
+- **D142 — operator-directed M4 observability addition: routed via branch 3 (P0.1 schema bump, no
+  mid-phase retrofit) — 2026-07-04.** The operator directed three additive observability items
+  mid-M4 (ledger cost columns; gate-time failure-kind enum; structured degraded-mode signal folding
+  BACKLOG #16), with an explicit three-branch routing rule keyed on ACTUAL phase state. Verified
+  state at receipt: DESIGN frozen (`1cd1a60`), PLAN-p0 frozen (`75ac522`), ledger schema v1 built
+  (`fb0568a`), row 1 committed (`32bd7f2`) ⇒ **branch 3**: no retrofit; P0.1 executed immediately
+  post-P0, pre-P1. Disposition recorded as a board DECISION + DESIGN Amendment #4 (dated,
+  operator-attributed). *Delivered:* ledger row schema v2 (additive: `perTask` explicit-null cost,
+  `failureKinds` `[{taskId, kind, at}]` orchestrator-classified at gate time — never worker
+  self-classified, D33; `degraded` `[{scope, reason}]`); reader tolerance (absent-`v` = v1; v1 →
+  `unclassified`/null via `failure_kinds_of`; unknown PRESENT version raises — mutation-proven;
+  **no backfill**, row 1 stands); `kata_restore`: `_scan_integration_commit_bodies` widened to
+  `(lines, degraded_reasons)` (both callers unpack; NOTE prints verbatim), additive
+  `collect_integrated_tasks_ex`, `restore()` `degraded`/`degraded_reasons` on both paths incl. the
+  previously silent git-error path (`integration-history-unreadable` — the delta gate's MED-2
+  catch: the WORST restore path had no NOTE at all). Every field has a NAMED consumer (M4-L7
+  routing break-even + anchor-metering budgeting; τ-calibration failure-type mix — the HANDOFF §1
+  unmeasured parameter; degraded-run exclusion in calibration/A-B + kata-orient/readiness); the
+  operator's drop-rule was applied and nothing was dropped. P0.1 scope: per-TASK gate rejections
+  only; final-gate per-area + ladder-event classification widen the entry (`{taskId|area, kind,
+  at}`) in P1 — deferred, stated. *Gates:* delta freeze-gate SHIP-WITH-FIXES (1 HIGH/2 MED/2 LOW,
+  all folded pre-build); suite 2376 → **2396** (+20); 3 mutation proofs (unknown-kind,
+  unknown-version, degraded-flag: disable → named test RED → revert); validator 47/0/0; Snyk
+  medium+ 0; orchestrate 0.6.1. M4-L1 honored: zero new per-checkpoint worker emissions — all
+  three items are orchestrator/gate-side or fields on already-emitted artifacts.
+  *(Addendum 2026-07-04, eval remediation 2 — AC-2's "listed" made literal: the seven T1 mutation-proof
+  guard → test pairs: duplicate-trailer → `test_parse_trailer_duplicate_raises`; trailer-on-merge →
+  `test_scan_checkpoints_merge_with_trailer_raises`; malformed-JSON → `test_parse_trailer_malformed_json_raises`;
+  empty-paths → `test_evidence_empty_paths_raises`; never-tracked-path → `test_evidence_stamp_never_tracked_raises`;
+  ledger-malformed-row → `test_read_ledger_malformed_row_raises`; append-to-missing-ledger →
+  `test_append_ledger_row_missing_file_raises` — each: guard disabled → named test RED → reverted → suite green.
+  The P0+P0.1 fresh-context evaluation (2026-07-04) returned NEEDS_WORK on exactly two record-keeping items —
+  this addendum + the T5 approval board `DECISION` — both closed same-day; all nine rubric surfaces otherwise
+  PASS on independent re-derivation incl. 4/4 evidence-digest MATCH and a live mutation spot-check.)*
+
+- **D143 — M4-P1 built (the code-class mechanism): risk score + inline evaluator + ladder + reroll,
+  dogfooded + instrumented — 2026-07-04.** PLAN-p1-code-class frozen after a double gate (v1 HOLD 4
+  HIGH/4 MED/5 LOW — headline: the resolver-None never-anchor leg missing from implementing text, the
+  THIRD resurfacing of that defect class, caught again; re-gate v2 SHIP-WITH-FIXES 1 HIGH/3 MED/3 LOW —
+  headline: a mode-less object config silently coercing to `off`; all 20 folded). *Delivered:*
+  `tools/kata_risk.py` (one-dial capped-sum score, STRICT `>` comparator mutation-pinned, A1-Q4
+  arithmetic test-pinned, VALUE-object override resolver with mode-REQUIRED raise; 57 tests, 4 mutation
+  proofs: unknown-signal, unknown-class, tau-range, `>`→`>=`; pure/no-subprocess structurally pinned;
+  Snyk 0); `skills/evaluate/kata-inline-eval/SKILL.md` (48th skill — one-page fresh-context no-write
+  chunk evaluator, VERDICT: continue|correct|reroll first-line contract) + SKILL_WORK_CLASS economy
+  registration + the never-anchor pin test (15 cells RED under the hardcode mutation);
+  kata-orchestrate 0.7.0 (M4 scheduler — scan at liveness passes + DONE, cursor + recovery rule,
+  SCAN-ERR once-per-window; the corrective-action ladder — DECISION lines with @sha, both never-anchor
+  carve-outs "never OMIT-inherit", ONE batch slack rule + stop-at-first-kill-verdict, grounding pass,
+  trigger #3 human-required, A1-Q5 arbitration, failureKinds area:<name> convention + task-id guard,
+  active-attempt-branch at loop steps 3/4/5, per-platform kill bindings); config.md inlineEval v2
+  (object-or-string, mode REQUIRED, `on` flipped live); adapters/ADAPTER-CONTRACT-M4.md (M4-L9
+  normative); kata-tdd 0.2.1. *Dogfood telemetry (instrumented run #2, ledger row 2, real):* 4 tasks /
+  10 checkpoints, 10/10 evidence digests re-derived MATCH at gate time, zero lane drift, first-pass
+  acceptance 4/4 (code×opus 1.0), streaks 3/2/3/2 clean. *Honesty notes:* (a) W2's module-2 trailer
+  reported failed=0 while the suite carried the pre-declared out-of-lane README-sync red — trailers
+  must carry raw counts; carve-outs belong to the gate (worker-prose hardening candidate, L19 sweep
+  input); (b) the conductor's first closeout telemetry scan ran POST-merge (rev-list vacuous ⇒
+  checkpoints:0) — caught by read-back before commit, corrected against fork refs; the orchestrate
+  text already mandates the scan at GATE time (step 3) — the deviation was the conductor's, the prose
+  was right; the erroneous row never committed (append-only applies to committed rows). *Gauntlet:*
+  suite 2469/3 (2396 + 57 W1 + 16 W2), validator 48/0/0, Snyk medium+ 0. <1% re-measurement: bracketed
+  (mechanical-ceremony lower bound ~0.4–0.8% run-level vs P0-calibrated upper bound ~1.9%) —
+  INCONCLUSIVE without a controlled real-scale A/B; the live-proof D16 A/B is the clean measurement;
+  remediation (coarsen chunk unit) remains named. L19 integrated sweep next; P2 adapters after.
+  *(Addendum 2026-07-04 — the L19 integrated cross-seam sweep over the WHOLE M4 body
+  (1cd1a60..805dacc, 10 seams explicitly checked incl. board/fix-loop/liveness/escalation/D131/
+  LD6-LD7/M1-contract/trailer-restore/config/ledger): SHIP-WITH-FIXES — 0 HIGH / 4 MED / 6 LOW, all
+  folded same-day: the ladder's area:-convention pointer now has its real documentation (ledger
+  header + closeout block — it had claimed docs that were never written); liveness-clock semantics
+  on a ladder kill pinned (fresh attempt's CLAIM = reset; adjudicated kill never double-handled);
+  checkpoint-index continuity across attempts mandated (anchor i=k ⇒ fresh session starts k+1); LD7
+  host-fallback × attempt topology NAMED-DEFERRED in the adapter contract (treat as reroll-equivalent
+  or degrade); R2 gained the reciprocal inline-eval carve-out (the 4th appearance of the never-anchor
+  class — now closed at BOTH ends); precondition-0 string-leg qualifier; scan-preempts-gate ordering
+  at DONE; slack attempt-spanning caveat in the docstring; +1 seam pin test (checkpoint-trailer
+  bodies inert to the restore scan through a --no-ff merge — suite 2469 → 2470). CORRECTION (sweep
+  LOW-9): the W5 commit message overclaimed "class_median now live" — row 2 holds 4 code samples and
+  the documented threshold is ≥5, so class_median correctly returns None at the shipped default; the
+  8.35 figure was a below-threshold preview, not a live median.)*
+
+- **D144 — M4-P2 built (research + debug adapters): per-class leashes live, class extras DATA'd with
+  named-deferred producers — 2026-07-04.** PLAN-p2-adapters frozen after a double gate (v1 HOLD 3
+  HIGH/4 MED/1 LOW — the milestone's most valuable catch: BOTH new signal sets pointed at artifacts
+  that DO NOT EXIST in the claimed shapes (the deviation-funnel schema carries no hypothesis records;
+  grounding.json is gate-time + gitignored tier-3; coverage_gap named a nonexistent trailer field),
+  and the class tables had dropped the universal hard trio — a missing checkpoint record on a
+  research task would have scored GREEN; re-gate v2 SHIP-WITH-FIXES 2 MED/2 LOW). The folds SHRANK
+  the phase per the operator's anti-overcomplication mandate. *Delivered:* `kata_risk`
+  `DEFAULT_WEIGHTS_BY_CLASS` (base hard trio in EVERY class; research/debug extras DATA'd at A1-Q4
+  weights; `DEFAULT_WEIGHTS` aliased BY REFERENCE, is-identity-pinned), `class_signals` kwarg
+  (overlay-not-replacement weights semantics — P1 tests pass with 0 deletions; cross-class
+  contamination raises; union-validated overrides deliberately inert for classes lacking the key —
+  documented, not a bug), +35 tests (suite 2470 → 2505), 3 mutation proofs (cross-class guard, >=3
+  boundary, research-pair weight), Snyk 0; kata-orchestrate 0.8.0 (the ONE declared scheduler
+  call-line edit + the M4-L6 class-adapters subsection: research verify IS the citation-integrity
+  check riding verify.exit — no separate signal; ALL class extras ABSENT-by-default v1 with
+  NAMED-DEFERRED producers — the durable per-hypothesis diagnose record and the brief-pinned
+  scope/coverage comparators each require their own gated amendment, never a silent claim; ABSENT
+  quiet / MALFORMED raises→treat-as-triggered); kata-plan RUBRIC `class:` field (default code, never
+  runShape) + the task-ids-never-begin-`area:` freeze guard (tier skills 0.1.2). *What P2 ships
+  LIVE:* per-class τ leashes (0.45 research/debug vs 0.50 code) on the base trio + slack; the
+  plumbing awaits producers. *Dogfood telemetry (instrumented run #3, ledger row 3):* 2 tasks / 4
+  checkpoints, 4/4 evidence MATCH, zero drift, first-pass 2/2. **The ledger now holds 3 instrumented
+  runs — the M4-L8 ≥3 threshold for bootstrap to OFFER `inlineEval: on` is met.** Gauntlet: 2505/3,
+  validator 48/0/0 post-regen, Snyk 0.
+
+- **D145 — M4 LIVE PROOF complete: the ladder fired live, the float ran n=0→1, the A/B numbers are in —
+  2026-07-04.** One scratch one-shot (`textstat-lp`, 3 tasks, a REAL `builds_against: stats@pin` edge),
+  two arms (`off` control / `on`), same frozen mini-PLAN, model constant (sonnet), one ARRANGED fault
+  (labeled: T-F committed its true red state — snake_case un-lowercased, 3 failed/5 passed — at
+  checkpoint 0 in the on arm; stopped-red DONE in the control arm). *The mechanism, live:* 4 green
+  checkpoints scored 0.0 — the happy path cost ZERO LLM calls (M4-L1 held live); the red checkpoint
+  scored 0.60 > τ 0.50 ⇒ trigger ⇒ [[kata-inline-eval]] dispatched at claude-sonnet-5 (D131 resolve,
+  strictly below anchor — never OMIT-inherit) ⇒ verdict `correct` WITH a diff-cited ≤10-line NOTE (it
+  identified the exact missing `.lower()` and the 5/3 pass/fail accounting from the diff alone) ⇒
+  ladder DECISION @96d9cd8 ⇒ kill confirmed-dead ⇒ fresh dispatch on `task/TF-attempt2` from the
+  CURRENT checkpoint with the NOTE ⇒ attempt-2 checkpoints i=1,2 (index continuity held) both 0.0 ⇒
+  integration green. *The A/B (outer-loop reduction — the M4-L1 success metric):* control arm = 1 gate
+  rejection + 1 fix re-dispatch; on arm = **0 gate rejections, 0 fix cycles** — the defect never reached
+  the gate. Rejections demonstrably happen at a lower level. *The float (n=0→1):* T-D dispatched AT
+  FREEZE in parallel with its provider against the frozen contract (monkeypatched-interface tests
+  standalone-green); at integration: surface hash == frozen pin (pure body-fill), surviving stubs 0,
+  danglers 0, merged suite 15/15. *Honest economics at toy scale:* green-task overhead +4.9%/+8.8%
+  (≈1.3–2.2k tokens/checkpoint — consistent with P0); the on arm's recovery path cost MORE total tokens
+  than the control's fix cycle (266k vs 202k worker tokens) because the preserved prefix was one tiny
+  module — mid-task recovery pays when the prefix is large relative to session setup; the serial
+  gate→diagnose→redispatch→re-gate path it removes was near-zero here by construction. The <1%
+  green-run cap remains AT-RISK at owned-module chunking (P0/P1 bracket ~0.4–1.9% run-level); named
+  remediation unchanged (coarsen chunk unit). Ledger row #4 (calibration: true — toy durations
+  median-excluded; carries the milestone's FIRST real failureKinds entry + ladder telemetry). All
+  numbers in `.planning/telemetry-ledger.md` + the board DECISION trail.

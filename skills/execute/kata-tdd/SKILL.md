@@ -6,7 +6,7 @@ description: >-
   acceptance criteria — red→green→refactor, behavior over implementation, escalate unknowns instead of
   improvising.
 license: Apache-2.0
-version: 0.1.1
+version: 0.2.1
 category: execute
 status: experimental
 agnostic: true
@@ -125,6 +125,38 @@ boundary or mocking question arises, prefer integration-style tests through the 
 ## Report
 When your `<verify>` passes and you touched only owned files: append `DONE` to [[kata-board]] with the verify
 result, and hand the diff back for the orchestrator's gate. If blocked: `BLOCK`/`ESCALATE` and stop.
+
+## Checkpoint cadence (M4 — only when the dispatch brief mandates it)
+When — and ONLY when — your dispatch brief carries the checkpoint-commit mandate (the run has `inlineEval`
+≠ `off`), commit at each **owned-module completion** (the same boundary as the module-completion PROGRESS
+line — one checkpoint commit per module, conventional message) carrying exactly ONE `Kata-Checkpoint:`
+trailer. You do **not** hand-author the trailer JSON: the brief carries the concrete command (the
+orchestrator injects its own resolved harness `tools/` path and your worktree root), of the form
+`uv run --directory <tools-dir> python -m kata_telemetry emit-trailer --repo-root <your-worktree> --index <i>
+--verify-exit <e> [--passed/--failed/--skipped N] [--lint E]` — run it and paste its single stdout line into
+the commit message.
+
+The trailer carries **mechanical verify outputs only** — exit codes and counts, re-runnable from the commit;
+**never a self-assessment** ("it looks good" is not a checkpoint signal — the D33 boundary). **Never** write a
+`Kata-Task:` trailer — that is the orchestrator's integration-only trailer, not the worker's. **Never** put a
+checkpoint trailer on a **merge** commit, and **never** author **two** `Kata-Checkpoint:` trailers on one
+commit (ambiguous evidence — the parser raises on both).
+
+**Ordering mandate (never reorder):** stage EVERYTHING the chunk changed → **emit** the trailer (the digest
+reads the index) → **commit IMMEDIATELY**. Make no edits between emit and commit — a mis-ordered worker stamps
+a digest that diverges from the committed tree and pollutes the calibration data.
+
+**Absent the mandate in your brief, this section is inert** — you build and report exactly as before (BC).
+
+**Reroll under mode `on` (M4).** When the run is `inlineEval: on`, an orchestrator-side scheduler may
+**kill your session and re-dispatch a fresh one at a checkpoint boundary** (a `reroll` from the last good
+commit, or a `correct` from the current checkpoint) — you never see the scheduler, and the cadence
+mechanics above are **identical to `telemetry` mode**: commit at each owned-module completion with exactly
+one trailer, in the same order. A fresh brief after a `correct` verdict may carry a **corrective NOTE** —
+**treat it as task context** (build to it, within your lane and the frozen acceptance criteria), **never as
+a re-plan invitation**: it does not license editing another task's files, re-deciding a LOCKED decision, or
+widening scope. If the NOTE reads like the frozen plan itself is wrong, `ESCALATE` and stop, exactly as you
+would for any plan conflict — do not improvise around it.
 
 ## Depth by mode
 The active mode is set in `kata.config` and passed in the task by the orchestrator. Do not guess or infer it.

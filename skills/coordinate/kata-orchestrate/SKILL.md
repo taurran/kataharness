@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.5.0
+version: 0.8.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -60,6 +60,27 @@ does not drift.**
      `kata_roles.HOST_ONLY_ROLES`, LD11**) ⇒ **STOP + escalate at preflight** (same fail-closed posture as the
      mode/effort/tiers/modules guard above). **BC1:** `roles` absent ⇒ `resolve_roles` returns every role
      assigned to the host ⇒ today's single-host loop byte-for-byte (DESIGN R5/LD3).
+   - **`inlineEval` load-guard (M4-L8/M4-L10 — ADDITIVE; BC: absent ⇒ `off`, byte-for-byte unchanged):** add
+     `kata.config.inlineEval` to the strict-validation list — **(string form; the object form is the NEXT
+     bullet's leg)** validate it mechanically via
+     `kata_telemetry.validate_inline_eval(inlineEval)`: `None`/absent ⇒ `"off"` (the BC fail-safe); exactly
+     `"off"`/`"telemetry"`/`"on"` ⇒ itself; **anything else** (case-variant, wrong type, unknown string) raises ⇒
+     **STOP + escalate** (the same fail-closed posture as the mode/effort/tiers/modules guard above — a
+     present-but-malformed value is never silently coerced to `"off"`, D45/GB12). The resolved value is the run's
+     **base** `inlineEval` mode; a task's **effective** mode may degrade below it at dispatch (see the checkpoint
+     mandate in § The loop step 2).
+   - **`inlineEval` object-form leg (M4-P1 — ADDITIVE; BC: a string / absent `inlineEval` takes the leg above
+     byte-for-byte unchanged):** when `kata.config.inlineEval` is an **object**, do NOT pass the object to
+     `kata_telemetry.validate_inline_eval` (its `None`⇒`"off"` BC leg is for an ABSENT FIELD, not a present
+     mode-less object — re-gate v2 HIGH-1). Instead: **(1)** require **`'mode' in value`** — **missing ⇒ STOP +
+     escalate** (never a silent `"off"`); **(2)** `kata_telemetry.validate_inline_eval(value['mode'])` fixes the
+     run's **base** mode; **(3)** `kata_risk.resolve_inline_eval_params(value)` — passing **the `inlineEval` VALUE
+     object itself, NEVER the whole `kata.config`** (re-gate v2 MED-2: the whole config would hit the absent-block
+     quiet path and silently ignore every override) — resolves the run's effective `{weights, tau}`. **Any raise
+     from any of the three ⇒ STOP + escalate** (GB12/D45), the same fail-closed posture as the string leg. The
+     resolved `{weights, tau}` are the run's inline-eval params, consumed by `kata_risk.should_trigger(...)` at each
+     scan (§ The M4 scheduler). A string / absent value carries no override ⇒ `{weights, tau}` default to
+     `kata_risk.DEFAULT_WEIGHTS`/`DEFAULT_TAU` (the same result `resolve_inline_eval_params` returns for a string).
 1. **PRE-FLIGHT gate** — conditional, fail-closed, BC-preserving (N5/D29). Call
    `kata_preflight.preflight_required(repo_root)`:
    - **`False`** (no `kata.dependencies.json` manifest): PRE-FLIGHT is not required — proceed
@@ -313,6 +334,30 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      CLAIMs and then works silently for tens of minutes is indistinguishable from a hung one — the Kenjiri
      F3 failure). `PROGRESS` is excluded from coordination and concurrency evidence; it exists for the
      liveness monitor and the M4 slack-timing estimator.
+   - **Checkpoint mandate (M4-P0 — ADDITIVE; BC: effective mode `off`/absent ⇒ this bullet is inert, no mandate
+     text enters the brief, byte-for-byte unchanged).** When the task's **effective `inlineEval` mode ≠ `off`**
+     (`telemetry` or `on`), the worker prompt **additionally** mandates a per-chunk checkpoint-commit cadence on
+     the task branch:
+     - **Commit at each owned-module completion** — the same boundary as the F3 `done/owned` PROGRESS line (one
+       checkpoint commit per module), a conventional commit message, and **NO `Kata-Task:` trailer** (that stays
+       integration-only, orchestrator-authored at step 5).
+     - The commit carries **exactly ONE `Kata-Checkpoint:` trailer**, emitted via the T1 CLI — **never
+       hand-authored, never on a merge commit** — and the trailer carries **mechanical outputs only** (verify exit
+       code + counts, lint exit, evidence digest; **never worker self-assessment** — the D33 no-self-cert boundary).
+     - **Concrete injected invocation — the orchestrator resolves BOTH paths at dispatch (the worker never guesses
+       a path).** The orchestrator resolves its own harness `tools/` directory and the worker's worktree root and
+       injects the exact command into the brief:
+       `uv run --directory <resolved-tools-dir> python -m kata_telemetry emit-trailer --repo-root <worker-worktree-root> --index <i> --verify-exit <e> [--passed <n>] [--failed <n>] [--skipped <n>] [--lint <e>] [--paths ...]`
+       — `--repo-root` is **required** (the `uv run --directory` prefix changes CWD to the harness tools dir, so an
+       unqualified default would digest the WRONG repo; the `protocol/board.md` pass-the-path-as-argv precedent).
+     - **Ordering:** stage everything the chunk changed → emit the trailer (the digest reads the index) → commit
+       immediately, no edits between emit and commit — the full ordering mandate lives in [[kata-tdd]]'s
+       checkpoint-cadence section (do not restate it here).
+     - **Tools-dir unresolvable ⇒ degrade, never guess.** If the orchestrator cannot resolve its harness `tools/`
+       directory, the mandate is **omitted** and the task's **`effectiveMode` is recorded `"off"`** (mandate not
+       dispatched) with a board **NOTE** — the EXISTING per-task effective-mode degrade taxonomy (M4-L10 as
+       amended), NOT a third degrade shape. The task then appears in `zeroCheckpointTasks` only as the arithmetic
+       consequence, and the ledger distinguishes the cause by its recorded effective mode.
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 
    **Liveness monitor (F3 — dark-worker detection; NO blind kill).** While workers run, the orchestrator
@@ -351,6 +396,49 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    two-dot `git diff integration..task`: if the task forked from an earlier integration head, the two-dot
    diff lists every file integration changed afterward as a *foreign* file and falsely trips the drift
    check. Feed the commit-scoped set to `footprint.is_within_footprint(changed, ownership)`.
+   **Active attempt branch (M4-P1 — ADDITIVE; BC: no reroll ⇒ `task_ref` is the original task branch, unchanged):**
+   after any M4 reroll (§ The corrective-action ladder), `task_ref` is the task's **ACTIVE attempt branch**
+   (`<task>-attempt<n>`), never the abandoned one — the merge-base with integration stays the original fork point
+   (single base), so the three-dot lane check is **unchanged in behavior** (M4-L2 as amended; gate v2 #7).
+   **Per-task telemetry (M4-P0 — ADDITIVE; only when the task's effective `inlineEval` mode ≠ `off`; BC: mode
+   `off`/absent ⇒ this step is a silent no-op, no artifact written, the gate byte-for-byte unchanged).** This step
+   runs **AFTER** the lane check above and is **pure measurement — detection-only, it NEVER blocks the task** (P0
+   records signal vectors; it computes no risk score, no τ, no trigger — all P1). **Scope guard (MED-7):** the
+   EXISTING lane check — its own `footprint.changed_in_task` invocation and its **BLOCKING** posture on a raise
+   (multi-merge-base / F5-2 / D136) — is **byte-for-byte untouched**; the "never blocks" property below governs
+   ONLY this new telemetry computation, never the task gate (M4-L8).
+   1. **Scan the task's checkpoints:** `kata_telemetry.scan_checkpoints(repo_root, <active task branch>, integration_ref)`
+      → the oldest-first `{sha, record}` list (post-reroll, "the task branch" = the ACTIVE attempt branch).
+   2. **Per-checkpoint lane drift:** for each checkpoint sha, `kata_telemetry.checkpoint_changed_files(repo_root, sha)`
+      then `footprint.partition(changed, ownership)["out_of_footprint"]` (the `kata_telemetry.checkpoint_lane_drift`
+      wrapper composes exactly this — REUSES footprint, no reimplementation).
+   3. **Per-checkpoint slack:** `kata_telemetry.parse_progress_events(<shared board text>, task_id)` →
+      `kata_telemetry.resolve_estimate(median, <plan-frontmatter estimate>)` → `kata_telemetry.slack_ratio(events,
+      estimate_min, now_utc)`. The **class-median source resolves IDENTICALLY to the append path** (read/append
+      symmetry, T4): a harness-repo run reads the local `.planning/telemetry-ledger.md`; a target-repo run reads
+      the `telemetryLedger` locator in `.kata-settings.json` — via
+      `kata_telemetry.class_median(kata_telemetry.read_ledger(<resolved ledger path>), task_class)` (absent locator
+      ⇒ median `None` ⇒ `resolve_estimate` falls through to frontmatter/absent, the documented A1-Q3 fail-safe).
+   4. **Build + write the record:** `kata_telemetry.build_task_telemetry(...)` (schema v1 — per-checkpoint verify
+      counts + lane drift + slack; `firstTripIndex`/`ladderEvents` schema'd null/empty in P0) then
+      `kata_telemetry.write_task_telemetry(kata_dir, record)` → `.kata/telemetry/<taskId>.json` (**fail-soft** — an
+      OSError returns a `{"skipped": …}` sentinel surfaced as a board NOTE, never a gate).
+   5. **Zero-checkpoint tell (LOW-12):** a task that reports **DONE with ZERO checkpoint commits** under effective
+      mode ≠ `off` ⇒ record it toward `zeroCheckpointTasks` — **a NOTE, never a gate** (a compliance tell that
+      feeds calibration).
+   6. **Malformed-signal fail-safe:** a RAISE from this ADDITIONAL per-checkpoint telemetry computation
+      (`scan_checkpoints`, per-checkpoint drift, slack) is **surfaced + recorded in the task telemetry as a
+      malformed-signal event** — in P0 this **never blocks the task** (detection-only; the treat-as-triggered
+      response is P1's). It is distinct from — and never reaches — the lane check's own blocking raise above.
+   7. **Failure-kind classification on a gate REJECTION (P0.1, DESIGN Amendment #4 — ADDITIVE; only when the
+      run's effective `inlineEval` mode ≠ `off`):** when THIS per-task gate rejects a task (verify red, lane
+      trip, or scan-fail), YOU — the orchestrator — classify the rejection from the gate evidence into exactly
+      one `kata_telemetry.FAILURE_KINDS` value (`test-regression` | `lane-drift` | `spec-misread` |
+      `integration-conflict` | `packaging` | `security` | `other`) and record `{taskId, kind, at}` for the
+      closeout ledger row's `failureKinds`. **Never worker-self-classified (D33)** — the worker's account is
+      input, the gate evidence decides. P0.1 scope is per-TASK gate rejections only; final-gate fix-loop
+      (per-area) and M4 ladder-event classification arrive with P1 (`{taskId|area, kind, at}` widening) —
+      deferred, stated, never silently skipped.
    **Provider-integration surface re-verify (ADDITIVE — only when the plan declares `builds_against` AND this
    task PROVIDES a contract; BC: absent it ⇒ unchanged).** When a PROVIDER task integrates, re-run
    `contract_edges.surface_hash` on each contract dir it owns. A mismatch against the frozen pin is authorized
@@ -427,8 +515,14 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
       Tier-1 IaC runs (author/review/gate, the `escalate` verdict, `.kata/iac.json`) are **byte-for-byte unchanged**.
 4. **Integrate.** Merge each completed task branch into the integration branch ([[kata-worktree]] — disjoint
    files merge cleanly by construction). Re-run the gate on the integration branch, then recompute the frontier.
+   **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** "each completed task branch" = the task's **ACTIVE attempt
+   branch** after any reroll (the abandoned attempt was worktree-removed+pruned at reroll time; § The
+   corrective-action ladder).
 5. **Commit at the checkpoint** (conventional commit + `Kata-Task: <task-id>` trailer) so compaction
    can't lose work and restore can map each integration commit back to its task.
+   **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** the mapped source is the task's **ACTIVE attempt branch**
+   after any reroll; the single original fork point keeps the `Kata-Task:` mapping stable (§ The corrective-action
+   ladder).
    Completions integrate **in completion order** — a linear integration-branch history, not a wave-batched one.
 
    **Board durability (cadence 1 — D133/B1):** immediately after the integration commit lands, call
@@ -439,6 +533,166 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    A skip result is logged at `NOTE` level on the board and does NOT block integration — it is a
    durability enhancement, not a gate. This call site closes Gap 2/3 (D132) at integration
    granularity, independently of the PreCompact auto-checkpoint hook (built last in the same spec).
+
+## The M4 scheduler (ADDITIVE — M4-P1; fires IFF a task's effective `inlineEval` mode == `on`; BC: below `on` ⇒ inert)
+
+This subsection is **ADDITIVE** and consumes the M4-P0 checkpoint stream — it **REUSES existing machinery** (the
+`DECISION` board line, the existing escalation kinds, the [[kata-worktree]] abort route) and introduces **NO new
+board TYPE, NO new escalation kind, NO new enum, NO new Python**. It fires **IFF a task's effective `inlineEval`
+mode == `on`**. Under `telemetry` (or `off`/absent) the P0 posture is **byte-for-byte unchanged**: signal vectors
+are recorded (§ The loop step 3 per-task telemetry) and **nothing is scheduled, gated, killed, or rerolled**
+(M4-L8/M4-L10; `telemetry` keeps the P0 never-blocks posture). Under `on`, the scheduler additionally turns each
+new checkpoint into a trigger decision.
+
+- **Ordering at `DONE` (L19 sweep LOW-10):** the checkpoint scan runs BEFORE the step-3 task gate; a final-
+  checkpoint trigger that ends in `reroll`/`correct` PRE-EMPTS the gate (the task re-enters in-flight on the
+  fresh attempt — one recovery re-dispatch, never two on one boundary).
+- **Scan cadence.** At **every liveness-monitor pass** (§ The loop step 2) **AND at each worker `DONE`** (§ The
+  loop step 3), scan the task's **ACTIVE attempt branch** for NEW checkpoint commits via
+  `kata_telemetry.scan_checkpoints(repo_root, <active attempt branch>, integration_ref)` (the oldest-first
+  `{sha, record}` list). The happy path costs **zero LLM calls** (M4-L1).
+- **Cursor bookkeeping.** Keep a per-task cursor = the **last-seen checkpoint sha**, as **in-context bookkeeping**
+  exactly like the fix-loop thrash counters (NOT a `state.json` field, NOT a board event TYPE, no new Python) —
+  the ladder `DECISION` lines are the durable recount trail (see *Cursor recovery* in the ladder). Only
+  checkpoints newer than the cursor are scored.
+- **Per new checkpoint:** compute drift + slack via the SAME P0 machinery — `kata_telemetry.checkpoint_lane_drift`
+  for the out-of-footprint set; `kata_telemetry.parse_progress_events` → `kata_telemetry.resolve_estimate` →
+  `kata_telemetry.slack_ratio` for slack — then call
+  `kata_risk.should_trigger(record_or_none, lane_drift, slack_ratio, task_class=<class>, weights=<resolved>, tau=<resolved>, class_signals=<class-signal dict or None>)`
+  with the run's resolved `{weights, tau}` (precondition 0 object-form leg); `<class>` = the task's
+  plan-frontmatter `class:` (default `code`; never `runShape`) and `class_signals` is the per-class
+  producer dict per **§ M4-L6 class adapters** below (`None` on `code` and whenever no producer exists).
+  - `triggered: false` ⇒ **record to telemetry, done** (the happy path costs zero LLM calls — M4-L1).
+  - `triggered: true` ⇒ enter *The corrective-action ladder* below.
+- **Raise ⇒ treat-as-triggered + surface (the A1-Q2 documented fail-safe).** A `scan_checkpoints` /
+  `should_trigger` RAISE under mode `on` is the designed fail-safe: **treat-as-triggered + surface** (P1 flips the
+  P0 record-only response for mode `on`; `telemetry` mode keeps the P0 never-blocks posture). A raise has no score
+  and possibly no sha, so its ladder line takes the shape
+  `ladder: <task> trigger <n> @<sha|SCAN-ERR> score ERR verdict <v>` (re-gate v2 MED-3). A **`SCAN-ERR`
+  adjudication covers THAT SCAN WINDOW and counts ONCE on the ladder** — a persistent git error must not re-fire
+  per conductor restart into an unbounded loop; the ≤3 ladder bound applies to raise-triggers exactly as to scored
+  ones.
+
+### M4-L6 class adapters (P2 — ADAPTERS on the one scheduler; ABSENT-by-default extras, producers named-deferred)
+
+M4-L6 is **one scheduler, three signal sets** — the scheduler, ladder, reroll, kill bindings, and cursor
+machinery above are UNCHANGED; the class adapters add only **which signals a class scores** and **at which
+leash**. **Class detection = the task's plan-frontmatter `class:`** (default `code`; **never `runShape`** —
+`runShape` is provenance-only, LOW-14b). This resolves the `task_class=<class>` argument in the call above,
+selecting BOTH the τ leash and the weight table (`kata_risk.DEFAULT_TAU` / `kata_risk.DEFAULT_WEIGHTS_BY_CLASS`,
+`tools/kata_risk.py`). Every class table carries the UNIVERSAL base hard trio (`verify_fail` / `lane_drift` /
+`missing_record`, each .60) + the `slack_ge_2x` soft term (.30), scored by the SAME P0 machinery; the adapters
+add the per-class EXTRAS and the per-class leash (research/debug at τ **0.45** vs code's 0.50).
+
+- **research** (`class: research`): the class per-checkpoint VERIFY **IS** the citation-integrity check — its
+  exit rides the trailer's `verify.exit` (the existing `verify_fail` signal; there is **NO separate
+  `citation_fail` key**, gate v1 HIGH-3). Grounding-gate REJECT verdicts and coverage remain **GATE-TIME
+  inputs** (telemetry / calibration), NOT trigger inputs — `.kata/grounding.json` is gate-time, gitignored
+  tier-3, and has no chunk mapping. `coverage_gap` / `scope_drift` are **ABSENT in v1** (named deferrals — no
+  mechanical comparator/producer exists; a future brief-pinned scope-list comparator arrives via its own gated
+  amendment). Their weights are DATA'd in `DEFAULT_WEIGHTS_BY_CLASS["research"]` awaiting that producer, never a
+  silent LLM judgment pre-trigger (M4-L3).
+- **debug** (`class: debug`): `hypothesis_cycles` / `repro_regression` / `same_hypothesis_reentry` are **ABSENT
+  in v1** (named deferral — the diagnose discipline emits no durable per-hypothesis records today; adding that
+  durable per-hypothesis-record emission is a new worker emission that must arrive via its own gated amendment,
+  never a silent claim). Debug tasks trigger on the **base trio + slack, at the shorter 0.45 leash**.
+
+**Signal plumbing (X1 contract).** The scheduler passes `class_signals` per class — research:
+`{coverage_gap: bool, scope_drift: bool}`; debug: `{hypothesis_cycles: int, repro_regression: bool,
+same_hypothesis_reentry: bool}`; **`code` carries none ⇒ `None`**. **ABSENT class artifacts ⇒ absent signals ⇒
+0** (trigger-shy fail-safe — the **only quiet leg**, documented). A **present-but-MALFORMED class artifact
+RAISES → treat-as-triggered + surface** (gate v1 LOW-8 — the A1-Q2/D136 posture; the SAME fail-safe as the
+`should_trigger` RAISE bullet above — only absence is quiet). A wrong-class or unknown `class_signals` key is a
+producer bug and RAISES loudly (`kata_risk._derive_class_extras`, `tools/kata_risk.py`).
+
+## The corrective-action ladder (ADDITIVE — M4-P1; M4-L5 / A1-Q1 / A1-Q5 verbatim — reuse, don't invent)
+
+Per-task trigger count is **in-context bookkeeping** + one board `DECISION` line per ladder event — **the line
+CARRIES the checkpoint sha**:
+`ladder: <task> trigger <n> @<sha> score <s> verdict <v>` (the L2/L3 `DECISION`-cadence pattern; a raise-trigger
+uses the `@<sha|SCAN-ERR> score ERR` shape above). **No new board TYPE, no new escalation kind** — the ladder
+reuses the existing `DECISION` line and the existing kinds.
+
+- **Cursor recovery rule (gate v1 HIGH-3).** The happy-path cursor (last-seen sha per task) is in-context only;
+  on conductor compaction/restart, **adjudicated checkpoint shas recount from the ladder `DECISION` lines and are
+  NEVER re-triggered** (the sha on each line is what makes recovery sound).
+- **Batch rule (re-gate v2 MED-4 — normal AND recovery scans, ONE rule).** In ANY scan batch, the slack term is
+  **live ONLY on the NEWEST unadjudicated checkpoint** (elapsed-vs-`now` grows monotonically — scoring history
+  against `now` manufactures triggers on already-accepted work; at P2's soft-pair classes this walks the ladder on
+  a healthy-but-slow worker). And **a batch STOPS at the first `reroll`/`correct` verdict** — the remaining
+  checkpoints belong to the killed attempt's abandoned suffix.
+- **Trigger #1 ⇒ inline eval.** Dispatch [[kata-inline-eval]] **fresh-context, no-write, at the D131-resolved
+  economy tier**. Context: **chunk diff + task brief + signal vector ONLY**. **BOTH "never anchor" failure points
+  are carved out — the OMIT/inherit path must be UNREACHABLE for this slot (never OMIT-inherit):**
+  - **(i) pre-resolve at run start under mode `on`:** `kata_models.resolve("kata-inline-eval", ...)` returning
+    `None` (absent `models` block, unknown family/anchor, zero-step/floor-clamped cell) ⇒ **SKIP every inline eval
+    + degrade the RUN to `telemetry`, surfaced AT RUN START**.
+  - **(ii) at dispatch failure:** R2 chain exhaustion or a `fallback_chain` of `[None]` (the resolved economy
+    model is already the family floor) ⇒ the **same skip + degrade route** — do NOT omit-and-inherit (the R2 OMIT
+    terminus in § Dispatch-time model selection does NOT apply to this slot; M4-L7 v2 carve-out).
+  In both cases: a board **NOTE** + a `degraded` ledger entry; **the inline evaluator NEVER dispatches via the
+  OMIT/inherit path and never at the anchor** (never OMIT-inherit).
+  Verdicts (A1-Q1 — ONE recovery primitive, parameterized by anchor commit + brief delta):
+  - `continue` ⇒ **write the ladder `DECISION` line (verdict continue) — its sha MUST adjudicate, else recovery
+    re-triggers cleared work (re-gate v2 LOW-5)** + a calibration-log entry (the false alarm feeds τ calibration).
+    No kill.
+  - `correct` ⇒ **kill** (confirmed-dead; kill FAILURE ⇒ `kind: human-required`) + fresh dispatch from the
+    **CURRENT checkpoint** on attempt branch `<task>-attempt<n>` with the corrective NOTE folded into the brief
+    (the flagged chunk is kept — it was acceptable-with-guidance).
+  - `reroll` ⇒ the SAME primitive anchored at the **LAST GOOD checkpoint** (last below-τ checkpoint, else the
+    task's dispatch base). **[[kata-worktree]] remove+prune the killed attempt's worktree BEFORE the fresh worktree
+    opens at the anchor** (the existing abort route); the reroll `DECISION` line **names the new attempt branch**
+    (the scheduler polls ONLY the active one).
+    **Liveness-clock semantics on a ladder kill (L19 sweep MED-2):** the killed attempt's open `CLAIM` (no
+    `DONE`, append-only board) is ADJUDICATED by the reroll/correct `DECISION` line and is **not a staleness
+    source**; the fresh attempt's `CLAIM` is the liveness reset. If the fresh dispatch itself stalls past
+    `livenessDeadline`, the liveness path applies to the FRESH attempt normally — the monitor never
+    double-handles the adjudicated kill.
+    **Checkpoint-index continuity (L19 sweep MED-3):** every `correct`/`reroll` fresh-dispatch brief mandates
+    **continuing the checkpoint index from the anchor checkpoint's `i`** (anchor at `i=k` ⇒ the fresh session's
+    first trailer is `--index k+1`) — the streak metric, `firstTripIndex`, and the inline evaluator's
+    "last good checkpoint index" all stay well-defined across attempts on the active branch.
+- **Trigger #2 (same task) ⇒ GROUNDING PASS before any second reroll.** YOU (the plan-guardian) re-anchor the task
+  against the FROZEN plan — **is the SPEC the defect?** Output = a **tightened task brief** (clarified within plan
+  bounds, board `DECISION`), and ONLY THEN reroll #2. A **plan-defect finding routes through the EXISTING general
+  supersede path** (deliberate, audited re-plan via `kind: human-required` where LOCKED text is touched — gate v1
+  LOW-13; see the *Research-needed → GROUND* route in `## Escalation`); the **contract-surface supersede route**
+  (`## Escalation`) applies **ONLY** when the plan declares `builds_against` and a contract surface changes.
+  **Never a silent plan patch.**
+- **Trigger #3 ⇒ `kind: human-required`** — the **EXISTING kind, no enum change** (async-parked per the existing
+  `## Escalation` contract, mirroring the thrash valve N=2 and the liveness ladder).
+- **Ladder arbitration (A1-Q5 verbatim — the ONE paragraph, M4 × liveness × fix-loop × kata-diagnose).** At most
+  one corrective ladder is active per task, arbitrated by **evidence class**: (1) an **open escalation or park**
+  on a task **SUSPENDS** its M4 ladder (a parked task produces no checkpoints; resolution re-arms the ladder
+  fresh, trigger count intact); (2) **absence of signal** (staleness) routes **ONLY through the liveness ladder**
+  (nudge → human-required) and staleness alone **NEVER authorizes a kill** (the dark worker may be
+  healthy-but-slow; the double-writer hazard); (3) **present-but-bad evidence** (a triggered, committed
+  checkpoint) routes **ONLY through the M4 ladder**, and an inline-eval `reroll`/`correct` verdict is the one
+  bounded auto-kill authority (board-logged `DECISION`) — it **stands even if the worker has meanwhile gone dark**
+  (an evidence-backed kill is not a blind kill); (4) the **M4 ladder ENDS at the task gate** — the final-gate fix
+  loop and its thrash budget count only their own cycles, and **M4 ladder history never spends the thrash budget
+  and vice versa** (M4-L8); (5) inside a debug-class task, kata-diagnose's hypothesis loop is the WORKER's
+  discipline — M4 reads only the emitted checkpoint artifacts and a debug-class trigger #3 routes to the existing
+  `human-required` kind (no enum change).
+- **failureKinds widening (P0.1 deferral discharged; gate v1 HIGH-4 — zero-code convention).** Ladder events +
+  final-gate fix-loop areas enter `failureKinds` with the **`taskId` field carrying `area:<name>` for per-area
+  entries** — the as-built `kata_telemetry._validate_failure_kinds` passes `taskId` through verbatim, so there is
+  **no producer change and no attribution loss to `null`**; orchestrator-classified (D33). The `area:` prefix
+  convention is documented in the ledger header (W5) and the closeout block; **and the guard: plan task ids MUST
+  NOT begin `area:`** (re-gate v2 LOW-6) — no task id in this plan or any existing plan collides (the kata-plan
+  RUBRIC authoring-rule line is P2-deferred; for P1 this convention doc carries it).
+
+### Kill bindings (M4-L2 as amended — per-PLATFORM degrade)
+
+Name the kill primitive where the ladder uses it (the `correct`/`reroll` kill above):
+- **Claude host** ⇒ the host's **background-task stop** on the dispatched worker.
+- **LD6 off-host** ⇒ **OS process kill** of the background subprocess.
+- **No kill binding on a platform** ⇒ **THAT PLATFORM degrades to `telemetry`** (per-platform, M4-L9c — a mixed
+  run keeps `on` where the primitive exists), recorded as each task's **effective mode** (the M4-L10 taxonomy) and
+  **surfaced at run start** (decidable at run start — the platform set is known at precondition 0).
+
+A kill **FAILURE at reroll time** ⇒ `kind: human-required`, **NEVER proceed-and-redispatch** over a possibly-live
+worker (the double-writer hazard — imports the contract-supersede abort-failure rule verbatim).
 
 ## Dispatch-time model selection (D59 / R2)
 
@@ -509,6 +763,9 @@ fails:
    record it in the drift ledger.
 4. After ≤ 2 step-downs the chain ends in `None`. Omit the `model` parameter on the final retry.
    **Never abort** solely due to model unavailability; always make the `None`/omit final attempt.
+   **EXCEPTION — the inline-eval slot (M4-L7, L19 sweep LOW-5):** [[kata-inline-eval]] dispatches NEVER take
+   the `None`/omit terminus — on chain exhaustion, skip the eval and degrade the run to `telemetry`, surfaced
+   (see § The corrective-action ladder, trigger #1: never OMIT-inherit for this slot).
    **Never re-select the anchor's own ID as the terminus** — `None`/omit is the terminus.
 5. **Inherited-model dispatches (the OMIT path) skip R2 entirely.** A failure on an
    inherited-model call is a hard dispatch error; surface it via the normal escalation path.
@@ -807,6 +1064,39 @@ After the frontier drains (all tasks integrated), on the integration branch:
      - The detector is also **on-demand-invocable** — an operator can run
        `recurrence_detect.detect_from_paths(...)` (or the [[kata-improve]] sub-mode) outside the Final gate.
 8. Commit; if a handoff is needed, [[kata-handoff]].
+
+   **Telemetry ledger closeout (M4-P0 — ADDITIVE; only when the run's effective `inlineEval` mode ≠ `off`; BC:
+   mode `off`/absent ⇒ this block is a silent no-op, no ledger row built or appended, byte-for-byte unchanged).**
+   Build the compact per-run summary row and append it to the **committed** telemetry ledger:
+   1. **Build the row:** `kata_telemetry.build_ledger_row(run_summary)` — schema **v2** (P0.1, DESIGN Amendment
+      #4): the v1 fields (per-`class×tier` first-pass acceptance, streaks, fix cycles, gate rejections, per-class
+      durations, effective modes, `zeroCheckpointTasks`) PLUS `perTask` per-task cost (`{tokensIn, tokensOut,
+      wallClockS}` — **explicit nulls where the host surfaces nothing, never fabricated**; consumer: the M4-L7
+      routing break-even + anchor-metering budgeting), `failureKinds` (the gate-step-3.7 classifications — per-area fix-loop/ladder entries carry `area:<name>` in
+      the `taskId` field, and plan task ids must never begin `area:` (the ladder's convention, L19 MED-1);
+      consumer: τ-calibration failure-type mix + recurrence hardening), and `degraded` (`[{scope, reason}]` —
+      one entry per degrade event this run: resolver-`None`, missing kill binding, tools-dir unresolvable,
+      absent-locator pending row; consumer: degraded-run exclusion in calibration/A-B). Old v1 rows stay valid —
+      readers map them to `unclassified` kinds / null cost (`kata_telemetry.failure_kinds_of`); **no backfill.**
+      **Set `"calibration": true` in `run_summary` when this run is a calibration run** (a toy / instrumented run —
+      `class_median` then EXCLUDES the row so calibration durations never bias the real class medians, gate v2 F6).
+   2. **Resolve the ledger path (IDENTICAL to the read path — read/append symmetry, T4):** a **harness-repo run** ⇒
+      the local `.planning/telemetry-ledger.md` directly; a **target-repo run** ⇒ the `telemetryLedger` locator in
+      `.kata-settings.json`. **Absent locator ⇒ source-absent fail-safe:** write the row to
+      `.kata/telemetry/ledger-row.pending.json` and **surface it** (the durability promise is loudly deferred,
+      never quietly dropped) — do NOT create a ledger file (`kata_telemetry.append_ledger_row` never creates it;
+      T4 creates the header-carrying artifact and appending to a missing file RAISES).
+   3. **Append + the approval gate (D141(b) — the commit carrying the row is NOT self-authorizing):** append via
+      `kata_telemetry.append_ledger_row(<resolved path>, row)`, then **commit the ledger row ONLY on explicit
+      operator approval recorded as a board `DECISION` line at this append site.** Step 8's bare "Commit" above does
+      **not** authorize this row's commit — D141(b) forbids creating an autonomous-git path by implication. When
+      the resolved ledger is **outside the run's target repo** (the normal target-repo case — the target's closeout
+      commit structurally cannot carry a harness-repo row), **request a SECOND, explicitly human-gated commit in
+      the ledger's own repo** (same human, same gate, ledger row only).
+   4. **Declined / failed ⇒ pending-uncommitted, surfaced:** a declined or failed approval leaves the appended row
+      **surfaced as pending-uncommitted, never silent** — it persists on disk (or in
+      `.kata/telemetry/ledger-row.pending.json`) and the deferral is reported at handoff (the M1-L3 durability
+      promise is kept or loudly deferred, never quietly broken).
 
 ## Benchmark closeout phase (ADDITIVE — benchmark run only; BC: absent `kata/module/benchmark` ⇒ silent no-op)
 

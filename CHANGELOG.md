@@ -8,6 +8,94 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [0.2.0] — 2026-07-04 — Freeze/Float M4: the inline evaluator/reroll (DSpark-informed)
+
+**The smaller loop, sharpened — shipped end-to-end in one operator-directed pass.** Everything
+below this header up to and including the M1-P2 float section ships as v0.2.0. Live proof (D145):
+the ladder fired on real evidence (trigger → diff-cited `correct` verdict at a D131-resolved
+below-anchor tier → kill-and-redispatch with a corrective NOTE → green), the happy path cost zero
+LLM calls, the A/B showed 0 gate rejections vs the control's 1 rejection + 1 fix cycle, and the
+float ran its first real `builds_against` edge (pin MATCH, stubs 0, danglers 0). Nine adversarial
+gates ran this milestone (2 DESIGN, 2+2+2 PLAN, 1 P0.1 delta, 1 L19 cross-seam, 1 P0+P0.1 eval) —
+every one caught real defects, all folded. Honest limits: the <1% green-run cap is AT-RISK at
+owned-module chunking (remediation named: coarsen the chunk unit); research/debug class EXTRAS
+await producers (named deferrals); LD7-fallback × M4 topology deferred; toy-scale recovery
+economics favor the control (D145 — the payoff is scale-dependent by design).
+
+## [Unreleased] — Freeze/Float M4-P2: research + debug adapters (per-class leashes)
+
+**One scheduler, three signal sets — honestly scoped.** The freeze-gate's HOLD caught both new
+signal sets pointing at artifacts that don't exist in the claimed shapes; v2 shrank the phase:
+per-class τ leashes (0.45 vs 0.50) ship LIVE on the universal base trio + slack; the class extras
+(coverage/scope/hypothesis signals) are DATA'd at A1-Q4 weights with ABSENT-by-default,
+NAMED-DEFERRED producers. `kata_risk` DEFAULT_WEIGHTS_BY_CLASS + class_signals overlay plumbing
+(+35 tests, 3 mutation proofs); orchestrate 0.8.0 (class adapters subsection + the one declared
+call-line edit); kata-plan RUBRIC `class:` field + the `area:` task-id freeze guard (tiers 0.1.2).
+Instrumented run #3: 4/4 evidence MATCH; **the ledger's ≥3-run threshold for offering
+`inlineEval: on` is met.** Suite 2505/3; validator 48/0/0. D144.
+
+## [Unreleased] — Freeze/Float M4-P1: the code-class mechanism (`inlineEval: on` live)
+
+**Detection now acts.** PLAN double-gated (v1 HOLD 4H/4M/5L; re-gate v2 SHIP-WITH-FIXES 1H/3M/3L —
+all 20 folded); built dogfooded + instrumented (ledger row #2: 4 tasks / 10 checkpoints, 10/10
+evidence digests re-derived MATCH, zero drift, first-pass 4/4); L19 integrated cross-seam sweep
+over the whole M4 body: SHIP-WITH-FIXES 0 HIGH / 4 MED / 6 LOW, all folded.
+
+- `tools/kata_risk.py` (NEW): the one-dial capped-sum risk score (A1-Q4 weights/τ as `[TUNABLE]`
+  data; STRICT `>` trigger comparator, mutation-pinned), `should_trigger` decision function,
+  VALUE-object `resolve_inline_eval_params` (object form REQUIRES `mode`); pure/no-subprocess,
+  57 tests, 4 mutation proofs, Snyk 0.
+- `kata-inline-eval` 0.1.0 (NEW, 48th skill): one-page fresh-context no-write chunk evaluator
+  (`VERDICT: continue|correct|reroll`); registered `economy` in D131 with a 15-cell never-anchor
+  pin test.
+- `kata-orchestrate` 0.7.0: the M4 scheduler (scan at liveness passes + DONE, sha-carrying ladder
+  `DECISION` lines, cursor recovery, SCAN-ERR once-per-window, ONE batch slack rule) + the
+  corrective-action ladder (inline eval at strictly-below-anchor with BOTH never-anchor carve-outs
+  incl. the R2 reciprocal exception; correct/reroll = one kill-and-restart primitive on attempt
+  branches with confirmed-dead + index-continuity + liveness-reset semantics; grounding pass before
+  reroll #2; trigger #3 = existing `human-required`; A1-Q5 arbitration verbatim; per-platform kill
+  bindings); `inlineEval` object form live (`{mode, tau?, weights?}`).
+- `adapters/ADAPTER-CONTRACT-M4.md` (NEW, M4-L9 normative; LD7 fallback named-deferred);
+  `kata-tdd` 0.2.1; config.md `inlineEval` v2 row; +1 restore seam pin test (checkpoint-trailer
+  bodies inert through --no-ff merges). Suite 2396 → 2470; validator 48/0/0. D143.
+
+## [Unreleased] — Freeze/Float M4-P0: telemetry (the inline-evaluator measurement substrate)
+
+**Pure measurement — record everything, act on nothing.** M4 DESIGN frozen through a double
+fresh-context freeze-gate (v1 HOLD 4 HIGH/7 MED/3 LOW; v2 SHIP-WITH-FIXES 2 HIGH/4 MED/4 LOW — all
+folded); PLAN-p0 likewise double-gated (v1 HOLD incl. a relocated kill-switch BLOCKER; v2
+SHIP-WITH-FIXES incl. a wrong-repo CWD bug and a git-config-dependent digest). BC:
+`kata.config.inlineEval` absent ⇒ `off` ⇒ byte-for-byte today's behavior.
+
+- `tools/kata_telemetry.py` (NEW): fail-closed (D136) `Kata-Checkpoint:` trailer parser +
+  checkpoint scanner (duplicate/merge-commit trailers raise), evidence digest over git blob hashes
+  (stamp = index, verify = commit tree + parent-tree deletion semantics; `--no-renames` +
+  `core.quotepath=off` pinned), slack substrate (PROGRESS events, ledger class-median with
+  calibration-row exclusion, zero-progress guard), per-task telemetry records, ledger rows, and the
+  worker CLI `emit-trailer` (required `--repo-root`). Suite 2306 → 2376 (+70, incl. a real-git
+  round-trip with deletion + rename); 7 mutation proofs; Snyk medium+ 0.
+- `kata-orchestrate` 0.6.0: `inlineEval` load-guard (malformed ⇒ STOP, never coerced); the
+  conditional worker checkpoint mandate (concrete injected CLI invocation; tools-dir-unresolvable ⇒
+  `effectiveMode: "off"` + NOTE); per-task telemetry step (detection-only — the existing lane
+  check's blocking posture untouched); ledger closeout with D141(b) board-`DECISION` approval gate.
+- `kata-tdd` 0.2.0 (checkpoint cadence: stage → emit → commit, mechanical outputs only, D33);
+  `kata-bootstrap` 0.2.0 (`inlineEval: "telemetry"` new-run default; offer `on` at ≥3 ledger runs);
+  `kata-plan` RUBRIC `estimate:` authoring + freeze-time validation (tier skills 0.1.1).
+- `protocol/config.md` `inlineEval` row; 4 new exec-safety sink registry rows;
+  `.planning/telemetry-ledger.md` (NEW — the committed calibration ledger, human-gated appends);
+  `.kata-settings.json` gains the `telemetryLedger` locator (documented in `kata_settings.py`).
+- D141: partial supersede of D134 (worker checkpoint commits become load-bearing for M4 reroll
+  anchoring; restore semantics unchanged) + the ledger commit-authority ruling.
+- **P0.1 (operator-directed observability addition, DESIGN Amendment #4, routing branch 3, D142):**
+  ledger row schema v1 → v2 (additive) — `perTask` cost columns (explicit nulls), `failureKinds`
+  (orchestrator-classified at gate time, `FAILURE_KINDS` enum, D33), `degraded` events; v1 rows
+  read as `unclassified`/null (no backfill; `failure_kinds_of` accessor; unknown ledger version
+  raises). `kata_restore` structured degraded signal (folds BACKLOG #16): additive
+  `collect_integrated_tasks_ex` + `restore()` `degraded`/`degraded_reasons` keys incl. the
+  previously NOTE-less git-error path (`integration-history-unreadable`); NOTE prints stay.
+  Suite 2376 → 2396 (+20); 3 mutation proofs; Snyk 0; orchestrate 0.6.1 (gate-time failure-kind
+  classification step).
+
 ## [Unreleased] — Freeze/Float M1-P2: the float (contract-edge scheduling)
 
 **The behavior change of the Freeze/Float program (D138): a contract-only dependent now dispatches at

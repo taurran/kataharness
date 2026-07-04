@@ -108,6 +108,7 @@ SKILL_WORK_CLASS: dict[str, str] = {
     "kata-benchmark-report": "economy",   # reporting
     "kata-debrief":          "economy",   # reporting
     "kata-evaluate":         "critical",  # evaluation gate
+    "kata-inline-eval":      "economy",   # frequent scoped chunk-eval, M4-L7 never-anchor (D131)
     "kata-report":           "economy",   # reporting
     "kata-review-advanced":  "critical",  # review gate
     "kata-review-essential": "critical",  # review gate

@@ -7,7 +7,14 @@ many subagents, and refuses to call anything "done" until a **fresh-context, def
 then folds every run's lessons back into itself. The name *is* the method: the **Improvement Kata** — *every loop
 sharpens the loop.*
 
-> **v0.1.0 · experimental.** The single-model Claude core is the proven, dogfooded path (KataHarness builds
+> **v0.2.0 · experimental.** NEW in v0.2.0 (Freeze/Float M4): the inline evaluator/reroll — an
+> event-triggered, checkpoint-chunked corrective ladder (`inlineEval: off|telemetry|on`; absent ⇒ off,
+> byte-for-byte BC). Rule-verifiable trigger signals only; LLM judgment ONLY after a trigger, at a
+> strictly-below-anchor tier; recovery = kill-and-restart on attempt branches; the final gate is
+> untouched as authority. Live-proven once (D145): trigger → diff-cited verdict → corrective
+> redispatch → green, with zero LLM calls on the green path. HONEST LIMITS: the <1% green-run
+> overhead cap is AT-RISK at owned-module chunking (remediation named); research/debug class extras
+> await producers; one live proof, not a statistical base. The single-model Claude core is the proven, dogfooded path (KataHarness builds
 > itself); multi-model routing and the Codex/Kiro adapters are partially built; IaC *apply* is gated and not yet
 > shipped runnable. We're honest about maturity — that honesty is the product. New here? Start with
 > [`AGENTS.md`](./AGENTS.md) (the vision + the spine).
@@ -122,16 +129,16 @@ is the machine source of truth for what exists and at what version.
 | `kata-grill-advanced` | 0.1.0 | 5 | plan | experimental | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
 | `kata-grill-essential` | 0.1.0 | 3 | plan | experimental | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
 | `kata-grill-standard` | 0.1.0 | 4 | plan | experimental | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
-| `kata-plan-advanced` | 0.1.0 | 4 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
-| `kata-plan-essential` | 0.1.0 | 2 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
-| `kata-plan-standard` | 0.1.0 | 3 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
+| `kata-plan-advanced` | 0.1.2 | 4 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
+| `kata-plan-essential` | 0.1.2 | 2 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
+| `kata-plan-standard` | 0.1.2 | 3 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
 | `kata-research` | 0.1.0 | 3 | plan | experimental | new (KataHarness original, loop-cognition RS-GB1/2/3, D62) — fresh-context no-write evaluator pattern (L4/L5) applied to in-loop research; escalation-routed like kata-orchestrate's no-re-plan escape valve (D52) | Research a must-deliver gap with no in-plan solution; ground every claim; return findings for the grounding gate, never re-plan |
 | `kata-board` | 0.1.0 | 2 | coordinate | experimental | adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3 | Append-only mailbox/message board for lateral peer comms |
-| `kata-bootstrap` | 0.1.3 | 2 | coordinate | experimental | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
+| `kata-bootstrap` | 0.2.0 | 2 | coordinate | experimental | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
 | `kata-initiate` | 0.2.1 | 3 | coordinate | experimental | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
 | `kata-loop` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
 | `kata-onboard` | 0.2.0 | 3 | coordinate | experimental | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
-| `kata-orchestrate` | 0.5.0 | 5 | coordinate | experimental | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
+| `kata-orchestrate` | 0.8.0 | 5 | coordinate | experimental | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
 | `kata-preflight` | 0.1.2 | 2 | coordinate | experimental | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner from _subprocess_runner in tools/kata_dispatch.py | — |
 | `kata-readiness` | 0.2.0 | 1 | coordinate | experimental | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
 | `kata-sprint` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C) | Own the sprint boundary (G1–G4 change-control); incremental delivery only |
@@ -143,10 +150,11 @@ is the machine source of truth for what exists and at what version.
 | `kata-iac-cloudformation` | 0.2.0 | 3 | execute | experimental | new (KataHarness original — IaC-safety specialist N3, DESIGN §2; shared safety contract protocol/iac-safety.md; Snyk IaC scanner wiring IAC-4) | — |
 | `kata-iac-terraform` | 0.2.0 | 3 | execute | experimental | new (KataHarness original — IaC-safety specialist N3, DESIGN §2; shared safety contract protocol/iac-safety.md; Snyk IaC scanner wiring IAC-4) | — |
 | `kata-lang-profile` | 0.1.2 | 2 | execute | experimental | new (KataHarness original — Debug Mode LD10 in-mode language prompt-profiles, DESIGN §3 LD10 / PLAN-p3 Slice D). Selection + overlay mechanism mirrors the IaC specialist-injection precedent (skills/coordinate/kata-orchestrate "IaC activation" block + iac_detect.classify_task); STYLE templates are the sibling specialists kata-iac-terraform / kata-iac-cloudformation. | — |
-| `kata-tdd` | 0.1.1 | 3 | execute | experimental | adapted-from mattpocock/skills engineering/tdd | Red-green-refactor on a vertical slice |
+| `kata-tdd` | 0.2.1 | 3 | execute | experimental | adapted-from mattpocock/skills engineering/tdd | Red-green-refactor on a vertical slice |
 | `kata-benchmark-report` | 0.1.0 | 1 | evaluate | experimental | new (KataHarness original — kata-loop-benchmark report; mirrors the kata-report/kata-debrief two-tier {{TOKEN}} render contract; engine tools/benchmark.py) | — |
 | `kata-debrief` | 0.1.0 | 1 | evaluate | experimental | new (KataHarness original, Debug Mode P3 — LD12 closeout confidence report + LD3 recommendations / offered version-up; mirrors the kata-report two-tier + {{TOKEN}} render contract) | — |
 | `kata-evaluate` | 0.3.0 | 2 | evaluate | experimental | adapted-from cpp-evaluation (CryptoPortfolioPlanner) + Anthropic fresh-context evaluator pattern | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
+| `kata-inline-eval` | 0.1.0 | 1 | evaluate | experimental | — | — |
 | `kata-report` | 0.1.2 | 1 | evaluate | experimental | new (KataHarness original — the D32 report, minimal v1; sprint-cadence D85/D2) | One-page report of a gated unit of work (reports the gate, never gates) |
 | `kata-review-advanced` | 0.1.1 | 3 | evaluate | experimental | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
 | `kata-review-essential` | 0.1.1 | 1 | evaluate | experimental | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
@@ -283,7 +291,7 @@ Restart your agent so it loads the skills, then use a slash-command (Claude Code
 
 ## Docs / status
 
-**v0.1.0, experimental.** The single-model Claude core is the proven path; multi-model routing and the
+**v0.2.0, experimental.** The single-model Claude core is the proven path; multi-model routing and the
 Codex/Kiro adapters are partially built; IaC *apply* is gated and not shipped runnable. Read next:
 
 - [`AGENTS.md`](./AGENTS.md) — the vision, the spine, how to work in the repo (canonical).
