@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.6.1
+version: 0.7.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -634,6 +634,18 @@ reuses the existing `DECISION` line and the existing kinds.
   convention is documented in the ledger header (W5) and the closeout block; **and the guard: plan task ids MUST
   NOT begin `area:`** (re-gate v2 LOW-6) — no task id in this plan or any existing plan collides (the kata-plan
   RUBRIC authoring-rule line is P2-deferred; for P1 this convention doc carries it).
+
+### Kill bindings (M4-L2 as amended — per-PLATFORM degrade)
+
+Name the kill primitive where the ladder uses it (the `correct`/`reroll` kill above):
+- **Claude host** ⇒ the host's **background-task stop** on the dispatched worker.
+- **LD6 off-host** ⇒ **OS process kill** of the background subprocess.
+- **No kill binding on a platform** ⇒ **THAT PLATFORM degrades to `telemetry`** (per-platform, M4-L9c — a mixed
+  run keeps `on` where the primitive exists), recorded as each task's **effective mode** (the M4-L10 taxonomy) and
+  **surfaced at run start** (decidable at run start — the platform set is known at precondition 0).
+
+A kill **FAILURE at reroll time** ⇒ `kind: human-required`, **NEVER proceed-and-redispatch** over a possibly-live
+worker (the double-writer hazard — imports the contract-supersede abort-failure rule verbatim).
 
 ## Dispatch-time model selection (D59 / R2)
 
