@@ -2153,3 +2153,12 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   unknown-version, degraded-flag: disable → named test RED → revert); validator 47/0/0; Snyk
   medium+ 0; orchestrate 0.6.1. M4-L1 honored: zero new per-checkpoint worker emissions — all
   three items are orchestrator/gate-side or fields on already-emitted artifacts.
+  *(Addendum 2026-07-04, eval remediation 2 — AC-2's "listed" made literal: the seven T1 mutation-proof
+  guard → test pairs: duplicate-trailer → `test_parse_trailer_duplicate_raises`; trailer-on-merge →
+  `test_scan_checkpoints_merge_with_trailer_raises`; malformed-JSON → `test_parse_trailer_malformed_json_raises`;
+  empty-paths → `test_evidence_empty_paths_raises`; never-tracked-path → `test_evidence_stamp_never_tracked_raises`;
+  ledger-malformed-row → `test_read_ledger_malformed_row_raises`; append-to-missing-ledger →
+  `test_append_ledger_row_missing_file_raises` — each: guard disabled → named test RED → reverted → suite green.
+  The P0+P0.1 fresh-context evaluation (2026-07-04) returned NEEDS_WORK on exactly two record-keeping items —
+  this addendum + the T5 approval board `DECISION` — both closed same-day; all nine rubric surfaces otherwise
+  PASS on independent re-derivation incl. 4/4 evidence-digest MATCH and a live mutation spot-check.)*
