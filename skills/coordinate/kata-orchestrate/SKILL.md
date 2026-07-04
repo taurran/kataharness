@@ -395,6 +395,10 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    two-dot `git diff integration..task`: if the task forked from an earlier integration head, the two-dot
    diff lists every file integration changed afterward as a *foreign* file and falsely trips the drift
    check. Feed the commit-scoped set to `footprint.is_within_footprint(changed, ownership)`.
+   **Active attempt branch (M4-P1 — ADDITIVE; BC: no reroll ⇒ `task_ref` is the original task branch, unchanged):**
+   after any M4 reroll (§ The corrective-action ladder), `task_ref` is the task's **ACTIVE attempt branch**
+   (`<task>-attempt<n>`), never the abandoned one — the merge-base with integration stays the original fork point
+   (single base), so the three-dot lane check is **unchanged in behavior** (M4-L2 as amended; gate v2 #7).
    **Per-task telemetry (M4-P0 — ADDITIVE; only when the task's effective `inlineEval` mode ≠ `off`; BC: mode
    `off`/absent ⇒ this step is a silent no-op, no artifact written, the gate byte-for-byte unchanged).** This step
    runs **AFTER** the lane check above and is **pure measurement — detection-only, it NEVER blocks the task** (P0
@@ -510,8 +514,14 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
       Tier-1 IaC runs (author/review/gate, the `escalate` verdict, `.kata/iac.json`) are **byte-for-byte unchanged**.
 4. **Integrate.** Merge each completed task branch into the integration branch ([[kata-worktree]] — disjoint
    files merge cleanly by construction). Re-run the gate on the integration branch, then recompute the frontier.
+   **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** "each completed task branch" = the task's **ACTIVE attempt
+   branch** after any reroll (the abandoned attempt was worktree-removed+pruned at reroll time; § The
+   corrective-action ladder).
 5. **Commit at the checkpoint** (conventional commit + `Kata-Task: <task-id>` trailer) so compaction
    can't lose work and restore can map each integration commit back to its task.
+   **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** the mapped source is the task's **ACTIVE attempt branch**
+   after any reroll; the single original fork point keeps the `Kata-Task:` mapping stable (§ The corrective-action
+   ladder).
    Completions integrate **in completion order** — a linear integration-branch history, not a wave-batched one.
 
    **Board durability (cadence 1 — D133/B1):** immediately after the integration commit lands, call
@@ -522,6 +532,108 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    A skip result is logged at `NOTE` level on the board and does NOT block integration — it is a
    durability enhancement, not a gate. This call site closes Gap 2/3 (D132) at integration
    granularity, independently of the PreCompact auto-checkpoint hook (built last in the same spec).
+
+## The M4 scheduler (ADDITIVE — M4-P1; fires IFF a task's effective `inlineEval` mode == `on`; BC: below `on` ⇒ inert)
+
+This subsection is **ADDITIVE** and consumes the M4-P0 checkpoint stream — it **REUSES existing machinery** (the
+`DECISION` board line, the existing escalation kinds, the [[kata-worktree]] abort route) and introduces **NO new
+board TYPE, NO new escalation kind, NO new enum, NO new Python**. It fires **IFF a task's effective `inlineEval`
+mode == `on`**. Under `telemetry` (or `off`/absent) the P0 posture is **byte-for-byte unchanged**: signal vectors
+are recorded (§ The loop step 3 per-task telemetry) and **nothing is scheduled, gated, killed, or rerolled**
+(M4-L8/M4-L10; `telemetry` keeps the P0 never-blocks posture). Under `on`, the scheduler additionally turns each
+new checkpoint into a trigger decision.
+
+- **Scan cadence.** At **every liveness-monitor pass** (§ The loop step 2) **AND at each worker `DONE`** (§ The
+  loop step 3), scan the task's **ACTIVE attempt branch** for NEW checkpoint commits via
+  `kata_telemetry.scan_checkpoints(repo_root, <active attempt branch>, integration_ref)` (the oldest-first
+  `{sha, record}` list). The happy path costs **zero LLM calls** (M4-L1).
+- **Cursor bookkeeping.** Keep a per-task cursor = the **last-seen checkpoint sha**, as **in-context bookkeeping**
+  exactly like the fix-loop thrash counters (NOT a `state.json` field, NOT a board event TYPE, no new Python) —
+  the ladder `DECISION` lines are the durable recount trail (see *Cursor recovery* in the ladder). Only
+  checkpoints newer than the cursor are scored.
+- **Per new checkpoint:** compute drift + slack via the SAME P0 machinery — `kata_telemetry.checkpoint_lane_drift`
+  for the out-of-footprint set; `kata_telemetry.parse_progress_events` → `kata_telemetry.resolve_estimate` →
+  `kata_telemetry.slack_ratio` for slack — then call
+  `kata_risk.should_trigger(record_or_none, lane_drift, slack_ratio, task_class=<class>, weights=<resolved>, tau=<resolved>)`
+  with the run's resolved `{weights, tau}` (precondition 0 object-form leg).
+  - `triggered: false` ⇒ **record to telemetry, done** (the happy path costs zero LLM calls — M4-L1).
+  - `triggered: true` ⇒ enter *The corrective-action ladder* below.
+- **Raise ⇒ treat-as-triggered + surface (the A1-Q2 documented fail-safe).** A `scan_checkpoints` /
+  `should_trigger` RAISE under mode `on` is the designed fail-safe: **treat-as-triggered + surface** (P1 flips the
+  P0 record-only response for mode `on`; `telemetry` mode keeps the P0 never-blocks posture). A raise has no score
+  and possibly no sha, so its ladder line takes the shape
+  `ladder: <task> trigger <n> @<sha|SCAN-ERR> score ERR verdict <v>` (re-gate v2 MED-3). A **`SCAN-ERR`
+  adjudication covers THAT SCAN WINDOW and counts ONCE on the ladder** — a persistent git error must not re-fire
+  per conductor restart into an unbounded loop; the ≤3 ladder bound applies to raise-triggers exactly as to scored
+  ones.
+
+## The corrective-action ladder (ADDITIVE — M4-P1; M4-L5 / A1-Q1 / A1-Q5 verbatim — reuse, don't invent)
+
+Per-task trigger count is **in-context bookkeeping** + one board `DECISION` line per ladder event — **the line
+CARRIES the checkpoint sha**:
+`ladder: <task> trigger <n> @<sha> score <s> verdict <v>` (the L2/L3 `DECISION`-cadence pattern; a raise-trigger
+uses the `@<sha|SCAN-ERR> score ERR` shape above). **No new board TYPE, no new escalation kind** — the ladder
+reuses the existing `DECISION` line and the existing kinds.
+
+- **Cursor recovery rule (gate v1 HIGH-3).** The happy-path cursor (last-seen sha per task) is in-context only;
+  on conductor compaction/restart, **adjudicated checkpoint shas recount from the ladder `DECISION` lines and are
+  NEVER re-triggered** (the sha on each line is what makes recovery sound).
+- **Batch rule (re-gate v2 MED-4 — normal AND recovery scans, ONE rule).** In ANY scan batch, the slack term is
+  **live ONLY on the NEWEST unadjudicated checkpoint** (elapsed-vs-`now` grows monotonically — scoring history
+  against `now` manufactures triggers on already-accepted work; at P2's soft-pair classes this walks the ladder on
+  a healthy-but-slow worker). And **a batch STOPS at the first `reroll`/`correct` verdict** — the remaining
+  checkpoints belong to the killed attempt's abandoned suffix.
+- **Trigger #1 ⇒ inline eval.** Dispatch [[kata-inline-eval]] **fresh-context, no-write, at the D131-resolved
+  economy tier**. Context: **chunk diff + task brief + signal vector ONLY**. **BOTH "never anchor" failure points
+  are carved out — the OMIT/inherit path must be UNREACHABLE for this slot (never OMIT-inherit):**
+  - **(i) pre-resolve at run start under mode `on`:** `kata_models.resolve("kata-inline-eval", ...)` returning
+    `None` (absent `models` block, unknown family/anchor, zero-step/floor-clamped cell) ⇒ **SKIP every inline eval
+    + degrade the RUN to `telemetry`, surfaced AT RUN START**.
+  - **(ii) at dispatch failure:** R2 chain exhaustion or a `fallback_chain` of `[None]` (the resolved economy
+    model is already the family floor) ⇒ the **same skip + degrade route** — do NOT omit-and-inherit (the R2 OMIT
+    terminus in § Dispatch-time model selection does NOT apply to this slot; M4-L7 v2 carve-out).
+  In both cases: a board **NOTE** + a `degraded` ledger entry; **the inline evaluator NEVER dispatches via the
+  OMIT/inherit path and never at the anchor** (never OMIT-inherit).
+  Verdicts (A1-Q1 — ONE recovery primitive, parameterized by anchor commit + brief delta):
+  - `continue` ⇒ **write the ladder `DECISION` line (verdict continue) — its sha MUST adjudicate, else recovery
+    re-triggers cleared work (re-gate v2 LOW-5)** + a calibration-log entry (the false alarm feeds τ calibration).
+    No kill.
+  - `correct` ⇒ **kill** (confirmed-dead; kill FAILURE ⇒ `kind: human-required`) + fresh dispatch from the
+    **CURRENT checkpoint** on attempt branch `<task>-attempt<n>` with the corrective NOTE folded into the brief
+    (the flagged chunk is kept — it was acceptable-with-guidance).
+  - `reroll` ⇒ the SAME primitive anchored at the **LAST GOOD checkpoint** (last below-τ checkpoint, else the
+    task's dispatch base). **[[kata-worktree]] remove+prune the killed attempt's worktree BEFORE the fresh worktree
+    opens at the anchor** (the existing abort route); the reroll `DECISION` line **names the new attempt branch**
+    (the scheduler polls ONLY the active one).
+- **Trigger #2 (same task) ⇒ GROUNDING PASS before any second reroll.** YOU (the plan-guardian) re-anchor the task
+  against the FROZEN plan — **is the SPEC the defect?** Output = a **tightened task brief** (clarified within plan
+  bounds, board `DECISION`), and ONLY THEN reroll #2. A **plan-defect finding routes through the EXISTING general
+  supersede path** (deliberate, audited re-plan via `kind: human-required` where LOCKED text is touched — gate v1
+  LOW-13; see the *Research-needed → GROUND* route in `## Escalation`); the **contract-surface supersede route**
+  (`## Escalation`) applies **ONLY** when the plan declares `builds_against` and a contract surface changes.
+  **Never a silent plan patch.**
+- **Trigger #3 ⇒ `kind: human-required`** — the **EXISTING kind, no enum change** (async-parked per the existing
+  `## Escalation` contract, mirroring the thrash valve N=2 and the liveness ladder).
+- **Ladder arbitration (A1-Q5 verbatim — the ONE paragraph, M4 × liveness × fix-loop × kata-diagnose).** At most
+  one corrective ladder is active per task, arbitrated by **evidence class**: (1) an **open escalation or park**
+  on a task **SUSPENDS** its M4 ladder (a parked task produces no checkpoints; resolution re-arms the ladder
+  fresh, trigger count intact); (2) **absence of signal** (staleness) routes **ONLY through the liveness ladder**
+  (nudge → human-required) and staleness alone **NEVER authorizes a kill** (the dark worker may be
+  healthy-but-slow; the double-writer hazard); (3) **present-but-bad evidence** (a triggered, committed
+  checkpoint) routes **ONLY through the M4 ladder**, and an inline-eval `reroll`/`correct` verdict is the one
+  bounded auto-kill authority (board-logged `DECISION`) — it **stands even if the worker has meanwhile gone dark**
+  (an evidence-backed kill is not a blind kill); (4) the **M4 ladder ENDS at the task gate** — the final-gate fix
+  loop and its thrash budget count only their own cycles, and **M4 ladder history never spends the thrash budget
+  and vice versa** (M4-L8); (5) inside a debug-class task, kata-diagnose's hypothesis loop is the WORKER's
+  discipline — M4 reads only the emitted checkpoint artifacts and a debug-class trigger #3 routes to the existing
+  `human-required` kind (no enum change).
+- **failureKinds widening (P0.1 deferral discharged; gate v1 HIGH-4 — zero-code convention).** Ladder events +
+  final-gate fix-loop areas enter `failureKinds` with the **`taskId` field carrying `area:<name>` for per-area
+  entries** — the as-built `kata_telemetry._validate_failure_kinds` passes `taskId` through verbatim, so there is
+  **no producer change and no attribution loss to `null`**; orchestrator-classified (D33). The `area:` prefix
+  convention is documented in the ledger header (W5) and the closeout block; **and the guard: plan task ids MUST
+  NOT begin `area:`** (re-gate v2 LOW-6) — no task id in this plan or any existing plan collides (the kata-plan
+  RUBRIC authoring-rule line is P2-deferred; for P1 this convention doc carries it).
 
 ## Dispatch-time model selection (D59 / R2)
 
