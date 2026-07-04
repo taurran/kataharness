@@ -118,3 +118,69 @@ def risk_score(signals: dict, weights: dict) -> float:
         total += weights["slack_ge_2x"]
 
     return min(1.0, total)
+
+
+# ---------------------------------------------------------------------------
+# 2. should_trigger — the decision function (strict score > tau ⇒ trigger)
+# ---------------------------------------------------------------------------
+
+
+def should_trigger(
+    record_or_none: dict | None,
+    lane_drift: bool,
+    slack_ratio: float | None,
+    *,
+    task_class: str,
+    weights: dict | None = None,
+    tau: dict | None = None,
+) -> dict:
+    """Decide whether a checkpoint's evidence trips the inline-eval trigger.
+
+    Builds the signal vector from a parsed ``Kata-Checkpoint`` *record* (or ``None`` on
+    a checkpoint commit that carries no record — under mode ``on`` that IS the A1-Q2
+    hard signal ``missing_record``), scores it, and returns the full vector for the
+    telemetry record + the ladder DECISION line. The trigger verdict is **strict**:
+    ``score > tau_class`` (M4-L4 verbatim "score > tau_class ⇒ trigger" — an exact
+    ``score == tau`` does NOT trigger).
+
+    Args:
+        record_or_none: A parsed checkpoint record (``{"verify": {"exit": int, ...},
+            ...}``) or ``None`` when the mandated record is absent.
+        lane_drift: True iff the checkpoint's out-of-footprint set is non-empty (F5).
+        slack_ratio: The scheduler-computed slack ratio, or ``None`` when absent (A1-Q3).
+        task_class: The task's class (``code``/``research``/``debug``) — selects tau.
+        weights: Optional weight override (defaults to ``DEFAULT_WEIGHTS``).
+        tau: Optional tau override (defaults to ``DEFAULT_TAU``).
+
+    Returns:
+        ``{triggered: bool, score: float, signals: dict, tau: float}``.
+
+    Raises:
+        RiskError: On an unknown *task_class* (never a default leash), or on an unknown
+            signal key via :func:`risk_score`.
+    """
+    active_weights = weights if weights is not None else DEFAULT_WEIGHTS
+    active_tau = tau if tau is not None else DEFAULT_TAU
+
+    if task_class not in active_tau:
+        raise RiskError(
+            f"should_trigger: unknown task_class {task_class!r} — no default leash "
+            f"(D136). Known classes: {sorted(active_tau)}."
+        )
+    tau_class = active_tau[task_class]
+
+    signals = {
+        "verify_fail": record_or_none is not None
+        and record_or_none["verify"]["exit"] != 0,
+        "lane_drift": bool(lane_drift),
+        "missing_record": record_or_none is None,
+        "slack_ratio": slack_ratio,
+    }
+
+    score = risk_score(signals, active_weights)
+    return {
+        "triggered": score > tau_class,
+        "score": score,
+        "signals": signals,
+        "tau": tau_class,
+    }

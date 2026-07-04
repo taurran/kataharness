@@ -107,6 +107,147 @@ class TestRiskScore:
 
 
 # ---------------------------------------------------------------------------
+# Module 2 — should_trigger (strict score > tau ⇒ trigger)
+# ---------------------------------------------------------------------------
+
+
+def _record(exit_code: int = 0) -> dict:
+    """A minimal parsed checkpoint record with the given verify exit."""
+    return {"v": 1, "i": 0, "verify": {"exit": exit_code}}
+
+
+class TestShouldTriggerArithmetic:
+    """A1-Q4 arithmetic PINNED: every hard signal alone crosses every tau; no lone
+    soft signal crosses any tau; code slack-alone never triggers."""
+
+    HARD_ARGS = {
+        "verify_fail": dict(record_or_none=_record(1), lane_drift=False, slack_ratio=None),
+        "lane_drift": dict(record_or_none=_record(0), lane_drift=True, slack_ratio=None),
+        "missing_record": dict(record_or_none=None, lane_drift=False, slack_ratio=None),
+    }
+
+    @pytest.mark.parametrize("task_class", ["code", "research", "debug"])
+    @pytest.mark.parametrize("signal", ["verify_fail", "lane_drift", "missing_record"])
+    def test_every_hard_signal_alone_triggers_every_class(self, signal, task_class):
+        result = kata_risk.should_trigger(task_class=task_class, **self.HARD_ARGS[signal])
+        assert result["score"] == 0.60
+        assert result["triggered"] is True
+
+    @pytest.mark.parametrize("task_class", ["code", "research", "debug"])
+    def test_lone_soft_slack_never_triggers_any_class(self, task_class):
+        # slack alone = 0.30 < every tau (0.45/0.50) ⇒ never triggers pre-calibration.
+        result = kata_risk.should_trigger(
+            _record(0), lane_drift=False, slack_ratio=5.0, task_class=task_class
+        )
+        assert result["score"] == 0.30
+        assert result["triggered"] is False
+
+    def test_code_slack_alone_never_triggers(self):
+        # Code's only soft signal is slack; 0.30 < 0.50 ⇒ code triggers on hard evidence only.
+        result = kata_risk.should_trigger(
+            _record(0), lane_drift=False, slack_ratio=10.0, task_class="code"
+        )
+        assert result["triggered"] is False
+
+    def test_clean_checkpoint_does_not_trigger(self):
+        result = kata_risk.should_trigger(
+            _record(0), lane_drift=False, slack_ratio=None, task_class="code"
+        )
+        assert result["score"] == 0.0
+        assert result["triggered"] is False
+
+    def test_missing_record_is_hard_signal(self):
+        # A1-Q2: None record on a checkpoint commit under mode `on` ⇒ missing_record hard.
+        result = kata_risk.should_trigger(
+            None, lane_drift=False, slack_ratio=None, task_class="code"
+        )
+        assert result["signals"]["missing_record"] is True
+        assert result["score"] == 0.60
+        assert result["triggered"] is True
+
+    def test_returned_vector_shape(self):
+        result = kata_risk.should_trigger(
+            _record(1), lane_drift=True, slack_ratio=2.0, task_class="code"
+        )
+        assert set(result) == {"triggered", "score", "signals", "tau"}
+        assert result["tau"] == 0.50
+        assert result["signals"] == {
+            "verify_fail": True,
+            "lane_drift": True,
+            "missing_record": False,
+            "slack_ratio": 2.0,
+        }
+
+
+class TestShouldTriggerBoundary:
+    """The strict-`>` comparator: score == tau does NOT trigger (M4-L4 verbatim).
+
+    Mutating `>` to `>=` turns test_score_equal_tau_does_not_trigger RED.
+    """
+
+    def test_score_equal_tau_does_not_trigger(self):
+        # NAMED: the `>` comparator mutation target. Custom weights put a single hard
+        # signal at EXACTLY the code tau (0.50), so score == tau == 0.50.
+        boundary_weights = {
+            "verify_fail": 0.50,
+            "lane_drift": 0.60,
+            "missing_record": 0.60,
+            "slack_ge_2x": 0.30,
+        }
+        result = kata_risk.should_trigger(
+            _record(1),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="code",
+            weights=boundary_weights,
+        )
+        assert result["score"] == 0.50
+        assert result["tau"] == 0.50
+        assert result["triggered"] is False  # strict `>`: equality does NOT trigger
+
+    def test_score_just_above_tau_triggers(self):
+        # The companion: one epsilon above the boundary DOES trigger (strict `>` holds).
+        boundary_weights = {
+            "verify_fail": 0.51,
+            "lane_drift": 0.60,
+            "missing_record": 0.60,
+            "slack_ge_2x": 0.30,
+        }
+        result = kata_risk.should_trigger(
+            _record(1),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="code",
+            weights=boundary_weights,
+        )
+        assert result["score"] == 0.51
+        assert result["triggered"] is True
+
+
+class TestShouldTriggerGuards:
+    """Fail-closed guards on the decision function."""
+
+    def test_unknown_task_class_raises(self):
+        # NAMED: unknown-class guard mutation target.
+        with pytest.raises(kata_risk.RiskError, match=r"unknown task_class"):
+            kata_risk.should_trigger(
+                _record(0), lane_drift=False, slack_ratio=None, task_class="marketing"
+            )
+
+    def test_custom_tau_override_selects_class(self):
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=2.0,
+            task_class="code",
+            tau={"code": 0.25, "research": 0.45, "debug": 0.45},
+        )
+        # slack 0.30 > custom code tau 0.25 ⇒ triggers under the override.
+        assert result["tau"] == 0.25
+        assert result["triggered"] is True
+
+
+# ---------------------------------------------------------------------------
 # Exec-safety — source-scan structural pin (mirrors TestExecSafety in test_benchmark.py)
 # ---------------------------------------------------------------------------
 
