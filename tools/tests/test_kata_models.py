@@ -703,3 +703,46 @@ class TestSonnetFiveId:
         result = km.resolve(_CODING_SKILL, "essential", "fable",
                             family=ANTHROPIC, coder_floor=None)
         assert result == "claude-sonnet-5"
+
+
+# ===========================================================================
+# 11. M4-L7 never-anchor pin — kata-inline-eval (D131)
+# ===========================================================================
+
+class TestInlineEvalNeverAnchor:
+    """M4-L7 as amended: the inline evaluator runs STRICTLY BELOW the anchor, NEVER at anchor.
+
+    kata-inline-eval registers as economy in SKILL_WORK_CLASS (D131). For every
+    (mode, anchor) cell in the Anthropic family, resolve() must return either None
+    (OMIT — the orchestrator then degrades M4 to telemetry, never inheriting the
+    anchor) or an id STRICTLY BELOW the anchor rung. It must NEVER return the
+    anchor's own id — that would run the frequent, scoped inline eval at anchor
+    tier, the overhead spiral M4-L7 exists to prevent.
+
+    Pinned against regression: the zero-step contract guarantees this structurally
+    today, but a future step-table or resolver change must not silently break it.
+    """
+
+    @pytest.mark.parametrize("anchor", ANCHORS)
+    @pytest.mark.parametrize("mode", MODES)
+    def test_inline_eval_never_resolves_to_anchor(self, mode: str, anchor: str) -> None:
+        result = km.resolve("kata-inline-eval", mode, anchor,
+                            family=ANTHROPIC, coder_floor=None)
+        anchor_id = km.ID_MAP[anchor]
+        # Never the anchor's own id.
+        assert result != anchor_id, (
+            f"inline-eval/{mode}/{anchor}: resolved to the ANCHOR id {anchor_id!r} "
+            "— M4-L7 requires strictly-below-anchor or None, never at anchor"
+        )
+        # When explicit, it must be a strictly-lower rung.
+        if result is not None:
+            anchor_idx = _short_to_idx(anchor)
+            resolved_idx = _id_to_idx(result)
+            assert resolved_idx < anchor_idx, (
+                f"inline-eval/{mode}/{anchor}: resolved id {result!r} (idx {resolved_idx}) "
+                f"is not strictly below the anchor (idx {anchor_idx})"
+            )
+
+    def test_inline_eval_registered_as_economy(self) -> None:
+        """D131: kata-inline-eval is registered as economy work-class (forces the ladder tier-down)."""
+        assert km.SKILL_WORK_CLASS.get("kata-inline-eval") == "economy"
