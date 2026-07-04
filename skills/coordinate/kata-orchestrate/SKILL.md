@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.5.0
+version: 0.6.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -60,6 +60,14 @@ does not drift.**
      `kata_roles.HOST_ONLY_ROLES`, LD11**) ⇒ **STOP + escalate at preflight** (same fail-closed posture as the
      mode/effort/tiers/modules guard above). **BC1:** `roles` absent ⇒ `resolve_roles` returns every role
      assigned to the host ⇒ today's single-host loop byte-for-byte (DESIGN R5/LD3).
+   - **`inlineEval` load-guard (M4-L8/M4-L10 — ADDITIVE; BC: absent ⇒ `off`, byte-for-byte unchanged):** add
+     `kata.config.inlineEval` to the strict-validation list — validate it mechanically via
+     `kata_telemetry.validate_inline_eval(inlineEval)`: `None`/absent ⇒ `"off"` (the BC fail-safe); exactly
+     `"off"`/`"telemetry"`/`"on"` ⇒ itself; **anything else** (case-variant, wrong type, unknown string) raises ⇒
+     **STOP + escalate** (the same fail-closed posture as the mode/effort/tiers/modules guard above — a
+     present-but-malformed value is never silently coerced to `"off"`, D45/GB12). The resolved value is the run's
+     **base** `inlineEval` mode; a task's **effective** mode may degrade below it at dispatch (see the checkpoint
+     mandate in § The loop step 2).
 1. **PRE-FLIGHT gate** — conditional, fail-closed, BC-preserving (N5/D29). Call
    `kata_preflight.preflight_required(repo_root)`:
    - **`False`** (no `kata.dependencies.json` manifest): PRE-FLIGHT is not required — proceed
@@ -313,6 +321,30 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      CLAIMs and then works silently for tens of minutes is indistinguishable from a hung one — the Kenjiri
      F3 failure). `PROGRESS` is excluded from coordination and concurrency evidence; it exists for the
      liveness monitor and the M4 slack-timing estimator.
+   - **Checkpoint mandate (M4-P0 — ADDITIVE; BC: effective mode `off`/absent ⇒ this bullet is inert, no mandate
+     text enters the brief, byte-for-byte unchanged).** When the task's **effective `inlineEval` mode ≠ `off`**
+     (`telemetry` or `on`), the worker prompt **additionally** mandates a per-chunk checkpoint-commit cadence on
+     the task branch:
+     - **Commit at each owned-module completion** — the same boundary as the F3 `done/owned` PROGRESS line (one
+       checkpoint commit per module), a conventional commit message, and **NO `Kata-Task:` trailer** (that stays
+       integration-only, orchestrator-authored at step 5).
+     - The commit carries **exactly ONE `Kata-Checkpoint:` trailer**, emitted via the T1 CLI — **never
+       hand-authored, never on a merge commit** — and the trailer carries **mechanical outputs only** (verify exit
+       code + counts, lint exit, evidence digest; **never worker self-assessment** — the D33 no-self-cert boundary).
+     - **Concrete injected invocation — the orchestrator resolves BOTH paths at dispatch (the worker never guesses
+       a path).** The orchestrator resolves its own harness `tools/` directory and the worker's worktree root and
+       injects the exact command into the brief:
+       `uv run --directory <resolved-tools-dir> python -m kata_telemetry emit-trailer --repo-root <worker-worktree-root> --index <i> --verify-exit <e> [--passed <n>] [--failed <n>] [--skipped <n>] [--lint <e>] [--paths ...]`
+       — `--repo-root` is **required** (the `uv run --directory` prefix changes CWD to the harness tools dir, so an
+       unqualified default would digest the WRONG repo; the `protocol/board.md` pass-the-path-as-argv precedent).
+     - **Ordering:** stage everything the chunk changed → emit the trailer (the digest reads the index) → commit
+       immediately, no edits between emit and commit — the full ordering mandate lives in [[kata-tdd]]'s
+       checkpoint-cadence section (do not restate it here).
+     - **Tools-dir unresolvable ⇒ degrade, never guess.** If the orchestrator cannot resolve its harness `tools/`
+       directory, the mandate is **omitted** and the task's **`effectiveMode` is recorded `"off"`** (mandate not
+       dispatched) with a board **NOTE** — the EXISTING per-task effective-mode degrade taxonomy (M4-L10 as
+       amended), NOT a third degrade shape. The task then appears in `zeroCheckpointTasks` only as the arithmetic
+       consequence, and the ledger distinguishes the cause by its recorded effective mode.
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 
    **Liveness monitor (F3 — dark-worker detection; NO blind kill).** While workers run, the orchestrator
@@ -351,6 +383,36 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    two-dot `git diff integration..task`: if the task forked from an earlier integration head, the two-dot
    diff lists every file integration changed afterward as a *foreign* file and falsely trips the drift
    check. Feed the commit-scoped set to `footprint.is_within_footprint(changed, ownership)`.
+   **Per-task telemetry (M4-P0 — ADDITIVE; only when the task's effective `inlineEval` mode ≠ `off`; BC: mode
+   `off`/absent ⇒ this step is a silent no-op, no artifact written, the gate byte-for-byte unchanged).** This step
+   runs **AFTER** the lane check above and is **pure measurement — detection-only, it NEVER blocks the task** (P0
+   records signal vectors; it computes no risk score, no τ, no trigger — all P1). **Scope guard (MED-7):** the
+   EXISTING lane check — its own `footprint.changed_in_task` invocation and its **BLOCKING** posture on a raise
+   (multi-merge-base / F5-2 / D136) — is **byte-for-byte untouched**; the "never blocks" property below governs
+   ONLY this new telemetry computation, never the task gate (M4-L8).
+   1. **Scan the task's checkpoints:** `kata_telemetry.scan_checkpoints(repo_root, <active task branch>, integration_ref)`
+      → the oldest-first `{sha, record}` list (post-reroll, "the task branch" = the ACTIVE attempt branch).
+   2. **Per-checkpoint lane drift:** for each checkpoint sha, `kata_telemetry.checkpoint_changed_files(repo_root, sha)`
+      then `footprint.partition(changed, ownership)["out_of_footprint"]` (the `kata_telemetry.checkpoint_lane_drift`
+      wrapper composes exactly this — REUSES footprint, no reimplementation).
+   3. **Per-checkpoint slack:** `kata_telemetry.parse_progress_events(<shared board text>, task_id)` →
+      `kata_telemetry.resolve_estimate(median, <plan-frontmatter estimate>)` → `kata_telemetry.slack_ratio(events,
+      estimate_min, now_utc)`. The **class-median source resolves IDENTICALLY to the append path** (read/append
+      symmetry, T4): a harness-repo run reads the local `.planning/telemetry-ledger.md`; a target-repo run reads
+      the `telemetryLedger` locator in `.kata-settings.json` — via
+      `kata_telemetry.class_median(kata_telemetry.read_ledger(<resolved ledger path>), task_class)` (absent locator
+      ⇒ median `None` ⇒ `resolve_estimate` falls through to frontmatter/absent, the documented A1-Q3 fail-safe).
+   4. **Build + write the record:** `kata_telemetry.build_task_telemetry(...)` (schema v1 — per-checkpoint verify
+      counts + lane drift + slack; `firstTripIndex`/`ladderEvents` schema'd null/empty in P0) then
+      `kata_telemetry.write_task_telemetry(kata_dir, record)` → `.kata/telemetry/<taskId>.json` (**fail-soft** — an
+      OSError returns a `{"skipped": …}` sentinel surfaced as a board NOTE, never a gate).
+   5. **Zero-checkpoint tell (LOW-12):** a task that reports **DONE with ZERO checkpoint commits** under effective
+      mode ≠ `off` ⇒ record it toward `zeroCheckpointTasks` — **a NOTE, never a gate** (a compliance tell that
+      feeds calibration).
+   6. **Malformed-signal fail-safe:** a RAISE from this ADDITIONAL per-checkpoint telemetry computation
+      (`scan_checkpoints`, per-checkpoint drift, slack) is **surfaced + recorded in the task telemetry as a
+      malformed-signal event** — in P0 this **never blocks the task** (detection-only; the treat-as-triggered
+      response is P1's). It is distinct from — and never reaches — the lane check's own blocking raise above.
    **Provider-integration surface re-verify (ADDITIVE — only when the plan declares `builds_against` AND this
    task PROVIDES a contract; BC: absent it ⇒ unchanged).** When a PROVIDER task integrates, re-run
    `contract_edges.surface_hash` on each contract dir it owns. A mismatch against the frozen pin is authorized
@@ -807,6 +869,31 @@ After the frontier drains (all tasks integrated), on the integration branch:
      - The detector is also **on-demand-invocable** — an operator can run
        `recurrence_detect.detect_from_paths(...)` (or the [[kata-improve]] sub-mode) outside the Final gate.
 8. Commit; if a handoff is needed, [[kata-handoff]].
+
+   **Telemetry ledger closeout (M4-P0 — ADDITIVE; only when the run's effective `inlineEval` mode ≠ `off`; BC:
+   mode `off`/absent ⇒ this block is a silent no-op, no ledger row built or appended, byte-for-byte unchanged).**
+   Build the compact per-run summary row and append it to the **committed** telemetry ledger:
+   1. **Build the row:** `kata_telemetry.build_ledger_row(run_summary)` — schema v1 (per-`class×tier` first-pass
+      acceptance, streaks, fix cycles, gate rejections, per-class durations, effective modes, `zeroCheckpointTasks`).
+      **Set `"calibration": true` in `run_summary` when this run is a calibration run** (a toy / instrumented run —
+      `class_median` then EXCLUDES the row so calibration durations never bias the real class medians, gate v2 F6).
+   2. **Resolve the ledger path (IDENTICAL to the read path — read/append symmetry, T4):** a **harness-repo run** ⇒
+      the local `.planning/telemetry-ledger.md` directly; a **target-repo run** ⇒ the `telemetryLedger` locator in
+      `.kata-settings.json`. **Absent locator ⇒ source-absent fail-safe:** write the row to
+      `.kata/telemetry/ledger-row.pending.json` and **surface it** (the durability promise is loudly deferred,
+      never quietly dropped) — do NOT create a ledger file (`kata_telemetry.append_ledger_row` never creates it;
+      T4 creates the header-carrying artifact and appending to a missing file RAISES).
+   3. **Append + the approval gate (D141(b) — the commit carrying the row is NOT self-authorizing):** append via
+      `kata_telemetry.append_ledger_row(<resolved path>, row)`, then **commit the ledger row ONLY on explicit
+      operator approval recorded as a board `DECISION` line at this append site.** Step 8's bare "Commit" above does
+      **not** authorize this row's commit — D141(b) forbids creating an autonomous-git path by implication. When
+      the resolved ledger is **outside the run's target repo** (the normal target-repo case — the target's closeout
+      commit structurally cannot carry a harness-repo row), **request a SECOND, explicitly human-gated commit in
+      the ledger's own repo** (same human, same gate, ledger row only).
+   4. **Declined / failed ⇒ pending-uncommitted, surfaced:** a declined or failed approval leaves the appended row
+      **surfaced as pending-uncommitted, never silent** — it persists on disk (or in
+      `.kata/telemetry/ledger-row.pending.json`) and the deferral is reported at handoff (the M1-L3 durability
+      promise is kept or loudly deferred, never quietly broken).
 
 ## Benchmark closeout phase (ADDITIVE — benchmark run only; BC: absent `kata/module/benchmark` ⇒ silent no-op)
 
