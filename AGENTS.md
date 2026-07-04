@@ -94,6 +94,7 @@ existing`; bootstrap sets `runShape: debug` + module `kata/module/debug`. To sta
 
 ## Status
 
-Pre-v0.1. See `.planning/ROADMAP.md`. v0.1 = Claude-only one-shot core, dogfooded by building
+v0.2.0 (Freeze/Float M1+M4 shipped: contract-edge float + the inline evaluator/reroll). See
+`.planning/ROADMAP.md`. v0.1 = Claude-only one-shot core, dogfooded by building
 KataHarness itself, then validated via the D16 planning-varied A/B on small one-shottable test
 projects (D57); installs into the PokeVault vault (D58).

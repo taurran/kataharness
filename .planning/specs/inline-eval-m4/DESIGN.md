@@ -486,6 +486,14 @@ read as `failure kinds unclassified / cost null`, never fabricated):**
 new per-checkpoint worker emissions (M4-L1 holds); D136 fail-closed only where a field drives a
 decision; every item has a named consumer (none dropped).
 
+**LIVE PROOF + MILESTONE status (dated note, 2026-07-04, D145):** COMPLETE. The ladder fired
+live (trigger 0.60>0.50 on an arranged red checkpoint; inline eval at sonnet via D131; verdict
+`correct` diff-cited; redispatch-with-NOTE; attempt-2 green with index continuity); the float ran
+n=0→1 (builds_against dependent at freeze; pin MATCH; stubs 0; danglers 0; suite 15/15); A/B:
+0 gate rejections on-arm vs 1 rejection + 1 fix cycle control. Happy path = zero LLM calls live.
+Ledger row #4. v0.2.0 tags this state. Honest limits recorded in D145 (toy-scale economics; <1%
+cap AT-RISK with named remediation; class extras await producers).
+
 **P1+P2 status (dated note, 2026-07-04):** P1 BUILT (dogfooded+instrumented, run #2, D143;
 L19 cross-seam sweep SHIP-WITH-FIXES 0 HIGH, all folded) — kata_risk, kata-inline-eval (48th
 skill), orchestrate 0.7.0 scheduler+ladder, adapter contract. P2 BUILT (D144) — per-class leashes

@@ -8,6 +8,20 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [0.2.0] — 2026-07-04 — Freeze/Float M4: the inline evaluator/reroll (DSpark-informed)
+
+**The smaller loop, sharpened — shipped end-to-end in one operator-directed pass.** Everything
+below this header up to and including the M1-P2 float section ships as v0.2.0. Live proof (D145):
+the ladder fired on real evidence (trigger → diff-cited `correct` verdict at a D131-resolved
+below-anchor tier → kill-and-redispatch with a corrective NOTE → green), the happy path cost zero
+LLM calls, the A/B showed 0 gate rejections vs the control's 1 rejection + 1 fix cycle, and the
+float ran its first real `builds_against` edge (pin MATCH, stubs 0, danglers 0). Nine adversarial
+gates ran this milestone (2 DESIGN, 2+2+2 PLAN, 1 P0.1 delta, 1 L19 cross-seam, 1 P0+P0.1 eval) —
+every one caught real defects, all folded. Honest limits: the <1% green-run cap is AT-RISK at
+owned-module chunking (remediation named: coarsen the chunk unit); research/debug class EXTRAS
+await producers (named deferrals); LD7-fallback × M4 topology deferred; toy-scale recovery
+economics favor the control (D145 — the payoff is scale-dependent by design).
+
 ## [Unreleased] — Freeze/Float M4-P2: research + debug adapters (per-class leashes)
 
 **One scheduler, three signal sets — honestly scoped.** The freeze-gate's HOLD caught both new

@@ -1,12 +1,27 @@
 ---
 gsd_state_version: 1.0
 milestone: M2-freeze-float
-milestone_name: "Freeze/Float (operator-directed, D138) — ship order M1→M4→M2→M3; M1 COMPLETE + MERGED (PR #5, D137-D140); M4 (inline evaluator/reroll) next — pending operator direction on the interim test path"
+milestone_name: "Freeze/Float (operator-directed, D138) — ship order M1→M4→M2→M3; M1 COMPLETE (PR #5); M4 COMPLETE (v0.2.0, D141–D145) incl. the operator-directed P0.1 observability addition; next: M2 (shadow tasks) per ship order"
 status: in-progress
-last_updated: "2026-07-02T00:00:00.000Z"
+last_updated: "2026-07-04T22:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-04 — M4 COMPLETE, v0.2.0 TAGGED):** The Fable 5 session executed the FULL M4 recipe
+> in one operator-directed pass: DESIGN double-gated (grill + v1 HOLD + v2 SHIP-WITH-FIXES, Amendments
+> #1–#4 incl. the operator's mid-run observability addition routed via branch 3 → P0.1); P0 telemetry
+> (kata_telemetry, Kata-Checkpoint trailers, evidence digests, the committed ledger) + calibration run #1;
+> P0.1 schema v2 (perTask cost, failureKinds, structured degraded incl. the BACKLOG #16 fold); P1
+> code-class mechanism (kata_risk one-dial score, kata-inline-eval 48th skill, orchestrate 0.7.0
+> scheduler+ladder+reroll, adapter contract) dogfooded+instrumented + L19 cross-seam sweep (0 HIGH);
+> P2 per-class leashes (honest shrink: class extras DATA'd, producers named-deferred); LIVE PROOF (D145):
+> ladder fired live (trigger→diff-cited correct verdict→redispatch-with-NOTE→green), float n=0→1 (pin
+> MATCH/stubs 0/danglers 0), A/B 0 gate rejections vs control 1+1, happy path zero LLM calls. Gauntlet at
+> tag: **pytest 2505/3 · validator 48/0/0 · Snyk medium+ 0 · 17 new mutation-proven guards · 9 gates run,
+> all catches folded**. Ledger: 4 rows (≥3-run offer-`on` threshold MET). Honest limits in D145 (<1% cap
+> AT-RISK, remediation named; class-extra producers deferred; LD7×M4 deferred). Next: M2 per ship order.
+> *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-02e — FREEZE/FLOAT M1 COMPLETE + MERGED to master `0c82bc4` (PR #5); next session =
 > test-path decision):** The Fable 5 session executed the full plan: (1) **D139 integrated adval** — 9

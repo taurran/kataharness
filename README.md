@@ -7,7 +7,14 @@ many subagents, and refuses to call anything "done" until a **fresh-context, def
 then folds every run's lessons back into itself. The name *is* the method: the **Improvement Kata** — *every loop
 sharpens the loop.*
 
-> **v0.1.0 · experimental.** The single-model Claude core is the proven, dogfooded path (KataHarness builds
+> **v0.2.0 · experimental.** NEW in v0.2.0 (Freeze/Float M4): the inline evaluator/reroll — an
+> event-triggered, checkpoint-chunked corrective ladder (`inlineEval: off|telemetry|on`; absent ⇒ off,
+> byte-for-byte BC). Rule-verifiable trigger signals only; LLM judgment ONLY after a trigger, at a
+> strictly-below-anchor tier; recovery = kill-and-restart on attempt branches; the final gate is
+> untouched as authority. Live-proven once (D145): trigger → diff-cited verdict → corrective
+> redispatch → green, with zero LLM calls on the green path. HONEST LIMITS: the <1% green-run
+> overhead cap is AT-RISK at owned-module chunking (remediation named); research/debug class extras
+> await producers; one live proof, not a statistical base. The single-model Claude core is the proven, dogfooded path (KataHarness builds
 > itself); multi-model routing and the Codex/Kiro adapters are partially built; IaC *apply* is gated and not yet
 > shipped runnable. We're honest about maturity — that honesty is the product. New here? Start with
 > [`AGENTS.md`](./AGENTS.md) (the vision + the spine).
@@ -284,7 +291,7 @@ Restart your agent so it loads the skills, then use a slash-command (Claude Code
 
 ## Docs / status
 
-**v0.1.0, experimental.** The single-model Claude core is the proven path; multi-model routing and the
+**v0.2.0, experimental.** The single-model Claude core is the proven path; multi-model routing and the
 Codex/Kiro adapters are partially built; IaC *apply* is gated and not shipped runnable. Read next:
 
 - [`AGENTS.md`](./AGENTS.md) — the vision, the spine, how to work in the repo (canonical).

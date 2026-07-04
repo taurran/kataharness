@@ -2234,3 +2234,29 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   checkpoints, 4/4 evidence MATCH, zero drift, first-pass 2/2. **The ledger now holds 3 instrumented
   runs — the M4-L8 ≥3 threshold for bootstrap to OFFER `inlineEval: on` is met.** Gauntlet: 2505/3,
   validator 48/0/0 post-regen, Snyk 0.
+
+- **D145 — M4 LIVE PROOF complete: the ladder fired live, the float ran n=0→1, the A/B numbers are in —
+  2026-07-04.** One scratch one-shot (`textstat-lp`, 3 tasks, a REAL `builds_against: stats@pin` edge),
+  two arms (`off` control / `on`), same frozen mini-PLAN, model constant (sonnet), one ARRANGED fault
+  (labeled: T-F committed its true red state — snake_case un-lowercased, 3 failed/5 passed — at
+  checkpoint 0 in the on arm; stopped-red DONE in the control arm). *The mechanism, live:* 4 green
+  checkpoints scored 0.0 — the happy path cost ZERO LLM calls (M4-L1 held live); the red checkpoint
+  scored 0.60 > τ 0.50 ⇒ trigger ⇒ [[kata-inline-eval]] dispatched at claude-sonnet-5 (D131 resolve,
+  strictly below anchor — never OMIT-inherit) ⇒ verdict `correct` WITH a diff-cited ≤10-line NOTE (it
+  identified the exact missing `.lower()` and the 5/3 pass/fail accounting from the diff alone) ⇒
+  ladder DECISION @96d9cd8 ⇒ kill confirmed-dead ⇒ fresh dispatch on `task/TF-attempt2` from the
+  CURRENT checkpoint with the NOTE ⇒ attempt-2 checkpoints i=1,2 (index continuity held) both 0.0 ⇒
+  integration green. *The A/B (outer-loop reduction — the M4-L1 success metric):* control arm = 1 gate
+  rejection + 1 fix re-dispatch; on arm = **0 gate rejections, 0 fix cycles** — the defect never reached
+  the gate. Rejections demonstrably happen at a lower level. *The float (n=0→1):* T-D dispatched AT
+  FREEZE in parallel with its provider against the frozen contract (monkeypatched-interface tests
+  standalone-green); at integration: surface hash == frozen pin (pure body-fill), surviving stubs 0,
+  danglers 0, merged suite 15/15. *Honest economics at toy scale:* green-task overhead +4.9%/+8.8%
+  (≈1.3–2.2k tokens/checkpoint — consistent with P0); the on arm's recovery path cost MORE total tokens
+  than the control's fix cycle (266k vs 202k worker tokens) because the preserved prefix was one tiny
+  module — mid-task recovery pays when the prefix is large relative to session setup; the serial
+  gate→diagnose→redispatch→re-gate path it removes was near-zero here by construction. The <1%
+  green-run cap remains AT-RISK at owned-module chunking (P0/P1 bracket ~0.4–1.9% run-level); named
+  remediation unchanged (coarsen chunk unit). Ledger row #4 (calibration: true — toy durations
+  median-excluded; carries the milestone's FIRST real failureKinds entry + ladder telemetry). All
+  numbers in `.planning/telemetry-ledger.md` + the board DECISION trail.
