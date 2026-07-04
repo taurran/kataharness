@@ -416,3 +416,397 @@ class TestExecSafety:
             f"subprocess import found in kata_risk.py: {hits} — "
             "kata_risk spawns NO subprocess (pure; exec-safety.md)"
         )
+
+
+# ===========================================================================
+# M4-P2 X1 — per-class registry + research/debug adapters (additive; the P1
+# tests above stand UNMODIFIED — this section is pure ADDITION)
+# ===========================================================================
+
+
+class TestClassRegistry:
+    """DEFAULT_WEIGHTS_BY_CLASS: three tables, the base trio in every one, the
+    by-reference code alias (re-gate v2 F2)."""
+
+    def test_registry_has_three_classes(self):
+        assert set(kata_risk.DEFAULT_WEIGHTS_BY_CLASS) == {"code", "research", "debug"}
+
+    def test_default_weights_is_code_table_by_reference(self):
+        # re-gate v2 F2 / gate v1 pin: the SAME object, never a copy (a copy silently
+        # diverges under [TUNABLE] calibration edits). is-identity, not just equality.
+        assert kata_risk.DEFAULT_WEIGHTS is kata_risk.DEFAULT_WEIGHTS_BY_CLASS["code"]
+
+    def test_code_table_unchanged(self):
+        assert kata_risk.DEFAULT_WEIGHTS_BY_CLASS["code"] == {
+            "verify_fail": 0.60,
+            "lane_drift": 0.60,
+            "missing_record": 0.60,
+            "slack_ge_2x": 0.30,
+        }
+
+    def test_research_table_values(self):
+        assert kata_risk.DEFAULT_WEIGHTS_BY_CLASS["research"] == {
+            "verify_fail": 0.60,
+            "lane_drift": 0.60,
+            "missing_record": 0.60,
+            "coverage_gap": 0.25,
+            "scope_drift": 0.25,
+            "slack_ge_2x": 0.30,
+        }
+
+    def test_debug_table_values(self):
+        assert kata_risk.DEFAULT_WEIGHTS_BY_CLASS["debug"] == {
+            "verify_fail": 0.60,
+            "lane_drift": 0.60,
+            "missing_record": 0.60,
+            "hypothesis_cycles_3plus": 0.60,
+            "repro_regression": 0.60,
+            "same_hypothesis_reentry": 0.30,
+            "slack_ge_2x": 0.30,
+        }
+
+    def test_base_hard_trio_in_every_class(self):
+        # gate v1 HIGH-1: verify_fail/lane_drift/missing_record never GREEN in any class.
+        for cls, table in kata_risk.DEFAULT_WEIGHTS_BY_CLASS.items():
+            for hard in ("verify_fail", "lane_drift", "missing_record"):
+                assert table[hard] == 0.60, f"{cls} missing base hard signal {hard}"
+
+
+class TestBaseTrioCanaryResearchDebug:
+    """The 6 research/debug base cells (gate v1 HIGH-1 regression canary): every hard
+    signal alone crosses the shorter 0.45 leash. This EXPLICITLY re-pins the cells the
+    P1 parametrized ``test_every_hard_signal_alone_triggers_every_class`` also covers."""
+
+    @pytest.mark.parametrize("task_class", ["research", "debug"])
+    @pytest.mark.parametrize(
+        "hard_args",
+        [
+            dict(record_or_none=_record(1), lane_drift=False, slack_ratio=None),
+            dict(record_or_none=_record(0), lane_drift=True, slack_ratio=None),
+            dict(record_or_none=None, lane_drift=False, slack_ratio=None),
+        ],
+    )
+    def test_base_trio_alone_triggers(self, task_class, hard_args):
+        result = kata_risk.should_trigger(task_class=task_class, **hard_args)
+        assert result["score"] == 0.60
+        assert result["tau"] == 0.45
+        assert result["triggered"] is True
+
+    def test_research_clean_checkpoint_does_not_trigger(self):
+        result = kata_risk.should_trigger(
+            _record(0), lane_drift=False, slack_ratio=None, task_class="research"
+        )
+        assert result["score"] == 0.0
+        assert result["triggered"] is False
+        # class extras ABSENT-by-default ⇒ present-but-False in the vector.
+        assert result["signals"]["coverage_gap"] is False
+        assert result["signals"]["scope_drift"] is False
+
+    def test_code_vector_has_no_class_extras(self):
+        result = kata_risk.should_trigger(
+            _record(0), lane_drift=False, slack_ratio=None, task_class="code"
+        )
+        assert set(result["signals"]) == {
+            "verify_fail",
+            "lane_drift",
+            "missing_record",
+            "slack_ratio",
+        }
+
+
+class TestResearchArithmetic:
+    """A1-Q4 research pins: soft PAIR crosses (0.25+0.25 = 0.50 > 0.45 STRICT); a lone
+    soft signal does not."""
+
+    def test_research_soft_pair_triggers(self):
+        # MUTATION 3 target: mutate research coverage_gap weight 0.25 -> 0.15 and the
+        # pair falls to 0.40 < 0.45 -> RED.
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="research",
+            class_signals={"coverage_gap": True, "scope_drift": True},
+        )
+        assert result["score"] == 0.50
+        assert result["tau"] == 0.45
+        assert result["triggered"] is True  # 0.50 > 0.45 STRICT
+
+    def test_research_lone_coverage_gap_does_not_trigger(self):
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="research",
+            class_signals={"coverage_gap": True},
+        )
+        assert result["score"] == 0.25
+        assert result["triggered"] is False
+
+    def test_research_lone_scope_drift_does_not_trigger(self):
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="research",
+            class_signals={"scope_drift": True},
+        )
+        assert result["score"] == 0.25
+        assert result["triggered"] is False
+
+
+class TestDebugArithmetic:
+    """A1-Q4 debug pins: re-entry+slack PAIR crosses (0.30+0.30 = 0.60 > 0.45); the hard
+    extras cross alone; the LOW-13 cold-start caveat; the >= 3 derivation boundary."""
+
+    def test_debug_reentry_slack_pair_triggers(self):
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=2.0,
+            task_class="debug",
+            class_signals={"same_hypothesis_reentry": True},
+        )
+        assert result["score"] == 0.60  # 0.30 reentry + 0.30 slack
+        assert result["tau"] == 0.45
+        assert result["triggered"] is True
+
+    def test_debug_cold_start_reentry_alone_does_not_trigger(self):
+        # LOW-13 PINNED: slack ABSENT ⇒ same_hypothesis_reentry 0.30 alone < 0.45 ⇒
+        # debug cannot soft-trigger cold (hard signals only at cold start).
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="debug",
+            class_signals={"same_hypothesis_reentry": True},
+        )
+        assert result["score"] == 0.30
+        assert result["triggered"] is False
+
+    def test_debug_repro_regression_alone_triggers(self):
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="debug",
+            class_signals={"repro_regression": True},
+        )
+        assert result["score"] == 0.60
+        assert result["triggered"] is True
+
+    def test_hypothesis_cycles_exactly_3_triggers(self):
+        # MUTATION 2 target: mutate the `>= 3` derivation to `> 3` and cycles==3 no longer
+        # derives hypothesis_cycles_3plus -> score 0.0 -> RED.
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="debug",
+            class_signals={"hypothesis_cycles": 3},
+        )
+        assert result["signals"]["hypothesis_cycles_3plus"] is True
+        assert result["score"] == 0.60
+        assert result["triggered"] is True
+
+    def test_hypothesis_cycles_2_does_not_trigger(self):
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="debug",
+            class_signals={"hypothesis_cycles": 2},
+        )
+        assert result["signals"]["hypothesis_cycles_3plus"] is False
+        assert result["score"] == 0.0
+        assert result["triggered"] is False
+
+    def test_hypothesis_cycles_absent_is_false(self):
+        # None / missing ⇒ absent ⇒ 0 (trigger-shy fail-safe).
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="debug",
+            class_signals={"repro_regression": False},
+        )
+        assert result["signals"]["hypothesis_cycles_3plus"] is False
+        assert result["score"] == 0.0
+
+
+class TestClassSignalGuards:
+    """Cross-class contamination + unknown class-signal keys RAISE (producer bugs, D136)."""
+
+    def test_code_rejects_research_signal(self):
+        # MUTATION 1 target: the cross-class-contamination guard. Disable it (raise ->
+        # continue) and the wrong-class key is silently accepted -> DID NOT RAISE -> RED.
+        with pytest.raises(kata_risk.RiskError, match=r"cross-class contamination"):
+            kata_risk.should_trigger(
+                _record(0),
+                lane_drift=False,
+                slack_ratio=None,
+                task_class="code",
+                class_signals={"coverage_gap": True},
+            )
+
+    def test_research_rejects_debug_signal(self):
+        with pytest.raises(kata_risk.RiskError, match=r"cross-class contamination"):
+            kata_risk.should_trigger(
+                _record(0),
+                lane_drift=False,
+                slack_ratio=None,
+                task_class="research",
+                class_signals={"hypothesis_cycles": 3},
+            )
+
+    def test_debug_rejects_research_signal(self):
+        with pytest.raises(kata_risk.RiskError, match=r"cross-class contamination"):
+            kata_risk.should_trigger(
+                _record(0),
+                lane_drift=False,
+                slack_ratio=None,
+                task_class="debug",
+                class_signals={"scope_drift": True},
+            )
+
+    def test_unknown_class_signal_key_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"unknown class-signal key"):
+            kata_risk.should_trigger(
+                _record(0),
+                lane_drift=False,
+                slack_ratio=None,
+                task_class="research",
+                class_signals={"bogus_signal": True},
+            )
+
+    def test_code_rejects_any_class_signal(self):
+        # code carries NO class extras ⇒ any class_signals key is wrong-class or unknown.
+        with pytest.raises(kata_risk.RiskError, match=r"cross-class contamination"):
+            kata_risk.should_trigger(
+                _record(0),
+                lane_drift=False,
+                slack_ratio=None,
+                task_class="code",
+                class_signals={"hypothesis_cycles": 3},
+            )
+
+
+class TestOverlaySemantics:
+    """The passed weights are an OVERRIDE MAP overlaid on the class table filtered to the
+    class vocabulary — NOT a replacement (gate v1 MED-5; re-gate v2 F1/F3)."""
+
+    def test_override_applies_within_class_vocab(self):
+        override = {
+            "verify_fail": 0.60,
+            "lane_drift": 0.60,
+            "missing_record": 0.60,
+            "coverage_gap": 0.40,  # overridden from base 0.25
+            "scope_drift": 0.25,
+            "slack_ge_2x": 0.30,
+        }
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="research",
+            weights=override,
+            class_signals={"coverage_gap": True},
+        )
+        assert result["score"] == 0.40  # the overridden weight applied
+
+    def test_partial_override_keeps_class_defaults(self):
+        # A sparse override map overlays onto the class table (missing keys keep base).
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="research",
+            weights={"coverage_gap": 0.50},
+            class_signals={"coverage_gap": True, "scope_drift": True},
+        )
+        # coverage_gap overridden to 0.50, scope_drift keeps base 0.25 -> 0.75 capped view.
+        assert result["score"] == 0.75
+        assert result["triggered"] is True
+
+    def test_cross_class_override_key_is_inert(self):
+        # A hypothesis_cycles_3plus weight override on a RESEARCH task is filtered out
+        # (research's table lacks it) — deliberately inert, never a bug (D144).
+        result = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="research",
+            weights={"hypothesis_cycles_3plus": 0.99},
+            class_signals={"coverage_gap": True},
+        )
+        assert "hypothesis_cycles_3plus" not in result["signals"]
+        assert result["score"] == 0.25  # research coverage_gap only; override ignored
+
+
+class TestResolverUnionValidation:
+    """resolve_inline_eval_params validates weight keys against the UNION of all class
+    vocabularies; a union-valid extra is accepted (deliberately inert for classes that
+    lack it); a key in NO class still RAISES."""
+
+    def test_research_extra_weight_override_accepted(self):
+        result = kata_risk.resolve_inline_eval_params(
+            {"mode": "on", "weights": {"coverage_gap": 0.40}}
+        )
+        assert result["weights"]["coverage_gap"] == 0.40
+
+    def test_debug_extra_weight_override_accepted(self):
+        result = kata_risk.resolve_inline_eval_params(
+            {"mode": "on", "weights": {"hypothesis_cycles_3plus": 0.55}}
+        )
+        assert result["weights"]["hypothesis_cycles_3plus"] == 0.55
+
+    def test_truly_unknown_weight_key_still_raises(self):
+        with pytest.raises(kata_risk.RiskError, match=r"unknown weights signal key"):
+            kata_risk.resolve_inline_eval_params(
+                {"mode": "on", "weights": {"not_a_signal": 0.40}}
+            )
+
+
+class TestF1ResolverToTriggerIntegration:
+    """F1 (re-gate v2): a resolver override of a research extra changes a research trigger
+    outcome AND is inert for code."""
+
+    def test_research_extra_override_changes_research_and_inert_for_code(self):
+        params = kata_risk.resolve_inline_eval_params(
+            {"mode": "on", "weights": {"coverage_gap": 0.50}}
+        )
+
+        # Baseline (no override): research coverage_gap 0.25 alone does NOT trigger.
+        baseline = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="research",
+            class_signals={"coverage_gap": True},
+        )
+        assert baseline["score"] == 0.25
+        assert baseline["triggered"] is False
+
+        # With the resolver override, research coverage_gap 0.50 > 0.45 ⇒ triggers.
+        research = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="research",
+            weights=params["weights"],
+            class_signals={"coverage_gap": True},
+        )
+        assert research["score"] == 0.50
+        assert research["triggered"] is True
+
+        # The SAME override map is inert for code: coverage_gap is not in code's table,
+        # so code's vector never gains it and a clean code checkpoint stays GREEN.
+        code = kata_risk.should_trigger(
+            _record(0),
+            lane_drift=False,
+            slack_ratio=None,
+            task_class="code",
+            weights=params["weights"],
+        )
+        assert "coverage_gap" not in code["signals"]
+        assert code["triggered"] is False
