@@ -1,5 +1,14 @@
 # DETAILED HANDOFF — M4 session: the inline evaluator/reroll, executed to FINAL STATE (v0.2.0)
 
+> **⚠️ SUPERSEDE NOTE (2026-07-04, post-freeze-gate — the DESIGN takes precedence over this brief; the
+> D138 stale-doc rule):** three shorthands below were superseded by the gated DESIGN amendments:
+> (1) §5's "per-checkpoint record committed in the task worktree" → a `Kata-Checkpoint:` **commit-message
+> trailer** (`.kata/` is gitignored; A1-Q2); (2) §1/§5's "anchor −1" → **strictly below anchor via the
+> D131 resolver + degrade-to-telemetry on `None`/fallback-exhaustion** (M4-L7 as amended); (3) §2's
+> "`file_content_hashes` = the M4 evidence substrate" → the evidence digest is computed over the
+> checkpoint commit's **git blob hashes** (`file_content_hashes` remains the F5 lane/gate substrate).
+> This brief is otherwise the standing order set; read `specs/inline-eval-m4/DESIGN.md` for the frozen truth.
+
 > **Paste-companion for a fresh coding-agent window (anchor: Fable 5).** This brief carries (1) the full
 > derivation behind M4, (2) exactly what was learned from DeepSeek DSpark and what was rejected, (3) the
 > complete ingest list the session must load for this to work effectively, and (4) the execution recipe to

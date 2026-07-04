@@ -2098,3 +2098,32 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   in the orchestrate step. Known-stale left per append-only convention: the D98 record's
   "step 6" anchor (now step 7). Suite 2270 → **2306** (+36 incl. 5 sweep-fold tests); validator
   47/0/0; Snyk medium+ 0. Awaiting the operator merge gate.
+
+<!-- Freeze/Float M4: the inline evaluator/reroll. Spec: specs/inline-eval-m4/. -->
+- **D141 — M4 worker checkpoint-commit cadence: a deliberate PARTIAL SUPERSEDE of D134's "nothing
+  load-bearing depends on worker task-branch commits" + the telemetry-ledger commit authority — 2026-07-04
+  (design-time ruling, folded at the M4 freeze-gate; supersede-never-rewrite, D134 NOT edited).**
+  (a) **Commit-cadence supersede (gate HIGH-1):** M4 (specs/inline-eval-m4/DESIGN.md, M4-L2 as amended)
+  INTRODUCES a mandated per-chunk worker checkpoint commit on the task branch, carrying a one-line
+  `Kata-Checkpoint:` trailer (the M4 signal record). This makes worker task-branch commits LOAD-BEARING for
+  M4 reroll anchoring and inline-eval scheduling — which D134 expressly disclaimed ("workers MAY commit …
+  but nothing load-bearing depends on it"). The supersede is PARTIAL and additive: **D134's restore
+  semantics stand unchanged** (restore = task-granular re-dispatch from the frozen PLAN; a mid-task loss
+  still re-dispatches from scratch; no mid-wave re-attach). M4 adds a NEW consumer of the commit stream
+  (reroll = kill + fresh dispatch from an existing commit — an anchor choice, not a re-attach; the killed
+  worktree is removed+pruned and a fresh one opens at the anchor on a new attempt branch). BC: the cadence
+  mandate rides the dispatch brief ONLY when `kata.config.inlineEval ≠ off`; absent the field ⇒ off ⇒
+  today's dispatch template byte-for-byte (M4-L8).
+  (b) **Ledger commit authority (gate HIGH-4):** the M4 telemetry ledger (`.planning/telemetry-ledger.md`,
+  HARNESS repo) is appended at closeout and rides the existing HUMAN-GATED closeout commit. This creates NO
+  new autonomous-git path: D133's mechanical carve-out remains board→`refs/kata/trail` ONLY. Target-repo
+  runs locate the ledger via `.kata-settings.json` `telemetryLedger`; absent ⇒ ledger source absent (the
+  documented A1-Q3 fail-safe), hot `.kata/telemetry/` still accumulates. When the ledger resolves OUTSIDE
+  the run's target repo (the normal target-repo case), closeout requests a SECOND explicitly human-gated
+  commit in the ledger's repo (same human, same gate, ledger row only); declined/failed ⇒ surfaced as
+  pending-uncommitted, never silent (gate v2 #2).
+  *Why:* the M4 freeze-gate (v1 HOLD, 2026-07-04) caught the DESIGN inheriting a checkpoint cadence that
+  did not exist (kata-orchestrate step 5 is the ORCHESTRATOR's integration commit; kata-tdd never commits)
+  — building on the false premise would have either silently no-opped M4 or forced an ungated ad-hoc
+  mandate mid-build, and making commits load-bearing without recording the D134 tension would be silent
+  drift on a FROZEN decision.
