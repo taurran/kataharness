@@ -68,6 +68,18 @@ does not drift.**
      present-but-malformed value is never silently coerced to `"off"`, D45/GB12). The resolved value is the run's
      **base** `inlineEval` mode; a task's **effective** mode may degrade below it at dispatch (see the checkpoint
      mandate in § The loop step 2).
+   - **`inlineEval` object-form leg (M4-P1 — ADDITIVE; BC: a string / absent `inlineEval` takes the leg above
+     byte-for-byte unchanged):** when `kata.config.inlineEval` is an **object**, do NOT pass the object to
+     `kata_telemetry.validate_inline_eval` (its `None`⇒`"off"` BC leg is for an ABSENT FIELD, not a present
+     mode-less object — re-gate v2 HIGH-1). Instead: **(1)** require **`'mode' in value`** — **missing ⇒ STOP +
+     escalate** (never a silent `"off"`); **(2)** `kata_telemetry.validate_inline_eval(value['mode'])` fixes the
+     run's **base** mode; **(3)** `kata_risk.resolve_inline_eval_params(value)` — passing **the `inlineEval` VALUE
+     object itself, NEVER the whole `kata.config`** (re-gate v2 MED-2: the whole config would hit the absent-block
+     quiet path and silently ignore every override) — resolves the run's effective `{weights, tau}`. **Any raise
+     from any of the three ⇒ STOP + escalate** (GB12/D45), the same fail-closed posture as the string leg. The
+     resolved `{weights, tau}` are the run's inline-eval params, consumed by `kata_risk.should_trigger(...)` at each
+     scan (§ The M4 scheduler). A string / absent value carries no override ⇒ `{weights, tau}` default to
+     `kata_risk.DEFAULT_WEIGHTS`/`DEFAULT_TAU` (the same result `resolve_inline_eval_params` returns for a string).
 1. **PRE-FLIGHT gate** — conditional, fail-closed, BC-preserving (N5/D29). Call
    `kata_preflight.preflight_required(repo_root)`:
    - **`False`** (no `kata.dependencies.json` manifest): PRE-FLIGHT is not required — proceed
