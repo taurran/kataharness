@@ -99,6 +99,11 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
   through to the next source. When present it MUST be numeric (minutes) — a present-but-non-numeric
   `estimate:` **fails plan freeze** (freeze-time raise, not a mid-run surprise); the runtime
   `kata_telemetry.resolve_estimate` raise is the second-line backstop.
+- **class** *(OPTIONAL, one of `code | research | debug`; default `code`)* — the task's work-class, read by
+  [[kata-orchestrate]]'s M4 inline-eval scheduler to select the per-class risk leash + weight table
+  (`kata_risk.DEFAULT_TAU` / `kata_risk.DEFAULT_WEIGHTS_BY_CLASS`). Omit it ⇒ `code`. An **unknown value**
+  (anything other than the three) **fails plan freeze** (freeze-time raise, not a mid-run surprise — the same
+  freeze-gate posture as `estimate:`). `class:` is **never** derived from `runShape` (provenance-only, LOW-14b).
 
 ## Quality bar (the invariant — all tiers must meet this)
 
@@ -112,6 +117,11 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
   the PRE-FLIGHT phase provisions the approved set before `kata-orchestrate` dispatches.
 - Any per-task `estimate:` present is numeric (minutes); a present-but-non-numeric `estimate:` **fails the
   freeze** (A1-Q3 freeze-time validation — bootstrap does not validate plans, so the freeze is the gate).
+- Any per-task `class:` present is one of `code | research | debug`; an unknown value **fails the freeze**
+  (same freeze-time validation gate as `estimate:`).
+- **No plan task id begins `area:`** — that prefix is reserved for [[kata-orchestrate]]'s M4 per-area
+  `failureKinds` attribution convention, so a colliding task id would corrupt closeout attribution; a task id
+  starting `area:` **fails the freeze** (re-gate v2 LOW-6).
 
 When these hold, **freeze the plan** and hand to [[kata-orchestrate]].
 
