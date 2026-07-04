@@ -80,3 +80,58 @@ the HANDOFF-M4-INLINE-EVAL.md brief is now HISTORICAL (superseded banners inline
   self-handoff at task boundaries rather than pushing through.
 - Post-merge telemetry scans need FORK REFS (rev-list task ^integration is vacuous after merge) —
   the orchestrate text mandates gate-time scans; honor it.
+
+## 6. HONEST GAP AUDIT — what is NOT fully closed in the M4 push (operator-requested, 2026-07-04)
+
+Nothing here blocks the tag — but each is a truth the next session must not rediscover:
+
+1. **The D16-machinery A/B was NOT used.** The handoff recipe named "Benchmark A/B (D16 machinery)";
+   the live proof's A/B was run MANUALLY (honest numbers in D145, but no `benchmark.def.json` /
+   scorecard artifacts). The evidence exists; the FORM deviates. If MindBridge ingest wants scorecard
+   artifacts, re-run the A/B through the benchmark module.
+2. **The <1% green-run cap is UNPROVEN — acceptance criterion 1 is PARTIALLY met.** Outer-loop
+   reduction: proven (0 vs 1+1, arranged). Green overhead <1%: bracketed ~0.4–1.9% run-level,
+   AT-RISK at owned-module chunking, remediation named (coarsen chunk `[TUNABLE]`). The first
+   real-scale `on` run is the decisive measurement.
+3. **`kata-inline-eval` has never been loaded AS an installed skill.** The live proof dispatched a
+   general-purpose agent with the skill's content inlined. The SKILL.md validates (48/0/0) but the
+   skill-file → dispatch path is unexercised (smoke item).
+4. **The shipped PROSE has never driven a fresh conductor.** M4's scheduler/ladder is orchestrator
+   prose; the one live firing was executed by the AUTHORING session (which knew the design). Whether
+   a fresh conductor following ONLY orchestrate 0.8.0's text reproduces the behavior is untested —
+   the single most valuable smoke check (the D137 sprint-blind-test spirit).
+5. **Bootstrap's offer-`on` rule is prose-only.** Nothing mechanically reads the ledger row count at
+   bootstrap; a bootstrap session must check `.planning/telemetry-ledger.md` manually (4 rows ⇒ MAY
+   offer `on`). Acceptable-by-design; stated so it isn't assumed mechanical.
+6. **Board DECISION durability**: the M4 session's D141(b) approval + ladder DECISION lines live in
+   the harness repo's gitignored `.kata/board.md`; `kata_trail.snapshot_board` was never run. The
+   approvals ALSO live in commit messages + D-records (audit trail survives), but the board lines
+   are session-local. Snapshot or accept.
+7. **Cross-model checklist row is PARTIAL**: durable-artifact readability is proven by the AC-4
+   round-trip test + live cross-session scans; no DEDICATED test exercises an LD6
+   background-subprocess writer. Deferred with the multi-model live leg.
+8. **Ledger row 4's `at` timestamp is conductor-approximate** (21:45:00Z, minted at record time,
+   not event time) — fine for calibration, noted for audit precision.
+9. **kata-evaluate does not read `.kata/telemetry/`** — deliberate (M4-L8: gate unchanged;
+   evidence re-validation deferred and flagged in A1-Q2). Stated so its absence reads as design.
+
+## 7. SMOKE-CHECK PROTOCOL (the next session's opener — adval-style, fresh-context)
+
+**Do we need it? YES** — gaps 3+4 above are exactly smoke-shaped: the product is prose + tools,
+and the prose has never run without its author. **Can we? YES — cheaply** (the P0 T5 pattern).
+
+- **SMOKE-1 (read-path, ~5 min, conductor-inline):** `git describe` == v0.2.0 on master; gauntlet
+  (pytest 2505/3, validator 48/0/0); `read_ledger` parses 4 rows + `failure_kinds_of` on each +
+  `class_median` returns None at min_samples=5 (calibration exclusion holds).
+- **SMOKE-2 (prose-executability — THE critical one):** prepare a micro repo with a pre-seeded red
+  checkpoint commit (reuse the T5/live-proof pattern); dispatch a FRESH-CONTEXT conductor agent
+  given ONLY the orchestrate 0.8.0 scheduler+ladder sections + the repo path; PASS = it scans,
+  scores 0.60, triggers, dispatches kata-inline-eval BY SKILL FILE (closes gap 3), acts on the
+  verdict per A1-Q1, writes the @sha DECISION line — from the shipped text alone. FAIL modes feed
+  a targeted prose fix, not a redesign.
+- **SMOKE-3 (efficiency BASELINE for the operator's context-minimization fix):** during SMOKE-2,
+  measure the CONDUCTOR's own cost: tokens consumed, tool calls, report bytes ingested per worker
+  gated, and context-% at closeout. Record as the PRE-FIX baseline row. After the operator's fix
+  lands (through the full loop), RE-RUN the same smoke — the fix's own A/B: conductor
+  context-per-task-gated must DROP with identical gate outcomes. That is the "loop is more
+  efficient" proof, measured, not asserted.
