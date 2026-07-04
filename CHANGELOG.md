@@ -35,6 +35,15 @@ SHIP-WITH-FIXES incl. a wrong-repo CWD bug and a git-config-dependent digest). B
   `.kata-settings.json` gains the `telemetryLedger` locator (documented in `kata_settings.py`).
 - D141: partial supersede of D134 (worker checkpoint commits become load-bearing for M4 reroll
   anchoring; restore semantics unchanged) + the ledger commit-authority ruling.
+- **P0.1 (operator-directed observability addition, DESIGN Amendment #4, routing branch 3, D142):**
+  ledger row schema v1 → v2 (additive) — `perTask` cost columns (explicit nulls), `failureKinds`
+  (orchestrator-classified at gate time, `FAILURE_KINDS` enum, D33), `degraded` events; v1 rows
+  read as `unclassified`/null (no backfill; `failure_kinds_of` accessor; unknown ledger version
+  raises). `kata_restore` structured degraded signal (folds BACKLOG #16): additive
+  `collect_integrated_tasks_ex` + `restore()` `degraded`/`degraded_reasons` keys incl. the
+  previously NOTE-less git-error path (`integration-history-unreadable`); NOTE prints stay.
+  Suite 2376 → 2396 (+20); 3 mutation proofs; Snyk 0; orchestrate 0.6.1 (gate-time failure-kind
+  classification step).
 
 ## [Unreleased] — Freeze/Float M1-P2: the float (contract-edge scheduling)
 

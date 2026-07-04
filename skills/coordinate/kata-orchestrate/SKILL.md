@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.6.0
+version: 0.6.1
 category: coordinate
 status: experimental
 agnostic: true
@@ -413,6 +413,15 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
       (`scan_checkpoints`, per-checkpoint drift, slack) is **surfaced + recorded in the task telemetry as a
       malformed-signal event** — in P0 this **never blocks the task** (detection-only; the treat-as-triggered
       response is P1's). It is distinct from — and never reaches — the lane check's own blocking raise above.
+   7. **Failure-kind classification on a gate REJECTION (P0.1, DESIGN Amendment #4 — ADDITIVE; only when the
+      run's effective `inlineEval` mode ≠ `off`):** when THIS per-task gate rejects a task (verify red, lane
+      trip, or scan-fail), YOU — the orchestrator — classify the rejection from the gate evidence into exactly
+      one `kata_telemetry.FAILURE_KINDS` value (`test-regression` | `lane-drift` | `spec-misread` |
+      `integration-conflict` | `packaging` | `security` | `other`) and record `{taskId, kind, at}` for the
+      closeout ledger row's `failureKinds`. **Never worker-self-classified (D33)** — the worker's account is
+      input, the gate evidence decides. P0.1 scope is per-TASK gate rejections only; final-gate fix-loop
+      (per-area) and M4 ladder-event classification arrive with P1 (`{taskId|area, kind, at}` widening) —
+      deferred, stated, never silently skipped.
    **Provider-integration surface re-verify (ADDITIVE — only when the plan declares `builds_against` AND this
    task PROVIDES a contract; BC: absent it ⇒ unchanged).** When a PROVIDER task integrates, re-run
    `contract_edges.surface_hash` on each contract dir it owns. A mismatch against the frozen pin is authorized
@@ -873,8 +882,15 @@ After the frontier drains (all tasks integrated), on the integration branch:
    **Telemetry ledger closeout (M4-P0 — ADDITIVE; only when the run's effective `inlineEval` mode ≠ `off`; BC:
    mode `off`/absent ⇒ this block is a silent no-op, no ledger row built or appended, byte-for-byte unchanged).**
    Build the compact per-run summary row and append it to the **committed** telemetry ledger:
-   1. **Build the row:** `kata_telemetry.build_ledger_row(run_summary)` — schema v1 (per-`class×tier` first-pass
-      acceptance, streaks, fix cycles, gate rejections, per-class durations, effective modes, `zeroCheckpointTasks`).
+   1. **Build the row:** `kata_telemetry.build_ledger_row(run_summary)` — schema **v2** (P0.1, DESIGN Amendment
+      #4): the v1 fields (per-`class×tier` first-pass acceptance, streaks, fix cycles, gate rejections, per-class
+      durations, effective modes, `zeroCheckpointTasks`) PLUS `perTask` per-task cost (`{tokensIn, tokensOut,
+      wallClockS}` — **explicit nulls where the host surfaces nothing, never fabricated**; consumer: the M4-L7
+      routing break-even + anchor-metering budgeting), `failureKinds` (the gate-step-3.7 classifications;
+      consumer: τ-calibration failure-type mix + recurrence hardening), and `degraded` (`[{scope, reason}]` —
+      one entry per degrade event this run: resolver-`None`, missing kill binding, tools-dir unresolvable,
+      absent-locator pending row; consumer: degraded-run exclusion in calibration/A-B). Old v1 rows stay valid —
+      readers map them to `unclassified` kinds / null cost (`kata_telemetry.failure_kinds_of`); **no backfill.**
       **Set `"calibration": true` in `run_summary` when this run is a calibration run** (a toy / instrumented run —
       `class_median` then EXCLUDES the row so calibration durations never bias the real class medians, gate v2 F6).
    2. **Resolve the ledger path (IDENTICAL to the read path — read/append symmetry, T4):** a **harness-repo run** ⇒

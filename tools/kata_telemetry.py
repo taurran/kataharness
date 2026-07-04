@@ -44,6 +44,27 @@ _TRAILER_KEY = "Kata-Checkpoint:"
 _VALID_MODES: frozenset[str] = frozenset({"off", "telemetry", "on"})
 _SHA256_HEX_LEN = 64
 
+# Ledger schema v2 (P0.1, additive). Producer vocabulary for a gate-rejection's
+# failure kind — the orchestrator classifies from the gate evidence (D33), never the
+# worker. ``unclassified`` is READER-side only (see :func:`failure_kinds_of`) and is
+# NEVER a producible value: an unknown/missing kind at BUILD time is a producer bug and
+# RAISES.
+FAILURE_KINDS: frozenset[str] = frozenset(
+    {
+        "test-regression",
+        "lane-drift",
+        "spec-misread",
+        "integration-conflict",
+        "packaging",
+        "security",
+        "other",
+    }
+)
+
+# Ledger row versions the reader parses. An ABSENT ``v`` reads as v1 (the pre-schema
+# committed shape); a PRESENT-but-unknown version RAISES (fail-closed, D136).
+_KNOWN_LEDGER_VERSIONS: frozenset[int] = frozenset({1, 2})
+
 
 class TelemetryError(Exception):
     """Fail-closed telemetry error (D136).
@@ -476,6 +497,11 @@ def read_ledger(path: str | Path) -> list[dict]:
     case ``read_ledger`` is never called); a configured-but-dangling path is a
     present-but-broken pointer ⇒ GB12/D45 raise (there is no ``missing_ok`` param).
 
+    **Version tolerance (schema v2, P0.1):** a row with an ABSENT ``v`` reads as v1
+    (the pre-schema committed shape); a PRESENT ``v`` in :data:`_KNOWN_LEDGER_VERSIONS`
+    (``{1, 2}``) parses; a PRESENT-but-unknown version RAISES (fail-closed — a future
+    schema this reader cannot interpret must never be silently mis-parsed, D136).
+
     Args:
         path: The ledger file path.
 
@@ -483,7 +509,7 @@ def read_ledger(path: str | Path) -> list[dict]:
         List of row dicts.
 
     Raises:
-        TelemetryError: On a missing file or a malformed row.
+        TelemetryError: On a missing file, a malformed row, or an unknown row version.
     """
     p = Path(path)
     if not p.exists():
@@ -498,13 +524,49 @@ def read_ledger(path: str | Path) -> list[dict]:
         if not stripped.startswith("{"):
             continue  # header/prose line
         try:
-            rows.append(json.loads(stripped))
+            record = json.loads(stripped)
         except (json.JSONDecodeError, ValueError) as exc:
             raise TelemetryError(
                 f"read_ledger: malformed ledger row {stripped[:80]!r} — never "
                 f"skip-and-average (MED-9b). Escalate. ({exc})"
             ) from exc
+        version = record.get("v") if isinstance(record, dict) else None
+        if version is not None and version not in _KNOWN_LEDGER_VERSIONS:
+            raise TelemetryError(
+                f"read_ledger: unknown ledger row version {version!r} — known versions "
+                f"are {sorted(_KNOWN_LEDGER_VERSIONS)}; an absent v reads as v1 but a "
+                "PRESENT unknown version RAISES (fail-closed, D136). Escalate."
+            )
+        rows.append(record)
     return rows
+
+
+def failure_kinds_of(row: dict) -> list[dict]:
+    """Return the ledger *row*'s failure-kind classification (reader accessor, v1/v2).
+
+    A schema-v2 row carries an explicit ``failureKinds`` list (built by
+    :func:`build_ledger_row`, each entry ``{taskId, kind, at}``) and it is returned
+    verbatim. A v1 row — or a v2 row where the field is absent — has no producer
+    classification; this maps it to the reader-side sentinel
+    ``[{"kind": "unclassified"}]`` ONLY when the row records at least one gate
+    rejection (there was something to classify), and to ``[]`` otherwise (an
+    unclassified sentinel is NEVER fabricated where no failure occurred). The
+    discriminator is field PRESENCE, not the version number, so an additive v2 row
+    without the field degrades identically to a v1 row. ``unclassified`` is
+    reader-side only and is never a producible :data:`FAILURE_KINDS` value.
+
+    Args:
+        row: A ledger row dict (from :func:`read_ledger`).
+
+    Returns:
+        The list of ``{taskId, kind, at}`` classification entries for a v2 row, or
+        the ``unclassified``/empty reader-side mapping for a v1/absent-field row.
+    """
+    if "failureKinds" in row:
+        return list(row["failureKinds"])
+    if row.get("gateRejections", 0) > 0:
+        return [{"kind": "unclassified"}]
+    return []
 
 
 def class_median(rows: list[dict], task_class: str, min_samples: int = 5) -> float | None:
@@ -767,8 +829,57 @@ _LEDGER_ROW_DEFAULTS: dict[str, Any] = {
 }
 
 
+def _normalize_per_task(raw: Any) -> dict:
+    """Normalize the v2 ``perTask`` cost map to ``{taskId: {tokensIn, tokensOut, wallClockS}}``.
+
+    Every entry is forced to the three-key shape with EXPLICIT nulls where the host
+    surfaced nothing — the usage_meter honesty (a null token count is recorded, never
+    fabricated). An absent / empty map ⇒ ``{}``.
+    """
+    result: dict[str, dict] = {}
+    for task_id, cost in (raw or {}).items():
+        cost = cost or {}
+        result[str(task_id)] = {
+            "tokensIn": cost.get("tokensIn"),
+            "tokensOut": cost.get("tokensOut"),
+            "wallClockS": cost.get("wallClockS"),
+        }
+    return result
+
+
+def _validate_failure_kinds(raw: Any) -> list[dict]:
+    """Validate + normalize the v2 ``failureKinds`` list (producer-side, fail-closed).
+
+    Each entry must carry a ``kind`` in :data:`FAILURE_KINDS`; an unknown OR missing
+    ``kind`` at BUILD time is a producer bug and RAISES :class:`TelemetryError`
+    (``unclassified`` is reader-side only, never producible — see
+    :func:`failure_kinds_of`). ``taskId`` and ``at`` (ISO-UTC, caller-supplied) pass
+    through. An absent / empty list ⇒ ``[]``.
+
+    Raises:
+        TelemetryError: On a non-object entry or an unknown/missing ``kind``.
+    """
+    out: list[dict] = []
+    for entry in raw or []:
+        if not isinstance(entry, dict):
+            raise TelemetryError(
+                "build_ledger_row: failureKinds entry must be a JSON object "
+                f"(got {entry!r}). Escalate."
+            )
+        kind = entry.get("kind")
+        if kind not in FAILURE_KINDS:
+            raise TelemetryError(
+                f"build_ledger_row: failureKinds kind {kind!r} not in the producer "
+                f"vocabulary {sorted(FAILURE_KINDS)} — an unknown/missing kind at build "
+                "time is a producer bug (unclassified is reader-side only, never "
+                "producible). Escalate."
+            )
+        out.append({"taskId": entry.get("taskId"), "kind": kind, "at": entry.get("at")})
+    return out
+
+
 def build_ledger_row(run_summary: dict) -> str:
-    """Build the one-line JSON ledger row (schema v1) from a run summary.
+    """Build the one-line JSON ledger row (schema v2, additive over v1) from a run summary.
 
     ``firstPassAcceptanceByClassTier`` is keyed ``"<class>×<tier>"`` (gate v1
     MED-10; M4-L10/L7's acceptance-per-(class×tier) routing report needs the keys,
@@ -776,20 +887,33 @@ def build_ledger_row(run_summary: dict) -> str:
     ``calibration`` in *run_summary* is carried through as ``"calibration": true``
     (gate v2 F6/F8 — :func:`class_median` then EXCLUDES the row).
 
+    **Schema v2 (P0.1, additive):** the row carries ``v: 2`` plus three additive
+    fields — ``perTask`` (``{taskId: {tokensIn, tokensOut, wallClockS}}``, explicit
+    nulls, never fabricated), ``failureKinds`` (``[{taskId, kind, at}]``, an
+    unknown/missing ``kind`` RAISES at build time), and ``degraded``
+    (``[{scope, reason}]``). Every v1 field is retained; a caller passing no new data
+    gets ``{}`` / ``[]`` / ``[]`` defaults (no backfill — old rows read as v1).
+
     Args:
         run_summary: The run-summary dict (``runId``/``target`` + the metrics).
 
     Returns:
         A single-line JSON string (append-ready; no embedded newline).
+
+    Raises:
+        TelemetryError: On a ``failureKinds`` entry with an unknown/missing ``kind``.
     """
     row: dict[str, Any] = {
-        "v": 1,
+        "v": 2,
         "utc": run_summary.get("utc") or _now_utc(),
         "runId": run_summary.get("runId"),
         "target": run_summary.get("target"),
     }
     for key, default in _LEDGER_ROW_DEFAULTS.items():
         row[key] = run_summary.get(key, default)
+    row["perTask"] = _normalize_per_task(run_summary.get("perTask"))
+    row["failureKinds"] = _validate_failure_kinds(run_summary.get("failureKinds"))
+    row["degraded"] = list(run_summary.get("degraded", []))
     if run_summary.get("calibration"):
         row["calibration"] = True
     return json.dumps(row, separators=(",", ":"))

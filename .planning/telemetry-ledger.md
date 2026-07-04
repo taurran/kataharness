@@ -10,7 +10,12 @@
 >
 > Row schema v1: `{v, utc, runId, target, calibration, tasks, checkpoints, zeroCheckpointTasks,
 > firstPassAcceptanceByClassTier, streaksByClass, fixCycles, gateRejections,
-> taskDurationsByClass, wallClockS, tokensIn, tokensOut, effectiveModes}` —
+> taskDurationsByClass, wallClockS, tokensIn, tokensOut, effectiveModes}`.
+> **Schema v2 (P0.1, DESIGN Amendment #4 — additive):** v1 fields + `perTask` (per-task
+> `{tokensIn, tokensOut, wallClockS}`, explicit nulls, never fabricated), `failureKinds`
+> (`[{taskId, kind, at}]`, orchestrator-classified at gate time from `FAILURE_KINDS`), `degraded`
+> (`[{scope, reason}]`). Rows with absent `v` read as v1; v1 rows read as `unclassified`
+> kinds / null cost (`failure_kinds_of`) — **no backfill; row 1 stands as written.** —
 > `calibration: true` rows are EXCLUDED from `class_median` (toy durations must never bias
 > real medians); `tokensIn`/`tokensOut` nullable (host-dependent, the usage_meter honesty).
 > τ calibration unlocks at ≥3 instrumented runs; the slack class-median source unlocks at

@@ -689,3 +689,181 @@ def test_roundtrip_cli_trailers_reproduce_records(tmp_path):
     assert any(
         e.startswith("renamed.py:") and "ABSENT" not in e for e in verify_entries
     )  # rename dest: new:<blob>
+
+
+# ===========================================================================
+# P0.1 — ledger schema v2 (additive): perTask + failureKinds + degraded,
+# reader tolerance (absent v ⇒ v1, unknown v ⇒ RAISE), failure_kinds_of accessor.
+# ===========================================================================
+
+
+# The EXACT committed row 1 from .planning/telemetry-ledger.md, verbatim (raw string
+# so the ``×`` JSON escape stays byte-identical to the committed artifact).
+_COMMITTED_V1_ROW = (
+    r'{"v":1,"utc":"2026-07-04T19:03:44Z","runId":"m4p0-t5-calibration-2026-07-04",'
+    r'"target":"scratch/strutil (calibration exercise)","tasks":2,"checkpoints":4,'
+    r'"zeroCheckpointTasks":0,"firstPassAcceptanceByClassTier":{"code×sonnet":1.0},'
+    r'"streaksByClass":{"code":[2,2]},"fixCycles":0,"gateRejections":0,'
+    r'"taskDurationsByClass":{"code":[2.21,3.5]},"wallClockS":342.9,"tokensIn":null,'
+    r'"tokensOut":116105,"effectiveModes":{"T-A":"telemetry","T-B":"telemetry"},'
+    r'"calibration":true}'
+)
+
+
+def test_build_ledger_row_v2_schema_defaults():
+    """A caller passing no v2 data still gets v:2 + empty/null-safe additive fields."""
+    row = json.loads(kt.build_ledger_row({"runId": "r1"}))
+    assert row["v"] == 2
+    assert row["perTask"] == {}
+    assert row["failureKinds"] == []
+    assert row["degraded"] == []
+    # every v1 field is retained
+    for key in (
+        "utc", "runId", "target", "tasks", "checkpoints", "zeroCheckpointTasks",
+        "firstPassAcceptanceByClassTier", "streaksByClass", "fixCycles", "gateRejections",
+        "taskDurationsByClass", "wallClockS", "tokensIn", "tokensOut", "effectiveModes",
+    ):
+        assert key in row
+
+
+def test_build_ledger_row_v2_carries_additive_fields():
+    row = json.loads(
+        kt.build_ledger_row(
+            {
+                "runId": "r1",
+                "perTask": {"T1": {"tokensIn": 10, "tokensOut": 20, "wallClockS": 5.0}},
+                "failureKinds": [
+                    {"taskId": "T2", "kind": "test-regression", "at": "2026-07-04T00:00:00Z"}
+                ],
+                "degraded": [{"scope": "T3", "reason": "tools-dir-unresolvable"}],
+            }
+        )
+    )
+    assert row["perTask"]["T1"] == {"tokensIn": 10, "tokensOut": 20, "wallClockS": 5.0}
+    assert row["failureKinds"] == [
+        {"taskId": "T2", "kind": "test-regression", "at": "2026-07-04T00:00:00Z"}
+    ]
+    assert row["degraded"] == [{"scope": "T3", "reason": "tools-dir-unresolvable"}]
+
+
+def test_build_ledger_row_per_task_explicit_nulls():
+    """perTask entries are forced to the 3-key shape with explicit nulls, never fabricated."""
+    row = json.loads(
+        kt.build_ledger_row({"runId": "r1", "perTask": {"T1": {"tokensOut": 99}}})
+    )
+    assert row["perTask"]["T1"] == {"tokensIn": None, "tokensOut": 99, "wallClockS": None}
+
+
+def test_build_ledger_row_unknown_kind_raises():
+    """RAISES at BUILD time: an unknown failure kind is a producer bug (P0.1 U1)."""
+    with pytest.raises(kt.TelemetryError, match="not in the producer vocabulary"):
+        kt.build_ledger_row(
+            {"runId": "r1", "failureKinds": [{"taskId": "T1", "kind": "made-up", "at": "z"}]}
+        )
+
+
+def test_build_ledger_row_missing_kind_raises():
+    """RAISES at BUILD time: a missing kind is a producer bug (unclassified is reader-only)."""
+    with pytest.raises(kt.TelemetryError, match="not in the producer vocabulary"):
+        kt.build_ledger_row({"runId": "r1", "failureKinds": [{"taskId": "T1", "at": "z"}]})
+
+
+def test_unclassified_never_in_producer_vocabulary():
+    """'unclassified' is reader-side only — never a producible FAILURE_KINDS value."""
+    assert "unclassified" not in kt.FAILURE_KINDS
+    with pytest.raises(kt.TelemetryError, match="not in the producer vocabulary"):
+        kt.build_ledger_row(
+            {"runId": "r1", "failureKinds": [{"taskId": "T1", "kind": "unclassified", "at": "z"}]}
+        )
+
+
+def test_ledger_v2_round_trip(tmp_path):
+    """v2 round-trip: build → append → read_ledger → additive fields intact."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text("# header\n", encoding="utf-8")
+    kt.append_ledger_row(
+        ledger,
+        kt.build_ledger_row(
+            {
+                "runId": "r2",
+                "perTask": {"T1": {"tokensIn": 1, "tokensOut": 2, "wallClockS": 3.0}},
+                "failureKinds": [{"taskId": "T1", "kind": "lane-drift", "at": "2026-07-04T00:00:00Z"}],
+                "degraded": [{"scope": "run", "reason": "x"}],
+            }
+        ),
+    )
+    rows = kt.read_ledger(ledger)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["v"] == 2
+    assert row["perTask"]["T1"]["tokensOut"] == 2
+    assert row["failureKinds"][0]["kind"] == "lane-drift"
+    assert row["degraded"] == [{"scope": "run", "reason": "x"}]
+
+
+def test_read_ledger_v1_committed_row_tolerance(tmp_path):
+    """v1 tolerance: the EXACT committed row 1 still parses via read_ledger (P0.1 U1)."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text(
+        "# M4 telemetry ledger\n\n<!-- rows below -->\n" + _COMMITTED_V1_ROW + "\n",
+        encoding="utf-8",
+    )
+    rows = kt.read_ledger(ledger)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["v"] == 1
+    assert row["runId"] == "m4p0-t5-calibration-2026-07-04"
+    assert row["firstPassAcceptanceByClassTier"] == {"code×sonnet": 1.0}
+    assert row["calibration"] is True
+
+
+def test_read_ledger_absent_v_reads_as_v1(tmp_path):
+    """A row with an ABSENT v reads as v1 (parses; no raise) — LOW-5 contract edge."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text('# header\n{"runId":"r1","tasks":1}\n', encoding="utf-8")
+    rows = kt.read_ledger(ledger)
+    assert rows == [{"runId": "r1", "tasks": 1}]
+
+
+def test_read_ledger_unknown_version_raises(tmp_path):
+    """RAISES: a PRESENT unknown ledger row version (P0.1 U1)."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text('# header\n{"v":99,"runId":"r1"}\n', encoding="utf-8")
+    with pytest.raises(kt.TelemetryError, match="unknown ledger row version"):
+        kt.read_ledger(ledger)
+
+
+def test_failure_kinds_of_v2_returns_field():
+    row = {
+        "v": 2,
+        "failureKinds": [{"taskId": "T1", "kind": "packaging", "at": "z"}],
+    }
+    assert kt.failure_kinds_of(row) == [{"taskId": "T1", "kind": "packaging", "at": "z"}]
+
+
+def test_failure_kinds_of_v1_with_rejections_unclassified():
+    """A v1 row WITH gate rejections maps to the reader-side unclassified sentinel."""
+    row = {"v": 1, "gateRejections": 2}
+    assert kt.failure_kinds_of(row) == [{"kind": "unclassified"}]
+
+
+def test_failure_kinds_of_v1_without_rejections_empty():
+    """A v1 row with NO gate rejections maps to [] — never a fabricated failure."""
+    assert kt.failure_kinds_of({"v": 1, "gateRejections": 0}) == []
+    assert kt.failure_kinds_of({"v": 1}) == []
+
+
+def test_class_median_v2_row_flows_identically():
+    """A v2 row flows through class_median identically (duration source untouched)."""
+    v2_row = json.loads(
+        kt.build_ledger_row(
+            {
+                "runId": "r1",
+                "taskDurationsByClass": {"code": [10.0, 20.0, 30.0, 40.0, 50.0]},
+                "perTask": {"T1": {"tokensIn": None, "tokensOut": None, "wallClockS": 30.0}},
+                "failureKinds": [{"taskId": "T1", "kind": "other", "at": "z"}],
+            }
+        )
+    )
+    assert v2_row["v"] == 2
+    assert kt.class_median([v2_row], "code", min_samples=5) == 30.0

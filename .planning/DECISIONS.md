@@ -2127,3 +2127,29 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   — building on the false premise would have either silently no-opped M4 or forced an ungated ad-hoc
   mandate mid-build, and making commits load-bearing without recording the D134 tension would be silent
   drift on a FROZEN decision.
+
+- **D142 — operator-directed M4 observability addition: routed via branch 3 (P0.1 schema bump, no
+  mid-phase retrofit) — 2026-07-04.** The operator directed three additive observability items
+  mid-M4 (ledger cost columns; gate-time failure-kind enum; structured degraded-mode signal folding
+  BACKLOG #16), with an explicit three-branch routing rule keyed on ACTUAL phase state. Verified
+  state at receipt: DESIGN frozen (`1cd1a60`), PLAN-p0 frozen (`75ac522`), ledger schema v1 built
+  (`fb0568a`), row 1 committed (`32bd7f2`) ⇒ **branch 3**: no retrofit; P0.1 executed immediately
+  post-P0, pre-P1. Disposition recorded as a board DECISION + DESIGN Amendment #4 (dated,
+  operator-attributed). *Delivered:* ledger row schema v2 (additive: `perTask` explicit-null cost,
+  `failureKinds` `[{taskId, kind, at}]` orchestrator-classified at gate time — never worker
+  self-classified, D33; `degraded` `[{scope, reason}]`); reader tolerance (absent-`v` = v1; v1 →
+  `unclassified`/null via `failure_kinds_of`; unknown PRESENT version raises — mutation-proven;
+  **no backfill**, row 1 stands); `kata_restore`: `_scan_integration_commit_bodies` widened to
+  `(lines, degraded_reasons)` (both callers unpack; NOTE prints verbatim), additive
+  `collect_integrated_tasks_ex`, `restore()` `degraded`/`degraded_reasons` on both paths incl. the
+  previously silent git-error path (`integration-history-unreadable` — the delta gate's MED-2
+  catch: the WORST restore path had no NOTE at all). Every field has a NAMED consumer (M4-L7
+  routing break-even + anchor-metering budgeting; τ-calibration failure-type mix — the HANDOFF §1
+  unmeasured parameter; degraded-run exclusion in calibration/A-B + kata-orient/readiness); the
+  operator's drop-rule was applied and nothing was dropped. P0.1 scope: per-TASK gate rejections
+  only; final-gate per-area + ladder-event classification widen the entry (`{taskId|area, kind,
+  at}`) in P1 — deferred, stated. *Gates:* delta freeze-gate SHIP-WITH-FIXES (1 HIGH/2 MED/2 LOW,
+  all folded pre-build); suite 2376 → **2396** (+20); 3 mutation proofs (unknown-kind,
+  unknown-version, degraded-flag: disable → named test RED → revert); validator 47/0/0; Snyk
+  medium+ 0; orchestrate 0.6.1. M4-L1 honored: zero new per-checkpoint worker emissions — all
+  three items are orchestrator/gate-side or fields on already-emitted artifacts.

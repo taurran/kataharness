@@ -1006,3 +1006,111 @@ def test_fold_board_ignores_progress_lines():
     assert folded["ends"] == {}
     assert "T9" not in folded["owners"]
     assert folded["in_flight"] == frozenset({"T1"})
+
+
+# ---------------------------------------------------------------------------
+# P0.1 U2 — structured degraded signal (collect_integrated_tasks_ex + restore keys)
+# ---------------------------------------------------------------------------
+
+
+def test_collect_ex_bounded_not_degraded(tmp_path):
+    """Bounded scan (fork-point resolves) ⇒ degraded False, reasons empty."""
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1", "T2"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+
+    ex = kata_restore.collect_integrated_tasks_ex(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert ex["tasks"] == {"T1"}
+    assert ex["degraded"] is False
+    assert ex["reasons"] == []
+
+
+def test_collect_ex_unbounded_fallback_degraded(tmp_path, capsys):
+    """Unbounded fallback (fork-point unresolvable) ⇒ degraded True + reason.
+
+    MUTATION PROOF anchor (degraded-flag guard): dropping the
+    ``reasons.append("integration-scan-unbounded")`` in
+    ``_scan_integration_commit_bodies`` makes this test go RED (degraded False).
+    """
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+    # PLAN exists on disk but is NEVER committed to integration → the fork-point
+    # (last commit touching the plan path) is unresolvable → unbounded fallback.
+    plan = _make_plan(repo, ["T1"])
+
+    ex = kata_restore.collect_integrated_tasks_ex(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert ex["tasks"] == {"T1"}
+    assert ex["degraded"] is True
+    assert "integration-scan-unbounded" in ex["reasons"]
+    # the verbatim NOTE print still fires at its current site (BC)
+    assert "integration scan is UNBOUNDED" in capsys.readouterr().out
+
+
+def test_collect_ex_git_error_integration_history_unreadable(tmp_path):
+    """Git error (lines is None) ⇒ empty set + 'integration-history-unreadable' (MED-2)."""
+    repo = _make_git_repo(tmp_path)  # no 'integration' branch exists
+    ex = kata_restore.collect_integrated_tasks_ex(
+        repo_root=str(repo), integration_branch="integration", plan_path=None
+    )
+    assert ex["tasks"] == set()
+    assert ex["degraded"] is True
+    assert ex["reasons"] == ["integration-history-unreadable"]
+
+
+def test_collect_delegation_is_byte_identical(tmp_path):
+    """collect_integrated_tasks returns exactly collect_integrated_tasks_ex()['tasks']."""
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+    plan = _make_plan(repo, ["T1", "T2"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+    _add_integration_commit(repo, "integration", "T2")
+
+    plain = kata_restore.collect_integrated_tasks(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    ex = kata_restore.collect_integrated_tasks_ex(
+        repo_root=str(repo), integration_branch="integration", plan_path=str(plan)
+    )
+    assert plain == ex["tasks"] == {"T1", "T2"}
+
+
+def test_restore_carries_degraded_keys_on_empty_path(tmp_path):
+    """LOW-5: the non-lost-run _empty early return carries degraded=False + []."""
+    repo = _make_git_repo(tmp_path)  # no refs/kata/trail ⇒ not a lost run
+    result = kata_restore.restore(repo_root=str(repo))
+    assert result["lost_run"] is False
+    assert result["degraded"] is False
+    assert result["degraded_reasons"] == []
+
+
+def test_restore_carries_degraded_keys_on_lost_run(tmp_path):
+    """restore() carries the additive degraded keys on the lost-run path too."""
+    repo = _make_git_repo(tmp_path)
+    plan_path = _make_plan(repo, ["T1", "T2"])
+    _commit_plan(repo)
+    _git(["checkout", "-b", "integration"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+
+    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    _write_board_and_snapshot(repo, board)
+    _delete_tier3(repo)
+
+    result = kata_restore.restore(
+        repo_root=str(repo),
+        plan_path=str(plan_path),
+        integration_branch="integration",
+    )
+    assert result["lost_run"] is True
+    assert "degraded" in result and "degraded_reasons" in result
+    assert isinstance(result["degraded"], bool)
+    assert isinstance(result["degraded_reasons"], list)
