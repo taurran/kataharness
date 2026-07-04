@@ -649,6 +649,13 @@ def slack_ratio(
     ⇒ ``None`` — the formula must never manufacture an early trigger against a
     healthy early worker (v2-MED-6 / zero-progress guard).
 
+    KNOWN CAVEAT (L19 sweep LOW-8): PROGRESS events SPAN reroll attempts — elapsed
+    runs from attempt 1's first event while a fresh attempt's ``done/owned``
+    restarts, so recorded slack across a reroll is inflated/polluted. Harmless for
+    P1 code-class triggering (slack alone cannot cross τ), but calibration
+    consumers of recorded slack should exclude rerolled tasks until P2 re-scopes
+    slack per attempt.
+
     Args:
         events: ``{ts, done, owned}`` events (from :func:`parse_progress_events`).
         estimate_min: The resolved estimate in minutes (or ``None``).

@@ -54,6 +54,13 @@ The kill primitive (b) binds to a concrete platform mechanism where the ladder u
 | **Claude host** | the host's **background-task stop** on the dispatched worker |
 | **LD6 off-host** | **OS process kill** of the background subprocess |
 
+**LD7 host-fallback mid-task is DEFERRED (L19 sweep MED-4 — named, not silent):** a platform failure that
+triggers the LD7 host fallback re-dispatches the task as a fresh host session; its interaction with the
+attempt-branch topology, checkpoint-index continuity, and confirmed-dead semantics for the abandoned off-host
+process is NOT specified by this contract version — until it is, a run mixing `inlineEval: on` with off-host
+workers should treat an LD7 fallback as a `reroll`-equivalent (new attempt branch, index continuity, kill
+confirmed) or degrade that platform to `telemetry`.
+
 Cross-model, LD6 workers are identical to the host case — subprocess kill *is* the primitive; there is no
 new adapter surface for off-host workers. A platform with **no** kill binding has no primitive (b) ⇒ it
 degrades to `telemetry` per the rule above (surfaced, recorded).

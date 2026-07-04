@@ -2193,3 +2193,18 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   (mechanical-ceremony lower bound ~0.4–0.8% run-level vs P0-calibrated upper bound ~1.9%) —
   INCONCLUSIVE without a controlled real-scale A/B; the live-proof D16 A/B is the clean measurement;
   remediation (coarsen chunk unit) remains named. L19 integrated sweep next; P2 adapters after.
+  *(Addendum 2026-07-04 — the L19 integrated cross-seam sweep over the WHOLE M4 body
+  (1cd1a60..805dacc, 10 seams explicitly checked incl. board/fix-loop/liveness/escalation/D131/
+  LD6-LD7/M1-contract/trailer-restore/config/ledger): SHIP-WITH-FIXES — 0 HIGH / 4 MED / 6 LOW, all
+  folded same-day: the ladder's area:-convention pointer now has its real documentation (ledger
+  header + closeout block — it had claimed docs that were never written); liveness-clock semantics
+  on a ladder kill pinned (fresh attempt's CLAIM = reset; adjudicated kill never double-handled);
+  checkpoint-index continuity across attempts mandated (anchor i=k ⇒ fresh session starts k+1); LD7
+  host-fallback × attempt topology NAMED-DEFERRED in the adapter contract (treat as reroll-equivalent
+  or degrade); R2 gained the reciprocal inline-eval carve-out (the 4th appearance of the never-anchor
+  class — now closed at BOTH ends); precondition-0 string-leg qualifier; scan-preempts-gate ordering
+  at DONE; slack attempt-spanning caveat in the docstring; +1 seam pin test (checkpoint-trailer
+  bodies inert to the restore scan through a --no-ff merge — suite 2469 → 2470). CORRECTION (sweep
+  LOW-9): the W5 commit message overclaimed "class_median now live" — row 2 holds 4 code samples and
+  the documented threshold is ≥5, so class_median correctly returns None at the shipped default; the
+  8.35 figure was a below-threshold preview, not a live median.)*

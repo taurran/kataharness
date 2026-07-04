@@ -13,7 +13,9 @@
 > taskDurationsByClass, wallClockS, tokensIn, tokensOut, effectiveModes}`.
 > **Schema v2 (P0.1, DESIGN Amendment #4 — additive):** v1 fields + `perTask` (per-task
 > `{tokensIn, tokensOut, wallClockS}`, explicit nulls, never fabricated), `failureKinds`
-> (`[{taskId, kind, at}]`, orchestrator-classified at gate time from `FAILURE_KINDS`), `degraded`
+> (`[{taskId, kind, at}]`, orchestrator-classified at gate time from `FAILURE_KINDS`; per-AREA
+> entries — final-gate fix-loop areas and ladder events — carry `area:<name>` in the `taskId`
+> field, and plan task ids must NEVER begin `area:`), `degraded`
 > (`[{scope, reason}]`). Rows with absent `v` read as v1; v1 rows read as `unclassified`
 > kinds / null cost (`failure_kinds_of`) — **no backfill; row 1 stands as written.** —
 > `calibration: true` rows are EXCLUDED from `class_median` (toy durations must never bias

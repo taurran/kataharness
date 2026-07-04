@@ -61,7 +61,8 @@ does not drift.**
      mode/effort/tiers/modules guard above). **BC1:** `roles` absent ⇒ `resolve_roles` returns every role
      assigned to the host ⇒ today's single-host loop byte-for-byte (DESIGN R5/LD3).
    - **`inlineEval` load-guard (M4-L8/M4-L10 — ADDITIVE; BC: absent ⇒ `off`, byte-for-byte unchanged):** add
-     `kata.config.inlineEval` to the strict-validation list — validate it mechanically via
+     `kata.config.inlineEval` to the strict-validation list — **(string form; the object form is the NEXT
+     bullet's leg)** validate it mechanically via
      `kata_telemetry.validate_inline_eval(inlineEval)`: `None`/absent ⇒ `"off"` (the BC fail-safe); exactly
      `"off"`/`"telemetry"`/`"on"` ⇒ itself; **anything else** (case-variant, wrong type, unknown string) raises ⇒
      **STOP + escalate** (the same fail-closed posture as the mode/effort/tiers/modules guard above — a
@@ -543,6 +544,9 @@ are recorded (§ The loop step 3 per-task telemetry) and **nothing is scheduled,
 (M4-L8/M4-L10; `telemetry` keeps the P0 never-blocks posture). Under `on`, the scheduler additionally turns each
 new checkpoint into a trigger decision.
 
+- **Ordering at `DONE` (L19 sweep LOW-10):** the checkpoint scan runs BEFORE the step-3 task gate; a final-
+  checkpoint trigger that ends in `reroll`/`correct` PRE-EMPTS the gate (the task re-enters in-flight on the
+  fresh attempt — one recovery re-dispatch, never two on one boundary).
 - **Scan cadence.** At **every liveness-monitor pass** (§ The loop step 2) **AND at each worker `DONE`** (§ The
   loop step 3), scan the task's **ACTIVE attempt branch** for NEW checkpoint commits via
   `kata_telemetry.scan_checkpoints(repo_root, <active attempt branch>, integration_ref)` (the oldest-first
@@ -605,6 +609,15 @@ reuses the existing `DECISION` line and the existing kinds.
     task's dispatch base). **[[kata-worktree]] remove+prune the killed attempt's worktree BEFORE the fresh worktree
     opens at the anchor** (the existing abort route); the reroll `DECISION` line **names the new attempt branch**
     (the scheduler polls ONLY the active one).
+    **Liveness-clock semantics on a ladder kill (L19 sweep MED-2):** the killed attempt's open `CLAIM` (no
+    `DONE`, append-only board) is ADJUDICATED by the reroll/correct `DECISION` line and is **not a staleness
+    source**; the fresh attempt's `CLAIM` is the liveness reset. If the fresh dispatch itself stalls past
+    `livenessDeadline`, the liveness path applies to the FRESH attempt normally — the monitor never
+    double-handles the adjudicated kill.
+    **Checkpoint-index continuity (L19 sweep MED-3):** every `correct`/`reroll` fresh-dispatch brief mandates
+    **continuing the checkpoint index from the anchor checkpoint's `i`** (anchor at `i=k` ⇒ the fresh session's
+    first trailer is `--index k+1`) — the streak metric, `firstTripIndex`, and the inline evaluator's
+    "last good checkpoint index" all stay well-defined across attempts on the active branch.
 - **Trigger #2 (same task) ⇒ GROUNDING PASS before any second reroll.** YOU (the plan-guardian) re-anchor the task
   against the FROZEN plan — **is the SPEC the defect?** Output = a **tightened task brief** (clarified within plan
   bounds, board `DECISION`), and ONLY THEN reroll #2. A **plan-defect finding routes through the EXISTING general
@@ -716,6 +729,9 @@ fails:
    record it in the drift ledger.
 4. After ≤ 2 step-downs the chain ends in `None`. Omit the `model` parameter on the final retry.
    **Never abort** solely due to model unavailability; always make the `None`/omit final attempt.
+   **EXCEPTION — the inline-eval slot (M4-L7, L19 sweep LOW-5):** [[kata-inline-eval]] dispatches NEVER take
+   the `None`/omit terminus — on chain exhaustion, skip the eval and degrade the run to `telemetry`, surfaced
+   (see § The corrective-action ladder, trigger #1: never OMIT-inherit for this slot).
    **Never re-select the anchor's own ID as the terminus** — `None`/omit is the terminus.
 5. **Inherited-model dispatches (the OMIT path) skip R2 entirely.** A failure on an
    inherited-model call is a hard dispatch error; surface it via the normal escalation path.
@@ -1022,7 +1038,8 @@ After the frontier drains (all tasks integrated), on the integration branch:
       #4): the v1 fields (per-`class×tier` first-pass acceptance, streaks, fix cycles, gate rejections, per-class
       durations, effective modes, `zeroCheckpointTasks`) PLUS `perTask` per-task cost (`{tokensIn, tokensOut,
       wallClockS}` — **explicit nulls where the host surfaces nothing, never fabricated**; consumer: the M4-L7
-      routing break-even + anchor-metering budgeting), `failureKinds` (the gate-step-3.7 classifications;
+      routing break-even + anchor-metering budgeting), `failureKinds` (the gate-step-3.7 classifications — per-area fix-loop/ladder entries carry `area:<name>` in
+      the `taskId` field, and plan task ids must never begin `area:` (the ladder's convention, L19 MED-1);
       consumer: τ-calibration failure-type mix + recurrence hardening), and `degraded` (`[{scope, reason}]` —
       one entry per degrade event this run: resolver-`None`, missing kill binding, tools-dir unresolvable,
       absent-locator pending row; consumer: degraded-run exclusion in calibration/A-B). Old v1 rows stay valid —

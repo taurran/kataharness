@@ -1114,3 +1114,59 @@ def test_restore_carries_degraded_keys_on_lost_run(tmp_path):
     assert "degraded" in result and "degraded_reasons" in result
     assert isinstance(result["degraded"], bool)
     assert isinstance(result["degraded_reasons"], list)
+
+
+def test_collect_integrated_checkpoint_trailers_are_inert(tmp_path):
+    """L19 sweep LOW-6 (M4 seam pin): worker Kata-Checkpoint trailer bodies, made
+    reachable in the integration scan by a --no-ff merge, must NOT enter the
+    integrated set (they match neither the strict Kata-Task regex nor the loose
+    prefix detectors) and must NOT be surfaced as malformed.
+
+    Topology: plan-freeze on integration -> worker branch with a checkpoint
+    commit (Kata-Checkpoint trailer, per the M4-P0 cadence) -> --no-ff merge
+    carrying the Kata-Task trailer (the orchestrator's integration commit).
+    """
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "integration"], repo)
+
+    plan_path = _make_plan(repo, ["T1", "T2"])
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "chore: freeze PLAN for current run"], repo)
+
+    # Worker task branch: one M4 checkpoint commit (worker-authored trailer body).
+    _git(["checkout", "-b", "task/T1"], repo)
+    (repo / "t1_module.txt").write_text("module 1\n", encoding="utf-8")
+    _git(["add", "t1_module.txt"], repo)
+    _git(
+        [
+            "commit",
+            "-m",
+            "feat: t1 module 1\n\n"
+            'Kata-Checkpoint: {"v":1,"i":0,"verify":{"exit":0,"passed":3,'
+            '"failed":0},"evidence":"deadbeef"}',
+        ],
+        repo,
+    )
+
+    # Orchestrator integrates via --no-ff merge (checkpoint body now reachable
+    # in the fork..integration %B walk).
+    _git(["checkout", "integration"], repo)
+    _git(["merge", "--no-ff", "task/T1", "-m", "feat: integrate T1\n\nKata-Task: T1"], repo)
+
+    integrated = kata_restore.collect_integrated_tasks(
+        repo_root=str(repo),
+        integration_branch="integration",
+        plan_path=str(plan_path),
+    )
+    # ONLY T1 (from the orchestrator's Kata-Task trailer). The worker's
+    # Kata-Checkpoint body contributed nothing: no phantom ids, no malformed
+    # surfacing, no under-dispatch of T2.
+    assert integrated == {"T1"}
+
+    ex = kata_restore.collect_integrated_tasks_ex(
+        repo_root=str(repo),
+        integration_branch="integration",
+        plan_path=str(plan_path),
+    )
+    assert ex["tasks"] == {"T1"}
+    assert ex["degraded"] is False
