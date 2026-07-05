@@ -108,5 +108,10 @@ section above).
 
 Then an overall **SHIP / HOLD** recommendation.
 
+> **Verdict-tier variance (CA-L44 F1; SMOKE-2 finding F1, `.planning/SMOKE-v0.2.0.md`):** the SHIP/HOLD call,
+> like the gate's PASS/NEEDS_WORK, is not tier-portable — the same evidence can draw a different verdict at a
+> different review tier. State the review tier and the rationale alongside the recommendation. See the
+> calibration note in [[kata-evaluate]] (Output) — it is the shared home for this guidance.
+
 HOLD findings route back to [[kata-orchestrate]] as a deliberate decision (re-grill the bad branch, tune a
 constant, add coverage) — never an inline silent fix.
