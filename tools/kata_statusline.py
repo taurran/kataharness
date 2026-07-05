@@ -11,15 +11,23 @@ Public API:
     statusline_from_event(stdin_text: str) -> str
         Parse the Claude statusLine stdin JSON, find cwd, call build_statusline().
         Fail-soft: ANY exception -> return "".
+    write_bridge(temp_dir, payload_dict) -> Path | None
+        Write the kata superset context-usage bridge file (CA-L1/CA-L2) from the
+        SAME statusLine stdin JSON. Fail-soft observability write (never raises).
 
 Security: build_statusline() applies a _safe_path() .. guard (CWE-23, mirrors kata_dash).
+write_bridge() applies a session_id filename-safety guard (CWE-22/CWE-23).
 """
 
 from __future__ import annotations
 
 import json
+import os
+import re
+import tempfile
+import time
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +154,112 @@ def build_statusline(kata_dir: Union[str, Path]) -> str:
 
 
 # ---------------------------------------------------------------------------
+# write_bridge — kata superset context-usage bridge writer (CA-L1 / CA-L2)
+# ---------------------------------------------------------------------------
+
+#: session_id is interpolated into the bridge filename; accept only a safe
+#: charset (UUIDs are `[0-9a-fA-F-]`). Combined with an explicit ".." reject
+#: below, this blocks path traversal / separator injection (CWE-22/CWE-23).
+_SAFE_SESSION_ID = re.compile(r"\A[A-Za-z0-9._-]+\Z")
+
+
+def _is_number(value: Any) -> bool:
+    """Return True iff *value* is a real int/float (bool rejected — subclasses int).
+
+    Mirrors kata_gauge._is_number so the bridge this writer produces round-trips
+    through kata_gauge.read_bridge's numeric guards.
+    """
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def write_bridge(temp_dir: Union[str, Path], payload_dict: Any) -> Union[Path, None]:
+    """Write the kata superset context-usage bridge file (CA-L1 / CA-L2).
+
+    Writes ``<temp_dir>/kata-ctx-<session_id>.json`` with the CA-L2 superset schema
+    verbatim: ``{session_id, remaining_percentage, used_pct, timestamp, total_tokens}``.
+    ``timestamp`` is Unix epoch seconds now (GROUNDING G3); ``used_pct`` is
+    ``100 - remaining_percentage``. The write is **atomic** (temp file in the same
+    directory + :func:`os.replace`) so a reader (kata_gauge.read_bridge) never sees a
+    partial file (CA-L1).
+
+    The superset is **additive/BC with the gsd 4-field schema**
+    (``{session_id, remaining_percentage, used_pct, timestamp}``); ``total_tokens`` is
+    free because the wrapper receives the same statusline stdin (GROUNDING G3 —
+    ``context_window.remaining_percentage`` + ``context_window.total_tokens`` confirmed).
+    When ``total_tokens`` is absent/non-numeric the field is written as JSON ``null`` and
+    the reader degrades to percentage-only triggering (CA-L2 degrade).
+
+    Returns:
+        The final bridge :class:`~pathlib.Path` on success, or ``None`` when nothing was
+        written. Missing ``context_window`` in *payload_dict*, a missing/non-numeric
+        ``remaining_percentage``, or a missing/unsafe ``session_id`` ⇒ ``None``, no file
+        (a statusline event without gauge data is a legitimate host state — the READ
+        side's absent-leg handles it; never a crash).
+
+    Fail-soft (statusline contract — never crash the host statusline): ANY exception,
+    including a write :class:`OSError`, is swallowed and yields ``None``. This is the
+    documented observability-write exception to the D136 fail-closed posture, matching
+    ``write_task_telemetry``'s fail-soft class.
+    """
+    try:
+        if not isinstance(payload_dict, dict):
+            return None
+
+        session_id = payload_dict.get("session_id")
+        if not isinstance(session_id, str) or not session_id:
+            return None
+        # filename-safety guard (CWE-22/CWE-23): session_id is interpolated into
+        # the temp filename — reject '..' and any non-safe character. Defense in
+        # depth even though the host session_id is trusted.
+        if ".." in session_id or not _SAFE_SESSION_ID.match(session_id):
+            return None
+
+        context_window = payload_dict.get("context_window")
+        if not isinstance(context_window, dict):
+            return None
+
+        remaining = context_window.get("remaining_percentage")
+        if not _is_number(remaining):
+            return None
+
+        total_tokens = context_window.get("total_tokens")
+        total_val = int(total_tokens) if _is_number(total_tokens) else None
+
+        payload = {
+            "session_id": session_id,
+            "remaining_percentage": remaining,
+            "used_pct": 100 - remaining,
+            "timestamp": int(time.time()),
+            "total_tokens": total_val,
+        }
+
+        temp_dir_path = Path(temp_dir)
+        final_path = temp_dir_path / f"kata-ctx-{session_id}.json"
+
+        # Atomic temp+rename (CA-L1): a sibling temp in the SAME directory, then
+        # os.replace (atomic on one filesystem). The reader watches for the FINAL
+        # name, which only ever appears whole via os.replace.
+        fd, tmp_name = tempfile.mkstemp(
+            dir=str(temp_dir_path), prefix="kata-ctx-", suffix=".json.tmp"
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                json.dump(payload, fh)
+            os.replace(tmp_name, final_path)
+        except OSError:
+            # write/rename failed — clean up the orphan temp, never crash the host.
+            try:
+                os.unlink(tmp_name)
+            except OSError:
+                pass
+            return None
+        return final_path
+
+    except Exception:  # noqa: BLE001 — fail-soft observability write (never raise to host)
+        return None
+
+
+# ---------------------------------------------------------------------------
 # statusline_from_event — Claude statusLine adapter entry point
 # ---------------------------------------------------------------------------
 
@@ -168,6 +282,12 @@ def statusline_from_event(stdin_text: str) -> str:
         data = json.loads(stdin_text)
         if not isinstance(data, dict):
             return ""
+
+        # CA-L1/CA-L2: write the kata superset bridge from the SAME stdin JSON,
+        # BEFORE the render path — the bridge must NOT depend on a kata cwd (a
+        # non-kata cwd still writes the gauge). write_bridge is fail-soft (never
+        # raises), so it cannot alter the rendered line.
+        write_bridge(tempfile.gettempdir(), data)
 
         cwd: str = data.get("cwd") or (
             data.get("workspace", {}).get("current_dir") or ""
