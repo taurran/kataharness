@@ -42,6 +42,19 @@ import kata_router
 BEGIN = "<!-- kata:begin -->"
 END = "<!-- kata:end -->"
 
+# CA-L20 standing line — distinctive substrings the resume/re-anchor line must carry.
+RESUME_PHRASE = "re-anchors via `.planning/HANDOFF.md`"
+RESUME_STALENESS = "staleness rule before doing anything else"
+RESUME_FALLBACK = "Universal fallback for platforms with no hook"
+
+
+def _body_lines(stanza: str) -> list[str]:
+    """Return the lines strictly between the BEGIN and END markers."""
+    lines = stanza.splitlines()
+    begin_idx = next(i for i, ln in enumerate(lines) if ln == BEGIN)
+    end_idx = next(i for i, ln in enumerate(lines) if ln == END)
+    return lines[begin_idx + 1 : end_idx]
+
 
 # ---------------------------------------------------------------------------
 # Import smoke
@@ -88,8 +101,8 @@ def test_render_stanza_line_budget():
     except ValueError:
         pytest.fail("BEGIN or END marker was not found as a standalone line")
     content_lines = lines[begin_idx + 1 : end_idx]
-    assert len(content_lines) <= 15, (
-        f"Stanza body has {len(content_lines)} lines (budget: ≤15); "
+    assert len(content_lines) <= 17, (
+        f"Stanza body has {len(content_lines)} lines (budget: ≤17); "
         f"body:\n" + "\n".join(content_lines)
     )
 
@@ -155,6 +168,71 @@ def test_render_stanza_no_html_in_body():
     assert not re.search(r"<[a-zA-Z][^>]*>", body), (
         "HTML tags found in stanza body — use Markdown only"
     )
+
+
+# ---------------------------------------------------------------------------
+# CA-L20 — the resume/compact re-anchor standing line (A7)
+# ---------------------------------------------------------------------------
+
+
+def test_render_stanza_contains_resume_reanchor_line():
+    """Stanza body carries the CA-L20 standing line verbatim (re-anchor via HANDOFF.md).
+
+    Mutation-proof: deleting the standing line from _STANZA_BODY → this fails (RED).
+    """
+    body = "\n".join(_body_lines(kata_router.render_stanza()))
+    assert RESUME_PHRASE in body, (
+        f"CA-L20 re-anchor phrase missing from stanza body:\n{body}"
+    )
+    assert RESUME_STALENESS in body, (
+        f"CA-L20 staleness-rule clause missing from stanza body:\n{body}"
+    )
+    assert RESUME_FALLBACK in body, (
+        f"CA-L20 universal-fallback clause missing from stanza body:\n{body}"
+    )
+
+
+def test_render_stanza_resume_line_appears_once():
+    """The standing line's distinctive phrase appears exactly once in the body."""
+    body = "\n".join(_body_lines(kata_router.render_stanza()))
+    assert body.count(RESUME_PHRASE) == 1
+
+
+def test_write_stanza_upsert_over_old_stanza_adds_line_exactly_once(tmp_path):
+    """Upserting over a pre-v0.2.1 stanza (no standing line) adds the line exactly once.
+
+    Simulates a target that already carries an OLD marked block; the existing
+    marked-block-replace machinery must swap in the new body containing the line.
+    """
+    agents_md = tmp_path / "AGENTS.md"
+    old_block = (
+        "# My Project\n\n"
+        f"{BEGIN}\n"
+        "## KataHarness\n\n"
+        "KataHarness is installed in this project.\n\n"
+        "_Managed by KataHarness._\n"
+        f"{END}\n"
+    )
+    agents_md.write_text(old_block, encoding="utf-8")
+    assert RESUME_PHRASE not in old_block  # precondition: old stanza lacks the line
+
+    kata_router.write_stanza(str(agents_md))
+
+    content = agents_md.read_text(encoding="utf-8")
+    assert content.count(BEGIN) == 1, "upsert must leave exactly one block"
+    assert content.count(END) == 1
+    assert content.count(RESUME_PHRASE) == 1, "standing line must appear exactly once"
+    assert "# My Project" in content, "surrounding content must be preserved"
+
+
+def test_write_stanza_idempotent_double_write_line_once(tmp_path):
+    """Two write_stanza calls leave the standing line present exactly once (idempotent)."""
+    agents_md = tmp_path / "AGENTS.md"
+    kata_router.write_stanza(str(agents_md))
+    kata_router.write_stanza(str(agents_md))
+
+    content = agents_md.read_text(encoding="utf-8")
+    assert content.count(RESUME_PHRASE) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -467,7 +545,7 @@ def test_render_stanza_with_summary_includes_text_in_body():
     assert "hello marker" in body, (
         f"Summary text 'hello marker' not found in body:\n{body}"
     )
-    # Base body is 15 lines; one summary line is inserted → ≤16 (the ~15 budget)
-    assert len(lines[begin_idx + 1 : end_idx]) <= 16, (
-        f"Body exceeds ~15-line budget with summary: {len(lines[begin_idx + 1 : end_idx])} lines"
+    # Base body is 17 lines; one summary line is inserted → ≤18 (the ~15 budget)
+    assert len(lines[begin_idx + 1 : end_idx]) <= 18, (
+        f"Body exceeds budget with summary: {len(lines[begin_idx + 1 : end_idx])} lines"
     )

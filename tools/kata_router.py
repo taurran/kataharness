@@ -9,9 +9,11 @@ Public API
 render_stanza(summary: str = "") -> str
     Return the full stanza string (begin marker + body + end marker).
     Deterministic and byte-stable for identical inputs.
-    Body: 12–15 Markdown lines covering what's installed, the two entrypoints
-    (kata-bootstrap, kata-validate), and the four run-state locations
-    (.kata/, .planning/, INTENT.md, kata.config).  No HTML in the body.
+    Body: ~17 Markdown lines covering what's installed, the two entrypoints
+    (kata-bootstrap, kata-validate), the four run-state locations
+    (.kata/, .planning/, INTENT.md, kata.config), and the CA-L20 standing line
+    (a resumed/compacted session re-anchors via .planning/HANDOFF.md first).
+    No HTML in the body.
 
 write_stanza(agents_md_path: str | Path, summary: str = "") -> None
     Idempotent UPSERT.
@@ -87,8 +89,12 @@ KataHarness is installed in this project.
 - `INTENT.md`   — the locked run intent
 - `kata.config` — harness configuration
 
+a resumed/compacted session re-anchors via `.planning/HANDOFF.md` + the staleness rule before doing anything else. (Universal fallback for platforms with no hook — §5.)
+
 _Managed by KataHarness._"""
-# Body line count (between markers): 15 — within the ≤15-line budget.
+# Body line count (between markers): 17 — the ~15-line instruction budget plus the
+# CA-L20 standing line (resume/compact re-anchor). This line is the universal fallback
+# for platforms with no SessionStart hook — see DESIGN CA-L20 / degradation §4 row 8.
 
 
 # ---------------------------------------------------------------------------
@@ -100,9 +106,11 @@ def render_stanza(summary: str = "") -> str:
     """Return the full router stanza string including begin/end markers.
 
     Deterministic and byte-stable for identical inputs.  The body (between the
-    markers) contains 15 Markdown lines: a project pointer, the two entrypoints
-    (``kata-bootstrap``, ``kata-validate``), and the four run-state locations
-    (``.kata/``, ``.planning/``, ``INTENT.md``, ``kata.config``).
+    markers) contains ~17 Markdown lines: a project pointer, the two entrypoints
+    (``kata-bootstrap``, ``kata-validate``), the four run-state locations
+    (``.kata/``, ``.planning/``, ``INTENT.md``, ``kata.config``), and the CA-L20
+    standing line (resume/compact sessions re-anchor via ``.planning/HANDOFF.md``
+    before doing anything else — the universal fallback for hook-less platforms).
     No HTML tags appear in the body.
 
     Parameters
