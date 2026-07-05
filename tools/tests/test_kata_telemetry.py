@@ -711,9 +711,9 @@ _COMMITTED_V1_ROW = (
 
 
 def test_build_ledger_row_v2_schema_defaults():
-    """A caller passing no v2 data still gets v:2 + empty/null-safe additive fields."""
+    """A caller passing no v2 data still gets the v2 additive fields (now stamped v3)."""
     row = json.loads(kt.build_ledger_row({"runId": "r1"}))
-    assert row["v"] == 2
+    assert row["v"] == 3  # CA-L40: schema v2 → v3; the v2 additive fields are retained
     assert row["perTask"] == {}
     assert row["failureKinds"] == []
     assert row["degraded"] == []
@@ -795,7 +795,7 @@ def test_ledger_v2_round_trip(tmp_path):
     rows = kt.read_ledger(ledger)
     assert len(rows) == 1
     row = rows[0]
-    assert row["v"] == 2
+    assert row["v"] == 3  # CA-L40: builder stamps v3; v2 additive fields carry through
     assert row["perTask"]["T1"]["tokensOut"] == 2
     assert row["failureKinds"][0]["kind"] == "lane-drift"
     assert row["degraded"] == [{"scope": "run", "reason": "x"}]
@@ -865,5 +865,162 @@ def test_class_median_v2_row_flows_identically():
             }
         )
     )
-    assert v2_row["v"] == 2
+    assert v2_row["v"] == 3  # CA-L40: builder stamps v3; duration source untouched
     assert kt.class_median([v2_row], "code", min_samples=5) == 30.0
+
+
+# ===========================================================================
+# CA-P0 E6 — ledger schema v3 (additive): parentTokens per-phase readings,
+# reader tolerance (v1/v2 committed shapes still parse, unknown v4 RAISES),
+# parent_tokens_of accessor, null-vs-zero honesty. (DESIGN CA-L40; D142 precedent.)
+# ===========================================================================
+
+
+# The EXACT committed v2 row (m4p1 dogfood) from .planning/telemetry-ledger.md, verbatim
+# (raw string so the ``×`` JSON escape stays byte-identical to the committed artifact).
+_COMMITTED_V2_ROW = (
+    r'{"v":2,"utc":"2026-07-04T20:38:54Z","runId":"m4p1-dogfood-build-2026-07-04",'
+    r'"target":"KataHarness (self, P1 dogfooded build)","tasks":4,"checkpoints":10,'
+    r'"zeroCheckpointTasks":0,"firstPassAcceptanceByClassTier":{"code×opus":1.0},'
+    r'"streaksByClass":{"code":[3,2,3,2]},"fixCycles":0,"gateRejections":0,'
+    r'"taskDurationsByClass":{"code":[11.1,7.2,9.5,3.6]},"wallClockS":1882.2,'
+    r'"tokensIn":null,"tokensOut":509407,"effectiveModes":{"m4p1-W1":"telemetry",'
+    r'"m4p1-W2":"telemetry","m4p1-W3":"telemetry","m4p1-W4":"telemetry"},'
+    r'"perTask":{"m4p1-W1":{"tokensIn":null,"tokensOut":115127,"wallClockS":665.1},'
+    r'"m4p1-W2":{"tokensIn":null,"tokensOut":111428,"wallClockS":433.2},'
+    r'"m4p1-W3":{"tokensIn":null,"tokensOut":185088,"wallClockS":568.2},'
+    r'"m4p1-W4":{"tokensIn":null,"tokensOut":97764,"wallClockS":215.7}},'
+    r'"failureKinds":[],"degraded":[]}'
+)
+
+
+def test_known_ledger_versions_includes_three():
+    """The reader's known-version set is exactly {1, 2, 3} after the CA-L40 v3 bump."""
+    assert kt._KNOWN_LEDGER_VERSIONS == frozenset({1, 2, 3})
+
+
+def test_build_ledger_row_v3_schema_defaults():
+    """A caller passing no parentTokens still gets v:3 + an empty parentTokens map."""
+    row = json.loads(kt.build_ledger_row({"runId": "r1"}))
+    assert row["v"] == 3
+    assert row["parentTokens"] == {}
+    # every prior (v1 + v2) field is retained (additive, no backfill)
+    for key in ("perTask", "failureKinds", "degraded", "utc", "runId", "tokensOut"):
+        assert key in row
+
+
+def test_build_ledger_row_v3_carries_parent_tokens():
+    """parentTokens is carried through per-phase, ints preserved (CA-L40 additive)."""
+    row = json.loads(
+        kt.build_ledger_row(
+            {"runId": "r1", "parentTokens": {"P0": 40000, "P1": 52310}}
+        )
+    )
+    assert row["parentTokens"] == {"P0": 40000, "P1": 52310}
+
+
+def test_build_ledger_row_parent_tokens_null_vs_zero_honesty():
+    """A phase with no reading serializes as null — NEVER 0 (CA-L40 honesty pin)."""
+    row_str = kt.build_ledger_row(
+        {"runId": "r1", "parentTokens": {"P0": None, "P1": 40000}}
+    )
+    # the serialized JSON carries an explicit null, not a fabricated zero
+    assert '"P0":null' in row_str
+    assert '"P0":0' not in row_str
+    row = json.loads(row_str)
+    assert row["parentTokens"]["P0"] is None
+    assert row["parentTokens"]["P1"] == 40000
+
+
+def test_ledger_v3_round_trip(tmp_path):
+    """v3 round-trip: build → append → read_ledger → parentTokens intact (nulls preserved)."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text("# header\n", encoding="utf-8")
+    kt.append_ledger_row(
+        ledger,
+        kt.build_ledger_row(
+            {"runId": "r3", "parentTokens": {"P0": 41000, "P1": None}}
+        ),
+    )
+    rows = kt.read_ledger(ledger)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["v"] == 3
+    assert row["parentTokens"] == {"P0": 41000, "P1": None}
+
+
+def test_read_ledger_v3_row_parses(tmp_path):
+    """A PRESENT v:3 row parses (the version-set guard mutation target: {1,2,3})."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text(
+        '# header\n{"v":3,"runId":"r3","parentTokens":{"P0":40000}}\n', encoding="utf-8"
+    )
+    rows = kt.read_ledger(ledger)
+    assert rows[0]["v"] == 3
+    assert rows[0]["parentTokens"] == {"P0": 40000}
+
+
+def test_read_ledger_v2_committed_row_tolerance(tmp_path):
+    """v2 tolerance: the EXACT committed v2 row still parses unchanged (§4 row 12 canary)."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text(
+        "# telemetry ledger\n\n<!-- rows below -->\n" + _COMMITTED_V2_ROW + "\n",
+        encoding="utf-8",
+    )
+    rows = kt.read_ledger(ledger)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["v"] == 2
+    assert row["runId"] == "m4p1-dogfood-build-2026-07-04"
+    assert row["firstPassAcceptanceByClassTier"] == {"code×opus": 1.0}
+    assert row["perTask"]["m4p1-W3"]["tokensOut"] == 185088
+    # a v2 row has NO parentTokens field (no backfill) — the accessor degrades to {}
+    assert "parentTokens" not in row
+    assert kt.parent_tokens_of(row) == {}
+
+
+def test_read_ledger_v1_committed_row_still_parses_after_v3(tmp_path):
+    """v1 tolerance survives the v3 bump: the committed v1 row still reads (§4 row 12)."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text(
+        "# header\n" + _COMMITTED_V1_ROW + "\n", encoding="utf-8"
+    )
+    rows = kt.read_ledger(ledger)
+    assert rows[0]["v"] == 1
+    assert kt.parent_tokens_of(rows[0]) == {}
+
+
+def test_read_ledger_unknown_v4_raises(tmp_path):
+    """RAISES: a PRESENT unknown v:4 row (fail-closed; D142/CA-L40 — present-unknown RAISES)."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text('# header\n{"v":4,"runId":"r1"}\n', encoding="utf-8")
+    with pytest.raises(kt.TelemetryError, match="unknown ledger row version"):
+        kt.read_ledger(ledger)
+
+
+def test_parent_tokens_of_v3_returns_field_nulls_preserved():
+    """The accessor returns the parentTokens map verbatim, explicit nulls preserved."""
+    row = {"v": 3, "parentTokens": {"P0": 40000, "P1": None}}
+    assert kt.parent_tokens_of(row) == {"P0": 40000, "P1": None}
+
+
+def test_parent_tokens_of_v1_v2_absent_returns_empty():
+    """v1/v2/absent-field rows have no readings ⇒ {} (presence-discriminated, no backfill)."""
+    assert kt.parent_tokens_of({"v": 1, "runId": "r1"}) == {}
+    assert kt.parent_tokens_of({"v": 2, "perTask": {}}) == {}
+    assert kt.parent_tokens_of({}) == {}
+
+
+def test_class_median_v3_row_flows_identically():
+    """A v3 row flows through class_median identically (duration source untouched, BC)."""
+    v3_row = json.loads(
+        kt.build_ledger_row(
+            {
+                "runId": "r1",
+                "taskDurationsByClass": {"code": [10.0, 20.0, 30.0, 40.0, 50.0]},
+                "parentTokens": {"P0": 40000},
+            }
+        )
+    )
+    assert v3_row["v"] == 3
+    assert kt.class_median([v3_row], "code", min_samples=5) == 30.0
