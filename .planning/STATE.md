@@ -3,10 +3,31 @@ gsd_state_version: 1.0
 milestone: M2-freeze-float
 milestone_name: "Freeze/Float (operator-directed, D138) — ship order M1→M4→M2→M3; M1 COMPLETE (PR #5); M4 COMPLETE (v0.2.0, D141–D145) incl. the operator-directed P0.1 observability addition; next: M2 (shadow tasks) per ship order"
 status: in-progress
-last_updated: "2026-07-04T22:00:00.000Z"
+last_updated: "2026-07-04T23:30:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-04 — CONTEXT-AUTONOMY v0.2.1 BUILT (C1–C10 integrated); NOT YET TAGGED — C11 live-proof
+> + operator merge next):** The context-autonomy initiative — the gauge-driven self-handoff loop that stops
+> the conductor's context being the run-fatal resource (OP-7) — is DESIGN-frozen and built across three plan
+> phases (P0 engine E1–E7, P1 Claude adapter A1–A7, P2 policy/docs C1–C10). It **wires a context gauge to
+> the already-existing self-handoff trigger prose** (SR-1, no new threshold concept): trigger @ 0.70 of the
+> host-reported effective window → durable HANDOFF refresh at a wave boundary → host auto-compact/respawn on
+> kata's recommended schedule → SessionStart(compact) re-anchor → resume at the next task boundary with zero
+> task loss (the 8-hour walk-away, OP-8); every degradation leg is graceful rotation or a surfaced preflight
+> BLOCK, never silent death. Both **[VETO-FLAG]** items RESOLVED LOCKED by the operator: report home =
+> `.kata/reports/<runId>-<taskId>-<agent>-<kind>.md` (CA-L22, durable-citation rule stands); preflight
+> strictness = intent-keyed BLOCK (CA-L25). D-records: **D146** (initiative freeze), **D147** (the ONE named
+> BC departure — one-shot incl. pre-v0.2.1 configs rotate unconditionally), **D148** (gated premium
+> amendment). CHANGELOG `[0.2.1]` section written; `protocol/exec-safety.md` registry row for the A2 chain
+> wrapper added; `.snyk` CWE-78 acceptance recorded (A2). Gauntlet at C10 closeout: **pytest 2849/3 skip ·
+> validator 48/0/0 · Snyk medium+ 0**. Named deferrals (never silent): the F2 sentence in the frozen M4
+> ladder span → next M4-surface amendment (C3/C4 home); τ/weights calibration follow-on fed by
+> `.planning/CALIBRATION-FINDINGS.md` (retroactive 57-checkpoint scan). **NEXT: C11 live-proof battery in a
+> throwaway profile (CA-A1..A5 + A8 row 1 + A11 b/c) → operator merge gate → conductor tags v0.2.1** (the
+> version bump + telemetry-ledger row are the conductor's, post-live-proof — NOT done at C10).
+> *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-04 — M4 COMPLETE, v0.2.0 TAGGED):** The Fable 5 session executed the FULL M4 recipe
 > in one operator-directed pass: DESIGN double-gated (grill + v1 HOLD + v2 SHIP-WITH-FIXES, Amendments
