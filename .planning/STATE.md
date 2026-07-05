@@ -1,12 +1,33 @@
 ---
 gsd_state_version: 1.0
 milestone: M2-freeze-float
-milestone_name: "Freeze/Float (operator-directed, D138) — ship order M1→M4→M2→M3; M1 COMPLETE (PR #5); M4 COMPLETE (v0.2.0, D141–D145) incl. the operator-directed P0.1 observability addition; next: M2 (shadow tasks) per ship order"
+milestone_name: "Freeze/Float (operator-directed, D138) — ship order M1→M4→M2→M3; M1 COMPLETE (PR #5); M4 COMPLETE (v0.2.0, D141–D145); context-autonomy v0.2.1 MERGED+TAGGED 2026-07-05; next: R6-first post-merge test queue, then M2 (shadow tasks) per ship order"
 status: in-progress
-last_updated: "2026-07-04T23:30:00.000Z"
+last_updated: "2026-07-05T09:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-05 — v0.2.1 MERGED + TAGGED; the operator's pre-merge plan EXECUTED end-to-end):**
+> The Fable 5 session ran the full pre-merge sequence on operator order ("execute 1-5"): **(1+2) M4
+> Amendment #5 (D149)** — the C-1 verify-signal fix (trailer `verify.owned`, owned-preferred scorer, kata-tdd
+> 0.4.0 `--owned-exit` mandate; kills the 13/13 retroactive FP class; τ untouched per C-1's ordering rule) +
+> the F2 dispatch-base index-0 sentence in the ladder span (kata-orchestrate 0.10.2) + a 23-cite
+> observability re-audit; gated fresh-context default-FAIL → 1 HIGH folded → re-gate PASS (`4ec9896`).
+> **(3) Final 3-reviewer fresh-context pass** over the whole diff (engine / adapter-security / policy):
+> security clear; folds landed (`c284387`) — kata_gauge numeric-sanity fail-closed (NaN/Inf/range/huge-int ⇒
+> GaugeError, the corrupt-bridge-shadows-healthy-leg vector killed, +15 tests), **CA-L25 stranding verdict
+> WIRED** (was engine-built + prose-orphaned — the built-but-unwired class again; kata-preflight 0.2.1
+> stranding section + bootstrap 0.3.1 bundle slot 6), allowlist slash-norm (Windows false-WARN killed),
+> readiness 0.2.2 WARN scoped to incremental (one-shot exempt per D147); fold re-gate PASS. **(4) MERGED
+> `feat/context-autonomy` → master (PR, merge commit), ledger row 5 appended (D141(b), C11 staged row,
+> strict-reader round-trip PASS), tagged `v0.2.1`, pushed.** A/B efficiency judgment at the gate: the −23%
+> tok / −44% calls / −29% wall result ACCEPTED as n=1-directional with its four LIVE-PROOF caveats — not a
+> statistical claim. **Gauntlet at tag: pytest 2895 pass / 3 skip · validate_skills 48/0/0 · Snyk medium+ 0.**
+> **(5) Post-merge test queue recorded** (BACKLOG ★, R6 leads). **(6, same session) README overhaul** —
+> differentiator-focused rewrite, every claim grounded to shipped artifacts. **NEXT SESSION: R6** (the one
+> unproven CA-A1 leg) per the queue; then calibration-proper once owned-exit-emitting runs exist.
+> *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-04 — CONTEXT-AUTONOMY v0.2.1 BUILT (C1–C10 integrated); NOT YET TAGGED — C11 live-proof
 > + operator merge next):** The context-autonomy initiative — the gauge-driven self-handoff loop that stops

@@ -8,7 +8,7 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
-## [0.2.1] — unreleased (tag pending: C11 live-proof battery + operator merge gate) — Context autonomy: the gauge-driven self-handoff loop
+## [0.2.1] — 2026-07-05 — Context autonomy: the gauge-driven self-handoff loop
 
 **The conductor's context stops being the run-fatal resource.** v0.2.1 wires a context gauge to the
 ALREADY-EXISTING self-handoff trigger prose (kata-selfhandoff SKILL.md) — SR-1: no new threshold concept,
@@ -18,8 +18,9 @@ boundary → host auto-compact / respawn on kata's recommended schedule → Sess
 resume at the next task boundary with **zero task loss**. Every degradation leg is graceful rotation or a
 surfaced preflight BLOCK — never silent death at the hard context limit. Frozen DESIGN + build: **D146**.
 Both **[VETO-FLAG]** items resolved LOCKED by the operator: report home = `.kata/reports/…` (CA-L22),
-preflight strictness = intent-keyed BLOCK (CA-L25). *Not yet tagged — the conductor tags after the C11
-live-proof battery (CA-A1..A5 + A8 row 1 + A11 b/c) and the operator merge gate.*
+preflight strictness = intent-keyed BLOCK (CA-L25). *Tagged 2026-07-05 after the C11 live-proof battery
+(CA-A1..A5 + A8 row 1 + A11 b/c), the operator-directed pre-merge tasks (M4 Amendment #5/D149 + the
+final 3-reviewer fresh-context pass, all findings folded), and the operator merge gate.*
 
 ### Added
 - **The context gauge + fallback** (`kata_gauge`): 0.70-of-effective-window trigger arithmetic, backstop

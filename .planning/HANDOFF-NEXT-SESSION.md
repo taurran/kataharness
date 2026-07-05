@@ -1,76 +1,73 @@
-# HANDOFF — next session (written 2026-07-04, end of the v0.2.1 build session)
+# HANDOFF — next session (written 2026-07-05, end of the v0.2.1 MERGE session)
 
-> Paste-companion for the next fresh session. **Supersedes the v0.2.0/M4 orientation this file used
-> to carry.** Ground truth: branch `feat/context-autonomy` @ **`3e34943`**, 69 commits ahead of
-> `master`, tree clean. **v0.2.1 is BUILT and gauntlet-green but NOT YET MERGED OR TAGGED** — it sits
-> on the branch awaiting the operator-directed pre-merge tasks below. ⚠️ IGNORE `C:\Dev\CLAUDE.md`
-> (unrelated Mise project).
+> Paste-companion for the next fresh session. **Supersedes the 2026-07-04 pre-merge orientation this
+> file used to carry.** Ground truth: **`master` @ the v0.2.1 tag** (merge commit of PR
+> `feat/context-autonomy` → master; branch deleted after merge), tree clean. ⚠️ IGNORE
+> `C:\Dev\CLAUDE.md` (unrelated Mise project).
 
-## 1. READ FIRST, IN ORDER
-1. This file (§2 state truth-table, §3 the operator's pre-merge plan, §4 residuals).
-2. `.planning/specs/context-autonomy/DESIGN.md` (FROZEN — 44 CA-L decisions) + `GRILL-LEDGER.md`
-   (43 resolutions R-1..R-43 + gate histories).
-3. `.planning/CALIBRATION-FINDINGS.md` — the telemetry-detected faults for the calibration follow-on
-   (C-1 is the priority; do NOT tune τ before fixing it).
-4. `.planning/specs/context-autonomy/LIVE-PROOF.md` — acceptance evidence + the 7 manual residuals
-   (R1–R7) + F2-R.
-5. `.planning/DECISIONS.md` D146–D148 + `CHANGELOG.md [0.2.1]` + `.planning/STATE.md` CURRENT block.
-6. Re-ground code before citing: `tools/kata_gauge.py`, `tools/kata_settings.py`,
-   `tools/kata_models.py` (premium branch), `tools/kata_preflight.py`, `adapters/claude/hooks/
-   kata-sessionstart.py`, `adapters/claude/statusline_chain.py`, `protocol/observability.md`.
+## 1. WHAT SHIPPED (v0.2.1, tagged 2026-07-05)
 
-## 2. STATE TRUTH-TABLE (what is DONE vs PENDING)
-| Item | State |
-|---|---|
-| 26 build tasks (E1–E7, A1–A7, C1–C11, closeout) | **BUILT + GATED PASS + MERGED to the branch** |
-| Gauntlet on `3e34943` | **GREEN**: pytest 2868 pass / 3 skip (unit) + 2 pass (integration) · validator 48/0/0 · Snyk 0 unaccepted medium+ (1 accepted CWE-78 false-positive, `.snyk`, expiry 2027-01-04) |
-| Grill (6 convergence gates) + freeze-gate + plan-checker + final whole-initiative review | **ALL passed / SHIP-WITH-FIXES folded** |
-| Efficiency A/B (SMOKE-2/3 rerun) | 72,347 tok / 14 calls / 335s vs baseline 94,489 / 25 / 472s (−23% / −44% / −29%), **exact outcome parity, n=1 directional, honestly caveated** — DROP grade is operator's at merge |
-| Green-path overhead (M4-L1 <1%) | **0 LLM calls on green confirmed at scale** (44/57 real checkpoints scored 0.0) |
-| Merge to master · tag `v0.2.1` · push | **NOT DONE** — awaiting the §3 pre-merge tasks |
-| Telemetry ledger row for this run | **STAGED not appended** (LIVE-PROOF §8; D141(b) human-gated commit) — ledger still 4 rows |
+Context autonomy — the gauge-driven self-handoff loop (D146–D149) — MERGED and TAGGED after the
+operator-directed pre-merge sequence executed in full:
 
-## 3. THE OPERATOR'S PRE-MERGE PLAN (this is the work order for next session, in order)
-The operator chose to fold the calibration fix + F2 review INTO v0.2.1 before merging (not ship-then-follow-up):
-1. **Calibration follow-up** — start with **C-1** (`.planning/CALIBRATION-FINDINGS.md`): the risk
-   scorer's `verify` signal is SUITE-scoped and false-positived 13/13 would-triggers this run. Fix the
-   signal definition (scope to owned-file tests / benign-red exclusion / dual exit codes in the
-   trailer) BEFORE any τ tuning. Gated task.
-2. **Review the index-continuity (F2) sentence** — F2-R (LIVE-PROOF): a second fresh conductor
-   inferred `--index k+1` where F2 pins `--index 0` for the dispatch-base anchor. The one-sentence
-   fix lives inside the FROZEN M4 ladder span, so it needs its own gated M4-surface amendment
-   (that's why C3 deferred it). Decide: amend now (pre-merge) or defer to an M4.1 amendment.
-3. **Final Fable code review** — one more fresh-context adversarial pass over the whole diff after
-   1+2 land, at anchor (Fable).
-4. **Commit / push / merge** — open PR `feat/context-autonomy` → `master`, append the staged ledger
-   row (D141(b) human gate), tag `v0.2.1`, push. THEN this codebase is up to date.
-5. **Queue more tests** (post-merge): the R6 live host-fired-compaction verification (the one
-   unproven leg of CA-A1) + R1–R5/R7 attended-host checks; then LD7 and the non-Claude live legs.
+1. **M4 Amendment #5 (D149, `4ec9896`):** C-1 verify-signal fix — trailer `verify.owned`
+   (owned-file-scoped exit, optional/nullable/fail-closed), scorer prefers owned over suite exit
+   (BC fallback), `emit-trailer --owned-exit`, kata-tdd 0.4.0 producer mandate, kata-orchestrate
+   0.10.2 scoping note; kills the 13/13 retroactive false-positive class. Plus the F2
+   dispatch-base index-0 sentence (CA-L44) in the ladder span. Plus a 23-cite observability.md
+   re-audit. Gate: fresh-context default-FAIL → 1 HIGH folded → re-gate PASS. **τ untouched.**
+2. **Final 3-reviewer fresh-context pass (`c284387`):** engine/adapter-security/policy. Security
+   clear. Folds: kata_gauge numeric-sanity fail-closed (NaN/Inf/out-of-range/huge-int ⇒
+   GaugeError — the corrupt-kata-bridge-shadows-healthy-user-bridge vector is dead, +15 tests);
+   **CA-L25 stranding verdict WIRED into prose** (kata-preflight 0.2.1 + kata-bootstrap 0.3.1
+   slot 6 — it was engine-built but prose-orphaned, the built-but-unwired class); allowlist
+   slash-normalization (Windows false-WARN); kata-readiness 0.2.2 WARN scoped to incremental
+   (D147 one-shot exemption). Fold re-gate PASS.
+3. **Merge/tag:** ledger row 5 appended (the C11 staged row, D141(b), strict-reader round-trip
+   PASS — ledger now 5 rows); CHANGELOG `[0.2.1]` dated; PR merged as a merge commit; annotated
+   tag `v0.2.1` pushed. A/B efficiency (−23% tok / −44% calls / −29% wall) accepted as
+   n=1-directional with its four LIVE-PROOF caveats.
+4. **README overhauled** (same session, own PR): differentiator-focused, every claim grounded.
 
-## 4. KNOWN-DEFERRED (named; do not rediscover, do not silently ship)
-- **R6** — a genuine host-fired compaction was never triggered from a test; "zero task loss across a
-  real compaction" is proven in mechanical parts + hook I/O, not end-to-end. Highest-value follow-on.
-- **Headless statusline** — `claude -p` VERIFIED to never tick the statusline (v2.1.200); the
-  staleness-fallback + deterministic rotation leg is load-bearing, as designed.
-- **Concurrent same-host kata sessions** — the gauge bridge is selected newest-by-mtime; >1 fresh
-  bridge ⇒ AMBIGUOUS ⇒ falls to deterministic rotation (documented limitation, CA-L1 fold).
-- **τ/weights calibration** — NOT started; blocked on C-1; ledger rows 1+4 are calibration-flagged toys.
-- **LD7 × M4 attempt topology**, **ACP/Quick + non-Claude live legs** — contract-conformance shipped,
-  live exercise deferred.
-- **PokeVault install / MindBridge ingest** — descoped this session by operator; would run against
-  v0.2.1 in a future session.
+**Gauntlet at tag: pytest 2895 pass / 3 skip · validate_skills 48/0/0 · Snyk medium+ 0** (one
+accepted CWE-78 false positive, `.snyk`, expiry 2027-01-04).
 
-## 5. LOCAL OPERATIONS NOTE (new this session)
-A **kata target toggle** is now wired: a `UserPromptSubmit` hook
-(`~/.claude/hooks/kata-target-toggle.js`) fires on kata-loop-start signals and reminds Claude to offer
-**(A) installed `~/.claude/skills` (stable)** vs **(B) codebase `C:\Dev\Projects\KataHarness` (dev)**
-before running. Memory: `kata-target-toggle`. Relevant to next session: when picking up, CHOOSE the
-codebase target (the v0.2.1 work is unmerged there, not in the install).
+## 2. NEXT SESSION — the post-merge test queue (BACKLOG ★, operator-ordered, R6 leads)
 
-## 6. STANDING ORDERS (unchanged, load-bearing)
-Cite the artifact before claiming it exists (grep/read, not memory); "done" = gate numbers + D-record
-+ SHA in the same message; freeze-gate discipline on every change (HOLD ⇒ fold ⇒ RE-GATE); D136
-fail-closed decision-code; D33 no-self-certification; bump-on-modify + `validate_skills --write`;
-commits only on operator approval, branch→PR→merge, never straight to master; supersede-never-rewrite,
-new D# ≥ D149; judgment/grill/gates at anchor (Fable), build workers tier down (D131); post-merge
-telemetry scans use FORK REFS (the orchestrate text mandates gate-time scans).
+1. **R6 — live host-fired compaction end-to-end**: attended interactive session, throwaway
+   profile, real auto-compact fires ⇒ SessionStart(compact) re-anchor ⇒ zero task loss +
+   kata-orient 3-tier grade. Only the host-fired link is unproven (LIVE-PROOF items 1–2 prove
+   every mechanical/hook leg).
+2. **R1–R5 + R7** attended-host residuals (LIVE-PROOF item 7).
+3. **Calibration follow-on proper**: τ/weights + C-3 verdict×tier ledger columns — UNBLOCKED by
+   D149 but needs fresh instrumented runs that EMIT `verify.owned` before τ gets a fair test.
+4. **LD7×M4 + non-Claude live legs**; **kata_settings atomic writes** (review LOW); then
+   **PokeVault install / MindBridge ingest** (first external deploys).
+
+## 3. READ ORDER FOR A FRESH SESSION
+
+1. This file. 2. `.planning/STATE.md` CURRENT block. 3. `.planning/BACKLOG.md` ★ queue.
+4. `.planning/DECISIONS.md` D146–D149. 5. `.planning/CALIBRATION-FINDINGS.md` (C-1 now FIXED by
+D149 — do not re-fix; C-3 verdict×tier still open). 6. Code re-ground before citing:
+`tools/kata_gauge.py` (numeric sanity), `tools/kata_risk.py` (`_verify_fail`),
+`tools/kata_telemetry.py` (`verify.owned`), `skills/coordinate/kata-preflight/SKILL.md`
+(stranding section).
+
+## 4. STANDING ORDERS (unchanged, load-bearing)
+
+Cite the artifact before claiming it exists; "done" = gate numbers + D-record + SHA in the same
+message; freeze-gate discipline on every change (HOLD ⇒ fold ⇒ RE-GATE); D136 fail-closed
+decision-code; D33 no-self-certification; bump-on-modify + `validate_skills --write`; commits
+only on operator approval, branch→PR→merge, never straight to master; supersede-never-rewrite,
+new D# ≥ **D150**; judgment/grill/gates at anchor, build workers tier down (D131); post-merge
+telemetry scans use FORK REFS.
+
+## 5. LOCAL OPERATIONS NOTES
+
+- The kata target toggle hook (`~/.claude/hooks/kata-target-toggle.js`) is live — pick CODEBASE
+  vs INSTALLED at session start. The INSTALL is still v0.2.0-era: run the updater
+  (`& "$env:USERPROFILE\.kata-home\update.ps1"`, all Claude sessions closed) to bring
+  `~/.claude/skills` up to v0.2.1 before running kata against the INSTALLED target.
+- Security note for the operator (from 2026-07-04, still open): `~/.claude/settings.json` carries
+  a cleartext GitHub PAT in `env.GITHUB_PERSONAL_ACCESS_TOKEN` — move to a credential helper /
+  `gh auth` when convenient.
