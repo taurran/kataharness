@@ -325,6 +325,68 @@ def test_factory_reset_hard_passthrough_exits_zero(fake_home, tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# CA-L36 (E5) — factory-reset clears the force-first-run marker
+# ---------------------------------------------------------------------------
+
+
+def test_factory_reset_clears_first_run_marker(fake_home, tmp_path):
+    """--factory-reset clears firstRunCompletedAt + firstRunVersion (CA-L36)."""
+    import kata_settings as ks
+
+    host = tmp_path / "dot-claude"
+    # seed the marker as if a prior first run completed
+    ks.record_first_run("deadbeef", home=fake_home)
+    seeded = ks.read_settings(home=fake_home)
+    assert seeded.get("firstRunCompletedAt") and seeded.get("firstRunVersion") == "deadbeef"
+
+    rc = ki.main([
+        "--platform", "claude", "--home", str(fake_home),
+        "--host-dir", str(host), "--factory-reset",
+    ])
+    assert rc == 0
+    after = ks.read_settings(home=fake_home)
+    assert "firstRunCompletedAt" not in after, "marker must be cleared by factory-reset"
+    assert "firstRunVersion" not in after, "firstRunVersion must be cleared by factory-reset"
+
+
+def test_factory_reset_no_marker_is_noop_clear(fake_home, tmp_path):
+    """--factory-reset with no marker present still succeeds (delete returns False)."""
+    host = tmp_path / "dot-claude"
+    rc = ki.main([
+        "--platform", "claude", "--home", str(fake_home),
+        "--host-dir", str(host), "--factory-reset",
+    ])
+    assert rc == 0
+
+
+def test_factory_reset_corrupt_settings_surfaces_and_proceeds(fake_home, tmp_path, capsys):
+    """Corrupt settings during the marker clear surfaces LOUDLY (never silent) and
+    does NOT loop; the reset itself (re-link + re-stamp) still proceeds (CA-L36/C-3)."""
+    import kata_settings as ks
+
+    host = tmp_path / "dot-claude"
+    sp = ks.settings_path(fake_home)
+    sp.parent.mkdir(parents=True, exist_ok=True)
+    sp.write_text("{ this is not valid json", encoding="utf-8")  # corrupt
+
+    rc = ki.main([
+        "--platform", "claude", "--home", str(fake_home),
+        "--host-dir", str(host), "--factory-reset",
+    ])
+    # reset proceeds: skills re-linked + stamp written
+    assert (host / "skills" / "kata-bootstrap" / "SKILL.md").exists()
+    assert kv.read_stamp(fake_home), "stamp must still be written (reset proceeds)"
+    # loud, non-silent surface pointing at the corrupt file
+    err = capsys.readouterr().err
+    assert "error" in err.lower()
+    assert str(sp) in err or "marker" in err.lower()
+    # never loop: main returned a value at all
+    assert rc in (0, 3)
+    # the corrupt file is left byte-unchanged (fail-closed write)
+    assert sp.read_text(encoding="utf-8") == "{ this is not valid json"
+
+
+# ---------------------------------------------------------------------------
 # _sweep_managed_slots — orphan-link removal, fail-closed
 # ---------------------------------------------------------------------------
 

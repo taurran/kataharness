@@ -353,3 +353,162 @@ def test_probe_commands_subset_of_command_builders():
         "platforms in _PROBE_COMMANDS but missing dispatch adapter: "
         + str(set(ki._PROBE_COMMANDS) - set(kata_dispatch._COMMAND_BUILDERS))
     )
+
+
+# ---------------------------------------------------------------------------
+# CA-L42 — shared tier-family base-dir install fix (E5)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def fake_home_with_tier_base(tmp_path):
+    """A harness home with a tier-family base dir (payload, NO SKILL.md).
+
+    Models the real defect (SMOKE): ``kata-grill/`` holds ``RUBRIC.md`` +
+    ``resources/`` but no ``SKILL.md``, and the sibling tier variant
+    ``kata-grill-standard`` references ``../kata-grill/RUBRIC.md``. ``iter_skill_dirs``
+    (SKILL.md-only) never returns the base dir, so a naive install dangles the ref.
+    """
+    home = tmp_path / "KataHarness"
+    # a normal skill (has SKILL.md)
+    (home / "skills" / "coordinate" / "kata-bootstrap").mkdir(parents=True)
+    (home / "skills" / "coordinate" / "kata-bootstrap" / "SKILL.md").write_text(
+        "---\nname: kata-bootstrap\n---\n", encoding="utf-8"
+    )
+    # a tier variant that references the shared base dir
+    (home / "skills" / "plan" / "kata-grill-standard").mkdir(parents=True)
+    (home / "skills" / "plan" / "kata-grill-standard" / "SKILL.md").write_text(
+        "---\nname: kata-grill-standard\n---\n"
+        "**Method:** see [`../kata-grill/RUBRIC.md`](../kata-grill/RUBRIC.md).\n",
+        encoding="utf-8",
+    )
+    # the shared tier-family base dir: payload, NO SKILL.md
+    base = home / "skills" / "plan" / "kata-grill"
+    (base / "resources").mkdir(parents=True)
+    (base / "RUBRIC.md").write_text("# grill rubric — tier-invariant method\n", encoding="utf-8")
+    (base / "resources" / "checklist.md").write_text("- one\n", encoding="utf-8")
+    (home / "README.md").write_text("# KataHarness v0.1.0\n", encoding="utf-8")
+    return home
+
+
+def test_iter_shared_base_dirs_finds_payload_only_base(fake_home_with_tier_base):
+    bases = ki.iter_shared_base_dirs(fake_home_with_tier_base)
+    assert [p.name for p in bases] == ["kata-grill"]
+
+
+def test_iter_shared_base_dirs_excludes_real_skill_dir(tmp_path):
+    """The no-SKILL.md discriminator: a referenced sibling that IS a real skill
+    (carries SKILL.md, already flat-linked) is NOT returned. (mutation proof)"""
+    home = tmp_path / "KataHarness"
+    (home / "skills" / "plan" / "kata-a").mkdir(parents=True)
+    # kata-a references a sibling kata-b that is itself a real skill
+    (home / "skills" / "plan" / "kata-a" / "SKILL.md").write_text(
+        "---\nname: kata-a\n---\nsee ../kata-b/NOTES.md\n", encoding="utf-8"
+    )
+    (home / "skills" / "plan" / "kata-b").mkdir(parents=True)
+    (home / "skills" / "plan" / "kata-b" / "SKILL.md").write_text(
+        "---\nname: kata-b\n---\n", encoding="utf-8"
+    )
+    (home / "skills" / "plan" / "kata-b" / "NOTES.md").write_text("x\n", encoding="utf-8")
+    assert ki.iter_shared_base_dirs(home) == []
+
+
+def test_iter_shared_base_dirs_excludes_empty_dir(tmp_path):
+    """The payload discriminator: a referenced dir with no payload is skipped."""
+    home = tmp_path / "KataHarness"
+    (home / "skills" / "plan" / "kata-a").mkdir(parents=True)
+    (home / "skills" / "plan" / "kata-a" / "SKILL.md").write_text(
+        "---\nname: kata-a\n---\nsee ../kata-empty/RUBRIC.md\n", encoding="utf-8"
+    )
+    (home / "skills" / "plan" / "kata-empty").mkdir(parents=True)  # exists but EMPTY
+    assert ki.iter_shared_base_dirs(home) == []
+
+
+def test_iter_shared_base_dirs_excludes_unreferenced_payload_dir(tmp_path):
+    """Reference-driven: a payload-only dir NOT referenced by any skill is skipped."""
+    home = tmp_path / "KataHarness"
+    (home / "skills" / "plan" / "kata-a").mkdir(parents=True)
+    (home / "skills" / "plan" / "kata-a" / "SKILL.md").write_text(
+        "---\nname: kata-a\n---\n(no relative refs)\n", encoding="utf-8"
+    )
+    (home / "skills" / "plan" / "kata-orphan").mkdir(parents=True)
+    (home / "skills" / "plan" / "kata-orphan" / "DATA.md").write_text("y\n", encoding="utf-8")
+    assert ki.iter_shared_base_dirs(home) == []
+
+
+def test_iter_skill_dirs_contract_unchanged(fake_home_with_tier_base):
+    """CA-L42: iter_skill_dirs keeps its exact contract — base dir NOT included."""
+    names = sorted(p.name for p in ki.iter_skill_dirs(fake_home_with_tier_base))
+    assert names == ["kata-bootstrap", "kata-grill-standard"]
+    assert "kata-grill" not in names
+
+
+def test_claude_install_links_base_dir_symlink(fake_home_with_tier_base, tmp_path):
+    host = tmp_path / "dot-claude"
+    res = ki.install("claude", harness_home=fake_home_with_tier_base, host_dir=host)
+    assert "kata-grill" in res["baseDirsLinked"]
+    # the base dir's payload resolves at the host flat location
+    assert (host / "skills" / "kata-grill" / "RUBRIC.md").exists()
+    # the tier variant's ../kata-grill/RUBRIC.md relative reference now resolves
+    ref = host / "skills" / "kata-grill-standard" / ".." / "kata-grill" / "RUBRIC.md"
+    assert ref.resolve().exists(), "the dangling ../kata-grill/RUBRIC.md ref must resolve"
+
+
+def test_claude_install_links_base_dir_copy(fake_home_with_tier_base, tmp_path, monkeypatch):
+    monkeypatch.setattr(ki.os, "symlink", _deny_symlink)  # force copy mode
+    host = tmp_path / "dot-claude"
+    res = ki.install("claude", harness_home=fake_home_with_tier_base, host_dir=host)
+    assert "kata-grill" in res["baseDirsLinked"]
+    assert (host / "skills" / "kata-grill" / "RUBRIC.md").exists()
+    assert (host / "skills" / "kata-grill" / ki._MARKER).exists()  # kata-managed copy
+    ref = host / "skills" / "kata-grill-standard" / ".." / "kata-grill" / "RUBRIC.md"
+    assert ref.resolve().exists()
+
+
+def test_install_linked_list_excludes_base_dir(fake_home_with_tier_base, tmp_path):
+    """BC: the base dir goes in its own key, never in 'linked' (existing contract)."""
+    host = tmp_path / "dot-claude"
+    res = ki.install("claude", harness_home=fake_home_with_tier_base, host_dir=host)
+    assert sorted(res["linked"]) == ["kata-bootstrap", "kata-grill-standard"]
+    assert "kata-grill" not in res["linked"]
+
+
+def test_uninstall_removes_base_dir_but_leaves_non_kata_intact(
+    fake_home_with_tier_base, tmp_path
+):
+    """Uninstall removes only kata-managed entries (base dir included). (mutation proof)"""
+    host = tmp_path / "dot-claude"
+    ki.install("claude", harness_home=fake_home_with_tier_base, host_dir=host)
+    assert (host / "skills" / "kata-grill" / "RUBRIC.md").exists()
+    # a user's own dir occupying a slot must survive uninstall
+    victim = host / "skills" / "user-thing"
+    victim.mkdir()
+    (victim / "MINE.txt").write_text("precious", encoding="utf-8")
+    res = ki.uninstall("claude", harness_home=fake_home_with_tier_base, host_dir=host)
+    assert not (host / "skills" / "kata-grill").exists(), "kata base dir must be removed"
+    assert (victim / "MINE.txt").read_text(encoding="utf-8") == "precious"  # left intact
+    assert any("user-thing" in p for p in res["leftIntact"])
+
+
+# The 5 frozen engine fns (D128, MD5-verified per STATE.md) must stay byte-identical.
+# CA-L43: this initiative freezes the list; E5 is ADDITIVE only.
+_FROZEN_FIVE_MD5 = {
+    "install": "7cad389a36ea3831dd1748af1302aafb",
+    "copy_project": "138fdfb8d3b87b5744b4aa9b170856fb",
+    "confirm_platform": "2c098b3801b978950324182c54e36073",
+    "_flat_link_skills": "d75d4f30b78434ce3d884a6a7234e9ab",
+    "_link_or_copy": "ede13dac66b693e02fd4041e196bcc2a",
+}
+
+
+def test_frozen_five_byte_identical():
+    import hashlib
+    import inspect
+
+    for name, expected in _FROZEN_FIVE_MD5.items():
+        src = inspect.getsource(getattr(ki, name))
+        got = hashlib.md5(src.encode("utf-8")).hexdigest()
+        assert got == expected, (
+            f"FROZEN-FIVE VIOLATION: {name} source changed "
+            f"(expected {expected}, got {got}) — CA-L43 forbids editing it"
+        )
