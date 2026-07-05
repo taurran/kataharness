@@ -380,13 +380,30 @@ stated in DESIGN.
   do-once suppression in the file is `firstRunCompletedAt`, which suppresses the forced FULL
   bootstrap, never the per-run recommendation.
 
-### Cautions carried to DESIGN (gate v5, non-blocking)
+### R-43 — Delta-gate v6 fold (grill CLOSED after this entry)
+- R-43 (v6#1 — CORRECTS R-41's comparator field; gate caught a second false premise):
+  `.kata-version` has NO `version` field — its fields are `gitSha` and `suiteSemver`
+  (kata_version.py:22-31, 109-117). PIN: the comparator reads **`gitSha`** (suiteSemver EXPLICITLY
+  REJECTED — it re-arms only on semver bumps, breaking R-39's re-arm-on-every-upgrade; gitSha
+  re-arms on every update, and "unknown" (kata_install.py:1171) is exactly the skip-clause case).
+  Verified by the gate: stamp IS written at install (kata_install.py:1472), --update (1337),
+  --factory-reset (1421); the marker-clear extension IS implementable at the factory-reset branch
+  (1359-1439) BUT `write_settings` cannot delete a key ({**existing, **owned} preserves all,
+  kata_settings.py:165/177) ⇒ the clear needs a small NEW fail-closed delete helper.
+GRILL CONVERGENCE: gate v5 verified all other sections converged; v6 verified R-41/R-42 with this
+one field correction (which adopts v6's own drafted answer). The grill is CLOSED; the DESIGN
+freeze-gate is the next fresh adversarial pass and re-attacks these pins in §2.
+
+### Cautions carried to DESIGN (gates v5+v6, non-blocking)
 - C-1: pin `acceptedDefaults` value schema at DESIGN before bootstrap writes it.
 - C-2: CA-6b allowlist-coverage check — DESIGN enumerates the run-critical patterns it warns on
   (a fixed checklist, not an analyzer; anti-cathedral).
 - C-3: corrupt `.kata-settings.json` ⇒ lenient read (marker reads absent ⇒ force) + fail-closed
   write (marker cannot persist) = forced first-run that can't complete. Surface loudly + point at
   the corrupt file; never loop.
+- C-4 (gate v6): the marker/hostPosture writer must copy the fail-closed `_load_existing` pattern
+  (kata_settings.py:120-144), NOT the lenient `add_confirmed_platform` read-before-write
+  (kata_settings.py:105-111), which silently clobbers a corrupt file — contradicting C-3.
 
 ## Handoff-taxonomy assessment (R-6 working notes)
 Current state (grounded): ONE durable artifact family — .planning/HANDOFF.md (protocol/handoff.md),
