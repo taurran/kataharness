@@ -168,3 +168,61 @@ needs no detection (inherits by omission); only economy tier-down reads the anch
 Claude-only core (v0.1): the inherit-by-omission BC guarantee (R3) and the Anthropic ladder IDs (R4) are grounded
 for the Claude host. OpenAI/Gemini ladders ship **shape-only**; their IDs and inherit semantics are re-pulled and
 re-grounded at each adapter's implementation, not assumed here.
+
+---
+
+## POST-FREEZE GATED AMENDMENT (2026-07-04, D148 — context-autonomy premium gate)
+
+> **Provenance.** Copied VERBATIM from the FROZEN context-autonomy DESIGN §3
+> (`.planning/specs/context-autonomy/DESIGN.md`), where it is the frozen amendment text.
+> Appended here (supersede-never-rewrite — no line above this point is edited), following the
+> 2026-07-01 POST-FREEZE ADDENDUM precedent. Implemented in `tools/kata_models.py` (`resolve()`'s
+> additive `premium=` branch + the exported `premium_status()`) + `tools/tests/test_kata_models_premium.py`
+> (CA-P0 task E3). The existing `tests/test_kata_models.py` BC canary is byte-unchanged.
+
+## §3 GATED AMENDMENT to the frozen model-tiering DESIGN (D148)
+
+Delivered as a post-freeze gated-amendment addendum APPENDED to `.planning/specs/model-tiering/DESIGN.md`
+(the existing POST-FREEZE ADDENDUM precedent; supersede-never-rewrite — no frozen line is edited).
+**Gating clause:** everything below activates ONLY under `kata.config.models.premium` with all four
+conjuncts true; **absent `models.premium`, the frozen spec governs byte-for-byte** — zero change to any
+existing path, including the absent-`models`-block BC guarantee (R3).
+
+1. **What it amends (quoted).** The frozen zero-step contract (model-tiering DESIGN §2, Layer 1):
+   > "`resolve()` returns `None` (= OMIT the model param → inherit) whenever the resolved rung index
+   > `== anchor_index`; it returns an explicit id string ONLY for a rung strictly BELOW the anchor
+   > (resolved index `< anchor_index`)."
+   is amended to: *explicit ids for non-anchor rungs — strictly below the anchor as frozen, **or the
+   single rung strictly ABOVE the anchor under a recorded premium approval**.* Zero-step cells still
+   NEVER return the anchor's own id (the gated-top-rung protection is untouched).
+2. **The premium branch (R-16, R-22; premium-id pin per freeze-gate fold #1).** The premium id is
+   **`models.premium.offer` itself** — never derived by ladder walk. The branch fires iff **all four
+   conjuncts** hold at resolve-time: `models.premium.approved == true` ∧ `work-class ∈
+   models.premium.scope` (critical | coding only — economy never, R-9) ∧ **the `offer` rung sits
+   EXACTLY ONE rung strictly above the anchor in the family ladder** ∧ `mode == "advanced"`. ANY other
+   offer↔anchor relation ⇒ **NO FIRE + surfaced** (board NOTE): `offer == anchor` (e.g. anchor already
+   fable); offer 2+ rungs above (e.g. a hand-edited mythos over an opus anchor — approval never
+   escalates past one rung); offer below the anchor. `resolve()` then returns the explicit `offer` id
+   (inherit would silently give the session model; explicit is mandatory).
+3. **grantedMode lapse (R-22/R-34).** The approval record carries the mode it was granted under
+   (`grantedMode`). A re-entrant run with `mode ≠ grantedMode` LAPSES the approval (bootstrap clears
+   `approved`; the next preflight re-asks). This is the fourth conjunct's persistence arm.
+4. **Any-failure run-lapse + the OMIT terminus (R-25, R-38).** ANY premium dispatch failure lapses
+   `approved` for the remainder of the run — one fallback step only: **premium → OMIT/inherit at the
+   anchor rung** (never an explicit anchor id; tracks mid-run `/model` switches; preserves the frozen
+   "never re-selects the anchor as a terminus" discipline). No re-offers, no per-task retry (the exact
+   retry-storm R2 exists to prevent).
+5. **R2 auth carve-out, premium rung ONLY (R-30).** The frozen R2 text —
+   > "EXCEPT **HTTP 401/403** (auth/quota) which surface as a real error (never a silent downgrade on a
+   > billing problem)"
+   — is amended for the premium rung only: premium 401/403 ⇒ **premium-unavailable**: OMIT-inherit +
+   LOUD surface (board DECISION + ledger `degraded {scope:"premium", reason:"auth-40x"}` + handoff note)
+   + approval LAPSED for the run. Rationale: R2's raise protects BASELINE dispatch (misconfig = stop);
+   premium is an optional elevation whose failure has a semantically-correct safe fallback — the anchor,
+   the exact no-approval behavior. Unattended survival wins; never silent. **Baseline rungs: R2
+   unchanged, including the 401/403 raise.**
+6. **Untouched invariants (stated so the gate can check):** R1 monotonicity
+   (`essential-coding ≤ standard-coding ≤ anchor`) is below-anchor arithmetic and is unaffected; the R2
+   ≤2-step-down bound for baseline chains is unaffected (premium has its own one-step chain); the
+   inline-eval M4-L7 carve-outs are unaffected (inline eval is economy class — structurally outside
+   `premium.scope`).
