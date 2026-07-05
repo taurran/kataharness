@@ -41,6 +41,14 @@ D150 + specs/adaptive-tiering/ (DESIGN, SMOKE-MODELED). Gauntlet at tag: pytest 
 Snyk 0. The queue below is UNCHANGED (R6 still leads) with item 6 added (adaptive live A/B rides
 the same post-R6 instrumented runs). New D# ≥ D151.
 
+## 1c. SAME-DAY ADDENDUM 2 — README restructured (PR #15, 2026-07-05)
+
+Banner = concise exec summary; feature box reordered by UNIQUENESS (quality loop -> adaptive tiering
+-> inline evaluator -> context autonomy -> learning loop -> ... -> niche); NEW "Picking a harness"
+comparison section (vs Claude Code native orchestration/ultra review, Hermes, OpenHands, Aider —
+design-philosophy level, in-repo-grounded, no benchmark claims; grounding-gated PASS). Maintain the
+discipline: any future README numeric/competitor claim goes through a grounding gate.
+
 ## 2. NEXT SESSION — the post-merge test queue (BACKLOG ★, operator-ordered, R6 leads)
 
 1. **R6 — live host-fired compaction end-to-end**: attended interactive session, throwaway
