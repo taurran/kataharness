@@ -1,11 +1,18 @@
 # KataHarness — Claude Code adapter
 
-Two Claude Code adapter features:
+Claude Code adapter features:
 
 1. **statusLine** — live one-line run-status in Claude Code's status bar, updated
-   every ~1 second while an orchestrated kata run is in progress.
-2. **PreCompact hook** — auto-checkpoint that commits `.kata/board.md` to
-   `refs/kata/trail` before context compaction, closing Gap 1 of restore-hardening.
+   every ~1 second while an orchestrated kata run is in progress. It also writes the
+   context-usage **bridge file** that feeds the context-autonomy gauge (CA-L1/CA-L2).
+2. **statusLine chaining wrapper** — when the operator ALREADY has a `statusLine`
+   command, kata **never clobbers** it: it offers a wrapper that runs the user's
+   command as a child and writes kata's own sibling bridge (CA-L1).
+3. **PreCompact hook** — auto-checkpoint that commits `.kata/board.md` to
+   `refs/kata/trail` before context compaction, closing Gap 1 of restore-hardening;
+   additively surfaces `.planning/HANDOFF.md` freshness (CA-L17).
+4. **SessionStart(compact) hook** — re-anchors a post-compaction / respawned session
+   on the newest `.planning/HANDOFF.md` (CA-L18).
 
 ---
 
@@ -102,6 +109,141 @@ before the next integration" — would still be exposed.  For that scenario the
 operator would need a different trigger (e.g. a `PostToolUse` hook on a writing
 tool, or a timed external cron).  Surface the finding and add a note to
 `.planning/DECISIONS.md`; do NOT attempt to fake the guarantee.
+
+---
+
+## SessionStart(compact) hook
+
+`adapters/claude/hooks/kata-sessionstart.py` fires when Claude Code starts a session
+from a **compaction** or **resume** boundary (`source` is `compact` or `resume`). It
+emits `hookSpecificOutput.additionalContext` (CA-L18) — a re-anchor instruction pointing
+the fresh session at the newest `.planning/HANDOFF.md`, telling it to apply the handoff
+**staleness rule** (protocol/handoff.md) and rebuild via the kata-orient 3-tier load. When
+no `HANDOFF.md` exists, the injected context says so and points at a kata-orient full
+rebuild. It is fail-soft (any exception ⇒ silent exit 0) and never blocks.
+
+### Hook installation
+
+The `SessionStart` entry in `settings.snippet.json` wires this script with the
+`compact|resume` matcher:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"<repo>/tools/.venv/Scripts/python.exe\" \"<repo>/adapters/claude/hooks/kata-sessionstart.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Same `<repo>` / venv substitution rules as the PreCompact entry above. The hook is
+stdlib-only, so any Python 3.12+ interpreter works.
+
+---
+
+## statusLine chaining wrapper (CA-L1 — never clobber)
+
+`adapters/claude/statusline_chain.py` is kata's **chain-never-clobber** wrapper. It exists
+for the case where the operator ALREADY has a `statusLine` command (e.g. the operator's
+`gsd-statusline.js`). Kata **never** replaces or edits that command. Instead it offers to
+**chain**: run the user's command as a child, pass its stdin through unmodified, print the
+child's stdout **byte-identical**, and then write kata's OWN sibling bridge file. Two
+bridge files, zero contention (R-32) — the user's file is never touched.
+
+### The offer (fresh-profile vs existing-statusline)
+
+- **No user `statusLine` exists (fresh profile):** kata installs its own unchained
+  `statusLine` command (`statusline.py`), which writes the superset bridge directly
+  (`kata_statusline.write_bridge`, the fresh-profile owner). This is the default snippet.
+- **A user `statusLine` exists:** kata offers to **chain** (wrap the user's command) OR to
+  **skip** to the fallback legs. **The operator's own statusline stays untouched (R-4: no
+  operator action).** When chained, the wrapper writes `%TEMP%/kata-ctx-<session_id>.json`
+  (atomic temp+rename); the user's own `%TEMP%/claude-ctx-<session_id>.json` is untouched.
+
+### Chained install
+
+The chained `statusLine` command passes the user's original command after `--`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "python \"<repo>/adapters/claude/statusline_chain.py\" -- <user's original statusLine command>"
+  }
+}
+```
+
+The wrapper shlex-parses the user command and runs it as a **list-argv** child. It chains
+**only** when that command shlex-parses to plain argv with **no shell metacharacters**;
+otherwise it takes the SKIP leg (see Security below). On Windows, keep the chained command
+using **forward slashes** so it stays chain-eligible (a backslash is treated as a shell
+metacharacter and forces the SKIP leg — safe, but kata then falls back to its own bridge
+instead of chaining).
+
+### Reader priority (context-autonomy gauge)
+
+The gauge (`tools/kata_gauge.py`) reads bridge files in this fixed priority:
+
+1. **kata bridge** (`kata-ctx-<session_id>.json`, 5-field superset) — full token-aware
+   triggering.
+2. **user bridge** (`claude-ctx-<session_id>.json`, gsd 4-field) — percentage-only
+   triggering (no `total_tokens`).
+3. **deterministic N-wave fallback** — no usable/fresh bridge ⇒ graceful rotation
+   (CA-L3/L4). Never "assume infinite context."
+
+### Security (subprocess sink)
+
+The chaining wrapper is the highest-scrutiny surface in this adapter: it runs a command
+every statusline tick. The posture:
+
+- **list-argv only, `shell` left False.** The child is executed as a validated
+  `list[str]` with `shell=False`. The user's command string is **never** string-
+  interpolated into a shell; `os.system` / `os.popen` are not used.
+- **Chain-eligibility gate.** Kata chains ONLY when the command shlex-parses to plain
+  argv with NO shell metacharacters (`| & ; < > ( ) $ `` ` `` \ * ? [ ] { } ~ ! #`,
+  newline/tab). Any metacharacter, an unbalanced quote, or an empty command ⇒ the **SKIP
+  leg**: no child runs, nothing is emitted, kata still writes its own bridge. Kata never
+  re-introduces shell evaluation, and the never-clobber guarantee is preserved at install
+  time (kata does not wrap an ineligible command — it leaves the user's statusline as-is).
+- **Bounded child.** The child runs under a hard timeout (5 s `[TUNABLE]`). Child failure,
+  nonzero exit, or timeout ⇒ kata still emits whatever stdout the child produced, never
+  hangs, and exits 0 — the host-statusline fail-soft contract (kata must never break the
+  operator's statusline under any failure).
+- **No new privilege.** The chained command is the operator's OWN pre-existing statusline
+  command — the same trust domain as a test runner; chaining grants it no new capability.
+
+The canonical `protocol/exec-safety.md` sink-registry row for this subprocess is authored
+at the P2/C10 closeout (this adapter documents the sink here meanwhile).
+
+---
+
+## Merge discipline & approval (CA-L24 — append-never-replace)
+
+Applying `settings.snippet.json` is a **write to `~/.claude/settings.json`** and is
+therefore an explicit item in the approved bundle collected pre-run — **never an implied
+side effect**. When kata's install/bootstrap applies the snippet, the following merge
+discipline holds verbatim:
+
+> **hooks arrays are APPEND-NEVER-REPLACE; `statusLine` is only ever chained-or-skipped**
+> — the CA-L1 never-clobber guarantee generalizes to EVERY settings key kata touches.
+
+Concretely: a new `SessionStart` / `PreCompact` hook entry is **appended** to any existing
+hooks array (never replacing the operator's hooks), and an existing `statusLine` command is
+**chained or skipped**, never overwritten.
+
+The operator's chosen mode (`bridgeMode`: `chained` | `user-only` | `none`) is recorded to
+`~/.kata/settings.json` under `hostPosture` (E2/R-33) by the bootstrap flow (P2/C1). This
+README states that contract; the adapter files here **write nothing** to host settings on
+their own — the snippet is applied only via the approved bundle's host-settings write slot.
 
 ---
 

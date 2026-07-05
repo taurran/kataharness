@@ -6,6 +6,17 @@
     "refreshInterval": 1
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"<repo>/tools/.venv/Scripts/python.exe\" \"<repo>/adapters/claude/hooks/kata-sessionstart.py\""
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "hooks": [
