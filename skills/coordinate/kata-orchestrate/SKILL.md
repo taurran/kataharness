@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.10.0
+version: 0.10.1
 category: coordinate
 status: experimental
 agnostic: true
@@ -396,7 +396,8 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      over-briefing WARN is the symptom detector for narration bloat. **Durable-citation rule (CA-L22, matches the
      D141 discipline):** anything a DECISION or ledger row cites MUST be quoted/restated in a committed artifact —
      **never a bare pointer** at a `.kata/*` path (see `protocol/observability.md`, the "Reports (v0.2.1)" row).
-     *(CA-L22 report home is a **[VETO-FLAG]** — recorded pending operator veto; it rides to the merge gate.)*
+     *(CA-L22 report home — **RESOLVED LOCKED** (D146): the project-local `.kata/reports/` path above is the
+     decision; the former [VETO-FLAG] is closed and no longer rides to the merge gate.)*
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 
    **Liveness monitor (F3 — dark-worker detection; NO blind kill).** While workers run, the orchestrator
@@ -568,6 +569,17 @@ by [[kata-selfhandoff]] and are **not re-decided here**; this step is the conduc
 - **Boundary placement (CA-L12).** The conductor evaluates the trigger at
   **wave/frontier-recompute boundaries only**; **never mid-task** (existing [[kata-selfhandoff]] mandate,
   unchanged).
+- **Select the bridge file (CA-L1 bridge resolution — pinned convention).** Before calling `resolve_gauge`
+  you must locate the `kata_bridge_path`. **The Claude adapter exposes NO session-id to the running
+  conductor**: the SessionStart hook (`adapters/claude/hooks/kata-sessionstart.py`) receives `session_id` on
+  stdin but neither persists nor exports it, the statusline writes `kata-ctx-<session_id>.json` from its OWN
+  stdin (a separate process), and there is no `CLAUDE_SESSION_ID` env. So there is no explicit session-id
+  source to key the bridge by — **select the NEWEST `%TEMP%/kata-ctx-*.json` by mtime**. **If MORE THAN ONE
+  fresh (younger than the 300 s `[TUNABLE]` staleness window) kata bridge exists** — concurrent same-host
+  kata sessions, a **known limitation** (each session writes its own `session_id`-named file to the shared
+  `%TEMP%`, and none can be attributed to *this* conductor without a session-id source) — treat the gauge as
+  **AMBIGUOUS ⇒ fall to the deterministic rotation leg below, never guess**. A single fresh kata bridge (or
+  none) resolves unambiguously. (Cross-referenced in `adapters/claude/README.md` § Reader priority.)
 - **Read the gauge (CA-L1 reader priority).** Resolve the active gauge via
   `kata_gauge.resolve_gauge(kata_bridge_path, user_bridge_path, now_utc=<now>)` — kata bridge → user bridge →
   `source: "none"`. A leg that is absent, corrupt, **or stale (bridge timestamp older than 300 s `[TUNABLE]`,
@@ -577,8 +589,11 @@ by [[kata-selfhandoff]] and are **not re-decided here**; this step is the conduc
   cap**. `contextTrigger` reads from `kata.config`, default **0.70 `[TUNABLE]`**, advanced-drawer only, never
   interactively asked (CA-L7).
 - **No usable gauge ⇒ deterministic rotation (CA-L4/L6; §4 row 6).** A `source: "none"` gauge
-  (absent / stale / unresolvable) ⇒ rotate on the `kata_gauge.fallback_waves(trigger_tokens)` cadence
-  (`N = max(1, floor(trigger_tokens ÷ est_wave_burn))`, `est_wave_burn` default **40k tokens `[TUNABLE]`**).
+  (absent / stale / unresolvable / AMBIGUOUS) ⇒ rotate on the `kata_gauge.fallback_waves(trigger_tokens)`
+  cadence (`N = max(1, floor(trigger_tokens ÷ est_wave_burn))`, `est_wave_burn` default **40k tokens
+  `[TUNABLE]`**). **No-gauge denominator (CA-L5):** with no live gauge there is no host-reported window, so
+  `trigger_tokens = contextTrigger × advertised-window estimate` (a per-model window estimate, explicitly
+  flagged **APPROXIMATE** — same posture as the `backstop_recommendation` approximate fallback).
   **Degradation is always graceful rotation — never "assume infinite context".**
 - **Post-trigger: keep working (CA-L12).** Once the trigger is crossed, **keep working**, refreshing the handoff
   at every subsequent boundary until the host reset arrives (option (a)). The refresh invokes [[kata-handoff]]
