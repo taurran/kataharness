@@ -52,7 +52,7 @@ token/wall-clock efficiency, in one loop.
 
 ---
 
-## Picking a harness — where KataHarness wins
+## Picking a harness — where KataHarness exceeds
 
 Positioning by design philosophy, not benchmark claims — each of these tools is excellent at its own
 job, and we benchmark ourselves, not others (see *Built-in benchmarking*). KataHarness is built for
@@ -65,20 +65,22 @@ the output to be *provably* right — and the token bill to stay rational while 
   *every* task (not review-on-request), evidence-routed model spend, and a git-durable trail that
   survives crashes and compactions. It runs **on** Claude Code — an extension of it, not a rival.
   Pick Kata when the whole loop needs governing, not just the review step.
-- **vs. Hermes (Nous Research).** Hermes built its identity on the closed learning loop, and we
-  studied it formally before borrowing — verdict: **borrow the mechanisms, keep our gates.** Hermes ships no
-  default-FAIL testing model and promotes learned behavior without a human gate; Kata's learning is
-  telemetry-grounded and **two-stage human-gated**, and nothing in the loop certifies its own work.
-  Pick Kata when a wrong "learned lesson" or an unverified deliverable is expensive.
+- **vs. Hermes (Nous Research).** Hermes built its identity on the closed learning loop; we studied
+  it formally and **based our approach on its applicable traits — while keeping our gates.** Hermes
+  ships no default-FAIL testing model and promotes learned behavior without a human gate; Kata's
+  learning is telemetry-grounded and passes a **two-stage human gate BEFORE anything executes with
+  it**, and during execution the inline evaluator identifies where work must **hard-fork** (kill +
+  fresh attempt branch) rather than drift on. Pick Kata when a wrong "learned lesson" or an
+  unverified deliverable is expensive.
 - **vs. OpenHands (ex-OpenDevin).** A leading open autonomous-dev platform — strong sandboxing, broad
   tooling, benchmark-driven. Its loop optimizes for *task completion*; Kata's optimizes for
   **provable completion**: mutation-proven tests, adversarial review before every merge, honest
   scorecards with no credit for tests that never ran. Pick Kata where "the agent said it works" is
   not evidence.
-- **vs. Aider.** The benchmark interactive pair-programming CLI (we adapted its repo-map, with
-  attribution). Aider keeps you in the loop prompt-by-prompt; Kata is built for the
-  **walk-away** — one approval bundle, then hours of gated autonomous execution with a crash-proof
-  trail. Pick Aider to code *with* an AI; pick Kata to *delegate* to one and trust what comes back.
+- **vs. Aider.** The benchmark interactive pair-programming CLI. Aider keeps you in the loop
+  prompt-by-prompt; Kata is built for the **walk-away** — one approval bundle, then hours of gated
+  autonomous execution with a crash-proof trail. Pick Aider to code *with* an AI; pick Kata to
+  *delegate* to one and trust what comes back.
 
 What no one else on this list ships together: **default-FAIL gates on everything + evidence-routed
 model spend** — validation depth and token thrift as one mechanism, not a trade-off.
@@ -108,62 +110,57 @@ is removed doesn't count). An optional **AI-slop check** fails a run for spirali
 standing **silent-permissive-default guard** forbids decision-code from quietly degrading on bad input.
 
 ### 🎯 Adaptive tiering — the loop routes models by evidence *(new in v0.3.0)*
-Most harnesses pick one model and pay its rate for everything, all run long. KataHarness routes
-**every dispatch off the run's own evidence**, on top of its relative-tier base: a task that fails its
-gate twice is **bumped a rung up for the retry**; plan-rated low-complexity work and classes riding a
-clean-first-pass streak **step down** (coding work only, capped at one rung, damped the moment a
-downshift fails); and a kill verdict gets a **cheap second opinion** one rung up — strictly below your
-anchor (stated-inert where no such tier exists) — before any work is thrown away. The expensive top
-rung (Fable today; any family's premium model tomorrow — registration is pure data, no mechanism
-change) fires **only on the hard moments you approved**: freeze-gate verdicts, HOLD re-reviews,
-escalations, failed-task retries — inside a **call budget** whose consent prompt shows your exact
-event list and cap, with the last two calls reserved for gates and a loud lapse to your anchor when
-it's spent. Every move is a board `tier:` line — auditable, and the restart-recovery trail. Modeled
-on this repo's own prior build via the shipped engine: **−86% premium-rung calls** (59→8) and
-**13→0 wrongful kills** on the false-positive trigger mix *(modeled, not measured — inputs cited in
-the committed SMOKE-MODELED artifact; the live A/B is queued with arms pinned)*. Ledger-driven
-acceptance routing (L2) ships as contract, activation OFF until real run volume. Backward compatible:
-no `models.adaptive` block ⇒ every leg OFF.
+Most harnesses pick one model and pay its rate for everything. KataHarness routes **every dispatch
+off the run's own evidence**: a task that fails its gate twice is **bumped a rung up for the retry**;
+plan-rated low-complexity work and clean-streak classes **step down** (coding work only, one rung,
+damped on any failure); a kill verdict gets a **cheap second opinion** — strictly below your anchor,
+stated-inert where no such tier exists — before work is thrown away. The premium rung (Fable today;
+any family's top model by data registration) fires **only on the hard moments you approved** —
+freeze-gate verdicts, HOLD re-reviews, escalations, failed-task retries — inside a **call budget**
+whose consent prompt shows your exact event list and cap; the last two calls are reserved for gates,
+and exhaustion lapses to your anchor, loudly. Every move is an auditable board `tier:` line (also the
+restart-recovery trail). Modeled on this repo's own prior build via the shipped engine: **−86%
+premium-rung calls** (59→8) and **13→0 wrongful kills** on the false-positive trigger mix *(modeled,
+not measured — inputs cited in the committed SMOKE-MODELED; live A/B queued, arms pinned)*.
+Acceptance routing (L2) ships as contract, activation OFF until real run volume. No `models.adaptive`
+block ⇒ every leg OFF.
 
 ### ⚡ The inline evaluator/reroll — DSpark-informed loop economics *(v0.2.0)*
-The best-of-both-worlds core. The scheduler discipline is adapted from DeepSeek's **DSpark** paper
-(confidence-scheduled speculative decoding) — not its inference code, its *principles*, translated to the
-harness layer: a **separate cheap confidence signal** (never the worker self-scoring — rule-verifiable
-trailer evidence only), **acceptance-length as the metric** (clean-checkpoint streaks per task class),
-**per-class leashes** (code gets a long leash on cheap verifiable signals; research/debug trigger shorter),
-**calibration from logged verdicts** (the telemetry ledger), and the **verifier's final say** (the
-default-FAIL gate stays the untouched authority, so a mistuned ladder degrades to exactly today's behavior).
-Explicitly rejected: fixed-cadence mid-task LLM judgment — an LLM judge costs about a chunk to judge a
-chunk, so periodic judgment on green work is a net loss. Live-proven: trigger → diff-cited verdict →
-corrective redispatch → green. `inlineEval: off|telemetry|on`; absent ⇒ off, byte-for-byte backward
-compatible.
+The best-of-both-worlds core: scheduler *principles* (not code) from DeepSeek's **DSpark** paper,
+translated to the harness layer — a **separate cheap confidence signal** (rule-verifiable trailer
+evidence, never worker self-scoring), **acceptance-length as the metric** (clean-checkpoint streaks
+per class), **per-class leashes**, **calibration from logged verdicts**, and the **verifier's final
+say** (the default-FAIL gate stays the untouched authority, so a mistuned ladder degrades to exactly
+today's behavior). Explicitly rejected: fixed-cadence mid-task LLM judgment — a judge costs about a
+chunk to judge a chunk, so periodic judgment on green work is a net loss. Live-proven: trigger →
+diff-cited verdict → corrective redispatch → green. `inlineEval: off|telemetry|on`; absent ⇒ off,
+byte-for-byte backward compatible.
 
 ### 🔋 Context autonomy — the 8-hour walk-away *(v0.2.1)*
-The conductor watches its own context gauge (a statusline **bridge** on Claude — installed chain-or-skip,
-your own statusline is **never clobbered**) and self-hands-off at 0.70 of the effective window: durable
-`HANDOFF.md` committed **before** any reset, host compaction recommended-never-written, a
-SessionStart(compact) hook that re-anchors the fresh context, and resume at the next task boundary with
-zero task loss. Where no gauge exists — headless `-p` runs were **verified on our host** to never tick
-the statusline — deterministic N-wave rotation covers the same guarantee. One **preflight approval bundle** collects
-everything up front (installs, permission allowlist, compact-window recommendation, host-settings writes,
-the premium-model gate, the stranding check) so an unattended run never stalls on a prompt — and a
-walk-away run missing every recovery leg is **BLOCKED at preflight**, not discovered dead 6 hours in.
-The v0.2.1 loop also got measurably cheaper end-to-end: an identical-protocol A/B rerun of the v0.2.0
-smoke measured **−23% conductor tokens / −44% tool calls / −29% wall clock at exact outcome parity**
-*(n=1, directional, and not surgically attributable between the shipped riders and same-span prose
-evolution — the full caveats are recorded in the committed LIVE-PROOF)*.
+The conductor watches its own context gauge (a statusline **bridge** on Claude — chain-or-skip, your
+statusline is **never clobbered**) and self-hands-off at 0.70 of the effective window: durable
+`HANDOFF.md` committed **before** any reset, a SessionStart(compact) hook that re-anchors the fresh
+context, resume at the next task boundary with zero task loss. Where no gauge exists — headless `-p`
+runs were **verified on our host** to never tick the statusline — deterministic N-wave rotation covers
+the same guarantee. One **preflight approval bundle** collects everything up front (installs,
+allowlist, compact-window recommendation, host-settings writes, the premium gate, the stranding check)
+so an unattended run never stalls on a prompt — and a walk-away run missing every recovery leg is
+**BLOCKED at preflight**, not discovered dead 6 hours in. The loop also got measurably cheaper: an
+identical-protocol A/B rerun measured **−23% conductor tokens / −44% tool calls / −29% wall clock at
+exact outcome parity** *(n=1, directional, not attributable to any single rider — full caveats in the
+committed LIVE-PROOF)*.
 
 ### 🧠 The learning loop — Hermes-informed, human-gated
-The cross-run learning arc borrows from a formal deep-research bake-off of the **Hermes** learning-loop
-agent — its prompt-builder tiering shapes `kata-orient`'s three-tier orientation assembly, its closed
-learning loop shapes the improve→promote arc — with the bake-off verdict applied deliberately: **borrow
-the mechanisms, keep our gates** (Hermes ships no default-FAIL testing model; ours is the spine).
-Concretely: a committed **telemetry ledger** (schema v3) records every instrumented run's acceptance
-streaks, per-class stats, cost columns, and failure kinds (the per-checkpoint signal vectors ride in
-committed `Kata-Checkpoint` trailers) → threshold calibration works from logged verdicts,
-never vibes; **recall** surfaces prior lessons/decisions/recurrences read-only at initiation; and
-`kata-improve` distils run lessons into candidate skills that only enter the toolkit through
-`kata-promote`'s **two-stage human gate**. The loop learns; nothing self-modifies silently.
+The cross-run learning arc is based on the applicable traits a formal deep-research bake-off surfaced
+in the **Hermes** learning-loop agent — its prompt-builder tiering shapes `kata-orient`'s three-tier
+orientation assembly; its closed loop shapes the improve→promote arc — with the verdict applied
+deliberately: **adopt the applicable traits, keep our gates** (Hermes ships no default-FAIL testing
+model; ours is the spine). Concretely: a committed **telemetry ledger** records every instrumented
+run's acceptance streaks, cost columns, and failure kinds → calibration works from logged verdicts,
+never vibes; **recall** surfaces prior lessons read-only at initiation; and `kata-improve` distils
+run lessons into candidate skills that enter the toolkit only through `kata-promote`'s **two-stage
+human gate — approved BEFORE any run executes with them**. The loop learns; nothing self-modifies
+silently, and nothing learned runs ungated.
 
 ### 🏁 Built-in benchmarking
 Quality you can *measure*, not assert. A complete two-axis scoring engine ranks candidate build artifacts on real
