@@ -1,7 +1,7 @@
 ---
 spec: context-autonomy
 title: "Context autonomy — the gauge-driven self-handoff loop: warn → handoff → compact → re-anchor, unattended"
-status: FROZEN 2026-07-04 (compiled from GRILL-LEDGER.md; grill CLOSED at R-43 after 6 gate rounds — convergence gates v1–v5 + delta-gate v6; pending the initiative freeze-gate + operator commit gate)
+status: FROZEN 2026-07-04 (freeze-gate v1 SHIP-WITH-FIXES — 6 MED / 4 LOW, fidelity clean, all ten folded in place same-day; gate history: grill 6 rounds — convergence v1–v5 + delta-gate v6, CLOSED at R-43 — then freeze-gate v1; pending the operator commit gate)
 created: 2026-07-04
 version-target: v0.2.1
 baseline: master 2c81beb (v0.2.0; pytest 2505/3 skip, validator 48/0/0, Snyk medium+ 0)
@@ -50,6 +50,9 @@ no hooks, auto-compact disabled) the run degrades to deterministic rotation or a
 Session scope pre-locks recorded: OP-1 (no PokeVault/MindBridge deploy this initiative — §8),
 OP-6 (cross-platform docs scope = Kiro, Codex CLI, Copilot, Cursor, Gemini CLI; Windsurf cut).
 
+Open operator items (freeze-gate fold #9): the two **[VETO-FLAG]** decisions — CA-L22 (report home) and
+CA-L25 (intent-keyed BLOCK) — stand locked-pending-veto and **surface at the operator merge gate**.
+
 ## §1 Locked decisions (CA-L1..CA-L44)
 
 Every resolved ledger branch appears below (or in §8 as a named deferral). Tunable **values** are marked
@@ -67,6 +70,9 @@ are locked here with an explicit **[VETO-FLAG]** the freeze-gate must surface.
   bridge `%TEMP%/kata-ctx-<session_id>.json` (atomic temp+rename); the user's file is untouched.
   Reader priority: (1) kata bridge → (2) user bridge (4-field, %-only triggering) → (3) deterministic
   fallback (CA-L4). The operator's own statusline stays untouched (R-4: no operator action).
+  **Fresh-profile owner (freeze-gate fold #3):** when NO user statusline exists, kata's OWN statusline
+  (adapters/claude/statusline.py + kata_statusline.py) is extended to write the same superset bridge
+  file unchained — a named build item of this initiative.
 - **CA-L2 — Bridge superset schema (R-24).** Kata's bridge writes
   `{session_id, remaining_percentage, used_pct, timestamp, total_tokens}` — the wrapper receives the same
   statusline stdin (GROUNDING G3: `context_window.remaining_percentage` + `context_window.total_tokens`
@@ -93,8 +99,10 @@ are locked here with an explicit **[VETO-FLAG]** the freeze-gate must surface.
   below the rot ceiling (R-7: degradation is two-sided; the 0.40 band is NOT a conductor clamp). Trigger
   = **0.70 `[TUNABLE]` × host-reported effective window** (CA-L5). One key (`contextTrigger`, §2), shown
   in bootstrap's advanced drawer, **never interactively asked** (K5: no new dial). A note for 1M frames
-  is recorded: a lower value is one config edit away (R-7). Rejected: flat 70%-of-raw everywhere (R-1 —
-  contradicts D83 on big frames); 60% default (violates D8 generous-not-timid).
+  is recorded: a lower value is one config edit away (R-7). Rejected: flat-70%-of-raw — R-1's rationale,
+  superseded by R-7 (operator: fraction-of-effective-window, with the 1M config note); 60% default
+  (violates D8 generous-not-timid). *(Freeze-gate fold #6 wording — R-1's D83-reconciliation clamp was
+  itself superseded; the standing rejection rests on R-7's smart-zone framing.)*
 - **CA-L8 — D83 is NOT edited (supersede-never-rewrite, R-7).** The prime-frame **0.40** fraction
   (protocol/config.md:98-115) remains the **sprint-sizing** fraction unchanged. The per-role trigger
   policy here is the **B1 amendment**: the one-shot self-handoff threshold source named by D83/B1 is now
@@ -121,6 +129,12 @@ are locked here with an explicit **[VETO-FLAG]** the freeze-gate must surface.
   (budget tokens, cap tokens, estimator basis); the estimate is worker-local from brief-embedded numbers
   + own activity, stated as approximate in the brief (R-31 pins all four). Rationale recorded: rotation
   is a designed exception with bounded cost, not a cadence.
+  **Substrate dependency (freeze-gate fold #4):** checkpoint-anchored continuation rides the M4
+  checkpoint stream, which exists only at `inlineEval ≠ off`. `inlineEval: off` ⇒ the continuation
+  machinery DEGRADES to the brief's budget prose + return-at-task-boundary only (no checkpoint-anchored
+  continuation). Therefore bootstrap, whenever it writes `contextAutonomy: "on"`, ALSO mandates
+  `inlineEval: "telemetry"` or higher for that config (the existing M4-L8 bootstrap default already
+  writes `"telemetry"` for new runs — this pins the coupling, additive, never touching absent-key BC).
 - **CA-L11 — Enforcement honesty (R-19, R-31).** Worker-side observance is **compliance** (M1-L3:
   soundness never rests on it); TRUE enforcement is conductor-side — existing liveness machinery + the
   M4 kill primitive terminate a worker that plows on. Plan/freeze-time: a **WARN** (never hard-fail) when
@@ -176,7 +190,12 @@ are locked here with an explicit **[VETO-FLAG]** the freeze-gate must surface.
   context-input; the kata-orient 3-tier rebuild becomes authoritative. Comparator = newest board
   DONE/DECISION ISO-8601-UTC line timestamp (protocol/board.md:9 line grammar, verified) vs HANDOFF.md's
   git commit timestamp, strict `>`; same-second ties favor the handoff. N=1 semantics; **no tunable**.
-  Trail-ref independent; no reliance on `@sha` presence.
+  Trail-ref independent; no reliance on `@sha` presence. **Clock-skew note (freeze-gate fold #10):** the
+  comparator crosses clock domains — board lines carry writer PROCESS clocks (protocol/board.md's stated
+  single-host assumption), the handoff carries the git COMMITTER clock. Acceptable on a single host at
+  this rule's granularity; the strict `>` + ties-favor-the-handoff convention is also the skew posture
+  (a same-second ambiguity never demotes). Multi-machine runs re-visit this with the board's own
+  documented revisit item.
 - **CA-L20 — AGENTS.md standing line (CA-4b).** The target-repo AGENTS.md router stanza gains ONE
   standing line: a resumed/compacted session re-anchors via `.planning/HANDOFF.md` + the staleness rule
   before doing anything else. (Universal fallback for platforms with no hook — §5.)
@@ -208,10 +227,19 @@ are locked here with an explicit **[VETO-FLAG]** the freeze-gate must surface.
 
 - **CA-L24 — ONE approval bundle, collected pre-run (OP-4, SR-3).** The bundle = dependency
   installs/downloads + permission allowlist + the premium gate (Leg G) + the compact-window
-  recommendation (CA-L16), collected ONCE in the PREFLIGHT phase of bootstrap's launch sequence; zero
-  expected prompts for 8 hours after. Extension is additive alongside the reserved
-  `preflight.approval_mode` field (protocol/config.md:41, D29) and the default-FAIL `kata_preflight.py`
-  engine (SR-16: today it covers dependency installs only).
+  recommendation (CA-L16) + **the host-settings write slot (freeze-gate fold #5)**: installing the
+  SessionStart(compact) hook and the statusline/wrapper entries IS a write to `~/.claude/settings.json`,
+  so it is an explicit bundle slot approved like an install — never an implied side effect. Merge
+  discipline pinned: **hooks arrays are APPEND-NEVER-REPLACE; `statusLine` is only ever
+  chained-or-skipped** — the CA-L1 never-clobber guarantee generalizes to EVERY settings key kata
+  touches. Collected ONCE; zero expected prompts for 8 hours after. Extension is additive alongside the
+  reserved `preflight.approval_mode` field (protocol/config.md:41, D29) and the default-FAIL
+  `kata_preflight.py` engine (SR-16: today it covers dependency installs only).
+  **Sequencing (freeze-gate fold #2):** bundle collection is a NEW bootstrap step between Phase 2 (the
+  advanced drawer) and the Phase-3 config write — **bootstrap collects; kata.config is written AFTER,
+  with `models.premium.approved` recorded from the collected answer**. kata-orchestrate's existing
+  PRE-FLIGHT gate stays **enforcement-only**: it verifies/provisions the approved set and NEVER prompts
+  a second time.
 - **CA-L25 — Intent-keyed strictness (R-12) [VETO-FLAG: recorded pending veto — asked twice,
   unanswered; freeze-gate attacks].** A walk-away-configured run (auto-continue boundary or unattended
   flag) with a missing leg that would STRAND it (auto-compact disabled AND no gauge AND no respawn path
@@ -444,11 +472,15 @@ existing path, including the absent-`models`-block BC guarantee (R3).
    is amended to: *explicit ids for non-anchor rungs — strictly below the anchor as frozen, **or the
    single rung strictly ABOVE the anchor under a recorded premium approval**.* Zero-step cells still
    NEVER return the anchor's own id (the gated-top-rung protection is untouched).
-2. **The premium branch (R-16, R-22).** `resolve()` returns the EXPLICIT premium id (e.g.
-   `claude-fable-5` above an opus anchor) iff **all four conjuncts** hold at resolve-time:
-   `models.premium.approved == true` ∧ `work-class ∈ models.premium.scope` (critical | coding only —
-   economy never, R-9) ∧ `a premium rung exists strictly above the anchor in the family ladder` ∧
-   `mode == "advanced"`. Inherit would silently give the session model; explicit is mandatory.
+2. **The premium branch (R-16, R-22; premium-id pin per freeze-gate fold #1).** The premium id is
+   **`models.premium.offer` itself** — never derived by ladder walk. The branch fires iff **all four
+   conjuncts** hold at resolve-time: `models.premium.approved == true` ∧ `work-class ∈
+   models.premium.scope` (critical | coding only — economy never, R-9) ∧ **the `offer` rung sits
+   EXACTLY ONE rung strictly above the anchor in the family ladder** ∧ `mode == "advanced"`. ANY other
+   offer↔anchor relation ⇒ **NO FIRE + surfaced** (board NOTE): `offer == anchor` (e.g. anchor already
+   fable); offer 2+ rungs above (e.g. a hand-edited mythos over an opus anchor — approval never
+   escalates past one rung); offer below the anchor. `resolve()` then returns the explicit `offer` id
+   (inherit would silently give the session model; explicit is mandatory).
 3. **grantedMode lapse (R-22/R-34).** The approval record carries the mode it was granted under
    (`grantedMode`). A re-entrant run with `mode ≠ grantedMode` LAPSES the approval (bootstrap clears
    `approved`; the next preflight re-asks). This is the fourth conjunct's persistence arm.
@@ -516,11 +548,17 @@ carried as re-verify items on each platform's docs page (§8).
    HANDOFF.md → the next task completes with **zero task loss** AND the resume is graded on
    **context-quality restoration** (kata-orient 3-tier reload complete, budget-capped), not just task
    continuity. Also measured empirically in the same profile (GROUNDING G4): the actual auto-compact
-   firing margin, bridge freshness in unattended mode, the PreCompact input schema, and the hook
-   sync-time budget (CA-L17 UNVERIFIED item).
+   firing margin, bridge freshness in unattended mode, the PreCompact input schema, the hook
+   sync-time budget (CA-L17 UNVERIFIED item), and **that the gauge's `total_tokens` reflects
+   `autoCompactWindow` capping** (fold #6 — the CA-L5 post-cap claim is currently ungrounded; this
+   grounds it). Fixture pin (fold #4): the live-proof run's config carries `inlineEval: "telemetry"`
+   (the CA-L10 substrate), stated in the fixture definition.
 2. **CA-A2 — SMOKE-2/3 identical-protocol rerun (A/B).** Re-run the SMOKE-2/3 protocols byte-identical
    on-arm vs baseline: conductor context-per-task (gauge-read at each boundary) shows a **gated DROP**
-   on-arm, with **identical run outcomes** (same gate verdicts, same green numbers).
+   on-arm, with **identical run outcomes** (same gate verdicts, same green numbers). The DROP threshold
+   is deliberately NOT a number invented here — it is **judgment-graded at the operator merge gate**
+   (fold #7). Fixture pin (fold #4): both arms state their `inlineEval` posture in the fixture
+   definition (`"telemetry"` on-arm; baseline as originally run).
 3. **CA-A3 — Degradation-path tests (each a separate arranged run/fixture):** (a) no-gauge ⇒
    deterministic N-wave rotation fires per CA-L4; (b) no-hooks ⇒ AGENTS.md-line manual re-anchor path
    works; (c) auto-compact DISABLED ⇒ preflight WARN (attended) and BLOCK (walk-away stranding
@@ -532,10 +570,12 @@ carried as re-verify items on each platform's docs page (§8).
 6. **CA-A6 — Corrupt-settings surface (C-3):** a corrupted `.kata-settings.json` ⇒ forced-first-run
    detection + loud surface naming the file + clean stop; NEVER a loop (test asserts single pass).
 7. **CA-A7 — Premium resolver matrix (§3):** unit tests over all four conjuncts (each false ⇒ no
-   premium id); premium id EXPLICIT when all true; failed premium ⇒ one-step OMIT + `approved` lapsed
-   for the run; premium 401/403 ⇒ OMIT + loud degraded entry (never a raise); baseline 401/403 still
-   raises; mode-change lapse cleared by re-entrant bootstrap. Absent `models.premium` ⇒ the existing
-   model-tiering suite passes byte-unchanged.
+   premium id); premium id EXPLICIT == `models.premium.offer` when all true; failed premium ⇒ one-step
+   OMIT + `approved` lapsed for the run; premium 401/403 ⇒ OMIT + loud degraded entry (never a raise);
+   baseline 401/403 still raises; mode-change lapse cleared by re-entrant bootstrap. **One-rung edge
+   cases (fold #1):** anchor=fable + approved fable offer ⇒ NO FIRE (must NOT elevate to mythos);
+   anchor=sonnet + approved fable offer (2 rungs above) ⇒ NO FIRE + surfaced. Absent `models.premium`
+   ⇒ the existing model-tiering suite passes byte-unchanged.
 8. **CA-A8 — BC matrix executable rows:** absent `contextAutonomy` + incremental ⇒ no rotation
    (row 2); one-shot ⇒ unconditional rotation incl. a pre-v0.2.1 config fixture (row 1, the D147
    departure — the test NAMES it); absent keys ⇒ rows 3–5, 10–12 hold.
@@ -545,6 +585,15 @@ carried as re-verify items on each platform's docs page (§8).
    entries.
 10. **CA-A10 — Standing gates:** pytest green (2505 baseline + new), validator 48+/0/0,
     Snyk medium+ 0 on new first-party code, bump-on-modify honored on every touched SKILL.md.
+11. **CA-A11 — Test-at-build fixture rows (fold #8; each becomes a runnable test in the PLAN):**
+    (a) over-briefing WARN — a dispatch with startup load > 0.30 surfaces the CA-L9 WARN (and > 0.40
+    is a plan/freeze mandate failure); (b) continuation-report path — a task exceeding its quantum
+    checkpoints, returns a continuation report, and the pt-N+1 fresh dispatch resumes from the anchor
+    with index continuity (CA-L10); (c) report size contracts — a worker final report is
+    verdict+pointer inline with bulk at the `.kata/reports/` path (CA-L22/L23); (d) allowlist checklist
+    WARN — a host allowlist missing a CA-L26 pattern class produces exactly the enumerated WARN;
+    (e) marker re-arm — a `.kata-version` `gitSha` change with the marker present forces the CA-L36
+    first-run pass ("unknown"/absent-stamp fixtures assert the skip clause).
 
 ## §7 Dependency manifest
 
