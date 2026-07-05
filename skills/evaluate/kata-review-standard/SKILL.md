@@ -4,7 +4,7 @@ description: >-
   Full 5-surface adversarial review (default). Use after kata-evaluate passes, before trusting a result,
   to red-team the spec's judgment, hunt missing test coverage, and probe the security and failure surface.
 license: Apache-2.0
-version: 0.1.1
+version: 0.1.2
 category: evaluate
 status: experimental
 agnostic: true

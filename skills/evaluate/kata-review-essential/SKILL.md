@@ -5,7 +5,7 @@ description: >-
   cheap one-shot where exhaustive adversarial coverage is not required — e.g., early drafts, time-boxed
   spikes, or when a full adversarial pass is planned later.
 license: Apache-2.0
-version: 0.1.1
+version: 0.1.2
 category: evaluate
 status: experimental
 agnostic: true

@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -65,6 +66,66 @@ def iter_skill_dirs(harness_home: str | Path) -> list[Path]:
             continue
         out.extend(sorted(p.parent for p in base.rglob("SKILL.md")))
     return out
+
+
+# Reference form ``../<name>/`` inside a tier skill's SKILL.md — a single path
+# segment (no slashes), so it can never escape the skill's category dir.
+_REL_REF = re.compile(r"\.\./([^/\s)\]]+)/")
+
+
+def iter_shared_base_dirs(harness_home: str | Path) -> list[Path]:
+    """Shared tier-family base dirs: payload-only dirs referenced by sibling tier skills.
+
+    CA-L42 fix. ``iter_skill_dirs`` returns only dirs directly containing a
+    ``SKILL.md``, so a tier-family **base** dir (``kata-grill/`` holding
+    ``RUBRIC.md`` + ``resources/`` but no ``SKILL.md``, likewise ``kata-plan`` /
+    ``kata-review`` / ``kata-diagnose``) is never flat-linked — and a copy-mode
+    install dangles the tier variants' ``../kata-grill/RUBRIC.md`` relative
+    reference (the SMOKE-observed real defect). This **ADDITIVE** enumerator is a
+    SEPARATE function: ``iter_skill_dirs`` keeps its exact current return contract
+    (CA-L42). The Claude install path links what this returns alongside the skills.
+
+    Detection — a dir under ``skills/`` that (the *no-SKILL.md-but-payload*
+    discriminator):
+
+    1. is **referenced** by a sibling tier skill's ``../<name>/`` relative path, and
+    2. is a directory that contains **NO ``SKILL.md``** (else it is itself a real
+       skill, already owned by ``iter_skill_dirs``), and
+    3. **carries payload** (is non-empty).
+
+    Everything else is dropped — "referenced by sibling tier skills' relative
+    paths" is the whole rule. Stdlib-only; never invokes git.
+    """
+    home = _safe_abs(harness_home)
+    skills_root = (home / "skills").resolve()
+    skill_dirs = iter_skill_dirs(home)
+
+    candidates: set[Path] = set()
+    for sk in skill_dirs:
+        skill_md = sk / "SKILL.md"
+        try:
+            text = skill_md.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        for name in _REL_REF.findall(text):
+            if name in ("", ".", ".."):
+                continue  # never a bare traversal segment
+            candidates.add((sk.parent / name).resolve())
+
+    out: list[Path] = []
+    for cand in candidates:
+        # Structurally can't escape skills/ (single segment, '..' filtered), but
+        # pin the invariant explicitly ("a dir under skills/").
+        if not cand.is_relative_to(skills_root):
+            continue
+        if not cand.is_dir():
+            continue
+        if (cand / "SKILL.md").exists():  # a real skill dir — iter_skill_dirs owns it
+            continue
+        if not any(cand.iterdir()):  # no payload — nothing to link
+            continue
+        out.append(cand)
+    return sorted(set(out))
 
 
 def _suite_version(home: Path) -> str:
@@ -296,21 +357,58 @@ def _flat_link_skills(home: Path, host_dir: Path, skills_subdir: str = "skills")
     return {"skillsDir": str(skills_dst), "linked": linked, "method": sorted(methods)}
 
 
+def _flat_link_shared_base_dirs(home: Path, host_dir: Path, skills_subdir: str = "skills") -> dict:
+    """Flat-link shared tier-family base dirs into ``<host_dir>/<skills_subdir>/<name>``.
+
+    CA-L42 additive companion to ``_flat_link_skills`` (the D104 install-portability
+    pattern, SR-13): the payload-only base dirs from ``iter_shared_base_dirs`` are
+    linked (symlink, copy fallback) so the tier variants' ``../<family>/RUBRIC.md``
+    references resolve. Uses the FROZEN ``_link_or_copy`` unchanged — the frozen
+    five stay byte-identical (CA-L43). Never invokes git; stdlib-only.
+    """
+    skills_dst = host_dir / skills_subdir
+    base_dirs = iter_shared_base_dirs(home)
+    if not base_dirs:
+        return {"baseDirsDir": str(skills_dst), "baseDirsLinked": [], "baseDirMethod": []}
+    # A base-dir basename that collides with a real skill name would clobber it on
+    # flat-link. Refuse rather than lose a skill (mirrors _flat_link_skills's guard).
+    skill_names = {d.name for d in iter_skill_dirs(home)}
+    collisions = sorted(b.name for b in base_dirs if b.name in skill_names)
+    if collisions:
+        raise ValueError(
+            f"kata_install: tier-family base dir names collide with skills on flat-link: {collisions}"
+        )
+    skills_dst.mkdir(parents=True, exist_ok=True)
+    linked, methods = [], set()
+    for base_dir in base_dirs:
+        method = _link_or_copy(base_dir, skills_dst / base_dir.name)
+        linked.append(base_dir.name)
+        methods.add(method)
+    return {"baseDirsDir": str(skills_dst), "baseDirsLinked": linked, "baseDirMethod": sorted(methods)}
+
+
 def _install_claude(home: Path, host_dir: Path) -> dict:
     manifest = ensure_plugin_manifest(home)
     res = _flat_link_skills(home, host_dir)
+    base = _flat_link_shared_base_dirs(home, host_dir)  # CA-L42 (additive, Claude-only)
     cmds = _flat_link_commands(home, host_dir)
+    notes = [
+        f"{len(res['linked'])} skills linked into {res['skillsDir']}",
+        f"{len(cmds['linked'])} commands linked into {cmds['commandsDir']}",
+    ]
+    if base["baseDirsLinked"]:
+        notes.append(
+            f"{len(base['baseDirsLinked'])} shared tier-family base dirs linked into {base['baseDirsDir']}"
+        )
     return {
         "platform": "claude",
         "ok": True,
         "manifest": str(manifest),
         **res,
+        "baseDirsLinked": base["baseDirsLinked"],
         "commandsDir": cmds["commandsDir"],
         "commandsLinked": cmds["linked"],
-        "notes": [
-            f"{len(res['linked'])} skills linked into {res['skillsDir']}",
-            f"{len(cmds['linked'])} commands linked into {cmds['commandsDir']}",
-        ],
+        "notes": notes,
     }
 
 
@@ -1429,6 +1527,26 @@ def main(argv: list[str] | None = None) -> int:
             _kv_fr.write_manifest(_home_fr, git_sha=_git_sha_fr)
         except Exception:  # noqa: BLE001 — stamp write failure non-fatal
             pass
+
+        # CA-L36: factory-reset wipes install state, so it additionally CLEARS the
+        # force-first-run marker (firstRunCompletedAt + firstRunVersion) — one forced
+        # first-run pass after a reset is correct. The re-link + re-stamp above have
+        # already completed ("reset otherwise proceeds"); a corrupt settings file makes
+        # the fail-closed delete helper RAISE, which we surface LOUDLY via the existing
+        # factory-reset error path (never silent) without aborting the reset (CA-L36/C-3).
+        import kata_settings as _ks_fr
+
+        try:
+            _ks_fr.delete_settings_key("firstRunCompletedAt", home=_home_fr)
+            _ks_fr.delete_settings_key("firstRunVersion", home=_home_fr)
+        except ValueError as _clear_exc:
+            print(
+                f"error: factory-reset could not clear the first-run marker — "
+                f"corrupt settings file {_ks_fr.settings_path(_home_fr)}: {_clear_exc} "
+                f"(reset otherwise completed; fix the file, then the next run forces one "
+                f"first-run pass — it will NOT loop)",
+                file=sys.stderr,
+            )
 
         if use_json:
             print(json.dumps(result))

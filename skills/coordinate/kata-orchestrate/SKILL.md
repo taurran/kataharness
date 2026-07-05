@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.8.0
+version: 0.10.2
 category: coordinate
 status: experimental
 agnostic: true
@@ -91,6 +91,12 @@ does not drift.**
        as a breakthrough-alert by [[kata-preflight]]); absent recorded acceptance ⇒ **STOP + surface**.
      - `"blocked"` | `"absent"` | malformed ⇒ **STOP + surface** the `blockers` list (or the missing /
        malformed artifact); refuse dispatch. Run [[kata-preflight]] first to provision and clear the gate.
+   - **Enforcement-only, never re-asks (CA-L24 — context-autonomy).** kata-orchestrate's existing PRE-FLIGHT
+     gate stays **enforcement-only**: it verifies/provisions the approved set and NEVER prompts a second time.
+     The ONE approval bundle (dependency installs + permission allowlist + premium gate + compact-window
+     recommendation + the host-settings write slot) is COLLECTED pre-run by bootstrap (P2/C1), not here — this
+     gate refuses dispatch on a `blocked`/`degraded` set but never re-collects an approval (the 8-hour walk-away
+     contract: zero interactive prompts after the bundle).
 2. A **frozen** PLAN exists with a wave/ownership DAG (e.g. `ownership:` + `waves:` + `depends_on:` in
    frontmatter). If the plan is not frozen, stop — planning is a different phase.
 3. The target repo is **green at the fork point** (run its test/build gate; record the baseline numbers).
@@ -358,6 +364,40 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
        dispatched) with a board **NOTE** — the EXISTING per-task effective-mode degrade taxonomy (M4-L10 as
        amended), NOT a third degrade shape. The task then appears in `zeroCheckpointTasks` only as the arithmetic
        consequence, and the ledger distinguishes the cause by its recorded effective mode.
+   - **Dispatch budget line (CA-L9/L10/L11 — context-autonomy; MANDATORY prose in EVERY dispatch brief).** Before
+     authoring the brief, the conductor estimates its **startup load** — the conductor-AUTHORED payload ONLY (the
+     brief + packed orientation attachments), estimated at dispatch by the conductor because it authored the brief;
+     worker-side read-ins count toward the worker's OWN budget, **never startup** — and calls
+     `kata_gauge.dispatch_budget(startup_fraction)` (`tools/kata_gauge.py`) → `{budget_fraction, cap_fraction
+     (0.80), warn, over_briefed}`. Act on the verdict at dispatch: **`warn`** (startup > **0.30**) ⇒ surface an
+     over-briefing WARN, do NOT block (the early smell); **`over_briefed`** (startup > **0.40**) ⇒ the 40pp work
+     quantum is unsatisfiable under the **0.80** hard cap, so the dispatch is OVER-BRIEFED ⇒ **split the task or
+     slim the brief — a mandate, not a WARN** (the cap WINS). Then EMBED the numbers in the brief as mandatory
+     prose (R-31's four pins, CA-L10): the **budget tokens**, the **cap tokens**, and the **estimator basis** — so
+     the worker's estimate is **worker-local**, computed from the brief-embedded numbers + its own activity and
+     **stated as approximate** in the brief.
+   - **Continuation contract (CA-L10/L11 — briefed to the worker; re-evaluated at EVERY checkpoint).** The
+     well-planned case NEVER rotates. At runtime, **at budget** ⇒ finish the current chunk + checkpoint ⇒ **if the
+     remaining estimate fits under the 0.80 hard cap, CONTINUE to completion** (no rotation to do 10% of a task);
+     **else return a continuation report** (last checkpoint anchor + what remains + what was learned). **Estimated
+     activity ≥ cap ⇒ return UNCONDITIONALLY.** Continue-or-return is **re-evaluated at EVERY checkpoint.**
+     Continuations reuse the existing **M4 kill+fresh-dispatch primitive anchored at the last checkpoint**
+     (ADAPTER-CONTRACT-M4 primitive (b) — no new machinery); green-path inter-part evaluation is
+     checkpoint-trailer scoring (**zero LLM calls**). A returned continuation resumes as a fresh **pt-N+1**
+     dispatch from the anchor, continuing the checkpoint index. **Substrate degrade (fold #4):** `inlineEval: off`
+     ⇒ the continuation machinery DEGRADES to the brief's budget prose + **return-at-task-boundary only** (no
+     checkpoint-anchored continuation). **Enforcement honesty (CA-L11):** worker observance is *compliance*
+     (soundness never rests on it); TRUE enforcement is conductor-side — the existing liveness machinery + the M4
+     kill primitive terminate a worker that plows on.
+   - **Report contract (CA-L22/L23 — size-contracted, narration economy).** The worker's FINAL report is
+     **verdict + pointer inline**, with bulk written to the run- and target-scoped artifact
+     `.kata/reports/<runId>-<taskId>-<agent>-<kind>.md` (project-local, gitignored, readable by every dispatched
+     agent via repo paths). Keep the inline hand-back to the verdict + the pointer and narrate economically — the
+     over-briefing WARN is the symptom detector for narration bloat. **Durable-citation rule (CA-L22, matches the
+     D141 discipline):** anything a DECISION or ledger row cites MUST be quoted/restated in a committed artifact —
+     **never a bare pointer** at a `.kata/*` path (see `protocol/observability.md`, the "Reports (v0.2.1)" row).
+     *(CA-L22 report home — **RESOLVED LOCKED** (D146): the project-local `.kata/reports/` path above is the
+     decision; the former [VETO-FLAG] is closed and no longer rides to the merge gate.)*
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 
    **Liveness monitor (F3 — dark-worker detection; NO blind kill).** While workers run, the orchestrator
@@ -518,8 +558,65 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** "each completed task branch" = the task's **ACTIVE attempt
    branch** after any reroll (the abandoned attempt was worktree-removed+pruned at reroll time; § The
    corrective-action ladder).
+
+**Context-autonomy — gauge-driven self-handoff at each boundary (ADDITIVE — CA-P1; BC: rotation-inactive ⇒ inert,
+byte-for-byte unchanged).** When context-autonomy rotation is active for this run — **one-shot shapes
+UNCONDITIONALLY** (CA-L33/D147; the key is not consulted, incl. pre-v0.2.1 configs), **incremental shapes iff
+`kata.config.contextAutonomy == "on"`** (CA-L32; absent-at-load ⇒ OFF) — the conductor evaluates the trigger at
+this frontier-recompute boundary. The rotation-active determination and the trigger-fraction policy are resolved
+by [[kata-selfhandoff]] and are **not re-decided here**; this step is the conductor's boundary MECHANICS only.
+
+- **Boundary placement (CA-L12).** The conductor evaluates the trigger at
+  **wave/frontier-recompute boundaries only**; **never mid-task** (existing [[kata-selfhandoff]] mandate,
+  unchanged).
+- **Select the bridge file (CA-L1 bridge resolution — pinned convention).** Before calling `resolve_gauge`
+  you must locate the `kata_bridge_path`. **The Claude adapter exposes NO session-id to the running
+  conductor**: the SessionStart hook (`adapters/claude/hooks/kata-sessionstart.py`) receives `session_id` on
+  stdin but neither persists nor exports it, the statusline writes `kata-ctx-<session_id>.json` from its OWN
+  stdin (a separate process), and there is no `CLAUDE_SESSION_ID` env. So there is no explicit session-id
+  source to key the bridge by — **select the NEWEST `%TEMP%/kata-ctx-*.json` by mtime**. **If MORE THAN ONE
+  fresh (younger than the 300 s `[TUNABLE]` staleness window) kata bridge exists** — concurrent same-host
+  kata sessions, a **known limitation** (each session writes its own `session_id`-named file to the shared
+  `%TEMP%`, and none can be attributed to *this* conductor without a session-id source) — treat the gauge as
+  **AMBIGUOUS ⇒ fall to the deterministic rotation leg below, never guess**. A single fresh kata bridge (or
+  none) resolves unambiguously. (Cross-referenced in `adapters/claude/README.md` § Reader priority.)
+- **Read the gauge (CA-L1 reader priority).** Resolve the active gauge via
+  `kata_gauge.resolve_gauge(kata_bridge_path, user_bridge_path, now_utc=<now>)` — kata bridge → user bridge →
+  `source: "none"`. A leg that is absent, corrupt, **or stale (bridge timestamp older than 300 s `[TUNABLE]`,
+  CA-L3)** is skipped explicitly; stale-or-absent is **never "assume fine"**.
+- **Test the trigger (CA-L5 denominator).** On a usable gauge, `kata_gauge.trigger_crossed(gauge, <contextTrigger
+  or 0.70>)`. The denominator is the gauge's `total_tokens` (post-cap): **a capped session's real frame IS the
+  cap**. `contextTrigger` reads from `kata.config`, default **0.70 `[TUNABLE]`**, advanced-drawer only, never
+  interactively asked (CA-L7).
+- **No usable gauge ⇒ deterministic rotation (CA-L4/L6; §4 row 6).** A `source: "none"` gauge
+  (absent / stale / unresolvable / AMBIGUOUS) ⇒ rotate on the `kata_gauge.fallback_waves(trigger_tokens)`
+  cadence (`N = max(1, floor(trigger_tokens ÷ est_wave_burn))`, `est_wave_burn` default **40k tokens
+  `[TUNABLE]`**). **No-gauge denominator (CA-L5):** with no live gauge there is no host-reported window, so
+  `trigger_tokens = contextTrigger × advertised-window estimate` (a per-model window estimate, explicitly
+  flagged **APPROXIMATE** — same posture as the `backstop_recommendation` approximate fallback).
+  **Degradation is always graceful rotation — never "assume infinite context".**
+- **Post-trigger: keep working (CA-L12).** Once the trigger is crossed, **keep working**, refreshing the handoff
+  at every subsequent boundary until the host reset arrives (option (a)). The refresh invokes [[kata-handoff]]
+  with `kind: self`; the **T1-extended** rule holds — any coincident boundary handoff supersedes a same-boundary
+  self-refresh. Resume must reload FULL context quality — [[kata-orient]] 3-tier, budget-capped per
+  `protocol/orientation.md` — seamless, no hangs, no degradation (graded at CA-A1, not just task continuity).
+- **Under threshold ⇒ ZERO churn (the graded NO-FIRE property, CA-L13 / CA-A5).** A session under the trigger
+  produces **zero handoff refreshes and zero rotation events** — early exit is a risk equal to rot; generous,
+  not timid.
+- **No hooks ⇒ manual re-anchor (§4 row 8).** Absent the SessionStart(compact) / PreCompact hooks, the AGENTS.md
+  standing line + the [[kata-orient]] 3-tier rebuild are the manual re-anchor path — degraded, surfaced, never
+  silent.
+
 5. **Commit at the checkpoint** (conventional commit + `Kata-Task: <task-id>` trailer) so compaction
    can't lose work and restore can map each integration commit back to its task.
+   **Reset ownership (CA-L14 — context-autonomy).** Host compaction is the SOLE reset mechanism on Claude (no
+   programmatic /compact exists). Kata owns the **SCHEDULE + DURABILITY** (threshold, handoff freshness,
+   recommended backstop placement); the host owns the **MECHANISM**. The [[kata-selfhandoff]] prose
+   "compact/reset" step = the host act arriving on kata's schedule. Platforms with respawn primitive (c):
+   rotation = kata-initiated respawn. There is **no conductor self-compaction leg** — this commit/checkpoint
+   step is the durability half; the host compaction/reset arrives on kata's recommended schedule (the CA-L16
+   backstop `autoCompactWindow`, recommend-never-write), and the SessionStart(compact) hook re-anchors the
+   fresh context on `.planning/HANDOFF.md`.
    **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** the mapped source is the task's **ACTIVE attempt branch**
    after any reroll; the single original fork point keeps the `Kata-Task:` mapping stable (§ The corrective-action
    ladder).
@@ -583,6 +680,11 @@ selecting BOTH the τ leash and the weight table (`kata_risk.DEFAULT_TAU` / `kat
 `tools/kata_risk.py`). Every class table carries the UNIVERSAL base hard trio (`verify_fail` / `lane_drift` /
 `missing_record`, each .60) + the `slack_ge_2x` soft term (.30), scored by the SAME P0 machinery; the adapters
 add the per-class EXTRAS and the per-class leash (research/debug at τ **0.45** vs code's 0.50).
+**`verify_fail` scoping (Amendment #5/C-1, all classes):** when the trailer's verify block carries a
+present-and-non-null `owned` exit (the worker's OWNED-FILE-scoped verify run — [[kata-tdd]] emits it via
+`--owned-exit`), the scorer reads THAT; absent/`null` `owned` falls back to the legacy suite-scoped
+`verify.exit` (BC — documented as the C-1 false-positive-prone leg: a sibling task's cross-task suite red is
+not this worker's defect). A present-but-non-int `owned` RAISES (D136, treat-as-triggered + surface).
 
 - **research** (`class: research`): the class per-checkpoint VERIFY **IS** the citation-integrity check — its
   exit rides the trailer's `verify.exit` (the existing `verify_fail` signal; there is **NO separate
@@ -652,6 +754,10 @@ reuses the existing `DECISION` line and the existing kinds.
     **continuing the checkpoint index from the anchor checkpoint's `i`** (anchor at `i=k` ⇒ the fresh session's
     first trailer is `--index k+1`) — the streak metric, `firstTripIndex`, and the inline evaluator's
     "last good checkpoint index" all stay well-defined across attempts on the active branch.
+    **When the reroll anchor is the task's DISPATCH BASE** (no below-τ checkpoint exists), the base carries no
+    checkpoint trailer, `k` is absent, and **the fresh attempt's first trailer is `--index 0`** — never inferred
+    as `k+1` from the rejected checkpoint (CA-L44 F2 stated rule, Amendment #5 Part B;
+    protocol/observability.md agrees verbatim).
 - **Trigger #2 (same task) ⇒ GROUNDING PASS before any second reroll.** YOU (the plan-guardian) re-anchor the task
   against the FROZEN plan — **is the SPEC the defect?** Output = a **tightened task brief** (clarified within plan
   bounds, board `DECISION`), and ONLY THEN reroll #2. A **plan-defect finding routes through the EXISTING general
@@ -775,6 +881,28 @@ model-availability transients. **Do not step down silently on a billing or autho
 failure.** Surface immediately as a `kind: "human-required"` escalation — a 401/403 signals a
 credential or quota problem in the dispatch infrastructure; silent downgrading masks the root
 cause and may incur runaway cost on an unintended model.
+
+### Premium rung — failure semantics (CA-L30 — context-autonomy)
+
+**Applies to the PREMIUM rung ONLY** (the §3 gated elevation, D148) — the additive `premium` branch of
+`kata_models.resolve(skill, mode, anchor, family=family, coder_floor=coder_floor, premium=<models.premium>)`;
+the NO-FIRE reason is read from `kata_models.premium_status(premium, anchor, family=family, mode=mode)` →
+`{fires, reason}` (`tools/kata_models.py`). A NO-FIRE (`reason ≠ "fires"`) is **not a failure** — it surfaces
+as a board **NOTE** (§3.2) and the dispatch simply runs at the resolved non-premium tier.
+
+A **failed premium dispatch** ⇒ **immediate OMIT/inherit at the anchor rung** — never an explicit anchor id
+(this tracks a mid-run `/model` switch and preserves the amended invariant).
+**One-step chain: premium → OMIT** — NOT the ≤ 2-step R2 ladder above; premium has exactly one honest
+fallback, the anchor. **ANY premium
+dispatch failure — auth or not — LAPSES `models.premium.approved` for the remainder of the run** (no
+re-offers, no retry storm — the exact pattern R2 exists to prevent).
+
+For the premium rung **ONLY**, **401/403 ⇒ *premium-unavailable*** (NOT the `human-required` raise baseline R2
+takes): **OMIT-inherit + LOUD surface** — a board **DECISION** + a ledger `degraded {scope: "premium", reason:
+"auth-40x" | "unavailable"}` row + a handoff note. Premium is an OPTIONAL elevation whose failure has a
+semantically-correct safe fallback (the anchor = the exact no-approval behavior); **unattended survival wins,
+never silent**. **Baseline (non-premium) R2 auth-raise behavior is UNCHANGED** — the R2 401/403
+`human-required` exception above stands for every non-premium dispatch.
 
 ## Cross-model dispatch (multi-model routing)
 

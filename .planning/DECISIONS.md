@@ -2260,3 +2260,119 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   remediation unchanged (coarsen chunk unit). Ledger row #4 (calibration: true — toy durations
   median-excluded; carries the milestone's FIRST real failureKinds entry + ladder telemetry). All
   numbers in `.planning/telemetry-ledger.md` + the board DECISION trail.
+
+- **D146 — Context-autonomy initiative FROZEN + built (v0.2.1 spine): the gauge-driven self-handoff
+  loop wired to existing policy — 2026-07-04.** OP-7's priority item for v0.2.1. The conductor's context
+  is the run-fatal resource (R-26); this initiative **wires a gauge to the ALREADY-EXISTING self-handoff
+  trigger prose** (kata-selfhandoff SKILL.md:30-45) — SR-1: no new threshold concept is invented. DESIGN
+  frozen at `.planning/specs/context-autonomy/DESIGN.md` (CA-L1..CA-L44, §2 config rows, §3 gated
+  amendment, §4 BC matrix, §5 platform matrix) through the grill + freeze folds (GRILL-LEDGER.md).
+  *Delivered across three plan phases* — P0 engine (E1–E7), P1 Claude adapter (A1–A7), P2 policy/docs
+  (C1–C10). **The 8-hour walk-away scenario (OP-8)** the design must survive: trigger @ **0.70** [TUNABLE]
+  of the host-reported effective window (CA-L5/L7) → durable HANDOFF refresh at a wave boundary → host
+  auto-compact / platform respawn on kata's recommended schedule → SessionStart(compact) re-anchor on
+  `.planning/HANDOFF.md` → resume at the next task boundary with **zero task loss** (R-2); expected prompts
+  after the one bundle = zero; under-threshold sessions never churn (R-8); every degradation leg is graceful
+  rotation or a surfaced BLOCK, never silent death at the hard limit (R-12). *Engine:* `kata_gauge`
+  (threshold/backstop/N-wave arithmetic, 300 s staleness), `kata_settings` (force-run marker + gitSha
+  re-arm + fail-closed delete helper), `kata_models` premium branch, `kata_preflight` bundle engine
+  (stranding verdict, host-posture reader, five-class allowlist checklist), ledger schema v3 (parentTokens).
+  *Adapter (Claude — native-features-MAY-use, never core-depended):* superset statusline bridge +
+  chain-never-clobber wrapper, SessionStart/PreCompact hooks, kata-selfhandoff trigger wiring, kata-orient
+  3-tier resume, handoff `kind:` taxonomy, AGENTS.md standing re-anchor line. *Policy/docs:* bootstrap
+  preflight bundle + premium gate + Phase-3 config writes (`contextAutonomy`/`contextTrigger`/
+  `models.premium`), report budgets + continuation contract (orchestrate/tdd), `protocol/observability.md`,
+  five per-platform recommended-config pages (Kiro/Codex CLI/Copilot/Cursor/Gemini CLI — OP-6; Windsurf
+  cut), adapter primitive (c) session-respawn, glossary fold into CONTEXT.md, plan-time quantum-sizing
+  RUBRIC. **Both [VETO-FLAG] items RESOLVED by the operator to their recommended option and recorded
+  LOCKED (no longer open):** (1) **CA-L22 report artifact home = project-local gitignored
+  `.kata/reports/<runId>-<taskId>-<agent>-<kind>.md`** — run/target-scoped, board-consistent, multi-project
+  safe; the **durable-citation rule STANDS** (anything a DECISION or ledger row cites is quoted/restated in
+  a COMMITTED artifact, never a bare `.kata/*` pointer — D141 discipline). (2) **CA-L25 preflight strictness
+  = intent-keyed BLOCK** — a walk-away-configured run (auto-continue boundary or unattended flag) with a
+  stranding-risk conjunction (auto-compact disabled AND no gauge AND no respawn path) ⇒ **BLOCK** at
+  preflight; an attended run ⇒ **WARN** + proceed. *Mutation-proof roster (P0/P1, folded per the integration
+  gate records):* `kata_gauge` boundary/floor/comparator + 300 s-strict staleness (E1, 35-cell walk clean);
+  `kata_settings` marker mechanics re-proven (E2, digest-verified); `kata_models` four-conjunct premium
+  branch (E3, 1728-cell matrix clean); `kata_preflight` six `mutation_prove` guards — F1 shape, non-vacuous,
+  colon-guard, stranding+conjunction, walk-away discriminator, five-class enumeration (E4, 36-combo matrix);
+  A1 session-id safety guard (UUID-proven); A2 statusline chain wrapper batch-vector + cmd.exe-metachar gate
+  (BATRAN closed, extensionless PATHEXT residual disproven live). *Gauntlet at C10 closeout:* pytest
+  **2849 / 3 skip**, validator **48/0/0**, Snyk medium+ **0**. Adversarial gates ran per DESIGN + per plan +
+  per task integration; every catch folded (G-1 Windows batch vector, G-2 observability doc citation drift,
+  G-3 premium decline-arm conflation — `.planning/CALIBRATION-FINDINGS.md`, which also captures the
+  retroactive 57-checkpoint telemetry scan feeding the τ/weights calibration follow-on). **NOT YET TAGGED:**
+  per the plan the conductor tags v0.2.1 ONLY after the **C11 live-proof battery** (CA-A1..A5 + A8 row 1 +
+  A11 b/c) and the **operator merge gate**; D146 records the DESIGN freeze + the C1–C10 build state with C11
+  pending. See D147 (the one named BC departure) and D148 (the gated premium amendment).
+
+- **D147 — The R-37 deliberate BC departure: one-shot configs (INCLUDING pre-v0.2.1) rotate context
+  UNCONDITIONALLY — 2026-07-04.** CA-L33 / DESIGN §4 row 1. The **ONE** named backward-compat departure in
+  the context-autonomy initiative, recorded so it is deliberate — not accidental. **What changes:** for
+  **one-shot run shapes** auto-context rotation fires WITHOUT consulting `contextAutonomy` — including
+  configs written before v0.2.1 that carry no `contextAutonomy` key. The general BC rule
+  (**absent-at-load ⇒ OFF**) is hereby **scoped to the key-consulted (incremental) path only** — R-18's
+  no-retroactive-activation clause is narrowed, not removed. **Why it is safe and correct** (recorded
+  rationale): the behavior is **protective and additive** (it prevents silent death at the hard context
+  limit; it removes no capability); it was **ALWAYS mandated** by the self-handoff prose
+  (kata-selfhandoff SKILL.md:30-45) and was simply never wired — this initiative wires it; and degradation
+  stays graceful (no gauge/hooks ⇒ deterministic N-wave rotation, never "assume infinite context").
+  **NOT a departure:** incremental shapes (CA-L32/L34, §4 row 2) preserve BC byte-for-byte — absent key ⇒
+  OFF, never flipped mid-roadmap, surfaced by the kata-readiness WARN (C2); sprint boundaries already rotate
+  by design, so an in-flight pre-v0.2.1 incremental run is not stranded (only intra-sprint refresh is
+  absent). Proven executable by the **CA-A8 row-1 fixture** (a pre-v0.2.1 one-shot config ⇒ unconditional
+  rotation, the fixture NAMES this departure), run in the C11 live-proof battery. Supersedes nothing; scopes
+  R-18.
+
+- **D148 — Gated premium amendment to the frozen model-tiering DESIGN: Fable one rung ABOVE the anchor,
+  four-conjunct-gated — 2026-07-04.** DESIGN §3, delivered by task E3 as a **POST-FREEZE gated-amendment
+  addendum APPENDED to `.planning/specs/model-tiering/DESIGN.md`** (the existing post-freeze-addendum
+  precedent; supersede-never-rewrite — no frozen line edited). **Gating clause:** everything activates ONLY
+  under `kata.config.models.premium` with all four conjuncts true; **absent `models.premium` (or the whole
+  `models` block), the frozen tiering spec governs byte-for-byte** — zero change to any existing path,
+  including the absent-block ⇒ inherit-everywhere BC guarantee (R3; §4 rows 4–5). **What it amends:** the
+  frozen zero-step contract (`resolve()` returns an explicit id ONLY for a rung strictly BELOW the anchor,
+  `None`/OMIT at the anchor) gains a single exception — an explicit id for the rung **exactly one rung
+  strictly ABOVE the anchor** under a recorded premium approval; zero-step cells still never return the
+  anchor's own id. **The premium branch fires iff all four:** `models.premium.approved == true` ∧
+  `work-class ∈ scope` (**critical | coding only — economy NEVER**, R-9) ∧ the `offer` rung sits EXACTLY one
+  rung above the anchor ∧ `mode == "advanced"`. The returned id is **`models.premium.offer` itself** (never
+  a ladder-walk derivation; inherit would silently give the session model — explicit is mandatory). Any
+  other offer↔anchor relation ⇒ **NO FIRE + board NOTE**. **Failure semantics (CA-L30):** ONE-step chain
+  **premium → OMIT/inherit at the anchor rung** (never an explicit anchor id — tracks mid-run `/model`
+  switches); ANY premium dispatch failure LAPSES `approved` for the remainder of the run (no re-offers, no
+  retry storm); premium-rung-ONLY 401/403 ⇒ *premium-unavailable* (OMIT-inherit + LOUD board DECISION +
+  ledger `degraded {scope:"premium", reason:"auth-40x"}` + handoff note) — a carve-out from R2's baseline
+  auth-raise, which stays UNCHANGED for baseline rungs. **grantedMode lapse:** a re-entrant run with
+  `mode ≠ grantedMode` clears `approved`; the next preflight re-asks (the fourth conjunct's persistence arm).
+  Untouched invariants stated for the gate: R1 below-anchor monotonicity, R2's ≤2-step baseline bound, and
+  the inline-eval M4-L7 economy carve-outs (economy is structurally outside `premium.scope`). Gate: E3
+  integration PASS — 1728-cell matrix clean, model-tiering frozen text byte-unchanged, D83 0.40 untouched.
+
+- **D149 — M4 Amendment #5 (gated, pre-merge): owned-scoped `verify_fail` (the C-1 signal-definition
+  fix) + the F2 dispatch-base index sentence — 2026-07-05.** The operator-directed v0.2.1 pre-merge tasks
+  1–2 (HANDOFF §3), delivered as ONE post-freeze gated amendment appended to
+  `.planning/specs/inline-eval-m4/DESIGN.md` (the Amendment #4/D148 precedent; no frozen line edited).
+  **Inputs:** CALIBRATION-FINDINGS C-1 (retroactive 57-checkpoint scan: 13/13 would-be triggers false
+  positive — every one a sibling task's suite-scoped `test_real_tree_readme_in_sync` red, true positives
+  0) + LIVE-PROOF F2-R (a second independent conductor inferred `--index k+1` at a dispatch-base anchor;
+  twice-reproduced live). **Part A (C-1, candidate 3 subsuming candidate 1):** trailer schema v1 gains
+  OPTIONAL nullable int `verify.owned` (the OWNED-FILE-scoped verify exit; non-int RAISES);
+  `kata_risk._verify_fail` reads `owned` when present-and-non-null, else the legacy suite `verify.exit`
+  (BC leg, documented C-1-FP-prone; calibration separates the populations by field presence — re-scoping
+  `exit` itself REJECTED as an undetectable semantic shift over historical rows; candidate 2's benign-red
+  exclusion list REJECTED as drift-prone roster-patching); `emit-trailer` gains `--owned-exit`; kata-tdd
+  0.4.0 carries the producer mandate (suite exit unchanged + owned-scoped run, both mechanical, D33);
+  kata-orchestrate 0.10.2 documents the scoring preference; **τ/weights untouched** (C-1's ordering rule —
+  signal definition before tuning; the τ/verdict×tier calibration follow-on remains open). **Part B (F2,
+  the C3-deferred sentence):** the ladder span's checkpoint-index-continuity mandate gains its k-absent
+  leg — a reroll anchored at the DISPATCH BASE (no below-τ checkpoint) indexes the fresh attempt from
+  `--index 0`, never `k+1` off the rejected checkpoint (CA-L44 F2; observability.md:93-97 verbatim). Plus
+  a **doc-citation re-audit**: 23 stale `SKILL.md:`/`kata_telemetry.py:` line citations in
+  `protocol/observability.md` re-pointed against the live tree (the G-2 lesson, applied proactively).
+  **BC:** absent `owned` ⇒ scoring byte-for-byte pre-amendment; historical trailers parse unchanged; no
+  ledger schema change. **Gate:** fresh-context default-FAIL adversarial gate (no-write reviewer) —
+  NEEDS_WORK (1 HIGH: the amendment's own observability cite went stale from the same-file insertion) →
+  folded → re-gate **PASS**. **Gauntlet at fold:** pytest 2878/3 skip · validate_skills 48/0/0 · Snyk
+  medium+ 0 (tools/ scan). Tests +10 incl. the mutation-pinned owned-beats-suite preference (the exact
+  C-1 class as a named red-turn target). Supersedes nothing; extends A1-Q2/A1-Q4/M4-L4 by gated addendum.

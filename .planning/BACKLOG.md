@@ -2,6 +2,24 @@
 
 Promote to ROADMAP milestones when ready.
 
+> **★ v0.2.1 POST-MERGE TEST QUEUE (2026-07-05, operator-directed order — R6 leads):**
+> 1. **R6 — live host-fired compaction end-to-end** (the ONE unproven leg of CA-A1): an ATTENDED
+>    interactive session in a throwaway profile where a REAL auto-compact fires ⇒ SessionStart(compact)
+>    re-anchor ⇒ next task zero-loss + kata-orient 3-tier context-quality grade. Every mechanical +
+>    hook-I/O leg is already proven (LIVE-PROOF items 1–2); only the host-fired link remains.
+> 2. **R1–R5 + R7 attended-host checks** (LIVE-PROOF item 7 residuals): auto-compact firing margin,
+>    PreCompact stdin schema capture, gauge total_tokens-vs-autoCompactWindow capping, attended bridge
+>    cadence, hook sync-time budget, install-time chain-or-skip OFFER.
+> 3. **Calibration follow-on proper** (CALIBRATION-FINDINGS): τ/weights tuning — now UNBLOCKED by the
+>    C-1 signal fix (D149) but needs fresh instrumented runs that EMIT `verify.owned` before τ gets a
+>    fair test; wire the C-3 `verdict×tier` ledger columns in the same pass.
+> 4. **LD7 × M4 attempt topology + ACP/Quick + non-Claude live legs** (contract-conformance shipped,
+>    live exercise deferred).
+> 5. **kata_settings atomic writes** (final-review LOW, engine reviewer finding 5): temp+`os.replace`
+>    on every settings writer — the same discipline `write_bridge` already has; bites only under
+>    concurrent same-home sessions.
+> 6. **PokeVault install / MindBridge ingest** — first real external deploys against v0.2.1.
+
 > **★ ACTIVE INITIATIVE (2026-07-02, D138): Milestone 2 — Freeze/Float (operator-directed).** This is the
 > current focus, NOT any item below. Milestone 1 (Release Hardening) shipped (PR #4). Freeze/Float ship order
 > **M1→M4→M2→M3**; **M1 COMPLETE + MERGED (PR #5, D137-D140)** — P0+P1+adval+P2 all shipped; **M4 (inline evaluator/reroll) is next**, after the operator-directed test path (new-project one-shot / version-up / debug run — the float needs its first live proof). See `ROADMAP.md`

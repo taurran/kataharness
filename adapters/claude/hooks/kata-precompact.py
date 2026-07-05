@@ -38,7 +38,34 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
+
+
+def _handoff_status_suffix(repo_root: Path) -> str:
+    """CA-L17 ADDITIVE surface: describe ``.planning/HANDOFF.md`` existence + mtime.
+
+    Observe-only and pure stdlib. Returns a leading-space suffix to append to the
+    existing custom_instructions nudge (so the resumed turn also learns about the
+    durable handoff), or a rebuild pointer when no handoff exists. NEVER block-shaped
+    (no ``decision``, no exit code) — the hook must never block compaction (G2: blocking
+    near the limit is dangerous). Fail-soft: an OS error yields an empty suffix.
+    """
+    handoff = repo_root / ".planning" / "HANDOFF.md"
+    try:
+        if handoff.is_file():
+            mtime = datetime.fromtimestamp(handoff.stat().st_mtime, tz=timezone.utc)
+            return (
+                " HANDOFF.md present (.planning/HANDOFF.md, modified "
+                f"{mtime.isoformat()}); on resume, apply the handoff staleness rule — "
+                "demote it if any board DONE/DECISION line is newer than its git commit."
+            )
+    except OSError:
+        return ""
+    return (
+        " No .planning/HANDOFF.md found; on resume, rebuild context via a "
+        "kata-orient full 3-tier rebuild."
+    )
 
 
 def _main() -> None:
@@ -75,13 +102,17 @@ def _main() -> None:
             "First action after resuming: invoke the kata-handoff skill "
             "to restore context from the just-committed board snapshot."
         )
+        # CA-L17: additively surface HANDOFF.md existence/freshness in the SAME nudge.
+        # Observe-only; never block-shaped. The board-snapshot leg above is unchanged.
+        nudge += _handoff_status_suffix(repo_root)
         # Output a single JSON line; Claude Code reads this as custom_instructions
         # for the post-compaction resumed turn.
         print(json.dumps({"custom_instructions": nudge}))
     # else: skipped (no board, busy lock, etc.) — exit silently
 
 
-try:
-    _main()
-except Exception:  # noqa: BLE001  (fail-soft: never block or crash compaction)
-    pass
+if __name__ == "__main__":
+    try:
+        _main()
+    except Exception:  # noqa: BLE001  (fail-soft: never block or crash compaction)
+        pass

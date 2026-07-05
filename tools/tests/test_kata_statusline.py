@@ -7,8 +7,10 @@ All tests are hermetic (tmp_path only, no real .kata dirs).
 from __future__ import annotations
 
 import json
+import os
 import sys
 import types
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -421,3 +423,283 @@ class TestStatuslineFromEvent:
             payload = json.dumps({"cwd": d})
             result = kata_statusline.statusline_from_event(payload)
         assert result == ""
+
+
+# ---------------------------------------------------------------------------
+# write_bridge — kata superset context-usage bridge writer (CA-L1 / CA-L2)
+# ---------------------------------------------------------------------------
+
+
+class TestWriteBridge:
+    _SID = "abc123-session-DEF"
+
+    _NO_SID = object()
+
+    def _payload(self, *, remaining=30, total=200000, session_id=_NO_SID):
+        cw = {}
+        if remaining is not None:
+            cw["remaining_percentage"] = remaining
+        if total is not None:
+            cw["total_tokens"] = total
+        sid = self._SID if session_id is self._NO_SID else session_id
+        return {"session_id": sid, "context_window": cw}
+
+    # --- schema round-trip: all five fields, numeric types ---
+
+    def test_round_trip_all_five_fields(self, tmp_path: Path):
+        result = kata_statusline.write_bridge(tmp_path, self._payload())
+        assert result is not None
+        assert result == tmp_path / f"kata-ctx-{self._SID}.json"
+        data = json.loads(result.read_text(encoding="utf-8"))
+        assert set(data) == {
+            "session_id",
+            "remaining_percentage",
+            "used_pct",
+            "timestamp",
+            "total_tokens",
+        }
+        assert data["session_id"] == self._SID
+        assert data["remaining_percentage"] == 30
+        assert data["used_pct"] == 70
+        assert isinstance(data["timestamp"], int)
+        assert isinstance(data["total_tokens"], int)
+        assert data["total_tokens"] == 200000
+
+    def test_used_pct_is_100_minus_remaining_float(self, tmp_path: Path):
+        result = kata_statusline.write_bridge(
+            tmp_path, self._payload(remaining=30.5)
+        )
+        data = json.loads(result.read_text(encoding="utf-8"))
+        assert data["remaining_percentage"] == 30.5
+        assert data["used_pct"] == 69.5
+
+    def test_round_trips_through_kata_gauge_full(self, tmp_path: Path):
+        """The superset file parses as a FULL-mode gauge in kata_gauge.read_bridge."""
+        import kata_gauge  # noqa: E402
+
+        result = kata_statusline.write_bridge(tmp_path, self._payload())
+        gauge = kata_gauge.read_bridge(
+            result, now_utc=datetime.now(timezone.utc)
+        )
+        assert gauge["mode"] == "full"
+        assert gauge["total_tokens"] == 200000
+        assert gauge["used_pct"] == 70
+        assert gauge["stale"] is False
+
+    # --- total_tokens absent ⇒ percentage-only degrade (CA-L2) ---
+
+    def test_absent_total_tokens_writes_null_percentage_only(self, tmp_path: Path):
+        import kata_gauge  # noqa: E402
+
+        result = kata_statusline.write_bridge(
+            tmp_path, self._payload(total=None)
+        )
+        assert result is not None
+        data = json.loads(result.read_text(encoding="utf-8"))
+        assert data["total_tokens"] is None
+        gauge = kata_gauge.read_bridge(
+            result, now_utc=datetime.now(timezone.utc)
+        )
+        assert gauge["mode"] == "percentage-only"
+
+    # --- atomicity: os.replace is the mechanism (mutation proof) ---
+
+    def test_atomic_rename_via_os_replace(self, tmp_path: Path, monkeypatch):
+        calls = []
+        real_replace = os.replace
+
+        def _recording_replace(src, dst):
+            calls.append((str(src), str(dst)))
+            return real_replace(src, dst)
+
+        monkeypatch.setattr(kata_statusline.os, "replace", _recording_replace)
+        result = kata_statusline.write_bridge(tmp_path, self._payload())
+
+        assert result is not None
+        # os.replace was called exactly once, temp name != final name.
+        assert len(calls) == 1
+        src, dst = calls[0]
+        assert src != dst
+        assert dst == str(tmp_path / f"kata-ctx-{self._SID}.json")
+        # The temp source is a sibling in the same dir, distinct from the final.
+        assert Path(src).parent == tmp_path
+        assert Path(src).name != f"kata-ctx-{self._SID}.json"
+
+    def test_no_partial_final_file_left_by_temp(self, tmp_path: Path):
+        """Only the final name (never a *.tmp) survives a successful write."""
+        kata_statusline.write_bridge(tmp_path, self._payload())
+        names = sorted(p.name for p in tmp_path.iterdir())
+        assert names == [f"kata-ctx-{self._SID}.json"]
+
+    # --- absent-field no-write guards (mutation proof) ---
+
+    def test_absent_context_window_writes_nothing(self, tmp_path: Path):
+        result = kata_statusline.write_bridge(
+            tmp_path, {"session_id": self._SID}
+        )
+        assert result is None
+        assert list(tmp_path.iterdir()) == []
+
+    def test_absent_session_id_writes_nothing(self, tmp_path: Path):
+        result = kata_statusline.write_bridge(
+            tmp_path, {"context_window": {"remaining_percentage": 30}}
+        )
+        assert result is None
+        assert list(tmp_path.iterdir()) == []
+
+    def test_empty_session_id_writes_nothing(self, tmp_path: Path):
+        result = kata_statusline.write_bridge(
+            tmp_path, self._payload(session_id="")
+        )
+        assert result is None
+        assert list(tmp_path.iterdir()) == []
+
+    def test_absent_remaining_percentage_writes_nothing(self, tmp_path: Path):
+        result = kata_statusline.write_bridge(
+            tmp_path, self._payload(remaining=None)
+        )
+        assert result is None
+        assert list(tmp_path.iterdir()) == []
+
+    def test_non_numeric_remaining_percentage_writes_nothing(self, tmp_path: Path):
+        result = kata_statusline.write_bridge(
+            tmp_path, {"session_id": self._SID,
+                       "context_window": {"remaining_percentage": "lots"}}
+        )
+        assert result is None
+        assert list(tmp_path.iterdir()) == []
+
+    def test_bool_remaining_percentage_rejected(self, tmp_path: Path):
+        # bool subclasses int — must be rejected (mirrors kata_gauge._is_number).
+        result = kata_statusline.write_bridge(
+            tmp_path, {"session_id": self._SID,
+                       "context_window": {"remaining_percentage": True}}
+        )
+        assert result is None
+
+    def test_non_dict_payload_returns_none(self, tmp_path: Path):
+        assert kata_statusline.write_bridge(tmp_path, "not a dict") is None
+        assert kata_statusline.write_bridge(tmp_path, None) is None
+
+    # --- session_id filename-safety guard (CWE-22/CWE-23) ---
+
+    @pytest.mark.parametrize(
+        "evil",
+        ["../evil", "..", "a/b", "a\\b", "with space", "a/../b", "id;rm"],
+    )
+    def test_unsafe_session_id_writes_nothing(self, tmp_path: Path, evil):
+        result = kata_statusline.write_bridge(
+            tmp_path, self._payload(session_id=evil)
+        )
+        assert result is None
+        # nothing (not even a temp) was created under tmp_path
+        assert list(tmp_path.iterdir()) == []
+
+    # --- fail-soft: a write OSError never raises ---
+
+    def test_write_oserror_returns_none(self, tmp_path: Path, monkeypatch):
+        def _boom(src, dst):
+            raise OSError("simulated rename failure")
+
+        monkeypatch.setattr(kata_statusline.os, "replace", _boom)
+        result = kata_statusline.write_bridge(tmp_path, self._payload())
+        assert result is None
+        # the orphan temp is cleaned up — no *.tmp left behind
+        assert list(tmp_path.iterdir()) == []
+
+
+# ---------------------------------------------------------------------------
+# statusline_from_event × write_bridge — bridge written before render path
+# ---------------------------------------------------------------------------
+
+
+class TestStatuslineFromEventBridge:
+    _SID = "sess-XYZ-001"
+
+    def _make_kata_dir(self, tmp_path: Path) -> Path:
+        kata_dir = tmp_path / ".kata"
+        kata_dir.mkdir()
+        (kata_dir / "board.md").write_text("", encoding="utf-8")
+        state = {"tasks": {"t1": "in-progress"}}
+        (kata_dir / "state.json").write_text(json.dumps(state), encoding="utf-8")
+        return kata_dir
+
+    def _payload(self, cwd):
+        return json.dumps({
+            "cwd": str(cwd),
+            "session_id": self._SID,
+            "context_window": {"remaining_percentage": 40, "total_tokens": 200000},
+        })
+
+    def test_render_byte_identical_and_bridge_written(self, tmp_path, monkeypatch):
+        """The rendered line is byte-identical to build_statusline AND the kata
+        bridge landed in %TEMP% (write happens before the render path)."""
+        cwd = tmp_path / "repo"
+        cwd.mkdir()
+        kata_dir = self._make_kata_dir(cwd)
+        bridge_dir = tmp_path / "temp"
+        bridge_dir.mkdir()
+        monkeypatch.setattr(
+            kata_statusline.tempfile, "gettempdir", lambda: str(bridge_dir)
+        )
+
+        expected = kata_statusline.build_statusline(kata_dir)
+        result = kata_statusline.statusline_from_event(self._payload(cwd))
+
+        assert result == expected  # byte-identical render (unchanged behavior)
+        assert (bridge_dir / f"kata-ctx-{self._SID}.json").exists()
+
+    def test_bridge_written_even_for_non_kata_cwd(self, tmp_path, monkeypatch):
+        """A non-kata cwd still writes the gauge (bridge must not depend on .kata)."""
+        cwd = tmp_path / "plain"
+        cwd.mkdir()  # no .kata subdir
+        bridge_dir = tmp_path / "temp"
+        bridge_dir.mkdir()
+        monkeypatch.setattr(
+            kata_statusline.tempfile, "gettempdir", lambda: str(bridge_dir)
+        )
+
+        result = kata_statusline.statusline_from_event(self._payload(cwd))
+
+        assert result == ""  # no .kata ⇒ blank line (unchanged)
+        assert (bridge_dir / f"kata-ctx-{self._SID}.json").exists()
+
+    def test_write_oserror_does_not_break_rendered_line(self, tmp_path, monkeypatch):
+        """A bridge write OSError must not blank/crash the rendered statusline."""
+        cwd = tmp_path / "repo"
+        cwd.mkdir()
+        kata_dir = self._make_kata_dir(cwd)
+        bridge_dir = tmp_path / "temp"
+        bridge_dir.mkdir()
+        monkeypatch.setattr(
+            kata_statusline.tempfile, "gettempdir", lambda: str(bridge_dir)
+        )
+
+        def _boom(src, dst):
+            raise OSError("rename failed")
+
+        monkeypatch.setattr(kata_statusline.os, "replace", _boom)
+
+        expected = kata_statusline.build_statusline(kata_dir)
+        result = kata_statusline.statusline_from_event(self._payload(cwd))
+
+        assert result == expected  # render intact despite the write failure
+        assert not (bridge_dir / f"kata-ctx-{self._SID}.json").exists()
+
+    def test_no_session_id_no_bridge_render_unchanged(self, tmp_path, monkeypatch):
+        """A statusline event without session_id writes no bridge, renders normally."""
+        cwd = tmp_path / "repo"
+        cwd.mkdir()
+        kata_dir = self._make_kata_dir(cwd)
+        bridge_dir = tmp_path / "temp"
+        bridge_dir.mkdir()
+        monkeypatch.setattr(
+            kata_statusline.tempfile, "gettempdir", lambda: str(bridge_dir)
+        )
+
+        expected = kata_statusline.build_statusline(kata_dir)
+        payload = json.dumps({"cwd": str(cwd)})  # no session_id/context_window
+        result = kata_statusline.statusline_from_event(payload)
+
+        assert result == expected
+        assert list(bridge_dir.iterdir()) == []

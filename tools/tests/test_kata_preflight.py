@@ -1195,3 +1195,351 @@ def test_mutation_prove_colon_guard():
     assert verdict["nonVacuous"], (
         "Test must be non-vacuous: it must catch removal of the per-manager regex guard"
     )
+
+
+# ===========================================================================
+# Context-autonomy CA-P0 / E4 — DESIGN §1 Leg F (CA-L24..L26, CA-L15/L17, CA-L25)
+# ===========================================================================
+
+# A run context that covers all five frozen allowlist classes.
+_COVERED_CONTEXT = {
+    "verify_command": "pytest -q",
+    "install_managers": ["pip", "uv"],
+    "harness_home": "/opt/harness",
+}
+# A host allowlist that positively covers every one of the five classes.
+_COVERING_ALLOWLIST = [
+    "git commit",           # git-plumbing
+    "pytest -q",            # verify-command
+    "pip install",          # dependency-installs
+    ".kata write",          # bridge-and-target-writes
+    "/opt/harness/tools/x",  # harness-tools
+]
+
+
+class TestAllowlistCoverage:
+    """CA-L26 — a FIXED checklist over the five frozen run-critical pattern classes."""
+
+    def test_exactly_five_classes_pin(self):
+        # Anti-cathedral guard: adding a sixth entry to the frozenset breaks this.
+        assert len(pf.ALLOWLIST_CLASSES) == 5
+        ids = {cid for cid, _desc in pf.ALLOWLIST_CLASSES}
+        assert ids == {
+            "git-plumbing",
+            "verify-command",
+            "dependency-installs",
+            "bridge-and-target-writes",
+            "harness-tools",
+        }
+
+    def test_all_covered_yields_no_warnings(self):
+        warns = pf.check_allowlist_coverage(_COVERING_ALLOWLIST, _COVERED_CONTEXT)
+        assert warns == []
+
+    def test_empty_allowlist_warns_every_class(self):
+        warns = pf.check_allowlist_coverage([], _COVERED_CONTEXT)
+        assert len(warns) == 5
+        assert all(w["severity"] == "warn" for w in warns)
+        assert {w["class"] for w in warns} == {
+            "git-plumbing",
+            "verify-command",
+            "dependency-installs",
+            "bridge-and-target-writes",
+            "harness-tools",
+        }
+        # Deterministic ordering (sorted by class id).
+        assert [w["class"] for w in warns] == sorted(w["class"] for w in warns)
+
+    def test_none_allowlist_is_conservative_not_permissive(self):
+        # None ⇒ treated as empty ⇒ MORE warnings (never a silent "assume covered").
+        warns = pf.check_allowlist_coverage(None, _COVERED_CONTEXT)
+        assert len(warns) == 5
+
+    @pytest.mark.parametrize(
+        "drop_pattern,expected_class",
+        [
+            ("git commit", "git-plumbing"),
+            ("pytest -q", "verify-command"),
+            ("pip install", "dependency-installs"),
+            (".kata write", "bridge-and-target-writes"),
+            ("/opt/harness/tools/x", "harness-tools"),
+        ],
+    )
+    def test_each_class_missing_yields_exactly_its_warn(self, drop_pattern, expected_class):
+        allowlist = [p for p in _COVERING_ALLOWLIST if p != drop_pattern]
+        warns = pf.check_allowlist_coverage(allowlist, _COVERED_CONTEXT)
+        assert len(warns) == 1, f"expected exactly one warn, got {warns!r}"
+        assert warns[0]["class"] == expected_class
+        assert warns[0]["severity"] == "warn"
+        # detail is the frozen human description for that class.
+        expected_detail = dict(pf.ALLOWLIST_CLASSES)[expected_class]
+        assert warns[0]["detail"] == expected_detail
+
+    def test_verify_command_absent_is_vacuously_covered(self):
+        # No verify command declared ⇒ nothing to cover ⇒ no verify warn.
+        ctx = {"install_managers": ["pip"], "harness_home": "/opt/harness"}
+        allowlist = ["git commit", "pip install", ".kata", "/opt/harness/tools"]
+        warns = pf.check_allowlist_coverage(allowlist, ctx)
+        assert not any(w["class"] == "verify-command" for w in warns)
+
+
+class TestReadHostAutocompact:
+    """CA-L15/L17 + GROUNDING G1 — env-var precedence, never writes, fail-closed enabled."""
+
+    def _write_settings(self, tmp_path: Path, data: dict) -> Path:
+        p = tmp_path / "settings.json"
+        p.write_text(json.dumps(data), encoding="utf-8")
+        return p
+
+    def test_settings_window_and_enabled(self, tmp_path: Path):
+        p = self._write_settings(
+            tmp_path, {"autoCompactEnabled": True, "autoCompactWindow": 200000}
+        )
+        out = pf.read_host_autocompact(p, {})
+        assert out["auto_compact_enabled"] is True
+        assert out["window_tokens"] == 200000
+        assert out["source"] == "settings"
+
+    def test_env_wins_over_settings(self, tmp_path: Path):
+        p = self._write_settings(
+            tmp_path, {"autoCompactEnabled": True, "autoCompactWindow": 200000}
+        )
+        out = pf.read_host_autocompact(
+            p, {"CLAUDE_CODE_AUTO_COMPACT_WINDOW": "800000"}
+        )
+        assert out["window_tokens"] == 800000
+        assert out["source"] == "env"
+
+    def test_disabled_is_read(self, tmp_path: Path):
+        p = self._write_settings(tmp_path, {"autoCompactEnabled": False})
+        out = pf.read_host_autocompact(p, {})
+        assert out["auto_compact_enabled"] is False
+
+    def test_absent_enabled_key_defaults_true(self, tmp_path: Path):
+        # Readable object, key absent ⇒ host default enabled (G1) — a resolved bool.
+        p = self._write_settings(tmp_path, {"autoCompactWindow": 150000})
+        out = pf.read_host_autocompact(p, {})
+        assert out["auto_compact_enabled"] is True
+
+    def test_unreadable_file_is_none_unknown_not_a_default_bool(self, tmp_path: Path):
+        p = tmp_path / "settings.json"
+        p.write_text("{ not valid json", encoding="utf-8")
+        out = pf.read_host_autocompact(p, {})
+        assert out["auto_compact_enabled"] is None  # never a silent True/False
+
+    def test_missing_file_is_none_unknown(self, tmp_path: Path):
+        out = pf.read_host_autocompact(tmp_path / "nope.json", {})
+        assert out["auto_compact_enabled"] is None
+        assert out["window_tokens"] is None
+        assert out["source"] == "none"
+
+    def test_env_window_survives_unreadable_settings(self, tmp_path: Path):
+        p = tmp_path / "settings.json"
+        p.write_text("garbage", encoding="utf-8")
+        out = pf.read_host_autocompact(
+            p, {"CLAUDE_CODE_AUTO_COMPACT_WINDOW": "500000"}
+        )
+        assert out["auto_compact_enabled"] is None
+        assert out["window_tokens"] == 500000
+        assert out["source"] == "env"
+
+    def test_non_bool_enabled_is_none(self, tmp_path: Path):
+        p = self._write_settings(tmp_path, {"autoCompactEnabled": "yes"})
+        out = pf.read_host_autocompact(p, {})
+        assert out["auto_compact_enabled"] is None
+
+    def test_invalid_env_falls_back_to_settings(self, tmp_path: Path):
+        p = self._write_settings(tmp_path, {"autoCompactWindow": 120000})
+        out = pf.read_host_autocompact(
+            p, {"CLAUDE_CODE_AUTO_COMPACT_WINDOW": "not-a-number"}
+        )
+        assert out["window_tokens"] == 120000
+        assert out["source"] == "settings"
+
+    def test_read_never_writes(self, tmp_path: Path):
+        p = self._write_settings(tmp_path, {"autoCompactEnabled": True})
+        before = p.read_bytes()
+        pf.read_host_autocompact(p, {"CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000"})
+        assert p.read_bytes() == before  # pure read — no mutation
+
+
+class TestStrandingVerdict:
+    """CA-L25 — walk-away + full stranding = block; attended = warn; fail-closed inputs."""
+
+    def test_walk_away_full_stranding_blocks(self):
+        assert pf.stranding_verdict(
+            walk_away=True, auto_compact_enabled=False,
+            gauge_present=False, respawn_path="",
+        ) == "block"
+
+    def test_attended_full_stranding_warns(self):
+        assert pf.stranding_verdict(
+            walk_away=False, auto_compact_enabled=False,
+            gauge_present=False, respawn_path="",
+        ) == "warn"
+
+    def test_attended_never_blocks(self):
+        # Even fully stranded, an attended run WARNs (proceeds), never blocks.
+        v = pf.stranding_verdict(
+            walk_away=False, auto_compact_enabled=False,
+            gauge_present=False, respawn_path="",
+        )
+        assert v != "block"
+
+    @pytest.mark.parametrize(
+        "auto_compact,gauge,respawn",
+        [
+            (True, False, ""),        # host backstop present
+            (False, True, ""),        # gauge present
+            (False, False, "/tmp/x"),  # respawn path present
+        ],
+    )
+    def test_any_recovery_leg_present_is_ok(self, auto_compact, gauge, respawn):
+        assert pf.stranding_verdict(
+            walk_away=True, auto_compact_enabled=auto_compact,
+            gauge_present=gauge, respawn_path=respawn,
+        ) == "ok"
+
+    def test_whitespace_respawn_counts_as_no_respawn(self):
+        # A whitespace-only respawn path is "no respawn path" (stripped).
+        assert pf.stranding_verdict(
+            walk_away=True, auto_compact_enabled=False,
+            gauge_present=False, respawn_path="   ",
+        ) == "block"
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            dict(walk_away=None, auto_compact_enabled=False, gauge_present=False, respawn_path=""),
+            dict(walk_away=True, auto_compact_enabled=None, gauge_present=False, respawn_path=""),
+            dict(walk_away=True, auto_compact_enabled=False, gauge_present=None, respawn_path=""),
+            dict(walk_away=True, auto_compact_enabled=False, gauge_present=False, respawn_path=None),
+            # bool-lookalikes must also be refused (strict typing).
+            dict(walk_away=1, auto_compact_enabled=False, gauge_present=False, respawn_path=""),
+        ],
+    )
+    def test_absent_or_wrong_type_input_raises(self, kwargs):
+        with pytest.raises(ValueError):
+            pf.stranding_verdict(**kwargs)
+
+
+class TestBundleAuditEvent:
+    """CA-L24/L28 — additive bundle audit key on every emitted preflight.json."""
+
+    def test_bundle_present_and_round_trips(self, repo: Path, fake_home: Path):
+        mp, ap = _setup_repo(repo, [])
+        result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
+        assert "bundle" in result
+        data = json.loads((repo / ".kata" / "preflight.json").read_text(encoding="utf-8"))
+        assert data["bundle"] == {
+            "autoCompactChecked": None,
+            "backstopRecommendation": None,
+            "allowlistWarnings": None,
+            "premiumGate": None,
+            "hostSettingsWriteSlot": None,
+        }
+
+    def test_bundle_present_on_blocked_path(self, repo: Path, fake_home: Path):
+        # Even an early blocked bailout carries the additive audit key.
+        _, ap = _setup_repo_raw(repo, {"deps": []})  # malformed shape → blocked
+        result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
+        assert result["status"] == "blocked"
+        assert "bundle" in result
+
+    def test_existing_status_keys_unchanged(self, repo: Path, fake_home: Path):
+        # BC canary: the additive key does not disturb existing behavior.
+        mp, ap = _setup_repo(repo, [])
+        result = pf.run_preflight(repo, approved_hash_path=ap, home_dir=fake_home)
+        assert result["status"] == "ready"
+        assert pf.gate_status(repo) == "ready"
+
+
+# ---------------------------------------------------------------------------
+# CA-P0 / E4 mutation proofs (≥3): disable → named test RED → revert.
+# ---------------------------------------------------------------------------
+
+def _prove(asserted_line: str, test_node: str) -> dict:
+    import sys
+    from pathlib import Path as _Path
+    import mutation_run
+
+    source = str(_Path(__file__).resolve().parent.parent / "kata_preflight.py")
+    test_cmd = (
+        f'cd "{_Path(__file__).resolve().parent.parent}" && '
+        f'{sys.executable} -m pytest "tests/test_kata_preflight.py::{test_node}" -q'
+    )
+    return mutation_run.prove_non_vacuous(source, asserted_line, test_cmd)
+
+
+def test_mutation_prove_stranding_and_conjunction():
+    """Prove the AND-conjunction backstop leg bites (flip/drop → RED).
+
+    Removing the ``auto_compact_enabled`` conjunct drops the backstop leg from the
+    stranding AND, so a walk-away run WITH the host backstop enabled (the only
+    recovery leg) is wrongly marked stranded → ``block`` instead of ``ok``.
+    """
+    verdict = _prove(
+        "    stranded = stranded and (not auto_compact_enabled)  # backstop leg",
+        "TestStrandingVerdict::test_any_recovery_leg_present_is_ok[True-False-]",
+    )
+    assert verdict["testWentRed"], "backstop-leg conjunct is not biting"
+    assert verdict["nonVacuous"]
+
+
+def test_mutation_prove_walk_away_discriminator():
+    """Prove the walk-away discriminator bites.
+
+    Removing the walk-away BLOCK return makes a walk-away full-stranding run fall
+    through to the attended ``warn`` path → the block test goes RED.
+    """
+    verdict = _prove(
+        '        return "block" if stranded else "ok"',
+        "TestStrandingVerdict::test_walk_away_full_stranding_blocks",
+    )
+    assert verdict["testWentRed"], "walk-away discriminator is not biting"
+    assert verdict["nonVacuous"]
+
+
+def test_mutation_prove_five_class_enumeration():
+    """Prove the five-class enumeration bites.
+
+    Removing one frozen class from ``ALLOWLIST_CLASSES`` drops it from the empty
+    allowlist's warning set → the "warns every class" test goes RED.
+    """
+    verdict = _prove(
+        '    ("harness-tools", "invocation of the harness tools (python/uv run on <harness_home>/tools/*)"),',
+        "TestAllowlistCoverage::test_empty_allowlist_warns_every_class",
+    )
+    assert verdict["testWentRed"], "five-class enumeration is not load-bearing"
+    assert verdict["nonVacuous"]
+
+
+class TestAllowlistWindowsPathNormalization:
+    """Final-review fold (v0.2.1 merge gate): a Windows backslash-style allowlist
+    pattern must satisfy the harness-tools needle — before the fold the needle was
+    slash-normalized but the patterns were not, a PERMANENT false WARN on Windows."""
+
+    def test_backslash_pattern_covers_harness_tools(self):
+        ctx = {
+            "verify_command": "pytest -q",
+            "install_managers": ["uv"],
+            "harness_home": r"C:\Dev\Projects\KataHarness",
+        }
+        patterns = [
+            "git",
+            "pytest",
+            "uv",
+            "kata-ctx .kata .planning",
+            r"Bash(python C:\Dev\Projects\KataHarness\tools\*)",
+        ]
+        warnings = pf.check_allowlist_coverage(patterns, ctx)
+        assert not [w for w in warnings if w["class"] == "harness-tools"], (
+            "backslash allowlist pattern must count as harness-tools coverage "
+            "(both sides slash-normalized)"
+        )
+
+    def test_uncovered_harness_tools_still_warns(self):
+        # The fold must not vacuously pass the class: genuinely-missing coverage warns.
+        ctx = {"harness_home": r"C:\Dev\Projects\KataHarness"}
+        warnings = pf.check_allowlist_coverage(["git"], ctx)
+        assert [w for w in warnings if w["class"] == "harness-tools"]

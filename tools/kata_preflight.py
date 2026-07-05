@@ -16,6 +16,18 @@ preflight_required(repo_root) -> bool
 gate_status(repo_root) -> "ready" | "blocked" | "degraded" | "absent"
     Read ``.kata/preflight.json`` status field; "absent" if missing / malformed.
 
+check_allowlist_coverage(allowlist_patterns, context) -> list[dict]
+    CA-L26 fixed-checklist WARN engine over the five frozen run-critical pattern
+    classes (``ALLOWLIST_CLASSES``).  Context-autonomy CA-P0; dormant until wired.
+
+read_host_autocompact(settings_path, env) -> dict
+    CA-L15/L17 + GROUNDING G1: read the host auto-compact posture with
+    ``CLAUDE_CODE_AUTO_COMPACT_WINDOW`` env precedence.  Pure read, never writes.
+
+stranding_verdict(walk_away, auto_compact_enabled, gauge_present, respawn_path) -> str
+    CA-L25 preflight stranding verdict "block"|"warn"|"ok"; fail-closed — any
+    absent/None/wrong-type input RAISES (never a permissive default).
+
 _build_argv(dep, registry_url) -> list[str]
     Build install argv from structured manifest fields (manager allowlist → forced
     registry, H1 guards).  Exported so the skill layer and tests can verify it
@@ -523,8 +535,34 @@ def _compute_cleanup_report(registry: dict) -> list[dict]:
 # preflight.json writer
 # ---------------------------------------------------------------------------
 
+def _default_bundle() -> dict:
+    """The additive CA-L24 approval-bundle audit event (context-autonomy, CA-P0).
+
+    P0 substrate: the KEY is schema-additive and present on every emitted
+    ``.kata/preflight.json``; its five slots stay ``None`` (honest absence) until
+    P1/P2 wire the producers (backstop recommendation = E1, premium gate = E3,
+    host-settings write slot + allowlist warnings = the prose bundle collector).
+    CA-L28: "``.kata/preflight.json`` carries the audit event only" — kata.config
+    stays authoritative; this is a record, never a decision input.
+    """
+    return {
+        "autoCompactChecked": None,
+        "backstopRecommendation": None,
+        "allowlistWarnings": None,
+        "premiumGate": None,
+        "hostSettingsWriteSlot": None,
+    }
+
+
 def _write_preflight(repo_root: Path, result: dict) -> None:
-    """Write ``result`` to ``.kata/preflight.json``."""
+    """Write ``result`` to ``.kata/preflight.json``.
+
+    Stamps the additive ``bundle`` audit key (CA-L24/CA-L28) if the caller has not
+    already supplied one — a single choke-point so EVERY emit path (including the
+    early blocked/degraded bailouts) carries the additive schema without touching
+    each return site.  Existing behavior (status/deps/gate_status) is byte-unchanged.
+    """
+    result.setdefault("bundle", _default_bundle())
     out_dir = repo_root / ".kata"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "preflight.json").write_text(
@@ -565,6 +603,255 @@ def gate_status(repo_root: str | Path) -> str:
         return "absent"
     except (json.JSONDecodeError, OSError):
         return "absent"
+
+
+# ===========================================================================
+# Context-autonomy CA-P0 additions (DESIGN §1 Leg F: CA-L24..L26, CA-L15/L17,
+# CA-L25).  Pure, stdlib-only, fail-closed decision helpers.  DORMANT in P0:
+# nothing here changes any run's behavior by itself — P1/P2 wire them.
+# ===========================================================================
+
+# --- CA-L26: allowlist-coverage check — a FIXED checklist, not an analyzer ---
+#
+# The five frozen run-critical pattern classes (DESIGN CA-L26, verbatim).  This
+# frozenset IS the whole check: the function iterates it and only it.  Adding a
+# sixth entry deliberately breaks a length test (the anti-cathedral guard) and,
+# if it lacks a needle builder, raises — the enumeration and the builders stay
+# in lock-step.
+ALLOWLIST_CLASSES: frozenset[tuple[str, str]] = frozenset({
+    ("git-plumbing", "git plumbing the loop uses (commit / branch / worktree / merge on the target repo)"),
+    ("verify-command", "the run's verify command (target.baselineGate / the test runner)"),
+    ("dependency-installs", "dependency installs from the approved preflight.allowed_registries set"),
+    ("bridge-and-target-writes", "writes to the bridge temp path (%TEMP%/kata-ctx-*.json) and to .kata/** + .planning/** in the target"),
+    ("harness-tools", "invocation of the harness tools (python/uv run on <harness_home>/tools/*)"),
+})
+
+#: Default dependency-manager tokens when the run context names none.
+_DEFAULT_INSTALL_MANAGERS: tuple[str, ...] = ("pip", "uv", "npm", "cargo")
+
+
+def _allowlist_needles(class_id: str, context: dict) -> list[str]:
+    """Representative coverage needles for one frozen pattern class (CA-L26).
+
+    Coarse membership tokens — NOT a deep analyzer (CA-L26: "a FIXED checklist,
+    not an analyzer").  A class is "covered" iff the host allowlist mentions one of
+    these needles; an empty needle list means the class is not applicable to this
+    run (e.g. no verify command declared) and is therefore vacuously covered.
+
+    Raises:
+        ValueError: if ``class_id`` has no builder — this fires when a class is
+                    added to ``ALLOWLIST_CLASSES`` without a matching needle rule,
+                    keeping the enumeration and the builders in lock-step.
+    """
+    if class_id == "git-plumbing":
+        return ["git"]
+    if class_id == "verify-command":
+        verify_command = (context.get("verify_command") or "").strip()
+        if not verify_command:
+            return []  # nothing to cover ⇒ vacuously covered
+        # First token = the program the allowlist must permit (e.g. "pytest").
+        return [verify_command.split()[0]]
+    if class_id == "dependency-installs":
+        managers = context.get("install_managers") or list(_DEFAULT_INSTALL_MANAGERS)
+        return [str(m) for m in managers if str(m)]
+    if class_id == "bridge-and-target-writes":
+        return ["kata-ctx", ".kata", ".planning"]
+    if class_id == "harness-tools":
+        harness_home = (context.get("harness_home") or "").strip()
+        if harness_home:
+            norm = harness_home.replace("\\", "/").rstrip("/")
+            return [f"{norm}/tools"]
+        return ["/tools"]
+    raise ValueError(f"kata_preflight: no allowlist-coverage needle rule for class {class_id!r}")
+
+
+def check_allowlist_coverage(allowlist_patterns, context) -> list[dict]:
+    """WARN for each run-critical pattern class the host allowlist does not cover.
+
+    CA-L26 (DESIGN §1 Leg F): a FIXED checklist over the five frozen classes in
+    ``ALLOWLIST_CLASSES`` — "Nothing else is checked; the list is the whole check."
+    Each uncovered class yields exactly one WARN entry naming the class.
+
+    Args:
+        allowlist_patterns: the host permission allowlist (iterable of strings).
+                            ``None`` is treated as the empty allowlist — the
+                            CONSERVATIVE direction (more warnings, never fewer);
+                            it never silently assumes coverage.
+        context: run context supplying the dynamic needles — ``verify_command``
+                 (str), ``install_managers`` (list[str]), ``harness_home`` (str).
+
+    Returns:
+        A deterministically ordered (by class id) list of
+        ``{"class": <id>, "severity": "warn", "detail": <description>}`` dicts —
+        one per uncovered class; empty when every class is covered.
+    """
+    # Slash-normalize BOTH sides (final-review fold): the harness-tools needle is
+    # slash-normalized, so a Windows backslash-style pattern must be too — else the
+    # class false-WARNs permanently on Windows despite genuine coverage.
+    patterns = [str(p).lower().replace("\\", "/") for p in (allowlist_patterns or [])]
+    ctx = context or {}
+
+    warnings: list[dict] = []
+    for class_id, description in sorted(ALLOWLIST_CLASSES):
+        needles = _allowlist_needles(class_id, ctx)
+        # Vacuously covered when the class is not applicable (no needles).
+        covered = (not needles) or any(
+            needle.lower() in pat for needle in needles for pat in patterns
+        )
+        if not covered:
+            warnings.append(
+                {"class": class_id, "severity": "warn", "detail": description}
+            )
+    return warnings
+
+
+def _parse_positive_int(raw) -> int | None:
+    """Return ``raw`` as a positive int, or ``None`` if it is not one.
+
+    Accepts an ``int`` (but NOT ``bool`` — ``True``/``False`` are never token
+    counts) or a numeric string.  Any other value, zero, or a negative ⇒ ``None``.
+    """
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw if raw > 0 else None
+    if isinstance(raw, str):
+        s = raw.strip()
+        try:
+            v = int(s)
+        except ValueError:
+            return None
+        return v if v > 0 else None
+    return None
+
+
+def read_host_autocompact(settings_path, env) -> dict:
+    """Read the host (Claude Code) auto-compact posture — env-var precedence per G1.
+
+    CA-L15/CA-L17 + GROUNDING-CLAUDE G1.  Reads the Claude settings keys
+    ``autoCompactEnabled`` and ``autoCompactWindow`` and honours
+    ``CLAUDE_CODE_AUTO_COMPACT_WINDOW`` which "takes precedence" over settings.json
+    for the window value.  This is a PURE READ — it NEVER writes anything
+    (CA-L15 recommend-never-write).
+
+    Fail-closed surfacing (never a silent bool): an unreadable / unparseable /
+    non-object settings file ⇒ ``auto_compact_enabled: None`` (unknown — the caller
+    must resolve the unknown, e.g. treat as the dangerous case for stranding), not
+    a silent ``True``/``False``.  A readable object with the key absent ⇒ ``True``
+    (the host default is enabled, G1); a present-but-non-bool value ⇒ ``None``.
+
+    Args:
+        settings_path: path to the host ``settings.json`` (or ``None``).
+        env: environment mapping (e.g. ``os.environ``) — read for the window
+             override key.
+
+    Returns:
+        ``{"auto_compact_enabled": bool|None, "window_tokens": int|None,
+           "source": "env"|"settings"|"none"}`` where ``source`` names the origin
+        of ``window_tokens``.
+    """
+    env_map = env or {}
+
+    settings: dict | None = None
+    settings_readable = False
+    if settings_path is not None:
+        p = Path(settings_path)
+        if p.exists():
+            try:
+                loaded = json.loads(p.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+                loaded = None
+            if isinstance(loaded, dict):
+                settings = loaded
+                settings_readable = True
+
+    if settings_readable:
+        raw_enabled = settings.get("autoCompactEnabled", True)  # host default = enabled (G1)
+        auto_compact_enabled: bool | None = (
+            raw_enabled if isinstance(raw_enabled, bool) else None
+        )
+    else:
+        auto_compact_enabled = None  # unknown — surfaced, never a silent bool
+
+    # Window: env override WINS over settings.json (G1).
+    window_tokens: int | None = None
+    source = "none"
+    env_window = _parse_positive_int(env_map.get("CLAUDE_CODE_AUTO_COMPACT_WINDOW"))
+    if env_window is not None:
+        window_tokens = env_window
+        source = "env"
+    elif settings_readable:
+        settings_window = _parse_positive_int(settings.get("autoCompactWindow"))
+        if settings_window is not None:
+            window_tokens = settings_window
+            source = "settings"
+
+    return {
+        "auto_compact_enabled": auto_compact_enabled,
+        "window_tokens": window_tokens,
+        "source": source,
+    }
+
+
+def stranding_verdict(walk_away, auto_compact_enabled, gauge_present, respawn_path) -> str:
+    """Preflight stranding verdict (CA-L25): ``"block"`` | ``"warn"`` | ``"ok"``.
+
+    CA-L25 verbatim: a walk-away-configured run (auto-continue boundary or
+    unattended flag) with a missing leg that would STRAND it — auto-compact
+    disabled AND no gauge AND no respawn path ⇒ session death at the hard limit
+    with no recovery — is a **BLOCK** at preflight.  Attended runs: **WARN** +
+    proceed.  (CA-L25 — RESOLVED LOCKED: the intent-keyed BLOCK is the decision;
+    the former [VETO-FLAG] is closed, not riding to any merge gate.)
+
+    Fail-closed (D136 + the adversarial-review discipline): every input is
+    REQUIRED and must state what the caller knows — an absent/``None``/wrong-type
+    argument RAISES rather than defaulting.  "No respawn path" is stated as an
+    EMPTY string ``respawn_path`` (a present-but-empty value the caller checked),
+    never ``None``; ``None`` is "I did not check" and hard-fails.
+
+    Args:
+        walk_away: ``True`` iff the run is walk-away-configured (auto-continue /
+                   unattended).  Must be a ``bool``.
+        auto_compact_enabled: ``True`` iff the host backstop is enabled.  Must be a
+                   ``bool`` — resolve ``read_host_autocompact``'s ``None``-unknown
+                   before calling (the unknown is the caller's decision to make).
+        gauge_present: ``True`` iff a live context gauge is available.  ``bool``.
+        respawn_path: the respawn path, or ``""`` for "no respawn path".  ``str``.
+
+    Returns:
+        ``"block"`` (walk-away + full stranding), ``"warn"`` (attended + full
+        stranding), or ``"ok"`` (any recovery leg present).
+
+    Raises:
+        ValueError: on any absent / ``None`` / wrong-type argument.
+    """
+    if not isinstance(walk_away, bool):
+        raise ValueError(
+            f"stranding_verdict: 'walk_away' must be bool (caller must state it); got {walk_away!r}"
+        )
+    if not isinstance(auto_compact_enabled, bool):
+        raise ValueError(
+            "stranding_verdict: 'auto_compact_enabled' must be bool — resolve the "
+            f"read_host_autocompact None-unknown before calling; got {auto_compact_enabled!r}"
+        )
+    if not isinstance(gauge_present, bool):
+        raise ValueError(
+            f"stranding_verdict: 'gauge_present' must be bool (caller must state it); got {gauge_present!r}"
+        )
+    if not isinstance(respawn_path, str):
+        raise ValueError(
+            "stranding_verdict: 'respawn_path' must be a str ('' means no respawn "
+            f"path; None means unchecked and is refused); got {respawn_path!r}"
+        )
+
+    stranded = True
+    stranded = stranded and (not auto_compact_enabled)  # backstop leg
+    stranded = stranded and (not gauge_present)  # gauge leg
+    stranded = stranded and (not respawn_path.strip())  # respawn leg
+
+    if walk_away:
+        return "block" if stranded else "ok"
+    return "warn" if stranded else "ok"
 
 
 # ---------------------------------------------------------------------------

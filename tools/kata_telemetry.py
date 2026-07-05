@@ -62,8 +62,10 @@ FAILURE_KINDS: frozenset[str] = frozenset(
 )
 
 # Ledger row versions the reader parses. An ABSENT ``v`` reads as v1 (the pre-schema
-# committed shape); a PRESENT-but-unknown version RAISES (fail-closed, D136).
-_KNOWN_LEDGER_VERSIONS: frozenset[int] = frozenset({1, 2})
+# committed shape); a PRESENT-but-unknown version RAISES (fail-closed, D136). Schema
+# history: v1 (pre-schema) → v2 (perTask/failureKinds/degraded, P0.1) → v3 (parentTokens
+# per-phase, CA-L40). Every bump is additive, no backfill (the D142 precedent).
+_KNOWN_LEDGER_VERSIONS: frozenset[int] = frozenset({1, 2, 3})
 
 
 class TelemetryError(Exception):
@@ -146,6 +148,7 @@ def _validate_record(record: Any) -> None:
     """Validate a checkpoint record against schema v1 (fail-closed).
 
     Required: ``v == 1``; ``i`` int >= 0; ``verify.exit`` int. Optional nullable:
+    ``verify.owned`` (int — the OWNED-FILE-scoped verify exit, Amendment #5/C-1),
     ``verify.passed/failed/skipped`` (ints), ``lint`` (int), ``evidence`` (sha256
     hex). Unknown keys tolerated (forward-compatible / additive).
 
@@ -166,7 +169,7 @@ def _validate_record(record: Any) -> None:
         raise TelemetryError(
             f"checkpoint record schema: verify.exit must be an int (got {verify.get('exit')!r})"
         )
-    for key in ("passed", "failed", "skipped"):
+    for key in ("passed", "failed", "skipped", "owned"):
         if key in verify and verify[key] is not None and not _is_int(verify[key]):
             raise TelemetryError(f"checkpoint record schema: verify.{key} must be int or null")
     if "lint" in record and record["lint"] is not None and not _is_int(record["lint"]):
@@ -497,10 +500,12 @@ def read_ledger(path: str | Path) -> list[dict]:
     case ``read_ledger`` is never called); a configured-but-dangling path is a
     present-but-broken pointer ⇒ GB12/D45 raise (there is no ``missing_ok`` param).
 
-    **Version tolerance (schema v2, P0.1):** a row with an ABSENT ``v`` reads as v1
+    **Version tolerance (schema v3, CA-L40):** a row with an ABSENT ``v`` reads as v1
     (the pre-schema committed shape); a PRESENT ``v`` in :data:`_KNOWN_LEDGER_VERSIONS`
-    (``{1, 2}``) parses; a PRESENT-but-unknown version RAISES (fail-closed — a future
-    schema this reader cannot interpret must never be silently mis-parsed, D136).
+    (``{1, 2, 3}``) parses; a PRESENT-but-unknown version RAISES (fail-closed — a future
+    schema this reader cannot interpret must never be silently mis-parsed, D136). v1/v2
+    rows read byte-unchanged (no backfill); use :func:`parent_tokens_of` for the additive
+    v3 ``parentTokens`` field, which degrades to ``{}`` on any pre-v3 row.
 
     Args:
         path: The ledger file path.
@@ -567,6 +572,34 @@ def failure_kinds_of(row: dict) -> list[dict]:
     if row.get("gateRejections", 0) > 0:
         return [{"kind": "unclassified"}]
     return []
+
+
+def parent_tokens_of(row: dict) -> dict:
+    """Return the ledger *row*'s per-phase parent-context readings (reader accessor, v3).
+
+    A schema-v3 row carries an explicit ``parentTokens`` map (built by
+    :func:`build_ledger_row`, ``{"<phase>": int|null}``); it is returned verbatim with
+    its EXPLICIT NULLS PRESERVED — a null is honest absence (a reading never taken) and
+    must never be coerced to zero (CA-L40). A v1/v2 row — or any row where the field is
+    absent — has no producer readings and maps to ``{}`` (no backfill). The
+    discriminator is field PRESENCE, not the version number, so an additive row without
+    the field degrades identically regardless of ``v`` (the :func:`failure_kinds_of`
+    pattern).
+
+    Named consumers (future calibration, §8 — not built here): the CA-L16 gap formula's
+    worst-observed-boundary-burn term; CA-L4's ``est_wave_burn`` replacement; OP-3's
+    telemetry-derived gap.
+
+    Args:
+        row: A ledger row dict (from :func:`read_ledger`).
+
+    Returns:
+        The ``{"<phase>": int|null}`` readings for a v3 row (nulls preserved), or ``{}``
+        for a v1/v2/absent-field row.
+    """
+    if "parentTokens" in row:
+        return dict(row["parentTokens"])
+    return {}
 
 
 def class_median(rows: list[dict], task_class: str, min_samples: int = 5) -> float | None:
@@ -885,8 +918,24 @@ def _validate_failure_kinds(raw: Any) -> list[dict]:
     return out
 
 
+def _normalize_parent_tokens(raw: Any) -> dict:
+    """Normalize the v3 ``parentTokens`` per-phase map to ``{"<phase>": int|None}``.
+
+    Each value is an honest parent-context token reading OR an EXPLICIT null where no
+    reading was taken — never zero (a zero would falsely assert an empty parent
+    context; CA-L40: "Nulls are honest absence, never zero"). A ``None`` is preserved
+    as ``None``; the caller's numeric reading passes through untouched (mirrors
+    :func:`_normalize_per_task` — the producer is trusted for the value, the shape is
+    enforced here). An absent / empty map ⇒ ``{}`` (no backfill; old rows read as v1/v2).
+    """
+    result: dict[str, Any] = {}
+    for phase, tokens in (raw or {}).items():
+        result[str(phase)] = tokens
+    return result
+
+
 def build_ledger_row(run_summary: dict) -> str:
-    """Build the one-line JSON ledger row (schema v2, additive over v1) from a run summary.
+    """Build the one-line JSON ledger row (schema v3, additive over v2/v1) from a run summary.
 
     ``firstPassAcceptanceByClassTier`` is keyed ``"<class>×<tier>"`` (gate v1
     MED-10; M4-L10/L7's acceptance-per-(class×tier) routing report needs the keys,
@@ -894,12 +943,19 @@ def build_ledger_row(run_summary: dict) -> str:
     ``calibration`` in *run_summary* is carried through as ``"calibration": true``
     (gate v2 F6/F8 — :func:`class_median` then EXCLUDES the row).
 
-    **Schema v2 (P0.1, additive):** the row carries ``v: 2`` plus three additive
-    fields — ``perTask`` (``{taskId: {tokensIn, tokensOut, wallClockS}}``, explicit
-    nulls, never fabricated), ``failureKinds`` (``[{taskId, kind, at}]``, an
-    unknown/missing ``kind`` RAISES at build time), and ``degraded``
-    (``[{scope, reason}]``). Every v1 field is retained; a caller passing no new data
-    gets ``{}`` / ``[]`` / ``[]`` defaults (no backfill — old rows read as v1).
+    **Schema v2 (P0.1, additive):** ``perTask`` (``{taskId: {tokensIn, tokensOut,
+    wallClockS}}``, explicit nulls, never fabricated), ``failureKinds``
+    (``[{taskId, kind, at}]``, an unknown/missing ``kind`` RAISES at build time), and
+    ``degraded`` (``[{scope, reason}]``).
+
+    **Schema v3 (CA-L40, additive):** the row carries ``v: 3`` plus ``parentTokens``
+    (``{"<phase>": int|null}``) — per-phase parent-context token readings, explicit
+    nulls for honest absence (never zero). Named future consumers (calibration, §8 —
+    NOT built here): the CA-L16 gap formula's worst-observed-boundary-burn term;
+    CA-L4's ``est_wave_burn`` replacement; OP-3's telemetry-derived gap.
+
+    Every earlier-schema field is retained; a caller passing no new data gets ``{}`` /
+    ``[]`` / ``[]`` / ``{}`` defaults (no backfill — old rows read as v1/v2, §4 row 12).
 
     Args:
         run_summary: The run-summary dict (``runId``/``target`` + the metrics).
@@ -911,7 +967,7 @@ def build_ledger_row(run_summary: dict) -> str:
         TelemetryError: On a ``failureKinds`` entry with an unknown/missing ``kind``.
     """
     row: dict[str, Any] = {
-        "v": 2,
+        "v": 3,
         "utc": run_summary.get("utc") or _now_utc(),
         "runId": run_summary.get("runId"),
         "target": run_summary.get("target"),
@@ -921,6 +977,7 @@ def build_ledger_row(run_summary: dict) -> str:
     row["perTask"] = _normalize_per_task(run_summary.get("perTask"))
     row["failureKinds"] = _validate_failure_kinds(run_summary.get("failureKinds"))
     row["degraded"] = list(run_summary.get("degraded", []))
+    row["parentTokens"] = _normalize_parent_tokens(run_summary.get("parentTokens"))
     if run_summary.get("calibration"):
         row["calibration"] = True
     return json.dumps(row, separators=(",", ":"))
@@ -966,6 +1023,7 @@ def _emit_trailer(
     skipped: int | None,
     lint: int | None,
     paths: list[str] | None,
+    owned_exit: int | None = None,
 ) -> str:
     """Build the complete single-line ``Kata-Checkpoint:`` trailer (staged mode).
 
@@ -993,6 +1051,8 @@ def _emit_trailer(
         )
     digest = evidence_digest(repo_root, resolved, commit=None)
     verify: dict[str, Any] = {"exit": verify_exit}
+    if owned_exit is not None:
+        verify["owned"] = owned_exit
     if passed is not None:
         verify["passed"] = passed
     if failed is not None:
@@ -1017,6 +1077,10 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     emit.add_argument("--repo-root", required=True, help="the worker's worktree root")
     emit.add_argument("--index", type=int, required=True, help="the checkpoint index i")
     emit.add_argument("--verify-exit", type=int, required=True, help="the verify exit code")
+    emit.add_argument(
+        "--owned-exit", type=int, default=None,
+        help="the OWNED-FILE-scoped verify exit code (Amendment #5/C-1; optional)",
+    )
     emit.add_argument("--passed", type=int, default=None)
     emit.add_argument("--failed", type=int, default=None)
     emit.add_argument("--skipped", type=int, default=None)
@@ -1046,6 +1110,7 @@ def main(argv: list[str] | None = None) -> int:
                 repo_root=args.repo_root,
                 index=args.index,
                 verify_exit=args.verify_exit,
+                owned_exit=args.owned_exit,
                 passed=args.passed,
                 failed=args.failed,
                 skipped=args.skipped,

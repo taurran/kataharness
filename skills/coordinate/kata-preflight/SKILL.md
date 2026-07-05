@@ -6,7 +6,7 @@ description: >-
   manifest-hash checked), records installs to the machine-global D-registry, probes the target environment,
   and emits .kata/preflight.json. Default-FAIL; never tiered (D29/D33).
 license: Apache-2.0
-version: 0.1.2
+version: 0.2.1
 category: coordinate
 status: experimental
 agnostic: true
@@ -29,6 +29,71 @@ tags:
 Provision the freeze-approved dependency set before EXECUTE. **Default-FAIL: a dep that won't verify
 after provisioning blocks the gate.** Never tiered (D29/D33) — spine gates are a consistency floor, not
 a depth dial.
+
+## Bundle collection (bootstrap Phase 2.5 — the ONE approval bundle, CA-L24/L27/L31)
+
+Invoked by [[kata-bootstrap]] **between Phase 2 and the Phase-3 config write** (bootstrap orchestrates;
+preflight collects). Collect the whole approval bundle **ONCE** — dependency installs, the permission
+allowlist (the CA-L26 fixed checklist), the compact-window recommendation (**recommend-never-write**), the
+host-settings write slot, and **the premium gate below**. The answer flows back to bootstrap, which writes
+`kata.config` **AFTER** with `models.premium.approved` recorded from it. This collection **never prompts a
+second time**; the enforcement pass invoked from [[kata-orchestrate]] only verifies/provisions the
+already-approved set. Accepted answers are recorded audit-only via `kata_settings.record_accepted_defaults`
+and `kata_settings.record_host_posture` (never an implied side effect).
+
+### The stranding verdict (CA-L25 — the intent-keyed BLOCK; final-review fold)
+
+As part of this SAME collection, COMPUTE `kata_preflight.stranding_verdict(walk_away,
+auto_compact_enabled, gauge_present, respawn_path)` — every input RESOLVED first, never guessed (the
+engine RAISES on `None`/wrong-type by design): `walk_away` from the composed run intent (auto-continue
+boundary or unattended flag); `auto_compact_enabled` from `read_host_autocompact`, with its
+`None`-unknown resolved by ASKING in this bundle (the operator states the host posture — one more slot,
+same single prompt); `gauge_present` = a fresh bridge is readable now (`resolve_gauge` source ≠ `none`);
+`respawn_path` from the platform's adapter-contract respawn primitive, `""` when the platform has none.
+Verdict handling:
+- **`"block"`** (walk-away intent + the full stranding conjunction: no auto-compact AND no gauge AND no
+  respawn path) ⇒ **append a `blockers` entry to `.kata/preflight.json`** (non-empty blockers ⇒
+  `status: blocked` — the EXISTING gate mechanics; [[kata-orchestrate]]'s enforcement pass already
+  refuses dispatch on `blocked`, nothing new fires there). Surface the three missing legs with their
+  exact remediations (enable host auto-compact / install the statusline bridge / configure a respawn
+  path) and STOP — the walk-away run would otherwise die silently at the hard context limit.
+- **`"warn"`** (attended intent + the same conjunction) ⇒ surface the warning inside the bundle and
+  proceed on approval — the operator is present to rotate manually.
+- **`"ok"`** ⇒ silent (any recovery leg present).
+
+### The premium (Fable) gate (CA-L27; the §3 amendment governs dispatch)
+
+Fable stays in the tiering matrix behind a **once-per-run approval** collected here, with a prominent cost
+disclaimer. Two cases, each with BOTH arms stated:
+
+- **(a) Anchor IS Fable** — this branch fires ONLY when *the session anchor is already Fable/Mythos-class*
+  ⇒ confirm keep-using + warn (verbatim):
+  **"long-running loops on Fable as primary FM can drive costs up significantly."**
+  - **Confirm** ⇒ proceed with Fable as the anchor (the operator's own session-model choice stands).
+  - **Decline** ⇒ pin `models.anchor: "opus"` + **hard-stop advising a `/model` switch**, resume after the
+    switch — the only honest decline for THIS case (SR-4: config cannot stop a Fable *session* from burning
+    Fable on zero-step critical work via inherit-by-omission; the session model is the operator's own
+    choice). The hard-stop is scoped to case (a) ONLY — it never applies to the offer case below.
+- **(b) The premium OFFER** — post-July-7, and ONLY when `anchor == opus` ∧ `mode == "advanced"` ⇒ kata MAY
+  OFFER anchor+1 (Fable) at preflight approval, the operator **knowingly accruing Fable API usage**. Scope
+  is fixed (R-9): the approved offer elevates **CRITICAL and CODING** work classes only — economy /
+  low-criticality **NEVER** runs Fable, even in advanced with approval.
+  - **Approve** ⇒ bootstrap records `models.premium: {offer, approved: true, scope, grantedMode}` (§2).
+  - **Decline = the DEFAULT** ⇒ record `approved: false` in the §2-shaped `models.premium` block (or write
+    no block at all — absent ⇒ the resolver's frozen behavior byte-for-byte), the run stays at the anchor
+    and **PROCEEDS normally** — no hard-stop, no anchor pin. This is exactly the disclaimer's own "Decline
+    to stay on your current model at no added cost" sentence.
+
+**Cost disclaimer — shown verbatim at the offer (CA-7b):**
+
+> Approving this sends your most demanding work — critical judgment and coding — to **Fable**, the top
+> model rung, billed at premium API rates. A long-running loop can make many such calls. By approving you
+> are **knowingly accepting Fable API charges** for the length of this run. Decline to stay on your current
+> model at no added cost; you can switch models yourself anytime with `/model`.
+
+The approval record carries `grantedMode`; a re-entrant run that changes mode LAPSES it (the lapse executor
+is bootstrap — Phase 0/1 clears `approved` when `mode ≠ grantedMode`, and this gate re-asks). Enforcement of
+the four-conjunct fire rule and the failure/OMIT semantics lives at dispatch time in [[kata-orchestrate]].
 
 ## Invariants (never relax)
 

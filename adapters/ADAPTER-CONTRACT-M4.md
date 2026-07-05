@@ -24,6 +24,22 @@ An adapter supporting `inlineEval: on` MUST provide **both**:
   over a possibly-live worker (the double-writer hazard; imports the contract-supersede abort-failure rule
   verbatim, M4-L2). Reroll needs nothing else — **no mid-session injection is required by design**.
 
+A third primitive is added for context autonomy (v0.2.1), **conformance-only** — it governs conductor
+respawn, not the `inlineEval: on` gate above (which still requires **both** (a) and (b)):
+
+- (c) session-respawn — the platform's OUTER SHELL (host feature, cron wrapper, or human; never the
+  in-session agent) can end the conductor session and start a fresh one that re-anchors from the newest
+  durable handoff (SessionStart-equivalent injection or a documented manual step). Absent ⇒ degradation:
+  conductor writes/refreshes the handoff and PROMPTS THE OPERATOR to rotate (universal fallback);
+  unattended runs on such platforms are bounded by one session window, surfaced at preflight. Governs
+  CONDUCTOR sessions only — worker attempt topology is out of scope; LD7 remains named-DEFERRED.
+
+Plus the R-40 sentence: Absent primitive (b), budget-overrun enforcement degrades to worker compliance +
+livenessDeadline escalation, surfaced at preflight.
+
+**Claude binding (the only live leg in v0.2.1):** host compaction + SessionStart(compact) =
+the (c)-equivalent. SR-14 scope guard honored — (c) does not silently absorb LD7.
+
 **Absent either primitive ⇒ that platform runs M4 at `telemetry`** — record-only, no scheduler/ladder/
 kill. This is **per-platform**, decidable at run start from the known platform set (precondition 0): a
 mixed run keeps `on` where the primitive exists and degrades only the platforms that lack it (M4-L9c /

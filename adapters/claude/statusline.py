@@ -13,7 +13,15 @@ What it does:
 Fail-soft contract: any exception in this glue layer prints nothing and exits 0.
 Claude ignores non-zero exits and empty stdout alike; never crashing is the priority.
 
-See also: adapters/claude/README.md for installation and rationale.
+Bridge writing (CA-L1/CA-L2 — no change needed here): the superset context-usage
+bridge (%TEMP%/kata-ctx-<session_id>.json) is written by the CORE
+(kata_statusline.statusline_from_event → write_bridge, A1), BEFORE the render path and
+independent of a kata cwd.  This is the FRESH-PROFILE owner (no user statusline exists);
+when a user statusline DOES exist, kata never clobbers it and instead offers the
+chaining wrapper (adapters/claude/statusline_chain.py, A2).  This glue therefore needs
+no bridge logic of its own — confirm-and-delegate only.
+
+See also: adapters/claude/README.md for installation, the chaining wrapper, and rationale.
 """
 
 from __future__ import annotations
