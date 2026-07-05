@@ -64,8 +64,31 @@ FAILURE_KINDS: frozenset[str] = frozenset(
 # Ledger row versions the reader parses. An ABSENT ``v`` reads as v1 (the pre-schema
 # committed shape); a PRESENT-but-unknown version RAISES (fail-closed, D136). Schema
 # history: v1 (pre-schema) → v2 (perTask/failureKinds/degraded, P0.1) → v3 (parentTokens
-# per-phase, CA-L40). Every bump is additive, no backfill (the D142 precedent).
+# per-phase, CA-L40; verdictByTier/tierEvents ride v3 as ADDITIVE OPTIONAL keys —
+# AT-L20 / M4 Amendment #6: NO v4 is minted, a v4 row would RAISE in every deployed
+# v0.2.1 reader mid-scan). Every bump is additive, no backfill (the D142 precedent).
 _KNOWN_LEDGER_VERSIONS: frozenset[int] = frozenset({1, 2, 3})
+
+# Adaptive-tiering calibration (AT-L20 / M4 Amendment #6 item 3). Producer vocabulary
+# for the ``verdictByTier`` key grammar ``"<verdict>×<tier>"`` (the × separator matching
+# the ``firstPassAcceptanceByClassTier`` ``"<class>×<tier>"`` convention). ``continue``/
+# ``correct``/``reroll`` are the inline-evaluator ladder verdicts; ``overturned`` is the
+# convention token for a SCREEN verdict overturned at re-adjudication (AT-L9): standing
+# verdicts are counted under their DECIDING tier, an overturned screen verdict under
+# ``"overturned×<screen-tier>"``. An unknown/malformed key at BUILD time is a producer
+# bug and RAISES (the FAILURE_KINDS precedent).
+VERDICT_TOKENS: frozenset[str] = frozenset({"continue", "correct", "reroll", "overturned"})
+
+# The ``"<verdict>×<tier>"`` separator (U+00D7, the firstPassAcceptanceByClassTier char).
+_VERDICT_TIER_SEP = "×"
+
+# The exact five string keys of a ``tierEvents`` entry (AT-L7's adaptive-move audit
+# trail): missing/extra/non-str keys RAISE at build (fail-closed, D136).
+_TIER_EVENT_KEYS: frozenset[str] = frozenset({"at", "dispatch", "from", "to", "reason"})
+
+# Below this many total costly-verdict samples, :func:`overturn_rate` returns ``None``
+# (the class_median not-yet-meaningful discipline, A1-Q3 / AT-L18's min_samples=5).
+_OVERTURN_MIN_SAMPLES = 5
 
 
 class TelemetryError(Exception):
@@ -602,6 +625,144 @@ def parent_tokens_of(row: dict) -> dict:
     return {}
 
 
+def verdict_by_tier_of(row: dict) -> dict:
+    """Return the ledger *row*'s verdict×tier calibration counts (reader accessor, AT-L20).
+
+    ABSENT-HONEST on absence, FAIL-CLOSED on presence: an additive-v3 row carrying
+    ``verdictByTier`` (built by :func:`build_ledger_row`) has the map returned after
+    the same fail-closed validation the builder applies — a PRESENT-but-malformed
+    value RAISES (the :func:`read_ledger` row-validation posture: a corrupt row is
+    never skipped or coerced, MED-9b/D136). A pre-amendment row — any v1/v2/v3 row
+    where the key is absent — maps to ``{}`` (nothing is ever fabricated). The
+    discriminator is field PRESENCE, not the version number — exactly how
+    :func:`failure_kinds_of` / :func:`parent_tokens_of` degrade on an absent field.
+
+    Key convention (documented at :data:`VERDICT_TOKENS` and pinned by the builder):
+    STANDING verdicts are counted under their DECIDING tier; an overturned screen
+    verdict is counted under ``"overturned×<screen-tier>"`` (AT-L9 re-adjudication).
+
+    Args:
+        row: A ledger row dict (from :func:`read_ledger`).
+
+    Returns:
+        The validated ``{"<verdict>×<tier>": count}`` map, or ``{}`` when absent.
+
+    Raises:
+        TelemetryError: On a present-but-malformed ``verdictByTier`` value.
+    """
+    if "verdictByTier" not in row:
+        return {}
+    return _validate_verdict_by_tier(row["verdictByTier"], where="verdict_by_tier_of")
+
+
+def tier_events_of(row: dict) -> list:
+    """Return the ledger *row*'s adaptive-move audit trail (reader accessor, AT-L20).
+
+    ABSENT-HONEST on absence (``[]`` — the :func:`failure_kinds_of` /
+    :func:`parent_tokens_of` presence-discriminated degrade), FAIL-CLOSED on
+    presence: a PRESENT-but-malformed ``tierEvents`` RAISES (the
+    :func:`verdict_by_tier_of` posture — a corrupt row is never skipped).
+
+    Args:
+        row: A ledger row dict (from :func:`read_ledger`).
+
+    Returns:
+        The validated ``[{at, dispatch, from, to, reason}]`` list, or ``[]`` when
+        absent.
+
+    Raises:
+        TelemetryError: On a present-but-malformed ``tierEvents`` value.
+    """
+    if "tierEvents" not in row:
+        return []
+    return _validate_tier_events(row["tierEvents"], where="tier_events_of")
+
+
+def verdict_by_tier_totals(rows: list[dict], *, include_calibration: bool = False) -> dict:
+    """Sum the ``verdictByTier`` maps across ledger *rows* (the calibration aggregate).
+
+    **Calibration rows (``"calibration": true``) are EXCLUDED by default** — exactly
+    the :func:`class_median` F6 discipline and for the same reasons: toy calibration
+    verdict counts must never bias the real τ/verdict calibration input. Pass
+    ``include_calibration=True`` to fold them in (e.g. when auditing the calibration
+    runs themselves). Rows without the key contribute nothing (absent-honest via
+    :func:`verdict_by_tier_of`); a row with a PRESENT-but-malformed map RAISES —
+    never skip-and-average (MED-9b).
+
+    Args:
+        rows: Ledger rows (from :func:`read_ledger`).
+        include_calibration: Include ``calibration: true`` rows (default False).
+
+    Returns:
+        The summed ``{"<verdict>×<tier>": total}`` map (``{}`` when no row carries
+        the key).
+
+    Raises:
+        TelemetryError: On any row's present-but-malformed ``verdictByTier``.
+    """
+    totals: dict[str, int] = {}
+    for row in rows:
+        if not include_calibration and row.get("calibration") is True:
+            continue  # calibration rows never bias the totals (the F6 discipline)
+        for key, count in verdict_by_tier_of(row).items():
+            totals[key] = totals.get(key, 0) + count
+    return totals
+
+
+def overturn_rate(
+    rows: list[dict], *, tier: str | None = None, include_calibration: bool = False
+) -> float | None:
+    """Return the screen-verdict overturn rate — the first-class calibration metric.
+
+    **The mechanical definition (the key convention pinned by the builder):**
+    ``verdictByTier`` counts STANDING verdicts under their DECIDING tier and each
+    overturned SCREEN verdict under ``"overturned×<screen-tier>"`` (AT-L9: a
+    would-be ``correct``/``reroll`` screen verdict is re-adjudicated one rung up;
+    the higher evaluator's verdict stands). The rate is therefore::
+
+        overturned_total / (overturned_total + standing correct+reroll total)
+
+    — of all costly (``correct``/``reroll``/``overturned``) verdicts recorded, the
+    fraction that were screen verdicts overturned at re-adjudication vs verdicts
+    that stood. ``continue`` verdicts are NEVER samples (the green path is never
+    re-adjudicated, M4-L1). With *tier* given, only keys whose tier component
+    matches count: overturned screens AT that tier plus standing verdicts DECIDED
+    at that tier.
+
+    Fewer than 5 total samples (``_OVERTURN_MIN_SAMPLES``) ⇒ ``None`` — the
+    :func:`class_median` not-yet-meaningful discipline (A1-Q3): a rate over noise
+    is never manufactured. Calibration rows are excluded by default (the
+    :func:`verdict_by_tier_totals` / F6 discipline).
+
+    Args:
+        rows: Ledger rows (from :func:`read_ledger`).
+        tier: Restrict to one tier's keys (``None`` ⇒ all tiers).
+        include_calibration: Include ``calibration: true`` rows (default False).
+
+    Returns:
+        The overturn rate in ``[0.0, 1.0]``, or ``None`` below 5 total samples.
+
+    Raises:
+        TelemetryError: On any row's present-but-malformed ``verdictByTier``.
+    """
+    totals = verdict_by_tier_totals(rows, include_calibration=include_calibration)
+    overturned = 0
+    samples = 0
+    for key, count in totals.items():
+        verdict, _, key_tier = key.partition(_VERDICT_TIER_SEP)
+        if tier is not None and key_tier != tier:
+            continue
+        if verdict == "overturned":
+            overturned += count
+            samples += count
+        elif verdict in ("correct", "reroll"):
+            samples += count
+        # "continue" is never a sample — the green path is never re-adjudicated.
+    if samples < _OVERTURN_MIN_SAMPLES:
+        return None  # not-yet-meaningful (the class_median discipline, A1-Q3)
+    return overturned / samples
+
+
 def class_median(rows: list[dict], task_class: str, min_samples: int = 5) -> float | None:
     """Return the median per-task duration for *task_class*, or ``None`` if too few.
 
@@ -934,6 +1095,121 @@ def _normalize_parent_tokens(raw: Any) -> dict:
     return result
 
 
+def _validate_verdict_by_tier(raw: Any, *, where: str) -> dict:
+    """Validate the additive-v3 ``verdictByTier`` map (fail-closed, both sides).
+
+    Key grammar (AT-L20 / Amendment #6 item 3): every key is exactly
+    ``"<verdict>×<tier>"`` — one ``×`` separator (the ``firstPassAcceptanceByClassTier``
+    convention), verdict in :data:`VERDICT_TOKENS` (``overturned`` IS legal — the
+    overturned-screen-verdict convention key), tier a non-empty string; every value a
+    non-negative real int (bool rejected). A malformed map RAISES wherever it is seen:
+    at BUILD it is a producer bug (the :func:`_validate_failure_kinds` precedent), at
+    READ it is a corrupt row (the :func:`read_ledger` row-validation posture) — never
+    skipped, never coerced (D136). A PRESENT ``None`` is malformed, never read as
+    absent (absence is key OMISSION, enforced by the callers).
+
+    Args:
+        raw: The raw ``verdictByTier`` value.
+        where: The raising context (``"build_ledger_row"`` / ``"verdict_by_tier_of"``).
+
+    Returns:
+        The validated ``{"<verdict>×<tier>": count}`` dict (a fresh copy).
+
+    Raises:
+        TelemetryError: On a non-dict value, a malformed key, an unknown verdict
+            token, or a negative/non-int count.
+    """
+    if not isinstance(raw, dict):
+        raise TelemetryError(
+            f"{where}: verdictByTier must be a JSON object of "
+            f'"<verdict>{_VERDICT_TIER_SEP}<tier>" counts (got {raw!r}) — a present '
+            "null/wrong type is malformed, never absent (D136 fail-closed). Escalate."
+        )
+    out: dict[str, int] = {}
+    for key, count in raw.items():
+        parts = key.split(_VERDICT_TIER_SEP) if isinstance(key, str) else []
+        if len(parts) != 2 or not parts[0] or not parts[1]:
+            raise TelemetryError(
+                f"{where}: verdictByTier key {key!r} is not of the exact "
+                f'"<verdict>{_VERDICT_TIER_SEP}<tier>" shape (one {_VERDICT_TIER_SEP} '
+                "separator, non-empty verdict and tier — the "
+                "firstPassAcceptanceByClassTier convention). Escalate."
+            )
+        verdict, tier = parts
+        if verdict not in VERDICT_TOKENS:
+            raise TelemetryError(
+                f"{where}: verdictByTier verdict token {verdict!r} not in the producer "
+                f"vocabulary {sorted(VERDICT_TOKENS)} (key {key!r}) — an unknown token "
+                "is a producer bug (the FAILURE_KINDS precedent). Escalate."
+            )
+        if not _is_int(count) or count < 0:
+            raise TelemetryError(
+                f"{where}: verdictByTier count for {key!r} must be a non-negative int "
+                f"(got {count!r}) — a count is a tally, never coerced (D136). Escalate."
+            )
+        out[key] = count
+    return out
+
+
+def _validate_tier_events(raw: Any, *, where: str) -> list[dict]:
+    """Validate the additive-v3 ``tierEvents`` list (fail-closed, both sides).
+
+    Each entry (AT-L7's adaptive-move audit record) must carry EXACTLY the five
+    string keys ``{at, dispatch, from, to, reason}`` — a missing key, an extra key,
+    or a non-string value RAISES (build: producer bug; read: corrupt row — the
+    :func:`_validate_verdict_by_tier` posture). ``at`` is checked as a string only
+    (ISO-8601-ish by contract; no timestamp parse here). A PRESENT ``None``/non-list
+    is malformed, never read as absent.
+
+    Args:
+        raw: The raw ``tierEvents`` value.
+        where: The raising context.
+
+    Returns:
+        The validated entry list (fresh five-key dicts, fixed key order).
+
+    Raises:
+        TelemetryError: On a non-list value, a non-object entry, missing/extra
+            keys, or a non-string value.
+    """
+    if not isinstance(raw, list):
+        raise TelemetryError(
+            f"{where}: tierEvents must be a JSON array of "
+            "{at, dispatch, from, to, reason} objects (got "
+            f"{raw!r}) — a present null/wrong type is malformed, never absent "
+            "(D136 fail-closed). Escalate."
+        )
+    out: list[dict] = []
+    for entry in raw:
+        if not isinstance(entry, dict):
+            raise TelemetryError(
+                f"{where}: tierEvents entry must be a JSON object (got {entry!r}). "
+                "Escalate."
+            )
+        if set(entry.keys()) != _TIER_EVENT_KEYS:
+            raise TelemetryError(
+                f"{where}: tierEvents entry keys {sorted(entry.keys())!r} must be "
+                f"EXACTLY {sorted(_TIER_EVENT_KEYS)} — missing/extra keys are a "
+                "producer bug (AT-L20 additive contract). Escalate."
+            )
+        for key in _TIER_EVENT_KEYS:
+            if not isinstance(entry[key], str):
+                raise TelemetryError(
+                    f"{where}: tierEvents entry value for {key!r} must be a string "
+                    f"(got {entry[key]!r}). Escalate."
+                )
+        out.append(
+            {
+                "at": entry["at"],
+                "dispatch": entry["dispatch"],
+                "from": entry["from"],
+                "to": entry["to"],
+                "reason": entry["reason"],
+            }
+        )
+    return out
+
+
 def build_ledger_row(run_summary: dict) -> str:
     """Build the one-line JSON ledger row (schema v3, additive over v2/v1) from a run summary.
 
@@ -957,6 +1233,17 @@ def build_ledger_row(run_summary: dict) -> str:
     Every earlier-schema field is retained; a caller passing no new data gets ``{}`` /
     ``[]`` / ``[]`` / ``{}`` defaults (no backfill — old rows read as v1/v2, §4 row 12).
 
+    **AT-L20 / M4 Amendment #6 item 3 (adaptive-tiering, additive — the row STAYS
+    ``v: 3``, NO v4 is minted):** two OPTIONAL, presence-discriminated keys —
+    ``verdictByTier`` (``{"<verdict>×<tier>": n}``; verdict in :data:`VERDICT_TOKENS`;
+    standing verdicts counted under their DECIDING tier, an overturned screen verdict
+    under ``"overturned×<screen-tier>"`` — the τ/verdict calibration input C-3 named)
+    and ``tierEvents`` (``[{at, dispatch, from, to, reason}]`` — the adaptive-move
+    audit trail). PRESENT ⇒ validated fail-closed (an unknown verdict token, malformed
+    key shape, negative/non-int count, or a wrong-shaped event entry RAISES at build —
+    the ``failureKinds`` producer-bug precedent); ABSENT ⇒ the key is OMITTED from the
+    row entirely (never null — the pre-amendment v3 row shape is byte-preserved).
+
     Args:
         run_summary: The run-summary dict (``runId``/``target`` + the metrics).
 
@@ -964,7 +1251,8 @@ def build_ledger_row(run_summary: dict) -> str:
         A single-line JSON string (append-ready; no embedded newline).
 
     Raises:
-        TelemetryError: On a ``failureKinds`` entry with an unknown/missing ``kind``.
+        TelemetryError: On a ``failureKinds`` entry with an unknown/missing ``kind``,
+            or a present-but-malformed ``verdictByTier`` / ``tierEvents``.
     """
     row: dict[str, Any] = {
         "v": 3,
@@ -978,6 +1266,16 @@ def build_ledger_row(run_summary: dict) -> str:
     row["failureKinds"] = _validate_failure_kinds(run_summary.get("failureKinds"))
     row["degraded"] = list(run_summary.get("degraded", []))
     row["parentTokens"] = _normalize_parent_tokens(run_summary.get("parentTokens"))
+    # AT-L20 additive keys: PRESENCE-discriminated (absent ⇒ omitted, never null);
+    # present ⇒ fail-closed validation (a present None is malformed, not absent).
+    if "verdictByTier" in run_summary:
+        row["verdictByTier"] = _validate_verdict_by_tier(
+            run_summary["verdictByTier"], where="build_ledger_row"
+        )
+    if "tierEvents" in run_summary:
+        row["tierEvents"] = _validate_tier_events(
+            run_summary["tierEvents"], where="build_ledger_row"
+        )
     if run_summary.get("calibration"):
         row["calibration"] = True
     return json.dumps(row, separators=(",", ":"))

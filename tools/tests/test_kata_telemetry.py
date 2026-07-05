@@ -1084,3 +1084,388 @@ def test_class_median_v3_row_flows_identically():
     )
     assert v3_row["v"] == 3
     assert kt.class_median([v3_row], "code", min_samples=5) == 30.0
+
+
+# ===========================================================================
+# Adaptive-tiering AT-L20 / M4 Amendment #6 item 3 — additive v3 calibration
+# keys: verdictByTier ("<verdict>×<tier>" counts, the τ/verdict calibration
+# input) + tierEvents (the adaptive move audit trail). Rows STAY v:3 — NO v4
+# is minted (AT-L20 hard rule; a v4 would RAISE in every deployed reader).
+# Build-time RAISE on malformed producer input (the failureKinds precedent);
+# absent ⇒ key OMITTED (pre-amendment row shape preserved); reader accessors
+# absent-honest ({}/[]); calibration-row exclusion (the class_median F6
+# discipline); overturn_rate as the first-class calibration metric.
+# ===========================================================================
+
+
+_VBT_VALID = {
+    "continue×haiku": 12,
+    "correct×sonnet": 2,
+    "reroll×sonnet": 1,
+    "overturned×haiku": 3,
+}
+
+_TIER_EVENT_VALID = {
+    "at": "2026-07-05T10:00:00Z",
+    "dispatch": "T1-attempt-3",
+    "from": "haiku",
+    "to": "sonnet",
+    "reason": "failbump",
+}
+
+
+# --- build-time verdictByTier validation (the failureKinds RAISE precedent) --
+
+
+def test_build_ledger_row_verdict_by_tier_valid_roundtrip(tmp_path):
+    """Valid verdictByTier: build → append → read_ledger → accessor, intact, still v:3."""
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text("# header\n", encoding="utf-8")
+    kt.append_ledger_row(
+        ledger, kt.build_ledger_row({"runId": "r1", "verdictByTier": dict(_VBT_VALID)})
+    )
+    rows = kt.read_ledger(ledger)
+    assert len(rows) == 1
+    assert rows[0]["v"] == 3  # AT-L20: additive keys, NEVER a v4
+    assert rows[0]["verdictByTier"] == _VBT_VALID
+    assert kt.verdict_by_tier_of(rows[0]) == _VBT_VALID
+
+
+def test_build_ledger_row_verdict_by_tier_overturned_token_accepted():
+    """'overturned' is a LEGAL verdict token — the overturned-screen-verdict convention key."""
+    row = json.loads(
+        kt.build_ledger_row({"runId": "r1", "verdictByTier": {"overturned×haiku": 1}})
+    )
+    assert row["verdictByTier"] == {"overturned×haiku": 1}
+    assert "overturned" in kt.VERDICT_TOKENS
+
+
+def test_build_ledger_row_verdict_by_tier_unknown_verdict_raises():
+    """RAISES at BUILD time: an unknown verdict token is a producer bug (the failureKinds precedent)."""
+    with pytest.raises(kt.TelemetryError, match="verdict token"):
+        kt.build_ledger_row({"runId": "r1", "verdictByTier": {"approve×haiku": 1}})
+
+
+def test_build_ledger_row_verdict_by_tier_case_variant_raises():
+    """RAISES: verdict tokens are exact — a case-variant is malformed, never coerced (D45/GB12)."""
+    with pytest.raises(kt.TelemetryError, match="verdict token"):
+        kt.build_ledger_row({"runId": "r1", "verdictByTier": {"Continue×haiku": 1}})
+
+
+@pytest.mark.parametrize(
+    "bad_key",
+    [
+        "continue",  # no × separator at all
+        "continue-haiku",  # wrong separator (ASCII hyphen, not ×)
+        "×haiku",  # empty verdict
+        "correct×",  # empty tier
+        "correct×a×b",  # more than one separator — ambiguous tier
+    ],
+)
+def test_build_ledger_row_verdict_by_tier_malformed_key_raises(bad_key):
+    """RAISES at BUILD time: a key not of the exact '<verdict>×<tier>' shape."""
+    with pytest.raises(kt.TelemetryError, match="verdictByTier"):
+        kt.build_ledger_row({"runId": "r1", "verdictByTier": {bad_key: 1}})
+
+
+def test_build_ledger_row_verdict_by_tier_negative_count_raises():
+    """RAISES at BUILD time: a negative count (a count is a tally, never a delta)."""
+    with pytest.raises(kt.TelemetryError, match="non-negative int"):
+        kt.build_ledger_row({"runId": "r1", "verdictByTier": {"continue×haiku": -1}})
+
+
+@pytest.mark.parametrize("bad_count", [1.5, "2", None, True, [1]])
+def test_build_ledger_row_verdict_by_tier_non_int_count_raises(bad_count):
+    """RAISES at BUILD time: a non-int count (bool rejected too — it subclasses int)."""
+    with pytest.raises(kt.TelemetryError, match="non-negative int"):
+        kt.build_ledger_row({"runId": "r1", "verdictByTier": {"continue×haiku": bad_count}})
+
+
+@pytest.mark.parametrize("bad_value", [None, ["continue×haiku"], "continue×haiku", 3])
+def test_build_ledger_row_verdict_by_tier_non_dict_raises(bad_value):
+    """RAISES at BUILD time: a PRESENT verdictByTier must be an object — a present
+    null is malformed, never read as absent (fail-closed, D136)."""
+    with pytest.raises(kt.TelemetryError, match="verdictByTier"):
+        kt.build_ledger_row({"runId": "r1", "verdictByTier": bad_value})
+
+
+# --- build-time tierEvents validation ----------------------------------------
+
+
+def test_build_ledger_row_tier_events_valid_carried():
+    """A valid tierEvents entry (exactly the five string keys) is carried verbatim."""
+    row = json.loads(
+        kt.build_ledger_row({"runId": "r1", "tierEvents": [dict(_TIER_EVENT_VALID)]})
+    )
+    assert row["tierEvents"] == [_TIER_EVENT_VALID]
+
+
+@pytest.mark.parametrize("missing", ["at", "dispatch", "from", "to", "reason"])
+def test_build_ledger_row_tier_events_missing_key_raises(missing):
+    """RAISES at BUILD time: a tierEvents entry missing any of the five keys."""
+    entry = {k: v for k, v in _TIER_EVENT_VALID.items() if k != missing}
+    with pytest.raises(kt.TelemetryError, match="tierEvents"):
+        kt.build_ledger_row({"runId": "r1", "tierEvents": [entry]})
+
+
+def test_build_ledger_row_tier_events_extra_key_raises():
+    """RAISES at BUILD time: a tierEvents entry with an extra key — EXACTLY five keys."""
+    entry = dict(_TIER_EVENT_VALID, surprise="x")
+    with pytest.raises(kt.TelemetryError, match="tierEvents"):
+        kt.build_ledger_row({"runId": "r1", "tierEvents": [entry]})
+
+
+@pytest.mark.parametrize("key", ["at", "dispatch", "from", "to", "reason"])
+def test_build_ledger_row_tier_events_non_str_value_raises(key):
+    """RAISES at BUILD time: every tierEvents value must be a string."""
+    entry = dict(_TIER_EVENT_VALID)
+    entry[key] = 42
+    with pytest.raises(kt.TelemetryError, match="tierEvents"):
+        kt.build_ledger_row({"runId": "r1", "tierEvents": [entry]})
+
+
+@pytest.mark.parametrize("bad_value", [None, {}, "event", 3])
+def test_build_ledger_row_tier_events_non_list_raises(bad_value):
+    """RAISES at BUILD time: a PRESENT tierEvents must be a list (present null ≠ absent)."""
+    with pytest.raises(kt.TelemetryError, match="tierEvents"):
+        kt.build_ledger_row({"runId": "r1", "tierEvents": bad_value})
+
+
+def test_build_ledger_row_tier_events_non_object_entry_raises():
+    """RAISES at BUILD time: a tierEvents entry must be a JSON object."""
+    with pytest.raises(kt.TelemetryError, match="tierEvents"):
+        kt.build_ledger_row({"runId": "r1", "tierEvents": ["not-an-object"]})
+
+
+# --- absent ⇒ OMITTED (pre-amendment row shape preserved) + absent-honest reads
+
+
+def test_build_ledger_row_new_keys_absent_omitted():
+    """Absent verdictByTier/tierEvents ⇒ keys OMITTED from the row — not null, not
+    defaulted; the pre-amendment v3 row shape is byte-preserved (AT-L20)."""
+    row_str = kt.build_ledger_row({"runId": "r1"})
+    row = json.loads(row_str)
+    assert "verdictByTier" not in row
+    assert "tierEvents" not in row
+    assert "verdictByTier" not in row_str and "tierEvents" not in row_str
+
+
+def test_verdict_by_tier_of_absent_returns_empty():
+    """Absent-honest ({} — the parent_tokens_of/failure_kinds_of precedent): v1/v2/
+    pre-amendment-v3 rows carry no verdictByTier and read as {}, never fabricated."""
+    assert kt.verdict_by_tier_of({"v": 1, "runId": "r1"}) == {}
+    assert kt.verdict_by_tier_of({"v": 2, "perTask": {}}) == {}
+    assert kt.verdict_by_tier_of({"v": 3, "parentTokens": {}}) == {}
+    assert kt.verdict_by_tier_of({}) == {}
+
+
+def test_tier_events_of_absent_returns_empty():
+    """Absent-honest ([]): rows without tierEvents read as an empty audit trail."""
+    assert kt.tier_events_of({"v": 1, "runId": "r1"}) == []
+    assert kt.tier_events_of({"v": 3, "parentTokens": {}}) == []
+    assert kt.tier_events_of({}) == []
+
+
+def test_verdict_by_tier_of_present_malformed_raises():
+    """RAISES read-side: a PRESENT-but-malformed verdictByTier is fail-closed (the
+    read_ledger row-validation posture) — never skipped, never coerced."""
+    with pytest.raises(kt.TelemetryError, match="verdictByTier"):
+        kt.verdict_by_tier_of({"v": 3, "verdictByTier": {"nonsense-key": 1}})
+    with pytest.raises(kt.TelemetryError, match="verdictByTier"):
+        kt.verdict_by_tier_of({"v": 3, "verdictByTier": None})
+
+
+def test_tier_events_of_present_malformed_raises():
+    """RAISES read-side: a PRESENT-but-malformed tierEvents is fail-closed."""
+    with pytest.raises(kt.TelemetryError, match="tierEvents"):
+        kt.tier_events_of({"v": 3, "tierEvents": [{"at": "z"}]})
+    with pytest.raises(kt.TelemetryError, match="tierEvents"):
+        kt.tier_events_of({"v": 3, "tierEvents": None})
+
+
+def test_tier_events_of_present_valid_returns_verbatim():
+    row = {"v": 3, "tierEvents": [dict(_TIER_EVENT_VALID)]}
+    assert kt.tier_events_of(row) == [_TIER_EVENT_VALID]
+
+
+# --- verdict_by_tier_totals (the class_median calibration-exclusion discipline)
+
+
+def test_verdict_by_tier_totals_sums_across_rows():
+    rows = [
+        {"v": 3, "verdictByTier": {"continue×haiku": 2, "reroll×sonnet": 1}},
+        {"v": 3, "verdictByTier": {"continue×haiku": 3, "overturned×haiku": 1}},
+        {"v": 2, "runId": "old"},  # pre-amendment row contributes nothing
+    ]
+    assert kt.verdict_by_tier_totals(rows) == {
+        "continue×haiku": 5,
+        "reroll×sonnet": 1,
+        "overturned×haiku": 1,
+    }
+
+
+def test_verdict_by_tier_totals_excludes_calibration_by_default():
+    """F6 discipline: calibration:true rows never bias the verdict×tier totals."""
+    rows = [
+        {"v": 3, "verdictByTier": {"continue×haiku": 2}},
+        {"v": 3, "calibration": True, "verdictByTier": {"continue×haiku": 100}},
+    ]
+    assert kt.verdict_by_tier_totals(rows) == {"continue×haiku": 2}
+
+
+def test_verdict_by_tier_totals_include_calibration_flag():
+    rows = [
+        {"v": 3, "verdictByTier": {"continue×haiku": 2}},
+        {"v": 3, "calibration": True, "verdictByTier": {"continue×haiku": 100}},
+    ]
+    assert kt.verdict_by_tier_totals(rows, include_calibration=True) == {
+        "continue×haiku": 102
+    }
+
+
+def test_verdict_by_tier_totals_malformed_row_raises():
+    """A malformed verdictByTier inside any aggregated row RAISES — the totals never
+    silently skip a broken row (MED-9b's never-skip-and-average)."""
+    rows = [{"v": 3, "verdictByTier": {"bogus": 1}}]
+    with pytest.raises(kt.TelemetryError, match="verdictByTier"):
+        kt.verdict_by_tier_totals(rows)
+
+
+# --- overturn_rate (the first-class calibration metric) -----------------------
+
+
+def test_overturn_rate_none_below_min_samples():
+    """< 5 total correct+reroll+overturned counts ⇒ None (the class_median
+    not-yet-meaningful discipline), never a rate over noise."""
+    rows = [
+        {
+            "v": 3,
+            "verdictByTier": {
+                "overturned×haiku": 2,
+                "correct×sonnet": 1,
+                "reroll×sonnet": 1,
+                # continue verdicts are NOT samples — the green path never re-adjudicates
+                "continue×haiku": 500,
+            },
+        }
+    ]
+    assert kt.overturn_rate(rows) is None  # 4 < min_samples=5
+
+
+def test_overturn_rate_arithmetic():
+    """At exactly min_samples=5: 2 overturned of (2+2+1)=5 costly verdicts ⇒ 0.4."""
+    rows = [
+        {
+            "v": 3,
+            "verdictByTier": {
+                "overturned×haiku": 2,
+                "correct×sonnet": 2,
+                "reroll×sonnet": 1,
+                "continue×haiku": 50,
+            },
+        }
+    ]
+    assert kt.overturn_rate(rows) == pytest.approx(0.4)
+
+
+def test_overturn_rate_continue_never_counted():
+    """Mutation pin: continue verdicts are neither numerator nor denominator — only
+    the costly (correct/reroll/overturned) verdicts are calibration samples."""
+    rows = [{"v": 3, "verdictByTier": {"continue×haiku": 1000}}]
+    assert kt.overturn_rate(rows) is None  # 0 samples, not 0.0
+
+
+def test_overturn_rate_tier_filter():
+    """tier= restricts to that tier's keys: overturned screens AT the screen tier +
+    standing verdicts DECIDED at that tier (the documented key convention)."""
+    rows = [
+        {
+            "v": 3,
+            "verdictByTier": {
+                "overturned×haiku": 3,
+                "correct×haiku": 2,
+                "correct×sonnet": 10,
+                "reroll×sonnet": 5,
+            },
+        }
+    ]
+    assert kt.overturn_rate(rows, tier="haiku") == pytest.approx(0.6)  # 3 of 5
+    assert kt.overturn_rate(rows, tier="sonnet") == pytest.approx(0.0)  # 0 of 15
+    # unfiltered: 3 of 20
+    assert kt.overturn_rate(rows) == pytest.approx(0.15)
+
+
+def test_overturn_rate_excludes_calibration_by_default():
+    real = {"v": 3, "verdictByTier": {"overturned×haiku": 1, "correct×sonnet": 4}}
+    cal = {
+        "v": 3,
+        "calibration": True,
+        "verdictByTier": {"overturned×haiku": 50, "correct×sonnet": 50},
+    }
+    assert kt.overturn_rate([real, cal]) == pytest.approx(0.2)  # 1 of 5, cal excluded
+    assert kt.overturn_rate([real, cal], include_calibration=True) == pytest.approx(
+        51 / 105
+    )
+
+
+# --- the reverse-direction test (freeze-gate H5's demand; §4 criterion 8) ------
+
+
+def test_reverse_direction_v3_new_keys_read_by_strict_reader(tmp_path):
+    """H5/criterion 8: a v:3 row CARRYING the new keys round-trips through the CURRENT
+    strict read_ledger WITHOUT raising — the reader has no key whitelist; the additive
+    keys ride v:3 and no v4 exists to brick a deployed reader mid-scan (AT-L20)."""
+    new_code_row = json.dumps(
+        {
+            "v": 3,
+            "runId": "at-run-1",
+            "parentTokens": {"P0": 40000},
+            "verdictByTier": {"continue×haiku": 4, "overturned×haiku": 1},
+            "tierEvents": [dict(_TIER_EVENT_VALID)],
+        },
+        separators=(",", ":"),
+    )
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text("# telemetry ledger\n\n" + new_code_row + "\n", encoding="utf-8")
+    rows = kt.read_ledger(ledger)  # the v0.2.1-era strict read path — must NOT raise
+    assert len(rows) == 1
+    assert rows[0]["v"] == 3
+    assert kt.verdict_by_tier_of(rows[0]) == {"continue×haiku": 4, "overturned×haiku": 1}
+    assert kt.tier_events_of(rows[0]) == [_TIER_EVENT_VALID]
+
+
+def test_reverse_direction_pre_amendment_rows_absent_honest(tmp_path):
+    """The other direction: a pre-amendment ledger (committed v1 + v2 rows, plus a
+    pre-amendment v3 row with NO new keys) reads with the accessors returning {}/[]."""
+    pre_v3 = kt.build_ledger_row({"runId": "pre-amendment"})
+    assert "verdictByTier" not in pre_v3 and "tierEvents" not in pre_v3
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text(
+        "# header\n" + _COMMITTED_V1_ROW + "\n" + _COMMITTED_V2_ROW + "\n" + pre_v3 + "\n",
+        encoding="utf-8",
+    )
+    rows = kt.read_ledger(ledger)
+    assert len(rows) == 3
+    for row in rows:
+        assert kt.verdict_by_tier_of(row) == {}
+        assert kt.tier_events_of(row) == []
+
+
+def test_new_keys_row_json_roundtrip_byte_stable(tmp_path):
+    """build_ledger_row output with the new keys parses via read_ledger AND re-serializes
+    byte-identically (insertion order + compact separators preserved)."""
+    row_str = kt.build_ledger_row(
+        {
+            "runId": "r1",
+            "verdictByTier": dict(_VBT_VALID),
+            "tierEvents": [dict(_TIER_EVENT_VALID)],
+        }
+    )
+    assert "\n" not in row_str  # still one append-ready line
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text("# header\n", encoding="utf-8")
+    kt.append_ledger_row(ledger, row_str)
+    rows = kt.read_ledger(ledger)
+    # same serialization pins as the builder (compact separators, default ensure_ascii
+    # — the ``×`` rides as the × escape, byte-identical to the committed rows)
+    assert json.dumps(rows[0], separators=(",", ":")) == row_str
