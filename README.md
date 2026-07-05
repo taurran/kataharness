@@ -7,17 +7,22 @@ many subagents, and refuses to call anything "done" until a **fresh-context, def
 then folds every run's lessons back into itself. The name *is* the method: the **Improvement Kata** — *every loop
 sharpens the loop.*
 
-> **v0.2.1 · experimental.** NEW in v0.2.1 (Context autonomy): the conductor's context window stops being
-> the run-fatal resource. A context **gauge** wired to the self-handoff loop — trigger at 0.70 of the
-> host-reported window → durable HANDOFF at a wave boundary → host compaction on kata's recommended
-> schedule → automatic re-anchor → resume with **zero task loss**. One approval bundle up front, then a
-> run built to survive an **8-hour walk-away**; every degradation leg is graceful rotation or a surfaced preflight
-> BLOCK, never silent death at the hard limit. (v0.2.0 shipped the inline evaluator/reroll — below.)
-> HONEST LIMITS: the live host-fired-compaction leg is verified mechanically but not yet end-to-end
-> (R6, queued first); the single-model Claude core is the proven, dogfooded path (KataHarness builds
-> itself); Codex/Kiro adapters are install-supported with partial live proof; the other platform guides
-> are config-docs-only; IaC *apply* is gated and not shipped runnable. We're honest about maturity —
-> that honesty is the product. New here? Start with [`AGENTS.md`](./AGENTS.md) (the vision + the spine).
+> **v0.3.0 · experimental.** NEW in v0.3.0 (Adaptive tiering): model selection stops being a static
+> table and starts learning from the run. A task that keeps failing its gate is **bumped up a rung for
+> its next attempt**; work the plan graded low-complexity or a class on a clean-pass streak **steps
+> down**; kill verdicts get a **cheap-then-escalate second opinion** before any redispatch (where a
+> higher below-anchor tier exists to give one — the leg is stated-inert otherwise); and the
+> expensive top rung (Fable today — any family's premium model tomorrow) fires **only on configured
+> hard moments, inside a call budget you approve up front**, with every move a loud board line.
+> Modeled on this repo's own prior build: **−86% premium-rung calls** vs class-scoped elevation
+> *(modeled, not measured — the live A/B is queued)*. v0.2.1 shipped context autonomy (the 8-hour
+> walk-away design); v0.2.0 the inline evaluator — both below.
+> HONEST LIMITS: the live host-fired-compaction leg (R6) is queued first, the adaptive-vs-static live
+> A/B rides the instrumented runs after it; ledger-driven acceptance routing (L2) ships as contract with activation OFF until
+> real run volume exists; the single-model Claude core is the proven, dogfooded path (KataHarness
+> builds itself); Codex/Kiro adapters are install-supported with partial live proof; the other platform
+> guides are config-docs-only; IaC *apply* is gated and not shipped runnable. We're honest about
+> maturity — that honesty is the product. New here? Start with [`AGENTS.md`](./AGENTS.md).
 
 ---
 
@@ -81,7 +86,34 @@ chunk, so periodic judgment on green work is a net loss. Live-proven: trigger �
 corrective redispatch → green. `inlineEval: off|telemetry|on`; absent ⇒ off, byte-for-byte backward
 compatible.
 
-### 🔋 Context autonomy — the 8-hour walk-away *(new in v0.2.1)*
+### 🎯 Adaptive tiering — evidence-driven model routing *(new in v0.3.0)*
+Three layers. **L0** — the relative differential table stays as the deterministic base and only
+fallback (no data, no events ⇒ exactly the frozen behavior). **L1** — the run's own evidence modulates
+each dispatch: a task that fails its gate twice is **bumped one rung up for its next attempt** (once
+per task, from gate rejections and standing reroll verdicts only — never a worker's self-report); a
+plan-rated low-complexity task or a class riding a 3-clean-first-pass streak **steps one rung down**
+(coding work only, capped at −1, with a damper that stops oscillation the moment a downshifted
+dispatch fails); a `correct`/`reroll` kill verdict gets **one second opinion from an evaluator a rung
+up — strictly below the anchor** — before anything is killed, and only the standing verdict counts
+(where the screening tier is already one rung below the anchor, the leg is INERT — stated, never
+silent, and the kill proceeds on the single cheap verdict).
+The **premium rung is event-scoped and budgeted** (the new object-form scope, which the composer now
+writes by default; the v0.2.1 class-scope form stays valid, byte-for-byte): approve once and it fires
+only on the configured hard moments (freeze-gate verdicts, HOLD re-reviews, escalations,
+failed-task retries…), capped at N
+calls with the last two reserved for freeze-gates — the consent prompt enumerates your exact event
+list and budget, and exhaustion lapses to the anchor loudly. Every adaptive move is a board `tier:`
+DECISION line (also the restart-recovery trail). Modeled on this repo's real v0.2.1 build shape via
+the shipped engine: **−86% premium-rung calls** (59→8) vs run-long class scoping, and **13→0 wrongful
+kills** on the pre-fix false-positive trigger mix *(modeled, not measured — every input cited in the
+committed SMOKE-MODELED artifact; the live A/B is queued with arms pinned)*. **L2** — ledger
+acceptance routing (a class *earns* a cheaper tier from recorded first-pass acceptance) ships as
+contract with activation OFF until post-R6 run volume exists. Family-agnostic by construction: the
+mechanism knows "the premium rung," not a model name — a GPT-5.6-class rung qualifies by registering
+its family's ladder entry plus the adapter's model-ID map (per-adapter re-grounding, no mechanism
+change). Backward compatible: no `models.adaptive` block ⇒ every leg OFF.
+
+### 🔋 Context autonomy — the 8-hour walk-away *(v0.2.1)*
 The conductor watches its own context gauge (a statusline **bridge** on Claude — installed chain-or-skip,
 your own statusline is **never clobbered**) and self-hands-off at 0.70 of the effective window: durable
 `HANDOFF.md` committed **before** any reset, host compaction recommended-never-written, a
@@ -114,8 +146,9 @@ by standing convention), **cost-weight** (drives run-cost previews), **allowed-t
 **source attribution**, and tags — the catalog below is auto-generated from it, so docs can't drift from
 reality. Deliberately **absent**: any `model:` pin. Model routing is **relative to your session's anchor**
 (critical work at the anchor, economy work tiered down; an optional four-conjunct-gated premium rung
-above), so a renamed, gated, or unavailable model ID never breaks the loop — and economy tiering is itself
-a token optimization baked into every dispatch.
+above — **event-scoped and budgeted in its new default form, and modulated per-dispatch by run
+evidence** when the v0.3.0 adaptive layer is composed on), so a renamed, gated, or unavailable model ID
+never breaks the loop — and economy tiering is itself a token optimization baked into every dispatch.
 
 ### 🌐 Platform compatibility
 One agnostic core; per-platform delivery at three honesty levels. **Claude Code** — the proven, dogfooded
@@ -360,10 +393,11 @@ Restart your agent so it loads the skills, then use a slash-command (Claude Code
 
 ## Docs / status
 
-**v0.2.1, experimental.** The single-model Claude core is the proven path; the Codex/Kiro adapters are
+**v0.3.0, experimental.** The single-model Claude core is the proven path; the Codex/Kiro adapters are
 install-supported with partial live proof; Gemini CLI / Copilot / Cursor ship as config guides; the live
-host-fired-compaction leg of context autonomy is queued for end-to-end verification (R6); IaC *apply* is
-gated and not shipped runnable. Read next:
+host-fired-compaction leg of context autonomy (R6) and the adaptive-vs-static live A/B are queued, in
+that order; L2 acceptance routing ships activation-OFF pending run volume; IaC *apply* is gated and not
+shipped runnable. Read next:
 
 - [`AGENTS.md`](./AGENTS.md) — the vision, the spine, how to work in the repo (canonical).
 - [`docs/SETUP.md`](./docs/SETUP.md) — install / update / overlay / factory-reset / uninstall in depth, plus the
