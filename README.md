@@ -1,22 +1,40 @@
 # KataHarness
 
-### One-shot complex coding tasks — with the guardrails that make autonomy trustworthy.
+### Hand your biggest build to an AI team — and trust what comes back.
 
-KataHarness front-loads deep, doc-grounded planning, **freezes the plan**, executes it faithfully across one or
-many subagents, and refuses to call anything "done" until a **fresh-context, default-FAIL evaluator** proves it —
-then folds every run's lessons back into itself. The name *is* the method: the **Improvement Kata** — *every loop
-sharpens the loop.*
+Every AI coding tool can produce an afternoon of code in minutes. The hard question is the one that
+comes next: *was any of it actually right?* KataHarness is built around that question. Tell it what
+you want in plain English. It interrogates your idea until the spec is airtight, **freezes the plan**
+so nothing drifts, then executes across a team of AI workers — and refuses to call anything "done"
+until an independent, fresh-context checker whose default verdict is **no** has been shown the proof.
+Then it folds what the run learned back into itself. The name *is* the method: the **Improvement
+Kata** — *every loop sharpens the loop.*
 
-> **v0.3.0 · experimental.** NEW: **Adaptive tiering** — the loop now routes every model dispatch by
-> the run's own evidence (failed tasks bump up a rung, proven-easy work steps down, kill verdicts get
-> a second opinion) and scopes the premium rung to **budgeted hard moments you approve up front**.
-> Modeled on our own prior build: **−86% premium-rung calls** *(modeled, not measured — live A/B
-> queued)*. Full story under *What's in the box* → 🎯.
-> HONEST LIMITS: the live host-fired-compaction check (R6) leads the test queue, the adaptive live
-> A/B rides the runs after it; L2 acceptance routing ships activation-OFF pending run volume; Claude
-> Code is the proven, dogfooded path (KataHarness builds itself), Codex/Kiro are install-supported,
-> the other platforms are config-guides; IaC *apply* is gated, not runnable. We're honest about
-> maturity — that honesty is the product. New here? Start with [`AGENTS.md`](./AGENTS.md).
+**Easy to start.** One command installs it into the agent host you already use. *"Start a KataHarness
+run on my project"* is the whole interface — the harness asks you one plain question (*how careful,
+and how often should I check in?*) and tunes the entire run's depth, checkpoints, and cost from your
+answer. No config safari required.
+
+**Easy on the bill.** The loop spends models the way a good engineering lead spends senior time:
+premium judgment reserved for the hard moments — and only inside a budget you approve up front —
+routine work tiered down to fast, cheap models, and **zero evaluator cost while the work is green**.
+It routes by evidence: failing work escalates to a stronger model, proven-easy work steps down, and
+every run's telemetry teaches the next one. And economy never buys down quality — **every deliverable
+still clears the same grounded, default-FAIL assessment**; the savings come from smarter routing,
+never from skipping a check.
+
+**Relentless about the result.** Nothing in this loop certifies its own work. Plans are frozen,
+reviews are adversarial, tests are mutation-proven, scorecards give no credit for tests that never
+ran — and the run is built to survive crashes, killed terminals, and context limits on a git-durable
+trail, so a long walk-away comes back as reviewable evidence, not a mystery diff.
+
+Whether this is your first agent harness or your fifth: if you have ever wanted to *delegate* real
+work to an AI — not babysit it — this is the loop built for the trust half of that transaction.
+
+> **v0.3.0 · experimental.** New: **adaptive tiering**, the evidence-driven model routing described
+> above — full story under *What's in the box* → 🎯, full history in the [CHANGELOG](./CHANGELOG.md),
+> honest maturity notes under *Docs / status* at the bottom of this page. New here? Start with
+> [`AGENTS.md`](./AGENTS.md).
 
 ---
 
@@ -413,7 +431,7 @@ Restart your agent so it loads the skills, then use a slash-command (Claude Code
 install-supported with partial live proof; Gemini CLI / Copilot / Cursor ship as config guides; the live
 host-fired-compaction leg of context autonomy (R6) and the adaptive-vs-static live A/B are queued, in
 that order; L2 acceptance routing ships activation-OFF pending run volume; IaC *apply* is gated and not
-shipped runnable. Read next:
+shipped runnable. We're honest about maturity — that honesty is the product. Read next:
 
 - [`AGENTS.md`](./AGENTS.md) — the vision, the spine, how to work in the repo (canonical).
 - [`docs/SETUP.md`](./docs/SETUP.md) — install / update / overlay / factory-reset / uninstall in depth, plus the
