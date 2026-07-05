@@ -22,8 +22,32 @@
 # Severity: LOW (every python/PT finding here). No medium+ findings present.
 #
 # Risk accepted under Approach C (documented suppression). Review by: 2027-06-30.
+# SUPPRESSION RATIONALE — python/CommandInjection (CWE-78) in adapters/claude/statusline_chain.py
+#
+# One MEDIUM finding: argv -> subprocess.run. FALSE POSITIVE, gate-adjudicated (context-autonomy
+# A2 task gate + delta gate, 2026-07-04): the argv derives EXCLUSIVELY from the operator's own
+# ~/.claude/settings.json statusLine.command — a value the Claude Code host already executes via
+# shell. The wrapper executes the same command with strictly LESS privilege: shell=False list-argv,
+# shlex-plain-parse-or-SKIP eligibility, full shell-metacharacter gate (incl. cmd-only % ^), and
+# .bat/.cmd/.com targets SKIP-ineligible (implicit-cmd.exe vector closed; extensionless PATHEXT
+# residual disproven live — CreateProcess appends only .exe). Exhaustive taint check: stdin, env,
+# and bridge content never influence argv. See adapters/claude/README.md §security and the
+# protocol/exec-safety.md registry row (C10).
+#
+# Risk accepted (documented suppression). Review by: 2027-01-04 (6-month review — execution sink).
+
 version: v1.25.0
 ignore:
+  python/CommandInjection:
+    - 'adapters/claude/statusline_chain.py':
+        reason: >-
+          FALSE POSITIVE, gate-adjudicated: argv derives exclusively from the operator's own
+          settings.json statusLine.command, which the host already shell-executes; the wrapper
+          runs it with strictly less privilege (shell=False list-argv, shlex-or-SKIP, full
+          metachar gate incl. % ^, batch targets SKIP-ineligible, PATHEXT residual disproven).
+          No less-trusted taint path (stdin/env/bridge never reach argv). MEDIUM, single finding.
+          Registry row in protocol/exec-safety.md (C10). Expiry: 2027-01-04.
+        expires: '2027-01-04T00:00:00.000Z'
   python/PT:
     - 'tools/kata_install.py':
         reason: >-
