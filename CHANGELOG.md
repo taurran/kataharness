@@ -8,6 +8,71 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [0.2.1] — unreleased (tag pending: C11 live-proof battery + operator merge gate) — Context autonomy: the gauge-driven self-handoff loop
+
+**The conductor's context stops being the run-fatal resource.** v0.2.1 wires a context gauge to the
+ALREADY-EXISTING self-handoff trigger prose (kata-selfhandoff SKILL.md) — SR-1: no new threshold concept,
+a mechanism for a policy that shipped un-wired. The 8-hour walk-away scenario (OP-8): one preflight approval
+bundle, then trigger @ 0.70 of the host-reported effective window → durable HANDOFF refresh at a wave
+boundary → host auto-compact / respawn on kata's recommended schedule → SessionStart(compact) re-anchor →
+resume at the next task boundary with **zero task loss**. Every degradation leg is graceful rotation or a
+surfaced preflight BLOCK — never silent death at the hard context limit. Frozen DESIGN + build: **D146**.
+Both **[VETO-FLAG]** items resolved LOCKED by the operator: report home = `.kata/reports/…` (CA-L22),
+preflight strictness = intent-keyed BLOCK (CA-L25). *Not yet tagged — the conductor tags after the C11
+live-proof battery (CA-A1..A5 + A8 row 1 + A11 b/c) and the operator merge gate.*
+
+### Added
+- **The context gauge + fallback** (`kata_gauge`): 0.70-of-effective-window trigger arithmetic, backstop
+  window recommendation, deterministic N-wave rotation fallback, 300 s bridge staleness. (E1)
+- **Claude statusline bridge + chain-never-clobber wrapper** (`adapters/claude/statusline.py`,
+  `statusline_chain.py`): kata's own statusline writes a superset bridge unchained; when a user statusline
+  exists, kata offers a chaining wrapper (shell=False list-argv, shlex-or-skip, batch/metachar gate) that
+  writes its own sibling bridge and never clobbers the user's. (A1/A2)
+- **SessionStart(compact) re-anchor + PreCompact HANDOFF surface hooks**; kata-selfhandoff trigger wiring;
+  kata-orient 3-tier resume; handoff `kind:` taxonomy; AGENTS.md standing re-anchor line. (A3–A7)
+- **Preflight approval bundle + premium gate** (kata-bootstrap 0.3.0, kata-preflight 0.2.0): ONE bundle
+  (installs + allowlist + premium gate + compact-window recommendation + host-settings write slot),
+  collected once; force-run marker + gitSha re-arm; five-class allowlist checklist; stranding verdict. (C1/E4)
+- **Report budgets + continuation contract** (kata-orchestrate 0.10.0, kata-tdd 0.3.0): dispatch
+  startup-load budget (WARN >0.30 / mandate >0.40), size-contracted worker reports (verdict + pointer
+  inline, bulk to `.kata/reports/`), the M4-primitive-reusing continuation contract. (C3)
+- **`protocol/observability.md`** — the gauge/bridge/reports/durable-citation contract. (C4)
+- **Five per-platform recommended-config pages** — Kiro, Codex CLI, Copilot, Cursor, Gemini CLI (docs-only,
+  no non-Claude live legs; Windsurf cut). (C5)
+- **Adapter contract primitive (c) session-respawn** (`adapters/ADAPTER-CONTRACT-M4.md`); glossary fold into
+  `CONTEXT.md`; plan-time quantum-sizing RUBRIC (kata-plan tiers 0.1.3). (C6/C7/C8)
+- New kata.config keys `contextAutonomy`, `contextTrigger`,
+  `models.premium {offer, approved, scope, grantedMode}`; `.kata-settings.json` keys `firstRunCompletedAt`/
+  `firstRunVersion`/`hostPosture`/`acceptedDefaults`; ledger schema v3 `parentTokens`. (E7/E2/E6)
+
+### Changed
+- **Model tiering — gated premium amendment (D148):** under `kata.config.models.premium` with all four
+  conjuncts (`approved` ∧ work-class ∈ `scope` ∧ `offer` exactly one rung above the anchor ∧
+  `mode == "advanced"`), CRITICAL and CODING work MAY elevate to the premium rung (Fable); economy never.
+  Appended as a post-freeze addendum to the model-tiering DESIGN; absent `models.premium`, the frozen spec
+  governs byte-for-byte.
+- **kata-readiness 0.2.1** gains a WARN for pre-v0.2.1 configs lacking `contextAutonomy` (written at next
+  composition, or opt in by config edit); no retroactive flip. (C2)
+- **kata-evaluate 0.3.1** + kata-review tiers: verdict-tier variance calibration note (prose-only). (C9)
+
+### Backward compatibility
+- **BC guarantee:** absent/unconfigured, EVERY new surface degrades to prior behavior — `contextAutonomy`
+  absent ⇒ OFF on the key-consulted (incremental) path; `contextTrigger` absent ⇒ 0.70 default; `models`
+  block absent ⇒ inherit everywhere; gauge absent/stale ⇒ deterministic N-wave rotation; a user statusline
+  is NEVER clobbered (chain-or-skip); hooks absent ⇒ AGENTS.md-line manual re-anchor. See DESIGN §4.
+- **The ONE named BC departure (D147, R-37):** one-shot run shapes — INCLUDING pre-v0.2.1 configs with no
+  `contextAutonomy` key — rotate context UNCONDITIONALLY. Deliberate: protective + additive, always mandated
+  by the self-handoff prose, degrades gracefully. The absent-⇒-OFF rule is scoped to the incremental path.
+
+### Security
+- **Statusline chain wrapper subprocess sink** (`adapters/claude/statusline_chain.py`, A2): runs the
+  operator's OWN `statusLine.command` with strictly LESS privilege than the host already grants it —
+  `shell=False` list-argv, shlex-plain-parse-or-SKIP eligibility, full shell-metacharacter gate (incl. the
+  cmd.exe-only `%`/`^`), and `.bat`/`.cmd`/`.com` targets SKIP-ineligible (implicit-`cmd.exe` vector closed;
+  extensionless PATHEXT residual disproven live). Registered in `protocol/exec-safety.md` (operator trust
+  domain). Snyk MEDIUM CWE-78 (argv → subprocess) accepted as a gate-adjudicated FALSE POSITIVE in `.snyk`
+  (reason recorded; 6-month expiry 2027-01-04 — execution sink).
+
 ## [0.2.0] — 2026-07-04 — Freeze/Float M4: the inline evaluator/reroll (DSpark-informed)
 
 **The smaller loop, sharpened — shipped end-to-end in one operator-directed pass.** Everything
