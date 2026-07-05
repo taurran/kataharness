@@ -6,7 +6,7 @@ description: >-
   cannot rubber-stamp the builder's work. Checks acceptance criteria, the green gate, drift against LOCKED
   decisions, and scope.
 license: Apache-2.0
-version: 0.3.0
+version: 0.3.1
 category: evaluate
 status: experimental
 agnostic: true
@@ -237,3 +237,11 @@ used for rubric items 1–2 so the record is self-contained.
 > adversarial pass or a human later catches is a conformance-escape; [[kata-review]] flags it and the orchestrator
 > records it to `.planning/validation-misses.jsonl` (non-fatally, via `validation_misses.append_miss`). This is
 > purely observational — it does not change this gate's own verdict or behavior (T1, `protocol/validation-misses.md`).
+
+> **Verdict-tier variance is a calibration reality (CA-L44 F1, GROUNDING SMOKE-1).** The same evidence can draw a
+> different verdict at a different evaluator tier — SMOKE-1 observed a lower model tier return a harsher inline
+> verdict than the anchor on the same defect flavor (both legal outcomes; only the cost profile differed). This is
+> expected, not a defect: no verdict is tier-portable on its own. So **every grade states the tier it ran at and the
+> rationale behind the verdict** — the tier plus the reason make the verdict interpretable, and later calibratable,
+> across tiers. Prose guidance only; it changes no gate behavior or threshold. (Mirrored for the adversarial
+> SHIP/HOLD verdict in [[kata-review]]'s RUBRIC.)

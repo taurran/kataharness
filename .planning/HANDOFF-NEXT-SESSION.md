@@ -122,7 +122,10 @@ and the prose has never run without its author. **Can we? YES — cheaply** (the
 
 - **SMOKE-1 (read-path, ~5 min, conductor-inline):** `git describe` == v0.2.0 on master; gauntlet
   (pytest 2505/3, validator 48/0/0); `read_ledger` parses 4 rows + `failure_kinds_of` on each +
-  `class_median` returns None at min_samples=5 (calibration exclusion holds).
+  `class_median` returns **8.35** at n=6 — the two non-calibration rows hold six code samples (≥ the
+  `min_samples=5` floor), so 8.35 is the correct output and the calibration exclusion HOLDS. *(Corrected
+  2026-07-04 per GROUNDING SMOKE-1, CA-L44 F5: the earlier expectation that it returns None here
+  miscounted the samples — the mechanism is right, the expectation was wrong.)*
 - **SMOKE-2 (prose-executability — THE critical one):** prepare a micro repo with a pre-seeded red
   checkpoint commit (reuse the T5/live-proof pattern); dispatch a FRESH-CONTEXT conductor agent
   given ONLY the orchestrate 0.8.0 scheduler+ladder sections + the repo path; PASS = it scans,

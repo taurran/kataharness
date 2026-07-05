@@ -5,7 +5,7 @@ description: >-
   rigor is required — high-stakes decisions, security-sensitive surfaces, or any result where a Standard
   review found HOLDs and the re-reviewed surface still warrants deeper scrutiny.
 license: Apache-2.0
-version: 0.1.1
+version: 0.1.2
 category: evaluate
 status: experimental
 agnostic: true
