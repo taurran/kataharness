@@ -1,0 +1,193 @@
+"""adapters/claude/statusline_chain.py — the chain-never-clobber statusLine wrapper.
+
+CA-L1 (DESIGN §1, Leg A) verbatim intent: when a user ALREADY has a Claude Code
+``statusLine`` command (e.g. the operator's ``gsd-statusline.js``), kata **never
+clobbers** it.  Kata offers a **chaining wrapper**: exec the user's script as a child,
+pass stdin through UNMODIFIED, print the child's stdout **byte-identical**, and never
+touch the user's own output or bridge file.  The wrapper then writes kata's OWN sibling
+bridge ``%TEMP%/kata-ctx-<session_id>.json`` (via ``kata_statusline.write_bridge`` — A1)
+with the CA-L2 superset schema, atomic temp+rename.  Two files, zero contention (R-32).
+
+Reader priority (documented in README §statusLine chaining / cross-ref ``kata_gauge``):
+    (1) kata bridge  →  (2) user bridge (4-field, %-only)  →  (3) deterministic fallback.
+
+Security posture (this is the highest-scrutiny surface in CA-P1 — a subprocess sink that
+runs the operator's own statusline command every statusline tick):
+
+  * **list-argv only, NEVER a shell** — the child command is executed as a validated
+    ``list[str]`` with ``shell`` left False.  The user's command string is NEVER
+    string-interpolated into a shell.
+  * **Chain-eligibility gate (the pin):** kata chains ONLY when the user's
+    ``statusLine.command`` shlex-parses to plain argv with **NO shell metacharacters**.
+    Any metacharacter (``| & ; < > ( ) $ `` ``` ` ``` ``\\ * ? [ ] { } ~ ! #`` /
+    newline/tab), an unbalanced quote, or an empty command ⇒ the **SKIP leg**: run no
+    child, emit nothing, still write kata's bridge.  Re-introducing shell evaluation is
+    never an option; the never-clobber guarantee is preserved at install time (kata does
+    not wrap an ineligible command — it leaves the user's statusline untouched).
+  * **Bounded child** — the child runs under a hard timeout (``_CHILD_TIMEOUT_S`` seconds,
+    ``[TUNABLE]``).  Child failure / nonzero exit / timeout ⇒ still emit whatever stdout
+    the child produced, never hang, exit 0 (the host-statusline fail-soft contract — kata
+    must never break the operator's statusline under any failure).
+
+  The ``protocol/exec-safety.md`` sink-registry row for this subprocess is NOT authored
+  here (it lands at P2/C10 closeout); this task documents the sink in
+  ``adapters/claude/README.md`` §security and rides a NOTE on its commit.  stdlib-only.
+
+Usage (wired by kata's approved settings write slot, CA-L24 — never an implied side
+effect):
+
+    "statusLine": {
+      "type": "command",
+      "command": "python \"<repo>/adapters/claude/statusline_chain.py\" -- <user-command>"
+    }
+
+Everything after ``--`` is the user's original ``statusLine.command`` (passed as a single
+quoted argument, or as already-split argv).  The wrapper shlex-parses it, checks
+eligibility, and runs it as the child.
+"""
+
+from __future__ import annotations
+
+import json
+import shlex
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from typing import List, Optional
+
+#: Child timeout in seconds. [TUNABLE] — a statusline tick is sub-second in practice; 5 s
+#: is a generous ceiling that still guarantees the wrapper never hangs Claude's status bar.
+_CHILD_TIMEOUT_S = 5
+
+#: Shell metacharacters whose presence means the user's command relies on shell semantics
+#: (operators, expansions, substitution) that a plain list-argv exec cannot faithfully
+#: reproduce.  Any occurrence ⇒ NOT chain-eligible ⇒ the SKIP leg.  Quotes (`"` / `'`) are
+#: intentionally NOT here: they are resolved by ``shlex`` (that is what "shlex-parses to
+#: plain argv" means).  Backslash IS rejected — it is a shell escape and, under POSIX
+#: shlex, would mangle Windows paths; forward slashes keep a command chain-eligible.
+_SHELL_METACHARS = frozenset("|&;<>()$`\\*?[]{}~!#\n\r\t")
+
+
+def is_chain_eligible(command_str: str) -> bool:
+    """Decision gate (CA-L1 pin): is *command_str* safe to chain as plain list-argv?
+
+    Chain-eligible IFF the command is a non-empty string that (1) contains **no** shell
+    metacharacter from :data:`_SHELL_METACHARS`, and (2) ``shlex.split``-parses to at
+    least one token.  Anything else ⇒ ``False`` ⇒ the SKIP leg (never a shell eval).
+
+    This is pure decision code — no I/O, no side effects — so it is mutation-provable in
+    isolation.
+    """
+    if not isinstance(command_str, str) or not command_str.strip():
+        return False
+    if any(ch in _SHELL_METACHARS for ch in command_str):
+        return False
+    try:
+        tokens = shlex.split(command_str)
+    except ValueError:
+        # unbalanced quote / dangling escape — never guess, SKIP.
+        return False
+    return bool(tokens)
+
+
+def parse_tail(argv: List[str]) -> Optional[List[str]]:
+    """Return the argv tail after the first ``--`` separator, or ``None`` if absent/empty.
+
+    ``argv`` is the process argv (``argv[0]`` is this script).  Everything after ``--`` is
+    the user's original ``statusLine`` command.
+    """
+    try:
+        idx = argv.index("--", 1)
+    except ValueError:
+        return None
+    tail = argv[idx + 1:]
+    return tail if tail else None
+
+
+def child_argv(tail: Optional[List[str]]) -> Optional[List[str]]:
+    """Normalize the argv tail to a validated child argv, or ``None`` for the SKIP leg.
+
+    The tail is either a single element (the user's command STRING, shlex-parsed here — the
+    CA-L1 pin) or already-split argv (re-joined with ``shlex.join`` so the ONE eligibility
+    path applies).  Returns the child ``list[str]`` when chain-eligible, else ``None``.
+    """
+    if not tail:
+        return None
+    command_str = tail[0] if len(tail) == 1 else shlex.join(tail)
+    if not is_chain_eligible(command_str):
+        return None
+    try:
+        argv = shlex.split(command_str)
+    except ValueError:
+        return None
+    return argv or None
+
+
+def run_child(argv: List[str], stdin_bytes: bytes, timeout: int = _CHILD_TIMEOUT_S) -> bytes:
+    """Run the child statusline command as list-argv (``shell=False``); return its stdout.
+
+    stdin is passed through **unmodified**.  The return value is the child's stdout **bytes**
+    (byte-identical passthrough).  Fail-soft: a nonzero exit still returns the captured
+    stdout; a timeout returns whatever partial stdout was buffered; a missing program /
+    invalid argv returns ``b""``.  NEVER raises, NEVER hangs (bounded by *timeout*).
+    """
+    try:
+        result = subprocess.run(  # noqa: S603 — list-argv, shell=False, validated child
+            argv,
+            input=stdin_bytes,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+            shell=False,
+        )
+        return result.stdout or b""
+    except subprocess.TimeoutExpired as exc:
+        # emit any partial stdout the child produced before the deadline; never hang.
+        return exc.stdout or b""
+    except (OSError, ValueError):
+        # missing program, empty argv, etc. — SKIP silently (fail-soft).
+        return b""
+
+
+def _write_kata_bridge(stdin_bytes: bytes) -> None:
+    """Write kata's OWN superset bridge from the SAME stdin (A1's ``write_bridge``).
+
+    Never touches the user's bridge file.  Fail-soft: any error is swallowed (the
+    observability-write exception to fail-closed — must never break the host statusline).
+    """
+    try:
+        tools_dir = Path(__file__).resolve().parents[2] / "tools"
+        if str(tools_dir) not in sys.path:
+            sys.path.insert(0, str(tools_dir))
+        import kata_statusline  # noqa: PLC0415 — deferred import (path set first)
+
+        data = json.loads(stdin_bytes.decode("utf-8", errors="replace"))
+        if isinstance(data, dict):
+            kata_statusline.write_bridge(tempfile.gettempdir(), data)
+    except Exception:  # noqa: BLE001 — fail-soft observability write; never raise to host
+        pass
+
+
+def _main() -> None:
+    """Chain-or-skip: run the user's child (byte-identical passthrough), then write bridge."""
+    stdin_bytes = sys.stdin.buffer.read()
+
+    argv = child_argv(parse_tail(sys.argv))
+    if argv is not None:
+        # CHAIN leg: exec the user's command, pass stdin through, emit stdout byte-identical.
+        out = run_child(argv, stdin_bytes)
+        sys.stdout.buffer.write(out)
+        sys.stdout.buffer.flush()
+    # else SKIP leg: no eligible child — emit nothing (never break the user's statusline;
+    # kata's own bridge below still feeds the gauge / deterministic fallback).
+
+    # Kata's sibling bridge — the user's file is untouched either way (R-32, two files).
+    _write_kata_bridge(stdin_bytes)
+
+
+if __name__ == "__main__":
+    try:
+        _main()
+    except Exception:  # noqa: BLE001 — fail-soft: never crash or hang Claude's statusline
+        pass
