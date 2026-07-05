@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.9.0
+version: 0.10.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -364,6 +364,39 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
        dispatched) with a board **NOTE** — the EXISTING per-task effective-mode degrade taxonomy (M4-L10 as
        amended), NOT a third degrade shape. The task then appears in `zeroCheckpointTasks` only as the arithmetic
        consequence, and the ledger distinguishes the cause by its recorded effective mode.
+   - **Dispatch budget line (CA-L9/L10/L11 — context-autonomy; MANDATORY prose in EVERY dispatch brief).** Before
+     authoring the brief, the conductor estimates its **startup load** — the conductor-AUTHORED payload ONLY (the
+     brief + packed orientation attachments), estimated at dispatch by the conductor because it authored the brief;
+     worker-side read-ins count toward the worker's OWN budget, **never startup** — and calls
+     `kata_gauge.dispatch_budget(startup_fraction)` (`tools/kata_gauge.py`) → `{budget_fraction, cap_fraction
+     (0.80), warn, over_briefed}`. Act on the verdict at dispatch: **`warn`** (startup > **0.30**) ⇒ surface an
+     over-briefing WARN, do NOT block (the early smell); **`over_briefed`** (startup > **0.40**) ⇒ the 40pp work
+     quantum is unsatisfiable under the **0.80** hard cap, so the dispatch is OVER-BRIEFED ⇒ **split the task or
+     slim the brief — a mandate, not a WARN** (the cap WINS). Then EMBED the numbers in the brief as mandatory
+     prose (R-31's four pins, CA-L10): the **budget tokens**, the **cap tokens**, and the **estimator basis** — so
+     the worker's estimate is **worker-local**, computed from the brief-embedded numbers + its own activity and
+     **stated as approximate** in the brief.
+   - **Continuation contract (CA-L10/L11 — briefed to the worker; re-evaluated at EVERY checkpoint).** The
+     well-planned case NEVER rotates. At runtime, **at budget** ⇒ finish the current chunk + checkpoint ⇒ **if the
+     remaining estimate fits under the 0.80 hard cap, CONTINUE to completion** (no rotation to do 10% of a task);
+     **else return a continuation report** (last checkpoint anchor + what remains + what was learned). **Estimated
+     activity ≥ cap ⇒ return UNCONDITIONALLY.** Continue-or-return is **re-evaluated at EVERY checkpoint.**
+     Continuations reuse the existing **M4 kill+fresh-dispatch primitive anchored at the last checkpoint**
+     (ADAPTER-CONTRACT-M4 primitive (b) — no new machinery); green-path inter-part evaluation is
+     checkpoint-trailer scoring (**zero LLM calls**). A returned continuation resumes as a fresh **pt-N+1**
+     dispatch from the anchor, continuing the checkpoint index. **Substrate degrade (fold #4):** `inlineEval: off`
+     ⇒ the continuation machinery DEGRADES to the brief's budget prose + **return-at-task-boundary only** (no
+     checkpoint-anchored continuation). **Enforcement honesty (CA-L11):** worker observance is *compliance*
+     (soundness never rests on it); TRUE enforcement is conductor-side — the existing liveness machinery + the M4
+     kill primitive terminate a worker that plows on.
+   - **Report contract (CA-L22/L23 — size-contracted, narration economy).** The worker's FINAL report is
+     **verdict + pointer inline**, with bulk written to the run- and target-scoped artifact
+     `.kata/reports/<runId>-<taskId>-<agent>-<kind>.md` (project-local, gitignored, readable by every dispatched
+     agent via repo paths). Keep the inline hand-back to the verdict + the pointer and narrate economically — the
+     over-briefing WARN is the symptom detector for narration bloat. **Durable-citation rule (CA-L22, matches the
+     D141 discipline):** anything a DECISION or ledger row cites MUST be quoted/restated in a committed artifact —
+     **never a bare pointer** at a `.kata/*` path (see `protocol/observability.md`, the "Reports (v0.2.1)" row).
+     *(CA-L22 report home is a **[VETO-FLAG]** — recorded pending operator veto; it rides to the merge gate.)*
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 
    **Liveness monitor (F3 — dark-worker detection; NO blind kill).** While workers run, the orchestrator
@@ -561,11 +594,14 @@ by [[kata-selfhandoff]] and are **not re-decided here**; this step is the conduc
 
 5. **Commit at the checkpoint** (conventional commit + `Kata-Task: <task-id>` trailer) so compaction
    can't lose work and restore can map each integration commit back to its task.
-   **Reset ownership (CA-L14 — context-autonomy).** Host compaction is the SOLE reset mechanism on Claude … Kata
-   owns the **SCHEDULE + DURABILITY** …; the host owns the **MECHANISM**. … There is **no conductor
-   self-compaction leg** — this commit/checkpoint step is the durability half; the host compaction/reset arrives
-   on kata's recommended schedule (the CA-L16 backstop `autoCompactWindow`, recommend-never-write), and the
-   SessionStart(compact) hook re-anchors the fresh context on `.planning/HANDOFF.md`.
+   **Reset ownership (CA-L14 — context-autonomy).** Host compaction is the SOLE reset mechanism on Claude (no
+   programmatic /compact exists). Kata owns the **SCHEDULE + DURABILITY** (threshold, handoff freshness,
+   recommended backstop placement); the host owns the **MECHANISM**. The [[kata-selfhandoff]] prose
+   "compact/reset" step = the host act arriving on kata's schedule. Platforms with respawn primitive (c):
+   rotation = kata-initiated respawn. There is **no conductor self-compaction leg** — this commit/checkpoint
+   step is the durability half; the host compaction/reset arrives on kata's recommended schedule (the CA-L16
+   backstop `autoCompactWindow`, recommend-never-write), and the SessionStart(compact) hook re-anchors the
+   fresh context on `.planning/HANDOFF.md`.
    **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** the mapped source is the task's **ACTIVE attempt branch**
    after any reroll; the single original fork point keeps the `Kata-Task:` mapping stable (§ The corrective-action
    ladder).
@@ -821,6 +857,28 @@ model-availability transients. **Do not step down silently on a billing or autho
 failure.** Surface immediately as a `kind: "human-required"` escalation — a 401/403 signals a
 credential or quota problem in the dispatch infrastructure; silent downgrading masks the root
 cause and may incur runaway cost on an unintended model.
+
+### Premium rung — failure semantics (CA-L30 — context-autonomy)
+
+**Applies to the PREMIUM rung ONLY** (the §3 gated elevation, D148) — the additive `premium` branch of
+`kata_models.resolve(skill, mode, anchor, family=family, coder_floor=coder_floor, premium=<models.premium>)`;
+the NO-FIRE reason is read from `kata_models.premium_status(premium, anchor, family=family, mode=mode)` →
+`{fires, reason}` (`tools/kata_models.py`). A NO-FIRE (`reason ≠ "fires"`) is **not a failure** — it surfaces
+as a board **NOTE** (§3.2) and the dispatch simply runs at the resolved non-premium tier.
+
+A **failed premium dispatch** ⇒ **immediate OMIT/inherit at the anchor rung** — never an explicit anchor id
+(this tracks a mid-run `/model` switch and preserves the amended invariant).
+**One-step chain: premium → OMIT** — NOT the ≤ 2-step R2 ladder above; premium has exactly one honest
+fallback, the anchor. **ANY premium
+dispatch failure — auth or not — LAPSES `models.premium.approved` for the remainder of the run** (no
+re-offers, no retry storm — the exact pattern R2 exists to prevent).
+
+For the premium rung **ONLY**, **401/403 ⇒ *premium-unavailable*** (NOT the `human-required` raise baseline R2
+takes): **OMIT-inherit + LOUD surface** — a board **DECISION** + a ledger `degraded {scope: "premium", reason:
+"auth-40x" | "unavailable"}` row + a handoff note. Premium is an OPTIONAL elevation whose failure has a
+semantically-correct safe fallback (the anchor = the exact no-approval behavior); **unattended survival wins,
+never silent**. **Baseline (non-premium) R2 auth-raise behavior is UNCHANGED** — the R2 401/403
+`human-required` exception above stands for every non-premium dispatch.
 
 ## Cross-model dispatch (multi-model routing)
 
