@@ -7,7 +7,7 @@ description: >-
   (routed: answer-inline / research-needed / human-required). Invoke from kata-orchestrate per dispatch so a
   worker starts oriented, not cold.
 license: Apache-2.0
-version: 0.2.0
+version: 0.2.1
 category: handoff
 status: experimental
 agnostic: true
@@ -125,6 +125,23 @@ Surface the restore result as the volatile tier of the orientation brief:
 - `integrated`: task-ids already durable (do not re-dispatch)
 
 The orchestrator (`kata-resume` → [[kata-orchestrate]]) acts on this to re-dispatch the incomplete tasks.
+
+## Compacted / respawned session — the injected HANDOFF.md pointer (context-autonomy CA-L12/L19)
+
+A **compacted or respawned** session is a distinct resume variant from the D134 lost-run restore above. On
+Claude, the SessionStart(`compact`/`resume`) hook injects a re-anchor instruction pointing at the newest
+**`.planning/HANDOFF.md`** (the SessionStart re-anchor hook; `protocol/handoff.md`). That pointer is this skill's
+**volatile-tier input** on resume — it maps 1:1 into context+volatile like any inbound [[kata-handoff]]
+artifact.
+
+- **Subject to the staleness rule (CA-L19, `protocol/handoff.md`).** Any board `DONE`/`DECISION` line **newer**
+  than the HANDOFF.md git commit **demotes** the handoff from sole-anchor to **context-input** — the
+  kata-orient **3-tier rebuild becomes authoritative**. A fresh handoff anchors; a **demoted** handoff is
+  corroborating context only, and this skill's tiers are rebuilt from the standard markdown regardless.
+- **Resume quality bar (CA-L12).** *Resume must reload FULL context quality — kata-orient 3-tier, budget-capped
+  per `protocol/orientation.md` — seamless, no hangs, no degradation* (graded at CA-A1, not just task
+  continuity). A demoted-handoff resume still meets this bar via the full rebuild; it never degrades to
+  handoff-only.
 
 ---
 
