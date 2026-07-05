@@ -117,8 +117,10 @@ def read_bridge(path: str | Path, *, now_utc: datetime) -> dict:
 
     Raises:
         GaugeError: Absent file (caller falls to the next priority leg explicitly);
-            unparseable JSON, a missing required field, or a non-numeric numeric field
-            (fail-closed — never "assume fine"); a non-datetime *now_utc*.
+            unparseable JSON, a missing required field, a non-numeric numeric field,
+            a non-finite / out-of-range percentage or timestamp, or a non-finite /
+            non-positive total_tokens (fail-closed — never "assume fine"); a
+            non-datetime *now_utc*.
     """
     if not isinstance(now_utc, datetime):
         raise GaugeError(
@@ -163,12 +165,51 @@ def read_bridge(path: str | Path, *, now_utc: datetime) -> dict:
                 "— fail-closed (D136)."
             )
 
+    # Numeric SANITY (final-review fold, v0.2.1 merge gate): json.loads accepts the
+    # non-standard NaN/Infinity tokens, arbitrary-precision int literals (a 309+
+    # digit int OVERFLOWS float() itself), and a buggy producer can write any
+    # float — a non-finite or out-of-range value would parse as a "fresh, usable"
+    # gauge whose trigger comparator is silently always-False (NaN) or always-True
+    # (total_tokens <= 0), and would SHADOW a healthy lower-priority leg in the
+    # CA-L1 walk. Fail closed as GaugeError so resolve_gauge walks the next leg.
+    def _finite(raw: Any, field: str) -> float:
+        try:
+            value = float(raw)
+        except (OverflowError, ValueError) as exc:
+            raise GaugeError(
+                f"read_bridge: bridge field {field!r} is not representable as a "
+                f"finite number (got {raw!r}: {exc}) — fail-closed (D136), never an "
+                "escaping OverflowError/ValueError."
+            ) from exc
+        if not math.isfinite(value):
+            raise GaugeError(
+                f"read_bridge: bridge field {field!r} must be finite (got {raw!r}) "
+                "— a corrupt gauge is never usable (D136)."
+            )
+        return value
+
+    for key in ("remaining_percentage", "used_pct"):
+        if not (0.0 <= _finite(data[key], key) <= 100.0):
+            raise GaugeError(
+                f"read_bridge: bridge field {key!r} must be a finite percentage in "
+                f"0..100 (got {data[key]!r}) — a corrupt gauge is never usable (D136)."
+            )
+    _finite(data["timestamp"], "timestamp")
+
     total_tokens = data.get("total_tokens")
-    if total_tokens is not None and not _is_number(total_tokens):
-        raise GaugeError(
-            f"read_bridge: total_tokens must be numeric when present (got "
-            f"{total_tokens!r}) — fail-closed (D136)."
-        )
+    if total_tokens is not None:
+        if not _is_number(total_tokens):
+            raise GaugeError(
+                f"read_bridge: total_tokens must be numeric when present (got "
+                f"{total_tokens!r}) — fail-closed (D136)."
+            )
+        _finite(total_tokens, "total_tokens")
+        if int(total_tokens) <= 0:
+            raise GaugeError(
+                f"read_bridge: total_tokens must be positive (got {total_tokens!r}) — "
+                "a non-positive window makes every trigger comparison degenerate "
+                "(rotation thrash / fallback_waves crash); fail-closed (D136)."
+            )
 
     age_s = now_utc.timestamp() - float(data["timestamp"])
     return {

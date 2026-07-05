@@ -7,7 +7,7 @@ description: >-
   (skip|light|standard|full, D71). Invoke from kata-bootstrap before composing a run, or standalone as
   an "is my kata environment ready?" doctor.
 license: Apache-2.0
-version: 0.2.1
+version: 0.2.2
 category: coordinate
 status: experimental
 agnostic: true
@@ -38,15 +38,18 @@ each a checklist; report PASS / WARN / BLOCK per item and an overall verdict.
 - Declared dependencies are installable from an allowed registry (defers the actual install to pre-flight, D29).
 - **Re-entrant detection:** if a `kata.config` already exists at the branch root, report it (its `mode`,
   `runShape`, `modules`) so bootstrap offers "same as last / step up / change shape" rather than cold-start.
-- **Pre-v0.2.1 config WARN (context autonomy, CA-L34).** This check runs at **every bootstrap entry**
-  (including Phase 0b routing). If the re-entrant `kata.config` **lacks the `contextAutonomy` key** (a
-  pre-v0.2.1 config), surface a WARN: "pre-v0.2.1 config lacks contextAutonomy — written at next
-  composition (Phase 3) or opt in by config edit." This is **surfaced, never silent, and never a
-  retroactive flip** — readiness reports it; the key is only ever written when bootstrap next composes
-  the config (Phase 3's write-all-fields-by-construction, matching kata-bootstrap's write-at-next-touch),
-  or when the user opts in by editing the config. Honest posture — **not a scare-WARN**: sprint
-  boundaries ALREADY rotate by design (the boundary handoff), so such a run is not stranded; only
-  intra-sprint refresh is absent.
+- **Pre-v0.2.1 config WARN (context autonomy, CA-L34) — INCREMENTAL shapes only.** This check runs at
+  **every bootstrap entry** (including Phase 0b routing), but fires ONLY when the re-entrant config's
+  `delivery.shape == "incremental"` AND it **lacks the `contextAutonomy` key** (a pre-v0.2.1 config):
+  surface a WARN: "pre-v0.2.1 config lacks contextAutonomy — written at next composition (Phase 3) or
+  opt in by config edit." This is **surfaced, never silent, and never a retroactive flip** — readiness
+  reports it; the key is only ever written when bootstrap next composes the config (Phase 3's
+  write-all-fields-by-construction, matching kata-bootstrap's write-at-next-touch), or when the user
+  opts in by editing the config. Honest posture — **not a scare-WARN**: sprint boundaries ALREADY
+  rotate by design (the boundary handoff), so such a run is not stranded; only intra-sprint refresh is
+  absent. **One-shot shapes are EXEMPT from this WARN** (final-review fold): rotation is UNCONDITIONAL
+  there and never consults the key (CA-L33/D147), so "lacks contextAutonomy" describes nothing absent —
+  a WARN would misstate the run's posture and invite a pointless config edit.
 - **Version-up gate:** for a version-up run (`target.kind == existing`), **BLOCK if tree-sitter is not
   available** — the kata-graph ingestion (seeding + blast-radius) needs AST; there is no inert grep-mode
   fallback for version-up.

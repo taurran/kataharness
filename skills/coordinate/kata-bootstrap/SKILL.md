@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.3.0
+version: 0.3.1
 category: coordinate
 status: experimental
 agnostic: true
@@ -177,6 +177,10 @@ approved like an install, **never an implied side effect**:
    wrapper entries IS a write to `~/.claude/settings.json`, so it is an explicit bundle slot approved like
    an install. Merge discipline: **hooks arrays are APPEND-NEVER-REPLACE; `statusLine` is only ever
    chained-or-skipped** (the CA-L1 never-clobber guarantee, generalized to every settings key kata touches).
+6. **The stranding verdict (CA-L25)** — computed by [[kata-preflight]] inside this same collection (its
+   *The stranding verdict* section owns the semantics): a walk-away-configured run with the full stranding
+   conjunction ⇒ preflight `blockers` entry (`status: blocked`, launch refused); attended ⇒ WARN + proceed.
+   The host-posture question that resolves `read_host_autocompact`'s unknown rides in this bundle.
 
 Record the operator's accepted answers via `kata_settings.record_accepted_defaults(entries)` (the C-1
 `{value, v, at}` schema) and the host posture via `kata_settings.record_host_posture(posture)` — both

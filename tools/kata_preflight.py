@@ -685,7 +685,10 @@ def check_allowlist_coverage(allowlist_patterns, context) -> list[dict]:
         ``{"class": <id>, "severity": "warn", "detail": <description>}`` dicts —
         one per uncovered class; empty when every class is covered.
     """
-    patterns = [str(p).lower() for p in (allowlist_patterns or [])]
+    # Slash-normalize BOTH sides (final-review fold): the harness-tools needle is
+    # slash-normalized, so a Windows backslash-style pattern must be too — else the
+    # class false-WARNs permanently on Windows despite genuine coverage.
+    patterns = [str(p).lower().replace("\\", "/") for p in (allowlist_patterns or [])]
     ctx = context or {}
 
     warnings: list[dict] = []

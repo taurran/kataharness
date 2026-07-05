@@ -1512,3 +1512,34 @@ def test_mutation_prove_five_class_enumeration():
     )
     assert verdict["testWentRed"], "five-class enumeration is not load-bearing"
     assert verdict["nonVacuous"]
+
+
+class TestAllowlistWindowsPathNormalization:
+    """Final-review fold (v0.2.1 merge gate): a Windows backslash-style allowlist
+    pattern must satisfy the harness-tools needle — before the fold the needle was
+    slash-normalized but the patterns were not, a PERMANENT false WARN on Windows."""
+
+    def test_backslash_pattern_covers_harness_tools(self):
+        ctx = {
+            "verify_command": "pytest -q",
+            "install_managers": ["uv"],
+            "harness_home": r"C:\Dev\Projects\KataHarness",
+        }
+        patterns = [
+            "git",
+            "pytest",
+            "uv",
+            "kata-ctx .kata .planning",
+            r"Bash(python C:\Dev\Projects\KataHarness\tools\*)",
+        ]
+        warnings = pf.check_allowlist_coverage(patterns, ctx)
+        assert not [w for w in warnings if w["class"] == "harness-tools"], (
+            "backslash allowlist pattern must count as harness-tools coverage "
+            "(both sides slash-normalized)"
+        )
+
+    def test_uncovered_harness_tools_still_warns(self):
+        # The fold must not vacuously pass the class: genuinely-missing coverage warns.
+        ctx = {"harness_home": r"C:\Dev\Projects\KataHarness"}
+        warnings = pf.check_allowlist_coverage(["git"], ctx)
+        assert [w for w in warnings if w["class"] == "harness-tools"]

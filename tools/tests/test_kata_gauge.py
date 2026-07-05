@@ -507,3 +507,75 @@ class TestExecSafety:
             f"subprocess import found in kata_gauge.py: {hits} — "
             "kata_gauge spawns NO subprocess (pure; exec-safety.md)"
         )
+
+
+# ---------------------------------------------------------------------------
+# Final-review fold (v0.2.1 merge gate): numeric sanity on bridge fields.
+# A corrupt gauge must RAISE GaugeError (walk the CA-L1 leg), never parse as
+# a fresh usable gauge that silently suppresses the trigger (D136).
+# ---------------------------------------------------------------------------
+
+
+class TestBridgeNumericSanity:
+    """Fold of the final-review engine findings 1-3: NaN/Infinity/out-of-range
+    bridge numerics must fail closed as GaugeError, so resolve_gauge walks the
+    next reader-priority leg instead of anchoring on a corrupt gauge."""
+
+    def test_nan_used_pct_raises(self, tmp_path):
+        # NAMED: the never-triggers vector — NaN >= threshold is always False.
+        p = _write_bridge(tmp_path, "k.json", _superset(used_pct=float("nan")))
+        with pytest.raises(GaugeError, match="finite"):
+            kata_gauge.read_bridge(p, now_utc=_NOW)
+
+    def test_infinity_total_tokens_raises_gauge_error_not_overflow(self, tmp_path):
+        # int(inf) raised OverflowError THROUGH resolve_gauge before the fold.
+        p = _write_bridge(tmp_path, "k.json", _superset(total_tokens=float("inf")))
+        with pytest.raises(GaugeError):
+            kata_gauge.read_bridge(p, now_utc=_NOW)
+
+    def test_nan_total_tokens_raises_gauge_error_not_valueerror(self, tmp_path):
+        p = _write_bridge(tmp_path, "k.json", _superset(total_tokens=float("nan")))
+        with pytest.raises(GaugeError):
+            kata_gauge.read_bridge(p, now_utc=_NOW)
+
+    @pytest.mark.parametrize("bad_pct", [-75.0, 150.0, -0.001, 100.001])
+    def test_out_of_range_percentages_raise(self, tmp_path, bad_pct):
+        p = _write_bridge(tmp_path, "k.json", _superset(used_pct=bad_pct))
+        with pytest.raises(GaugeError, match="0..100"):
+            kata_gauge.read_bridge(p, now_utc=_NOW)
+
+    @pytest.mark.parametrize("bad_total", [0, -500_000])
+    def test_nonpositive_total_tokens_raises(self, tmp_path, bad_total):
+        # total_tokens <= 0 made trigger_crossed True at ANY usage (thrash) and
+        # blew up fallback_waves(0) downstream — a malformed gauge, fail closed.
+        p = _write_bridge(tmp_path, "k.json", _superset(total_tokens=bad_total))
+        with pytest.raises(GaugeError, match="positive"):
+            kata_gauge.read_bridge(p, now_utc=_NOW)
+
+    def test_nan_timestamp_raises(self, tmp_path):
+        p = _write_bridge(tmp_path, "k.json", _superset(timestamp=float("nan")))
+        with pytest.raises(GaugeError, match="finite"):
+            kata_gauge.read_bridge(p, now_utc=_NOW)
+
+    def test_corrupt_kata_bridge_walks_to_healthy_user_leg(self, tmp_path):
+        # NAMED: the shadowing vector — before the fold a NaN kata bridge WON the
+        # CA-L1 priority walk over a healthy user bridge and suppressed its trigger.
+        kata = _write_bridge(tmp_path, "k.json", _superset(used_pct=float("nan")))
+        user = _write_bridge(tmp_path, "u.json", _user_four_field(used_pct=92.0,
+                                                                  remaining_percentage=8.0))
+        resolved = kata_gauge.resolve_gauge(kata, user, now_utc=_NOW)
+        assert resolved["source"] == "user"
+        assert kata_gauge.trigger_crossed(resolved) is True
+
+    def test_both_corrupt_resolves_none(self, tmp_path):
+        kata = _write_bridge(tmp_path, "k.json", _superset(total_tokens=0))
+        user = _write_bridge(tmp_path, "u.json", _user_four_field(used_pct=-5.0))
+        assert kata_gauge.resolve_gauge(kata, user, now_utc=_NOW) == {"source": "none"}
+
+    @pytest.mark.parametrize("field", ["used_pct", "total_tokens", "timestamp"])
+    def test_astronomical_int_raises_gauge_error_not_overflow(self, tmp_path, field):
+        # json.loads parses arbitrary-precision ints; float(10**400) raises
+        # OverflowError AT the guard — must surface as GaugeError (walk the leg).
+        p = _write_bridge(tmp_path, "k.json", _superset(**{field: 10**400}))
+        with pytest.raises(GaugeError):
+            kata_gauge.read_bridge(p, now_utc=_NOW)

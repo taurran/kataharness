@@ -6,7 +6,7 @@ description: >-
   manifest-hash checked), records installs to the machine-global D-registry, probes the target environment,
   and emits .kata/preflight.json. Default-FAIL; never tiered (D29/D33).
 license: Apache-2.0
-version: 0.2.0
+version: 0.2.1
 category: coordinate
 status: experimental
 agnostic: true
@@ -40,6 +40,26 @@ host-settings write slot, and **the premium gate below**. The answer flows back 
 second time**; the enforcement pass invoked from [[kata-orchestrate]] only verifies/provisions the
 already-approved set. Accepted answers are recorded audit-only via `kata_settings.record_accepted_defaults`
 and `kata_settings.record_host_posture` (never an implied side effect).
+
+### The stranding verdict (CA-L25 — the intent-keyed BLOCK; final-review fold)
+
+As part of this SAME collection, COMPUTE `kata_preflight.stranding_verdict(walk_away,
+auto_compact_enabled, gauge_present, respawn_path)` — every input RESOLVED first, never guessed (the
+engine RAISES on `None`/wrong-type by design): `walk_away` from the composed run intent (auto-continue
+boundary or unattended flag); `auto_compact_enabled` from `read_host_autocompact`, with its
+`None`-unknown resolved by ASKING in this bundle (the operator states the host posture — one more slot,
+same single prompt); `gauge_present` = a fresh bridge is readable now (`resolve_gauge` source ≠ `none`);
+`respawn_path` from the platform's adapter-contract respawn primitive, `""` when the platform has none.
+Verdict handling:
+- **`"block"`** (walk-away intent + the full stranding conjunction: no auto-compact AND no gauge AND no
+  respawn path) ⇒ **append a `blockers` entry to `.kata/preflight.json`** (non-empty blockers ⇒
+  `status: blocked` — the EXISTING gate mechanics; [[kata-orchestrate]]'s enforcement pass already
+  refuses dispatch on `blocked`, nothing new fires there). Surface the three missing legs with their
+  exact remediations (enable host auto-compact / install the statusline bridge / configure a respawn
+  path) and STOP — the walk-away run would otherwise die silently at the hard context limit.
+- **`"warn"`** (attended intent + the same conjunction) ⇒ surface the warning inside the bundle and
+  proceed on approval — the operator is present to rotate manually.
+- **`"ok"`** ⇒ silent (any recovery leg present).
 
 ### The premium (Fable) gate (CA-L27; the §3 amendment governs dispatch)
 
