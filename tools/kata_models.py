@@ -40,8 +40,11 @@ Adaptive premium scope (model-tiering DESIGN Amendment #2 / adaptive-tiering, D1
 ``premium.scope`` becomes TYPE-DISPATCHED (AT-L15): a LIST value keeps the D148
 work-class semantics BYTE-FOR-BYTE (above — zero change to any shipped path); an
 OBJECT value ``{"events": [...], "budget": {"calls": N}}`` activates the ADAPTIVE
-form, where conjunct #2 of the four-conjunct fire rule reads "event ∈ scope.events"
-instead of "work-class ∈ scope" — the rule's SHAPE (four conjuncts, offer exactly
+form, where conjunct #2 of the four-conjunct fire rule reads "event ∈ scope.events
+AND work-class ∈ {critical, coding}" (the R-9 economy exclusion is STRUCTURAL in
+BOTH forms — the events leg of the conjunction lives in premium_status, the
+work-class leg in resolve, mirroring the list-form split) — the rule's SHAPE
+(four conjuncts, offer exactly
 one rung above the anchor, ``mode == "advanced"``, recorded approval) is unchanged.
 Any other scope type / unknown event name / unknown object key / non-int budget ⇒
 load-guard RAISE (AT-L15/AT-L21, GB12/D45).  Absent ``events`` key in the object
@@ -557,7 +560,10 @@ def premium_status(
                                  (the class-query-against-events-form case)
       * ``"event-not-in-scope"`` — events-form scope, *event* ∉ ``scope.events``
                                  (includes the explicit ``events: []`` no-op)
-      * ``"fires"``            — every conjunct evaluated here holds
+      * ``"fires"``            — every conjunct evaluated HERE holds (events form:
+                                 the R-9 work-class leg is resolve()'s — a "fires"
+                                 for an economy-destined dispatch is still declined
+                                 there, the list-form status/resolve split mirrored)
 
     A present-but-malformed block RAISES ``ValueError`` (fail-closed, D136/AT-L21).
     """
@@ -594,8 +600,8 @@ def premium_status(
 
     # diff == 1: offer sits EXACTLY one rung strictly above the anchor.
 
-    # Amendment #2 (AT-L15 events form): conjunct #2 reads "event ∈ scope.events"
-    # instead of "work-class ∈ scope" and is applied HERE.  The classes (list)
+    # Amendment #2 (AT-L15 events form): the EVENTS leg of conjunct #2 ("event ∈
+    # scope.events") is applied HERE; the R-9 work-class leg is resolve()'s.  The classes (list)
     # form is untouched: conjunct #2 stays per-skill in resolve(), event ignored.
     if isinstance(premium["scope"], dict):
         if event is None:
@@ -661,8 +667,9 @@ def resolve(
       work-class ∈ ``premium.scope`` (critical | coding only — economy is
       structurally excluded, R-9); *event* is ignored.
     * DICT scope (events form): ``event is not None AND event ∈ scope["events"]``
-      — evaluated inside :func:`premium_status`; a class-based query against an
-      events-form scope is simply NO-FIRE.  Budget SHAPE is validated at load;
+      (evaluated inside :func:`premium_status`) **AND work-class ∈ {critical,
+      coding}** (the R-9 STRUCTURAL guard, applied below — adval F1); a
+      class-based query against an events-form scope is simply NO-FIRE.  Budget SHAPE is validated at load;
       budget SPEND is the conductor's (kata_adaptive), never enforced here.
 
     ANY other case falls through to the frozen path below
@@ -707,10 +714,17 @@ def resolve(
         if premium_status(premium, anchor, family=family, mode=mode, event=event)["fires"]:
             if isinstance(premium["scope"], dict):
                 # Events form (Amendment #2 / AT-L15): conjunct #2 (event ∈
-                # scope.events) was already evaluated inside premium_status —
-                # a True "fires" means all four conjuncts hold.
-                # EXPLICIT offer id — never inherit, never a ladder walk (§3.2).
-                return ID_MAP.get(_normalize_anchor(premium["offer"]))
+                # scope.events) was already evaluated inside premium_status.
+                # R-9 STRUCTURAL GUARD (adval F1 fold, AT-L14): economy work
+                # NEVER runs the premium rung IN EITHER FORM — an event-tagged
+                # economy dispatch (e.g. a bumped economy attempt) falls through
+                # to the frozen path (its bump ceilings at the anchor). The
+                # exclusion is code, not prose, exactly as config.md/preflight/
+                # AT-L14 claim.
+                work_class_e: str = SKILL_WORK_CLASS.get(skill, "critical")
+                if work_class_e in ("critical", "coding"):
+                    # EXPLICIT offer id — never inherit, never a ladder walk (§3.2).
+                    return ID_MAP.get(_normalize_anchor(premium["offer"]))
             work_class_p: str = SKILL_WORK_CLASS.get(skill, "critical")
             if work_class_p in ("critical", "coding") and work_class_p in premium["scope"]:
                 # EXPLICIT offer id — never inherit, never a ladder walk (§3.2).

@@ -377,12 +377,39 @@ def test_events_form_malformed_scope_raises_in_premium_status():
                           event="freeze-gate-verdict")
 
 
-def test_events_form_fires_for_economy_dispatch_site_is_event_scoped():
-    # Conjunct #2 in the events form is EVENT-based, not class-based (Amendment
-    # #2 item 1: "instead of"). The conductor supplies the event only at the
-    # covering dispatch site — the resolver honours the event tag.
+def test_events_form_never_fires_for_economy_class_r9_structural():
+    # ADVAL F1 fold (AT-L14 / R-9): economy work NEVER runs the premium rung in
+    # EITHER scope form — an event-tagged economy dispatch falls through to the
+    # frozen path (code-enforced, not prose-enforced). Mutation target: removing
+    # the events-form work-class guard turns this RED.
     got = _resolve(_ECONOMY_SKILL, premium=_premium_events(), event="escalation-adjudication")
-    assert got == km.ID_MAP["fable"]
+    assert got != km.ID_MAP["fable"]
+    # ...and the frozen advanced-economy resolution (anchor−1 off the opus
+    # anchor = sonnet) still applies:
+    assert got == km.ID_MAP["sonnet"]
+
+
+def test_events_form_ac7_premium_never_fires_matrix():
+    # AC-7 (DESIGN §4 criterion 7): the 5-way premium-NEVER-fires matrix.
+    fable = km.ID_MAP["fable"]
+    # (1) economy class, even event-tagged (the F1 structural guard):
+    assert _resolve(_ECONOMY_SKILL, premium=_premium_events(),
+                    event="fail-bump-escalation") != fable
+    # (2) essential / (3) standard modes (conjunct #4):
+    for mode in ("essential", "standard"):
+        assert km.resolve(_CRITICAL_SKILL, mode, "opus", family=ANTHROPIC,
+                          coder_floor=None, premium=_premium_events(),
+                          event="freeze-gate-verdict") != fable
+    # (4) unapproved:
+    unapproved = _premium_events()
+    unapproved["approved"] = False
+    assert _resolve(_CRITICAL_SKILL, premium=unapproved,
+                    event="freeze-gate-verdict") != fable
+    # (5) wrong-rung offer (two rungs above a sonnet anchor):
+    assert km.resolve(_CRITICAL_SKILL, "advanced", "sonnet", family=ANTHROPIC,
+                      coder_floor=None, premium=_premium_events(),
+                      event="freeze-gate-verdict") != fable
+    # (budget exhaustion is conductor-side: kata_adaptive.can_spend tests own it.)
 
 
 # ---------------------------------------------------------------------------
@@ -469,3 +496,46 @@ def test_premium_rung_of_is_family_agnostic(monkeypatch):
     assert km.premium_rung_of("testfam", "medium") == "large"
     assert km.premium_rung_of("testfam", "large") is None
     assert km.premium_rung_of("testfam", "small") == "medium"
+
+
+# ---------------------------------------------------------------------------
+# ADVAL F3 fold — AC-1's golden matrix: the FULL 48-skill × 3-mode × 5-anchor
+# equivalence sweep (new kwargs at defaults ⇒ byte-identical resolution) plus a
+# literal pinned sample (hand-derived v0.2.1 expectations, not self-comparison).
+# ---------------------------------------------------------------------------
+
+
+def test_ac1_golden_full_matrix_new_kwargs_are_inert():
+    anchors = ["haiku", "sonnet", "opus", "fable", "claude-opus-4-8"]
+    modes = ["essential", "standard", "advanced"]
+    cells = 0
+    for skill in sorted(km.SKILL_WORK_CLASS):
+        for mode in modes:
+            for anchor in anchors:
+                baseline = km.resolve(skill, mode, anchor, family=ANTHROPIC, coder_floor=None)
+                with_kwargs = km.resolve(
+                    skill, mode, anchor, family=ANTHROPIC, coder_floor=None,
+                    premium=None, event=None,
+                )
+                assert with_kwargs == baseline, (skill, mode, anchor)
+                cells += 1
+    assert cells == len(km.SKILL_WORK_CLASS) * 3 * 5
+    assert len(km.SKILL_WORK_CLASS) >= 48  # the full registry, never a sample
+
+
+def test_ac1_golden_literal_pinned_sample():
+    # Hand-derived v0.2.1 expectations (D131 table: advanced economy −1;
+    # standard economy −2; standard coding −1; zero-step ⇒ None/OMIT) — a
+    # literal cross-check independent of the code's own arithmetic.
+    pins = [
+        ("kata-evaluate", "advanced", "fable", None),            # zero-step critical
+        ("kata-evaluate", "standard", "opus", None),             # zero-step critical
+        ("kata-tdd", "standard", "opus", km.ID_MAP["sonnet"]),   # coding −1
+        ("kata-tdd", "advanced", "fable", None),                 # advanced coding zero-step
+        ("kata-report", "advanced", "fable", km.ID_MAP["opus"]),  # advanced economy −1
+        ("kata-report", "standard", "opus", km.ID_MAP["haiku"]),  # standard economy −2
+    ]
+    for skill, mode, anchor, expected in pins:
+        got = km.resolve(skill, mode, anchor, family=ANTHROPIC, coder_floor=None,
+                         premium=None, event=None)
+        assert got == expected, (skill, mode, anchor, got, expected)

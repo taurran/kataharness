@@ -238,9 +238,11 @@ changes on THIS spec's surface.
 1. **`premium.scope` becomes TYPE-DISPATCHED (AT-L15).** A LIST value keeps the Amendment-#1
    work-class semantics BYTE-FOR-BYTE (run-long class scope — zero change to any shipped path). An
    OBJECT value `{events: [...], budget: {calls: N}}` activates the ADAPTIVE form: conjunct #2 of the
-   four-conjunct fire rule reads "event ∈ scope.events" instead of "work-class ∈ scope" — the rule's
-   SHAPE (four conjuncts, offer exactly one rung above the anchor, mode == "advanced", recorded
-   approval) is unchanged. Any other type / unknown event name / unknown object key / non-int budget ⇒
+   four-conjunct fire rule reads "event ∈ scope.events **AND work-class ∈ {critical, coding}**" —
+   the R-9 economy exclusion is STRUCTURAL (code-enforced) in BOTH forms, exactly as the list form
+   always had it (adval F1 fold: an event-tagged economy dispatch falls through to the frozen path;
+   its fail-bump ceilings at the anchor). The rule's SHAPE (four conjuncts, offer exactly one rung
+   above the anchor, mode == "advanced", recorded approval) is unchanged. Any other type / unknown event name / unknown object key / non-int budget ⇒
    load-guard RAISE (GB12/D45). Absent `events` key in the object form ⇒ RAISE; explicit `[]` ⇒ legal
    no-op. Absent `premium` block entirely ⇒ the frozen spec governs byte-for-byte (R3 restated).
 2. **The budget envelope (AT-L12/L13).** Object form carries `budget.calls` (default 10; token budgets

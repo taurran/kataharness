@@ -40,8 +40,10 @@ __all__ = [
     "RESERVED_EVENTS",
     "AdaptiveError",
     "anchor_switch_reset",
+    "apply_delta",
     "bump_pending",
     "can_spend",
+    "l2_base_rung",
     "modulate_step",
     "new_state",
     "record_gate_result",
@@ -51,6 +53,7 @@ __all__ = [
     "render_tier_decision",
     "resolve_adaptive_config",
     "resolve_budget",
+    "state_from_recount",
 ]
 
 
@@ -685,3 +688,151 @@ def anchor_switch_reset(state: dict) -> None:
     state["bumped"].clear()
     state["streaks"].clear()
     state["dampers"].clear()
+
+
+# ---------------------------------------------------------------------------
+# ADVAL folds (pre-merge, D150): restart-state merge, rung arithmetic, L2 base
+# ---------------------------------------------------------------------------
+
+
+def state_from_recount(recount: dict) -> dict:
+    """Materialize a FULL adaptive state from a :func:`recount_from_decisions` result.
+
+    Adval F5 fold: the recount rebuilds ONLY the durably-recountable keys —
+    ``budgetSpent`` (premium spends) and ``bumped`` (consumed one-per-task bump
+    marks). Sub-threshold ``bumpCounters``, ``streaks``, and ``dampers`` are
+    STRUCTURALLY unrecountable (no ``tier:`` line exists below the thresholds) and
+    restart empty — the honest, conservative direction: a restarted conductor
+    under-adapts (base behavior) rather than inventing counters. Pass THIS result
+    as the post-restart ``state``; never pass the raw recount dict (its shape is
+    partial by design and every consumer RAISES on it).
+
+    Args:
+        recount: The :func:`recount_from_decisions` return value.
+
+    Returns:
+        A full :func:`new_state` dict with the recounted keys folded in.
+
+    Raises:
+        AdaptiveError: On a *recount* missing either recounted key (a partial
+            hand-built dict is a caller bug — fail closed, D136).
+    """
+    if not isinstance(recount, dict) or "budgetSpent" not in recount or "bumped" not in recount:
+        raise AdaptiveError(
+            "state_from_recount: expected a recount_from_decisions result "
+            f"({{'budgetSpent', 'bumped'}}); got {recount!r}. STOP (D136)."
+        )
+    state = new_state()
+    state["budgetSpent"] = recount["budgetSpent"]
+    state["bumped"] = dict(recount["bumped"])
+    return state
+
+
+#: Mode → ceiling offset from the anchor index (AT-L2): essential caps one rung
+#: below the anchor; standard/advanced cap AT the anchor (the premium rung is
+#: NEVER reached via delta arithmetic — it fires only through the gated event
+#: path in kata_models, AT-L14).
+_MODE_CEILING_OFFSET: dict[str, int] = {"essential": -1, "standard": 0, "advanced": 0}
+
+
+def apply_delta(ladder: list[str], current: str | None, delta: int, *, anchor: str, mode: str) -> str | None:
+    """Apply an L1 delta to a resolved rung and EMIT per the frozen contract (AT-L2b).
+
+    Adval F6 fold — the executable owner of the caller-side rung arithmetic the
+    orchestrate prose describes: clamp to [ladder floor, the mode ceiling
+    (essential = anchor−1; standard/advanced = the anchor)] and return **``None``
+    when the result lands ON the anchor** (OMIT — never the anchor's explicit id,
+    the R7/Fable-outage protection) else the rung short-name. ``current=None``
+    means "at the anchor" (the zero-step OMIT input).
+
+    Args:
+        ladder: The family ladder, LOW→HIGH rung short-names, containing *anchor*.
+        current: The pre-delta resolved rung short-name, or ``None`` (= at anchor).
+        delta: The :func:`modulate_step` result (−1 | 0 | +1).
+        anchor: The anchor rung short-name (must be in *ladder*).
+        mode: ``essential`` | ``standard`` | ``advanced``.
+
+    Returns:
+        The post-delta rung short-name, or ``None`` for the anchor-landing OMIT.
+
+    Raises:
+        AdaptiveError: On an unknown *mode*, an *anchor*/*current* not in
+            *ladder*, or a non-int *delta* (fail-closed, D136).
+    """
+    if mode not in _MODE_CEILING_OFFSET:
+        raise AdaptiveError(f"apply_delta: unknown mode {mode!r} — STOP (D136).")
+    if not isinstance(delta, int) or isinstance(delta, bool) or delta not in (-1, 0, 1):
+        raise AdaptiveError(
+            f"apply_delta: delta must be -1, 0, or +1 (got {delta!r}) — anything else "
+            "is a producer bug, never silently clamped (D136; one rung per iteration, AT-L2)."
+        )
+    try:
+        anchor_idx = ladder.index(anchor)
+    except ValueError:
+        raise AdaptiveError(
+            f"apply_delta: anchor {anchor!r} not in ladder {ladder!r} — STOP (D136)."
+        ) from None
+    if current is None:
+        current_idx = anchor_idx
+    else:
+        try:
+            current_idx = ladder.index(current)
+        except ValueError:
+            raise AdaptiveError(
+                f"apply_delta: rung {current!r} not in ladder {ladder!r} — STOP (D136)."
+            ) from None
+    ceiling_idx = max(0, anchor_idx + _MODE_CEILING_OFFSET[mode])
+    idx = min(max(current_idx + delta, 0), ceiling_idx)
+    return None if idx == anchor_idx else ladder[idx]
+
+
+def l2_base_rung(
+    acceptance: dict[str, float],
+    samples: dict[str, int],
+    ladder: list[str],
+    l0_rung: str,
+    task_class: str,
+    *,
+    theta: float = 0.85,
+    min_samples: int = 5,
+) -> str:
+    """The L2 acceptance-routing base-row contract (AT-L18; adval F4 fold).
+
+    Selects the CHEAPEST tier (lowest ladder index) whose ledger acceptance for
+    ``"<task_class>×<tier>"`` meets ``theta`` with ``samples >= min_samples`` —
+    **clamped to at most the L0 row** (L2 may never raise the base above L0;
+    a cost increase needs an event or an approval, never a data inference —
+    re-gate LOW-18). No qualifying tier ⇒ the L0 rung, exactly. ACTIVATION is
+    the caller's `models.adaptive.l2` gate (default OFF, named-deferred until
+    post-R6 ledger volume — AT-L19); this function is the shipped CONTRACT.
+
+    Args:
+        acceptance: ``{"<class>×<tier>": rate}`` — the ledger's
+            ``firstPassAcceptanceByClassTier`` aggregated by the ACTIVATION
+            pipeline (deferred with L2 itself, AT-L19; no aggregator ships yet —
+            this function is the selection contract only).
+        samples: ``{"<class>×<tier>": contributing-row-count}`` (same deferred source).
+        ladder: The family ladder, LOW→HIGH rung short-names.
+        l0_rung: The L0 base rung for this class×mode (must be in *ladder*).
+        task_class: The task's class (the key prefix).
+        theta: The acceptance threshold ``[TUNABLE]`` (AT-L18: 0.85).
+        min_samples: The row floor ``[TUNABLE]`` (AT-L18: 5, the class_median
+            discipline).
+
+    Returns:
+        The selected rung short-name (``<= l0_rung`` on the ladder, always).
+
+    Raises:
+        AdaptiveError: On *l0_rung* not in *ladder* (fail-closed, D136).
+    """
+    try:
+        l0_idx = ladder.index(l0_rung)
+    except ValueError:
+        raise AdaptiveError(
+            f"l2_base_rung: l0_rung {l0_rung!r} not in ladder {ladder!r} — STOP (D136)."
+        ) from None
+    for idx in range(0, l0_idx):  # strictly cheaper tiers, cheapest first
+        key = f"{task_class}×{ladder[idx]}"
+        if samples.get(key, 0) >= min_samples and acceptance.get(key, 0.0) >= theta:
+            return ladder[idx]
+    return l0_rung

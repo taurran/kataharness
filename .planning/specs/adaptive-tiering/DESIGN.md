@@ -378,3 +378,25 @@ citation corrected to pre-fix TP 0/57 + post-fix unmeasured (AT-L9); LOW-7 Amend
 includes the ledger additive keys (header); LOW-8 freeze-act must draft both amendment texts
 (header). **Next: operator resolves VETO-FLAG-1/2/3 ⇒ FREEZE (drafts the paired amendment texts,
 assigns D≥150) ⇒ plan ⇒ build as v0.3.0.**
+
+### Implementation notes (dated, 2026-07-05 — the pre-merge ADVAL folds; supersede-never-rewrite)
+
+**ADVAL (Fable, whole-feature, tie-in-focused): SHIP-WITH-FIXES — 1 HIGH / 4 MED / 3 LOW, all
+folded:** **F1 (HIGH)** the events-form premium branch lacked the R-9 work-class guard (economy
+could fire premium via an event tag — prose-only exclusion where three docs claimed structural) ⇒
+the guard is now CODE in `kata_models.resolve` + the AC-7 five-way never-fires matrix test +
+Amendment #2 item 1 wording carries the conjunction explicitly. **F2** ~20 `kata_telemetry.py:`
+cites in observability.md renumbered after this initiative's insertions (the G-2 class, again).
+**F3** AC-1's golden test delivered in full: 48-skill × 3-mode × 5-anchor inertness sweep + a
+literal hand-derived pin sample. **F4** the L2 contract is now CODE (`kata_adaptive.l2_base_rung`:
+θ/min_samples/cheapest-first/≤-L0 clamp, tested) — activation stays `l2: false` named-deferred
+(AT-L19 unchanged). **F5** restart recovery: `state_from_recount` materializes a full state from
+the partial recount; HONESTY NOTE on AT-L7 — the durable recount trail covers premium SPEND +
+consumed BUMP MARKS only; sub-threshold bump counters/streaks/dampers are structurally
+unrecountable (no `tier:` line exists below threshold) and restart empty, the conservative
+direction. **F6** `apply_delta` is the executable owner of the caller-side clamp + AT-L2b OMIT
+emission (AC-2 now mutation-pinned in code). **F7** grammar delta vs the frozen AT-L7 line, noted:
+the shipped trail uses ASCII `->` and SIX reasons (`anchor-switch-reset`, `budget-exhausted` added
+beyond the frozen four) — render/recount/observability are byte-consistent with each other; the
+frozen line's `→`/four-reason sketch is superseded by this note, not edited. **F8** config.md
+budget type now includes `tokensOut?`.

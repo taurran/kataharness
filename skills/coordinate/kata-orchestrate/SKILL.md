@@ -924,15 +924,23 @@ ABSENT `adaptive` block ⇒ `{"enabled": False}` ⇒ **every step in this sectio
 Dispatch-time protocol above runs byte-for-byte as v0.2.1** (the load-time BC leg). A malformed
 block ⇒ the resolver RAISES ⇒ load-guard STOP + escalate (GB12/D45). Hold ONE
 `state = kata_adaptive.new_state()` for the run; after a conductor restart, rebuild it via
-`kata_adaptive.recount_from_decisions(<the board's tier: DECISION payloads>, <premium rung>)`.
+`state = kata_adaptive.state_from_recount(kata_adaptive.recount_from_decisions(<the board's tier:
+DECISION payloads>, <premium rung>))` — the recount is PARTIAL by design (budget spend + consumed
+bump marks are the only durably-recountable keys; sub-threshold bump counters, streaks, and dampers
+have no `tier:` line and restart EMPTY — conservative: a restarted conductor under-adapts to base
+behavior, never invents counters). NEVER pass the raw recount dict as `state`; every consumer
+RAISES on it (adval F5).
 
 **Step 2.5 — modulate the resolved rung (between resolve and dispatch, EVERY build dispatch):**
 `delta = kata_adaptive.modulate_step(cfg, state, task_id=…, task_class=…, work_class=…,
-complexity=<the task's plan-frontmatter complexity, or None>)`. Apply `delta` to the resolved rung
-on the family ladder, clamp to [family floor / R1 coder-floor, the mode ceiling (essential
-anchor−1 · standard anchor · advanced anchor-or-premium)], then EMIT per the frozen contract
-(AT-L2b): a rung landing ON the anchor ⇒ OMIT the model parameter (never the anchor's explicit
-id); below-anchor ⇒ explicit id; the premium rung ⇒ `premium.offer` itself. **The AT-L4 roster
+complexity=<the task's plan-frontmatter complexity, or None>)`. Apply the delta via
+`kata_adaptive.apply_delta(<family ladder>, <resolved rung or None>, delta, anchor=…, mode=…)` —
+the executable owner of the clamp + emission arithmetic (adval F6): it clamps to [ladder floor,
+the mode ceiling (essential anchor−1 · standard anchor · advanced anchor — the premium rung is
+NEVER reached by delta, only by the gated event path)] and returns **`None` for an anchor-landing
+rung ⇒ OMIT the model parameter (never the anchor's explicit id, AT-L2b)**, else the rung
+short-name ⇒ emit its explicit id. Apply the R1 coder-floor to the result exactly as in step 2.
+The premium rung emits `premium.offer` itself via the resolver's event path. **The AT-L4 roster
 NEVER modulates down:** kata-evaluate, kata-review/grill/slop/validate verdict passes, AND
 [[kata-inline-eval]] (economy-classed but kill-authority judgment) keep their L0 resolution as a
 floor. Every non-zero delta writes a board DECISION with the payload from

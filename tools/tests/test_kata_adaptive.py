@@ -28,6 +28,9 @@ from kata_adaptive import (
     RESERVED_EVENTS,
     AdaptiveError,
     anchor_switch_reset,
+    apply_delta,
+    l2_base_rung,
+    state_from_recount,
     bump_pending,
     can_spend,
     modulate_step,
@@ -656,3 +659,121 @@ class TestExecSafety:
         source = Path(kata_adaptive.__file__).read_text(encoding="utf-8")
         assert not re.search(r"^\s*(import subprocess|from subprocess)", source, re.M)
         assert "subprocess" not in dir(kata_adaptive)
+
+
+# ---------------------------------------------------------------------------
+# ADVAL folds (pre-merge): state_from_recount (F5), apply_delta (F6/AC-2),
+# l2_base_rung (F4/AT-L18)
+# ---------------------------------------------------------------------------
+
+LADDER = ["haiku", "sonnet", "opus", "fable"]
+
+
+class TestStateFromRecount:
+    def test_materializes_full_state_from_recount(self):
+        state = new_state()
+        record_spend(state)
+        record_spend(state)
+        lines = [
+            render_tier_decision("gate-1", "opus", "fable", "event:freeze-gate-verdict"),
+            render_tier_decision("gate-2", "opus", "fable", "event:re-gate-after-hold"),
+            render_tier_decision("T-3", "sonnet", "opus", "failbump"),
+        ]
+        recount = recount_from_decisions(lines, "fable")
+        full = state_from_recount(recount)
+        assert set(full) == {"bumpCounters", "bumped", "streaks", "dampers", "budgetSpent"}
+        assert full["budgetSpent"] == state["budgetSpent"] == 2
+        assert full["bumped"] == {"T-3": True}
+        # The materialized state is CONSUMABLE (F5: the raw recount dict raises):
+        cfg = resolve_adaptive_config({})
+        assert modulate_step(cfg, full, task_id="T-9", task_class="code",
+                             work_class="coding") == 0
+
+    def test_raw_recount_dict_rejected_by_consumers(self):
+        # The exact F5 crash, pinned as the designed fail-closed behavior.
+        recount = {"budgetSpent": 1, "bumped": {}}
+        cfg = resolve_adaptive_config({})
+        with pytest.raises(AdaptiveError, match="new_state"):
+            modulate_step(cfg, recount, task_id="T", task_class="code", work_class="coding")
+
+    def test_partial_recount_raises(self):
+        with pytest.raises(AdaptiveError, match="recount_from_decisions"):
+            state_from_recount({"budgetSpent": 1})
+
+
+class TestApplyDelta:
+    """AC-2's executable owner (adval F6): clamp + the AT-L2b OMIT emission."""
+
+    def test_anchor_landing_bump_emits_omit_never_anchor_id(self):
+        # NAMED mutation target (AC-2): a +1 landing ON the anchor returns None.
+        assert apply_delta(LADDER, "opus", 1, anchor="fable", mode="advanced") is None
+
+    def test_below_anchor_result_emits_explicit_rung(self):
+        assert apply_delta(LADDER, "opus", -1, anchor="fable", mode="advanced") == "sonnet"
+
+    def test_essential_ceiling_is_anchor_minus_one(self):
+        # +1 from anchor-2 in essential clamps at anchor-1 (never the anchor).
+        assert apply_delta(LADDER, "sonnet", 1, anchor="fable", mode="essential") == "opus"
+        assert apply_delta(LADDER, "opus", 1, anchor="fable", mode="essential") == "opus"
+
+    def test_essential_sonnet_anchor_bump_is_a_no_op(self):
+        # AC-2's degenerate case asserted AS a no-op: sonnet anchor, essential
+        # ceiling = haiku; a bumped haiku dispatch clamps back to haiku.
+        assert apply_delta(LADDER, "haiku", 1, anchor="sonnet", mode="essential") == "haiku"
+
+    def test_floor_clamp(self):
+        assert apply_delta(LADDER, "haiku", -1, anchor="opus", mode="standard") == "haiku"
+
+    def test_none_current_means_at_anchor(self):
+        assert apply_delta(LADDER, None, -1, anchor="opus", mode="standard") == "sonnet"
+        assert apply_delta(LADDER, None, 0, anchor="opus", mode="standard") is None
+
+    @pytest.mark.parametrize("bad", [("nope", "opus"), ("opus", "nope")])
+    def test_unknown_rung_or_anchor_raises(self, bad):
+        current, anchor = bad
+        with pytest.raises(AdaptiveError):
+            apply_delta(LADDER, current, 0, anchor=anchor, mode="standard")
+
+    def test_unknown_mode_raises(self):
+        with pytest.raises(AdaptiveError, match="mode"):
+            apply_delta(LADDER, "opus", 0, anchor="fable", mode="turbo")
+
+
+class TestL2BaseRung:
+    """AT-L18's shipped contract (adval F4): cheapest qualifying tier, <= L0."""
+
+    ACC = {"code×haiku": 0.90, "code×sonnet": 0.95, "code×opus": 1.0}
+    N5 = {"code×haiku": 5, "code×sonnet": 7, "code×opus": 9}
+
+    def test_cheapest_qualifying_tier_wins(self):
+        assert l2_base_rung(self.ACC, self.N5, LADDER, "opus", "code") == "haiku"
+
+    def test_theta_boundary_excludes_below(self):
+        acc = dict(self.ACC, **{"code×haiku": 0.84})  # < 0.85 by one point
+        assert l2_base_rung(acc, self.N5, LADDER, "opus", "code") == "sonnet"
+
+    def test_min_samples_boundary(self):
+        n = dict(self.N5, **{"code×haiku": 4})  # below the 5-row floor
+        assert l2_base_rung(self.ACC, n, LADDER, "opus", "code") == "sonnet"
+
+    def test_never_above_l0(self):
+        # Only the ANCHOR tier qualifies — but L2 may never raise above L0.
+        acc = {"code×opus": 1.0}
+        n = {"code×opus": 9}
+        assert l2_base_rung(acc, n, LADDER, "sonnet", "code") == "sonnet"
+
+    def test_no_data_returns_l0_exactly(self):
+        assert l2_base_rung({}, {}, LADDER, "opus", "code") == "opus"
+
+    def test_unknown_l0_raises(self):
+        with pytest.raises(AdaptiveError):
+            l2_base_rung({}, {}, LADDER, "gpt", "code")
+
+
+class TestApplyDeltaStrictness:
+    """Re-gate N3 fold: out-of-band deltas RAISE (one rung per iteration, AT-L2)."""
+
+    @pytest.mark.parametrize("bad", [7, -9, 2, -2])
+    def test_out_of_band_delta_raises(self, bad):
+        with pytest.raises(AdaptiveError, match="one rung"):
+            apply_delta(LADDER, "opus", bad, anchor="fable", mode="advanced")
