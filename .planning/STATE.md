@@ -8,6 +8,14 @@ last_updated: "2026-07-05T09:00:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-07-05c — README restructured, PR #15 `b5ffccc`; session complete):** Post-v0.3.0
+> operator-directed README pass: exec-summary banner, feature box reordered by UNIQUENESS (quality loop
+> leads), salesy adaptive-tiering entry, NEW "Picking a harness" comparison (Claude Code native
+> orchestration/ultra · Hermes · OpenHands · Aider — philosophy-level, grounded, gate PASS). Session
+> total: v0.2.1 (D146–D149, PRs #11/#12) + v0.3.0 (D150, PRs #13/#14) + README (PR #15) + Tier-0
+> cleanup, all merged/tagged/pushed. **NEXT SESSION: R6** per the BACKLOG ★ queue. New D# ≥ D151.
+> *(Prior CURRENT blocks below are history.)*
+
 > **CURRENT (2026-07-05b — v0.3.0 ADAPTIVE TIERING MERGED + TAGGED, same day as v0.2.1):** The operator
 > directed the adaptive-tiering initiative same-session ("push this as the next update… execute the build
 > on premium… go deep on calibration"): brainstorm → conversational grill → DESIGN → freeze-gate v1 HOLD
