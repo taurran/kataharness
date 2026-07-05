@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.8.0
+version: 0.9.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -91,6 +91,12 @@ does not drift.**
        as a breakthrough-alert by [[kata-preflight]]); absent recorded acceptance ⇒ **STOP + surface**.
      - `"blocked"` | `"absent"` | malformed ⇒ **STOP + surface** the `blockers` list (or the missing /
        malformed artifact); refuse dispatch. Run [[kata-preflight]] first to provision and clear the gate.
+   - **Enforcement-only, never re-asks (CA-L24 — context-autonomy).** kata-orchestrate's existing PRE-FLIGHT
+     gate stays **enforcement-only**: it verifies/provisions the approved set and NEVER prompts a second time.
+     The ONE approval bundle (dependency installs + permission allowlist + premium gate + compact-window
+     recommendation + the host-settings write slot) is COLLECTED pre-run by bootstrap (P2/C1), not here — this
+     gate refuses dispatch on a `blocked`/`degraded` set but never re-collects an approval (the 8-hour walk-away
+     contract: zero interactive prompts after the bundle).
 2. A **frozen** PLAN exists with a wave/ownership DAG (e.g. `ownership:` + `waves:` + `depends_on:` in
    frontmatter). If the plan is not frozen, stop — planning is a different phase.
 3. The target repo is **green at the fork point** (run its test/build gate; record the baseline numbers).
@@ -518,8 +524,48 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** "each completed task branch" = the task's **ACTIVE attempt
    branch** after any reroll (the abandoned attempt was worktree-removed+pruned at reroll time; § The
    corrective-action ladder).
+
+**Context-autonomy — gauge-driven self-handoff at each boundary (ADDITIVE — CA-P1; BC: rotation-inactive ⇒ inert,
+byte-for-byte unchanged).** When context-autonomy rotation is active for this run — **one-shot shapes
+UNCONDITIONALLY** (CA-L33/D147; the key is not consulted, incl. pre-v0.2.1 configs), **incremental shapes iff
+`kata.config.contextAutonomy == "on"`** (CA-L32; absent-at-load ⇒ OFF) — the conductor evaluates the trigger at
+this frontier-recompute boundary. The rotation-active determination and the trigger-fraction policy are resolved
+by [[kata-selfhandoff]] and are **not re-decided here**; this step is the conductor's boundary MECHANICS only.
+
+- **Boundary placement (CA-L12).** The conductor evaluates the trigger at
+  **wave/frontier-recompute boundaries only**; **never mid-task** (existing [[kata-selfhandoff]] mandate,
+  unchanged).
+- **Read the gauge (CA-L1 reader priority).** Resolve the active gauge via
+  `kata_gauge.resolve_gauge(kata_bridge_path, user_bridge_path, now_utc=<now>)` — kata bridge → user bridge →
+  `source: "none"`. A leg that is absent, corrupt, **or stale (bridge timestamp older than 300 s `[TUNABLE]`,
+  CA-L3)** is skipped explicitly; stale-or-absent is **never "assume fine"**.
+- **Test the trigger (CA-L5 denominator).** On a usable gauge, `kata_gauge.trigger_crossed(gauge, <contextTrigger
+  or 0.70>)`. The denominator is the gauge's `total_tokens` (post-cap): **a capped session's real frame IS the
+  cap**. `contextTrigger` reads from `kata.config`, default **0.70 `[TUNABLE]`**, advanced-drawer only, never
+  interactively asked (CA-L7).
+- **No usable gauge ⇒ deterministic rotation (CA-L4/L6; §4 row 6).** A `source: "none"` gauge
+  (absent / stale / unresolvable) ⇒ rotate on the `kata_gauge.fallback_waves(trigger_tokens)` cadence
+  (`N = max(1, floor(trigger_tokens ÷ est_wave_burn))`, `est_wave_burn` default **40k tokens `[TUNABLE]`**).
+  **Degradation is always graceful rotation — never "assume infinite context".**
+- **Post-trigger: keep working (CA-L12).** Once the trigger is crossed, **keep working**, refreshing the handoff
+  at every subsequent boundary until the host reset arrives (option (a)). The refresh invokes [[kata-handoff]]
+  with `kind: self`; the **T1-extended** rule holds — any coincident boundary handoff supersedes a same-boundary
+  self-refresh. Resume must reload FULL context quality — [[kata-orient]] 3-tier, budget-capped per
+  `protocol/orientation.md` — seamless, no hangs, no degradation (graded at CA-A1, not just task continuity).
+- **Under threshold ⇒ ZERO churn (the graded NO-FIRE property, CA-L13 / CA-A5).** A session under the trigger
+  produces **zero handoff refreshes and zero rotation events** — early exit is a risk equal to rot; generous,
+  not timid.
+- **No hooks ⇒ manual re-anchor (§4 row 8).** Absent the SessionStart(compact) / PreCompact hooks, the AGENTS.md
+  standing line + the [[kata-orient]] 3-tier rebuild are the manual re-anchor path — degraded, surfaced, never
+  silent.
+
 5. **Commit at the checkpoint** (conventional commit + `Kata-Task: <task-id>` trailer) so compaction
    can't lose work and restore can map each integration commit back to its task.
+   **Reset ownership (CA-L14 — context-autonomy).** Host compaction is the SOLE reset mechanism on Claude … Kata
+   owns the **SCHEDULE + DURABILITY** …; the host owns the **MECHANISM**. … There is **no conductor
+   self-compaction leg** — this commit/checkpoint step is the durability half; the host compaction/reset arrives
+   on kata's recommended schedule (the CA-L16 backstop `autoCompactWindow`, recommend-never-write), and the
+   SessionStart(compact) hook re-anchors the fresh context on `.planning/HANDOFF.md`.
    **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** the mapped source is the task's **ACTIVE attempt branch**
    after any reroll; the single original fork point keeps the `Kata-Task:` mapping stable (§ The corrective-action
    ladder).
