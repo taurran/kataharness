@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -37,6 +37,25 @@ free-text prompt)*. Voice per `protocol/persona.md`.
 Invoke [[kata-readiness]]. On **BLOCK**, stop and surface the blocker (don't compose a run on a broken env). On
 re-entrant detection (an existing `kata.config`), offer **same-as-last / step a family up a tier / change
 run-shape** instead of cold-start. WARNs are surfaced, not blocking.
+
+### Phase 0 — force-run marker (CA-L36/CA-L37, first-run gating)
+Before composing, call `kata_settings.first_run_required(home)` (E2). It returns
+`{required, reason, clause_skipped}`: **an absent marker OR a `.kata-version` `gitSha` mismatch**
+(`firstRunVersion ≠` the stamp's `gitSha`) ⇒ force the FULL first run — re-armed on every install/upgrade
+(a fresh install or `--update` writes a new stamp, and a new posture pass is worth one forced full run).
+Stamp absent OR `gitSha == "unknown"` (the dev in-repo path) ⇒ the version clause is SKIPPED and marker
+absence alone forces. On a completed forced first run, call `kata_settings.record_first_run(git_sha)` to
+stamp `firstRunCompletedAt` + `firstRunVersion`.
+
+**Corrupt settings (C-3, D136 fail-closed):** the marker READ is lenient (a corrupt `.kata-settings.json`
+reads as *absent* ⇒ force), but `record_first_run` **fails closed** — it cannot persist over a corrupt
+file. Bootstrap MUST detect that write failure, surface **LOUDLY** pointing at the corrupt file path, and
+**stop; never loop** (a forced first run that can't record its completion would otherwise re-force forever).
+
+### Phase 0/1 — premium lapse executor (CA-L31)
+On re-entrant detection, compare the composed `mode` against the recorded `models.premium.grantedMode`. A
+run that **changes mode LAPSES** the approval: the lapse executor is BOOTSTRAP — re-entrant Phase 0/1
+detecting `mode ≠ grantedMode` **clears `approved`**, and the next preflight bundle (Phase 2.5) re-asks.
 
 ### Phase 0b — sprint-boundary routing (sprint-cadence D80 — bootstrap is the boundary router)
 When the re-entered config has `delivery.shape == "incremental"`, read [[kata-readiness]]'s **sprint-progression
@@ -135,6 +154,34 @@ stays one keystroke; advanced fields appear only when this drawer is opened.
 The cost preview is shown here for runs opened via the drawer; on the default path it is surfaced as a single
 line in the plain-language statement ("this is a medium-cost run").
 
+## Phase 2.5 — the approval bundle (preflight collection; CA-L24)
+
+**Bundle collection is a NEW bootstrap step between Phase 2** (the advanced drawer) **and the Phase-3
+config write** — **bootstrap collects; kata.config is written AFTER, with `models.premium.approved`
+recorded from the collected answer.** Bootstrap orchestrates; [[kata-preflight]] collects (CA-L31 gate
+home). The existing [[kata-orchestrate]] PRE-FLIGHT gate stays **enforcement-only** — it verifies /
+provisions the approved set and NEVER prompts a second time.
+
+**The ONE bundle** — **Collected ONCE**; **zero expected prompts for 8 hours after**. Every slot is
+approved like an install, **never an implied side effect**:
+
+1. **Dependency installs/downloads** — the freeze-approved set (existing [[kata-preflight]] scope).
+2. **Permission allowlist** — the CA-L26 fixed-checklist coverage WARNs.
+3. **The premium gate** (Leg G) — collected here; full semantics + the cost disclaimer live in
+   [[kata-preflight]].
+4. **The compact-window recommendation** (CA-L16 backstop) — **recommend-never-write**: Kata **never
+   writes user settings silently**; the recommendation is surfaced and applied only with permission (set
+   above the internal target, or not at all if the default suffices). It is **RECOMPUTED every run**
+   (CA-L37/R-42 — `hostPosture` is audit-only and never suppresses it).
+5. **The host-settings write slot** — installing the SessionStart(compact) hook and the statusline /
+   wrapper entries IS a write to `~/.claude/settings.json`, so it is an explicit bundle slot approved like
+   an install. Merge discipline: **hooks arrays are APPEND-NEVER-REPLACE; `statusLine` is only ever
+   chained-or-skipped** (the CA-L1 never-clobber guarantee, generalized to every settings key kata touches).
+
+Record the operator's accepted answers via `kata_settings.record_accepted_defaults(entries)` (the C-1
+`{value, v, at}` schema) and the host posture via `kata_settings.record_host_posture(posture)` — both
+**audit-only, last-write-wins, never consulted for suppression**.
+
 ## Phase 3 — write kata.config + launch
 Write `kata.config` (JSON, branch root) per `protocol/config.md`: `mode`, `modules`, `effort`, `tiers`,
 `ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**, **`securityScan`**, **`inlineEval`**. Bootstrap writes the config
@@ -186,3 +233,27 @@ the dispatch brief; that mandate's cost is exactly what the M4-P0 instrument mea
 (byte-for-byte BC)** — omitting the field on an existing run leaves that run unchanged. **Forward rule:**
 offer `"on"` (the P1 scheduling/reroll mode) only once the harness telemetry ledger holds **≥3 instrumented
 runs** — until that calibration data exists, stay on `"telemetry"`.
+
+**Context-autonomy posture (`contextAutonomy`, CA-L32 + CA-L10 fold #4):** write `contextAutonomy: "on"`
+explicitly for every new config. The key governs **incremental shapes only** — one-shot shapes rotate
+**unconditionally** and never consult it (CA-L33/D147, the ONE deliberate BC departure). **Whenever
+bootstrap writes `contextAutonomy: "on"`, it ALSO mandates `inlineEval: "telemetry"` or higher for that
+config** — checkpoint-anchored continuation rides the M4 checkpoint stream, which exists only at
+`inlineEval ≠ off`; the M4-L8 default above already writes `"telemetry"` for new runs, so this pins the
+coupling additively. `contextTrigger` (the trigger fraction, default `0.70`) is shown in the **advanced
+drawer only** and is **never interactively asked** (K5). Re-entrant **same-as-last from a pre-v0.2.1
+config** (no `contextAutonomy` key) writes the key **at the next composition touch** per Phase 3's
+write-all-fields-by-construction, **surfaced in the composition summary** (R-23) — never a silent
+retroactive flip.
+
+**Premium record (`models.premium`, CA-L27/L28):** write `models.premium: {offer, approved, scope,
+grantedMode}` from the Phase-2.5 collected answer — **kata.config is authoritative** for dispatch, while
+`.kata/preflight.json` carries the audit event only (once-per-run = once per kata.config). The two decline
+arms are distinct — never conflate them:
+- **Offer declined (the DEFAULT arm — anchor=opus ∧ mode=advanced):** record `approved: false` in the
+  §2-shaped block (or write no `models.premium` block — absent ⇒ the resolver's frozen behavior
+  byte-for-byte), stay at the anchor, and the run **PROCEEDS normally**. No hard-stop, no anchor pin.
+- **Keep-using declined — ONLY when the session anchor is already Fable/Mythos-class:** pin
+  `models.anchor: "opus"` + hard-stop advising a `/model` switch, resume after the switch (the only honest
+  decline for that case — config cannot stop a Fable *session* from inheriting Fable on zero-step critical
+  work; the session model is the operator's own choice).
