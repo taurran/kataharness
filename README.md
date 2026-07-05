@@ -1,14 +1,17 @@
 # KataHarness
 
-### Hand your biggest build to an AI team — and trust what comes back.
+### The best of modern agentic engineering — turned into output you can trust, for the fewest tokens it takes to prove it.
 
-Every AI coding tool can produce an afternoon of code in minutes. The hard question is the one that
-comes next: *was any of it actually right?* KataHarness is built around that question. Tell it what
-you want in plain English. It interrogates your idea until the spec is airtight, **freezes the plan**
-so nothing drifts, then executes across a team of AI workers — and refuses to call anything "done"
-until an independent, fresh-context checker whose default verdict is **no** has been shown the proof.
-Then it folds what the run learned back into itself. The name *is* the method: the **Improvement
-Kata** — *every loop sharpens the loop.*
+**Bottom line:** AI can write a week of code in an hour — it just can't tell you which of it is
+actually *right*, and checking everything with an AI judge burns tokens fast. KataHarness exists to
+close that gap. It takes the cutting-edge agentic practices the industry is converging on — a
+plain-English spec interrogated until it's airtight, a **frozen plan** so nothing drifts, a team of AI
+workers, and independent, adversarial review whose default verdict is **no** — and combines them into
+one loop that **relentlessly proves its own output is correct while spending the fewest tokens to get
+there**. What you get back is work you can *delegate and trust*, not a fast pile of code you still have
+to babysit — because unverified AI output isn't a shortcut, it's a liability you inherit, and the only
+output worth shipping is the output that's been proven right. The name *is* the method: the
+**Improvement Kata** — *every loop sharpens the loop.*
 
 **Easy to start.** One command installs it into the agent host you already use. *"Start a KataHarness
 run on my project"* is the whole interface — the harness asks you one plain question (*how careful,
@@ -31,7 +34,7 @@ trail, so a long walk-away comes back as reviewable evidence, not a mystery diff
 Whether this is your first agent harness or your fifth: if you have ever wanted to *delegate* real
 work to an AI — not babysit it — this is the loop built for the trust half of that transaction.
 
-> **v0.3.0 · experimental.** New: **adaptive tiering**, the evidence-driven model routing described
+> **v0.3.0 · beta.** New: **adaptive tiering**, the evidence-driven model routing described
 > above — full story under *What's in the box* → 🎯, full history in the [CHANGELOG](./CHANGELOG.md),
 > honest maturity notes under *Docs / status* at the bottom of this page. New here? Start with
 > [`AGENTS.md`](./AGENTS.md).
@@ -121,123 +124,123 @@ the spec     design +    parallel       no-write,       two-way,     lessons bac
 ## What's in the box
 
 ### 🛡️ The quality loop — nothing certifies its own work
-The spine every other feature hangs off, and the reason to trust a walk-away run at all.
-A **default-FAIL** evaluator owns the definition of "done." An **adversarial review** attacks the design before
-every merge. Every code behavior is **mutation-proven non-vacuous** (a test that stays green when its assertion
-is removed doesn't count). An optional **AI-slop check** fails a run for spiraling or over-claiming. And a
-standing **silent-permissive-default guard** forbids decision-code from quietly degrading on bad input.
+The backbone everything else hangs on — and the reason you can trust a run you walked away from.
+Nothing here grades its own work. A **default-FAIL evaluator** owns the definition of "done" (work is
+guilty until it proves it passed). A separate **adversarial reviewer** attacks the design before every
+merge. Every test is **mutation-proven** — if it still passes after you delete what it checks, it
+doesn't count. An optional **slop check** fails a run that starts spiraling or over-claiming, and a
+standing guard stops decision-code from quietly degrading on bad input.
 
-### 🎯 Adaptive tiering — the loop routes models by evidence *(new in v0.3.0)*
-Most harnesses pick one model and pay its rate for everything. KataHarness routes **every dispatch
-off the run's own evidence**: a task that fails its gate twice is **bumped a rung up for the retry**;
-plan-rated low-complexity work and clean-streak classes **step down** (coding work only, one rung,
-damped on any failure); a kill verdict gets a **cheap second opinion** — strictly below your anchor,
-stated-inert where no such tier exists — before work is thrown away. The premium rung (Fable today;
-any family's top model by data registration) fires **only on the hard moments you approved** —
-freeze-gate verdicts, HOLD re-reviews, escalations, failed-task retries — inside a **call budget**
-whose consent prompt shows your exact event list and cap; the last two calls are reserved for gates,
-and exhaustion lapses to your anchor, loudly. Every move is an auditable board `tier:` line (also the
-restart-recovery trail). Modeled on this repo's own prior build via the shipped engine: **−86%
-premium-rung calls** (59→8) and **13→0 wrongful kills** on the false-positive trigger mix *(modeled,
-not measured — inputs cited in the committed SMOKE-MODELED; live A/B queued, arms pinned)*.
-Acceptance routing (L2) ships as contract, activation OFF until real run volume. No `models.adaptive`
-block ⇒ every leg OFF.
+### 🎯 Adaptive tiering — the loop picks models by evidence *(new in v0.3.0)*
+Most tools pick one model and pay its price for everything. KataHarness decides per task, using what
+the run is actually telling it. A task that fails its check twice is **retried on a stronger model**.
+Work rated simple, or on a clean streak, **drops down a rung** (coding only, and it backs off the
+moment anything fails). Cancelling work gets a **cheap second opinion first**.
 
-### ⚡ The inline evaluator/reroll — DSpark-informed loop economics *(v0.2.0)*
-The best-of-both-worlds core: scheduler *principles* (not code) from DeepSeek's **DSpark** paper,
-translated to the harness layer — a **separate cheap confidence signal** (rule-verifiable trailer
-evidence, never worker self-scoring), **acceptance-length as the metric** (clean-checkpoint streaks
-per class), **per-class leashes**, **calibration from logged verdicts**, and the **verifier's final
-say** (the default-FAIL gate stays the untouched authority, so a mistuned ladder degrades to exactly
-today's behavior). Explicitly rejected: fixed-cadence mid-task LLM judgment — a judge costs about a
-chunk to judge a chunk, so periodic judgment on green work is a net loss. Live-proven: trigger →
-diff-cited verdict → corrective redispatch → green. `inlineEval: off|telemetry|on`; absent ⇒ off,
-byte-for-byte backward compatible.
+Your most expensive "premium" model is reserved for **the hard moments you approved** — final gates,
+re-reviews, escalations, retries — inside a **spending cap you consent to up front** (you see the exact
+triggers and the limit). Run out, and it drops back to your normal model, loudly. Every choice is
+logged as an auditable line.
+
+On this repo's own prior build, the shipped engine **modeled an 86% cut in premium-model calls
+(59→8)** while telling real failures from false alarms with **perfect precision — every one of 13
+noise signals correctly ignored**, so no good work is redone on a false trigger *(modeled from
+committed inputs, not yet measured live; a real A/B is queued)*. None of this turns on unless you add
+the config; without it, every part stays off.
+
+### ⚡ The inline evaluator/reroll — catch a bad chunk as it happens *(v0.2.0)*
+A cheap way to catch a bad piece of work the moment it lands, without paying a model to babysit every
+step. The idea (scheduler *principles*, not code, adapted from DeepSeek's **DSpark** paper): watch a
+**cheap, rule-checkable signal** on each checkpoint — never the worker scoring itself — and only call
+a judge when that signal trips. The default-FAIL gate keeps the final say, so a mis-tuned version just
+falls back to normal behavior.
+
+We deliberately **don't** run a judge on a fixed timer: judging a chunk costs about as much as building
+it, so grading healthy work is a net loss. Proven end to end: signal trips → judge cites the diff →
+the chunk is redone → green. `inlineEval: off | telemetry | on`; leave it off and behavior is
+byte-for-byte unchanged.
 
 ### 🔋 Context autonomy — the 8-hour walk-away *(v0.2.1)*
-The conductor watches its own context gauge (a statusline **bridge** on Claude — chain-or-skip, your
-statusline is **never clobbered**) and self-hands-off at 0.70 of the effective window: durable
-`HANDOFF.md` committed **before** any reset, a SessionStart(compact) hook that re-anchors the fresh
-context, resume at the next task boundary with zero task loss. Where no gauge exists — headless `-p`
-runs were **verified on our host** to never tick the statusline — deterministic N-wave rotation covers
-the same guarantee. One **preflight approval bundle** collects everything up front (installs,
-allowlist, compact-window recommendation, host-settings writes, the premium gate, the stranding check)
-so an unattended run never stalls on a prompt — and a walk-away run missing every recovery leg is
-**BLOCKED at preflight**, not discovered dead 6 hours in. The loop also got measurably cheaper: an
-identical-protocol A/B rerun measured **−23% conductor tokens / −44% tool calls / −29% wall clock at
-exact outcome parity** *(n=1, directional, not attributable to any single rider — full caveats in the
-committed LIVE-PROOF)*.
+Long runs used to rot once the context window filled. Now the conductor watches its own **context
+gauge** and hands off to itself at 70% full: it writes a durable `HANDOFF.md` and commits it **before**
+any reset, then a hook re-anchors the fresh context and picks up at the next task boundary — **no work
+lost**. On Claude it reads the gauge from a statusline **bridge** that never clobbers your own
+statusline; where there's no gauge (headless `-p` runs, which we **verified never update the
+statusline**), it falls back to a fixed rotation cadence that gives the same guarantee.
+
+A single **preflight approval** collects everything an unattended run needs up front — installs,
+permissions, the model-cost gate, the recovery checks — so it never stalls waiting on you. And a
+walk-away run that's missing every recovery path is **blocked before it starts**, not found dead six
+hours in. A side benefit showed up in a same-protocol A/B: **−23% tokens, −44% tool calls, −29%
+wall-clock at identical results** *(n=1, directional, not pinned to any single change — full caveats
+in the committed LIVE-PROOF)*.
 
 ### 🧠 The learning loop — Hermes-informed, human-gated
-The cross-run learning arc is based on the applicable traits a formal deep-research bake-off surfaced
-in the **Hermes** learning-loop agent — its prompt-builder tiering shapes `kata-orient`'s three-tier
-orientation assembly; its closed loop shapes the improve→promote arc — with the verdict applied
-deliberately: **adopt the applicable traits, keep our gates** (Hermes ships no default-FAIL testing
-model; ours is the spine). Concretely: a committed **telemetry ledger** records every instrumented
-run's acceptance streaks, cost columns, and failure kinds → calibration works from logged verdicts,
-never vibes; **recall** surfaces prior lessons read-only at initiation; and `kata-improve` distils
-run lessons into candidate skills that enter the toolkit only through `kata-promote`'s **two-stage
-human gate — approved BEFORE any run executes with them**. The loop learns; nothing self-modifies
-silently, and nothing learned runs ungated.
+KataHarness gets better across runs — but it never quietly rewrites itself. The cross-run learning
+design borrows the useful ideas from **Hermes** (a learning-loop agent surfaced by a formal research
+bake-off) while keeping our own gates, which Hermes doesn't have.
+
+In practice: a committed **telemetry ledger** records every run's results, costs, and failure types,
+so tuning works from logged evidence rather than hunches. **Recall** surfaces past lessons (read-only)
+when a new run starts. And `kata-improve` turns lessons into candidate skills that only join the
+toolkit through a **two-stage human approval — granted *before* any run uses them**. The loop learns;
+nothing self-modifies silently, and nothing it learns runs without a gate.
 
 ### 🏁 Built-in benchmarking
-Quality you can *measure*, not assert. A complete two-axis scoring engine ranks candidate build artifacts on real
-**fail-to-pass / pass-to-pass** test evidence (weighted by a mutation-non-vacuity multiplier) and produces an
-**honest scorecard** — it distinguishes a genuine all-pass from a vacuous one, with **no free credit for tests
-that never ran**. *(v0.1 scores single-arm + k-repeat runs; the parallel multi-arm bake-off driver — launch N
-approaches at once, judge, and promote the winner — is the next planned capability.)*
+Quality you can *measure*, not just assert. A two-axis scoring engine ranks candidate builds on real
+**fail-to-pass / pass-to-pass** test evidence (weighted by the same mutation check above) and prints an
+**honest scorecard** — it tells a real all-pass from a hollow one, and gives **no credit for tests that
+never ran**. *(v0.1 scores single-arm and repeat runs; the multi-arm bake-off — run N approaches at
+once and promote the winner — is next.)*
 
 ### 🔁 Crash-proof resume
-A session death — a crash, a killed terminal, an auto-compaction that wipes context mid-build — no longer costs
-you the run. KataHarness keeps a **durable, git-committed progress trail** and restores the exact frontier:
+A crash, a closed terminal, or a mid-build auto-compaction no longer costs you the run. KataHarness
+keeps a **durable, git-committed progress trail** and rebuilds the exact spot it left off:
 
-- **Durable board.** The live work-board is snapshotted to a dedicated git ref (`refs/kata/trail`) with pure git
-  plumbing — it never touches your working tree, never pushes, and can't corrupt a thing.
-- **Auto-checkpoint before compaction.** A pre-compaction hook is wired to checkpoint the board *before* the
-  context window is squeezed. *(Being live-verified: that Claude's PreCompact hook fires synchronously with a
-  usable budget. Even if it doesn't, your progress is already durable at every integration checkpoint — above.)*
-- **Task-granular restore.** On resume, `/kata-resume` re-derives which tasks were finished (from the git
-  history, the authoritative source) and re-dispatches only the ones that weren't — no double work, no dropped
-  work, no manual reconstruction.
+- **Durable board.** The live work-board is snapshotted to its own git ref (`refs/kata/trail`) with
+  plain git plumbing — it never touches your working tree, never pushes, and can't corrupt anything.
+- **Checkpoint before compaction.** A pre-compaction hook saves the board *before* the window is
+  squeezed. *(We're still live-verifying that Claude's hook fires in time — but your progress is
+  already durable at every checkpoint regardless.)*
+- **Task-level restore.** On `/kata-resume`, it reads the git history to see which tasks actually
+  finished and re-runs only the rest — no double work, no dropped work, no manual cleanup.
 
 ### 🎛️ Frontmatter as the contract — and no model IDs, ever
-Every skill's frontmatter is machine-read policy: **semver** (format validator-enforced; bump-on-modify
-by standing convention), **cost-weight** (drives run-cost previews), **allowed-tools** (least-privilege per skill),
-**source attribution**, and tags — the catalog below is auto-generated from it, so docs can't drift from
-reality. Deliberately **absent**: any `model:` pin. Model routing is **relative to your session's anchor**
-(critical work at the anchor, economy work tiered down; an optional four-conjunct-gated premium rung
-above — **event-scoped and budgeted in its new default form, and modulated per-dispatch by run
-evidence** when the v0.3.0 adaptive layer is composed on), so a renamed, gated, or unavailable model ID
-never breaks the loop — and economy tiering is itself a token optimization baked into every dispatch.
+Every skill carries machine-read policy in its frontmatter: a **version** (format-enforced), a
+**cost-weight** (feeds run-cost previews), its **allowed tools** (least-privilege), source credit, and
+tags — and the catalog below is generated straight from it, so the docs can't drift from the code. One
+thing is deliberately **missing**: any hard-coded model name. Model choice is **relative to your
+session's model** — the hard work runs on your model, cheaper work a rung down, with an optional
+approved premium rung above (event-scoped and budgeted; steered by run evidence once the v0.3.0
+adaptive layer is on). So a renamed, gated, or unavailable model never breaks the loop.
 
 ### 🐞 Debug Mode — a bug-hunting pipeline
-Point it at a failing or mysterious codebase and it's *designed* to work like an engineer, not a guesser: build a
-**function model** of the code, run a **deviation-discovery** pass to surface where behavior diverges from intent,
-generate a **characterization suite** that pins current behavior, **diagnose** root cause (light or full depth),
-and hand back a **debrief** with confidence and an optional version-up offer. *(Built and wired — P1–P3, gated on
-`kata/module/debug`; proven on seeded fixtures. Launch it with `/kata-onboard` on a fresh repo, or just ask for a
-**debug run** at `/kata-start` — "debug my repo".)*
+Point it at a broken or unfamiliar codebase and it works like an engineer, not a guesser: it builds a
+**model of the code**, hunts for **where behavior drifts from intent**, writes a **suite that pins the
+current behavior**, **diagnoses** the root cause (light or full depth), and hands back a **debrief**
+with a confidence level and an optional offer to fix. *(Built and gated on `kata/module/debug`; proven
+on seeded fixtures. Start one with `/kata-onboard`, or just say "debug my repo" at `/kata-start`.)*
 
 ### ☁️ Specialized Infrastructure-as-Code agents
-First-class IaC specialists for **Terraform** and **CloudFormation**, injected automatically when a task touches
-infra. They share a **safety contract** (`protocol/iac-safety.md`): structured plan-only argv, a **Snyk IaC**
-scan gate, an explicit approval-artifact gate, and **no destructive `-target`**. Authoring, review, and planning
-are live; *apply* is deliberately gated behind approval and not yet shipped runnable — safety before convenience.
+Dedicated specialists for **Terraform** and **CloudFormation** that switch on automatically when a task
+touches infrastructure. They share a **safety contract** (`protocol/iac-safety.md`): plan-only (never
+apply), a **Snyk IaC** scan gate, an explicit approval step, and no destructive targeting. Authoring,
+review, and planning are live; *apply* is deliberately still gated off — safety before convenience.
 
 ### 🎚️ Modes, tiers & relative model routing
-Three **modes** (**Essential · Standard · Advanced**) set breadth and depth. Tiered skill families
-(`kata-grill`, `kata-plan`, `kata-review`, `kata-diagnose`) share one rubric and expose a depth dial. Model
-selection is **relative** — critical work runs at your session's anchor model, economy work tiers *down* a rung —
-so a gated or renamed model never breaks the loop, and no model ID is ever hard-baked into a skill.
+Three **modes** — **Essential, Standard, Advanced** — dial how much breadth and depth a run gets. Four
+skill families (`kata-grill`, `kata-plan`, `kata-review`, `kata-diagnose`) share one rubric with a
+depth control. And model routing is **relative**, as above — your model for the hard parts, a rung down
+for the cheap parts — so a gated or renamed model never breaks the loop, and nothing is hard-coded.
 
 ### 🌐 Platform compatibility
-One agnostic core; per-platform delivery at three honesty levels. **Claude Code** — the proven, dogfooded
-adapter (hooks, statusline bridge, slash-commands; KataHarness builds itself on it). **Codex CLI · Kiro**
-— installer-supported platforms (`--platform codex|kiro`), with the multi-model dispatch chain live-proven
-on a real Codex install. **Gemini CLI · GitHub Copilot · Cursor** — shipped recommended-configuration
-guides (`docs/platforms/`) mapping each host's context, checkpoint, and settings model onto the harness
-contract; the deterministic-rotation leg is designed exactly for hosts with no gauge. Docs-first is
-deliberate: a platform gets promoted to "supported" by live proof, not by a README claim.
+One shared core, delivered per platform at three honest levels. **Claude Code** is the proven,
+dogfooded home — KataHarness builds itself on it (hooks, statusline bridge, slash-commands). **Codex
+CLI and Kiro** are installer-supported (`--platform codex|kiro`), with the multi-model chain
+live-proven on a real Codex install. **Gemini CLI, GitHub Copilot, and Cursor** ship
+**recommended-config guides** (`docs/platforms/`) that map each host onto the harness contract — the
+fixed-rotation fallback is built exactly for hosts with no gauge. A platform earns "supported" by live
+proof, not by a claim here.
 
 ### 🔧 Adapt without forking upstream
 Customize any skill via a local **overlay** or a promoted **fork** — your changes survive every update; the
@@ -258,54 +261,54 @@ is the machine source of truth for what exists and at what version.
 <!-- SKILL-INDEX:START -->
 | Skill | Ver | Cost | Category | Status | Source | Use |
 |---|---|---|---|---|---|---|
-| `kata-comprehend` | 0.1.0 | 3 | plan | experimental | new (KataHarness original, Debug Mode P1 — function-model oracle, DESIGN LD2/LD7) | — |
-| `kata-context` | 0.1.0 | 1 | plan | experimental | adapted-from mattpocock/skills {ubiquitous-language, grill-with-docs CONTEXT-FORMAT} | Build/maintain CONTEXT.md shared/ubiquitous language |
-| `kata-design-doc` | 0.1.0 | 2 | plan | experimental | adapted-from mattpocock/skills {to-prd} + superpowers brainstorming + GSD spec-phase | Synthesize the frozen design doc / spec |
-| `kata-graph` | 0.1.0 | 3 | plan | experimental | adapted-from aider repo-map (MIT — tree-sitter tag-queries + personalized PageRank + token budget) + Graphify (safishamsi/graphify, MIT — AST graph + MCP oracle get_neighbors/shortest_path/get_pr_impact) | Token-budgeted structural map of an existing repo (version-up ingestion); builds kata.graph.json |
-| `kata-grill-advanced` | 0.1.0 | 5 | plan | experimental | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
-| `kata-grill-essential` | 0.1.0 | 3 | plan | experimental | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
-| `kata-grill-standard` | 0.1.0 | 4 | plan | experimental | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
-| `kata-plan-advanced` | 0.1.4 | 4 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
-| `kata-plan-essential` | 0.1.4 | 2 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
-| `kata-plan-standard` | 0.1.4 | 3 | plan | experimental | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
-| `kata-research` | 0.1.0 | 3 | plan | experimental | new (KataHarness original, loop-cognition RS-GB1/2/3, D62) — fresh-context no-write evaluator pattern (L4/L5) applied to in-loop research; escalation-routed like kata-orchestrate's no-re-plan escape valve (D52) | Research a must-deliver gap with no in-plan solution; ground every claim; return findings for the grounding gate, never re-plan |
-| `kata-board` | 0.1.0 | 2 | coordinate | experimental | adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3 | Append-only mailbox/message board for lateral peer comms |
-| `kata-bootstrap` | 0.4.0 | 2 | coordinate | experimental | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
-| `kata-initiate` | 0.2.1 | 3 | coordinate | experimental | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
-| `kata-loop` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
-| `kata-onboard` | 0.2.0 | 3 | coordinate | experimental | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
-| `kata-orchestrate` | 0.11.0 | 5 | coordinate | experimental | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
-| `kata-preflight` | 0.3.0 | 2 | coordinate | experimental | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner from _subprocess_runner in tools/kata_dispatch.py | — |
-| `kata-readiness` | 0.2.2 | 1 | coordinate | experimental | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
-| `kata-sprint` | 0.1.0 | 2 | coordinate | experimental | new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C) | Own the sprint boundary (G1–G4 change-control); incremental delivery only |
-| `kata-worktree` | 0.1.0 | 1 | coordinate | experimental | adapted-from CryptoPortfolioPlanner worktree proof (LESSONS-LEARNED L2/L3) | Per-owner git-worktree isolation for concurrent code |
-| `kata-characterize` | 0.1.0 | 3 | execute | experimental | new (KataHarness original, Debug Mode P2b — characterization-suite generation, DESIGN LD6+§5) | — |
-| `kata-deviate` | 0.1.0 | 4 | execute | experimental | new (KataHarness original, Debug Mode P2a — deviation-discovery pipeline, DESIGN LD4–LD5) | — |
-| `kata-diagnose-full` | 0.1.0 | 3 | execute | experimental | adapted-from mattpocock/skills engineering/diagnose | — |
-| `kata-diagnose-light` | 0.1.0 | 2 | execute | experimental | adapted-from mattpocock/skills engineering/diagnose | — |
-| `kata-iac-cloudformation` | 0.2.0 | 3 | execute | experimental | new (KataHarness original — IaC-safety specialist N3, DESIGN §2; shared safety contract protocol/iac-safety.md; Snyk IaC scanner wiring IAC-4) | — |
-| `kata-iac-terraform` | 0.2.0 | 3 | execute | experimental | new (KataHarness original — IaC-safety specialist N3, DESIGN §2; shared safety contract protocol/iac-safety.md; Snyk IaC scanner wiring IAC-4) | — |
-| `kata-lang-profile` | 0.1.2 | 2 | execute | experimental | new (KataHarness original — Debug Mode LD10 in-mode language prompt-profiles, DESIGN §3 LD10 / PLAN-p3 Slice D). Selection + overlay mechanism mirrors the IaC specialist-injection precedent (skills/coordinate/kata-orchestrate "IaC activation" block + iac_detect.classify_task); STYLE templates are the sibling specialists kata-iac-terraform / kata-iac-cloudformation. | — |
-| `kata-tdd` | 0.4.0 | 3 | execute | experimental | adapted-from mattpocock/skills engineering/tdd | Red-green-refactor on a vertical slice |
-| `kata-benchmark-report` | 0.1.0 | 1 | evaluate | experimental | new (KataHarness original — kata-loop-benchmark report; mirrors the kata-report/kata-debrief two-tier {{TOKEN}} render contract; engine tools/benchmark.py) | — |
-| `kata-debrief` | 0.1.0 | 1 | evaluate | experimental | new (KataHarness original, Debug Mode P3 — LD12 closeout confidence report + LD3 recommendations / offered version-up; mirrors the kata-report two-tier + {{TOKEN}} render contract) | — |
-| `kata-evaluate` | 0.3.1 | 2 | evaluate | experimental | adapted-from cpp-evaluation (CryptoPortfolioPlanner) + Anthropic fresh-context evaluator pattern | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
-| `kata-inline-eval` | 0.1.0 | 1 | evaluate | experimental | — | — |
-| `kata-report` | 0.1.2 | 1 | evaluate | experimental | new (KataHarness original — the D32 report, minimal v1; sprint-cadence D85/D2) | One-page report of a gated unit of work (reports the gate, never gates) |
-| `kata-review-advanced` | 0.1.2 | 3 | evaluate | experimental | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
-| `kata-review-essential` | 0.1.2 | 1 | evaluate | experimental | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
-| `kata-review-standard` | 0.1.2 | 2 | evaluate | experimental | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
-| `kata-slop-check` | 0.1.0 | 2 | evaluate | experimental | General heuristics original to KataHarness; adopted-check concepts from ai-slop-detector by flamehaven01 (Flamehaven Labs), https://github.com/flamehaven01/ai-slop-detector, MIT License (Copyright (c) 2026 Flamehaven Labs) — concepts re-implemented as in-context heuristics, no source code copied. | — |
-| `kata-validate` | 0.1.0 | 3 | evaluate | experimental | new (KataHarness original — validation mini-loop). Adapted patterns: Guardrails-AI on_fail propose-vs-apply seam; OASIS SARIF severity taxonomy (error/warning/note); Reflexion bounded self-critique loop. | — |
-| `kata-closeout` | 0.1.0 | 2 | handoff | experimental | new (KataHarness original — Phase 2 Kata Loop back-half, D89/DESIGN §3) | — |
-| `kata-defer` | 0.1.0 | 1 | handoff | experimental | new (KataHarness original, D42/D43 GB9) — the structural complement to the no-drift spine; assumption-log role added by D71 (Priming-and-Grill autonomous floor) | Park off-plan items + log grill-skip assumptions at the boundary, never drift the frozen plan |
-| `kata-handoff` | 0.2.0 | 1 | handoff | experimental | adapted-from mattpocock/skills {handoff} + Anthropic reset-with-handoff / compaction guidance | Two-way durable handoff (session/agent/tool) |
-| `kata-orient` | 0.2.1 | 2 | handoff | experimental | new (KataHarness original, loop-cognition AO-GB1/2/3 + D76) — receiving half of the two-way handoff (spine #5); three-tier assembly echoes Hermes prompt_builder (stable/context/volatile); nested-AGENTS.md rollup standard | Assemble a subagent's launch orientation: three-tier, task-type-tailored, derived pointers+callouts, routed questions — the read half of handoff |
-| `kata-selfhandoff` | 0.2.0 | 1 | handoff | experimental | adapted-from Anthropic compaction guidance + mattpocock caveman compression | Configurable context-threshold self-handoff (delegates artifact to kata-handoff) |
-| `kata-understand` | 0.1.0 | 2 | handoff | experimental | new (KataHarness original, Phase 2 GL-R2c / DESIGN §3 / PLAN-phase2 Task C1) — comprehension-map half of the closeout back-half; backed by the F2 graph runtime (tools/graph_gen.py → kata.graph.json) | — |
-| `kata-improve` | 0.2.0 | 1 | meta | experimental | adapted-from the Improvement Kata (Toyota Kata) + mattpocock/skills engineering/improve-codebase-architecture | Fold cross-run lessons back into the skills/ tree; calls kata-write-skill |
-| `kata-promote` | 0.1.0 | 2 | meta | experimental | new (KataHarness original, loop-cognition ML / LC-GB3/GB4/GB5, D60-D69) — two-stage gate vs Hermes' no-gate instant-universal model (RESEARCH.md bake-off: borrow the closed loop, keep our human gate) | Stage-2 human gate: promote a grounded agent-distilled candidate skill (experimental→stable + scope bump) into the toolkit; honors engram.autonomy |
-| `kata-write-skill` | 0.1.0 | 1 | meta | experimental | adapted-from mattpocock/skills productivity/write-a-skill | Author new skills to STANDARDS (points, not restates); kata-improve calls it |
+| `kata-comprehend` | 0.1.0 | 3 | plan | beta | new (KataHarness original, Debug Mode P1 — function-model oracle, DESIGN LD2/LD7) | — |
+| `kata-context` | 0.1.0 | 1 | plan | beta | adapted-from mattpocock/skills {ubiquitous-language, grill-with-docs CONTEXT-FORMAT} | Build/maintain CONTEXT.md shared/ubiquitous language |
+| `kata-design-doc` | 0.1.0 | 2 | plan | beta | adapted-from mattpocock/skills {to-prd} + superpowers brainstorming + GSD spec-phase | Synthesize the frozen design doc / spec |
+| `kata-graph` | 0.1.0 | 3 | plan | beta | adapted-from aider repo-map (MIT — tree-sitter tag-queries + personalized PageRank + token budget) + Graphify (safishamsi/graphify, MIT — AST graph + MCP oracle get_neighbors/shortest_path/get_pr_impact) | Token-budgeted structural map of an existing repo (version-up ingestion); builds kata.graph.json |
+| `kata-grill-advanced` | 0.1.0 | 5 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
+| `kata-grill-essential` | 0.1.0 | 3 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
+| `kata-grill-standard` | 0.1.0 | 4 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
+| `kata-plan-advanced` | 0.1.4 | 4 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
+| `kata-plan-essential` | 0.1.4 | 2 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
+| `kata-plan-standard` | 0.1.4 | 3 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
+| `kata-research` | 0.1.0 | 3 | plan | beta | new (KataHarness original, loop-cognition RS-GB1/2/3, D62) — fresh-context no-write evaluator pattern (L4/L5) applied to in-loop research; escalation-routed like kata-orchestrate's no-re-plan escape valve (D52) | Research a must-deliver gap with no in-plan solution; ground every claim; return findings for the grounding gate, never re-plan |
+| `kata-board` | 0.1.0 | 2 | coordinate | beta | adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3 | Append-only mailbox/message board for lateral peer comms |
+| `kata-bootstrap` | 0.4.0 | 2 | coordinate | beta | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
+| `kata-initiate` | 0.2.1 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
+| `kata-loop` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
+| `kata-onboard` | 0.2.0 | 3 | coordinate | beta | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
+| `kata-orchestrate` | 0.11.0 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
+| `kata-preflight` | 0.3.0 | 2 | coordinate | beta | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner from _subprocess_runner in tools/kata_dispatch.py | — |
+| `kata-readiness` | 0.2.2 | 1 | coordinate | beta | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
+| `kata-sprint` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C) | Own the sprint boundary (G1–G4 change-control); incremental delivery only |
+| `kata-worktree` | 0.1.0 | 1 | coordinate | beta | adapted-from CryptoPortfolioPlanner worktree proof (LESSONS-LEARNED L2/L3) | Per-owner git-worktree isolation for concurrent code |
+| `kata-characterize` | 0.1.0 | 3 | execute | beta | new (KataHarness original, Debug Mode P2b — characterization-suite generation, DESIGN LD6+§5) | — |
+| `kata-deviate` | 0.1.0 | 4 | execute | beta | new (KataHarness original, Debug Mode P2a — deviation-discovery pipeline, DESIGN LD4–LD5) | — |
+| `kata-diagnose-full` | 0.1.0 | 3 | execute | beta | adapted-from mattpocock/skills engineering/diagnose | — |
+| `kata-diagnose-light` | 0.1.0 | 2 | execute | beta | adapted-from mattpocock/skills engineering/diagnose | — |
+| `kata-iac-cloudformation` | 0.2.0 | 3 | execute | beta | new (KataHarness original — IaC-safety specialist N3, DESIGN §2; shared safety contract protocol/iac-safety.md; Snyk IaC scanner wiring IAC-4) | — |
+| `kata-iac-terraform` | 0.2.0 | 3 | execute | beta | new (KataHarness original — IaC-safety specialist N3, DESIGN §2; shared safety contract protocol/iac-safety.md; Snyk IaC scanner wiring IAC-4) | — |
+| `kata-lang-profile` | 0.1.2 | 2 | execute | beta | new (KataHarness original — Debug Mode LD10 in-mode language prompt-profiles, DESIGN §3 LD10 / PLAN-p3 Slice D). Selection + overlay mechanism mirrors the IaC specialist-injection precedent (skills/coordinate/kata-orchestrate "IaC activation" block + iac_detect.classify_task); STYLE templates are the sibling specialists kata-iac-terraform / kata-iac-cloudformation. | — |
+| `kata-tdd` | 0.4.0 | 3 | execute | beta | adapted-from mattpocock/skills engineering/tdd | Red-green-refactor on a vertical slice |
+| `kata-benchmark-report` | 0.1.0 | 1 | evaluate | beta | new (KataHarness original — kata-loop-benchmark report; mirrors the kata-report/kata-debrief two-tier {{TOKEN}} render contract; engine tools/benchmark.py) | — |
+| `kata-debrief` | 0.1.0 | 1 | evaluate | beta | new (KataHarness original, Debug Mode P3 — LD12 closeout confidence report + LD3 recommendations / offered version-up; mirrors the kata-report two-tier + {{TOKEN}} render contract) | — |
+| `kata-evaluate` | 0.3.1 | 2 | evaluate | beta | adapted-from cpp-evaluation (CryptoPortfolioPlanner) + Anthropic fresh-context evaluator pattern | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
+| `kata-inline-eval` | 0.1.0 | 1 | evaluate | beta | — | — |
+| `kata-report` | 0.1.2 | 1 | evaluate | beta | new (KataHarness original — the D32 report, minimal v1; sprint-cadence D85/D2) | One-page report of a gated unit of work (reports the gate, never gates) |
+| `kata-review-advanced` | 0.1.2 | 3 | evaluate | beta | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
+| `kata-review-essential` | 0.1.2 | 1 | evaluate | beta | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
+| `kata-review-standard` | 0.1.2 | 2 | evaluate | beta | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
+| `kata-slop-check` | 0.1.0 | 2 | evaluate | beta | General heuristics original to KataHarness; adopted-check concepts from ai-slop-detector by flamehaven01 (Flamehaven Labs), https://github.com/flamehaven01/ai-slop-detector, MIT License (Copyright (c) 2026 Flamehaven Labs) — concepts re-implemented as in-context heuristics, no source code copied. | — |
+| `kata-validate` | 0.1.0 | 3 | evaluate | beta | new (KataHarness original — validation mini-loop). Adapted patterns: Guardrails-AI on_fail propose-vs-apply seam; OASIS SARIF severity taxonomy (error/warning/note); Reflexion bounded self-critique loop. | — |
+| `kata-closeout` | 0.1.0 | 2 | handoff | beta | new (KataHarness original — Phase 2 Kata Loop back-half, D89/DESIGN §3) | — |
+| `kata-defer` | 0.1.0 | 1 | handoff | beta | new (KataHarness original, D42/D43 GB9) — the structural complement to the no-drift spine; assumption-log role added by D71 (Priming-and-Grill autonomous floor) | Park off-plan items + log grill-skip assumptions at the boundary, never drift the frozen plan |
+| `kata-handoff` | 0.2.0 | 1 | handoff | beta | adapted-from mattpocock/skills {handoff} + Anthropic reset-with-handoff / compaction guidance | Two-way durable handoff (session/agent/tool) |
+| `kata-orient` | 0.2.1 | 2 | handoff | beta | new (KataHarness original, loop-cognition AO-GB1/2/3 + D76) — receiving half of the two-way handoff (spine #5); three-tier assembly echoes Hermes prompt_builder (stable/context/volatile); nested-AGENTS.md rollup standard | Assemble a subagent's launch orientation: three-tier, task-type-tailored, derived pointers+callouts, routed questions — the read half of handoff |
+| `kata-selfhandoff` | 0.2.0 | 1 | handoff | beta | adapted-from Anthropic compaction guidance + mattpocock caveman compression | Configurable context-threshold self-handoff (delegates artifact to kata-handoff) |
+| `kata-understand` | 0.1.0 | 2 | handoff | beta | new (KataHarness original, Phase 2 GL-R2c / DESIGN §3 / PLAN-phase2 Task C1) — comprehension-map half of the closeout back-half; backed by the F2 graph runtime (tools/graph_gen.py → kata.graph.json) | — |
+| `kata-improve` | 0.2.0 | 1 | meta | beta | adapted-from the Improvement Kata (Toyota Kata) + mattpocock/skills engineering/improve-codebase-architecture | Fold cross-run lessons back into the skills/ tree; calls kata-write-skill |
+| `kata-promote` | 0.1.0 | 2 | meta | beta | new (KataHarness original, loop-cognition ML / LC-GB3/GB4/GB5, D60-D69) — two-stage gate vs Hermes' no-gate instant-universal model (RESEARCH.md bake-off: borrow the closed loop, keep our human gate) | Stage-2 human gate: promote a grounded agent-distilled candidate skill (experimental→stable + scope bump) into the toolkit; honors engram.autonomy |
+| `kata-write-skill` | 0.1.0 | 1 | meta | beta | adapted-from mattpocock/skills productivity/write-a-skill | Author new skills to STANDARDS (points, not restates); kata-improve calls it |
 <!-- SKILL-INDEX:END -->
 
 </details>
@@ -427,7 +430,7 @@ Restart your agent so it loads the skills, then use a slash-command (Claude Code
 
 ## Docs / status
 
-**v0.3.0, experimental.** The single-model Claude core is the proven path; the Codex/Kiro adapters are
+**v0.3.0, beta.** The single-model Claude core is the proven path; the Codex/Kiro adapters are
 install-supported with partial live proof; Gemini CLI / Copilot / Cursor ship as config guides; the live
 host-fired-compaction leg of context autonomy (R6) and the adaptive-vs-static live A/B are queued, in
 that order; L2 acceptance routing ships activation-OFF pending run volume; IaC *apply* is gated and not

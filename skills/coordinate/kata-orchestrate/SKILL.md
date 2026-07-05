@@ -8,7 +8,7 @@ description: >-
 license: Apache-2.0
 version: 0.11.0
 category: coordinate
-status: experimental
+status: beta
 agnostic: true
 cost-weight: 5
 allowed-tools: [Read, Grep, Glob, Bash, Write, Agent]   # Agent = the Claude-adapter binding of the abstract "dispatch worker" capability; v0.1 ships only the Claude adapter
