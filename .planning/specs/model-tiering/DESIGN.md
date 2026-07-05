@@ -226,3 +226,38 @@ existing path, including the absent-`models`-block BC guarantee (R3).
    ≤2-step-down bound for baseline chains is unaffected (premium has its own one-step chain); the
    inline-eval M4-L7 carve-outs are unaffected (inline eval is economy class — structurally outside
    `premium.scope`).
+
+## Amendment #2 (2026-07-05, GATED — adaptive premium scope: event form + budget envelope;
+## delivered by the adaptive-tiering initiative, D150)
+
+**Routing:** POST-FREEZE gated-amendment addendum (the Amendment-#1/D148 precedent — no frozen line
+above is edited). Full contract: `.planning/specs/adaptive-tiering/DESIGN.md` (FROZEN 2026-07-05;
+freeze-gate v1 HOLD → 19 folds → re-gate SHIP-WITH-FIXES → 8 folds). This addendum records ONLY what
+changes on THIS spec's surface.
+
+1. **`premium.scope` becomes TYPE-DISPATCHED (AT-L15).** A LIST value keeps the Amendment-#1
+   work-class semantics BYTE-FOR-BYTE (run-long class scope — zero change to any shipped path). An
+   OBJECT value `{events: [...], budget: {calls: N}}` activates the ADAPTIVE form: conjunct #2 of the
+   four-conjunct fire rule reads "event ∈ scope.events" instead of "work-class ∈ scope" — the rule's
+   SHAPE (four conjuncts, offer exactly one rung above the anchor, mode == "advanced", recorded
+   approval) is unchanged. Any other type / unknown event name / unknown object key / non-int budget ⇒
+   load-guard RAISE (GB12/D45). Absent `events` key in the object form ⇒ RAISE; explicit `[]` ⇒ legal
+   no-op. Absent `premium` block entirely ⇒ the frozen spec governs byte-for-byte (R3 restated).
+2. **The budget envelope (AT-L12/L13).** Object form carries `budget.calls` (default 10; token budgets
+   degrade to call budgets where the host reports nulls — usage_meter honesty). FCFS spend with the
+   last 2 calls RESERVED for `freeze-gate-verdict`/`re-gate-after-hold` events; exhaustion ⇒ premium
+   LAPSES to the anchor for the run's remainder (LOUD DECISION + degraded record + handoff note — the
+   CA-L30 lapse discipline). Counting at DISPATCH COMMIT by the single conductor; durable recount from
+   the board `tier:` DECISION lines.
+3. **Family generalization + rename (AT-L17).** All prose says "the premium rung." The fire relation
+   ("offer exactly one rung above the anchor IN ITS FAMILY") is already family-parametric via the
+   ladder registry; a family without a registered rung above the anchor ⇒ NO-FIRE + board NOTE
+   (unchanged mechanics, generalized statement — e.g. an `openai` ladder's expensive top rung
+   qualifies the moment it is registered).
+4. **Adaptive modulation NEVER breaks this spec's emission contract (AT-L2b):** a modulated rung
+   landing ON the anchor emits `None`/OMIT (never the anchor's explicit id — R7); below-anchor rungs
+   emit explicit ids; the premium rung emits `premium.offer` itself (Amendment #1 §3.1 verbatim).
+5. **Untouched invariants (stated for the gate):** R1 coder-floor monotonicity; R2's ≤2-step baseline
+   bound + the 401/403 raise; the premium one-step lapse chain (Amendment #1 items 3–5); zero-step
+   OMIT. The adaptive layer only supplies WHICH rung to emit — every emission and failure rule above
+   stands.

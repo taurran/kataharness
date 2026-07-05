@@ -586,3 +586,37 @@ before the v0.2.1 merge (recorded as D149).
 4. τ defaults per class before any data exists — propose numbers and the rationale the gate can attack.
 5. Does the debug class's ladder interact with kata-diagnose's own loop (double-ladder risk) — needs a
    precedence rule.
+
+## Amendment #6 (2026-07-05, GATED — cheap-then-escalate verdict re-adjudication + adaptive-tiering
+## signal wiring + the verdict×tier calibration columns; delivered by the adaptive-tiering
+## initiative, D150)
+
+**Routing:** POST-FREEZE gated-amendment addendum (the Amendment-#5 precedent — no frozen line above
+is edited). Full contract: `.planning/specs/adaptive-tiering/DESIGN.md` (FROZEN 2026-07-05). This
+addendum records ONLY what changes on THIS spec's surfaces.
+
+1. **Cheap-then-escalate re-adjudication (AT-L9; the C-3 calibration finding realized).** The inline
+   evaluator still dispatches at its M4-L7 economy resolution — unchanged. NEW: a would-be `reroll`
+   or `correct` verdict (the two costly actions) is re-adjudicated EXACTLY ONCE by a second
+   fresh-context evaluator **one rung up from the economy resolution, CLAMPED STRICTLY BELOW THE
+   ANCHOR** — M4-L7's never-anchor line is PRESERVED, not amended. Where the economy resolution is
+   already anchor−1 (e.g. advanced-mode Anthropic), the leg is INERT — stated, never silent.
+   Conflicting verdicts ⇒ the higher evaluator's verdict STANDS (recorded, item 3). `continue`
+   verdicts are never re-adjudicated — the green path stays one cheap call (M4-L1 intact). Cost
+   honesty: pre-Amendment-#5 scan measured TP 0/57 with a 13/57 FP class that Amendment #5 designed
+   away; the post-fix trigger rate is UNMEASURED until owned-exit-emitting runs exist.
+2. **The STANDING verdict is the signal (AT-L8 wiring).** Downstream consumers (the adaptive
+   fail-bump counter; the streak-clear rule) count ONLY the post-re-adjudication standing verdict —
+   an overturned `reroll` never bumps a healthy task. The bump counter itself, its F=2 threshold,
+   and the bumped attempt's dispatch mechanics live in the adaptive-tiering spec (AT-L8), not here;
+   this spec's surface is only WHICH verdict counts.
+3. **Ledger calibration columns (M4-L10 surface; the C-3 ask delivered).** The ledger row STAYS
+   schema v3 — NO v4 is minted (a v4 row would RAISE in every deployed reader mid-scan; the shared
+   ledger is a fleet artifact). Two ADDITIVE OPTIONAL v3 keys: `verdictByTier`
+   (`{"<verdict>×<tier>": n}` — every standing AND overturned verdict counted per evaluator tier,
+   the τ/verdict calibration input C-3 named) and `tierEvents`
+   (`[{at, dispatch, from, to, reason}]` — the adaptive move audit trail). Reader accessors are
+   absent-honest (`{}`/`[]` on pre-amendment rows, never fabricated); the shipped strict reader
+   tolerates unknown v3 keys (no key whitelist — verified, with a reverse-direction test pinned at
+   build). Calibration discipline: rows with `calibration: true` stay excluded exactly as for
+   `class_median`.

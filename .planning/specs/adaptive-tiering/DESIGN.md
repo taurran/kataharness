@@ -1,7 +1,7 @@
 ---
 spec: adaptive-tiering
-status: DRAFT v3 — grill-resolved 2026-07-05 (conversational grill, operator-directed); freeze-gate v1
-  HOLD (2 BLOCKER / 4 HIGH / 8 MED / 5 LOW) → ALL FOLDED → re-gate SHIP-WITH-FIXES (3 MED / 5 LOW, all folded into this v3); FREEZE PENDING operator flag resolution; three [VETO-FLAG] items
+status: FROZEN 2026-07-05 (D150) — grill-resolved; freeze-gate v1
+  HOLD (2 BLOCKER / 4 HIGH / 8 MED / 5 LOW) → ALL FOLDED → re-gate SHIP-WITH-FIXES (3 MED / 5 LOW, folded); all three [VETO-FLAG]s RESOLVED by the operator 2026-07-05 to the draft defaults ("Yes, looks good") — N=10/reserve 2, F=2/K=3/damper ×2, compose-ON/load-OFF; paired amendment texts DRAFTED into both host specs; formerly
   open for the operator
 directive: operator 2026-07-05 — "adaptive and driven by data… bake in evaluation into the mix… if a
   task fails over a certain amount of times, it gets bumped up to the higher model… if a step is
@@ -20,7 +20,7 @@ new_d_records: assigned at freeze (≥ D150)
 tags: [kata/spine, model-tiering, adaptive, premium-rung, evaluation-driven]
 ---
 
-# Adaptive tiering — evidence-driven model routing (DRAFT v3)
+# Adaptive tiering — evidence-driven model routing (FROZEN)
 
 ## §0 Mission (the operator's framing, verbatim-level)
 

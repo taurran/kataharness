@@ -2376,3 +2376,29 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   folded → re-gate **PASS**. **Gauntlet at fold:** pytest 2878/3 skip · validate_skills 48/0/0 · Snyk
   medium+ 0 (tools/ scan). Tests +10 incl. the mutation-pinned owned-beats-suite preference (the exact
   C-1 class as a named red-turn target). Supersedes nothing; extends A1-Q2/A1-Q4/M4-L4 by gated addendum.
+
+- **D150 — Adaptive-tiering initiative FROZEN (v0.3.0 spine): evidence-driven model routing, the
+  premium rung optimized by construction — 2026-07-05.** Operator-directed same-session arc: brainstorm →
+  conversational grill (AT-R1..R7) → DESIGN → freeze-gate v1 **HOLD** (2 BLOCKER / 4 HIGH / 8 MED / 5 LOW —
+  headline catches: the evaluator-escalation leg would have breached M4-L7's never-anchor line in advanced
+  mode; a phantom registry event named a conductor-authored non-dispatch; a ledger v4 mint would have
+  bricked every deployed v0.2.1 reader mid-scan) → 19 folds → re-gate **SHIP-WITH-FIXES** (3 MED / 5 LOW —
+  incl. the under-enumerated consent pitch) → 8 folds → all three [VETO-FLAG]s resolved by the operator to
+  the draft defaults → **FROZEN**, with the PAIRED amendment texts drafted into both host specs
+  (model-tiering **Amendment #2**: scope type-dispatch LIST=classes-BC / OBJECT={events,budget}; budget
+  envelope N=10 + 2-call freeze-gate reservation + CA-L30-style lapse; premium-rung family generalization;
+  inline-eval-m4 **Amendment #6**: cheap-then-escalate re-adjudication strictly below the anchor with the
+  advanced-Anthropic inert arm STATED; standing-verdict-only signal; additive v3 ledger keys
+  `verdictByTier`/`tierEvents` — NO v4). **The contract:** L0 = the D131 differential, unchanged, the only
+  fallback; L1 = per-dispatch modulation — fail-bump (F=2, once/task, gate rejections + standing rerolls
+  only, bumped tasks exempt from downshift), downward modulation capped at −1/dispatch (plan-frozen
+  `complexity: low` OR K=3 first-pass streak, `coding`-class only, damper ×2 on downshift-attributed
+  rejection, D33 roster + kata-inline-eval never adapt down), event registry (7 events, each citing its
+  covering dispatch site; `fail-bump-escalation` conjunct-coverage-only), emission per the frozen OMIT
+  contract; L2 = ledger acceptance routing ≤ L0, contract shipped, activation `models.adaptive.l2`
+  default-OFF, named-deferred until post-R6 volume. BC: `adaptive` block absent ⇒ ALL legs OFF (load-time);
+  bootstrap writes it explicitly at next composition (compose = consent); scope LIST form byte-for-byte
+  v0.2.1. Mid-run `/model` switch ⇒ adaptive state reset (budget spend preserved), LOUD. Every adaptive
+  move is a board `tier:` DECISION line — also the durable recount trail. Ship vehicle **v0.3.0**, ahead
+  of M2 shadow tasks BY OPERATOR DIRECTION (the D138 no-relitigation lesson). Build record appended below
+  at closeout.
