@@ -6,7 +6,7 @@ description: >-
   manifest-hash checked), records installs to the machine-global D-registry, probes the target environment,
   and emits .kata/preflight.json. Default-FAIL; never tiered (D29/D33).
 license: Apache-2.0
-version: 0.1.2
+version: 0.2.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -29,6 +29,43 @@ tags:
 Provision the freeze-approved dependency set before EXECUTE. **Default-FAIL: a dep that won't verify
 after provisioning blocks the gate.** Never tiered (D29/D33) — spine gates are a consistency floor, not
 a depth dial.
+
+## Bundle collection (bootstrap Phase 2.5 — the ONE approval bundle, CA-L24/L27/L31)
+
+Invoked by [[kata-bootstrap]] **between Phase 2 and the Phase-3 config write** (bootstrap orchestrates;
+preflight collects). Collect the whole approval bundle **ONCE** — dependency installs, the permission
+allowlist (the CA-L26 fixed checklist), the compact-window recommendation (**recommend-never-write**), the
+host-settings write slot, and **the premium gate below**. The answer flows back to bootstrap, which writes
+`kata.config` **AFTER** with `models.premium.approved` recorded from it. This collection **never prompts a
+second time**; the enforcement pass invoked from [[kata-orchestrate]] only verifies/provisions the
+already-approved set. Accepted answers are recorded audit-only via `kata_settings.record_accepted_defaults`
+and `kata_settings.record_host_posture` (never an implied side effect).
+
+### The premium (Fable) gate (CA-L27; the §3 amendment governs dispatch)
+
+Fable stays in the tiering matrix behind a **once-per-run approval** collected here, with a prominent cost
+disclaimer. Three branches:
+
+- **Decline** ⇒ pin `models.anchor: "opus"` + **hard-stop advising a `/model` switch** — the only honest
+  decline (SR-4: config cannot stop a Fable *session* from burning Fable on zero-step critical work via
+  inherit-by-omission; the session model is the operator's own choice).
+- **Anchor IS Fable** ⇒ confirm keep-using + warn (verbatim):
+  **"long-running loops on Fable as primary FM can drive costs up significantly."**
+- **The premium offer** — post-July-7, and ONLY when `anchor == opus` ∧ `mode == "advanced"` ⇒ kata MAY
+  OFFER anchor+1 (Fable) at preflight approval, the operator **knowingly accruing Fable API usage**. Scope
+  is fixed (R-9): the approved offer elevates **CRITICAL and CODING** work classes only — economy /
+  low-criticality **NEVER** runs Fable, even in advanced with approval.
+
+**Cost disclaimer — shown verbatim at the offer (CA-7b):**
+
+> Approving this sends your most demanding work — critical judgment and coding — to **Fable**, the top
+> model rung, billed at premium API rates. A long-running loop can make many such calls. By approving you
+> are **knowingly accepting Fable API charges** for the length of this run. Decline to stay on your current
+> model at no added cost; you can switch models yourself anytime with `/model`.
+
+The approval record carries `grantedMode`; a re-entrant run that changes mode LAPSES it (the lapse executor
+is bootstrap — Phase 0/1 clears `approved` when `mode ≠ grantedMode`, and this gate re-asks). Enforcement of
+the four-conjunct fire rule and the failure/OMIT semantics lives at dispatch time in [[kata-orchestrate]].
 
 ## Invariants (never relax)
 
