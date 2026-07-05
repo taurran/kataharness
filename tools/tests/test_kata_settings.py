@@ -21,6 +21,7 @@ from pathlib import Path
 import pytest
 
 import kata_settings as ks
+import kata_version
 
 
 def test_build_settings_shape(tmp_path):
@@ -231,3 +232,284 @@ def test_write_preserves_unknown_key(tmp_path):
     ks.write_settings(proj, home=tmp_path)
     back = ks.read_settings(home=tmp_path)
     assert back["futureKey"] == "keep-me"
+
+
+# ---------------------------------------------------------------------------
+# CA-P0 / E2 — context-autonomy per-install keys (CA-L35..L37, CA-A6, CA-A11(e))
+# ---------------------------------------------------------------------------
+
+
+def _stamp(home, git_sha):
+    """Write a minimal .kata-version stamp with the given gitSha for tests."""
+    return kata_version.write_stamp(
+        home,
+        git_sha=git_sha,
+        suite_semver="0.2.1",
+        ref="master",
+        link_mode="symlink",
+        platform="claude",
+    )
+
+
+# --- delete_settings_key: fail-closed key delete (CA-L36 named build item) ---
+
+
+def test_delete_key_present_removes_and_returns_true(tmp_path):
+    ks.record_first_run("deadbeef", home=tmp_path)
+    assert ks.delete_settings_key("firstRunCompletedAt", home=tmp_path) is True
+    back = ks.read_settings(home=tmp_path)
+    assert "firstRunCompletedAt" not in back
+    # sibling key untouched
+    assert back["firstRunVersion"] == "deadbeef"
+
+
+def test_delete_key_absent_returns_false_no_write(tmp_path):
+    ks.record_first_run("deadbeef", home=tmp_path)
+    sp = ks.settings_path(home=tmp_path)
+    before = sp.read_text(encoding="utf-8")
+    assert ks.delete_settings_key("noSuchKey", home=tmp_path) is False
+    assert sp.read_text(encoding="utf-8") == before  # no write
+
+
+def test_delete_key_on_absent_file_returns_false(tmp_path):
+    # No settings file at all ⇒ nothing to delete, no write, no raise.
+    assert ks.delete_settings_key("firstRunCompletedAt", home=tmp_path) is False
+    assert not ks.settings_path(home=tmp_path).exists()
+
+
+def test_delete_key_corrupt_file_fails_closed(tmp_path):
+    sp = ks.settings_path(home=tmp_path)
+    garbage = "{not json"
+    sp.write_text(garbage, encoding="utf-8")
+    with pytest.raises(ValueError):
+        ks.delete_settings_key("firstRunCompletedAt", home=tmp_path)
+    # File byte-unchanged (fail-closed, C-4)
+    assert sp.read_text(encoding="utf-8") == garbage
+
+
+def test_delete_key_blank_rejected(tmp_path):
+    with pytest.raises(ValueError):
+        ks.delete_settings_key("  ", home=tmp_path)
+
+
+# --- record_first_run: the force-run marker writer (C-4 fail-closed) ---
+
+
+def test_record_first_run_writes_both_keys(tmp_path):
+    ks.record_first_run("abc123", home=tmp_path)
+    back = ks.read_settings(home=tmp_path)
+    assert back["firstRunVersion"] == "abc123"
+    assert isinstance(back["firstRunCompletedAt"], str) and back["firstRunCompletedAt"]
+    assert back["settingsVersion"] == ks.SETTINGS_VERSION
+
+
+def test_record_first_run_blank_sha_rejected(tmp_path):
+    with pytest.raises(ValueError):
+        ks.record_first_run("", home=tmp_path)
+    with pytest.raises(ValueError):
+        ks.record_first_run(None, home=tmp_path)
+
+
+def test_record_first_run_preserves_existing_keys(tmp_path):
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    ks.write_settings(proj, home=tmp_path)
+    ks.add_confirmed_platform("codex", home=tmp_path)
+    ks.record_first_run("sha1", home=tmp_path)
+    back = ks.read_settings(home=tmp_path)
+    assert back["confirmedPlatforms"] == ["codex"]
+    assert Path(back["parentDir"]) == proj.resolve()
+    assert back["firstRunVersion"] == "sha1"
+
+
+def test_record_first_run_corrupt_file_fails_closed(tmp_path):
+    sp = ks.settings_path(home=tmp_path)
+    garbage = "{broken"
+    sp.write_text(garbage, encoding="utf-8")
+    with pytest.raises(ValueError):
+        ks.record_first_run("sha1", home=tmp_path)
+    assert sp.read_text(encoding="utf-8") == garbage
+
+
+# --- first_run_required: the CA-L36 comparator (CA-A11(e) re-arm matrix) ---
+
+
+def test_first_run_required_marker_absent(tmp_path):
+    _stamp(tmp_path, "aaaa1111")
+    out = ks.first_run_required(home=tmp_path)
+    assert out == {"required": True, "reason": "marker-absent", "clause_skipped": False}
+
+
+def test_first_run_required_marker_present_sha_equal(tmp_path):
+    _stamp(tmp_path, "aaaa1111")
+    ks.record_first_run("aaaa1111", home=tmp_path)
+    out = ks.first_run_required(home=tmp_path)
+    assert out == {"required": False, "reason": None, "clause_skipped": False}
+
+
+def test_first_run_required_marker_present_sha_changed(tmp_path):
+    _stamp(tmp_path, "aaaa1111")
+    ks.record_first_run("aaaa1111", home=tmp_path)
+    _stamp(tmp_path, "bbbb2222")  # upgrade re-arms
+    out = ks.first_run_required(home=tmp_path)
+    assert out == {"required": True, "reason": "sha-mismatch", "clause_skipped": False}
+
+
+def test_first_run_required_stamp_absent_clause_skipped(tmp_path):
+    # Marker present but NO stamp ⇒ version clause skipped ⇒ marker governs ⇒ not required.
+    ks.record_first_run("aaaa1111", home=tmp_path)
+    out = ks.first_run_required(home=tmp_path)
+    assert out == {"required": False, "reason": None, "clause_skipped": True}
+
+
+def test_first_run_required_stamp_unknown_clause_skipped(tmp_path):
+    _stamp(tmp_path, "unknown")
+    ks.record_first_run("whatever", home=tmp_path)
+    out = ks.first_run_required(home=tmp_path)
+    assert out == {"required": False, "reason": None, "clause_skipped": True}
+
+
+def test_first_run_required_marker_absent_stamp_unknown(tmp_path):
+    # Marker absence alone forces, even when the version clause is skipped.
+    _stamp(tmp_path, "unknown")
+    out = ks.first_run_required(home=tmp_path)
+    assert out == {"required": True, "reason": "marker-absent", "clause_skipped": True}
+
+
+def test_first_run_required_corrupt_settings_single_pass(tmp_path):
+    """C-3: corrupt settings ⇒ lenient READ forces (marker-absent) AND the paired
+    WRITE fail-closes — the single-pass contract, never a loop."""
+    _stamp(tmp_path, "aaaa1111")
+    sp = ks.settings_path(home=tmp_path)
+    garbage = "{corrupt"
+    sp.write_text(garbage, encoding="utf-8")
+    # Lenient read ⇒ marker reads absent ⇒ forced.
+    out = ks.first_run_required(home=tmp_path)
+    assert out["required"] is True and out["reason"] == "marker-absent"
+    # Paired write fail-closes on the SAME corrupt file (caller surfaces + stops).
+    with pytest.raises(ValueError):
+        ks.record_first_run("aaaa1111", home=tmp_path)
+    assert sp.read_text(encoding="utf-8") == garbage  # never clobbered
+
+
+# --- record_host_posture: AUDIT-ONLY, last-write-wins (CA-L37/R-42) ---
+
+
+def test_record_host_posture_roundtrip(tmp_path):
+    posture = {
+        "autoCompactChecked": True,
+        "recommendedWindowTokens": 120000,
+        "bridgeMode": "chained",
+    }
+    ks.record_host_posture(posture, home=tmp_path)
+    back = ks.read_settings(home=tmp_path)["hostPosture"]
+    assert back == posture
+
+
+def test_record_host_posture_null_window_allowed(tmp_path):
+    posture = {
+        "autoCompactChecked": False,
+        "recommendedWindowTokens": None,
+        "bridgeMode": "none",
+    }
+    ks.record_host_posture(posture, home=tmp_path)
+    assert ks.read_settings(home=tmp_path)["hostPosture"] == posture
+
+
+def test_record_host_posture_last_write_wins(tmp_path):
+    ks.record_host_posture(
+        {"autoCompactChecked": True, "recommendedWindowTokens": 1, "bridgeMode": "chained"},
+        home=tmp_path,
+    )
+    ks.record_host_posture(
+        {"autoCompactChecked": False, "recommendedWindowTokens": 2, "bridgeMode": "user-only"},
+        home=tmp_path,
+    )
+    back = ks.read_settings(home=tmp_path)["hostPosture"]
+    assert back["bridgeMode"] == "user-only" and back["recommendedWindowTokens"] == 2
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"autoCompactChecked": "yes", "recommendedWindowTokens": 1, "bridgeMode": "none"},
+        {"autoCompactChecked": True, "recommendedWindowTokens": 1.5, "bridgeMode": "none"},
+        {"autoCompactChecked": True, "recommendedWindowTokens": True, "bridgeMode": "none"},
+        {"autoCompactChecked": True, "recommendedWindowTokens": 1, "bridgeMode": "bogus"},
+        {"autoCompactChecked": True, "recommendedWindowTokens": 1},  # missing bridgeMode
+        ["not", "a", "dict"],
+    ],
+)
+def test_record_host_posture_malformed_raises(tmp_path, bad):
+    with pytest.raises(ValueError):
+        ks.record_host_posture(bad, home=tmp_path)
+
+
+def test_record_host_posture_corrupt_file_fails_closed(tmp_path):
+    sp = ks.settings_path(home=tmp_path)
+    garbage = "{corrupt"
+    sp.write_text(garbage, encoding="utf-8")
+    with pytest.raises(ValueError):
+        ks.record_host_posture(
+            {"autoCompactChecked": True, "recommendedWindowTokens": 1, "bridgeMode": "none"},
+            home=tmp_path,
+        )
+    assert sp.read_text(encoding="utf-8") == garbage
+
+
+# --- record_accepted_defaults: AUDIT-ONLY, per-item last-write-wins (C-1) ---
+
+
+def test_record_accepted_defaults_roundtrip_and_merge(tmp_path):
+    ks.record_accepted_defaults(
+        {"bundleA": {"value": 42, "v": "0.2.1", "at": "2026-07-04T00:00:00Z"}},
+        home=tmp_path,
+    )
+    ks.record_accepted_defaults(
+        {"bundleB": {"value": "x", "v": "0.2.1", "at": "2026-07-04T01:00:00Z"}},
+        home=tmp_path,
+    )
+    back = ks.read_settings(home=tmp_path)["acceptedDefaults"]
+    assert set(back) == {"bundleA", "bundleB"}  # accumulated
+    assert back["bundleA"]["value"] == 42
+
+
+def test_record_accepted_defaults_item_last_write_wins(tmp_path):
+    ks.record_accepted_defaults(
+        {"bundleA": {"value": 1, "v": "0.2.1", "at": "2026-07-04T00:00:00Z"}},
+        home=tmp_path,
+    )
+    ks.record_accepted_defaults(
+        {"bundleA": {"value": 99, "v": "0.2.2", "at": "2026-07-04T02:00:00Z"}},
+        home=tmp_path,
+    )
+    back = ks.read_settings(home=tmp_path)["acceptedDefaults"]["bundleA"]
+    assert back["value"] == 99 and back["v"] == "0.2.2"
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"bundleA": "not-a-dict"},
+        {"bundleA": {"v": "0.2.1", "at": "2026-07-04T00:00:00Z"}},  # missing value
+        {"bundleA": {"value": 1, "at": "2026-07-04T00:00:00Z"}},  # missing v
+        {"bundleA": {"value": 1, "v": "0.2.1"}},  # missing at
+        {"bundleA": {"value": 1, "v": 2, "at": "x"}},  # v not str
+        ["not", "a", "dict"],
+    ],
+)
+def test_record_accepted_defaults_malformed_raises(tmp_path, bad):
+    with pytest.raises(ValueError):
+        ks.record_accepted_defaults(bad, home=tmp_path)
+
+
+def test_record_accepted_defaults_corrupt_file_fails_closed(tmp_path):
+    sp = ks.settings_path(home=tmp_path)
+    garbage = "{corrupt"
+    sp.write_text(garbage, encoding="utf-8")
+    with pytest.raises(ValueError):
+        ks.record_accepted_defaults(
+            {"bundleA": {"value": 1, "v": "0.2.1", "at": "2026-07-04T00:00:00Z"}},
+            home=tmp_path,
+        )
+    assert sp.read_text(encoding="utf-8") == garbage

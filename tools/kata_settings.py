@@ -36,10 +36,16 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
+
+import kata_version
 
 SETTINGS_FILENAME = ".kata-settings.json"
 SETTINGS_VERSION = 1
+
+# Allowed bridgeMode values for the audit-only hostPosture block (CA-L37 / §2).
+_BRIDGE_MODES = ("chained", "user-only", "none")
 
 
 def _safe_abs(raw: str | Path) -> Path:
@@ -183,3 +189,188 @@ def write_settings(
     # 5. Write (same serialization as today: indent=2 + trailing newline).
     p.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
     return p
+
+
+# ---------------------------------------------------------------------------
+# CA-P0 / E2 — context-autonomy per-install keys (CA-L35..L37, §2 settings table)
+#
+# Four additive keys, all AUDIT-ONLY except ``firstRunCompletedAt`` (the only
+# do-once suppression in the file, CA-L37):
+#   firstRunCompletedAt  — ISO-8601 UTC, the force-run marker (CA-L36).
+#   firstRunVersion      — the .kata-version stamp ``gitSha`` the forced run
+#                          completed for (CA-L36 / R-43; NOT ``suiteSemver``).
+#   hostPosture          — {autoCompactChecked, recommendedWindowTokens,
+#                          bridgeMode}; last-write-wins, never consulted for
+#                          suppression (CA-L37/R-42).
+#   acceptedDefaults     — {"<bundleItemId>": {value, v, at}}; C-1 schema,
+#                          audit-only, per-item last-write-wins (CA-L37).
+#
+# WRITER DISCIPLINE (C-4, gate v6): every writer below copies the fail-closed
+# ``_load_existing`` pattern (a corrupt file RAISES ``ValueError``, the file is
+# left byte-unchanged), NEVER the lenient ``add_confirmed_platform``
+# read-before-write which silently clobbers a corrupt file — that would
+# contradict the C-3 corrupt-settings contract.
+# ---------------------------------------------------------------------------
+
+
+def _utc_now_iso() -> str:
+    """Current instant as an ISO-8601 UTC string (matches kata_version stamps)."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _merge_write(updates: dict, home: str | Path | None) -> Path:
+    """Fail-closed overlay-write: strict-load existing, overlay ``updates``, write.
+
+    Copies the ``write_settings`` merge discipline (C-4): ``_load_existing``
+    RAISES ``ValueError`` on a corrupt / non-dict file and the file is left
+    untouched. Never the lenient ``add_confirmed_platform`` clobber.
+    """
+    p = settings_path(home)
+    existing = _load_existing(p)  # fail-closed on corrupt / non-dict
+    merged = {**existing, **updates}
+    merged.setdefault("settingsVersion", SETTINGS_VERSION)
+    p.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
+    return p
+
+
+def record_first_run(git_sha: str, home: str | Path | None = None) -> Path:
+    """Stamp the force-run marker: ``firstRunCompletedAt`` + ``firstRunVersion``.
+
+    ``git_sha`` is the current ``.kata-version`` stamp's ``gitSha`` (CA-L36/R-43
+    — the marker records a ``gitSha``, never ``suiteSemver``). ``"unknown"`` is a
+    valid value (the plain-install path); only ``None``/blank is rejected.
+
+    Fail-closed (C-4): a corrupt ``.kata-settings.json`` RAISES ``ValueError``
+    and is left byte-unchanged. CALLER CONTRACT (CA-L37/C-3): bootstrap MUST
+    detect this write failure, surface LOUDLY pointing at the corrupt file path,
+    and stop — **never loop**.
+    """
+    if git_sha is None or not str(git_sha).strip():
+        raise ValueError("kata_settings: git_sha is required for the first-run marker")
+    return _merge_write(
+        {"firstRunCompletedAt": _utc_now_iso(), "firstRunVersion": str(git_sha)},
+        home,
+    )
+
+
+def record_host_posture(posture: dict, home: str | Path | None = None) -> Path:
+    """Write the AUDIT-ONLY ``hostPosture`` block (last-write-wins; CA-L37/R-42).
+
+    ``posture`` schema (§2): ``{autoCompactChecked: bool, recommendedWindowTokens:
+    int|None, bridgeMode: "chained"|"user-only"|"none"}``. NEVER consulted for
+    suppression — the compact-window recommendation is RECOMPUTED at every run's
+    preflight (OP-4). Malformed posture ⇒ ``ValueError`` (fail-closed, D136).
+
+    Fail-closed on a corrupt settings file (C-4), same as ``record_first_run``.
+    """
+    if not isinstance(posture, dict):
+        raise ValueError("kata_settings: hostPosture must be a dict")
+    if not isinstance(posture.get("autoCompactChecked"), bool):
+        raise ValueError("kata_settings: hostPosture.autoCompactChecked must be a bool")
+    rwt = posture.get("recommendedWindowTokens")
+    if not (rwt is None or (isinstance(rwt, int) and not isinstance(rwt, bool))):
+        raise ValueError(
+            "kata_settings: hostPosture.recommendedWindowTokens must be int or null"
+        )
+    if posture.get("bridgeMode") not in _BRIDGE_MODES:
+        raise ValueError(
+            f"kata_settings: hostPosture.bridgeMode must be one of {_BRIDGE_MODES}"
+        )
+    block = {
+        "autoCompactChecked": posture["autoCompactChecked"],
+        "recommendedWindowTokens": rwt,
+        "bridgeMode": posture["bridgeMode"],
+    }
+    return _merge_write({"hostPosture": block}, home)
+
+
+def record_accepted_defaults(entries: dict, home: str | Path | None = None) -> Path:
+    """Merge AUDIT-ONLY ``acceptedDefaults`` entries (per-item last-write-wins).
+
+    ``entries`` schema (C-1, §2): ``{"<bundleItemId>": {"value": <json>, "v":
+    "<harness semver>", "at": "<ISO-8601 UTC>"}}`` — one entry per bundle item
+    the operator accepted at CA-L24. Each item's latest value wins; existing
+    items not in ``entries`` are preserved. Audit-only, never consulted for
+    suppression (CA-L37). Malformed entries ⇒ ``ValueError`` (fail-closed).
+
+    Fail-closed on a corrupt settings file (C-4).
+    """
+    if not isinstance(entries, dict):
+        raise ValueError("kata_settings: acceptedDefaults entries must be a dict")
+    for item_id, entry in entries.items():
+        if not isinstance(entry, dict):
+            raise ValueError(
+                f"kata_settings: acceptedDefaults[{item_id!r}] must be a dict"
+            )
+        for req in ("value", "v", "at"):
+            if req not in entry:
+                raise ValueError(
+                    f"kata_settings: acceptedDefaults[{item_id!r}] missing key {req!r}"
+                )
+        if not isinstance(entry["v"], str) or not isinstance(entry["at"], str):
+            raise ValueError(
+                f"kata_settings: acceptedDefaults[{item_id!r}] 'v'/'at' must be strings"
+            )
+    p = settings_path(home)
+    existing = _load_existing(p)  # fail-closed
+    merged_defaults = {**existing.get("acceptedDefaults", {}), **entries}
+    return _merge_write({"acceptedDefaults": merged_defaults}, home)
+
+
+def delete_settings_key(key: str, home: str | Path | None = None) -> bool:
+    """Remove ``key`` from the settings file; return whether a delete happened.
+
+    The CA-L36 named build item: ``write_settings`` cannot delete a key
+    (``{**existing, **owned}`` preserves every key), so the factory-reset marker
+    clear needs this small fail-closed helper.
+
+    - File absent OR key not present ⇒ return ``False``, no write.
+    - Key present ⇒ removed, file rewritten, return ``True``.
+    - Corrupt / non-dict file ⇒ ``_load_existing`` RAISES ``ValueError``; the
+      file is left byte-unchanged (fail-closed, C-4).
+    """
+    if not key or not str(key).strip():
+        raise ValueError("kata_settings: key is required")
+    p = settings_path(home)
+    data = _load_existing(p)  # fail-closed on corrupt / non-dict
+    if key not in data:
+        return False
+    del data[key]
+    p.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    return True
+
+
+def first_run_required(home: str | Path | None = None) -> dict:
+    """The CA-L36 force-first-run comparator.
+
+    Bootstrap force-executes the FULL first run when the marker is **absent OR
+    ``firstRunVersion`` differs from the ``.kata-version`` stamp's ``gitSha``**
+    (R-43: the stamp has no ``version`` field; ``suiteSemver`` is rejected).
+    ``Stamp absent OR gitSha == "unknown"`` ⇒ the version clause is SKIPPED and
+    marker absence alone forces (dev in-repo homes are not force-every-run).
+
+    Returns ``{required: bool, reason: "marker-absent"|"sha-mismatch"|None,
+    clause_skipped: bool}``.
+
+    **C-3 surface:** the marker READ here is LENIENT — a corrupt settings file
+    reads as absent (``read_settings`` degrades to ``{}``) ⇒ the run is forced.
+    The paired ``record_first_run`` on that same corrupt file fail-closes, so a
+    forced run that cannot persist its marker MUST be surfaced LOUDLY by the
+    caller pointing at the corrupt file path, then stop — **never loop**.
+    """
+    settings = read_settings(home)  # LENIENT (corrupt ⇒ {} ⇒ force)
+    marker = settings.get("firstRunCompletedAt")
+    recorded_sha = settings.get("firstRunVersion")
+
+    stamp = kata_version.read_stamp(home if home is not None else harness_home())
+    stamp_sha = stamp.get("gitSha") if isinstance(stamp, dict) else None
+    clause_skipped = stamp_sha in (None, "", "unknown")
+
+    if marker is None:
+        return {"required": True, "reason": "marker-absent", "clause_skipped": clause_skipped}
+    if clause_skipped:
+        # Marker present + no comparable stamp ⇒ marker governs ⇒ not required.
+        return {"required": False, "reason": None, "clause_skipped": True}
+    if recorded_sha != stamp_sha:
+        return {"required": True, "reason": "sha-mismatch", "clause_skipped": False}
+    return {"required": False, "reason": None, "clause_skipped": False}
