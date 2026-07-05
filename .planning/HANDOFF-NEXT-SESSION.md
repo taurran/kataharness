@@ -32,6 +32,15 @@ operator-directed pre-merge sequence executed in full:
 **Gauntlet at tag: pytest 2895 pass / 3 skip · validate_skills 48/0/0 · Snyk medium+ 0** (one
 accepted CWE-78 false positive, `.snyk`, expiry 2027-01-04).
 
+## 1b. SAME-DAY ADDENDUM — v0.3.0 ADAPTIVE TIERING also SHIPPED (D150, 2026-07-05)
+
+Operator-directed same-session: adaptive model routing (L0 base / L1 evidence modulation / L2
+deferred), event-scoped budgeted premium rung (family-agnostic), cheap-then-escalate evaluator
+re-adjudication, calibration columns (verdictByTier/tierEvents). Full arc in STATE 2026-07-05b +
+D150 + specs/adaptive-tiering/ (DESIGN, SMOKE-MODELED). Gauntlet at tag: pytest 3120/3 · 48/0/0 ·
+Snyk 0. The queue below is UNCHANGED (R6 still leads) with item 6 added (adaptive live A/B rides
+the same post-R6 instrumented runs). New D# ≥ D151.
+
 ## 2. NEXT SESSION — the post-merge test queue (BACKLOG ★, operator-ordered, R6 leads)
 
 1. **R6 — live host-fired compaction end-to-end**: attended interactive session, throwaway

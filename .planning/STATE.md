@@ -8,6 +8,22 @@ last_updated: "2026-07-05T09:00:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-07-05b — v0.3.0 ADAPTIVE TIERING MERGED + TAGGED, same day as v0.2.1):** The operator
+> directed the adaptive-tiering initiative same-session ("push this as the next update… execute the build
+> on premium… go deep on calibration"): brainstorm → conversational grill → DESIGN → freeze-gate v1 HOLD
+> (2 BLOCKER/4 HIGH/8 MED/5 LOW, all folded) → re-gate SHIP-WITH-FIXES (8 folds) → operator VETO-FLAGs
+> resolved to defaults → **FROZEN (D150)** with PAIRED amendments (model-tiering #2 + inline-eval-m4 #6)
+> → 3-worker TDD engine build (kata_adaptive NEW + kata_models event-scope + kata_telemetry calibration
+> columns, +200 tests) → prose wave (orchestrate 0.11.0/preflight 0.3.0/bootstrap 0.4.0/plan 0.1.4) →
+> **whole-feature Fable ADVAL** SHIP-WITH-FIXES (1 HIGH: R-9 made structural in code; +10 more folds) →
+> re-gate **SHIP** → merged + tagged **v0.3.0**. **SMOKE-MODELED** (engine-driven replay, real v0.2.1
+> build shape): −86% premium-rung calls · −93% modeled tokens + 13→0 wrongful kills on the pre-fix FP
+> mix (modeled-not-measured, caveats in the artifact); live A/B queued post-R6 (BACKLOG ★ 6). Gauntlet
+> at tag: **pytest 3120/3 skip · validator 48/0/0 · Snyk medium+ 0**. BC: `models.adaptive` absent ⇒ all
+> legs OFF; scope LIST form byte-for-byte; L2 contract shipped, activation OFF (post-R6). **NEXT
+> SESSION: R6 leads unchanged** (the queue gained item 6: the adaptive live A/B rides the same
+> instrumented runs). *(Prior CURRENT blocks below are history.)*
+
 > **CURRENT (2026-07-05 — v0.2.1 MERGED + TAGGED; the operator's pre-merge plan EXECUTED end-to-end):**
 > The Fable 5 session ran the full pre-merge sequence on operator order ("execute 1-5"): **(1+2) M4
 > Amendment #5 (D149)** — the C-1 verify-signal fix (trailer `verify.owned`, owned-preferred scorer, kata-tdd
