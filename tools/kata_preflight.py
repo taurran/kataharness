@@ -797,7 +797,8 @@ def stranding_verdict(walk_away, auto_compact_enabled, gauge_present, respawn_pa
     unattended flag) with a missing leg that would STRAND it — auto-compact
     disabled AND no gauge AND no respawn path ⇒ session death at the hard limit
     with no recovery — is a **BLOCK** at preflight.  Attended runs: **WARN** +
-    proceed.  [VETO-FLAG: CA-L25 stands locked-pending-veto.]
+    proceed.  (CA-L25 — RESOLVED LOCKED: the intent-keyed BLOCK is the decision;
+    the former [VETO-FLAG] is closed, not riding to any merge gate.)
 
     Fail-closed (D136 + the adversarial-review discipline): every input is
     REQUIRED and must state what the caller knows — an absent/``None``/wrong-type

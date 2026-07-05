@@ -88,7 +88,12 @@ are locked here with an explicit **[VETO-FLAG]** the freeze-gate must surface.
   tokens** `[TUNABLE]` until parent-telemetry rows exist (CA-L40; SMOKE-3 seeded n=1).
 - **CA-L5 — Trigger denominator = the HOST-REPORTED effective window (R-15).** The denominator is the
   gauge's `context_window.total_tokens` (post-cap): a capped session's real frame IS the cap. Gauge
-  absent ⇒ fallback rotation needs no denominator.
+  absent ⇒ there is no live host-reported denominator for the *trigger*, but the deterministic N-wave
+  fallback (CA-L4) still needs a `trigger_tokens` value for its wave count: use
+  `trigger_tokens = contextTrigger × advertised-window estimate` (a per-model window estimate, explicitly
+  flagged **APPROXIMATE** — same posture as the `backstop_recommendation` approximate fallback). (Freeze-gate
+  fold MED-1: the earlier "fallback rotation needs no denominator" wording was wrong — the wave count needs
+  the token estimate; reconciled here.)
 - **CA-L6 — Small-frame / absent-gauge ⇒ rotation is MANDATORY (CA-1e, OP-9 degradation clause).**
   Degradation is always graceful rotation — never "assume infinite context."
 
@@ -524,6 +529,7 @@ existing path, including the absent-`models`-block BC guarantee (R3).
 | 14 | Adapter primitive (c) absent | Handoff + PROMPT-operator-to-rotate; unattended bounded by one window, surfaced at preflight | Contract degradation text (CA-L38). |
 | 15 | Adapter primitive (b) absent | Budget-overrun enforcement degrades to compliance + livenessDeadline escalation, surfaced at preflight | R-40 (CA-L38). |
 | 16 | `.kata-settings.json` corrupt | Lenient read + fail-closed write ⇒ loud surface pointing at the file; never loop | C-3 (CA-L37). |
+| 17 | kata statusline writes `%TEMP%/kata-ctx-<session_id>.json` on every tick (incl. non-kata cwd), one file per `session_id` | Observability-only bridge write; the boundary-eval bridge selection (newest-by-mtime) **never depends on a kata cwd** and **never gates** — an absent/ambiguous bridge falls to deterministic rotation (§4 row 6) | **Benign + deliberate (LOW-5).** The gauge must not depend on where kata runs (CA-L1), so the tick writes unconditionally; the write is an on-absent-config side effect that is observability-only, never a gate. **Known-minor:** the files are never cleaned — one small JSON per `session_id` accumulates in `%TEMP%`. |
 
 ## §5 Per-platform degradation matrix (RESEARCH-CROSS-PLATFORM.md; docs-only for non-Claude in v0.2.1)
 

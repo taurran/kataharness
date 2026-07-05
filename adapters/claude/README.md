@@ -200,6 +200,16 @@ The gauge (`tools/kata_gauge.py`) reads bridge files in this fixed priority:
 3. **deterministic N-wave fallback** — no usable/fresh bridge ⇒ graceful rotation
    (CA-L3/L4). Never "assume infinite context."
 
+**Bridge selection (which file is the kata bridge).** The running conductor has **no session-id source** on
+the Claude adapter — the SessionStart hook (`hooks/kata-sessionstart.py`) receives `session_id` on stdin but
+neither persists nor exports it, the statusline writes `kata-ctx-<session_id>.json` from its own separate
+stdin, and there is no `CLAUDE_SESSION_ID` env. So the conductor **selects the newest
+`%TEMP%/kata-ctx-*.json` by mtime**. **Known limitation — concurrent same-host kata sessions:** if more than
+one *fresh* (younger than the 300 s `[TUNABLE]` staleness window) `kata-ctx-*.json` exists, none can be
+attributed to *this* conductor without a session-id, so the gauge is treated as **AMBIGUOUS** and the
+conductor **falls to deterministic N-wave rotation — it never guesses**. Pinned in `kata-orchestrate`
+(§ boundary-eval); mirrored here.
+
 ### Security (subprocess sink)
 
 The chaining wrapper is the highest-scrutiny surface in this adapter: it runs a command
@@ -226,8 +236,8 @@ every statusline tick. The posture:
 - **No new privilege.** The chained command is the operator's OWN pre-existing statusline
   command — the same trust domain as a test runner; chaining grants it no new capability.
 
-The canonical `protocol/exec-safety.md` sink-registry row for this subprocess is authored
-at the P2/C10 closeout (this adapter documents the sink here meanwhile).
+The canonical `protocol/exec-safety.md` sink-registry row for this subprocess now exists
+(authored at the P2/C10 closeout); this adapter documents the same sink here as the adapter-local view.
 
 ---
 
@@ -246,7 +256,9 @@ hooks array (never replacing the operator's hooks), and an existing `statusLine`
 **chained or skipped**, never overwritten.
 
 The operator's chosen mode (`bridgeMode`: `chained` | `user-only` | `none`) is recorded to
-`~/.kata/settings.json` under `hostPosture` (E2/R-33) by the bootstrap flow (P2/C1). This
+`<harness_home>/.kata-settings.json` under `hostPosture` (R-36/CA-L35 — the home corrected from the earlier
+`~/.kata/settings.json`; this is where `kata_settings.record_host_posture` actually writes) by the bootstrap
+flow (P2/C1). This
 README states that contract; the adapter files here **write nothing** to host settings on
 their own — the snippet is applied only via the approved bundle's host-settings write slot.
 

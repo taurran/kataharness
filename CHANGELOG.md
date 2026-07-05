@@ -36,7 +36,8 @@ live-proof battery (CA-A1..A5 + A8 row 1 + A11 b/c) and the operator merge gate.
 - **Report budgets + continuation contract** (kata-orchestrate 0.10.0, kata-tdd 0.3.0): dispatch
   startup-load budget (WARN >0.30 / mandate >0.40), size-contracted worker reports (verdict + pointer
   inline, bulk to `.kata/reports/`), the M4-primitive-reusing continuation contract. (C3)
-- **`protocol/observability.md`** — the gauge/bridge/reports/durable-citation contract. (C4)
+- **`protocol/observability.md`** — the log-reader orientation contract (telemetry ledger, board, checkpoint
+  trailers, preflight, handoff, reports, durable-citation rule; no gauge/bridge row — CA-L41). (C4)
 - **Five per-platform recommended-config pages** — Kiro, Codex CLI, Copilot, Cursor, Gemini CLI (docs-only,
   no non-Claude live legs; Windsurf cut). (C5)
 - **Adapter contract primitive (c) session-respawn** (`adapters/ADAPTER-CONTRACT-M4.md`); glossary fold into
