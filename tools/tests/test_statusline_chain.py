@@ -90,11 +90,38 @@ class TestEligibility:
             "a # c",
             "run !x",
             r"python C:\gsd.js",
+            "echo %PATH%",
+            "run ^escape",
         ],
     )
     def test_metachars_rejected(self, cmd: str) -> None:
-        # MUTATION PROOF: dropping any char from _SHELL_METACHARS makes one case RED.
+        # MUTATION PROOF: dropping any char from _SHELL_METACHARS makes one case RED
+        # (includes the cmd.exe-only % and ^ — the implicit-cmd.exe hardening fold).
         assert mod.is_chain_eligible(cmd) is False
+
+    @pytest.mark.parametrize(
+        "cmd",
+        [
+            "/path/user-status.bat",
+            "/path/user-status.BAT arg1",
+            "C:/scripts/status.cmd",
+            "C:/scripts/STATUS.CMD",
+            "legacy.com",
+            "LEGACY.COM --flag",
+        ],
+    )
+    def test_batch_targets_rejected(self, cmd: str) -> None:
+        # MUTATION PROOF (extension gate): removing the _BATCH_EXTENSIONS argv[0]
+        # check makes every case here RED — a .bat/.cmd/.com child runs via an
+        # IMPLICIT cmd.exe despite shell=False (live-proven): skip-not-chain.
+        assert mod.is_chain_eligible(cmd) is False
+
+    def test_batch_gate_is_argv0_only_not_arguments(self) -> None:
+        # a .bat mentioned as an ARGUMENT does not poison an eligible interpreter target
+        assert mod.is_chain_eligible("python /path/reader.py input.bat") is True
+
+    def test_child_argv_skips_batch(self) -> None:
+        assert mod.child_argv(["/path/user-status.bat"]) is None
 
     def test_unbalanced_quote_rejected(self) -> None:
         # MUTATION PROOF: removing the shlex ValueError guard makes this RED.

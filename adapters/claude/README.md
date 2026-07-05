@@ -209,11 +209,16 @@ every statusline tick. The posture:
   `list[str]` with `shell=False`. The user's command string is **never** string-
   interpolated into a shell; `os.system` / `os.popen` are not used.
 - **Chain-eligibility gate.** Kata chains ONLY when the command shlex-parses to plain
-  argv with NO shell metacharacters (`| & ; < > ( ) $ `` ` `` \ * ? [ ] { } ~ ! #`,
-  newline/tab). Any metacharacter, an unbalanced quote, or an empty command ⇒ the **SKIP
-  leg**: no child runs, nothing is emitted, kata still writes its own bridge. Kata never
-  re-introduces shell evaluation, and the never-clobber guarantee is preserved at install
-  time (kata does not wrap an ineligible command — it leaves the user's statusline as-is).
+  argv with NO shell metacharacters (`| & ; < > ( ) $ `` ` `` \ * ? [ ] { } ~ ! # % ^`,
+  newline/tab — `%` and `^` are cmd.exe-only). Any metacharacter, an unbalanced quote, or
+  an empty command ⇒ the **SKIP leg**: no child runs, nothing is emitted, kata still
+  writes its own bridge. Kata never re-introduces shell evaluation, and the never-clobber
+  guarantee is preserved at install time (kata does not wrap an ineligible command — it
+  leaves the user's statusline as-is).
+- **Windows batch targets are skip-not-chain.** A `.bat`/`.cmd`/`.com` argv[0]
+  (case-insensitive) is never chained, because Windows executes batch files via an
+  implicit cmd.exe even under `shell=False` — the argument line is re-parsed with cmd.exe
+  shell semantics, defeating the list-argv guarantee.
 - **Bounded child.** The child runs under a hard timeout (5 s `[TUNABLE]`). Child failure,
   nonzero exit, or timeout ⇒ kata still emits whatever stdout the child produced, never
   hangs, and exits 0 — the host-statusline fail-soft contract (kata must never break the

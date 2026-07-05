@@ -20,10 +20,14 @@ runs the operator's own statusline command every statusline tick):
   * **Chain-eligibility gate (the pin):** kata chains ONLY when the user's
     ``statusLine.command`` shlex-parses to plain argv with **NO shell metacharacters**.
     Any metacharacter (``| & ; < > ( ) $ `` ``` ` ``` ``\\ * ? [ ] { } ~ ! #`` /
-    newline/tab), an unbalanced quote, or an empty command ⇒ the **SKIP leg**: run no
-    child, emit nothing, still write kata's bridge.  Re-introducing shell evaluation is
-    never an option; the never-clobber guarantee is preserved at install time (kata does
-    not wrap an ineligible command — it leaves the user's statusline untouched).
+    newline/tab, plus the cmd.exe-only ``%`` and ``^``), an unbalanced quote, or an
+    empty command ⇒ the **SKIP leg**: run no child, emit nothing, still write kata's
+    bridge.  A Windows batch target (``.bat``/``.cmd``/``.com`` argv[0], case-insensitive)
+    is likewise NEVER chained: CreateProcess runs it via an implicit cmd.exe even under
+    ``shell=False``, re-introducing shell evaluation — skip-not-chain.  Re-introducing
+    shell evaluation is never an option; the never-clobber guarantee is preserved at
+    install time (kata does not wrap an ineligible command — it leaves the user's
+    statusline untouched).
   * **Bounded child** — the child runs under a hard timeout (``_CHILD_TIMEOUT_S`` seconds,
     ``[TUNABLE]``).  Child failure / nonzero exit / timeout ⇒ still emit whatever stdout
     the child produced, never hang, exit 0 (the host-statusline fail-soft contract — kata
@@ -66,15 +70,27 @@ _CHILD_TIMEOUT_S = 5
 #: intentionally NOT here: they are resolved by ``shlex`` (that is what "shlex-parses to
 #: plain argv" means).  Backslash IS rejected — it is a shell escape and, under POSIX
 #: shlex, would mangle Windows paths; forward slashes keep a command chain-eligible.
-_SHELL_METACHARS = frozenset("|&;<>()$`\\*?[]{}~!#\n\r\t")
+#: ``%`` and ``^`` are cmd.exe-only metacharacters (env expansion / escape) — rejected
+#: because a Windows batch child re-enters cmd.exe semantics (see the batch gate below).
+_SHELL_METACHARS = frozenset("|&;<>()$`\\*?[]{}~!#%^\n\r\t")
+
+#: Windows batch-file vector (live-proven): a ``.bat``/``.cmd``/``.com`` child target is
+#: executed via an IMPLICIT cmd.exe even under ``shell=False`` — the argument line is
+#: re-parsed with cmd.exe shell semantics, defeating the list-argv guarantee.  Batch
+#: targets are therefore skip-not-chain: NEVER eligible.  Checked case-insensitively on
+#: the literal argv[0] token (no PATHEXT resolution is performed anywhere in this module).
+_BATCH_EXTENSIONS = frozenset({".bat", ".cmd", ".com"})
 
 
 def is_chain_eligible(command_str: str) -> bool:
     """Decision gate (CA-L1 pin): is *command_str* safe to chain as plain list-argv?
 
     Chain-eligible IFF the command is a non-empty string that (1) contains **no** shell
-    metacharacter from :data:`_SHELL_METACHARS`, and (2) ``shlex.split``-parses to at
-    least one token.  Anything else ⇒ ``False`` ⇒ the SKIP leg (never a shell eval).
+    metacharacter from :data:`_SHELL_METACHARS`, (2) ``shlex.split``-parses to at least
+    one token, and (3) the argv[0] target is NOT a Windows batch file
+    (:data:`_BATCH_EXTENSIONS`, case-insensitive — a batch child runs via an implicit
+    cmd.exe despite ``shell=False``, re-introducing shell evaluation).  Anything else ⇒
+    ``False`` ⇒ the SKIP leg (never a shell eval).
 
     This is pure decision code — no I/O, no side effects — so it is mutation-provable in
     isolation.
@@ -88,7 +104,12 @@ def is_chain_eligible(command_str: str) -> bool:
     except ValueError:
         # unbalanced quote / dangling escape — never guess, SKIP.
         return False
-    return bool(tokens)
+    if not tokens:
+        return False
+    # Windows batch-file gate: .bat/.cmd/.com argv[0] ⇒ implicit cmd.exe ⇒ NOT eligible.
+    if Path(tokens[0]).suffix.lower() in _BATCH_EXTENSIONS:
+        return False
+    return True
 
 
 def parse_tail(argv: List[str]) -> Optional[List[str]]:
