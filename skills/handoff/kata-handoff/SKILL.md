@@ -5,7 +5,7 @@ description: >-
   compaction with zero loss. Use at the end of a session, when handing between agents/tools, or before a
   context reset — anchored on the frozen plan so the resumer re-enters mid-stream without re-deriving.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: handoff
 status: experimental
 agnostic: true
@@ -68,3 +68,22 @@ point to it:
   classified by reach), surfaced for the human, never auto-applied.
 - A boundary handoff **supersedes** a coincident self-handoff (T1): at a boundary, write **one** artifact.
 The one-shot/session handoff above is unchanged; this is purely additive for incremental runs.
+
+## Provenance `kind:` + refresh discipline ([[protocol|handoff]] CA-L21)
+Every HANDOFF.md carries an additive `kind: manual|self|boundary` frontmatter field recording **who wrote
+it** — author it at the write site:
+- **kata-handoff** (this skill, a human-directed write) writes `kind: manual`.
+- The **self-handoff cycle** ([[kata-selfhandoff]], a threshold refresh) writes `kind: self`.
+- The **sprint boundary** ([[kata-sprint]]) writes `kind: boundary`.
+
+A pre-existing handoff without `kind:` reads as unknown kind and never gates — the field is purely additive.
+
+**Refresh (CA-L21(4)):** an over-threshold refresh **overwrites** HANDOFF.md and commits — history lives in
+git, not in a second file (**NO new artifact formats**). **T1 extended:** any coincident boundary handoff
+supersedes a same-boundary self-refresh — at a shared boundary, write **one** artifact.
+
+**Staleness (read side — CA-L19, [[protocol|handoff]] "Staleness rule"):** the resumer demotes this handoff
+from sole-anchor to context-input whenever a board `DONE`/`DECISION` line is **newer** than the HANDOFF.md
+git commit (strict `>`; same-second ties favor the handoff), and the [[kata-orient]] 3-tier rebuild becomes
+authoritative. The read-side machinery lives in `protocol/handoff.md` + [[kata-orient]]; author this handoff
+committed-and-current so it stays the sole anchor.
