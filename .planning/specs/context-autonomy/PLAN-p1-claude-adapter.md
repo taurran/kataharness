@@ -35,7 +35,7 @@ waves:
   wave1: [A1, A3, A6, A7]
   wave2: [A2, A4, A5]
 depends_on:
-  A2: [A1]
+  A2: [A1, A3]
   A4: [A1, A6]
   A5: [A1, A6]
 tasks:
@@ -92,15 +92,17 @@ adapters/claude/README.md; GROUNDING G2/G3.
    wrapper** (exec the user's script as child, pass stdin through unmodified, never touch the user's
    output or bridge file) … The chained wrapper writes its OWN sibling bridge
    `%TEMP%/kata-ctx-<session_id>.json` (atomic temp+rename); the user's file is untouched."
-   Mechanics: read all stdin once; `subprocess.run(list-argv-of-the-user-command, input=stdin)` —
-   NO `shell=True` (exec-safety registry row added is P2/C4's observability doc? No — registry rows
-   live in `protocol/exec-safety.md`; A2 adds its row there is NOT owned here — instead the wrapper's
-   child argv comes from its own argv tail (`statusline_chain.py -- <user-cmd> [args…]`), documented;
-   the exec-safety registry row is added by A2 to adapters/claude/README.md §security and the
-   protocol registry entry is deferred to P2/C10 closeout with a NOTE — single-owner discipline);
-   print the child's stdout byte-identical; then call `kata_statusline.write_bridge` (A1's function)
-   with the parsed stdin. Child failure/timeout ⇒ still emit child output if any, never hang (bounded
-   timeout), exit 0 (fail-soft, the host-statusline contract).
+   Mechanics: read all stdin once; `subprocess.run(list-argv, input=stdin)` — NO `shell=True`; the
+   child argv comes from the wrapper's own argv tail (`statusline_chain.py -- <user-cmd> [args…]`).
+   **Chain-eligibility pin: chain ONLY when the existing `statusLine.command` shlex-parses to plain
+   argv with NO shell metacharacters — otherwise take the SKIP leg (user bridge or deterministic
+   fallback; never re-introduce shell evaluation, never break the user's statusline).** Child
+   timeout default **5 s `[TUNABLE]`**. Print the child's stdout byte-identical; then call
+   `kata_statusline.write_bridge` (A1's function) with the parsed stdin. Child failure/timeout ⇒
+   still emit child output if any, never hang, exit 0 (fail-soft, the host-statusline contract).
+   **Single-owner note:** the `protocol/exec-safety.md` registry row for this subprocess sink is NOT
+   owned here — A2 documents the sink in adapters/claude/README.md §security and the protocol
+   registry entry lands at P2/C10 closeout (a NOTE rides this task's commit).
 2. **`adapters/claude/statusline.py`** — no behavior change needed beyond what A1's core provides
    (the glue already pipes stdin to `statusline_from_event`); confirm + comment only.
 3. **`settings.snippet.json`** — add the SessionStart(compact) hook entry (A3's script) alongside the

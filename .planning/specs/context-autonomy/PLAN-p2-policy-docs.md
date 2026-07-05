@@ -32,7 +32,7 @@ ownership:
   C6: [adapters/ADAPTER-CONTRACT-M4.md]
   C7: [CONTEXT.md]
   C8: [skills/plan/kata-plan/RUBRIC.md, skills/plan/kata-plan-essential/SKILL.md, skills/plan/kata-plan-standard/SKILL.md, skills/plan/kata-plan-advanced/SKILL.md]
-  C9: [skills/evaluate/kata-evaluate/SKILL.md, skills/evaluate/kata-review/RUBRIC.md, .planning/HANDOFF-NEXT-SESSION.md]
+  C9: [skills/evaluate/kata-evaluate/SKILL.md, skills/evaluate/kata-review/RUBRIC.md, skills/evaluate/kata-review-essential/SKILL.md, skills/evaluate/kata-review-standard/SKILL.md, skills/evaluate/kata-review-advanced/SKILL.md, .planning/HANDOFF-NEXT-SESSION.md]
 waves:
   wave1: [C1, C3, C4, C5, C6, C7, C8, C9]
   wave2: [C2]
@@ -80,9 +80,15 @@ In a THROWAWAY Claude profile (fixture pin, fold #4: the run config carries `inl
 - **CA-A4**: install/preflight against a profile WITH a user statusline ⇒ user's statusLine + bridge
   byte-unchanged; chain-or-skip offered.
 - **CA-A5**: under-threshold session ⇒ ZERO handoff refreshes, zero rotation events.
+- **CA-A8 row 1**: a one-shot **pre-v0.2.1** config fixture (no `contextAutonomy` key) ⇒ rotation
+  UNCONDITIONAL — the fixture NAMES the D147 departure (CA-L33; §4 row 1).
 - **CA-A11(b)**: a task exceeding its quantum checkpoints → continuation report → pt-N+1 fresh
   dispatch resumes from the anchor with index continuity. **CA-A11(c)**: a worker final report is
   verdict+pointer inline with bulk at `.kata/reports/`.
+**Fixture crossing mechanics (pinned):** the throwaway profile sets `autoCompactWindow: 100000`
+(the key floor) and the fixture config carries a fixture-only `contextTrigger: 0.30`, so the
+threshold crossing is affordable; the conductor drives the crossing by processing a sized fixture
+corpus; G4 measurements read via the bridge file + `/context` readings.
 Output: the CA REPORT to the operator — measurements, fixture verdicts, the A/B numbers, and the
 merge-gate packet (VETO-FLAGs + the CA-A2 judgment grade).
 
@@ -148,10 +154,11 @@ read_first: DESIGN CA-L34; kata-readiness SKILL.md 0.2.0; C1's Phase-3 write-at-
 
 ## C3 — report budgets + continuation contract + premium failure semantics (orchestrate + tdd briefs)
 
-read_first: DESIGN Leg B (CA-L9/L10/L11), Leg E (CA-L22/L23), CA-L30, CA-L44(F2); kata-orchestrate
+read_first: DESIGN Leg B (CA-L9/L10/L11), Leg E (CA-L22/L23), CA-L30; kata-orchestrate
 SKILL.md 0.9.0 (dispatch template in "The loop"; "Dispatch-time model selection" + R2 at lines
-697-778; the reroll anchor prose at line ~643 "task's dispatch base"); kata-tdd SKILL.md 0.2.1
-(checkpoint-cadence section); E1 `dispatch_budget` + E3 premium branch — cite exactly.
+697-778 — NOTE: lines 537-696, the M4 scheduler + ladder span, are OFF-LIMITS to this task);
+kata-tdd SKILL.md 0.2.1 (checkpoint-cadence section); E1 `dispatch_budget` + E3 premium branch —
+cite exactly.
 
 1. **Dispatch brief template (orchestrate):** startup-load estimate at dispatch (CA-L9: "**Startup
    load** = the conductor-AUTHORED dispatch payload only (brief + packed orientation attachments),
@@ -185,15 +192,18 @@ SKILL.md 0.9.0 (dispatch template in "The loop"; "Dispatch-time model selection"
    {scope:"premium", reason:"auth-40x"|"unavailable"}` + handoff note) … Baseline (non-premium) R2
    auth-raise behavior is unchanged." The premium branch call site cites `kata_models`' E3 surface;
    NO-FIRE reasons surface as a board NOTE (§3.2).
-5. **F2 rider** (CA-L44): the one dispatch-base sentence at the reroll anchor/index rule: "no
-   last-good anchor ⇒ fresh attempt indexes from 0 at the task's dispatch base."
-6. Versions: kata-orchestrate 0.9.0 → 0.10.0 (MINOR), kata-tdd 0.2.1 → 0.3.0 (MINOR). Scope guard:
+5. Versions: kata-orchestrate 0.9.0 → 0.10.0 (MINOR), kata-tdd 0.2.1 → 0.3.0 (MINOR). Scope guard:
    the P1/A4 gauge sections land first and are untouched here except where this task's sections
-   adjoin them; the M4 scheduler internals stay byte-unchanged.
+   adjoin them. **F2's orchestrate-side leg is DROPPED from this task** — its target line sits
+   inside the frozen ladder span (SKILL.md 608-696); the F2 stated rule ships in the observability
+   doc (C4 — the home DESIGN F2 names). Deferred note: "F2 sentence in the frozen ladder span —
+   deferred to the next M4-surface amendment."
 
 **Verify:** validator green; grep pins: "verdict + pointer inline", ".kata/reports/", "One-step
-chain: premium → OMIT", "auth-40x", "re-evaluated at EVERY checkpoint", "indexes from 0",
-"0.30"/"0.40"/"0.80" present at the budget prose.
+chain: premium → OMIT", "auth-40x", "re-evaluated at EVERY checkpoint",
+"0.30"/"0.40"/"0.80" present at the budget prose. Canary: **git diff of
+skills/coordinate/kata-orchestrate/SKILL.md shows ZERO hunks intersecting lines 537-696** (the M4
+scheduler + corrective-action ladder span).
 
 ## C4 — `protocol/observability.md` ships (from the committed draft)
 
@@ -279,13 +289,16 @@ RUBRIC.md (where verdict-tier guidance lives).
 1. **F1** — verdict-tier variance calibration note where verdict-tier guidance lives (one note in
    kata-evaluate SKILL.md, cross-referenced from kata-review RUBRIC.md): SMOKE-observed verdict-tier
    variance is a calibration reality; graders state tier + rationale. Prose-only, no behavior
-   change; kata-evaluate 0.3.0 → 0.3.1 (PATCH).
+   change; kata-evaluate 0.3.0 → 0.3.1 (PATCH). **Because the kata-review family RUBRIC is touched,
+   the three review tier skills get PATCH bumps per the D140/F7 rule C8 cites (RUBRIC change ⇒
+   tier-skill PATCH bumps): kata-review-essential/-standard/-advanced each +0.0.1.**
 2. **F5** — correct .planning/HANDOFF-NEXT-SESSION.md §7: "class_median returns None at
    min_samples=5" → the SMOKE-1 truth: non-calibration rows hold 6 code samples ≥ 5, so **8.35 is
    the correct output; calibration exclusion HOLDS**. *(Repo-note: the SMOKE doc names this "HANDOFF
    §7"; the line lives in HANDOFF-NEXT-SESSION.md:125 — this task pins the real file.)*
 
-**Verify:** validator green; the stale sentence gone (grep returns the corrected text only).
+**Verify:** validator green with the kata-evaluate PATCH + the three kata-review tier PATCHes; the
+stale sentence gone (grep returns the corrected text only).
 
 ## Phase verification (default-FAIL)
 
@@ -293,6 +306,7 @@ RUBRIC.md (where verdict-tier guidance lives).
   first-party code; bump-on-modify honored on every touched SKILL.md (CA-A10).
 - C11 battery complete: CA-A1 zero-task-loss + context-quality grade; CA-A2 A/B with stated fixture
   postures; CA-A3 (a)–(d) each surfaced; CA-A4 byte-unchanged user artifacts; CA-A5 zero churn;
+  **CA-A8 row 1: one-shot pre-v0.2.1 fixture ⇒ unconditional rotation, D147 named**;
   CA-A11(b)/(c) fixtures pass; G4 empirical numbers recorded in the CA REPORT.
 - Drift magnets: model-tiering frozen text above the appendix byte-unchanged; D83 0.40 untouched;
   DRAFT-observability retained; the M4 scheduler internals untouched.
@@ -350,7 +364,7 @@ has two named build legs, the legs are listed separately (each leg → one task)
 | CA-L41 observability doc | C4 |
 | CA-L42 shared-base-dir installer fix | E5 |
 | CA-L43 frozen five pinned + hash-verified | E5 |
-| CA-L44 F1 / F2 / F5 riders | C9 / C3+C4 / C9 |
+| CA-L44 F1 / F2 / F5 riders | C9 / C4 (orchestrate-span leg deferred to the next M4-surface amendment) / C9 |
 | §2 kata.config rows / settings keys / bridge / kind / ledger v3 | E7 / E2 / A1 / A6 / E6 |
 | §3 gated amendment (D148) | E3 (append) · C10 (D148 record) |
 | CA-A1 live proof | C11 |

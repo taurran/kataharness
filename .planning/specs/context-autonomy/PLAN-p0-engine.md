@@ -158,20 +158,21 @@ kata_models.py:300-407 (`resolve()` — the zero-step contract this amends), :29
 ["haiku","sonnet","opus","fable","mythos"]`); .planning/specs/model-tiering/DESIGN.md:25 (the
 POST-FREEZE ADDENDUM precedent — append, never edit a frozen line).
 
-1. **`resolve()` premium branch** — additive optional kwarg `premium: dict | None = None` (the
-   `models.premium` block passed by the caller; `None` ⇒ byte-for-byte frozen behavior — §3 gating
-   clause: "absent `models.premium`, the frozen spec governs byte-for-byte"). Fires iff **all four
-   conjuncts** (CA-L29/§3.2 verbatim): "`models.premium.approved == true` ∧ `work-class ∈
-   models.premium.scope` (critical | coding only — economy never, R-9) ∧ **the `offer` rung sits
-   EXACTLY ONE rung strictly above the anchor in the family ladder** ∧ `mode == "advanced"`". The
-   premium id is "**`models.premium.offer` itself** — never derived by ladder walk"; return the
-   EXPLICIT id via ID_MAP (§3.2: "inherit would silently give the session model; explicit is
-   mandatory"). "ANY other offer↔anchor relation ⇒ **NO FIRE + surfaced**" — mechanically: return the
-   frozen-path result + a distinguishable surface signal (additive second channel, e.g. a
-   `resolve_premium(...)` wrapper returning `{id, no_fire_reason}` so the frozen `resolve()` signature
-   and every existing call stay byte-compatible; the board-NOTE prose is P2/C3). Malformed premium
-   block (missing keys, wrong types) ⇒ RAISES (fail-closed, D136 — a present-but-broken approval is
-   never silently ignored).
+1. **`resolve()` premium branch — exact public surface (pinned; no other new exports):**
+   `resolve(skill, mode, anchor, *, family, coder_floor, premium=None) -> str | None` — an ADDITIVE
+   keyword-only param consuming the `models.premium` dict per DESIGN §3 (`None` ⇒ byte-for-byte
+   frozen behavior — §3 gating clause: "absent `models.premium`, the frozen spec governs
+   byte-for-byte"); plus exported **`premium_status(premium, anchor, *, family, mode) ->
+   {"fires": bool, "reason": str}`** for NO-FIRE surfacing/audit (the board-NOTE prose consumer is
+   P2/C3). The branch fires iff **all four conjuncts** (CA-L29/§3.2 verbatim):
+   "`models.premium.approved == true` ∧ `work-class ∈ models.premium.scope` (critical | coding only
+   — economy never, R-9) ∧ **the `offer` rung sits EXACTLY ONE rung strictly above the anchor in the
+   family ladder** ∧ `mode == "advanced"`". The premium id is "**`models.premium.offer` itself** —
+   never derived by ladder walk"; return the EXPLICIT id via ID_MAP (§3.2: "inherit would silently
+   give the session model; explicit is mandatory"). "ANY other offer↔anchor relation ⇒ **NO FIRE +
+   surfaced**" — `resolve()` returns the frozen-path result; `premium_status` carries the reason.
+   Malformed premium block (missing keys, wrong types) ⇒ RAISES (fail-closed, D136 — a
+   present-but-broken approval is never silently ignored).
 2. **The §3 amendment doc** — append the DESIGN §3 text (all six numbered clauses, verbatim, including
    both quoted frozen-spec excerpts) as a dated POST-FREEZE GATED AMENDMENT section at the END of
    `.planning/specs/model-tiering/DESIGN.md` (the line-25 precedent; supersede-never-rewrite — zero
@@ -205,14 +206,22 @@ read_first: DESIGN §1 Leg F (CA-L24..L26), CA-L15/L17, CA-L25; kata_preflight.p
    (`python`/`uv run` on `<harness_home>/tools/*`)." Each uncovered class ⇒ one WARN entry naming the
    class. "Nothing else is checked; the list is the whole check" — the class list is a module constant
    frozenset; the function iterates it and only it.
-2. **`stranding_verdict(walk_away, auto_compact_enabled, gauge_present, respawn_path) -> str`** —
+2. **`read_host_autocompact(settings_path, env) -> dict`** — the host-posture reader producing
+   `auto_compact_enabled` (+ `window_tokens`, `source`): reads the Claude settings key(s)
+   (`autoCompactEnabled`, `autoCompactWindow`) with **env-var precedence per GROUNDING-CLAUDE G1**
+   ("`CLAUDE_CODE_AUTO_COMPACT_WINDOW` … takes precedence" over settings.json). Feeds
+   `stranding_verdict`'s `auto_compact_enabled` input and the `autoCompactChecked` audit field
+   (item 4). Unreadable/unparseable settings file ⇒ `auto_compact_enabled: None` (unknown —
+   surfaced), never a silent True/False; the READ never writes anything (CA-L15
+   recommend-never-write).
+3. **`stranding_verdict(walk_away, auto_compact_enabled, gauge_present, respawn_path) -> str`** —
    CA-L25 verbatim: "A walk-away-configured run (auto-continue boundary or unattended flag) with a
    missing leg that would STRAND it (auto-compact disabled AND no gauge AND no respawn path ⇒ session
    death at hard limit with no recovery) = **BLOCK** at preflight. Attended runs: **WARN** + proceed."
    Returns `"block"|"warn"|"ok"`; any input absent/None ⇒ RAISES (fail-closed on absent input to
    decision code — the adversarial-review discipline; callers must state what they know).
    [VETO-FLAG note carried in the docstring: CA-L25 stands locked-pending-veto.]
-3. **Bundle audit event** — `run_preflight`'s `.kata/preflight.json` payload gains additive keys
+4. **Bundle audit event** — `run_preflight`'s `.kata/preflight.json` payload gains additive keys
    `bundle: {autoCompactChecked, backstopRecommendation, allowlistWarnings, premiumGate,
    hostSettingsWriteSlot}` (CA-L24: the host-settings write "is an explicit bundle slot approved like
    an install — never an implied side effect"; CA-L28: "`.kata/preflight.json` carries the audit event
@@ -221,7 +230,9 @@ read_first: DESIGN §1 Leg F (CA-L24..L26), CA-L15/L17, CA-L25; kata_preflight.p
 
 **Tests (CA-A11(d) + CA-A3(c) mechanical leg):** exactly-five-classes pin (adding a sixth entry to the
 frozenset breaks a length test — the anti-cathedral guard); each class missing ⇒ exactly the enumerated
-WARN; stranding matrix (walk-away + all three legs absent ⇒ block; any leg present ⇒ warn-or-ok;
+WARN; `read_host_autocompact` env-var-precedence pin (env set ⇒ env wins over settings.json; unreadable
+file ⇒ `None`-unknown, never a default bool); stranding matrix (walk-away + all three legs absent ⇒
+block; any leg present ⇒ warn-or-ok;
 attended ⇒ never block); absent-input RAISES; audit-event additive round-trip; existing suite green.
 **Mutation proofs ≥3:** the AND-conjunction in stranding (flip to OR → RED), walk-away discriminator,
 the five-class enumeration.
