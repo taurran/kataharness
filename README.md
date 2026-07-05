@@ -7,21 +7,15 @@ many subagents, and refuses to call anything "done" until a **fresh-context, def
 then folds every run's lessons back into itself. The name *is* the method: the **Improvement Kata** — *every loop
 sharpens the loop.*
 
-> **v0.3.0 · experimental.** NEW in v0.3.0 (Adaptive tiering): model selection stops being a static
-> table and starts learning from the run. A task that keeps failing its gate is **bumped up a rung for
-> its next attempt**; work the plan graded low-complexity or a class on a clean-pass streak **steps
-> down**; kill verdicts get a **cheap-then-escalate second opinion** before any redispatch (where a
-> higher below-anchor tier exists to give one — the leg is stated-inert otherwise); and the
-> expensive top rung (Fable today — any family's premium model tomorrow) fires **only on configured
-> hard moments, inside a call budget you approve up front**, with every move a loud board line.
-> Modeled on this repo's own prior build: **−86% premium-rung calls** vs class-scoped elevation
-> *(modeled, not measured — the live A/B is queued)*. v0.2.1 shipped context autonomy (the 8-hour
-> walk-away design); v0.2.0 the inline evaluator — both below.
-> HONEST LIMITS: the live host-fired-compaction leg (R6) is queued first, the adaptive-vs-static live
-> A/B rides the instrumented runs after it; ledger-driven acceptance routing (L2) ships as contract with activation OFF until
-> real run volume exists; the single-model Claude core is the proven, dogfooded path (KataHarness
-> builds itself); Codex/Kiro adapters are install-supported with partial live proof; the other platform
-> guides are config-docs-only; IaC *apply* is gated and not shipped runnable. We're honest about
+> **v0.3.0 · experimental.** NEW: **Adaptive tiering** — the loop now routes every model dispatch by
+> the run's own evidence (failed tasks bump up a rung, proven-easy work steps down, kill verdicts get
+> a second opinion) and scopes the premium rung to **budgeted hard moments you approve up front**.
+> Modeled on our own prior build: **−86% premium-rung calls** *(modeled, not measured — live A/B
+> queued)*. Full story under *What's in the box* → 🎯.
+> HONEST LIMITS: the live host-fired-compaction check (R6) leads the test queue, the adaptive live
+> A/B rides the runs after it; L2 acceptance routing ships activation-OFF pending run volume; Claude
+> Code is the proven, dogfooded path (KataHarness builds itself), Codex/Kiro are install-supported,
+> the other platforms are config-guides; IaC *apply* is gated, not runnable. We're honest about
 > maturity — that honesty is the product. New here? Start with [`AGENTS.md`](./AGENTS.md).
 
 ---
@@ -58,6 +52,39 @@ token/wall-clock efficiency, in one loop.
 
 ---
 
+## Picking a harness — where KataHarness wins
+
+Positioning by design philosophy, not benchmark claims — each of these tools is excellent at its own
+job, and we benchmark ourselves, not others (see *Built-in benchmarking*). KataHarness is built for
+one user in particular: **the developer delegating real, production-bound work to agents, who needs
+the output to be *provably* right — and the token bill to stay rational while proving it.**
+
+- **vs. Claude Code's native orchestration (subagents, workflows, the multi-agent "ultra" review).**
+  Claude Code ships world-class *primitives*; KataHarness is the **opinionated discipline layered on
+  top of them** — frozen plans workers structurally cannot drift, a default-FAIL fresh-context gate on
+  *every* task (not review-on-request), evidence-routed model spend, and a git-durable trail that
+  survives crashes and compactions. It runs **on** Claude Code — an extension of it, not a rival.
+  Pick Kata when the whole loop needs governing, not just the review step.
+- **vs. Hermes (Nous Research).** Hermes built its identity on the closed learning loop, and we
+  studied it formally before borrowing — verdict: **borrow the mechanisms, keep our gates.** Hermes ships no
+  default-FAIL testing model and promotes learned behavior without a human gate; Kata's learning is
+  telemetry-grounded and **two-stage human-gated**, and nothing in the loop certifies its own work.
+  Pick Kata when a wrong "learned lesson" or an unverified deliverable is expensive.
+- **vs. OpenHands (ex-OpenDevin).** A leading open autonomous-dev platform — strong sandboxing, broad
+  tooling, benchmark-driven. Its loop optimizes for *task completion*; Kata's optimizes for
+  **provable completion**: mutation-proven tests, adversarial review before every merge, honest
+  scorecards with no credit for tests that never ran. Pick Kata where "the agent said it works" is
+  not evidence.
+- **vs. Aider.** The benchmark interactive pair-programming CLI (we adapted its repo-map, with
+  attribution). Aider keeps you in the loop prompt-by-prompt; Kata is built for the
+  **walk-away** — one approval bundle, then hours of gated autonomous execution with a crash-proof
+  trail. Pick Aider to code *with* an AI; pick Kata to *delegate* to one and trust what comes back.
+
+What no one else on this list ships together: **default-FAIL gates on everything + evidence-routed
+model spend** — validation depth and token thrift as one mechanism, not a trade-off.
+
+---
+
 ## The Kata Loop
 
 Six phases, every run feeding the next:
@@ -73,6 +100,31 @@ the spec     design +    parallel       no-write,       two-way,     lessons bac
 
 ## What's in the box
 
+### 🛡️ The quality loop — nothing certifies its own work
+The spine every other feature hangs off, and the reason to trust a walk-away run at all.
+A **default-FAIL** evaluator owns the definition of "done." An **adversarial review** attacks the design before
+every merge. Every code behavior is **mutation-proven non-vacuous** (a test that stays green when its assertion
+is removed doesn't count). An optional **AI-slop check** fails a run for spiraling or over-claiming. And a
+standing **silent-permissive-default guard** forbids decision-code from quietly degrading on bad input.
+
+### 🎯 Adaptive tiering — the loop routes models by evidence *(new in v0.3.0)*
+Most harnesses pick one model and pay its rate for everything, all run long. KataHarness routes
+**every dispatch off the run's own evidence**, on top of its relative-tier base: a task that fails its
+gate twice is **bumped a rung up for the retry**; plan-rated low-complexity work and classes riding a
+clean-first-pass streak **step down** (coding work only, capped at one rung, damped the moment a
+downshift fails); and a kill verdict gets a **cheap second opinion** one rung up — strictly below your
+anchor (stated-inert where no such tier exists) — before any work is thrown away. The expensive top
+rung (Fable today; any family's premium model tomorrow — registration is pure data, no mechanism
+change) fires **only on the hard moments you approved**: freeze-gate verdicts, HOLD re-reviews,
+escalations, failed-task retries — inside a **call budget** whose consent prompt shows your exact
+event list and cap, with the last two calls reserved for gates and a loud lapse to your anchor when
+it's spent. Every move is a board `tier:` line — auditable, and the restart-recovery trail. Modeled
+on this repo's own prior build via the shipped engine: **−86% premium-rung calls** (59→8) and
+**13→0 wrongful kills** on the false-positive trigger mix *(modeled, not measured — inputs cited in
+the committed SMOKE-MODELED artifact; the live A/B is queued with arms pinned)*. Ledger-driven
+acceptance routing (L2) ships as contract, activation OFF until real run volume. Backward compatible:
+no `models.adaptive` block ⇒ every leg OFF.
+
 ### ⚡ The inline evaluator/reroll — DSpark-informed loop economics *(v0.2.0)*
 The best-of-both-worlds core. The scheduler discipline is adapted from DeepSeek's **DSpark** paper
 (confidence-scheduled speculative decoding) — not its inference code, its *principles*, translated to the
@@ -85,33 +137,6 @@ Explicitly rejected: fixed-cadence mid-task LLM judgment — an LLM judge costs 
 chunk, so periodic judgment on green work is a net loss. Live-proven: trigger → diff-cited verdict →
 corrective redispatch → green. `inlineEval: off|telemetry|on`; absent ⇒ off, byte-for-byte backward
 compatible.
-
-### 🎯 Adaptive tiering — evidence-driven model routing *(new in v0.3.0)*
-Three layers. **L0** — the relative differential table stays as the deterministic base and only
-fallback (no data, no events ⇒ exactly the frozen behavior). **L1** — the run's own evidence modulates
-each dispatch: a task that fails its gate twice is **bumped one rung up for its next attempt** (once
-per task, from gate rejections and standing reroll verdicts only — never a worker's self-report); a
-plan-rated low-complexity task or a class riding a 3-clean-first-pass streak **steps one rung down**
-(coding work only, capped at −1, with a damper that stops oscillation the moment a downshifted
-dispatch fails); a `correct`/`reroll` kill verdict gets **one second opinion from an evaluator a rung
-up — strictly below the anchor** — before anything is killed, and only the standing verdict counts
-(where the screening tier is already one rung below the anchor, the leg is INERT — stated, never
-silent, and the kill proceeds on the single cheap verdict).
-The **premium rung is event-scoped and budgeted** (the new object-form scope, which the composer now
-writes by default; the v0.2.1 class-scope form stays valid, byte-for-byte): approve once and it fires
-only on the configured hard moments (freeze-gate verdicts, HOLD re-reviews, escalations,
-failed-task retries…), capped at N
-calls with the last two reserved for freeze-gates — the consent prompt enumerates your exact event
-list and budget, and exhaustion lapses to the anchor loudly. Every adaptive move is a board `tier:`
-DECISION line (also the restart-recovery trail). Modeled on this repo's real v0.2.1 build shape via
-the shipped engine: **−86% premium-rung calls** (59→8) vs run-long class scoping, and **13→0 wrongful
-kills** on the pre-fix false-positive trigger mix *(modeled, not measured — every input cited in the
-committed SMOKE-MODELED artifact; the live A/B is queued with arms pinned)*. **L2** — ledger
-acceptance routing (a class *earns* a cheaper tier from recorded first-pass acceptance) ships as
-contract with activation OFF until post-R6 run volume exists. Family-agnostic by construction: the
-mechanism knows "the premium rung," not a model name — a GPT-5.6-class rung qualifies by registering
-its family's ladder entry plus the adapter's model-ID map (per-adapter re-grounding, no mechanism
-change). Backward compatible: no `models.adaptive` block ⇒ every leg OFF.
 
 ### 🔋 Context autonomy — the 8-hour walk-away *(v0.2.1)*
 The conductor watches its own context gauge (a statusline **bridge** on Claude — installed chain-or-skip,
@@ -140,24 +165,12 @@ never vibes; **recall** surfaces prior lessons/decisions/recurrences read-only a
 `kata-improve` distils run lessons into candidate skills that only enter the toolkit through
 `kata-promote`'s **two-stage human gate**. The loop learns; nothing self-modifies silently.
 
-### 🎛️ Frontmatter as the contract — and no model IDs, ever
-Every skill's frontmatter is machine-read policy: **semver** (format validator-enforced; bump-on-modify
-by standing convention), **cost-weight** (drives run-cost previews), **allowed-tools** (least-privilege per skill),
-**source attribution**, and tags — the catalog below is auto-generated from it, so docs can't drift from
-reality. Deliberately **absent**: any `model:` pin. Model routing is **relative to your session's anchor**
-(critical work at the anchor, economy work tiered down; an optional four-conjunct-gated premium rung
-above — **event-scoped and budgeted in its new default form, and modulated per-dispatch by run
-evidence** when the v0.3.0 adaptive layer is composed on), so a renamed, gated, or unavailable model ID
-never breaks the loop — and economy tiering is itself a token optimization baked into every dispatch.
-
-### 🌐 Platform compatibility
-One agnostic core; per-platform delivery at three honesty levels. **Claude Code** — the proven, dogfooded
-adapter (hooks, statusline bridge, slash-commands; KataHarness builds itself on it). **Codex CLI · Kiro**
-— installer-supported platforms (`--platform codex|kiro`), with the multi-model dispatch chain live-proven
-on a real Codex install. **Gemini CLI · GitHub Copilot · Cursor** — shipped recommended-configuration
-guides (`docs/platforms/`) mapping each host's context, checkpoint, and settings model onto the harness
-contract; the deterministic-rotation leg is designed exactly for hosts with no gauge. Docs-first is
-deliberate: a platform gets promoted to "supported" by live proof, not by a README claim.
+### 🏁 Built-in benchmarking
+Quality you can *measure*, not assert. A complete two-axis scoring engine ranks candidate build artifacts on real
+**fail-to-pass / pass-to-pass** test evidence (weighted by a mutation-non-vacuity multiplier) and produces an
+**honest scorecard** — it distinguishes a genuine all-pass from a vacuous one, with **no free credit for tests
+that never ran**. *(v0.1 scores single-arm + k-repeat runs; the parallel multi-arm bake-off driver — launch N
+approaches at once, judge, and promote the winner — is the next planned capability.)*
 
 ### 🔁 Crash-proof resume
 A session death — a crash, a killed terminal, an auto-compaction that wipes context mid-build — no longer costs
@@ -172,12 +185,15 @@ you the run. KataHarness keeps a **durable, git-committed progress trail** and r
   history, the authoritative source) and re-dispatches only the ones that weren't — no double work, no dropped
   work, no manual reconstruction.
 
-### 🏁 Built-in benchmarking
-Quality you can *measure*, not assert. A complete two-axis scoring engine ranks candidate build artifacts on real
-**fail-to-pass / pass-to-pass** test evidence (weighted by a mutation-non-vacuity multiplier) and produces an
-**honest scorecard** — it distinguishes a genuine all-pass from a vacuous one, with **no free credit for tests
-that never ran**. *(v0.1 scores single-arm + k-repeat runs; the parallel multi-arm bake-off driver — launch N
-approaches at once, judge, and promote the winner — is the next planned capability.)*
+### 🎛️ Frontmatter as the contract — and no model IDs, ever
+Every skill's frontmatter is machine-read policy: **semver** (format validator-enforced; bump-on-modify
+by standing convention), **cost-weight** (drives run-cost previews), **allowed-tools** (least-privilege per skill),
+**source attribution**, and tags — the catalog below is auto-generated from it, so docs can't drift from
+reality. Deliberately **absent**: any `model:` pin. Model routing is **relative to your session's anchor**
+(critical work at the anchor, economy work tiered down; an optional four-conjunct-gated premium rung
+above — **event-scoped and budgeted in its new default form, and modulated per-dispatch by run
+evidence** when the v0.3.0 adaptive layer is composed on), so a renamed, gated, or unavailable model ID
+never breaks the loop — and economy tiering is itself a token optimization baked into every dispatch.
 
 ### 🐞 Debug Mode — a bug-hunting pipeline
 Point it at a failing or mysterious codebase and it's *designed* to work like an engineer, not a guesser: build a
@@ -199,11 +215,14 @@ Three **modes** (**Essential · Standard · Advanced**) set breadth and depth. T
 selection is **relative** — critical work runs at your session's anchor model, economy work tiers *down* a rung —
 so a gated or renamed model never breaks the loop, and no model ID is ever hard-baked into a skill.
 
-### 🛡️ The quality loop
-A **default-FAIL** evaluator owns the definition of "done." An **adversarial review** attacks the design before
-every merge. Every code behavior is **mutation-proven non-vacuous** (a test that stays green when its assertion
-is removed doesn't count). An optional **AI-slop check** fails a run for spiraling or over-claiming. And a
-standing **silent-permissive-default guard** forbids decision-code from quietly degrading on bad input.
+### 🌐 Platform compatibility
+One agnostic core; per-platform delivery at three honesty levels. **Claude Code** — the proven, dogfooded
+adapter (hooks, statusline bridge, slash-commands; KataHarness builds itself on it). **Codex CLI · Kiro**
+— installer-supported platforms (`--platform codex|kiro`), with the multi-model dispatch chain live-proven
+on a real Codex install. **Gemini CLI · GitHub Copilot · Cursor** — shipped recommended-configuration
+guides (`docs/platforms/`) mapping each host's context, checkpoint, and settings model onto the harness
+contract; the deterministic-rotation leg is designed exactly for hosts with no gauge. Docs-first is
+deliberate: a platform gets promoted to "supported" by live proof, not by a README claim.
 
 ### 🔧 Adapt without forking upstream
 Customize any skill via a local **overlay** or a promoted **fork** — your changes survive every update; the
