@@ -105,6 +105,26 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
   (anything other than the three) **fails plan freeze** (freeze-time raise, not a mid-run surprise — the same
   freeze-gate posture as `estimate:`). `class:` is **never** derived from `runShape` (provenance-only, LOW-14b).
 
+## Dispatch sizing (context autonomy)
+
+Plan/freeze time carries two fail-soft sizing checks over the per-task `estimate:` and the
+conductor-authored dispatch brief, both computed off the same arithmetic — `kata_gauge.dispatch_budget`
+(the CA-L9 rotation-point + over-briefing engine): rotation point = startup load + the **40pp** work
+quantum, clamped by the 0.80 hard cap of the worker window.
+
+- **Freeze WARN (CA-L11).** A **WARN** (never hard-fail) when estimated task burn > the 40pp quantum,
+  estimator `[TUNABLE]` tokens-per-chunk seeded from ledger `perTask` medians; the budget line is
+  mandatory prose in every dispatch brief (D136 posture: the estimate drives a WARN + split suggestion,
+  fail-soft; splitting stays planner judgment). Worker-side observance is **compliance**, not soundness
+  (M1-L3); TRUE enforcement is conductor-side ([[kata-orchestrate]] liveness machinery + the M4 kill
+  primitive).
+- **Freeze mandate (CA-L9).** When **startup load > 0.40** the 40pp quantum is unsatisfiable below the
+  0.80 cap (`dispatch_budget` returns `over_briefed`), so the dispatch is **OVER-BRIEFED** and is caught
+  at plan/freeze time — split the task or slim the brief, a **mandate, not a WARN**. Startup load = the
+  conductor-authored dispatch payload only (brief + packed orientation attachments); worker read-ins
+  count toward the worker's own budget, never startup. (Over-briefing also WARNs earlier, at startup
+  > 0.30 — the early smell.)
+
 ## Quality bar (the invariant — all tiers must meet this)
 
 - Ownership is provably disjoint (no file in two tasks).
