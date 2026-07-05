@@ -6,7 +6,7 @@ description: >-
   acceptance criteria — red→green→refactor, behavior over implementation, escalate unknowns instead of
   improvising.
 license: Apache-2.0
-version: 0.2.1
+version: 0.3.0
 category: execute
 status: experimental
 agnostic: true
@@ -157,6 +157,21 @@ one trailer, in the same order. A fresh brief after a `correct` verdict may carr
 a re-plan invitation**: it does not license editing another task's files, re-deciding a LOCKED decision, or
 widening scope. If the NOTE reads like the frozen plan itself is wrong, `ESCALATE` and stop, exactly as you
 would for any plan conflict — do not improvise around it.
+
+**Continuation contract (CA-L10 — when your brief carries the dispatch budget line).** Your brief embeds a
+**budget** and a **0.80 hard cap** (both in tokens) plus the estimator basis; your estimate is **worker-local
+and approximate** — the brief's numbers + your own activity. Re-evaluate at **EVERY checkpoint**: while
+**under budget**, keep building. **At budget**, finish the current chunk and checkpoint-commit, then decide —
+**if the remaining estimate fits under the 0.80 cap, CONTINUE to completion** (never rotate to do the last
+10% of a task); **otherwise return a continuation report** — your last checkpoint anchor (the sha), what
+remains, and what you learned — and stop. **If your estimated remaining activity is already ≥ the cap, return
+UNCONDITIONALLY.** A returned task is resumed by the orchestrator as a fresh **pt-N+1** dispatch anchored at
+your last checkpoint, continuing the checkpoint index — so a clean checkpoint + a precise "what remains" is
+the whole handoff. This rides the M4 checkpoint stream: **absent the mandate (`inlineEval: off`) it degrades
+to the brief's budget prose + return-at-task-boundary only** — no checkpoint-anchored continuation. Observing
+this is **compliance**, not the enforcement mechanism (the conductor's liveness machinery + the M4 kill
+primitive are the true enforcement); still, observe it — a worker that plows past the cap gets killed
+mid-work and loses the uncommitted tail.
 
 ## Depth by mode
 The active mode is set in `kata.config` and passed in the task by the orchestrator. Do not guess or infer it.
