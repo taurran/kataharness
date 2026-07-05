@@ -6,7 +6,7 @@ description: >-
   manifest-hash checked), records installs to the machine-global D-registry, probes the target environment,
   and emits .kata/preflight.json. Default-FAIL; never tiered (D29/D33).
 license: Apache-2.0
-version: 0.2.1
+version: 0.3.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -75,21 +75,36 @@ disclaimer. Two cases, each with BOTH arms stated:
     Fable on zero-step critical work via inherit-by-omission; the session model is the operator's own
     choice). The hard-stop is scoped to case (a) ONLY — it never applies to the offer case below.
 - **(b) The premium OFFER** — post-July-7, and ONLY when `anchor == opus` ∧ `mode == "advanced"` ⇒ kata MAY
-  OFFER anchor+1 (Fable) at preflight approval, the operator **knowingly accruing Fable API usage**. Scope
-  is fixed (R-9): the approved offer elevates **CRITICAL and CODING** work classes only — economy /
-  low-criticality **NEVER** runs Fable, even in advanced with approval.
+  OFFER anchor+1 (the premium rung) at preflight approval, the operator **knowingly accruing premium API
+  usage**. Scope takes ONE of two forms (D150/AT-L15, type-dispatched): the LIST form elevates **CRITICAL
+  and CODING** work classes run-long (v0.2.1 semantics byte-for-byte); the OBJECT form elevates **only the
+  configured hard-moment events, within the call budget** (the adaptive default bootstrap composes).
+  **R-9 holds in BOTH forms:** economy / low-criticality work **NEVER** runs the premium rung, even in
+  advanced with approval (an economy fail-bump ceilings at the anchor).
   - **Approve** ⇒ bootstrap records `models.premium: {offer, approved: true, scope, grantedMode}` (§2).
   - **Decline = the DEFAULT** ⇒ record `approved: false` in the §2-shaped `models.premium` block (or write
     no block at all — absent ⇒ the resolver's frozen behavior byte-for-byte), the run stays at the anchor
     and **PROCEEDS normally** — no hard-stop, no anchor pin. This is exactly the disclaimer's own "Decline
     to stay on your current model at no added cost" sentence.
 
-**Cost disclaimer — shown verbatim at the offer (CA-7b):**
+**Cost disclaimer — shown verbatim at the offer (CA-7b). TWO variants, selected by the composed
+`premium.scope` FORM (D150/AT-L16):**
 
-> Approving this sends your most demanding work — critical judgment and coding — to **Fable**, the top
-> model rung, billed at premium API rates. A long-running loop can make many such calls. By approving you
-> are **knowingly accepting Fable API charges** for the length of this run. Decline to stay on your current
-> model at no added cost; you can switch models yourself anytime with `/model`.
+*LIST form (v0.2.1 run-long class scope):*
+
+> Approving this sends your most demanding work — critical judgment and coding — to **the premium
+> rung**, billed at premium API rates. A long-running loop can make many such calls. By approving you
+> are **knowingly accepting premium API charges** for the length of this run. Decline to stay on your
+> current model at no added cost; you can switch models yourself anytime with `/model`.
+
+*OBJECT form (adaptive event scope — the enumeration is READ FROM the composed `scope.events` at the
+prompt, never a hand-maintained list; an under-enumerated pitch is a consent defect, AT-L16):*
+
+> Approving this sends **exactly the <N> hard-moment events in this run's configuration — <the
+> `scope.events` list, verbatim>** — to **the premium rung**, capped at **<budget.calls> calls** this
+> run (the last 2 reserved for freeze-gate verdicts; when the budget is spent, premium lapses to your
+> anchor, loudly). Everything else tiers down as usual. By approving you are **knowingly accepting up
+> to <budget.calls> premium-rung calls**. Decline to stay on your current model at no added cost.
 
 The approval record carries `grantedMode`; a re-entrant run that changes mode LAPSES it (the lapse executor
 is bootstrap — Phase 0/1 clears `approved` when `mode ≠ grantedMode`, and this gate re-asks). Enforcement of

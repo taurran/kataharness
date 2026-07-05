@@ -61,6 +61,14 @@ useful in-run, not citable after the fact unless re-derived from a committed art
   needs **≥5 samples per class** before `class_median` returns non-`None` (telemetry-ledger.md:23-24,
   kata_telemetry.py:605-630, `min_samples=5` default). Below threshold, treat the metric as "not yet
   meaningful," not "zero."
+- **Adaptive-tiering calibration columns (D150 / M4 Amendment #6 — ADDITIVE OPTIONAL keys on the v3
+  row; NO v4 exists):** `verdictByTier` (`{"<verdict>×<tier>": n}` — standing verdicts under their
+  deciding tier, overturned screen verdicts under `overturned×<screen-tier>`; the C-3 τ/verdict
+  calibration input) and `tierEvents` (`[{at, dispatch, from, to, reason}]` — the adaptive move audit
+  trail). Read via the absent-honest accessors `verdict_by_tier_of(row)` / `tier_events_of(row)`
+  (`{}`/`[]` on pre-amendment rows, never fabricated); aggregate via `verdict_by_tier_totals(rows)` and
+  `overturn_rate(rows)` — both EXCLUDE `calibration: true` rows by default and return
+  not-yet-meaningful sentinels below `min_samples`, the `class_median` discipline exactly.
 
 ## How to read checkpoints
 
@@ -108,6 +116,12 @@ useful in-run, not citable after the fact unless re-derived from a committed art
   `ladder: <task> trigger <n> @<sha> score <s> verdict <v>` (SKILL.md:713-715). The `@<sha>` on a ladder
   line is what makes cursor recovery sound after a conductor restart: adjudicated shas recount from these
   lines and are never re-triggered (SKILL.md:719-721).
+- **`tier:` DECISION lines record every adaptive-tiering move (D150, AT-L7)** —
+  `tier: <task|dispatch> <from>-><to> reason <event:<name>|failbump|streak|complexity|anchor-switch-reset|budget-exhausted>`
+  (rendered/parsed by `kata_adaptive.render_tier_decision`/`recount_from_decisions`). These lines are
+  ALSO the durable recount trail: after a conductor restart, premium budget spend and per-task bump
+  state rebuild from them (the thrash-budget recount pattern); a malformed `tier:` payload RAISES at
+  recount — a corrupt trail must never silently under-count premium spend (D136).
 - **Archives + trail snapshots.** The orchestrator rotates any pre-existing board at run start — moved to
   `.kata/board.<utc>.archive.md` (or truncated) — so `.kata/board.md` holds only the current run's events
   (protocol/board.md:45-50). Each integration commit additionally triggers a `refs/kata/trail` snapshot of

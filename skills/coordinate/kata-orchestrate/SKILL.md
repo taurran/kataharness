@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.10.2
+version: 0.11.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -758,6 +758,17 @@ reuses the existing `DECISION` line and the existing kinds.
     checkpoint trailer, `k` is absent, and **the fresh attempt's first trailer is `--index 0`** — never inferred
     as `k+1` from the rejected checkpoint (CA-L44 F2 stated rule, Amendment #5 Part B;
     protocol/observability.md agrees verbatim).
+  - **Cheap-then-escalate re-adjudication (M4 Amendment #6 / D150 AT-L9 — ONLY when the run's
+    `models.adaptive` block is present with `evaluatorEscalate: true`):** a `correct` or `reroll` verdict
+    (the two costly actions) is re-adjudicated EXACTLY ONCE before any kill fires — dispatch a SECOND
+    fresh-context [[kata-inline-eval]] (same chunk diff + brief + signal vector, blind to the first verdict)
+    at **one rung UP from the economy resolution, CLAMPED STRICTLY BELOW THE ANCHOR** (M4-L7's never-anchor
+    line stands). Where the economy resolution is ALREADY anchor−1 (e.g. advanced-mode Anthropic), **this
+    step is INERT — proceed on the first verdict, zero extra calls** (stated, never silent). Conflicting
+    verdicts ⇒ the HIGHER evaluator's verdict STANDS; record BOTH in `verdictByTier` (the standing verdict
+    under its deciding tier, the overturned one under `overturned×<screen-tier>`). `continue` verdicts are
+    NEVER re-adjudicated (the green path stays one cheap call, M4-L1). Only the STANDING verdict drives the
+    ladder action, the adaptive fail-bump counter, and the streak clear.
 - **Trigger #2 (same task) ⇒ GROUNDING PASS before any second reroll.** YOU (the plan-guardian) re-anchor the task
   against the FROZEN plan — **is the SPEC the defect?** Output = a **tightened task brief** (clarified within plan
   bounds, board `DECISION`), and ONLY THEN reroll #2. A **plan-defect finding routes through the EXISTING general
@@ -903,6 +914,63 @@ takes): **OMIT-inherit + LOUD surface** — a board **DECISION** + a ledger `deg
 semantically-correct safe fallback (the anchor = the exact no-approval behavior); **unattended survival wins,
 never silent**. **Baseline (non-premium) R2 auth-raise behavior is UNCHANGED** — the R2 401/403
 `human-required` exception above stands for every non-premium dispatch.
+
+## Adaptive tiering (D150 — evidence-driven modulation over the D131 base)
+
+**Activation (AT-L21, load-guard posture):** at run start resolve
+`cfg = kata_adaptive.resolve_adaptive_config(kata.config["models"].get("adaptive"))` and (advanced
+mode, object-form scope only) `budget = kata_adaptive.resolve_budget(models.premium.scope)`. An
+ABSENT `adaptive` block ⇒ `{"enabled": False}` ⇒ **every step in this section is a NO-OP and the
+Dispatch-time protocol above runs byte-for-byte as v0.2.1** (the load-time BC leg). A malformed
+block ⇒ the resolver RAISES ⇒ load-guard STOP + escalate (GB12/D45). Hold ONE
+`state = kata_adaptive.new_state()` for the run; after a conductor restart, rebuild it via
+`kata_adaptive.recount_from_decisions(<the board's tier: DECISION payloads>, <premium rung>)`.
+
+**Step 2.5 — modulate the resolved rung (between resolve and dispatch, EVERY build dispatch):**
+`delta = kata_adaptive.modulate_step(cfg, state, task_id=…, task_class=…, work_class=…,
+complexity=<the task's plan-frontmatter complexity, or None>)`. Apply `delta` to the resolved rung
+on the family ladder, clamp to [family floor / R1 coder-floor, the mode ceiling (essential
+anchor−1 · standard anchor · advanced anchor-or-premium)], then EMIT per the frozen contract
+(AT-L2b): a rung landing ON the anchor ⇒ OMIT the model parameter (never the anchor's explicit
+id); below-anchor ⇒ explicit id; the premium rung ⇒ `premium.offer` itself. **The AT-L4 roster
+NEVER modulates down:** kata-evaluate, kata-review/grill/slop/validate verdict passes, AND
+[[kata-inline-eval]] (economy-classed but kill-authority judgment) keep their L0 resolution as a
+floor. Every non-zero delta writes a board DECISION with the payload from
+`kata_adaptive.render_tier_decision(task, from_rung, to_rung, reason)` — LOUD, never silent, and
+the durable recount trail (AT-L7).
+
+**Event escalation (Leg B):** when the dispatch IS one of the 7 registry events
+(`kata_models.ADAPTIVE_EVENTS`; each event's covering site is `ADAPTIVE_EVENT_SITES` — consult it,
+never guess; `fail-bump-escalation` is CONJUNCT-COVERAGE-ONLY and follows AT-L8's mechanics, not
+this paragraph): essential ⇒ inert; standard ⇒ escalate the dispatch to the ANCHOR (OMIT-emit);
+advanced + object-form scope ⇒ resolve via
+`kata_models.resolve(…, premium=<models.premium>, event="<event-name>")` — the premium rung fires
+iff all four conjuncts hold AND `kata_adaptive.can_spend(budget, state, event)` grants it
+(FCFS, last 2 calls reserved for `freeze-gate-verdict`/`re-gate-after-hold`; a denied non-reserved
+event dispatches at the anchor, LOUD). On a granted spend: `record_spend(state)` + the `tier:`
+DECISION line. **Budget exhaustion ⇒ premium LAPSES for the run's remainder** — LOUD DECISION +
+ledger `degraded {scope:"premium", reason:"budget-exhausted"}` + handoff note (the CA-L30
+discipline; the premium failure semantics above are UNCHANGED and also still lapse on any dispatch
+failure).
+
+**Evidence recording (Leg C inputs — orchestrator-side only, D33):** after EVERY task-gate verdict
+call `kata_adaptive.record_gate_result(state, task_id, task_class, accepted=…, first_pass=…,
+downshifted=<True iff this attempt's dispatch carried a −1 delta>)`; after every STANDING ladder
+`reroll` (post-re-adjudication — an overturned verdict never counts, M4 Amendment #6 item 2) call
+`record_standing_reroll(state, task_id, task_class)`. When `bump_pending(state, cfg, task_id)` is
+True, the task's NEXT attempt dispatches one rung up (AT-L8: once per task; the bumped attempt is
+the `fail-bump-escalation` event; economy work NEVER bumps past the anchor, R-9). Bumped tasks are
+exempt from downshift by construction (the engine enforces it).
+
+**Ledger closeout additions:** accumulate `verdictByTier` (standing verdicts under their deciding
+tier; overturned screen verdicts under `overturned×<screen-tier>` — the kata_telemetry key grammar)
+and `tierEvents` (every `tier:` move) into the run's ledger row via `build_ledger_row` — ADDITIVE
+v3 keys, calibration's C-3 input.
+
+**Mid-run `/model` switch (AT-L17b):** on detecting an anchor change, call
+`kata_adaptive.anchor_switch_reset(state)` (bumps/streaks/dampers cleared, budget spend PRESERVED)
++ a board NOTE naming the reset. Anchor-relative state re-based against a different ladder is
+undefined arithmetic; reset is the honest posture.
 
 ## Cross-model dispatch (multi-model routing)
 
