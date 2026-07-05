@@ -107,6 +107,29 @@ def test_parse_trailer_bad_evidence_raises():
         kt.parse_checkpoint_trailer(_trailer(evidence="not-a-sha"))
 
 
+# --- Amendment #5 Part A (C-1): the optional owned-scoped verify exit -------
+
+
+def test_parse_trailer_verify_owned_int_ok():
+    """Amendment #5: verify.owned is an OPTIONAL int — the owned-file-scoped exit."""
+    rec = json.dumps({"v": 1, "i": 0, "verify": {"exit": 1, "owned": 0}})
+    parsed = kt.parse_checkpoint_trailer(f"{kt._TRAILER_KEY} {rec}")
+    assert parsed["verify"]["owned"] == 0
+
+
+def test_parse_trailer_verify_owned_null_ok():
+    """owned: null ⇒ 'not measured' — valid (pre-amendment producer shape)."""
+    rec = json.dumps({"v": 1, "i": 0, "verify": {"exit": 0, "owned": None}})
+    assert kt.parse_checkpoint_trailer(f"{kt._TRAILER_KEY} {rec}") is not None
+
+
+def test_parse_trailer_verify_owned_non_int_raises():
+    """Fail-closed (D136): a present-but-non-int owned exit is malformed, never coerced."""
+    rec = json.dumps({"v": 1, "i": 0, "verify": {"exit": 0, "owned": "0"}})
+    with pytest.raises(kt.TelemetryError, match="verify.owned"):
+        kt.parse_checkpoint_trailer(f"{kt._TRAILER_KEY} {rec}")
+
+
 # ===========================================================================
 # 2. scan_checkpoints
 # ===========================================================================
@@ -635,6 +658,43 @@ def test_main_emit_prints_one_trailer_line(tmp_path, capsys):
     out = capsys.readouterr().out.strip().splitlines()
     assert len(out) == 1 and out[0].startswith(f"{kt._TRAILER_KEY} ")
     assert kt.parse_checkpoint_trailer(out[0])["verify"]["passed"] == 3
+
+
+def test_emit_trailer_owned_exit_included(tmp_path):
+    """Amendment #5: --owned-exit rides into verify.owned; absent ⇒ key omitted (BC)."""
+    repo = tmp_path
+    _seed(repo)
+    _stage(repo, "base.py", "b=0\n")
+    _git(["commit", "-m", "base"], repo)
+    _stage(repo, "chunk.py", "c=1\n")
+    line = kt._emit_trailer(
+        repo_root=str(repo), index=0, verify_exit=1, owned_exit=0,
+        passed=None, failed=None, skipped=None, lint=None, paths=None,
+    )
+    rec = kt.parse_checkpoint_trailer(line)
+    assert rec["verify"]["exit"] == 1 and rec["verify"]["owned"] == 0
+    # BC: omitting owned_exit produces a trailer with NO owned key at all.
+    line_bc = kt._emit_trailer(
+        repo_root=str(repo), index=0, verify_exit=1, owned_exit=None,
+        passed=None, failed=None, skipped=None, lint=None, paths=None,
+    )
+    assert "owned" not in kt.parse_checkpoint_trailer(line_bc)["verify"]
+
+
+def test_main_emit_owned_exit_flag(tmp_path, capsys):
+    """The CLI --owned-exit flag round-trips through the printed trailer."""
+    repo = tmp_path
+    _seed(repo)
+    _stage(repo, "base.py", "b=0\n")
+    _git(["commit", "-m", "base"], repo)
+    _stage(repo, "chunk.py", "c=1\n")
+    rc = kt.main(
+        ["emit-trailer", "--repo-root", str(repo), "--index", "0",
+         "--verify-exit", "1", "--owned-exit", "0"]
+    )
+    assert rc == 0
+    out = capsys.readouterr().out.strip().splitlines()
+    assert kt.parse_checkpoint_trailer(out[0])["verify"]["owned"] == 0
 
 
 # ===========================================================================

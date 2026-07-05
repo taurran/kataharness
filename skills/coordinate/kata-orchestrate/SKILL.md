@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.10.1
+version: 0.10.2
 category: coordinate
 status: experimental
 agnostic: true
@@ -680,6 +680,11 @@ selecting BOTH the τ leash and the weight table (`kata_risk.DEFAULT_TAU` / `kat
 `tools/kata_risk.py`). Every class table carries the UNIVERSAL base hard trio (`verify_fail` / `lane_drift` /
 `missing_record`, each .60) + the `slack_ge_2x` soft term (.30), scored by the SAME P0 machinery; the adapters
 add the per-class EXTRAS and the per-class leash (research/debug at τ **0.45** vs code's 0.50).
+**`verify_fail` scoping (Amendment #5/C-1, all classes):** when the trailer's verify block carries a
+present-and-non-null `owned` exit (the worker's OWNED-FILE-scoped verify run — [[kata-tdd]] emits it via
+`--owned-exit`), the scorer reads THAT; absent/`null` `owned` falls back to the legacy suite-scoped
+`verify.exit` (BC — documented as the C-1 false-positive-prone leg: a sibling task's cross-task suite red is
+not this worker's defect). A present-but-non-int `owned` RAISES (D136, treat-as-triggered + surface).
 
 - **research** (`class: research`): the class per-checkpoint VERIFY **IS** the citation-integrity check — its
   exit rides the trailer's `verify.exit` (the existing `verify_fail` signal; there is **NO separate
@@ -749,6 +754,10 @@ reuses the existing `DECISION` line and the existing kinds.
     **continuing the checkpoint index from the anchor checkpoint's `i`** (anchor at `i=k` ⇒ the fresh session's
     first trailer is `--index k+1`) — the streak metric, `firstTripIndex`, and the inline evaluator's
     "last good checkpoint index" all stay well-defined across attempts on the active branch.
+    **When the reroll anchor is the task's DISPATCH BASE** (no below-τ checkpoint exists), the base carries no
+    checkpoint trailer, `k` is absent, and **the fresh attempt's first trailer is `--index 0`** — never inferred
+    as `k+1` from the rejected checkpoint (CA-L44 F2 stated rule, Amendment #5 Part B;
+    protocol/observability.md agrees verbatim).
 - **Trigger #2 (same task) ⇒ GROUNDING PASS before any second reroll.** YOU (the plan-guardian) re-anchor the task
   against the FROZEN plan — **is the SPEC the defect?** Output = a **tightened task brief** (clarified within plan
   bounds, board `DECISION`), and ONLY THEN reroll #2. A **plan-defect finding routes through the EXISTING general

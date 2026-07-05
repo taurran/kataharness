@@ -2348,3 +2348,31 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   Untouched invariants stated for the gate: R1 below-anchor monotonicity, R2's ≤2-step baseline bound, and
   the inline-eval M4-L7 economy carve-outs (economy is structurally outside `premium.scope`). Gate: E3
   integration PASS — 1728-cell matrix clean, model-tiering frozen text byte-unchanged, D83 0.40 untouched.
+
+- **D149 — M4 Amendment #5 (gated, pre-merge): owned-scoped `verify_fail` (the C-1 signal-definition
+  fix) + the F2 dispatch-base index sentence — 2026-07-05.** The operator-directed v0.2.1 pre-merge tasks
+  1–2 (HANDOFF §3), delivered as ONE post-freeze gated amendment appended to
+  `.planning/specs/inline-eval-m4/DESIGN.md` (the Amendment #4/D148 precedent; no frozen line edited).
+  **Inputs:** CALIBRATION-FINDINGS C-1 (retroactive 57-checkpoint scan: 13/13 would-be triggers false
+  positive — every one a sibling task's suite-scoped `test_real_tree_readme_in_sync` red, true positives
+  0) + LIVE-PROOF F2-R (a second independent conductor inferred `--index k+1` at a dispatch-base anchor;
+  twice-reproduced live). **Part A (C-1, candidate 3 subsuming candidate 1):** trailer schema v1 gains
+  OPTIONAL nullable int `verify.owned` (the OWNED-FILE-scoped verify exit; non-int RAISES);
+  `kata_risk._verify_fail` reads `owned` when present-and-non-null, else the legacy suite `verify.exit`
+  (BC leg, documented C-1-FP-prone; calibration separates the populations by field presence — re-scoping
+  `exit` itself REJECTED as an undetectable semantic shift over historical rows; candidate 2's benign-red
+  exclusion list REJECTED as drift-prone roster-patching); `emit-trailer` gains `--owned-exit`; kata-tdd
+  0.4.0 carries the producer mandate (suite exit unchanged + owned-scoped run, both mechanical, D33);
+  kata-orchestrate 0.10.2 documents the scoring preference; **τ/weights untouched** (C-1's ordering rule —
+  signal definition before tuning; the τ/verdict×tier calibration follow-on remains open). **Part B (F2,
+  the C3-deferred sentence):** the ladder span's checkpoint-index-continuity mandate gains its k-absent
+  leg — a reroll anchored at the DISPATCH BASE (no below-τ checkpoint) indexes the fresh attempt from
+  `--index 0`, never `k+1` off the rejected checkpoint (CA-L44 F2; observability.md:93-97 verbatim). Plus
+  a **doc-citation re-audit**: 23 stale `SKILL.md:`/`kata_telemetry.py:` line citations in
+  `protocol/observability.md` re-pointed against the live tree (the G-2 lesson, applied proactively).
+  **BC:** absent `owned` ⇒ scoring byte-for-byte pre-amendment; historical trailers parse unchanged; no
+  ledger schema change. **Gate:** fresh-context default-FAIL adversarial gate (no-write reviewer) —
+  NEEDS_WORK (1 HIGH: the amendment's own observability cite went stale from the same-file insertion) →
+  folded → re-gate **PASS**. **Gauntlet at fold:** pytest 2878/3 skip · validate_skills 48/0/0 · Snyk
+  medium+ 0 (tools/ scan). Tests +10 incl. the mutation-pinned owned-beats-suite preference (the exact
+  C-1 class as a named red-turn target). Supersedes nothing; extends A1-Q2/A1-Q4/M4-L4 by gated addendum.

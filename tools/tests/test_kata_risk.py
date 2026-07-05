@@ -224,6 +224,71 @@ class TestShouldTriggerBoundary:
         assert result["triggered"] is True
 
 
+class TestOwnedVerifyScoping:
+    """Amendment #5 Part A (C-1): ``verify_fail`` reads the OWNED-scoped exit when the
+    trailer carries ``verify.owned``; the legacy suite exit is the BC fallback.
+
+    Mutation targets: the owned-beats-suite preference (inverting it turns
+    test_owned_green_suite_red_is_not_verify_fail RED — the exact C-1 false-positive
+    class, 13/13 retroactive FPs); the present-but-non-int fail-closed guard.
+    """
+
+    @staticmethod
+    def _rec(exit_code: int, **owned_kw) -> dict:
+        verify: dict = {"exit": exit_code}
+        if "owned" in owned_kw:
+            verify["owned"] = owned_kw["owned"]
+        return {"v": 1, "i": 1, "verify": verify}
+
+    def test_owned_green_suite_red_is_not_verify_fail(self):
+        # THE C-1 class: suite red on a cross-task artifact, owned tests green.
+        result = kata_risk.should_trigger(
+            self._rec(1, owned=0), lane_drift=False, slack_ratio=None, task_class="code"
+        )
+        assert result["signals"]["verify_fail"] is False
+        assert result["score"] == 0.0
+        assert result["triggered"] is False
+
+    def test_owned_red_is_verify_fail_even_when_suite_green(self):
+        result = kata_risk.should_trigger(
+            self._rec(0, owned=1), lane_drift=False, slack_ratio=None, task_class="code"
+        )
+        assert result["signals"]["verify_fail"] is True
+        assert result["score"] == 0.60
+        assert result["triggered"] is True
+
+    def test_owned_null_falls_back_to_suite_exit(self):
+        # owned: null ⇒ "not measured" ⇒ the legacy suite-scoped leg governs.
+        red = kata_risk.should_trigger(
+            self._rec(1, owned=None), lane_drift=False, slack_ratio=None, task_class="code"
+        )
+        assert red["signals"]["verify_fail"] is True
+        green = kata_risk.should_trigger(
+            self._rec(0, owned=None), lane_drift=False, slack_ratio=None, task_class="code"
+        )
+        assert green["signals"]["verify_fail"] is False
+
+    def test_owned_absent_is_byte_identical_bc(self):
+        # No owned key at all ⇒ pre-amendment scoring exactly (the BC guarantee).
+        red = kata_risk.should_trigger(
+            self._rec(1), lane_drift=False, slack_ratio=None, task_class="code"
+        )
+        assert red["signals"]["verify_fail"] is True and red["score"] == 0.60
+        green = kata_risk.should_trigger(
+            self._rec(0), lane_drift=False, slack_ratio=None, task_class="code"
+        )
+        assert green["signals"]["verify_fail"] is False and green["score"] == 0.0
+
+    @pytest.mark.parametrize("bad", ["0", 1.5, True])
+    def test_owned_non_int_raises(self, bad):
+        # Fail-closed (D136): unpriceable owned exit RAISES, never coerced/ignored.
+        with pytest.raises(kata_risk.RiskError, match="verify.owned"):
+            kata_risk.should_trigger(
+                self._rec(1, owned=bad), lane_drift=False, slack_ratio=None,
+                task_class="code",
+            )
+
+
 class TestShouldTriggerGuards:
     """Fail-closed guards on the decision function."""
 

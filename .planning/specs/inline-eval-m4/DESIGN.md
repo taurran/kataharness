@@ -517,6 +517,59 @@ cap is flagged AT-RISK at owned-module chunking and is re-measured on the P1 dog
 (instrumented run #2, real module sizes); named remediation if it misses: coarsen the chunk unit
 (checkpoint every N modules — the A1-Q2 `[TUNABLE]`), never a silent cap change.
 
+## Amendment #5 (2026-07-05, GATED pre-merge amendment — C-1 verify-signal scoping + the F2
+index-continuity sentence; this is the "next M4-surface amendment" C3/C4 named)
+
+**Provenance:** operator-directed v0.2.1 pre-merge tasks 1–2 (HANDOFF-NEXT-SESSION §3). Inputs:
+`.planning/CALIBRATION-FINDINGS.md` FINDING C-1 (retroactive 57-checkpoint scan: 13/13 would-be
+triggers false-positive, every one the suite-scoped `test_real_tree_readme_in_sync` cross-task
+artifact — true positives 0) + `specs/context-autonomy/LIVE-PROOF.md` item 5 F2-R (a second
+independent fresh conductor inferred `--index k+1` where the stated rule pins 0 at a dispatch-base
+anchor — twice-reproduced live). Routed as a POST-FREEZE gated-amendment addendum (the
+Amendment #4 / D148 precedent; supersede-never-rewrite — no frozen line above is edited).
+
+**Part A — C-1: `verify_fail` becomes OWNED-SCOPED, carried by an ADDITIVE trailer field
+(CALIBRATION-FINDINGS C-1 candidate 3, subsuming candidate 1).**
+1. **Trailer schema (extends A1-Q2, additive):** `verify` gains an OPTIONAL nullable int
+   **`owned`** — the exit code of the OWNED-FILE-SCOPED verify run (the task's owned test files
+   only, the F5 footprint's test set). Absent/`null` ⇒ "not measured" (every pre-amendment
+   producer). Present-but-non-int ⇒ schema RAISE (fail-closed, D136). **`verify.exit` keeps its
+   existing meaning byte-for-byte** (the worker's full committed verify — the suite run), retained
+   for forensics and gate-side context. Re-scoping `exit` itself was REJECTED: it would poison
+   every pre-amendment calibration row with an undetectable semantic shift; field-presence is the
+   honest version marker.
+2. **Scorer (extends A1-Q4 / M4-L4):** `verify_fail` = `verify.owned != 0` **when `owned` is
+   present and non-null**, else the legacy `verify.exit != 0` (the BC leg — documented as
+   suite-scoped and C-1 FP-prone; calibration distinguishes rows by field presence). A
+   present-but-non-int `owned` reaching the scorer RAISES `RiskError` (unpriceable input, D136 —
+   never coerced).
+3. **Producer (kata-tdd + dispatch briefs):** `emit-trailer` gains optional `--owned-exit <e>`;
+   the worker mandate becomes: run the full `<verify>` as before (exit → `--verify-exit`) AND run
+   the owned-file-scoped test subset (exit → `--owned-exit`). Both stay mechanical, re-runnable
+   outputs (D33 — no self-assessment enters the vector). Cost honesty: this adds one SCOPED test
+   run per checkpoint (seconds, zero LLM calls) — the M4-L1 green-path evaluator economics are
+   untouched (C11 item 6: green path remains 0 calls / 0 tokens).
+4. **REJECTED — C-1 candidate 2** (a benign-red test-id exclusion list): mutable per-repo
+   benignlist state is drift-prone and treats the roster, not the root cause; the signal
+   DEFINITION is the bug (C-1's own diagnosis).
+5. **τ/weights UNTOUCHED** — C-1's ordering rule: fix the signal definition BEFORE any τ tuning;
+   the calibration follow-on proper (τ, verdict×tier columns for C-3) remains a separate task.
+
+**Part B — F2: the ladder-span index-continuity sentence gains its k-absent leg (CA-L44 F2,
+the C3-deferred sentence).** The kata-orchestrate ladder span (*Checkpoint-index continuity, L19
+sweep MED-3*) states only the `k+1` leg; a ladder-executing conductor whose minimal read set
+excludes `protocol/observability.md` infers `k+1` at a dispatch-base anchor (reproduced in BOTH
+smokes). The span gains one sentence: when the reroll anchor is the task's **dispatch base** (no
+below-τ checkpoint exists), `k` is absent and **the fresh attempt's first trailer is `--index 0`**
+— verbatim-consistent with the observability.md:93-97 stated rule.
+
+**Consumers + BC, named:** `kata_risk.should_trigger` (scorer leg), `kata_telemetry`
+(`_validate_record`/`_emit_trailer`/CLI), kata-tdd producer prose, kata-orchestrate ladder span
+(Part B sentence only), `protocol/observability.md` trailer-shape row. BC: absent `owned` ⇒
+scoring byte-identical to pre-amendment; NO ledger schema change; historical trailers stay valid
+and parse unchanged. Gate: fresh-context default-FAIL review over this amendment + its diff
+before the v0.2.1 merge (recorded as D149).
+
 ## Open questions for the grill (before freeze)
 
 > **RESOLVED 2026-07-04** — see *Grill resolutions (Amendment #1)* above. Retained verbatim below per

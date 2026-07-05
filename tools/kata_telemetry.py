@@ -148,6 +148,7 @@ def _validate_record(record: Any) -> None:
     """Validate a checkpoint record against schema v1 (fail-closed).
 
     Required: ``v == 1``; ``i`` int >= 0; ``verify.exit`` int. Optional nullable:
+    ``verify.owned`` (int — the OWNED-FILE-scoped verify exit, Amendment #5/C-1),
     ``verify.passed/failed/skipped`` (ints), ``lint`` (int), ``evidence`` (sha256
     hex). Unknown keys tolerated (forward-compatible / additive).
 
@@ -168,7 +169,7 @@ def _validate_record(record: Any) -> None:
         raise TelemetryError(
             f"checkpoint record schema: verify.exit must be an int (got {verify.get('exit')!r})"
         )
-    for key in ("passed", "failed", "skipped"):
+    for key in ("passed", "failed", "skipped", "owned"):
         if key in verify and verify[key] is not None and not _is_int(verify[key]):
             raise TelemetryError(f"checkpoint record schema: verify.{key} must be int or null")
     if "lint" in record and record["lint"] is not None and not _is_int(record["lint"]):
@@ -1022,6 +1023,7 @@ def _emit_trailer(
     skipped: int | None,
     lint: int | None,
     paths: list[str] | None,
+    owned_exit: int | None = None,
 ) -> str:
     """Build the complete single-line ``Kata-Checkpoint:`` trailer (staged mode).
 
@@ -1049,6 +1051,8 @@ def _emit_trailer(
         )
     digest = evidence_digest(repo_root, resolved, commit=None)
     verify: dict[str, Any] = {"exit": verify_exit}
+    if owned_exit is not None:
+        verify["owned"] = owned_exit
     if passed is not None:
         verify["passed"] = passed
     if failed is not None:
@@ -1073,6 +1077,10 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     emit.add_argument("--repo-root", required=True, help="the worker's worktree root")
     emit.add_argument("--index", type=int, required=True, help="the checkpoint index i")
     emit.add_argument("--verify-exit", type=int, required=True, help="the verify exit code")
+    emit.add_argument(
+        "--owned-exit", type=int, default=None,
+        help="the OWNED-FILE-scoped verify exit code (Amendment #5/C-1; optional)",
+    )
     emit.add_argument("--passed", type=int, default=None)
     emit.add_argument("--failed", type=int, default=None)
     emit.add_argument("--skipped", type=int, default=None)
@@ -1102,6 +1110,7 @@ def main(argv: list[str] | None = None) -> int:
                 repo_root=args.repo_root,
                 index=args.index,
                 verify_exit=args.verify_exit,
+                owned_exit=args.owned_exit,
                 passed=args.passed,
                 failed=args.failed,
                 skipped=args.skipped,

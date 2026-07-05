@@ -55,6 +55,12 @@ live-proof battery (CA-A1..A5 + A8 row 1 + A11 b/c) and the operator merge gate.
 - **kata-readiness 0.2.1** gains a WARN for pre-v0.2.1 configs lacking `contextAutonomy` (written at next
   composition, or opt in by config edit); no retroactive flip. (C2)
 - **kata-evaluate 0.3.1** + kata-review tiers: verdict-tier variance calibration note (prose-only). (C9)
+- **M4 Amendment #5 (D149, pre-merge):** the inline-eval `verify_fail` signal is now OWNED-SCOPED — the
+  checkpoint trailer gains an optional nullable `verify.owned` exit (`emit-trailer --owned-exit`; kata-tdd
+  0.4.0 producer mandate), and the scorer reads it in preference to the suite-scoped `verify.exit` (BC
+  fallback — the C-1 false-positive class: 13/13 retroactive triggers were sibling-task suite artifacts).
+  Plus the F2 dispatch-base index sentence in the kata-orchestrate ladder span (0.10.2): a reroll anchored
+  at the dispatch base indexes the fresh attempt from 0 (CA-L44). τ/weights deliberately untouched.
 
 ### Backward compatibility
 - **BC guarantee:** absent/unconfigured, EVERY new surface degrades to prior behavior — `contextAutonomy`

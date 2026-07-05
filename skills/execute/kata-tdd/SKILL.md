@@ -6,7 +6,7 @@ description: >-
   acceptance criteria — red→green→refactor, behavior over implementation, escalate unknowns instead of
   improvising.
 license: Apache-2.0
-version: 0.3.0
+version: 0.4.0
 category: execute
 status: experimental
 agnostic: true
@@ -133,8 +133,16 @@ line — one checkpoint commit per module, conventional message) carrying exactl
 trailer. You do **not** hand-author the trailer JSON: the brief carries the concrete command (the
 orchestrator injects its own resolved harness `tools/` path and your worktree root), of the form
 `uv run --directory <tools-dir> python -m kata_telemetry emit-trailer --repo-root <your-worktree> --index <i>
---verify-exit <e> [--passed/--failed/--skipped N] [--lint E]` — run it and paste its single stdout line into
-the commit message.
+--verify-exit <e> [--owned-exit <e>] [--passed/--failed/--skipped N] [--lint E]` — run it and paste its single
+stdout line into the commit message.
+
+**Owned-scoped verify exit (Amendment #5/C-1 — emit it whenever your brief names your owned test files).**
+`--verify-exit` stays the exit of your FULL `<verify>` run (the suite — unchanged). ADDITIONALLY run just the
+test files for YOUR owned modules (e.g. `pytest <your-owned-test-files>`) and pass that exit as
+`--owned-exit`. The scheduler's `verify_fail` signal reads the owned exit in preference to the suite exit, so
+a sibling task's cross-task red (a README-index sync test, an integration artifact you don't own) never
+false-triggers the ladder on YOUR checkpoint. Both exits are mechanical, re-runnable outputs (D33). Omit
+`--owned-exit` only when the brief names no owned test files.
 
 The trailer carries **mechanical verify outputs only** — exit codes and counts, re-runnable from the commit;
 **never a self-assessment** ("it looks good" is not a checkpoint signal — the D33 boundary). **Never** write a

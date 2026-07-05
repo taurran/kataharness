@@ -56,7 +56,7 @@ class RiskError(Exception):
 # the class-signal plumbing awaiting producers.
 DEFAULT_WEIGHTS_BY_CLASS: dict[str, dict[str, float]] = {
     "code": {
-        "verify_fail": 0.60,  # [TUNABLE] per-checkpoint verify FAIL (exit != 0)
+        "verify_fail": 0.60,  # [TUNABLE] per-checkpoint verify FAIL (owned-scoped exit when the trailer carries verify.owned, else suite exit != 0 — Amendment #5/C-1)
         "lane_drift": 0.60,  # [TUNABLE] non-empty out-of-footprint set (F5)
         "missing_record": 0.60,  # [TUNABLE] mandated-but-missing checkpoint record (A1-Q2)
         "slack_ge_2x": 0.30,  # [TUNABLE] slack ratio >= 2.0x (the only code soft signal)
@@ -266,6 +266,35 @@ def _derive_class_extras(task_class: str, class_signals: dict) -> dict:
     return {}
 
 
+def _verify_fail(record_or_none: dict | None) -> bool:
+    """Derive the ``verify_fail`` hard signal from a checkpoint record (or ``None``).
+
+    **Amendment #5 Part A (C-1 signal-definition fix):** when the trailer's verify
+    block carries a present-and-non-null ``owned`` exit (the OWNED-FILE-scoped verify
+    run), THAT is the signal — ``verify_fail`` means "this chunk broke something it
+    owns," never a sibling task's cross-task suite artifact (the 13/13 retroactive
+    false-positive class). Absent/``null`` ``owned`` falls back to the legacy
+    suite-scoped ``verify.exit != 0`` (BC — documented as C-1 FP-prone; calibration
+    tells the two populations apart by field presence).
+
+    Raises:
+        RiskError: On a present-but-non-int ``owned`` (bool included) — an
+            unpriceable input is a producer bug (D136, never coerced or ignored).
+    """
+    if record_or_none is None:
+        return False  # missing_record carries the hard signal for an absent record
+    verify = record_or_none["verify"]
+    owned = verify.get("owned")
+    if owned is None:
+        return verify["exit"] != 0
+    if not isinstance(owned, int) or isinstance(owned, bool):
+        raise RiskError(
+            f"should_trigger: verify.owned must be int or null (got {owned!r}) — an "
+            "unpriceable owned-scoped exit is a producer bug (D136). STOP."
+        )
+    return owned != 0
+
+
 def should_trigger(
     record_or_none: dict | None,
     lane_drift: bool,
@@ -342,8 +371,7 @@ def should_trigger(
     extras = _derive_class_extras(task_class, class_signals or {})
 
     signals = {
-        "verify_fail": record_or_none is not None
-        and record_or_none["verify"]["exit"] != 0,
+        "verify_fail": _verify_fail(record_or_none),
         "lane_drift": bool(lane_drift),
         "missing_record": record_or_none is None,
         "slack_ratio": slack_ratio,
