@@ -248,7 +248,12 @@ retroactive flip.
 
 **Premium record (`models.premium`, CA-L27/L28):** write `models.premium: {offer, approved, scope,
 grantedMode}` from the Phase-2.5 collected answer — **kata.config is authoritative** for dispatch, while
-`.kata/preflight.json` carries the audit event only (once-per-run = once per kata.config). On a **decline**,
-do NOT write an approved premium block; instead pin `models.anchor: "opus"` and hard-stop advising a
-`/model` switch (the only honest decline — config cannot stop a Fable *session* from inheriting Fable on
-zero-step critical work; the session model is the operator's own choice).
+`.kata/preflight.json` carries the audit event only (once-per-run = once per kata.config). The two decline
+arms are distinct — never conflate them:
+- **Offer declined (the DEFAULT arm — anchor=opus ∧ mode=advanced):** record `approved: false` in the
+  §2-shaped block (or write no `models.premium` block — absent ⇒ the resolver's frozen behavior
+  byte-for-byte), stay at the anchor, and the run **PROCEEDS normally**. No hard-stop, no anchor pin.
+- **Keep-using declined — ONLY when the session anchor is already Fable/Mythos-class:** pin
+  `models.anchor: "opus"` + hard-stop advising a `/model` switch, resume after the switch (the only honest
+  decline for that case — config cannot stop a Fable *session* from inheriting Fable on zero-step critical
+  work; the session model is the operator's own choice).

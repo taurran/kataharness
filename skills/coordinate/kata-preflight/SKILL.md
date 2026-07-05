@@ -44,17 +44,25 @@ and `kata_settings.record_host_posture` (never an implied side effect).
 ### The premium (Fable) gate (CA-L27; the §3 amendment governs dispatch)
 
 Fable stays in the tiering matrix behind a **once-per-run approval** collected here, with a prominent cost
-disclaimer. Three branches:
+disclaimer. Two cases, each with BOTH arms stated:
 
-- **Decline** ⇒ pin `models.anchor: "opus"` + **hard-stop advising a `/model` switch** — the only honest
-  decline (SR-4: config cannot stop a Fable *session* from burning Fable on zero-step critical work via
-  inherit-by-omission; the session model is the operator's own choice).
-- **Anchor IS Fable** ⇒ confirm keep-using + warn (verbatim):
+- **(a) Anchor IS Fable** — this branch fires ONLY when *the session anchor is already Fable/Mythos-class*
+  ⇒ confirm keep-using + warn (verbatim):
   **"long-running loops on Fable as primary FM can drive costs up significantly."**
-- **The premium offer** — post-July-7, and ONLY when `anchor == opus` ∧ `mode == "advanced"` ⇒ kata MAY
+  - **Confirm** ⇒ proceed with Fable as the anchor (the operator's own session-model choice stands).
+  - **Decline** ⇒ pin `models.anchor: "opus"` + **hard-stop advising a `/model` switch**, resume after the
+    switch — the only honest decline for THIS case (SR-4: config cannot stop a Fable *session* from burning
+    Fable on zero-step critical work via inherit-by-omission; the session model is the operator's own
+    choice). The hard-stop is scoped to case (a) ONLY — it never applies to the offer case below.
+- **(b) The premium OFFER** — post-July-7, and ONLY when `anchor == opus` ∧ `mode == "advanced"` ⇒ kata MAY
   OFFER anchor+1 (Fable) at preflight approval, the operator **knowingly accruing Fable API usage**. Scope
   is fixed (R-9): the approved offer elevates **CRITICAL and CODING** work classes only — economy /
   low-criticality **NEVER** runs Fable, even in advanced with approval.
+  - **Approve** ⇒ bootstrap records `models.premium: {offer, approved: true, scope, grantedMode}` (§2).
+  - **Decline = the DEFAULT** ⇒ record `approved: false` in the §2-shaped `models.premium` block (or write
+    no block at all — absent ⇒ the resolver's frozen behavior byte-for-byte), the run stays at the anchor
+    and **PROCEEDS normally** — no hard-stop, no anchor pin. This is exactly the disclaimer's own "Decline
+    to stay on your current model at no added cost" sentence.
 
 **Cost disclaimer — shown verbatim at the offer (CA-7b):**
 
