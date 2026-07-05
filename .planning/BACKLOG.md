@@ -18,7 +18,12 @@ Promote to ROADMAP milestones when ready.
 > 5. **kata_settings atomic writes** (final-review LOW, engine reviewer finding 5): temp+`os.replace`
 >    on every settings writer — the same discipline `write_bridge` already has; bites only under
 >    concurrent same-home sessions.
-> 6. **PokeVault install / MindBridge ingest** — first real external deploys against v0.2.1.
+> 6. **Adaptive-vs-static LIVE A/B (D150 follow-on, operator-directed 2026-07-05):** two arms,
+>    identical seeded multi-task protocol, `models.adaptive` + `premium.scope` pinned per arm
+>    (AT-L22); measure premium calls, evaluator calls, wrongful-kill count, wall clock, tokens —
+>    the measured successors to SMOKE-MODELED's −86% premium-call / −93% FP-class-token modeled
+>    numbers. Rides the same post-R6 instrumented runs as the calibration follow-on.
+> 7. **PokeVault install / MindBridge ingest** — first real external deploys against v0.2.1.
 
 > **★ ACTIVE INITIATIVE (2026-07-02, D138): Milestone 2 — Freeze/Float (operator-directed).** This is the
 > current focus, NOT any item below. Milestone 1 (Release Hardening) shipped (PR #4). Freeze/Float ship order

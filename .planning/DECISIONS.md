@@ -2376,3 +2376,44 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   folded → re-gate **PASS**. **Gauntlet at fold:** pytest 2878/3 skip · validate_skills 48/0/0 · Snyk
   medium+ 0 (tools/ scan). Tests +10 incl. the mutation-pinned owned-beats-suite preference (the exact
   C-1 class as a named red-turn target). Supersedes nothing; extends A1-Q2/A1-Q4/M4-L4 by gated addendum.
+
+- **D150 — Adaptive-tiering initiative FROZEN (v0.3.0 spine): evidence-driven model routing, the
+  premium rung optimized by construction — 2026-07-05.** Operator-directed same-session arc: brainstorm →
+  conversational grill (AT-R1..R7) → DESIGN → freeze-gate v1 **HOLD** (2 BLOCKER / 4 HIGH / 8 MED / 5 LOW —
+  headline catches: the evaluator-escalation leg would have breached M4-L7's never-anchor line in advanced
+  mode; a phantom registry event named a conductor-authored non-dispatch; a ledger v4 mint would have
+  bricked every deployed v0.2.1 reader mid-scan) → 19 folds → re-gate **SHIP-WITH-FIXES** (3 MED / 5 LOW —
+  incl. the under-enumerated consent pitch) → 8 folds → all three [VETO-FLAG]s resolved by the operator to
+  the draft defaults → **FROZEN**, with the PAIRED amendment texts drafted into both host specs
+  (model-tiering **Amendment #2**: scope type-dispatch LIST=classes-BC / OBJECT={events,budget}; budget
+  envelope N=10 + 2-call freeze-gate reservation + CA-L30-style lapse; premium-rung family generalization;
+  inline-eval-m4 **Amendment #6**: cheap-then-escalate re-adjudication strictly below the anchor with the
+  advanced-Anthropic inert arm STATED; standing-verdict-only signal; additive v3 ledger keys
+  `verdictByTier`/`tierEvents` — NO v4). **The contract:** L0 = the D131 differential, unchanged, the only
+  fallback; L1 = per-dispatch modulation — fail-bump (F=2, once/task, gate rejections + standing rerolls
+  only, bumped tasks exempt from downshift), downward modulation capped at −1/dispatch (plan-frozen
+  `complexity: low` OR K=3 first-pass streak, `coding`-class only, damper ×2 on downshift-attributed
+  rejection, D33 roster + kata-inline-eval never adapt down), event registry (7 events, each citing its
+  covering dispatch site; `fail-bump-escalation` conjunct-coverage-only), emission per the frozen OMIT
+  contract; L2 = ledger acceptance routing ≤ L0, contract shipped, activation `models.adaptive.l2`
+  default-OFF, named-deferred until post-R6 volume. BC: `adaptive` block absent ⇒ ALL legs OFF (load-time);
+  bootstrap writes it explicitly at next composition (compose = consent); scope LIST form byte-for-byte
+  v0.2.1. Mid-run `/model` switch ⇒ adaptive state reset (budget spend preserved), LOUD. Every adaptive
+  move is a board `tier:` DECISION line — also the durable recount trail. Ship vehicle **v0.3.0**, ahead
+  of M2 shadow tasks BY OPERATOR DIRECTION (the D138 no-relitigation lesson).
+  **BUILD RECORD (same session, closeout):** engine by 3 parallel TDD workers (kata_adaptive NEW 98
+  tests · kata_models event-scope/premium-rung 68 tests · kata_telemetry calibration columns 54 tests;
+  one integration seam aligned: budget calls-required both layers) + prose wave (orchestrate 0.11.0
+  adaptive region + AT-L9 re-adjudication step · preflight 0.3.0 two-variant consent pitch · bootstrap
+  0.4.0 compose-consent · plan 0.1.4 complexity · config.md/observability.md). **Whole-feature Fable
+  ADVAL (operator-directed, pre-push): SHIP-WITH-FIXES — 1 HIGH (the R-9 economy exclusion was
+  prose-only in the events form where three docs claimed structural ⇒ now CODE in resolve() + the AC-7
+  five-way matrix) + F2 cite-renumber (~21) + F3 AC-1 golden 48×3×5 sweep + literal pins + F4
+  l2_base_rung (the AT-L18 contract shipped as code) + F5 state_from_recount + recount-honesty + F6
+  apply_delta (AC-2's executable owner) + F7 dated grammar note + F8 tokensOut — re-gate SHIP (3 LOW
+  residuals folded: docstring truth, phantom-ref removal, strict {-1,0,+1} delta guard).**
+  **SMOKE-MODELED** (operator-directed, engine-driven replay of the real v0.2.1 build shape): **−86%
+  premium-rung calls (59→8, reservation demonstrated) · −93% modeled tokens + 13→0 wrongful kills on
+  the pre-fix FP trigger mix** — modeled-not-measured, inputs cited, C-3 n=1 caveat stated; live A/B
+  queued post-R6 (BACKLOG ★ 6). **Gauntlet at tag: pytest 3120 pass / 3 skip · validate_skills 48/0/0 ·
+  Snyk medium+ 0.** Tests +225 over v0.2.1. Tagged **v0.3.0**.

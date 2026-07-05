@@ -4,7 +4,7 @@ description: >-
   Full vertical-slice plan with disjoint ownership, wave DAG, threat model, phase verification, and SUMMARY.
   The default for any non-trivial build — today's kata-plan at its original depth.
 license: Apache-2.0
-version: 0.1.3
+version: 0.1.4
 category: plan
 status: experimental
 agnostic: true

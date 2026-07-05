@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.3.1
+version: 0.4.0
 category: coordinate
 status: experimental
 agnostic: true
@@ -188,7 +188,15 @@ Record the operator's accepted answers via `kata_settings.record_accepted_defaul
 
 ## Phase 3 — write kata.config + launch
 Write `kata.config` (JSON, branch root) per `protocol/config.md`: `mode`, `modules`, `effort`, `tiers`,
-`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**, **`securityScan`**, **`inlineEval`**. Bootstrap writes the config
+`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**, **`securityScan`**, **`inlineEval`**.
+**`models.adaptive` (D150 — compose = consent):** every Phase-3 composition writes the FULL `adaptive`
+block EXPLICITLY (all five keys, `protocol/config.md` defaults: `failBumpAt: 2, streakDownAt: 3,
+planComplexityDownshift: true, evaluatorEscalate: true, l2: false`) — a config bootstrap composes is
+new consent, so adaptivity is baked in going forward; a config the loop merely LOADS without the block
+keeps every adaptive leg OFF (no retroactive flip — the D147/CA-L34 discipline). In ADVANCED mode with
+the premium offer approved, write the OBJECT-form `premium.scope` (`{events: <the 7-event registry>,
+budget: {calls: 10}}`) unless the operator edited the event list or budget at the gate; other modes
+never write a premium block. Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;
 a second validation pass here would be redundant bloat). Then hand off to the loop ([[kata-orchestrate]]).
 

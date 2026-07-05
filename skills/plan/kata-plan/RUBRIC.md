@@ -104,6 +104,14 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
   (`kata_risk.DEFAULT_TAU` / `kata_risk.DEFAULT_WEIGHTS_BY_CLASS`). Omit it ⇒ `code`. An **unknown value**
   (anything other than the three) **fails plan freeze** (freeze-time raise, not a mid-run surprise — the same
   freeze-gate posture as `estimate:`). `class:` is **never** derived from `runShape` (provenance-only, LOW-14b).
+- **complexity** *(OPTIONAL, one of `low | standard | high`; D150/AT-L10a)* — the plan-time low-value
+  rating for adaptive tiering: `low` ⇒ the task's build worker STARTS one rung below its L0 resolution
+  (floor-clamped; `coding`-class dispatches only; inert unless the run's `models.adaptive` block is
+  present with `planComplexityDownshift: true`). This rating is **assessed at plan/grill time and FROZEN
+  with the plan** — it is the initiative's one new plan-frozen judgment surface, deliberately attackable
+  by the plan freeze-gate (never a runtime LLM value judgment). Omit it ⇒ no effect (BC). An **unknown
+  value fails plan freeze** (the `estimate:`/`class:` posture). `high` and `standard` are recorded-only
+  in v1 (no upward modulation from this field — bumps come from evidence, AT-L8, never from a rating).
 
 ## Dispatch sizing (context autonomy)
 

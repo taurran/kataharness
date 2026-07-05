@@ -8,6 +8,58 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [0.3.0] — 2026-07-05 — Adaptive tiering: evidence-driven model routing (D150)
+
+**Model selection stops being a static table and starts learning from the run.** Three layers: **L0**
+the D131 relative-differential table (unchanged — the deterministic base and ONLY fallback); **L1**
+per-dispatch evidence modulation; **L2** ledger acceptance routing (contract shipped, activation
+`models.adaptive.l2` default-OFF, named-deferred until post-R6 ledger volume). Delivered as PAIRED
+gated amendments (model-tiering Amendment #2 + inline-eval-m4 Amendment #6 — no frozen line edited).
+Gate journey: freeze-gate v1 HOLD (2 BLOCKER) → 19 folds → re-gate SHIP-WITH-FIXES → 8 folds →
+operator VETO-FLAG resolution → whole-feature Fable ADVAL SHIP-WITH-FIXES (1 HIGH: the R-9 economy
+exclusion made STRUCTURAL in code) → 11 folds → re-gate **SHIP**.
+
+### Added
+- **`tools/kata_adaptive.py`** (NEW, pure stdlib) — the L1 state machine: fail-bump (F=2, once/task,
+  gate rejections + STANDING rerolls only; bumped tasks exempt from downshift), streak downshift
+  (K=3, `coding`-class only, ×2 damper on a downshift-attributed rejection), −1-capped downward
+  modulation (complexity and streak never stack), FCFS premium budget (N=10, last 2 reserved for
+  freeze-gate events), `tier:` DECISION render/recount (fail-closed durable trail),
+  `state_from_recount` restart recovery, `apply_delta` clamp + anchor-landing OMIT emission,
+  `l2_base_rung` (the AT-L18 contract), anchor-switch reset (budget spend preserved).
+- **Event-scoped premium (`kata_models`):** `premium.scope` is TYPE-DISPATCHED — a LIST keeps the
+  v0.2.1 run-long class semantics byte-for-byte; an OBJECT `{events, budget}` scopes the premium
+  rung to the 7-event hard-moments registry (`ADAPTIVE_EVENTS`, each citing its covering dispatch
+  site) within the call budget. **R-9 is structural in BOTH forms** (economy never fires premium —
+  code-enforced). `premium_rung_of` family-agnostic helper; all prose renamed to "the premium rung"
+  (GPT-5.6-class models qualify by registering a family ladder rung — no mechanism change).
+- **Calibration columns (`kata_telemetry`; M4 Amendment #6):** ADDITIVE OPTIONAL v3 ledger keys
+  `verdictByTier` (standing verdicts by deciding tier; overturned screens under
+  `overturned×<tier>` — the C-3 input) + `tierEvents`; absent-honest accessors;
+  `verdict_by_tier_totals` + `overturn_rate` aggregates (calibration-row exclusion, min_samples=5).
+  **NO v4 minted** — deployed v0.2.1 readers keep reading the shared ledger.
+- **Cheap-then-escalate evaluator ladder (kata-orchestrate 0.11.0; M4 Amendment #6):** a `correct`/
+  `reroll` verdict is re-adjudicated once, one rung up, CLAMPED STRICTLY BELOW the anchor (M4-L7
+  preserved; the advanced-Anthropic inert arm stated); only the STANDING verdict drives the ladder,
+  the bump counter, and the streaks. `continue` never re-adjudicates (green path stays one call).
+- **Plan-frozen `complexity: low|standard|high`** per-task rating (kata-plan 0.1.4) — `low` starts
+  the build worker one rung down; assessed at plan time, attacked by the plan freeze-gate, never a
+  runtime LLM value judgment.
+- **Two-variant consent pitch (kata-preflight 0.3.0):** the OBJECT-form premium disclaimer reads
+  the composed `scope.events` + budget verbatim at the prompt — the approval IS the optimization
+  guarantee. kata-bootstrap 0.4.0 composes the full `adaptive` block at Phase 3 (compose = consent).
+- **SMOKE-MODELED** (`.planning/specs/adaptive-tiering/SMOKE-MODELED.md`): on the real v0.2.1 build
+  shape, event-scope premium = **−86% premium-rung calls** (59→8) and the re-adjudication ladder =
+  **−93% modeled tokens + 13→0 wrongful kills** on the pre-fix FP trigger mix — MODELED not
+  measured, every input cited, caveats stated; the live A/B is queued post-R6 with arms pinned.
+
+### Backward compatibility
+- `models.adaptive` ABSENT ⇒ **every adaptive leg OFF** (load-time; no retroactive flip — the
+  D147/CA-L34 discipline); block presence = consent; bootstrap writes it explicitly at its next
+  composition. `premium.scope` LIST form ⇒ v0.2.1 byte-for-byte (golden 48-skill × 3-mode × 5-anchor
+  inertness sweep + literal pinned sample). Absent `models`/`premium` ⇒ frozen behavior (R3/D148).
+  Mid-run `/model` switch ⇒ adaptive state reset (LOUD), budget spend preserved.
+
 ## [0.2.1] — 2026-07-05 — Context autonomy: the gauge-driven self-handoff loop
 
 **The conductor's context stops being the run-fatal resource.** v0.2.1 wires a context gauge to the
