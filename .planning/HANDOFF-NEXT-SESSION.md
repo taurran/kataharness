@@ -2,7 +2,7 @@
 
 > Paste-companion for the next fresh session. **Supersedes the 2026-07-12 health-review handoff.**
 > Ground truth at write time: branch **`feat/second-brain-loop`** (13 commits over master `8de8f4f`),
-> gauntlet green, **PR PENDING** (operator merge gate). ⚠ IGNORE `C:\Dev\CLAUDE.md` (unrelated Mise
+> gauntlet green — since MERGED as PR #21 (`c81db21`); hook chain LIVE-INSTALLED + kata-home updated to `c81db21` same session. ⚠ IGNORE `C:\Dev\CLAUDE.md` (unrelated Mise
 > project). Untracked `.planning/config.json` remains the known pre-existing operator artifact.
 
 ## 1. WHAT HAPPENED THIS SESSION (2026-07-12b, Fable 5)
