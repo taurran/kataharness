@@ -68,7 +68,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import recurrence_detect
@@ -226,7 +226,7 @@ def _parse_date(date_str: str | None):
     if not m:
         return None
     try:
-        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), tzinfo=timezone.utc).date()
+        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), tzinfo=UTC).date()
     except ValueError:
         return None
 
@@ -236,7 +236,7 @@ def _is_stale(date_str: str | None) -> bool:
     d = _parse_date(date_str)
     if d is None:
         return False
-    return (datetime.now(timezone.utc).date() - d).days > _STALE_DAYS
+    return (datetime.now(UTC).date() - d).days > _STALE_DAYS
 
 
 def _recency_component(date_str: str | None) -> float:
@@ -270,7 +270,7 @@ def _date_sort_key(date_str: str | None) -> str:
 
 def _now_ts() -> str:
     """ISO8601 generation timestamp (UTC)."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _parse_frontmatter(text: str) -> tuple[dict, str]:

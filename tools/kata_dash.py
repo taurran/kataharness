@@ -21,7 +21,6 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 from rich.console import RenderableType
 from rich.panel import Panel
@@ -177,7 +176,7 @@ def _safe_path(raw: str) -> Path:
 # kata_dash_model import is LAZY here so importing kata_dash for tests never fails
 # ---------------------------------------------------------------------------
 
-def main(argv: Optional[list] = None) -> None:
+def main(argv: list | None = None) -> None:
     """CLI entry-point: tail .kata/board.md + .kata/state.json and render live."""
     parser = argparse.ArgumentParser(
         prog="kata_dash",
@@ -205,14 +204,14 @@ def main(argv: Optional[list] = None) -> None:
 
     # Lazy import: keeps kata_dash importable in test contexts where
     # kata_dash_model does not exist.
-    import kata_dash_model  # type: ignore[import]
-    from rich.live import Live
-
     # The dashboard renders Unicode glyphs (改善型 kanji, braille spinners, block bars). On a
     # non-UTF-8 Windows stdout (piped/redirected, or a cp1252 console) rich's encode
     # would crash. Force UTF-8 with errors="replace" so glyphs degrade, never crash;
     # and disable the legacy-windows renderer so a single code path drives output.
     from rich.console import Console
+    from rich.live import Live
+
+    import kata_dash_model  # type: ignore[import]
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
     except (AttributeError, ValueError, OSError):
