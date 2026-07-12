@@ -316,6 +316,10 @@ REQUIRED_PROTOCOL = {
     "reuse-claims.md": ["claim to verify, not an assumption", "NEW capability", "documentation-only seam"],
     # second-brain-learning (R2/B2): the Recall read-CONTRACT load-bearing clauses.
     "recall.md": ["schema_version", "recall/v1", "NO embeddings", "never written", "read-only invariant"],
+    # prime-directives (2026-07-12 health review): the standing behavioral contract injected into
+    # every run — never-tiered; erasing or hollowing it must fail the validator.
+    "prime-directives.md": ["PD-1", "PD-2", "DRIFT", "kata-defer", "escalation", "truthful",
+                            "stable tier"],
 }
 
 
@@ -479,6 +483,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     skills = load_skills()
+    if not skills:
+        # D136/D33: zero skills discovered is NOT a green validator — an empty
+        # discovery set means the tree is missing or mis-rooted, and certifying
+        # over it would be a silent-permissive default (self-certification).
+        print("ERROR: skills-tree: 0 skills discovered — refusing to certify an empty tree "
+              "(check SKILLS_DIR/MODULES_DIR roots).", file=sys.stderr)
+        print("\n0 skills checked — 1 error(s), 0 warning(s).")
+        return 1
     if args.write:
         # README-sync findings are EXPECTED pre-write, so they don't block the write;
         # any OTHER skill error could corrupt the index, so refuse until it's fixed.

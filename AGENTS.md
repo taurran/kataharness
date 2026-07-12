@@ -72,6 +72,11 @@ existing`; bootstrap sets `runShape: debug` + module `kata/module/debug`. To sta
    the plan).
 6. **Everything is versioned.** Every skill carries a semver in its frontmatter; the README skill
    index is the source of truth for what exists and at what version. See `docs/STANDARDS.md`.
+7. **The Prime Directives bind every agent, every run.** `protocol/prime-directives.md` —
+   never silently defer/stub/skip designed work (PD-1: express operator permission BEFORE any
+   bypass; `kata-defer`/escalation are the only sanctioned paths), and absolute truthfulness
+   about what exists (PD-2: a stub/scaffold/facade reported as a completed feature IS DRIFT).
+   Injected into every launch orientation at the stable tier; never tiered, never mode-gated.
 
 ## How to work in this repo
 
@@ -94,7 +99,8 @@ existing`; bootstrap sets `runShape: debug` + module `kata/module/debug`. To sta
 
 ## Status
 
-v0.2.0 (Freeze/Float M1+M4 shipped: contract-edge float + the inline evaluator/reroll). See
-`.planning/ROADMAP.md`. v0.1 = Claude-only one-shot core, dogfooded by building
+v0.3.0 (adaptive tiering, D150 — on v0.2.1 context autonomy and v0.2.0 Freeze/Float M1+M4:
+contract-edge float + the inline evaluator/reroll). See
+`.planning/ROADMAP.md` + `CHANGELOG.md`. v0.1 = Claude-only one-shot core, dogfooded by building
 KataHarness itself, then validated via the D16 planning-varied A/B on small one-shottable test
 projects (D57); installs into the PokeVault vault (D58).
