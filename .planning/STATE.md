@@ -3,10 +3,41 @@ gsd_state_version: 1.0
 milestone: M2-freeze-float
 milestone_name: "Freeze/Float (operator-directed, D138) — ship order M1→M4→M2→M3; M1 COMPLETE (PR #5); M4 COMPLETE (v0.2.0, D141–D145); context-autonomy v0.2.1 MERGED+TAGGED 2026-07-05; next: R6-first post-merge test queue, then M2 (shadow tasks) per ship order"
 status: in-progress
-last_updated: "2026-07-05T09:00:00.000Z"
+last_updated: "2026-07-12T23:30:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-12c — THIRD Fable 5 session: OPERATOR-AWAY AUTONOMOUS RUN through the phases
+> A–D plan; THREE PRs MERGED #24 `b107750` / #25 `fd0e7c2` / #26 `e369d17`; installed kata-home
+> advanced to `e369d17`):** Mid-session operator authorization ("I approve of all commits/pushes/
+> merges this section … when I am back we will do a full evaluation") — merges exercised under it;
+> everything interpretive is marked PROVISIONAL for return ratification. **(A1) hook chain CONFIRMED
+> live** — first session ever under it: bridge + GSD child both writing, byte-identical passthrough
+> verified e2e; "no GSD statusline" = correct behavior in a non-GSD cwd (C:\Dev has no .planning) —
+> NOT a regression; F-9/R6 blocked this session (scope gate walks UP from cwd; needs a repo-cwd
+> session). **(B1+B2 → D153, PR #24):** the ELEVATE step (one grounded recommendation at every grill
+> close, `EV-{n} · LOCKED` ledger entries riding the D151 emit engine-unchanged, declines = signal)
+> + one-question-per-AskUserQuestion grill UX. Freeze-gate HOLD(8) → re-gate SHIP-WITH-FIXES(8) →
+> 2-reviewer adval SHIP-WITH-FIXES ×2 (13) — all 29 folded. Grill tiers 0.3.0 · initiate 0.5.0 ·
+> DECISION-LEDGER EV shape · engram seam E24. **LIVE-UNPROVEN (n=0)** — live smoke = return item 1;
+> mechanical emit proof PASSED (fixture EV entry → learn_feed → page → recall read-back; real vault
+> kept clean). **(C-residuals → D154/D155/D156, PR #25):** consent-gated `--auto-compact-window N`
+> opt-in (+42 TDD tests; frozen-five md5-verified) · recall 7th-source first-run fallback
+> (initiate 0.6.0) · worker recall brief in orientation (orient 0.4.0 + contract §). **(D1 →
+> ROOT-CAUSED, `.planning/D1-CORRUPTION-FINDINGS.md`):** Session-A "reverts" = a live un-popped
+> `git stash` (10:37:39, ~25 files — ★ STILL IN stash@{0}, operator decision); phantom
+> IndentationError = non-atomic truncate-then-write races (repro'd 22/8s; atomic = 0/12,606);
+> Defender/pyc/uv RULED OUT. Standing policy: conductor = sole main-tree git writer; stash-empty
+> closeout tripwire. **(Hardening → D157/D158/D159, PR #26):** updater stale-lock guards +
+> ls-remote truth check + annotated-tag peel (adval catch — the landing check would have
+> false-aborted every annotated-tag update) · `tools/scripts/gauntlet.py` honest-exit runner
+> (dogfooded 4/4 PASS) · `fs_atomic.atomic_write_text` + five writer conversions (+59 TDD tests).
+> **Gauntlet at close: pytest 3577/3 skip · integration 2/2 · ruff clean · validator 48/0/0 ·
+> Snyk med+ 0.** D-records D153–D159. **NEXT: the operator-return checklist —
+> `.planning/HANDOFF-NEXT-SESSION.md` §2** (live-smoke D153 + ratify provisionals + stash decision
+> + statusline/GSD decision + F-9/R6 from a repo-cwd session). *(Prior CURRENT blocks below are
+> history.)*
 
 > **CURRENT (2026-07-12b — SECOND Fable 5 session: BOTH handoff deep reviews DONE + D151/D152 BUILT;
 > MERGED PR #21 `c81db21`):** The two operator-ordered deep reviews ran outside
