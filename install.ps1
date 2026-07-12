@@ -65,6 +65,11 @@ if ($env:KATA_SRC) {
     $_KataHome = $_KataDefaultHome
     Write-Host "kata-install: cloning KataHarness (ref=$_KataRef) to $_KataHome ..."
     & git clone --branch "$_KataRef" --depth 1 "$_KataRepoUrl" "$_KataHome"
+    # PS 5.1 Stop preference does NOT trip on native nonzero exits; gate on
+    # $LASTEXITCODE so a failed clone cannot fall through to false success.
+    if ($LASTEXITCODE -ne 0) {
+        throw "kata-install: git clone failed (exit $LASTEXITCODE; ref=$_KataRef, url=$_KataRepoUrl)"
+    }
     Write-Host 'kata-install: clone complete.'
 }
 

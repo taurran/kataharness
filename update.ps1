@@ -80,8 +80,6 @@ if ($env:KATA_SRC) {
 if (-not (Test-Path (Join-Path $_home 'tools\kata_install.py'))) {
     throw "kata-update: tools/kata_install.py not found in $_home"
 }
-Set-Location $_home
-
 # --------------------------------------------------------------------------
 # Helpers. No redirection of native git stderr (PS 5.1 wraps it in ErrorRecords
 # under Stop preference); gate on LASTEXITCODE and use --quiet probes instead.
@@ -92,11 +90,37 @@ function Test-GitClone {
     return ($LASTEXITCODE -eq 0)
 }
 
-# Resolve the reset target for KATA_REF: prefer origin/<ref>, else <ref> (tag/sha).
+# PS 5.1 $ErrorActionPreference = 'Stop' does NOT trip on native nonzero exits,
+# so every git call that matters is gated on $LASTEXITCODE via this helper.
+function Assert-GitOk {
+    param([string]$Verb)
+    if ($LASTEXITCODE -ne 0) {
+        throw "kata-update: git $Verb failed (exit $LASTEXITCODE)"
+    }
+}
+
+# Resolve the reset target for KATA_REF (mirror update.sh's resolution chain):
+# origin/<ref>, else refs/tags/<ref>, else <ref> (sha). Throws when the ref
+# resolves nowhere — never silently returns an unresolvable target.
 function Get-ResetTarget {
-    git rev-parse --verify --quiet "origin/$_KataRef" | Out-Null
-    if ($LASTEXITCODE -eq 0) { return "origin/$_KataRef" }
-    return $_KataRef
+    foreach ($_cand in @("origin/$_KataRef", "refs/tags/$_KataRef", $_KataRef)) {
+        git rev-parse --verify --quiet $_cand | Out-Null
+        if ($LASTEXITCODE -eq 0) { return $_cand }
+    }
+    throw "kata-update: ref '$_KataRef' not found (tried origin/$_KataRef, refs/tags/$_KataRef, $_KataRef)"
+}
+
+# 3-leg checkout fallback (mirror update.sh): branch <ref>, else detached
+# origin/<ref>, else detached <ref>. Failed legs may print git errors to
+# stderr (not redirected — see helper comment above); only all three legs
+# failing throws.
+function Invoke-GitCheckout {
+    git checkout --quiet $_KataRef
+    if ($LASTEXITCODE -eq 0) { return }
+    git checkout --quiet --detach "origin/$_KataRef"
+    if ($LASTEXITCODE -eq 0) { return }
+    git checkout --quiet --detach $_KataRef
+    Assert-GitOk "checkout '$_KataRef'"
 }
 
 function Invoke-Engine {
@@ -122,11 +146,24 @@ function Invoke-Engine {
 }
 
 # --------------------------------------------------------------------------
+# All git + engine work runs inside the harness home; restore the caller's
+# location on every exit path (mirror install.ps1 / uninstall.ps1).
+# --------------------------------------------------------------------------
+$_OrigLocation = Get-Location
+Set-Location $_home
+try {
+
+# --------------------------------------------------------------------------
 # FACTORY-RESET path (engine re-links; bootstrap owns the optional --hard reset)
 # --------------------------------------------------------------------------
 if ($_factoryReset) {
+    # Best-effort SHA for the version stamp; stays 'unknown' if HEAD is
+    # unresolvable (mirror update.sh's `|| printf 'unknown'`).
     $_gitSha = 'unknown'
-    if (Test-GitClone) { $_gitSha = (git rev-parse HEAD) }
+    if (Test-GitClone) {
+        $_headSha = (git rev-parse --verify --quiet HEAD)
+        if ($LASTEXITCODE -eq 0 -and $_headSha) { $_gitSha = $_headSha }
+    }
 
     if ($_hard) {
         if (-not $_yes) {
@@ -139,10 +176,13 @@ if ($_factoryReset) {
         if (Test-GitClone) {
             Write-Host "kata-update: fetching and resetting to $_KataRef ..."
             git fetch origin
+            Assert-GitOk 'fetch'
+            Invoke-GitCheckout
             $_target = Get-ResetTarget
-            git checkout $_KataRef
             git reset --hard $_target
+            Assert-GitOk "reset --hard '$_target'"
             $_gitSha = (git rev-parse HEAD)
+            Assert-GitOk 'rev-parse HEAD'
         }
     }
     Invoke-Engine (@('--git-sha', $_gitSha) + $_engineArgs)
@@ -160,9 +200,14 @@ if (-not (Test-GitClone)) {
 
 Write-Host 'kata-update: fetching origin ...'
 git fetch origin
+Assert-GitOk 'fetch'
 $_localSha = (git rev-parse HEAD)
+Assert-GitOk 'rev-parse HEAD'
 $_target = Get-ResetTarget
-$_remoteSha = (git rev-parse $_target)
+$_remoteSha = (git rev-parse --verify --quiet $_target)
+if ($LASTEXITCODE -ne 0 -or -not $_remoteSha) {
+    throw "kata-update: could not resolve update target '$_target'"
+}
 
 # --check: report current vs available, no mutation
 if ($_check) {
@@ -193,10 +238,16 @@ if ($_dirtyLines.Count -gt 0) {
     $_dirtyLines | ForEach-Object { Write-Host $_ }
 }
 
-git checkout $_KataRef
+Invoke-GitCheckout
 git reset --hard $_target
+Assert-GitOk "reset --hard '$_target'"
 $_newSha = (git rev-parse HEAD)
+Assert-GitOk 'rev-parse HEAD'
 $_nShort = $_newSha.Substring(0, [Math]::Min(12, $_newSha.Length))
 Write-Host "kata-update: advanced to $_nShort (ref: $_KataRef)"
 
 Invoke-Engine (@('--update', '--git-sha', $_newSha) + $_engineArgs)
+
+} finally {
+    Set-Location $_OrigLocation
+}
