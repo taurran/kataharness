@@ -2497,3 +2497,33 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   byte-untouched. Frozen-five engine fns md5-verified unchanged. +41 TDD tests
   (test_kata_host_settings.py 55→96). Closes the C-4 "recommend-only forever?" question: the
   recommendation now has an executable, consent-gated apply path.
+- **D157 — updater stale-lock robustness (env-hardening, 2026-07-12c operator-away).** Root cause
+  of the 2026-07-12b silent-stale-install: a stale `refs/remotes/origin/master.lock` let `git
+  fetch` leave the remote-tracking ref frozen; the script then hard-reset to the STALE sha and
+  announced "advanced". Fix (update.sh + update.ps1, symmetric): (a) pre-fetch lock scan
+  (`.git/refs/remotes/**/*.lock` + `packed-refs.lock`) at BOTH fetch sites — abort with path+age;
+  new `--clear-stale-locks` flag deletes-with-printing, never silent; (b) post-fetch truth check
+  via one `git ls-remote origin <exact-ref>` BEFORE any reset — tracking-ref ≠ remote truth ⇒ loud
+  abort; ls-remote-fails-after-successful-fetch ⇒ distinct abort; (c) "advanced to <sha>" prints
+  only when HEAD == the verified sha. Live-proven in a sandbox git rig incl. the exact incident
+  shape (frozen tracking ref while origin advanced ⇒ abort pre-reset, HEAD untouched). HONEST
+  SCOPE: the factory-reset --hard path carries the lock scan (blocks the root cause) but not the
+  ls-remote check. +19 content/behavior tests (test_update_scripts.py, new).
+- **D158 — honest-exit gauntlet runner (env-hardening, 2026-07-12c operator-away).** NEW
+  `tools/scripts/gauntlet.py` (stdlib; pure `run_gauntlet(gates, runner=…)` + thin main): the four
+  gates in order via list-argv subprocess (never shell), output streamed uncaptured, deterministic
+  summary table, exits with the FIRST non-zero gate code — kills the `pytest | tail && commit`
+  pipe-eats-the-failure class (the 2026-07-12b session's own miss, D3). `--skip-integration`/
+  `--skip-slow`/`--fail-fast` (default run-all-then-report). PYTEST_ADDOPTS stripped (law 8).
+  exec-safety registry row added (fixed argv, operator domain; outside the top-level mechanical
+  scan — registered explicitly). +20 tests.
+- **D159 — atomic writes for the five proven-corruptible artifact writers (env-hardening,
+  2026-07-12c; closes the D1 corruption class — `.planning/D1-CORRUPTION-FINDINGS.md`).** NEW
+  `tools/fs_atomic.py :: atomic_write_text` (same-dir mkstemp → write → `os.replace` → orphan
+  cleanup; mirrors write_bridge/write_host_settings_atomic; new leaf module because all five sites
+  are leaf modules — no shared home without an import cycle). Converted: function_model
+  emit_function_model · debug_report emit_debug_report · benchmark emit_scorecard · iac_apply
+  emit_iac_apply · intent_scaffold write_intent. Byte-identical output pinned; sandbox race proof:
+  non-atomic ⇒ 22 IndentationErrors/8s, atomic ⇒ 0 corruption in 12,606 rewrites. +20 tests.
+  Standing policy (D1 findings doc): conductor is the sole main-tree git writer; end-of-session
+  stash-empty tripwire; reader-retry discipline.

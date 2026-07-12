@@ -28,6 +28,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from fs_atomic import atomic_write_text
+
 # ---------------------------------------------------------------------------
 # Allowed derivation sources (single source of truth)
 # ---------------------------------------------------------------------------
@@ -722,7 +724,8 @@ def emit_function_model(fm: dict, path: str | Path) -> None:
     """
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(fm, indent=2, ensure_ascii=False), encoding="utf-8")
+    # D159: atomic tmp+os.replace — a concurrent reader never sees a partial file.
+    atomic_write_text(dest, json.dumps(fm, indent=2, ensure_ascii=False))
 
 
 def load_function_model(path: str | Path) -> dict:

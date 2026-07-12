@@ -56,4 +56,22 @@ adds its sibling bridge write. Options:
 
 No change made this session (global-profile edit while operator away = out of bounds).
 
-## Q1+ — see task queue; results appended below as they land.
+## Q1+ — results
+
+- **Q1 (B1+B2 → D153): MERGED PR #24 `b107750`.** Freeze-gate HOLD(8) → re-gate SHIP-WITH-FIXES(8)
+  → build → 2-reviewer adval SHIP-WITH-FIXES ×2 (13) — all 29 folded. Live smoke = named deferral
+  (operator return, item 1). §RATIFY: 4 provisional calls.
+- **Q2/Q3/Q4 (C1/C2/C3 → D154/D155/D156): MERGED PR #25 `fd0e7c2`.** TDD engine build +42 tests;
+  adval SHIP-WITH-FIXES (2 LOW folded). All three PROVISIONAL pending ratification.
+- **Q7 (D1): ROOT-CAUSED** — see `.planning/D1-CORRUPTION-FINDINGS.md`. ★ stash@{0} recovery is an
+  operator decision; standing git policy adopted; code fix = D159 (hardening branch).
+- **Q8 EV emit proof (mechanical): PASS** — fixture ledger with `### EV-1 — Elevate: … · LOCKED`
+  (bare-decline shape) through the real `learn_feed.py`: written=2 / open-skipped correct /
+  idempotent 0-rewrite; page `ev-proof--ev-1.md`; `recall_from_paths(feed_dir=…)` read it back as
+  `source="second-brain"`. Honest label: mechanical n=1 in a fixture feed dir (NOT the live vault —
+  kept clean); the live-vault emit rides the operator's first real grill.
+- **Operator mid-session authorization:** "I approve of all commits/pushes/merges this section.
+  Run through using loop elements aligned with the plan. When I am back we will do a full
+  evaluation." — merge gate exercised under it (PRs #24/#25 + the hardening PR).
+- **Kata target toggle (fired this session):** CODEBASE per the handoff standing order; carried
+  for the session.

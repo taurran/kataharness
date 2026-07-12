@@ -45,6 +45,8 @@ import math
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fs_atomic import atomic_write_text
+
 # ---------------------------------------------------------------------------
 # CWE-23 path-traversal guard (mirrors usage_meter._guard_path)
 # ---------------------------------------------------------------------------
@@ -838,7 +840,8 @@ def emit_scorecard(path: str | Path, scorecard: dict) -> None:
     """
     dest = _guard_path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(scorecard, indent=2, ensure_ascii=False), encoding="utf-8")
+    # D159: atomic tmp+os.replace — a concurrent reader never sees a partial file.
+    atomic_write_text(dest, json.dumps(scorecard, indent=2, ensure_ascii=False))
 
 
 # ---------------------------------------------------------------------------
