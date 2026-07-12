@@ -225,6 +225,75 @@ class a gate-focused pass wouldn't catch — both now fixed with mutation-proof 
 Round-2 gauntlet: **pytest 3160/3 · validator 48/0/0 · Snyk medium+ 0 (changed files) ·
 integration tests 2/2 green · PS scripts parse-clean ×3 · update.sh bash -n clean**.
 
+## Round 3 (operator: "wire these up and fix ALL of these disconnects") — the backlog built out
+
+Every named health-review deferral was built (operator-directed), across 5 parallel fix-groups +
+STEERING wiring + gauntlet infra, done by me. Commits: `feat(steering)`, `fix(engine)`,
+`chore(gauntlet)`, `style(ruff)`.
+
+- **F-3 STEERING facade → real**: `tools/kata_steer.py` (stop_requested + read_active_directives,
+  +9 tests), `protocol/steering.md`, kata-orchestrate 0.12.0 boundary step, STEERING.md rewritten,
+  REQUIRED_PROTOCOL-registered. The AGENT_STOP graceful kill-switch is now implemented.
+- **Gate-input validation** (Q-2/Q-3/Q-6): groundsToPlan enum hard-fail; empty-verdicts vacuous:true;
+  run_funnel hard-requires refuted/sparse_signal.
+- **Benchmark integrity** (Q-8/Q-9/DET-11): malformed test-ID raises; truncated mutation.json ⇒
+  vacuous; explicit tie-break key.
+- **Gate-runner determinism** (DET-09): sanitized env (strip PYTEST_ADDOPTS + disable plugin
+  autoload) — shell=True RETAINED after I caught that the argv rewrite broke the shell-string
+  test_cmd contract (65 mutation-proof tests). The env sanitization is the real cross-host win.
+- **Determinism residuals** (DET-06/10/12/13/14): fixed-width diffstat, netstring digest, /var/folders
+  scrub + node-id separator normalize, content-addressed benchmark id, injectable generated_at.
+- **Git-hang safety** (Q-16/Q-14): 60s timeout on every parsed git call; board-unreadable degraded flag.
+- **Robustness LOWs** (Q-10/Q-13/Q-18/S-5/S-6/F4/F5): gate_emit exit codes+parsedCounts; researcher
+  source-required; ledger skippedLines; rate-table date; web error-vs-waiting; overlay key regex;
+  preflight naming doc.
+- **Path-guard family drift-guard** (Q-12): `test_path_guard_family.py` pins all 29 `..`-guards +
+  a completeness tripwire — chosen over a merge-risky 30-file shared-helper refactor (rationale
+  recorded; the physical DRY extraction is the one consciously-deferred item, operator-visible).
+- **W-7**: `validate_skills --only <skill>`.
+- **Gauntlet infra** (M-1/M-2/6d): ruff (E/W/F/I core), coverage floor 90, `tools/scripts/sca.sh`
+  (uv export → pip-audit), `.github/workflows/ci.yml` (Linux+Windows), `docs/RELEASE-CHECKLIST.md`.
+  Repo-wide ruff `--fix` hygiene pass applied.
+
+**Note on worktree instability:** several parallel fix-groups (and 3 of my own edits — STEERING.md,
+orchestrate 0.12.0, the DET-09 reapply) were transiently reverted mid-session by a
+worktree/git operation; each was detected via re-grep/failing tests and re-applied, then committed
+promptly to lock in. Adval covers the committed final state.
+
+Round-3 gauntlet: pytest 3270+/3 · validator 48/0/0 · ruff clean · integration 2/2 · Snyk med+ 0.
+
+## Adval — fresh-context adversarial review of the full day's diff (master..HEAD, 3 reviewers)
+
+Per the project's own D33/adversarial-review discipline before merge. Each reviewer told to
+REFUTE. Result: **1 HIGH defect caught in a fix I wrote, folded; no cross-seam regression; both
+new protocol files confirmed genuinely wired (not docs-only); STEERING confirmed a real tested
+engine at parity, not a facade.**
+
+- **DEFECT-1 (HIGH, folded):** my F1 sequence-repetition cap was a PARTIAL FACADE — it bounded the
+  count operand (`abs(count) > 1024`) not the result length, so chained `[0]*1000*1000*1000`
+  (each count < cap, product 10⁹) bypassed it, verified live. **Fixed:** cap the materialized
+  output length `len(seq)*count` at each step (kills the chain at the 10⁶ intermediate); +2
+  exploit tests.
+- **R1 (MED, folded):** blanket `PYTEST_DISABLE_PLUGIN_AUTOLOAD` on the benchmark scoring path could
+  DEFLATE a third-party target's numbers (autoload-reliant tests fail under the gate). Confirmed
+  *conservative* (never inflates). **Fixed:** made `run_named_test` surgical — keep autoload, block
+  only `-p no:randomly` (harmless when absent), strip ADDOPTS; blanket-disable reserved for the
+  arbitrary-command `_default_runner`. Doctrine law 8 updated.
+- **Steering polish (folded):** self-contradicting `kata_steer._safe_path` docstring cite corrected
+  (PD-2 truthfulness); `_is_placeholder` tightened so a real `(none-blocking)…` directive isn't
+  dropped (+test); steering docs now state the stop is conductor-invoked/prose-gated, not
+  host-enforced (adval #1); prime-directives validator claim corrected to term-removal not
+  "hollowing" (adval #4).
+- **Confirmed SOUND (cited by reviewers):** escalation traversal (two-layer), grounding enum,
+  deviation run_funnel (no real breaking caller), dispatch researcher, gate_emit exit codes,
+  evidence_digest framing (stamp/verify co-temporal, no old-framing pin), git timeouts (all
+  fail-closed, no pin removed), graph ordering, drift scrub. Cross-seam: ruff × functional hunks
+  disjoint; kata_telemetry triple-compose clean.
+- **Left as documented LOW/INFO:** R3 (backslash in param node-id collision — niche), R2 (digest
+  contract unversioned — negligible, fail-closed), escalation `C:foo` drive-relative collision.
+
+Post-adval gauntlet: pytest 3271+/3 · integration 2/2 · ruff clean · validator 48/0/0 · Snyk med+ 0.
+
 ## Facade-audit conclusion (the BIG ONE, answered)
 Across four independent passes (claims 3-leg, engine stub sweep, wiring both-directions,
 quality): **KataHarness is NOT a facade.** The advertised feature set is implemented, wired,
