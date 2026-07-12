@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.4.0
+version: 0.4.1
 category: coordinate
 status: beta
 agnostic: true
@@ -379,7 +379,9 @@ weakening of it.
 9. **Acceptance / success criteria** (`acceptanceCriteria`) — the checkable "how we'll know it's done" list confirmed in step 2g. **Handled exactly like conditional value #8:** when there are no checkable criteria for this run (e.g. a `research` run, or the human explicitly opts out), an explicit "no acceptance criteria for this run" is a valid confirmation and the run PASSES with an **empty `acceptanceCriteria`**. The gate fails only on an un-itemized, unconfirmed value — never on a legitimately empty or research run.
 
 If any value was not named in the mirror — or the human's response was ambiguous on that value
-specifically — surface it explicitly via `AskUserQuestion` before proceeding.
+specifically — surface it explicitly via `AskUserQuestion` before proceeding: **one value per
+question, one question at a time (D153/U1)** — plural unconfirmed values are never batched into a
+single multi-question call.
 
 ### Gate checklist (for the evaluator — with teeth)
 
@@ -424,7 +426,8 @@ to that value specifically.
 
 Collect the operator's goal narrative (one paragraph north star — the outcome, not the
 implementation), and any `fixes`, `features`, `modulesAdded`, `changeSummary` details via
-`AskUserQuestion` if not already captured.
+`AskUserQuestion` if not already captured — **asked one at a time, never a multi-question dump
+(D153/U1)**.
 
 Assemble an `answers` dict from **all** of the operator-supplied values gathered in Phases 1–3 and
 the gate above. Call `tools/intent_scaffold.py :: write_intent(path, answers)` to produce the draft

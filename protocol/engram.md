@@ -119,6 +119,7 @@ clearly it is a human-decision/learning surface (HIGH must be wired; MED plausib
 | **E21** | `kata-handoff` "open decisions for the human" | LEARN | A handoff's parked open-decisions list is a learning surface. | LOW-MED | handoff SKILL |
 | **E22** | `kata-slop-check` SLOP-DETECTED verdict + fix-loop | LEARN (+ latent CONSULT) | Learn which slop classes the user accepts vs forces a fix; latent CONSULT pre-weights by the user's tolerance. A SLOP-DETECTED verdict is a default-FAIL EVALUATE gate finding. | MED | kata-slop-check, D41/GB8 |
 | **E23** | `protocol/persona.md` register adaptation | LEARN (+ latent CONSULT) | **Substrate:** observed comprehension/correction signals in the conversation + grill-ledger choices (D72 LEARN feed). **Seam:** latent CONSULT sets the persona register from the matured fingerprint — calibrating voice register toward the user's real sophistication over time. **Gated off** (D9/D56): emit/observe-only, zero CONSULT; the feed builds the corpus a future CONSULT will synthesize against. The static moderate-non-expert default (`protocol/persona.md` Defaults section) is the live register until CONSULT matures. Claiming this seam is active before CONSULT lights is a forbidden overclaim (K1). | MED | protocol/persona.md, D9, D56, D72, D74 |
+| **E24** | `kata-grill` ELEVATE accept/decline (grill-close, before the emit) | LEARN (+ latent CONSULT) | The operator's accept / decline-with-reason / null-elevation outcomes on the one grounded grill-close recommendation are recorded as `EV-{n} · LOCKED` ledger entries and ride the grill-close emit — a decline is preference signal too. Latent CONSULT: a matured fingerprint pre-weights what kinds of elevations this operator accepts. | MED | D153, grill RUBRIC ELEVATE step |
 
 **Substrate dependency (not a seam):** `kata-understand` / research-mode emit into PokeVault (D54/D55/D58);
 that vault is what a vault-style backend READS FROM. It is upstream of the contract, not a CONSULT/LEARN
@@ -167,8 +168,10 @@ cross-linked **synthesis pages** *over* them. Markdown, Obsidian-native, no embe
 **distinct from `engram.backend`** (the CONSULT backend, still gated/off): the feed is active now; CONSULT is not.
 
 **Producers (two, one schema):** (1) the **grill-close emit** (D151/G1) — at every grill's convergence-gate
-SHIP-to-close, `tools/learn_feed.py` emits the run's resolved ledger entries (see the `kata-grill` RUBRIC's
-grill-close emit step); and (2) the `kata-improve` **LEARN-feed emit-only sub-mode** (seam E6), the broader
+SHIP-to-close, AFTER the ELEVATE step records its outcome (D153, seam E24), `tools/learn_feed.py` emits the
+run's resolved/LOCKED ledger entries — which now include the elevate outcome entries (`EV-{n}`: accepted,
+declined-with-reason, or the honest no-elevation null; see the `kata-grill` RUBRIC's ELEVATE + grill-close
+emit steps); and (2) the `kata-improve` **LEARN-feed emit-only sub-mode** (seam E6), the broader
 re-synthesis (the same engine covers ledgers/DECISIONS; the wider LESSONS/REVIEW inputs are agent-authored
 per kata-improve's honest-scope note), run at IMPROVE / handoff time — out of the one-shot loop budget,
 never a per-task hook.

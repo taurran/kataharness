@@ -40,9 +40,15 @@ Ask **structured questions the user can either click an option for OR answer in 
   L7 forbids; offering options *with* an escape is encouraged, not banned);
 - states the provenance: what in the spec/code/docs raised this branch.
 
-Group tightly-related questions together, but resolve **dependent** branches in sequence (an answer routinely
-opens or closes downstream branches). *(Adapter binding: Claude → `AskUserQuestion`; a plain CLI → numbered
-options + a free-text prompt. The pattern is host-agnostic; the rendering is the adapter's job.)*
+**ONE question per interaction (D153/U1).** The grill asks **one question at a time — never a multi-question
+dump** ("throwing five out there isn't a good UX" — operator, 2026-07-12). Related branches are asked in
+consecutive single questions, dependency order preserved: an answer re-derives the tree before the next
+question is posed (which single-question pacing makes structurally natural). *(Adapter binding: Claude → one
+`AskUserQuestion` call containing exactly ONE question — the hard binding; never a multi-question call, never
+a batch. Non-Claude hosts keep prose questioning — numbered options + a free-text prompt — with
+one-question-at-a-time sequencing as guidance, not a new hard binding. The pattern is host-agnostic; the
+rendering is the adapter's job.)* This binds the GRILL's interactive flow; general design discussion outside
+the grill stays conversational prose (the operator's standing preference).
 
 ## Plain-language & simplest-model discipline — the PRIMARY grill style (memory `grill-in-plain-terms`)
 
@@ -152,10 +158,45 @@ in its "could two independent builders still diverge here?" mode). This mirrors 
 EXECUTE — the one who did the work does not certify it. Only when that fresh pass returns SHIP is the grill
 complete; a HOLD names the under-specified branch → back to Phase 1.
 
+## The ELEVATE step (D153) — one grounded recommendation at every grill close
+
+When the fresh convergence pass returns SHIP (Advanced: the final of its two passes), and strictly BEFORE the
+grill-close emit below, pose **exactly ONE brainstormed recommendation that elevates the design or function of
+the output** — a concrete improvement the resolved design does not already contain, **grounded in THIS run's
+grill context** (cite the resolved branch(es), goal terms, or probed scenarios that motivate it). Generic
+advice is a violation: if no grounded elevation exists, say so honestly in one line and record that (below) —
+never invent filler (PD-2). More than one recommendation is offered ONLY if the operator asks. ELEVATE is
+**always-on wherever a grill runs, at every tier** (same D33-class posture as the convergence gate — a tier
+may scope the tree it grills, not the close-out behaviors); a `skip`-depth run has no grill and therefore no
+ELEVATE. A Path-A hard bail ("execute" typed mid-grill) forgoes ELEVATE — stop means stop; a confirmed Path-B
+close (the grill self-proposes readiness) is a NORMAL close and runs the full sequence: convergence pass →
+ELEVATE → record → emit.
+
+- **Interaction:** posed as ONE structured question through the same single-question binding as the rest of
+  the grill (Claude: one `AskUserQuestion`) — the recommendation with its grounding, options **Accept (lock it
+  in)** / **Decline**, free text always available. "Tell me more" ⇒ elaborate in-step, then re-pose the SAME
+  question (no ledger entry of its own). "Give me another" ⇒ record #1 as declined-superseded, pose the
+  alternative as the next single question. **ELEVATE is posed at most ONCE per grill close** — operator-
+  requested alternatives occur WITHIN the single step; harness-initiated re-elevation is forbidden.
+- **Recording (before the emit, always):** every outcome is a normal checkpointed ledger entry with a
+  **dedicated `EV-{n}` anchor and a `· LOCKED` status token** — `### EV-{n} — Elevate: <short title> · LOCKED`
+  — so the SB-L1 grammar emits it (`learn_feed._ANCHOR_RE` requires a digit/dash-segment anchor; a heading
+  without one is not an entry and silently never emits; the anchor also names the emitted page, so never
+  collide with an existing anchor). Decision field by outcome: **Accepted** ⇒ the recommendation (compiled
+  into the frozen DESIGN like any other resolution); **Declined** ⇒ "Declined — <operator's reason>", or
+  "Declined — no reason given" on a bare decline (never pose a follow-up question to extract a reason);
+  **no grounded elevation** ⇒ "No grounded elevation beyond the resolved design";
+  **accept-with-modification** ⇒ the operator's modified form, rationale noting the correction. Declines and
+  the null result feed the second brain too — a decline is preference signal.
+- **If an acceptance opens genuinely NEW branches** (the exception — pose recommendations edge-defined):
+  resolve them via the normal Phase-1 loop, then run a **scoped** fresh-context convergence check over ONLY
+  those branches — one pass per attempt regardless of tier, re-run until SHIP; a HOLD sends the named branch
+  back to Phase 1. On SHIP, resume at recording → emit — never a second ELEVATE.
+
 ## Grill-close emit — feed the second brain (D151/G1)
 
-The moment the fresh pass returns SHIP and the ledger checkpoints its final entry, this grill's resolutions
-become second-brain signal — each resolved branch, the human's choice, and the rationale. When
+The moment the fresh pass returns SHIP, the ELEVATE outcome (D153, above) is recorded, and the ledger
+checkpoints its final entry, this grill's resolutions become second-brain signal — each resolved branch, the human's choice, and the rationale. When
 `engram.learnFeed.dir` is set (kata.config / `protocol/config.md`), run the LEARN-feed emitter over the run's
 ledger before handing off:
 

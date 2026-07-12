@@ -5,7 +5,7 @@ description: >-
   e.g., security-critical systems, public APIs with long backward-compat horizons, or architectures that
   are genuinely hard to reverse.
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: plan
 status: beta
 agnostic: true
@@ -42,8 +42,12 @@ Run the **full Standard-depth method (see the RUBRIC)** **plus**:
 - **Two fresh-context convergence passes.** Run [[kata-review]] twice with a fresh context between passes.
   The first pass gates the main decision tree; the second pass gates the security/edge-case layer added by
   Advanced. Both must return SHIP before the grill is complete. On the final SHIP, run the RUBRIC's
-  **grill-close emit** (the `tools/learn_feed.py` second-brain feed — no-op when `engram.learnFeed.dir` is
-  unset; never blocks the close).
+  **ELEVATE step** (D153 — exactly ONE grounded recommendation, posed as a single question; outcome recorded
+  as an `EV-{n} · LOCKED` ledger entry; an acceptance that opens new branches gets a SCOPED one-pass-per-
+  attempt re-check, not a repeat of the double gate), then the **grill-close emit** (the `tools/learn_feed.py`
+  second-brain feed — no-op when `engram.learnFeed.dir` is unset; never blocks the close).
+- **Interaction (D153/U1):** every grill question — ELEVATE included — goes out ONE at a time (Claude adapter:
+  one `AskUserQuestion` call, exactly one question); never a multi-question dump.
 
 The Advanced tier is strictly a superset of Standard — it produces the same artifact types (ledger + glossary
 + ADRs) but with higher coverage, deeper adversarial probing, and the double convergence gate.
