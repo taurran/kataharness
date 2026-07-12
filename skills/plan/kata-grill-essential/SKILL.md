@@ -5,7 +5,7 @@ description: >-
   the output does not need to be drift-proof — e.g., exploratory spikes, throwaway prototypes, or
   time-boxed pre-reads before a fuller grill.
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: plan
 status: beta
 agnostic: true
@@ -45,8 +45,13 @@ ledger to a **fresh-context [[kata-review]] (essential tier) scoped to the branc
 A SHIP from that pass closes the Essential grill; a HOLD names an under-specified branch to resolve before
 closing. No tier self-certifies — Essential narrows the *tree* it grills, not the *backstop* that gates
 it. The convergence gate is a structural invariant; a tier may reduce depth but may NOT drop it. On SHIP,
-run the RUBRIC's **grill-close emit** (the `tools/learn_feed.py` second-brain feed — no-op when
-`engram.learnFeed.dir` is unset; never blocks the close).
+run the RUBRIC's **ELEVATE step** (D153 — exactly ONE grounded recommendation, posed as a single question;
+outcome recorded as an `EV-{n} · LOCKED` ledger entry; same behavior at every tier — Essential narrows the
+tree, never the close-out), then the **grill-close emit** (the `tools/learn_feed.py` second-brain feed —
+no-op when `engram.learnFeed.dir` is unset; never blocks the close).
+
+**Interaction (D153/U1):** every grill question — ELEVATE included — goes out ONE at a time (Claude adapter:
+one `AskUserQuestion` call, exactly one question); never a multi-question dump.
 
 **This tier does NOT replace a Standard grill before a production freeze.** Use it when a PoC or one-shot
 outcome is acceptable and the user has explicitly accepted the reduced coverage.

@@ -4,7 +4,7 @@ description: >-
   Full doc-grounded grill (default). Use this for any non-trivial build, feature, or change where the
   output must be drift-proof — the standard production-quality grill that resolves the entire decision tree.
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: plan
 status: beta
 agnostic: true
@@ -37,7 +37,11 @@ Run the **full method** as defined in the RUBRIC:
   real trade-off), and the decision ledger updated at every checkpoint.
 - Run the **fresh-context convergence gate** ([[kata-review]], "could two independent builders still diverge?"
   mode) before declaring the grill done. Only a SHIP from that pass closes the grill; a HOLD sends it back to
-  Phase 1. On SHIP, run the RUBRIC's **grill-close emit** (the `tools/learn_feed.py` second-brain feed —
-  no-op when `engram.learnFeed.dir` is unset; never blocks the close).
+  Phase 1. On SHIP, run the RUBRIC's **ELEVATE step** (D153 — exactly ONE grounded recommendation, posed as a
+  single question; outcome recorded as an `EV-{n} · LOCKED` ledger entry), then the **grill-close emit** (the
+  `tools/learn_feed.py` second-brain feed — no-op when `engram.learnFeed.dir` is unset; never blocks the
+  close).
+- **Interaction (D153/U1):** every grill question — ELEVATE included — goes out ONE at a time (Claude adapter:
+  one `AskUserQuestion` call, exactly one question); never a multi-question dump.
 
 This is today's `kata-grill` at its original depth — the default for any production-quality planning session.

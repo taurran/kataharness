@@ -2441,3 +2441,29 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   existing CA-L1 wrapper) — the executable bootstrap slot 6 (kills D-1/D-2). Router stanza A2/A3 +
   doc-truth A4/F3/CG-L6 in the same pass. R6 stays a named-open leg: this build makes the live
   proof possible, it does not claim it proven.
+- **D153 — ELEVATE at grill close + one-question-at-a-time grill UX (operator-directed 2026-07-12;
+  built 2026-07-12c operator-away, "I approve of all commits/pushes/merges this section").** Spec:
+  `.planning/specs/elevate-grill-ux/DESIGN.md` (E1–E6/U1–U2/S/V, FROZEN; freeze-gate v1 HOLD 8 →
+  re-gate v2 SHIP-WITH-FIXES 8, all 16 folded). **B1:** every grill close (post-convergence-SHIP,
+  pre-emit) poses exactly ONE brainstormed recommendation grounded in the run's grill context that
+  elevates the design/function of the output — always-on at every tier, at most once per close,
+  never generic filler (an honest "no grounded elevation" is the null result). Every outcome is an
+  `### EV-{n} — Elevate: … · LOCKED` ledger entry (accepted / declined-with-reason / bare-decline
+  "no reason given" / no-elevation) so it rides the D151 grill-close emit with `learn_feed.py`
+  byte-unchanged — declines feed the second brain too (preference signal). Path-A hard bail forgoes
+  ELEVATE; a confirmed Path-B close runs it (normal close). Acceptance opening new branches ⇒
+  scoped one-pass-per-attempt re-check, never a second ELEVATE. **B2:** the grill asks ONE question
+  per interaction — Claude adapter hard binding: one `AskUserQuestion` call, exactly one question,
+  never a multi-question dump ("throwing five out there isn't a good UX"); non-Claude hosts keep
+  prose questioning; general non-grill design discussion stays conversational prose. Surfaces:
+  grill RUBRIC (ELEVATE section + Interaction format) · tier skills 0.3.0 · kata-initiate 0.5.0
+  (two batching-ambiguous call sites pinned + Phase 5 Path A/B close-out alignment per adval A2-1:
+  Path B on-confirm runs convergence → ELEVATE → record → emit; Path A forgoes with an
+  evaluator-checkable bail ledger line) · DECISION-LEDGER.md EV-{n} shape + Edges-exemption ·
+  engram.md seam E24 + producer alignment. Adval: 2 fresh-context reviewers SHIP-WITH-FIXES ×2,
+  all 13 findings folded.
+  **PROVISIONAL (operator ratification at return, DESIGN §RATIFY):** tier-uniform behavior ·
+  elevate via the single-question surface · declines-feed-second-brain · skip-depth ⇒ no ELEVATE.
+  **Honesty label: built + freeze-gated + adval'd; LIVE-UNPROVEN (n=0)** — the live smoke (a real
+  grill asking one-at-a-time + posing one elevate) requires the operator and is the first item of
+  the announced return evaluation.
