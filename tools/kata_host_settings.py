@@ -20,7 +20,16 @@ Pure core (no I/O — independently testable)
     ``--``); present + ineligible ⇒ untouched, reported ``skipped-ineligible``.
 ``unmerge_host_settings(existing, rendered) -> (cleaned, report)``
     Remove exactly kata's hook entries; unwrap the chain back to the user's original
-    command; a kata-set statusLine (no prior user one) is removed outright.
+    command; a kata-set statusLine (no prior user one) is removed outright.  A
+    top-level ``autoCompactWindow`` key is NEVER removed (a scalar carries no kata
+    marker); when present it is reported ``left-in-place`` so the caller can note it.
+``parse_auto_compact_window(raw) -> int``
+    D154: parse + bounds-check an ``autoCompactWindow`` value against Claude's
+    settings schema (GROUNDING-CLAUDE §G1: ``int().min(1e5).max(1e6)``).  The
+    opt-in ``--auto-compact-window N`` install flag merges the key through
+    :func:`merge_host_settings` (``auto_compact_window=`` keyword — additive, BC:
+    ``None`` leaves merge output byte-identical) under the SAME consent-gated,
+    backup-first, atomic flow as the hooks merge.
 
 Kata entries are identified STRUCTURALLY: any string inside the entry contains the
 rendered ``<repo>/adapters/claude/`` path (never by event name or position).
@@ -70,6 +79,11 @@ _ADAPTER_SEGMENT = "/adapters/claude/"
 #: Unwrap separator — the chain script's quoted path followed by the ``--`` tail marker.
 #: Everything AFTER this separator is the user's original command, verbatim.
 _CHAIN_SEP = 'statusline_chain.py" -- '
+
+#: Claude settings schema bounds for the top-level ``autoCompactWindow`` key
+#: (GROUNDING-CLAUDE §G1, verified empirically: ``int().min(1e5).max(1e6)``).
+AUTO_COMPACT_WINDOW_MIN = 100_000
+AUTO_COMPACT_WINDOW_MAX = 1_000_000
 
 
 class HostSettingsError(ValueError):
@@ -212,11 +226,44 @@ def _is_kata_entry(entry, marker: str) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# Pure core — autoCompactWindow parse (D154)
+# --------------------------------------------------------------------------- #
+
+
+def parse_auto_compact_window(raw: str | int) -> int:
+    """Parse + bounds-check an ``autoCompactWindow`` value (G1: 100k ≤ N ≤ 1M).
+
+    Accepts the CLI's raw string (or an already-parsed int).  Raises
+    :class:`ValueError` with a usage-grade message on non-int input (floats and
+    bools are rejected — no silent truncation/coercion) or an out-of-range value;
+    the CLI maps that to exit 2 (USAGE).  Pure; no I/O.
+    """
+    if isinstance(raw, bool) or isinstance(raw, float):
+        raise ValueError(f"autoCompactWindow must be an integer (tokens), got {raw!r}")
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        raise ValueError(
+            f"autoCompactWindow must be an integer (tokens), got {raw!r}"
+        ) from None
+    if not (AUTO_COMPACT_WINDOW_MIN <= value <= AUTO_COMPACT_WINDOW_MAX):
+        raise ValueError(
+            f"autoCompactWindow must be within [{AUTO_COMPACT_WINDOW_MIN}, "
+            f"{AUTO_COMPACT_WINDOW_MAX}] (Claude settings schema, G1), got {value}"
+        )
+    return value
+
+
+# --------------------------------------------------------------------------- #
 # Pure core — merge / unmerge
 # --------------------------------------------------------------------------- #
 
 
-def merge_host_settings(existing: dict, rendered: dict) -> tuple[dict, dict]:
+def merge_host_settings(
+    existing: dict,
+    rendered: dict,
+    auto_compact_window: int | None = None,
+) -> tuple[dict, dict]:
     """Merge kata's *rendered* snippet into the user's *existing* settings (pure).
 
     Returns ``(merged, report)``.  *existing* is never mutated.  Hook entries APPEND
@@ -225,6 +272,14 @@ def merge_host_settings(existing: dict, rendered: dict) -> tuple[dict, dict]:
     is updated in place.  statusLine follows the CG-L2 decision table (set / chain /
     skipped-ineligible).  Fail-closed on structurally unusable user data (a non-dict
     ``hooks`` or non-list event) — never guess (D136).
+
+    D154 (additive, BC): when *auto_compact_window* is an int, the top-level
+    ``"autoCompactWindow"`` key is merged too — set when absent, updated when a
+    DIFFERENT value exists (never silently: the report carries ``old`` so the
+    consent disclosure can show ``old -> new``), no-op when equal.  ``None`` (the
+    default) leaves the merge output byte-identical to the pre-D154 behavior and
+    adds no report key.  An out-of-range / non-int value is fail-closed
+    (:class:`HostSettingsError`).
     """
     if not isinstance(existing, dict):
         raise HostSettingsError("kata_host_settings: existing settings must be a JSON object")
@@ -283,6 +338,22 @@ def merge_host_settings(existing: dict, rendered: dict) -> tuple[dict, dict]:
                 # CA-L1 never-clobber: leave the user's statusLine untouched.
                 report["statusline"] = "skipped-ineligible"
 
+    if auto_compact_window is not None:
+        try:
+            acw = parse_auto_compact_window(auto_compact_window)
+        except ValueError as exc:
+            # fail-closed (D136): never write a value Claude's schema rejects
+            raise HostSettingsError(f"kata_host_settings: {exc}") from exc
+        if "autoCompactWindow" not in merged:
+            merged["autoCompactWindow"] = acw
+            report["autoCompactWindow"] = {"action": "set", "old": None, "new": acw}
+        elif merged["autoCompactWindow"] == acw:
+            report["autoCompactWindow"] = {"action": "noop", "old": acw, "new": acw}
+        else:
+            old = merged["autoCompactWindow"]
+            merged["autoCompactWindow"] = acw
+            report["autoCompactWindow"] = {"action": "updated", "old": old, "new": acw}
+
     return merged, report
 
 
@@ -308,6 +379,10 @@ def unmerge_host_settings(existing: dict, rendered: dict) -> tuple[dict, dict]:
     - A chain-wrapped statusLine is unwrapped back to the user's original command
       (verbatim tail after ``statusline_chain.py" -- ``).
     - A kata-set statusLine (kata's own command, no chain) is removed outright.
+    - ``autoCompactWindow`` is NEVER removed (D154): a scalar carries no kata
+      marker, and silently deleting an operator-visible preference is worse than
+      leaving it.  When present it is reported ``left-in-place`` (with its value)
+      so the caller can print the honest origin/restore note.
     """
     if not isinstance(existing, dict):
         raise HostSettingsError("kata_host_settings: existing settings must be a JSON object")
@@ -349,6 +424,13 @@ def unmerge_host_settings(existing: dict, rendered: dict) -> tuple[dict, dict]:
                 # kata-set statusLine (no prior user command) — remove the key.
                 del cleaned["statusLine"]
                 report["statusline"] = "removed"
+
+    if "autoCompactWindow" in cleaned:
+        # D154: never removed — no kata marker on a scalar; report for the caller's note.
+        report["autoCompactWindow"] = {
+            "action": "left-in-place",
+            "value": cleaned["autoCompactWindow"],
+        }
 
     return cleaned, report
 
@@ -454,6 +536,7 @@ def apply_hooks_change(
     dry_run: bool = False,
     venv_exists: bool | None = None,
     snippet_path: str | Path | None = None,
+    auto_compact_window: int | None = None,
 ) -> dict:
     """Render + merge (or unmerge) kata's snippet into the host settings file.
 
@@ -461,6 +544,11 @@ def apply_hooks_change(
     strict read → pure merge/unmerge → diff; then (unless ``dry_run`` or no change)
     timestamped backup BEFORE any change, then atomic write.  Consent/prompting is the
     CALLER's job — this function never prompts.
+
+    D154: *auto_compact_window* rides the SAME flow — passed through to
+    :func:`merge_host_settings` on install (ignored on uninstall, which never
+    removes the key), so the key change appears in the consent diff and lands in
+    the same backup-first atomic write.
 
     Returns ``{ok, changed, dryRun, uninstall, path, backup, report, diff}``.
     Raises :class:`HostSettingsError` (fail-closed, D136) on an unparseable host file.
@@ -475,7 +563,9 @@ def apply_hooks_change(
     if uninstall:
         new, report = unmerge_host_settings(existing, rendered)
     else:
-        new, report = merge_host_settings(existing, rendered)
+        new, report = merge_host_settings(
+            existing, rendered, auto_compact_window=auto_compact_window
+        )
 
     changed = new != existing
     result: dict = {

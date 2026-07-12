@@ -2485,3 +2485,15 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   with engram CONSULT). kata-orchestrate untouched (it already injects whatever orient assembles —
   the logic lives in orient + the contract, per orientation.md producer/consumer). Surfaces:
   kata-orient 0.4.0 step 2b · protocol/orientation.md context-tier row + §Worker recall brief.
+- **D154 — autoCompactWindow backstop gets an OPT-IN write; recommend-only stays the default (C1
+  residual / audit C-4, 2026-07-12c operator-away; PROVISIONAL pending return ratification).**
+  `kata_install.py --install-hooks --auto-compact-window N` (valid only together; N int in
+  [100_000, 1_000_000] per GROUNDING-CLAUDE G1; violations = semantic exit 2) merges the top-level
+  key through the SAME consent-gated backup-first atomic flow as the hooks merge — disclosure shows
+  absent→N / old→N / already-N, plus a non-blocking precedence note when
+  CLAUDE_CODE_AUTO_COMPACT_WINDOW is set (env wins, G1). `--uninstall-hooks` NEVER removes the key
+  (scalar carries no kata marker; silent preference deletion is worse) — it prints an honest note +
+  the backup restore path. Nothing else ever writes the key; kata_gauge.backstop_recommendation
+  byte-untouched. Frozen-five engine fns md5-verified unchanged. +41 TDD tests
+  (test_kata_host_settings.py 55→96). Closes the C-4 "recommend-only forever?" question: the
+  recommendation now has an executable, consent-gated apply path.
