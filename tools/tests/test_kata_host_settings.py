@@ -584,6 +584,19 @@ class TestInstallCliWiring:
         assert not (tmp_path / "settings.json").exists()
         assert "consent" in capsys.readouterr().err
 
+    def test_auto_compact_window_consent_refused_leaves_settings_byte_identical(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        # Consent-denied path WITH the flag: pre-existing settings must stay byte-identical
+        # (adval c-residuals finding 2 — pins the denial leg explicitly for the new key).
+        settings_path = tmp_path / "settings.json"
+        settings_path.write_text('{"theme": "dark"}', encoding="utf-8")
+        before = settings_path.read_bytes()
+        rc = self._run(tmp_path, "--install-hooks", "--auto-compact-window", "200000")
+        assert rc == 2  # non-TTY, no --yes ⇒ consent refused
+        assert settings_path.read_bytes() == before  # byte-identical, key NOT written
+        assert "consent" in capsys.readouterr().err
+
     def test_install_then_uninstall_roundtrip(self, tmp_path: Path) -> None:
         assert self._run(tmp_path, "--install-hooks", "--yes", "--json") == 0
         assert self._run(tmp_path, "--uninstall-hooks", "--yes", "--json") == 0

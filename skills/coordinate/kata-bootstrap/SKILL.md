@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.5.0
+version: 0.5.1
 category: coordinate
 status: beta
 agnostic: true
@@ -172,7 +172,9 @@ approved like an install, **never an implied side effect**:
 4. **The compact-window recommendation** (CA-L16 backstop) — **recommend-never-write**: Kata **never
    writes user settings silently**; the recommendation is surfaced and applied only with permission (set
    above the internal target, or not at all if the default suffices). It is **RECOMPUTED every run**
-   (CA-L37/R-42 — `hostPosture` is audit-only and never suppresses it).
+   (CA-L37/R-42 — `hostPosture` is audit-only and never suppresses it). The executable, consent-gated
+   apply path is `kata_install.py --install-hooks --auto-compact-window N` (D154); the loop itself
+   still never writes the key.
 5. **The host-settings write slot** — installing the SessionStart(compact) hook and the statusline /
    wrapper entries IS a write to `~/.claude/settings.json`, so it is an explicit bundle slot approved like
    an install. Merge discipline: **hooks arrays are APPEND-NEVER-REPLACE; `statusLine` is only ever

@@ -737,7 +737,8 @@ chained wrapper writes it). Stale (>300s) or absent ⇒ the deterministic rotati
 
 **backstop** — the host's own compaction mechanism (the sole reset mechanism on Claude), recommended
 (never silently set) to fire at trigger + gap. Kata owns the schedule and durability; the host owns
-the act. _Avoid_: "backup," "the env var" (the settings.json key `autoCompactWindow` is the
+the act. Consent-gated apply path: `kata_install.py --install-hooks --auto-compact-window N` (D154).
+_Avoid_: "backup," "the env var" (the settings.json key `autoCompactWindow` is the
 recommendation vector).
 
 **premium offer** — the mode==advanced, preflight-approved above-anchor elevation (e.g. Fable above
