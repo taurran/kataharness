@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -19,3 +19,40 @@ pythonpath = ["."]
 markers = [
     "integration: end-to-end integration test (may run a real pytest subprocess over a benchmark clone)",
 ]
+
+# ---------------------------------------------------------------------------
+# Lint (ruff) — wired into the gauntlet 2026-07-12 (health review M-1: the
+# gauntlet previously had no lint/type/coverage/SCA). Production code is held
+# clean; tests get a looser profile (fixtures legitimately shadow/repeat).
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py312"
+line-length = 110
+extend-exclude = [".venv", "__pycache__"]
+
+[tool.ruff.lint]
+# First lint wiring on a mature codebase: enforce the real-bug + hygiene core —
+# E/W pycodestyle, F pyflakes (unused imports, undefined names), I import-order.
+# Opinionated modernization rules (B bugbear, UP pyupgrade) are intentionally NOT
+# enforced here (they generate debatable churn on legacy code); a --fix pass has
+# already applied their safe autofixes. Revisit selecting B/UP in a dedicated
+# modernization pass, not as a merge blocker.
+select = ["E", "W", "F", "I"]
+# E501 line-length is advisory (many long doc-strings); ambiguous-name E741 is
+# left tolerant repo-wide to avoid churn on legacy single-char locals.
+ignore = ["E501", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests legitimately: re-import per-test (F811-adjacent), keep unused fixtures,
+# inline imports after sys.path juggling, and use inline-semicolon setups.
+"tests/**" = ["E402", "F401", "F811", "F841", "E702"]
+
+# ---------------------------------------------------------------------------
+# Coverage floor (health review M-1). Run: uv run --with pytest-cov pytest
+#   -m "not integration" --cov=. --cov-report=term --cov-fail-under=90
+# Kept OUT of default addopts (coverage overhead on every run); the pre-tag
+# checklist (docs/RELEASE-CHECKLIST.md) invokes it explicitly.
+# ---------------------------------------------------------------------------
+[tool.coverage.report]
+fail_under = 90
+omit = ["tests/*", "kata_dash*.py", "kata_web.py"]

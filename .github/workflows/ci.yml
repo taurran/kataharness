@@ -1,0 +1,37 @@
+# CI — KataHarness gauntlet (wired 2026-07-12, health review 6d: the repo had NO CI,
+# so the integration tests + symlink install tests only ever ran on human memory).
+#
+# Runs on Linux (exercises the POSIX install/symlink paths the Windows dev box skips)
+# AND Windows (the primary dev platform). No secrets required — the gauntlet is pytest
+# + the skill validator + ruff; SAST/SCA stay local/manual (Snyk needs auth; see the
+# S-07 CI exception note in docs/RELEASE-CHECKLIST.md).
+name: gauntlet
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  gauntlet:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: tools
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Lint (ruff)
+        run: uvx ruff check .
+      - name: Skill-conformance validator
+        run: uv run python validate_skills.py
+      - name: Unit + integration gauntlet
+        run: uv run pytest --cov=. --cov-report=term
+      - name: Integration tests (real subprocess / real git)
+        run: uv run pytest -m integration
