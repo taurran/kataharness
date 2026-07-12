@@ -20,8 +20,11 @@ LEARN feed, D74 — emit-only, out of scope here).
   (`recall.parse_lessons` / `parse_decisions` / `parse_intent` / `parse_understand` /
   `parse_synthesis_pages`): the default backend that serves the contract from six on-disk artifacts
   **plus an optional config-gated seventh — the second-brain feed dir** (`feed_dir`, records
-  `source="second-brain"`; absent ⇒ byte-identical six-source behavior; SB-L5/D151). It is **one
-  implementation** of the contract.
+  `source="second-brain"`; absent ⇒ byte-identical six-source behavior; SB-L5/D151). The gate has a
+  **first-run fallback (D155):** on a fresh project with no `kata.config` yet, the caller
+  (kata-initiate Phase 1b) resolves `feed_dir` via `kata_settings.default_learn_feed_dir(settings)`
+  instead — the engine signature and BC are unchanged; the fallback is caller-side resolution only.
+  It is **one implementation** of the contract.
 - An external store (Obsidian / kiban / kagami) is a *different adapter answering the same contract* — it
   drops in later **without re-contracting**. Keep the two strictly separate so the seam survives.
 
