@@ -8,6 +8,29 @@ last_updated: "2026-07-05T09:00:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-07-12 — FABLE 5 FULL HEALTH REVIEW shipped + MERGED; master `da9bc92`, pushed):**
+> A three-round health review run OUTSIDE the loop (D33 no-self-cert) + a pre-merge adversarial
+> validation. **Verdict: NOT a facade** (0 FALSE/0 UNSUBSTANTIATED of ~19 public claims; 259/259
+> prose-cited engine surfaces real; learning loop validated hop-by-hop live). **MERGED PR #20
+> `6c5dbc1`** + wiring follow-up `da9bc92`. SHIPPED: **`protocol/prime-directives.md`** (PD-1
+> never-silently-defer/stub/skip; PD-2 absolute-truthfulness — now loaded on EVERY execution:
+> kata-initiate 0.3.0 Phase-0 conductor front door + AGENTS.md read-first + CLAUDE.md pointer +
+> router stanza + orientation stable tier + validator reg); **`docs/DETERMINISM-DOCTRINE.md`** (ten
+> laws, wired into AGENTS/STANDARDS §4a/CLAUDE); **`protocol/steering.md` + `tools/kata_steer.py`**
+> (the F-3 facade FIXED — STEERING/AGENT_STOP is now a real tested engine, kata-orchestrate 0.12.0
+> boundary step); `.planning/REVIEW-PROCEDURE.md`; gauntlet infra (ruff/coverage/SCA/CI/
+> RELEASE-CHECKLIST); ALL health-review backlog fixes (each mutation-proven). Biggest catch: the
+> **PreCompact hook snapshotted the harness home not the session repo** — flagship crash-durability
+> silently no-op'd in every install; fixed. Adval caught **1 HIGH in my own F1 fix** (seq-repetition
+> cap bounded count not result-length; chained bypass) + 1 MED; both folded. **Gate at merge: pytest
+> 3274/3 · integration 2/2 · ruff clean · validator 48/0/0 · Snyk med+ 0.** Ledger:
+> `.planning/REVIEW-FABLE5-2026-07-12.md`; portable procedure: `.planning/REVIEW-PROCEDURE.md`.
+> ⚠ Worktree-revert instability observed all session (commit early/often). **NEXT SESSION: two deep
+> reviews FIRST** (per operator, `.planning/HANDOFF-NEXT-SESSION.md` §2) — (1) does the PARENT/
+> conductor context self-handoff actually work (it didn't engage this session — the R6 leg); (2)
+> validate the universal AGENTS.md-canonical pointer structure + the memory-management/recall wiring.
+> Then the LOW/INFO backlog residuals. *(Prior CURRENT blocks below are history.)*
+
 > **CURRENT (2026-07-05c — README restructured, PR #15 `b5ffccc`; session complete):** Post-v0.3.0
 > operator-directed README pass: exec-summary banner, feature box reordered by UNIQUENESS (quality loop
 > leads), salesy adaptive-tiering entry, NEW "Picking a harness" comparison (Claude Code native

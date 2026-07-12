@@ -1,90 +1,112 @@
-# HANDOFF — next session (written 2026-07-05, end of the v0.2.1 MERGE session)
+# HANDOFF — next session (written 2026-07-12, end of the Fable 5 health-review session)
 
-> Paste-companion for the next fresh session. **Supersedes the 2026-07-04 pre-merge orientation this
-> file used to carry.** Ground truth: **`master` @ the v0.2.1 tag** (merge commit of PR
-> `feat/context-autonomy` → master; branch deleted after merge), tree clean. ⚠️ IGNORE
-> `C:\Dev\CLAUDE.md` (unrelated Mise project).
+> Paste-companion for the next fresh session. **Supersedes the 2026-07-05 v0.2.1 handoff.**
+> Ground truth: **`master` @ `da9bc92`**, pushed, tree clean (only untracked `.planning/config.json`,
+> a pre-existing operator artifact). ⚠ IGNORE `C:\Dev\CLAUDE.md` (unrelated Mise project).
 
-## 1. WHAT SHIPPED (v0.2.1, tagged 2026-07-05)
+## 1. WHAT HAPPENED THIS SESSION (2026-07-12, Fable 5)
 
-Context autonomy — the gauge-driven self-handoff loop (D146–D149) — MERGED and TAGGED after the
-operator-directed pre-merge sequence executed in full:
+A full-project **health review** of KataHarness, run OUTSIDE the kata loop (the loop was the subject
+under audit — D33 no-self-cert), in three rounds + a pre-merge adversarial validation. **Merged via
+PR #20 (`6c5dbc1`)**, then a follow-up wiring commit (`da9bc92`) direct to master.
 
-1. **M4 Amendment #5 (D149, `4ec9896`):** C-1 verify-signal fix — trailer `verify.owned`
-   (owned-file-scoped exit, optional/nullable/fail-closed), scorer prefers owned over suite exit
-   (BC fallback), `emit-trailer --owned-exit`, kata-tdd 0.4.0 producer mandate, kata-orchestrate
-   0.10.2 scoping note; kills the 13/13 retroactive false-positive class. Plus the F2
-   dispatch-base index-0 sentence (CA-L44) in the ladder span. Plus a 23-cite observability.md
-   re-audit. Gate: fresh-context default-FAIL → 1 HIGH folded → re-gate PASS. **τ untouched.**
-2. **Final 3-reviewer fresh-context pass (`c284387`):** engine/adapter-security/policy. Security
-   clear. Folds: kata_gauge numeric-sanity fail-closed (NaN/Inf/out-of-range/huge-int ⇒
-   GaugeError — the corrupt-kata-bridge-shadows-healthy-user-bridge vector is dead, +15 tests);
-   **CA-L25 stranding verdict WIRED into prose** (kata-preflight 0.2.1 + kata-bootstrap 0.3.1
-   slot 6 — it was engine-built but prose-orphaned, the built-but-unwired class); allowlist
-   slash-normalization (Windows false-WARN); kata-readiness 0.2.2 WARN scoped to incremental
-   (D147 one-shot exemption). Fold re-gate PASS.
-3. **Merge/tag:** ledger row 5 appended (the C11 staged row, D141(b), strict-reader round-trip
-   PASS — ledger now 5 rows); CHANGELOG `[0.2.1]` dated; PR merged as a merge commit; annotated
-   tag `v0.2.1` pushed. A/B efficiency (−23% tok / −44% calls / −29% wall) accepted as
-   n=1-directional with its four LIVE-PROOF caveats.
-4. **README overhauled** (same session, own PR): differentiator-focused, every claim grounded.
+**Verdict: KataHarness is NOT a facade.** 0 FALSE / 0 UNSUBSTANTIATED of ~19 load-bearing public
+claims; 259/259 prose-cited engine surfaces real; zero dead modules; the learning loop was validated
+hop-by-hop live on committed data (real machinery). Full ledger: `.planning/REVIEW-FABLE5-2026-07-12.md`.
+Reusable procedure: `.planning/REVIEW-PROCEDURE.md`.
 
-**Gauntlet at tag: pytest 2895 pass / 3 skip · validate_skills 48/0/0 · Snyk medium+ 0** (one
-accepted CWE-78 false positive, `.snyk`, expiry 2027-01-04).
+**Shipped:**
+- **`protocol/prime-directives.md`** — PD-1 (never silently defer/stub/skip designed work; operator
+  permission before any bypass) + PD-2 (absolute truthfulness; stub-reported-as-built IS DRIFT).
+- **`docs/DETERMINISM-DOCTRINE.md`** — ten laws.
+- **`protocol/steering.md` + `tools/kata_steer.py`** — the F-3 facade FIXED: STEERING/AGENT_STOP is a
+  real, tested, wired engine (was prose claiming a cadence with zero implementation).
+- **`.planning/REVIEW-PROCEDURE.md`**, gauntlet infra (ruff/coverage/SCA/`.github/workflows/ci.yml`/
+  `docs/RELEASE-CHECKLIST.md`), and ALL health-review backlog fixes (gate-input, benchmark integrity,
+  determinism residuals, git timeouts, ~20 robustness LOWs) — each mutation-proven.
+- Biggest catch: the **PreCompact hook snapshotted the harness home, not the session repo** — the
+  flagship crash-durability guarantee silently no-op'd in every installed deployment. Fixed.
+- Adval caught **1 HIGH in my own F1 fix** (seq-repetition cap bounded the count operand not the
+  result length; chained `[0]*1000*1000` bypassed it) + 1 MED (blanket plugin-autoload-disable
+  deflates 3rd-party benchmark numbers). Both folded.
 
-## 1b. SAME-DAY ADDENDUM — v0.3.0 ADAPTIVE TIERING also SHIPPED (D150, 2026-07-05)
+**Final gate at merge:** pytest **3274 pass / 3 skip** · integration **2/2** · ruff **clean** ·
+validator **48/0/0** · Snyk medium+ **0**.
 
-Operator-directed same-session: adaptive model routing (L0 base / L1 evidence modulation / L2
-deferred), event-scoped budgeted premium rung (family-agnostic), cheap-then-escalate evaluator
-re-adjudication, calibration columns (verdictByTier/tierEvents). Full arc in STATE 2026-07-05b +
-D150 + specs/adaptive-tiering/ (DESIGN, SMOKE-MODELED). Gauntlet at tag: pytest 3120/3 · 48/0/0 ·
-Snyk 0. The queue below is UNCHANGED (R6 still leads) with item 6 added (adaptive live A/B rides
-the same post-R6 instrumented runs). New D# ≥ D151.
+## 1b. FOLLOW-UP COMMIT `da9bc92` — Prime Directives on EVERY execution + Determinism Doctrine wired
 
-## 1c. SAME-DAY ADDENDUM 2 — README restructured (PR #15, 2026-07-05)
+The operator flagged that PD was wired only for worker *dispatch*. Now guaranteed at every entry:
+kata-initiate 0.3.0 Phase 0 (conductor front door, loads PD first) · AGENTS.md Read-first (mandatory
+first read) · CLAUDE.md pointer · kata_router stanza (installed targets carry it) · orientation stable
+tier (dispatch, already) · validator REQUIRED_PROTOCOL (can't be erased). Determinism Doctrine, an
+orphaned doc, is now referenced in AGENTS.md conventions/read-first, CLAUDE.md, and STANDARDS.md §4a.
 
-Banner = concise exec summary; feature box reordered by UNIQUENESS (quality loop -> adaptive tiering
--> inline evaluator -> context autonomy -> learning loop -> ... -> niche); NEW "Picking a harness"
-comparison section (vs Claude Code native orchestration/ultra review, Hermes, OpenHands, Aider —
-design-philosophy level, in-repo-grounded, no benchmark claims; grounding-gated PASS). Maintain the
-discipline: any future README numeric/competitor claim goes through a grounding gate.
+## 2. ★★ NEXT SESSION — START HERE: two deep-review items (same depth as this session's audits)
 
-## 2. NEXT SESSION — the post-merge test queue (BACKLOG ★, operator-ordered, R6 leads)
+The operator wants these two validated IN DEPTH first, before anything else:
 
-1. **R6 — live host-fired compaction end-to-end**: attended interactive session, throwaway
-   profile, real auto-compact fires ⇒ SessionStart(compact) re-anchor ⇒ zero task loss +
-   kata-orient 3-tier grade. Only the host-fired link is unproven (LIVE-PROOF items 1–2 prove
-   every mechanical/hook leg).
-2. **R1–R5 + R7** attended-host residuals (LIVE-PROOF item 7).
-3. **Calibration follow-on proper**: τ/weights + C-3 verdict×tier ledger columns — UNBLOCKED by
-   D149 but needs fresh instrumented runs that EMIT `verify.owned` before τ gets a fair test.
-4. **LD7×M4 + non-Claude live legs**; **kata_settings atomic writes** (review LOW); then
-   **PokeVault install / MindBridge ingest** (first external deploys).
+1. **The coordinator/parent-session context-handoff — does it actually work?** In THIS session the
+   parent (conductor) context ran very long and **never self-managed / self-handed-off** — the
+   context-autonomy self-handoff (v0.2.1: conductor watches its own gauge, self-hands-off at 0.70)
+   did NOT fire. Validate the whole `kata-selfhandoff` + `kata_gauge` + statusline-bridge + PreCompact/
+   SessionStart re-anchor chain end-to-end for the PARENT/conductor (not just workers). Is the gauge
+   readable by the conductor? Does the trigger fire? Does re-anchor restore full context? This is the
+   R6 "live host-fired compaction" leg that was already the top of the backlog — now with the concrete
+   observation that it didn't engage this session. Deep-validate like the facade audit: prove it, don't
+   assume it.
+2. **The universal pointer/context structure — is AGENTS.md truly the single standard, and is memory
+   wired in?** Validate that ALL instruction/pointer files (`CLAUDE.md`, `STEERING.md`, per-platform
+   `docs/platforms/*`, the kata_router stanza, nested-module AGENTS.md) consistently point to
+   `AGENTS.md` as the canonical standard (STANDARDS §4 dual-standard) with no drift or contradiction.
+   THEN validate the **memory-management component**: how does KataHarness persist/recall cross-run
+   memory (recall.py + the learning loop + `.claude` memory), and are memories wired to reinforce the
+   pointer structure? The operator wants memories that "wire in the memory management component" — i.e.
+   confirm the recall/second-brain read-path actually surfaces the right context at run start and that
+   the pointer discipline is memory-reinforced.
 
-## 3. READ ORDER FOR A FRESH SESSION
+## 3. REMAINING BACKLOG (after the two deep reviews)
 
-1. This file. 2. `.planning/STATE.md` CURRENT block. 3. `.planning/BACKLOG.md` ★ queue.
-4. `.planning/DECISIONS.md` D146–D149. 5. `.planning/CALIBRATION-FINDINGS.md` (C-1 now FIXED by
-D149 — do not re-fix; C-3 verdict×tier still open). 6. Code re-ground before citing:
-`tools/kata_gauge.py` (numeric sanity), `tools/kata_risk.py` (`_verify_fail`),
-`tools/kata_telemetry.py` (`verify.owned`), `skills/coordinate/kata-preflight/SKILL.md`
-(stranding section).
+- `.planning/BACKLOG.md` "2026-07-12 health-review follow-ups" — the LOW/INFO residuals NOT fixed:
+  skill-level Determinism-Doctrine enforcement in `kata-review`/`kata-evaluate` (named this session);
+  the physical `_safe_path` shared-helper extraction (a drift-guard test covers the invariant — the
+  one consciously-deferred item, see §4); R3 param-node-id backslash collision (niche); a handful of
+  cosmetic LOWs.
+- Then the pre-existing queue: R1–R5/R7 attended-host residuals, calibration-proper (τ/weights),
+  adaptive live A/B, PokeVault install / MindBridge ingest.
 
-## 4. STANDING ORDERS (unchanged, load-bearing)
+## 4. THE STORY WITH THE ONE CONSCIOUSLY-DEFERRED ITEM (`_safe_path` consolidation, Q-12)
 
-Cite the artifact before claiming it exists; "done" = gate numbers + D-record + SHA in the same
-message; freeze-gate discipline on every change (HOLD ⇒ fold ⇒ RE-GATE); D136 fail-closed
-decision-code; D33 no-self-certification; bump-on-modify + `validate_skills --write`; commits
-only on operator approval, branch→PR→merge, never straight to master; supersede-never-rewrite,
-new D# ≥ **D150**; judgment/grill/gates at anchor, build workers tier down (D131); post-merge
-telemetry scans use FORK REFS.
+The engine has ~30 hand-copied `..`-rejection path guards (`_safe_path`/`_guard_path`/`_safe_abs`/…).
+The review found drift starting at the edges (kata_supersede was swallowing the error — fixed).
+Q-12's options were: extract one shared `kata_paths.safe_path` helper and migrate all 30 files, OR add
+a check that the guards stay consistent. **I chose the drift-guard test** (`tests/test_path_guard_family.py`
+— pins all 29 guards reject `..` + a completeness tripwire so a new unenumerated guard fails CI) over
+the 30-file refactor, **because a mass mechanical refactor right before merge was the wrong risk given
+the worktree-revert instability observed all session** (see §5). The behavioral invariant that actually
+protects correctness is now enforced; the physical DRY extraction is a safe future refactor, not a
+functional gap. This is the ONE item deferred with rationale (PD-1-compliant: named, reasoned,
+operator-visible).
 
-## 5. LOCAL OPERATIONS NOTES
+## 5. ⚠ ENVIRONMENT HAZARD — worktree/git revert instability
 
-- The kata target toggle hook (`~/.claude/hooks/kata-target-toggle.js`) is live — pick CODEBASE
-  vs INSTALLED at session start. The INSTALL is still v0.2.0-era: run the updater
-  (`& "$env:USERPROFILE\.kata-home\update.ps1"`, all Claude sessions closed) to bring
-  `~/.claude/skills` up to v0.2.1 before running kata against the INSTALLED target.
-- Security note for the operator (from 2026-07-04, still open): `~/.claude/settings.json` carries
-  a cleartext GitHub PAT in `env.GITHUB_PERSONAL_ACCESS_TOKEN` — move to a credential helper /
-  `gh auth` when convenient.
+Multiple times this session a transient git/worktree operation **silently reverted uncommitted
+edits**: one fix-group's changes wiped entirely, `function_model.py` corrupted mid-edit, and
+STEERING.md / orchestrate SKILL / validate_skills reverted 2×. Each was caught via re-grep / failing
+tests and re-applied, then committed promptly. **Mitigation for next session: commit early and often;
+after any batch of edits, `git status` + re-grep key signatures before trusting they landed.** Worth
+investigating what in the parallel-agent-in-worktree setup causes it.
+
+## 6. STANDING ORDERS (unchanged, load-bearing)
+
+Cite the artifact before claiming it exists; "done" = gate numbers + record + SHA in the same message;
+fresh-context adversarial review before merge (D33 no-self-cert); D136 fail-closed decision-code;
+bump-on-modify + `validate_skills --write`; branch→PR→merge (this session's `da9bc92` wiring went
+direct to master under time pressure — prefer a branch next time); **the Prime Directives now bind
+every run — PD-1/PD-2 are non-negotiable.**
+
+## 7. GATE REPRODUCTION (from `tools/`)
+
+`uv run pytest -m "not integration"` → 3277 pass · `uv run pytest -m integration` → 2 pass ·
+`uvx ruff check .` → clean · `uv run python validate_skills.py` → 48/0/0 · Snyk Code medium+ → 0.
+Installed skills at `~/.claude/skills` are still v0.2.0-era — run the updater before any
+INSTALLED-target kata run so future runs carry the Prime Directives.
