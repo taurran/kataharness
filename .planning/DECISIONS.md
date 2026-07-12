@@ -2467,3 +2467,21 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   **Honesty label: built + freeze-gated + adval'd; LIVE-UNPROVEN (n=0)** — the live smoke (a real
   grill asking one-at-a-time + posing one elevate) requires the operator and is the first item of
   the announced return evaluation.
+- **D155 — recall's 7th source gets a first-run fallback (C2 residual, 2026-07-12c operator-away;
+  PROVISIONAL pending return ratification).** On a fresh project, Phase 1b runs before bootstrap
+  writes `kata.config`, so the config-gated `feed_dir` row could never fire in run 1 (2026-07-12b
+  adval observation, BACKLOG #4). Now: no `kata.config` ⇒ kata-initiate resolves `feed_dir` via
+  `kata_settings.default_learn_feed_dir(settings)` — caller-side resolution only; the recall engine
+  signature, gating vocabulary, and BC are byte-unchanged. Cross-project recall works from the very
+  first grill. Surfaces: kata-initiate 0.6.0 Phase 1b row · protocol/recall.md files-only-adapter
+  paragraph.
+- **D156 — worker recall brief in launch orientation (C3 residual / audit finding B1, 2026-07-12c
+  operator-away; PROVISIONAL pending return ratification).** Workers never saw prior lessons
+  (recall was initiation-only). Now kata-orient builds a task-scoped recall brief into the CONTEXT
+  tier: same engine + seven sources as Phase 1b (incl. D155), query terms from the task's action /
+  owned files / DESIGN-slice terms, rendered as a handful of POINTERS (never inlined bodies);
+  read-only, never gates, first context-tier element dropped under budget pressure. Deliberately
+  narrow: the ONLY recall surface beyond initiation — no per-wave/per-message recall (revisit only
+  with engram CONSULT). kata-orchestrate untouched (it already injects whatever orient assembles —
+  the logic lives in orient + the contract, per orientation.md producer/consumer). Surfaces:
+  kata-orient 0.4.0 step 2b · protocol/orientation.md context-tier row + §Worker recall brief.

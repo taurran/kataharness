@@ -18,7 +18,7 @@ drop **stable**. Each tier names its sources; absent sources degrade gracefully 
 | Tier | Holds | Sources |
 |---|---|---|
 | **stable** | identity · **the Prime Directives** · the spine · conventions · model-routing — the non-negotiables, same every task | `protocol/prime-directives.md` (always injected, never summarized away), root `AGENTS.md` (+ adapter `CLAUDE.md` notes), `docs/STANDARDS.md` |
-| **context** | where the work sits + who it collaborates with | the **frozen DESIGN/PLAN slice** for this task · **nearest-module `AGENTS.md`/`CLAUDE.md`** (vertical rollup) · `CONTEXT.md` glossary · relevant ADRs · **lateral adjacency pointers** (below) |
+| **context** | where the work sits + who it collaborates with | the **frozen DESIGN/PLAN slice** for this task · **nearest-module `AGENTS.md`/`CLAUDE.md`** (vertical rollup) · `CONTEXT.md` glossary · relevant ADRs · **lateral adjacency pointers** (below) · **worker recall brief** (below, D156 — first context item dropped under budget pressure) |
 | **volatile** | the assignment + current state | task `<action>`/`<owned files>`/`<acceptance>` · `kata-board`/state · open escalations · any inbound `kata-handoff` artifact |
 
 ## Vertical rollup (the 2026 nested-AGENTS.md standard)
@@ -52,6 +52,19 @@ which docs to surface, which callouts to raise, and which questions to generate:
 - **Callouts** — the landmines: a **relevant LOCKED decision**, a **drift-magnet glossary term**, an
   **applicable `LESSONS-LEARNED` lesson**, a convention this task is likely to violate. Derived from the markdown
   by relevance to the task — never a hand-maintained list.
+
+## Worker recall brief (D156 — recall beyond initiation, deliberately narrow)
+
+Workers previously never saw prior lessons at launch (recall was wired only at kata-initiate Phase 1b).
+`kata-orient` now builds a **task-scoped recall brief** into the **context tier**: call
+`recall.recall_from_paths(...)` (the same engine and seven sources as initiation, incl. the D155 first-run
+fallback) with `query_terms` from THIS task (its `<action>`, owned-file names, DESIGN-slice terms) and the
+run's `kind`. Render **at most a handful of records as pointers** (source + one-line why + provenance date —
+pointers-over-payload; never inline page bodies). Rules, unchanged from the recall contract: **read-only,
+never gates, never blocks** a dispatch; absent sources contribute nothing; staleness is shown, never
+enforced. Budget: this brief is the **first context-tier element dropped** when over the prime frame — a
+worker without recall is oriented; a worker without its DESIGN slice is not. Scope note (D156): this is the
+ONLY recall surface beyond initiation — no per-wave or per-message recall; revisit only with engram CONSULT.
 
 ## Smart questioning + routing (NEW, D76 — "ask the questions a good hire would ask")
 From the task-type + what the in-scope docs leave **unresolved for this task**, generate the relevant questions,
