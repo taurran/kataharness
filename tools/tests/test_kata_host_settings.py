@@ -21,6 +21,10 @@ Covers (DESIGN .planning/specs/conductor-gauge-wiring/DESIGN.md, freeze-gate F-7
   write leaves no temp file; re-run idempotency proven.
 - kata_install wiring: --install-hooks / --uninstall-hooks / --dry-run / consent
   refusal without --yes; frozen-five existence + unchanged signatures.
+- D154 opt-in autoCompactWindow write: parse bounds (G1 ``int().min(1e5).max(1e6)``),
+  merge shapes (absent/equal/different existing key), disclosure content
+  (absent→N / old→N / already-N + env-var precedence note), --uninstall-hooks
+  non-removal + honest note, and BC (flag absent ⇒ merge output byte-identical).
 """
 
 from __future__ import annotations
@@ -580,6 +584,19 @@ class TestInstallCliWiring:
         assert not (tmp_path / "settings.json").exists()
         assert "consent" in capsys.readouterr().err
 
+    def test_auto_compact_window_consent_refused_leaves_settings_byte_identical(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        # Consent-denied path WITH the flag: pre-existing settings must stay byte-identical
+        # (adval c-residuals finding 2 — pins the denial leg explicitly for the new key).
+        settings_path = tmp_path / "settings.json"
+        settings_path.write_text('{"theme": "dark"}', encoding="utf-8")
+        before = settings_path.read_bytes()
+        rc = self._run(tmp_path, "--install-hooks", "--auto-compact-window", "200000")
+        assert rc == 2  # non-TTY, no --yes ⇒ consent refused
+        assert settings_path.read_bytes() == before  # byte-identical, key NOT written
+        assert "consent" in capsys.readouterr().err
+
     def test_install_then_uninstall_roundtrip(self, tmp_path: Path) -> None:
         assert self._run(tmp_path, "--install-hooks", "--yes", "--json") == 0
         assert self._run(tmp_path, "--uninstall-hooks", "--yes", "--json") == 0
@@ -620,6 +637,328 @@ class TestInstallCliWiring:
         assert rc == 5  # fail-closed: never guess, never write
         assert (tmp_path / "settings.json").read_bytes() == b"corrupt {{{"
         assert "unparseable" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------------- #
+# D154 — opt-in autoCompactWindow write: parse bounds (pure)
+# --------------------------------------------------------------------------- #
+class TestAutoCompactParse:
+    def test_bounds_inclusive(self) -> None:
+        assert khs.parse_auto_compact_window("100000") == 100000
+        assert khs.parse_auto_compact_window("1000000") == 1000000
+        assert khs.parse_auto_compact_window(200000) == 200000
+
+    @pytest.mark.parametrize("raw", ["99999", "1000001", "0", "-200000"])
+    def test_out_of_range_rejected(self, raw: str) -> None:
+        with pytest.raises(ValueError) as ei:
+            khs.parse_auto_compact_window(raw)
+        # G1 schema bounds are NAMED in the error (usage-grade message)
+        assert "100000" in str(ei.value) and "1000000" in str(ei.value)
+
+    @pytest.mark.parametrize("raw", ["abc", "2.5", "", "1e5", None, True, 200000.0])
+    def test_non_int_rejected(self, raw) -> None:
+        with pytest.raises(ValueError):
+            khs.parse_auto_compact_window(raw)
+
+    def test_schema_bound_constants_pin_g1(self) -> None:
+        # GROUNDING-CLAUDE §G1: int().min(1e5).max(1e6)
+        assert khs.AUTO_COMPACT_WINDOW_MIN == 100_000
+        assert khs.AUTO_COMPACT_WINDOW_MAX == 1_000_000
+
+
+# --------------------------------------------------------------------------- #
+# D154 — autoCompactWindow merge shapes (pure core)
+# --------------------------------------------------------------------------- #
+class TestAutoCompactMerge:
+    def test_absent_key_set(self) -> None:
+        merged, report = khs.merge_host_settings(
+            _gsd_settings(), _rendered(), auto_compact_window=200000
+        )
+        assert merged["autoCompactWindow"] == 200000
+        assert report["autoCompactWindow"] == {"action": "set", "old": None, "new": 200000}
+
+    def test_different_value_updated_visibly_never_silently(self) -> None:
+        existing = _gsd_settings()
+        existing["autoCompactWindow"] = 150000
+        merged, report = khs.merge_host_settings(
+            existing, _rendered(), auto_compact_window=200000
+        )
+        assert merged["autoCompactWindow"] == 200000
+        # the OLD value travels in the report so the disclosure can show old -> new
+        assert report["autoCompactWindow"] == {"action": "updated", "old": 150000, "new": 200000}
+        assert existing["autoCompactWindow"] == 150000  # input never mutated
+
+    def test_equal_value_noop(self) -> None:
+        existing = _gsd_settings()
+        existing["autoCompactWindow"] = 200000
+        merged, report = khs.merge_host_settings(
+            existing, _rendered(), auto_compact_window=200000
+        )
+        assert merged["autoCompactWindow"] == 200000
+        assert report["autoCompactWindow"] == {"action": "noop", "old": 200000, "new": 200000}
+
+    @pytest.mark.parametrize("bad", [99999, 1000001, "abc"])
+    def test_out_of_range_or_non_int_fail_closed(self, bad) -> None:
+        with pytest.raises(khs.HostSettingsError):
+            khs.merge_host_settings(_gsd_settings(), _rendered(), auto_compact_window=bad)
+
+    def test_flag_absent_merge_output_byte_identical_bc(self) -> None:
+        existing = _gsd_settings()
+        m_default, r_default = khs.merge_host_settings(existing, _rendered())
+        m_none, r_none = khs.merge_host_settings(existing, _rendered(), auto_compact_window=None)
+        # byte-identical including key ORDER (json.dumps preserves insertion order)
+        assert json.dumps(m_default) == json.dumps(m_none)
+        assert r_default == r_none
+        assert "autoCompactWindow" not in m_default
+        assert set(r_default) == {"hooks", "statusline"}  # report shape unchanged
+
+
+# --------------------------------------------------------------------------- #
+# D154 — uninstall never removes autoCompactWindow (scalar carries no kata marker)
+# --------------------------------------------------------------------------- #
+class TestAutoCompactUnmerge:
+    def test_key_left_in_place_and_reported(self) -> None:
+        merged, _ = khs.merge_host_settings(
+            _gsd_settings(), _rendered(), auto_compact_window=200000
+        )
+        cleaned, report = khs.unmerge_host_settings(merged, _rendered())
+        assert cleaned["autoCompactWindow"] == 200000  # NOT removed
+        assert report["autoCompactWindow"] == {"action": "left-in-place", "value": 200000}
+
+    def test_no_key_no_report_entry_bc(self) -> None:
+        merged, _ = khs.merge_host_settings(_gsd_settings(), _rendered())
+        cleaned, report = khs.unmerge_host_settings(merged, _rendered())
+        assert "autoCompactWindow" not in report
+        assert "autoCompactWindow" not in cleaned
+
+
+# --------------------------------------------------------------------------- #
+# D154 — I/O shell: same backup-first atomic flow carries the key
+# --------------------------------------------------------------------------- #
+class TestAutoCompactApply:
+    def _host(self, tmp_path: Path) -> Path:
+        host = tmp_path / "claude-host"
+        host.mkdir()
+        return host
+
+    def _snippet_file(self, tmp_path: Path) -> Path:
+        p = tmp_path / "settings.snippet.json"
+        p.write_text(json.dumps(_snippet(), indent=2), encoding="utf-8")
+        return p
+
+    def _apply(self, tmp_path: Path, host: Path, **kw) -> dict:
+        return khs.apply_hooks_change(
+            FAKE_REPO,
+            host_dir=host,
+            snippet_path=self._snippet_file(tmp_path),
+            venv_exists=True,
+            **kw,
+        )
+
+    def test_apply_writes_key_with_backup_and_diff(self, tmp_path: Path) -> None:
+        host = self._host(tmp_path)
+        original_bytes = json.dumps(_gsd_settings(), indent=2).encode("utf-8")
+        (host / "settings.json").write_bytes(original_bytes)
+        result = self._apply(tmp_path, host, auto_compact_window=250000)
+        data = json.loads((host / "settings.json").read_text(encoding="utf-8"))
+        assert data["autoCompactWindow"] == 250000
+        assert result["report"]["autoCompactWindow"]["action"] == "set"
+        assert '"autoCompactWindow": 250000' in result["diff"]
+        backups = list(host.glob("settings.json.kata-backup-*"))
+        assert len(backups) == 1
+        assert backups[0].read_bytes() == original_bytes  # backup BEFORE the change
+
+    def test_apply_dry_run_key_in_diff_nothing_written(self, tmp_path: Path) -> None:
+        host = self._host(tmp_path)
+        original = json.dumps(_gsd_settings()).encode("utf-8")
+        (host / "settings.json").write_bytes(original)
+        result = self._apply(tmp_path, host, dry_run=True, auto_compact_window=250000)
+        assert '"autoCompactWindow": 250000' in result["diff"]
+        assert (host / "settings.json").read_bytes() == original
+        assert list(host.glob("settings.json.kata-backup-*")) == []
+
+    def test_apply_uninstall_never_removes_key(self, tmp_path: Path) -> None:
+        host = self._host(tmp_path)
+        self._apply(tmp_path, host, auto_compact_window=250000)
+        result = self._apply(tmp_path, host, uninstall=True)
+        data = json.loads((host / "settings.json").read_text(encoding="utf-8"))
+        assert data == {"autoCompactWindow": 250000}  # hooks gone, key stays
+        assert result["report"]["autoCompactWindow"] == {
+            "action": "left-in-place",
+            "value": 250000,
+        }
+
+
+# --------------------------------------------------------------------------- #
+# D154 — kata_install CLI wiring: flag validation, disclosure, uninstall note, BC
+# --------------------------------------------------------------------------- #
+class TestAutoCompactCliWiring:
+    def _run(self, tmp_path: Path, *extra: str) -> int:
+        return kata_install.main(
+            [
+                "--platform",
+                "claude",
+                "--home",
+                str(REPO_ROOT),
+                "--host-dir",
+                str(tmp_path),
+                *extra,
+            ]
+        )
+
+    def test_flag_without_install_hooks_usage_error(self, tmp_path: Path, capsys) -> None:
+        rc = self._run(tmp_path, "--auto-compact-window", "200000", "--yes")
+        assert rc == 2  # USAGE
+        assert not (tmp_path / "settings.json").exists()
+        assert "--install-hooks" in capsys.readouterr().err
+
+    def test_flag_with_uninstall_hooks_usage_error(self, tmp_path: Path, capsys) -> None:
+        rc = self._run(
+            tmp_path, "--uninstall-hooks", "--auto-compact-window", "200000", "--yes"
+        )
+        assert rc == 2  # USAGE — valid ONLY together with --install-hooks
+        assert not (tmp_path / "settings.json").exists()
+
+    @pytest.mark.parametrize("bad", ["abc", "2.5", "", "99999", "1000001"])
+    def test_flag_non_int_or_out_of_range_usage_error(
+        self, tmp_path: Path, bad: str, capsys
+    ) -> None:
+        rc = self._run(
+            tmp_path, "--install-hooks", "--auto-compact-window", bad, "--yes"
+        )
+        assert rc == 2  # USAGE
+        assert not (tmp_path / "settings.json").exists()
+        assert "auto-compact-window" in capsys.readouterr().err.casefold().replace("_", "-")
+
+    def test_install_with_window_writes_key_and_hooks(self, tmp_path: Path, capsys) -> None:
+        rc = self._run(
+            tmp_path, "--install-hooks", "--auto-compact-window", "200000", "--yes", "--json"
+        )
+        assert rc == 0
+        out = capsys.readouterr()
+        result = json.loads(out.out.strip().splitlines()[-1])
+        assert result["ok"] is True and result["changed"] is True
+        assert result["report"]["autoCompactWindow"]["action"] == "set"
+        data = json.loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
+        assert data["autoCompactWindow"] == 200000
+        real_events = json.loads(REAL_SNIPPET.read_text(encoding="utf-8-sig"))["hooks"]
+        for event in real_events:
+            assert event in data["hooks"]  # the hooks merge still fully happens
+
+    def test_disclosure_absent_to_new(self, tmp_path: Path, capsys) -> None:
+        rc = self._run(
+            tmp_path,
+            "--install-hooks",
+            "--auto-compact-window",
+            "200000",
+            "--dry-run",
+            "--yes",
+            "--json",
+        )
+        assert rc == 0
+        assert "autoCompactWindow: absent -> 200000" in capsys.readouterr().err
+        assert not (tmp_path / "settings.json").exists()  # dry-run wrote nothing
+
+    def test_disclosure_old_to_new_and_write_proceeds(self, tmp_path: Path, capsys) -> None:
+        (tmp_path / "settings.json").write_text(
+            json.dumps({"autoCompactWindow": 150000}), encoding="utf-8"
+        )
+        rc = self._run(
+            tmp_path, "--install-hooks", "--auto-compact-window", "200000", "--yes", "--json"
+        )
+        assert rc == 0
+        assert "autoCompactWindow: 150000 -> 200000" in capsys.readouterr().err
+        data = json.loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
+        assert data["autoCompactWindow"] == 200000  # overwrite proceeded under consent
+
+    def test_disclosure_already_no_change(self, tmp_path: Path, capsys) -> None:
+        assert (
+            self._run(
+                tmp_path,
+                "--install-hooks",
+                "--auto-compact-window",
+                "200000",
+                "--yes",
+                "--json",
+            )
+            == 0
+        )
+        capsys.readouterr()
+        rc = self._run(
+            tmp_path, "--install-hooks", "--auto-compact-window", "200000", "--yes", "--json"
+        )
+        assert rc == 0
+        out = capsys.readouterr()
+        assert "autoCompactWindow: already 200000 (no change)" in out.err
+        result = json.loads(out.out.strip().splitlines()[-1])
+        assert result["changed"] is False
+
+    def test_env_var_note_emitted_when_set(self, tmp_path: Path, capsys, monkeypatch) -> None:
+        monkeypatch.setenv("CLAUDE_CODE_AUTO_COMPACT_WINDOW", "300000")
+        rc = self._run(
+            tmp_path,
+            "--install-hooks",
+            "--auto-compact-window",
+            "200000",
+            "--dry-run",
+            "--yes",
+            "--json",
+        )
+        assert rc == 0  # never blocks
+        err = capsys.readouterr().err
+        assert "CLAUDE_CODE_AUTO_COMPACT_WINDOW" in err
+        assert "precedence" in err
+
+    def test_env_var_note_absent_when_unset(self, tmp_path: Path, capsys, monkeypatch) -> None:
+        monkeypatch.delenv("CLAUDE_CODE_AUTO_COMPACT_WINDOW", raising=False)
+        rc = self._run(
+            tmp_path,
+            "--install-hooks",
+            "--auto-compact-window",
+            "200000",
+            "--dry-run",
+            "--yes",
+            "--json",
+        )
+        assert rc == 0
+        assert "CLAUDE_CODE_AUTO_COMPACT_WINDOW" not in capsys.readouterr().err
+
+    def test_uninstall_leaves_key_and_prints_honest_note(self, tmp_path: Path, capsys) -> None:
+        assert (
+            self._run(
+                tmp_path,
+                "--install-hooks",
+                "--auto-compact-window",
+                "200000",
+                "--yes",
+                "--json",
+            )
+            == 0
+        )
+        capsys.readouterr()
+        assert self._run(tmp_path, "--uninstall-hooks", "--yes", "--json") == 0
+        err = capsys.readouterr().err
+        data = json.loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
+        assert data == {"autoCompactWindow": 200000}  # hooks removed, key NOT removed
+        assert "autoCompactWindow" in err  # one honest note names the key
+        assert "--auto-compact-window" in err  # ... and its possible kata origin
+        assert "backup" in err  # ... and the restore path
+
+    def test_uninstall_without_key_prints_no_note_bc(self, tmp_path: Path, capsys) -> None:
+        assert self._run(tmp_path, "--install-hooks", "--yes", "--json") == 0
+        capsys.readouterr()
+        assert self._run(tmp_path, "--uninstall-hooks", "--yes", "--json") == 0
+        assert "autoCompactWindow" not in capsys.readouterr().err
+
+    def test_no_flag_report_and_settings_free_of_key_bc(self, tmp_path: Path, capsys) -> None:
+        rc = self._run(tmp_path, "--install-hooks", "--yes", "--json")
+        assert rc == 0
+        out = capsys.readouterr()
+        result = json.loads(out.out.strip().splitlines()[-1])
+        assert "autoCompactWindow" not in result["report"]
+        data = json.loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
+        assert "autoCompactWindow" not in data
+        assert "autoCompactWindow" not in out.err  # no disclosure line without the flag
 
 
 # --------------------------------------------------------------------------- #

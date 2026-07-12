@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.5.0
+version: 0.6.0
 category: coordinate
 status: beta
 agnostic: true
@@ -129,7 +129,7 @@ to the classified run kind:
 | `understand_path` | `.kata/understand.md` (the understand-map, written by [[kata-understand]]) |
 | `misses_path` | `.planning/validation-misses.jsonl` |
 | `handled_path` | `.planning/recurrence-handled.jsonl` |
-| `feed_dir` | `engram.learnFeed.dir` when set (the second-brain synthesis pages — config-gated 7th source; absent ⇒ omit) |
+| `feed_dir` | `engram.learnFeed.dir` when a `kata.config` sets it (the second-brain synthesis pages — config-gated 7th source). **First-run fallback (D155):** when NO `kata.config` exists yet (a fresh project — Phase 1b runs before bootstrap writes the config), fall back to `kata_settings.default_learn_feed_dir(settings)` so cross-project recall works from the very first grill. Both absent ⇒ omit. |
 | `query_terms` | tokens from the run goal + pinned `CONTEXT.md` terms (+ prior-INTENT goal on version-up) |
 | `kind` | `project` \| `research` \| `version-up` |
 

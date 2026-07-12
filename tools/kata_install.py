@@ -1124,7 +1124,7 @@ def _sweep_managed_slots(
 # ---------------------------------------------------------------------------
 
 
-def _hooks_verb(args, use_json: bool) -> int:
+def _hooks_verb(args, use_json: bool, auto_compact_window: int | None = None) -> int:
     """Dispatch ``--install-hooks`` / ``--uninstall-hooks`` into ``kata_host_settings``.
 
     Consent flow (CG-L2, FROZEN): print the unified settings diff + the explicit
@@ -1132,6 +1132,13 @@ def _hooks_verb(args, use_json: bool) -> int:
     machine (containment = each hook's F-3 kata-scope gate), then require interactive
     confirmation or ``--yes``.  ``--dry-run`` prints the diff and writes nothing.
     Headless ``--json``: machine JSON report to stdout, human notes to stderr.
+
+    D154 (additive): *auto_compact_window* (already parsed + bounds-checked by
+    ``main``) rides the same consent flow.  The disclosure names the key state
+    (absent→N / old→N / already-N) and — when the CLAUDE_CODE_AUTO_COMPACT_WINDOW
+    env var is set — notes that the env var takes precedence (G1); never blocks.
+    On uninstall a present key is never removed; one honest note names its
+    possible kata origin and the timestamped backup as the restore path.
 
     Exit codes reuse the semantic table: 0 OK / 1 no-consent / 2 USAGE (flag conflict,
     headless without --yes) / 3 NOT_FOUND (non-claude platform, bad path) /
@@ -1166,6 +1173,7 @@ def _hooks_verb(args, use_json: bool) -> int:
                     host_dir=args.host_dir,
                     uninstall=uninstall,
                     dry_run=dry,
+                    auto_compact_window=auto_compact_window,
                 ),
                 0,
             )
@@ -1189,6 +1197,43 @@ def _hooks_verb(args, use_json: bool) -> int:
         plan["diff"] if plan["changed"] else "(no change — already in the desired state)",
         as_json=use_json,
     )
+    # D154 disclosure: name the autoCompactWindow key state so the consent is informed.
+    acw_report = plan["report"].get("autoCompactWindow")
+    if auto_compact_window is not None and isinstance(acw_report, dict):
+        action = acw_report.get("action")
+        if action == "set":
+            _emit(
+                f"autoCompactWindow: absent -> {auto_compact_window}", as_json=use_json
+            )
+        elif action == "updated":
+            _emit(
+                f"autoCompactWindow: {acw_report.get('old')} -> {auto_compact_window} "
+                f"(a different value exists — it will be overwritten under this consent gate)",
+                as_json=use_json,
+            )
+        else:  # noop
+            _emit(
+                f"autoCompactWindow: already {auto_compact_window} (no change)",
+                as_json=use_json,
+            )
+        if "CLAUDE_CODE_AUTO_COMPACT_WINDOW" in os.environ:
+            _emit(
+                "note: CLAUDE_CODE_AUTO_COMPACT_WINDOW="
+                f"{os.environ['CLAUDE_CODE_AUTO_COMPACT_WINDOW']} is set in this "
+                "environment and takes precedence over the settings key (G1) — the "
+                "written autoCompactWindow will not take effect until it is unset.",
+                as_json=use_json,
+            )
+    # D154 uninstall note: a present autoCompactWindow is NEVER removed (a scalar
+    # carries no kata marker) — one honest note, never silent.
+    if uninstall and isinstance(acw_report, dict) and acw_report.get("action") == "left-in-place":
+        _emit(
+            f"note: autoCompactWindow={acw_report.get('value')} remains in the settings — "
+            "it may have been set by kata --install-hooks --auto-compact-window; kata does "
+            "not remove it (a scalar carries no kata marker). To revert it, restore from a "
+            "timestamped settings.json.kata-backup-* backup.",
+            as_json=use_json,
+        )
     _emit(
         "DISCLOSURE: these are GLOBAL Claude Code hooks — once installed they run in "
         "EVERY Claude Code session on this machine, not only kata runs. Containment: "
@@ -1458,7 +1503,23 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help=(
             "remove exactly kata's hook entries from ~/.claude/settings.json and unwrap the "
-            "statusLine chain back to your original command (consent-gated like --install-hooks)"
+            "statusLine chain back to your original command (consent-gated like --install-hooks). "
+            "Never removes autoCompactWindow (a scalar carries no kata marker); the timestamped "
+            "backup is the restore path"
+        ),
+    )
+    # NEW flag (D154 — opt-in autoCompactWindow write; valid ONLY with --install-hooks)
+    parser.add_argument(
+        "--auto-compact-window",
+        dest="auto_compact_window",
+        default=None,
+        metavar="N",
+        help=(
+            "with --install-hooks only: also merge the top-level \"autoCompactWindow\": N "
+            "into the GLOBAL settings (Claude schema bounds: 100000-1000000, G1). Same "
+            "consent gate, diff disclosure, timestamped backup, and atomic write as the "
+            "hooks merge. Note: a set CLAUDE_CODE_AUTO_COMPACT_WINDOW env var takes "
+            "precedence over the settings key"
         ),
     )
     args = parser.parse_args(argv)
@@ -1485,9 +1546,27 @@ def main(argv: list[str] | None = None) -> int:
         parent_dir = answers.get("parentDir", parent_dir)
         vault_dir = answers.get("vaultDir", vault_dir)
 
+    # D154: --auto-compact-window is valid ONLY together with --install-hooks; parse +
+    # bounds-check up-front (G1 schema) so a bad value is a USAGE error, exit 2.
+    auto_compact_window: int | None = None
+    if args.auto_compact_window is not None:
+        if not args.install_hooks:
+            print(
+                "error: --auto-compact-window is only valid together with --install-hooks",
+                file=sys.stderr,
+            )
+            return 2  # USAGE
+        import kata_host_settings as _khs_acw
+
+        try:
+            auto_compact_window = _khs_acw.parse_auto_compact_window(args.auto_compact_window)
+        except ValueError as exc:
+            print(f"error: --auto-compact-window: {exc}", file=sys.stderr)
+            return 2  # USAGE
+
     # CG-L2 dispatch: consent-gated GLOBAL host-settings merge (engine: kata_host_settings)
     if args.install_hooks or args.uninstall_hooks:
-        return _hooks_verb(args, use_json)
+        return _hooks_verb(args, use_json, auto_compact_window=auto_compact_window)
 
     # Write settings when parentDir is known (--parent-dir, KATA_PARENT_DIR, or --answers-json)
     if parent_dir:

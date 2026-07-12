@@ -7,7 +7,7 @@ description: >-
   (routed: answer-inline / research-needed / human-required). Invoke from kata-orchestrate per dispatch so a
   worker starts oriented, not cold.
 license: Apache-2.0
-version: 0.3.0
+version: 0.4.0
 category: handoff
 status: beta
 agnostic: true
@@ -51,6 +51,13 @@ or dispatch. The full contract is **`protocol/orientation.md`** — this skill i
      escalations · any inbound [[kata-handoff]] artifact (maps directly into context+volatile — see its
      *Orientation tie-in*).
    Over budget ⇒ degrade from the bottom (volatile → pointers) before touching context; never drop stable.
+2b. **Build the worker recall brief (D156 — context tier, narrow).** Call `recall.recall_from_paths(...)`
+   (`tools/recall.py` — the same seven sources as kata-initiate Phase 1b, incl. the D155 first-run
+   fallback) with `query_terms` from THIS task's `<action>` + owned-file names + DESIGN-slice terms and the
+   run's `kind`; render at most a handful of records as **pointers** (source · one-line why · provenance
+   date — never inlined page bodies). Read-only, never gates, never blocks; absent sources ⇒ no brief. This
+   is the **first context-tier element dropped** under budget pressure. Contract: `protocol/orientation.md`
+   §Worker recall brief.
 3. **Derive pointers + callouts from the standard markdown** (don't inline whole files). Scan root +
    nearest-module `AGENTS.md`/`CLAUDE.md`, `CONTEXT.md`, ADRs, the DESIGN/PLAN slice, README; extract for *this*
    task-type + owned files: **pointers** ("for X, see `<file:section>`") and **callouts** — the landmines: a
