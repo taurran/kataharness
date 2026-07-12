@@ -149,6 +149,82 @@ demonstrably works.
   kata-orchestrate 0.11.1, kata-initiate 0.2.2, README index regenerated.
 - Everything NOT fixed is a named deferral: BACKLOG "2026-07-12 health-review follow-ups" #1–8.
 
+## Round 2 (operator follow-up: "did we really check everything?") — mechanical checks
+
+| Check | Result | Notes |
+|---|---|---|
+| Coverage (pytest-cov one-off) | **TOTAL 97%** | Weak: kata_dash 60 / kata_dash_demo 64 / function_model 76 / gate_emit 76 / kata_web 77 / kata_trail 80 / kata_install 81 / recall 82 — mostly render/CLI mains |
+| Lint (ruff one-off) | **34 findings, ALL in tests/** — production code ruff-clean | 18 unused-import, 6 `l` names, 4 unused vars; cosmetic |
+| Type check | **NOT CONFIGURED** (no mypy/pyright) | Type hints present but unverified — finding M-1 below |
+| Lint config | **NOT CONFIGURED** (no ruff in gauntlet) | finding M-1 |
+| Coverage in gauntlet | **NOT CONFIGURED** | finding M-1 |
+| Snyk SCA (dependency scan) | **DEFERRED** — resolver cannot read the uv-native manifest (3 attempts incl. requirements export) | Deferred-security note per operator global policy. Mitigation: dependency surface is 12 pinned mainstream packages (pyyaml/rich/tree-sitter/pytest chain) |
+
+| ID | Sev | Class | Finding | Proposed fix |
+|---|---|---|---|---|
+| M-1 | MED | loose-end | The gauntlet (pytest+validator+Snyk SAST) has NO lint, NO type-check, NO coverage floor, NO dependency (SCA) scan — four standard checks absent from "green" | Add ruff (config committed, tests included), mypy or pyright on tools/ (hints already exist), coverage floor (e.g. 90%), and an SCA path that works with uv (uv export → pip-audit, or Snyk once uv-supported) to the standing gauntlet |
+| M-2 | LOW | quality | 34 ruff findings in tests/ (unused imports etc.) | one `ruff --fix` pass |
+
+## Round 2 — learning-loop deep e2e validation (agent; every hop EXECUTED live on committed data)
+
+| Hop | Status |
+|---|---|
+| run → telemetry ledger | CLOSES-LIVE (5 real rows, schema round-trips, medians match calibration doc to the digit) — but "every run" overclaimed: v0.2.1 main build + v0.3.0 build have NO row (row commits are human-gated by design, omission unlabeled) |
+| ledger → calibration | BUILT-AWAITING-DATA, exemplarily labeled (τ gated on ≥3 instrumented runs; 2 exist; C-1 finding DID already flow into scorer code via gated commit — the loop's first real closure) |
+| recall → kata-initiate | CLOSES-LIVE (live run: payload validates, 10 records, correct ranking/staleness, recurrences correctly empty) |
+| misses → recurrence → auto-draft → human gate | CLOSES-LIVE, fired once end-to-end historically (phantom-reuse: 2 distinct BLOCKER runs → T2 draft → proposed marker; handled-aware skip verified live returning 0 now) |
+| β LEARN feed | OPEN-BY-DESIGN, labeled in 3 places; zero CONSULT structurally asserted by a validator test |
+| lessons → skills | repo route CLOSES-LIVE (human-mediated, dozens of lesson-cited bumps); candidate→PROMOTE route BUILT-NEVER-EXERCISED, was unlabeled |
+
+| ID | Sev | Finding | Status |
+|---|---|---|---|
+| L-1 | MED | README "telemetry from every run" false vs ledger (2 rowless real runs) | **FIXED** — README reworded (instrumented runs; human-gated rows) |
+| L-2 | MED | README present-tense "lessons distil into candidate skills" — leg never executed once | **FIXED** — README states gate built+validated, first candidate pending |
+| L-3 | LOW | Proposal-path convention drift (LOCKED convention dir vs where the one real proposal lives) | backlog (health-review follow-ups) |
+
+Verdict: the learning loop is REAL machinery (~85% honest as previously marketed; 100% at
+artifact level) — what closes live today is recall read-back, recurrence→draft→human, and
+human-mediated findings→code; τ calibration and candidate promotion are honestly gated/pending.
+
+## Round 2 — test-suite quality audit (agent)
+
+High-integrity suite: zero `assert True`, zero swallowed assertions; ~30 assert-free tests all
+legitimate must-not-raise proofs; all 5 sampled "mutation-proven" guards VERIFIED killed by
+reading their tests (several name the exact mutation); boundary pairs (== tau, == RESERVE)
+textbook; real-git/real-subprocess e2e on telemetry/restore/install/contract chains. No
+untested module (thinnest: kata_trail 5 deep real-git tests).
+
+| ID | Sev | Finding | Status |
+|---|---|---|---|
+| T-1 | HIGH | NO CI exists; the 2 `-m integration` tests (the ONLY real-subprocess proof the benchmark F2P leg isn't vacuous) run only on human memory | **integration run EXECUTED 2026-07-12: 2 passed (2.42s)** — green on this branch today; standing fix = pre-tag checklist step / CI when S-07 exception lands → backlog |
+| T-2 | MED | 3 symlink-path install tests have plausibly NEVER executed anywhere (Windows box without symlink priv, no CI) — symlink replace/orphan-sweep code proven only by always-skipping tests | operator: one WSL/Linux (or Dev-Mode) suite pass before any release touching kata_install → backlog |
+| T-3 | LOW | kata_trail error paths (corrupt ref, read-only .git) untested | backlog |
+| T-4 | LOW/INFO | kata_dispatch is pure-injection (real-CLI seam untestable in units — the D124 shape); live-proof battery tests are doc-drift tripwires by design | accepted, documented |
+
+## Round 2 — adapters/hooks/lifecycle-scripts review (agent) + second-opinion non-gate engine review (agent)
+
+**The biggest catch of the whole review is here:** the flagship crash-durability guarantee
+silently no-oped in the installed deployment.
+
+| ID | Sev | Where | Finding | Status |
+|---|---|---|---|---|
+| A-1 | HIGH | `kata-precompact.py:80` | repo_root = `__file__`.parents[3] = the HARNESS HOME, not the session repo → snapshots `~/.kata-home/.kata/board.md` (absent in a clone) → silent no-op every compaction → Gap-1 durability void in every `~/.kata-home` install (only worked inside the harness repo). Sibling hook already reads stdin cwd. | **FIXED** — reads payload cwd; +3 real-git tests |
+| A-2 | HIGH | `function_model.py` `_safe_eval` Mult | seq*int repetition (`[0]*N`) allocates ∝ N — DoS class closed for `**`/`<<` but left open for seq*int; reachable from LLM-authored FM assertions | **FIXED** — eval-time cap at _MAX_SHIFT; +3 tests |
+| A-3 | HIGH | `escalation.py:182` `write_escalation` | taskId flows into filename unguarded despite the module advertising CWE-23 protection; taskId carries worker/LLM content → path traversal | **FIXED** — separator/../dash/NUL guard + containment assert; +2 tests |
+| A-4 | MED | `kata_install.py` `uninstall` | install links commands/*.md + records manifest; uninstall removed only skills/settings/router → commands + manifest orphaned | **FIXED** — managed-command sweep + manifest removal |
+| A-5 | MED | `update.ps1:162,196` | native git fetch/checkout/reset never exit-checked (PS 5.1 Stop doesn't trip on natives) → offline fetch fail-open "already current"; failed checkout stamps a version never applied | **FIXED** — Assert-GitOk + sh fallback chain ported |
+| A-6 | MED | `update.sh:61-98` | engine args whitespace-joined + unquoted (SC2086) → spaces/globs in --target-dir split | **FIXED** — positional-param rebuild + quoted "$@" |
+| A-7 | MED | `install.ps1:67`, `precompact/sessionstart/statusline` | install.ps1 false "clone complete." on failed clone (F5); Windows ANSI stdin decode gap (F7); zero-trace fail-soft (F8) | **FIXED** — clone check + bytes-UTF8 stdin + stderr breadcrumbs |
+| A-8 | LOW | `update.ps1:83` cwd restore (F9); `uninstall.ps1` dead-code/console-close exit (F10) | script-parity polish | **FIXED** |
+| A-9 | LOW | `kata_overlay.py:262` list-item key regex (F4); `kata_preflight` allowed_registries naming (F5); F6 custom_instructions output-key assumption | minor | backlog (health-review follow-ups) |
+
+Second-opinion verdict on the non-gate engine half: **high-quality, consistently fail-closed,
+`..`-guard idiom nearly everywhere**; the two genuine security bugs (A-2/A-3) were exactly the
+class a gate-focused pass wouldn't catch — both now fixed with mutation-proof tests.
+
+Round-2 gauntlet: **pytest 3160/3 · validator 48/0/0 · Snyk medium+ 0 (changed files) ·
+integration tests 2/2 green · PS scripts parse-clean ×3 · update.sh bash -n clean**.
+
 ## Facade-audit conclusion (the BIG ONE, answered)
 Across four independent passes (claims 3-leg, engine stub sweep, wiring both-directions,
 quality): **KataHarness is NOT a facade.** The advertised feature set is implemented, wired,

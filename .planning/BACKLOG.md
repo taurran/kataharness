@@ -20,7 +20,20 @@ Promote to ROADMAP milestones when ready.
 >    normalize grounding parity; Q-14 board-unreadable degraded flag; Q-15 approval CORRUPT-vs-absent;
 >    Q-16 git timeouts; Q-17 precompact stderr trace; Q-18 ledger skippedLines; S-5 rate-table date;
 >    S-6 web-viewer error surface; W-3 orphan helpers; W-6 banner invocation form; W-7 kata-validate
->    scope hint).
+>    scope hint; L-3 proposal-path convention — kata-improve's LOCKED PROPOSAL dir vs where the
+>    one real T2 proposal lives; M-2 ruff --fix pass over tests/).
+> 6b. **Gauntlet gaps (M-1)**: add ruff + a type checker (hints exist, unverified) + a coverage
+>    floor (one-off 2026-07-12 measurement: 97% total) + an SCA path that works with uv
+>    (uv export → pip-audit; Snyk resolver can't read the uv manifest — deferred-security note).
+> 6c. **Round-2 residual LOWs** (adapters/second-opinion): kata_overlay list-item key
+>    regex (F4 — misreads non-indented `- k: v` as a top-level key); kata_preflight
+>    `allowed_registries` naming footgun (holds manager names, not URLs); precompact
+>    `custom_instructions` output-key assumption (F6 — verify the host actually reads it,
+>    or drop to the ref-commit-only guarantee); kata_trail error-path tests (T-3);
+>    kata_dispatch injection-only seam is accepted/documented (T-4).
+> 6d. **CI is absent entirely** (T-1/T-2): the 2 integration tests + the 3 symlink install
+>    tests never run automatically; add the S-07 CI exception and a pre-tag checklist that
+>    runs `-m integration` and one non-Windows (or Dev-Mode) suite pass.
 > 7. **`_safe_path` consolidation** (Q-12): shared helper or validator textual-identity check over the
 >    16 hand-copies.
 > 8. **Push discipline**: `f40a973` sits on local master unpushed (direct-to-master docs commit) —

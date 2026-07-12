@@ -63,8 +63,9 @@ token/wall-clock efficiency, in one loop.
   suite had blessed (the v0.2.1 merge gate alone caught and folded two HIGHs).
 - **🔋 The run outlives the context window.** v0.2.1's gauge-driven self-handoff + crash-proof resume: a
   compaction, crash, or killed terminal costs you a wave boundary, not the run.
-- **🧠 A learning loop with a gate.** Telemetry from every run feeds threshold calibration; lessons distil
-  into candidate skills — but promotion is **two-stage and human-gated**, never silent self-modification.
+- **🧠 A learning loop with a gate.** Telemetry from instrumented runs feeds threshold calibration; lessons
+  flow back into the shipped skills — and the candidate-skill promotion path is **two-stage and human-gated**,
+  never silent self-modification *(gate built and validated; first candidate yet to pass through it)*.
 - **🏁 It benchmarks itself.** A built-in scoring engine ranks candidate approaches on real fail-to-pass /
   pass-to-pass evidence and produces an **honest scorecard** — quality you can measure, not vibes.
 - **🧩 Tool-agnostic core + thin adapters.** One agnostic core (protocol, skills, planning engine, quality
@@ -183,11 +184,16 @@ KataHarness gets better across runs — but it never quietly rewrites itself. Th
 design borrows the useful ideas from **Hermes** (a learning-loop agent surfaced by a formal research
 bake-off) while keeping our own gates, which Hermes doesn't have.
 
-In practice: a committed **telemetry ledger** records every run's results, costs, and failure types,
-so tuning works from logged evidence rather than hunches. **Recall** surfaces past lessons (read-only)
-when a new run starts. And `kata-improve` turns lessons into candidate skills that only join the
-toolkit through a **two-stage human approval — granted *before* any run uses them**. The loop learns;
-nothing self-modifies silently, and nothing it learns runs without a gate.
+In practice: a committed **telemetry ledger** records instrumented runs' results, costs, and failure
+types (row commits are human-gated, so a run can honestly ship without one), and tuning works from
+logged evidence rather than hunches — the first τ calibration is itself gated on ≥3 instrumented
+runs and deliberately hasn't fired yet. **Recall** surfaces past lessons (read-only) when a new run
+starts — the always-on read-back path, live today. Lessons already flow back into the shipped skills
+through the normal gated build loop (a ledger-era finding has changed scorer code). And `kata-improve`
+can distil lessons into candidate skills that join the toolkit only through a **two-stage human
+approval — granted *before* any run uses them**; that promotion gate is built and validator-enforced,
+and honestly: no candidate has yet made the trip. The loop learns; nothing self-modifies silently,
+and nothing it learns runs without a gate.
 
 ### 🏁 Built-in benchmarking
 Quality you can *measure*, not just assert. A two-axis scoring engine ranks candidate builds on real
