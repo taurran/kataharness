@@ -2,7 +2,28 @@
 
 Promote to ROADMAP milestones when ready.
 
-> **★ 2026-07-12b SESSION QUEUE (deep reviews + second-brain loop; operator-directed):**
+> **★ 2026-07-12c SESSION QUEUE (operator-return items — the FULL return checklist is
+> `.planning/HANDOFF-NEXT-SESSION.md` §2):**
+> 1. **RETURN EVALUATION (operator-announced):** live-smoke D153 (a real grill: one-question-at-a-
+>    time + ONE elevate recommendation → EV entry → vault emit) — flips the B1/B2 honesty label
+>    from mechanical-n=1 to live-proven; ratify the PROVISIONAL calls (D153 §RATIFY ×4, D154,
+>    D155, D156); review PRs #24/#25/#26 (merged under the mid-session authorization).
+> 2. **stash@{0} decision** (`.planning/D1-CORRUPTION-FINDINGS.md`): ~25 files of 2026-07-12
+>    health-review edits — diff against master, then pop or drop deliberately. Preserved untouched.
+> 3. **Statusline/GSD decision** (session notes Q0): keep chain (recommended) / kata-native
+>    segment / drop GSD from the global slot (affects Mise). Chain verified HEALTHY; "no GSD
+>    statusline" in non-GSD cwds is correct behavior.
+> 4. **F-9 + R6 live smokes** — need a session started with cwd INSIDE the harness repo (the
+>    gauge hook's kata-scope gate walks UP from cwd; C:\Dev does not qualify). Then flip
+>    GROUNDING-CLAUDE G1b + adapter README GROUNDED-BY-PATTERN → CONFIRMED.
+> 5. Optional: Defender exclusion for C:\Dev (admin; lock-amplification reduction only).
+> *(2026-07-12b queue disposition: #1 ELEVATE → DONE D153 PR #24 · #2 single-question UX → DONE
+> D153 PR #24 · #3 residuals → C-4 DONE D154, R6/F-9 open (cwd-blocked, above), PostToolUse
+> cadence still evidence-gated, B1 recall-beyond-initiation DONE D156, A5 + memory-pointer LOWs
+> unchanged-accepted · #4 first-run fallback → DONE D155 PR #25.)*
+
+> **★ 2026-07-12b SESSION QUEUE (deep reviews + second-brain loop; operator-directed) — SUPERSEDED
+> by the 2026-07-12c block above (disposition noted there):**
 > 1. **"ELEVATE" recommendation step (NEXT SESSION, operator-priority):** at the END of every grill
 >    session — on EACH KataHarness execution — the harness uses its deep context + task understanding
 >    to make ONE brainstormed recommendation (more only if the user asks) that elevates the design and
