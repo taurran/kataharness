@@ -3,8 +3,12 @@
 **This project uses `AGENTS.md` as the canonical agent-instructions file** (the cross-tool industry
 standard). Claude Code is the exception that reads `CLAUDE.md`, so this file exists only to redirect.
 
-➡️ **Read [`AGENTS.md`](./AGENTS.md) first** — it holds the vision, the spine principles, the working
-conventions, and the routing. Then read `docs/DESIGN.md`, `docs/STANDARDS.md`, and `.planning/STATE.md`.
+➡️ **FIRST, load [`protocol/prime-directives.md`](./protocol/prime-directives.md)** — the standing
+behavioral contract every kata execution runs under (PD-1 never-silently-defer/stub/skip designed
+work; PD-2 absolute truthfulness — a stub reported as built is drift). Then **read
+[`AGENTS.md`](./AGENTS.md)** — the vision, spine principles, working conventions (incl. the
+**Determinism Doctrine**, `docs/DETERMINISM-DOCTRINE.md`), and routing. Then `docs/DESIGN.md`,
+`docs/STANDARDS.md`, and `.planning/STATE.md`.
 
 ## Claude-specific notes (only what differs from AGENTS.md)
 

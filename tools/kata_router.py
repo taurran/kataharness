@@ -77,6 +77,8 @@ _STANZA_BODY = """\
 
 KataHarness is installed in this project.
 
+**Prime Directives** (loaded every run — `~/.kata-home/protocol/prime-directives.md`): never silently defer/stub/skip designed work (ask first); absolute truthfulness — a stub reported as built is drift.
+
 **Entrypoints**
 - `kata-bootstrap` — start a new kata run
 - `kata-validate`  — adversarially validate a payload or an agent's output
@@ -90,9 +92,9 @@ KataHarness is installed in this project.
 a resumed/compacted session re-anchors via `.planning/HANDOFF.md` + the staleness rule before doing anything else. (Universal fallback for platforms with no hook — §5.)
 
 _Managed by KataHarness._"""
-# Body line count (between markers): 17 — the ~15-line instruction budget plus the
-# CA-L20 standing line (resume/compact re-anchor). This line is the universal fallback
-# for platforms with no SessionStart hook — see DESIGN CA-L20 / degradation §4 row 8.
+# Body: the ~15-line instruction budget + the CA-L20 resume/compact re-anchor line
+# (universal fallback for platforms with no SessionStart hook — DESIGN CA-L20 / §4 row 8)
+# + the standing Prime Directives reminder (loaded on every execution, 2026-07-12).
 
 
 # ---------------------------------------------------------------------------

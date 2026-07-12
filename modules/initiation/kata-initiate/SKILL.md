@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.2.2
+version: 0.3.0
 category: coordinate
 status: beta
 agnostic: true
@@ -34,9 +34,15 @@ Never surface internal stage names. Never overclaim gated capabilities.
 
 ---
 
-## Phase 0 — readiness check (always first)
+## Phase 0 — load the Prime Directives, then the readiness check (always first)
 
-Invoke [[kata-readiness]]. On **BLOCK**, stop and surface the blocker. On **WARN**, surface and allow
+**Before anything else, load `protocol/prime-directives.md`** — the standing behavioral contract
+(PD-1 never-silently-defer/stub/skip designed work; PD-2 absolute truthfulness — a stub reported as
+built IS DRIFT). It binds the conductor from its first action, not just the dispatched workers, and
+holds for the entire run. This is the front-door guarantee that **every** kata execution operates
+under the Prime Directives (workers additionally receive them at the orientation stable tier).
+
+Then invoke [[kata-readiness]]. On **BLOCK**, stop and surface the blocker. On **WARN**, surface and allow
 proceed. Use the readiness verdict's priming-prompt richness score to pre-select a recommended
 grill depth for Phase 3 (the human always chooses).
 

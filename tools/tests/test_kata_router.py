@@ -101,8 +101,9 @@ def test_render_stanza_line_budget():
     except ValueError:
         pytest.fail("BEGIN or END marker was not found as a standalone line")
     content_lines = lines[begin_idx + 1 : end_idx]
-    assert len(content_lines) <= 17, (
-        f"Stanza body has {len(content_lines)} lines (budget: ≤17); "
+    assert len(content_lines) <= 19, (
+        f"Stanza body has {len(content_lines)} lines (budget: ≤19 — the ~15 instruction "
+        f"budget + CA-L20 re-anchor + the Prime Directives line, 2026-07-12); "
         f"body:\n" + "\n".join(content_lines)
     )
 
@@ -545,7 +546,7 @@ def test_render_stanza_with_summary_includes_text_in_body():
     assert "hello marker" in body, (
         f"Summary text 'hello marker' not found in body:\n{body}"
     )
-    # Base body is 17 lines; one summary line is inserted → ≤18 (the ~15 budget)
-    assert len(lines[begin_idx + 1 : end_idx]) <= 18, (
+    # Base body is 19 lines; one summary line is inserted -> <=20
+    assert len(lines[begin_idx + 1 : end_idx]) <= 20, (
         f"Body exceeds budget with summary: {len(lines[begin_idx + 1 : end_idx])} lines"
     )

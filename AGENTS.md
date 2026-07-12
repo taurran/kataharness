@@ -80,8 +80,11 @@ existing`; bootstrap sets `runShape: debug` + module `kata/module/debug`. To sta
 
 ## How to work in this repo
 
-- **Read first:** this file, then `docs/DESIGN.md` (charter), `docs/STANDARDS.md` (frontmatter +
-  versioning + naming), `.planning/STATE.md` + `.planning/HANDOFF.md`.
+- **Read first — ALWAYS, before any action, conductor and worker alike:**
+  **`protocol/prime-directives.md`** (the standing behavioral contract — loaded on EVERY run; PD-1
+  never-silently-defer, PD-2 absolute-truthfulness), then this file, then `docs/DESIGN.md` (charter),
+  `docs/STANDARDS.md` (frontmatter + versioning + naming + the **Determinism Doctrine**
+  `docs/DETERMINISM-DOCTRINE.md`), `.planning/STATE.md` + `.planning/HANDOFF.md`.
 - **Plan before building.** Use the `plan/` skills (grill → context → design-doc → plan). Freeze the
   plan before execution.
 - **Build in isolation.** Concurrent code work uses git worktrees (one owner per file set).
@@ -92,6 +95,11 @@ existing`; bootstrap sets `runShape: debug` + module `kata/module/debug`. To sta
 
 ## Conventions
 
+- **Determinism is a standard, not a preference** (`docs/DETERMINISM-DOCTRINE.md`): anything that
+  gates, scores, orders, hashes, compares, or writes a durable artifact MUST be reproducible —
+  same inputs ⇒ same bytes, any machine, any operator config. The ten laws are load-bearing on all
+  new engine code; apply them when building and check them in review and at the gate. *(Skill-level
+  enforcement in `kata-review`/`kata-evaluate` is a named next-session follow-up.)*
 - Line endings pinned to **LF** (`.gitattributes`) — build/handoff sizes must be deterministic.
 - Durable artifacts use **YAML frontmatter + `[[wikilinks]]` + `#tags`** (Obsidian-native).
 - Machine coordination state (board, task list) is separate from human/durable docs.

@@ -132,6 +132,17 @@ D33). Core repo skills never carry these fields.
 - `AGENTS.md` is **canonical** (cross-tool industry norm). `CLAUDE.md` is a **pointer** + Claude-only
   notes. Adapters for other tools map the canonical instructions to that tool's instruction file
   (e.g. `.cursorrules`, Kiro/Codex equivalents). One source of truth, many pointers.
+- Both entrypoints load **`protocol/prime-directives.md`** first (the behavioral contract on every
+  run) — see AGENTS.md *Read first* and the CLAUDE.md redirect.
+
+## 4a. The Determinism Doctrine (standard for all gate/score/hash/order code)
+
+`docs/DETERMINISM-DOCTRINE.md` is the canonical determinism standard: anything that gates, scores,
+orders, hashes, compares, or writes a durable artifact MUST be reproducible (same inputs ⇒ same
+bytes, any host/config). Its ten laws (one pinned git helper, sorted-at-the-boundary, no
+set/dict-driven output order, netstring digests, `sort_keys` on committed JSON, injectable clocks,
+sanitized gate subprocesses, randomness-mints-identity-only, explicit tie-breaks) apply to all new
+engine code; a violation in a gate/score/digest path is a gate-failing finding.
 
 ## 5. Obsidian / durable-artifact compatibility
 
