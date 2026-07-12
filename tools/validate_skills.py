@@ -10,9 +10,9 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 import yaml
 
@@ -275,7 +275,7 @@ def regenerate_readme(skills: list[Skill], readme: Path = README) -> None:
     readme.write_text(_splice_index(text, block), encoding="utf-8")
 
 
-def _is_real_repo_skill(s: "Skill") -> bool:
+def _is_real_repo_skill(s: Skill) -> bool:
     """A skill counts as a real repo skill when it lives under SKILLS_DIR or MODULES_DIR (D91).
     Previously the guard was SKILLS_DIR-only, which silently disabled README-sync enforcement
     when any module skill was present — a real bug fixed here."""
@@ -320,6 +320,9 @@ REQUIRED_PROTOCOL = {
     # every run — never-tiered; erasing or hollowing it must fail the validator.
     "prime-directives.md": ["PD-1", "PD-2", "DRIFT", "kata-defer", "escalation", "truthful",
                             "stable tier"],
+    # steering (2026-07-12 health review F-3): the operator->agent mid-run channel + AGENT_STOP
+    # graceful kill-switch — now a real engine (tools/kata_steer.py), no longer a prose facade.
+    "steering.md": ["AGENT_STOP", "Active directives", "kata_steer", "boundary", "graceful"],
 }
 
 
@@ -480,9 +483,17 @@ def run_checks(skills: list[Skill]) -> list[Finding]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="KataHarness skill-conformance validator")
     parser.add_argument("--write", action="store_true", help="regenerate the README skill index from frontmatter")
+    parser.add_argument(
+        "--only", metavar="SKILL",
+        help="scope the per-skill checks to one skill by name (W-7; the whole-tree checks "
+             "— README sync, protocol schemas — still run over the full set)",
+    )
     args = parser.parse_args(argv)
 
     skills = load_skills()
+    if args.only and not any(s.name == args.only for s in skills):
+        print(f"ERROR: --only: no skill named {args.only!r} found.", file=sys.stderr)
+        return 1
     if not skills:
         # D136/D33: zero skills discovered is NOT a green validator — an empty
         # discovery set means the tree is missing or mis-rooted, and certifying
@@ -503,11 +514,17 @@ def main(argv: list[str] | None = None) -> int:
         regenerate_readme(skills)
         print(f"README index regenerated from {len(skills)} skills.")
 
+    # Checks always run over the FULL set (so README-sync / protocol-schema
+    # checks are correct); --only then filters the REPORT to the named skill's
+    # per-skill findings — a focusing aid, never a narrower gate (W-7).
     findings = run_checks(skills)
+    if args.only:
+        findings = [f for f in findings if f.where == args.only]
     for f in findings:
         print(f"{f.level}: {f.where}: {f.msg}", file=sys.stderr)
     errors = [f for f in findings if f.level == "ERROR"]
-    print(f"\n{len(skills)} skills checked — {len(errors)} error(s), {len(findings) - len(errors)} warning(s).")
+    scope = f"1 skill ({args.only})" if args.only else f"{len(skills)} skills"
+    print(f"\n{scope} checked — {len(errors)} error(s), {len(findings) - len(errors)} warning(s).")
     return 1 if errors else 0
 
 

@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.11.1
+version: 0.12.0
 category: coordinate
 status: beta
 agnostic: true
@@ -560,6 +560,22 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    **(M4-P1 — ADDITIVE; BC: no reroll ⇒ unchanged):** "each completed task branch" = the task's **ACTIVE attempt
    branch** after any reroll (the abandoned attempt was worktree-removed+pruned at reroll time; § The
    corrective-action ladder).
+
+**Steering channel — read operator direction at each boundary (ADDITIVE; BC: absent `STEERING.md`/`AGENT_STOP` ⇒
+inert, byte-for-byte unchanged).** At every wave/frontier-recompute boundary (the same cadence as the liveness and
+self-handoff checks below — **never mid-task**), consult the operator→agent channel (`protocol/steering.md`):
+
+- **Graceful stop.** Call `kata_steer.stop_requested(<kata_dir>)` (`tools/kata_steer.py`). A `True` result — an
+  `<kata_dir>/AGENT_STOP` file OR a `## AGENT_STOP` line in `STEERING.md` — means **halt cleanly at THIS
+  boundary**: dispatch nothing new, **park** in-flight tasks (they resume via the normal restore path), refresh the
+  `HANDOFF.md` (`kata-handoff kind: self`), and stop. This is a boundary halt, **never a blind mid-task kill**
+  (`protocol/board.md`). Absent the marker ⇒ continue unchanged.
+- **Active directives.** Call `kata_steer.read_active_directives(<STEERING.md>)`. For each returned directive:
+  if it fits **within the frozen plan**, act on it and record it; if it would **change the plan**, do NOT silently
+  obey — route it through the escalation/re-plan path (spine #1: the plan does not drift; the operator's directive
+  is the deliberate re-plan trigger). After acting, move the directive to `STEERING.md`'s `## Consumed / delivered`
+  section (a prose edit the conductor owns; `kata_steer` is read-only). An absent/malformed `STEERING.md` yields no
+  directives — steering is additive, never run-fatal.
 
 **Context-autonomy — gauge-driven self-handoff at each boundary (ADDITIVE — CA-P1; BC: rotation-inactive ⇒ inert,
 byte-for-byte unchanged).** When context-autonomy rotation is active for this run — **one-shot shapes

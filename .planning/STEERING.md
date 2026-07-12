@@ -2,18 +2,14 @@
 
 Operator → agent steering channel (mid-run direction without a restart).
 
-> **Honesty note (2026-07-12 health review):** this file is a **manual convention, not an
-> automated harness behavior**. No skill, tool, or hook currently reads this file on a cadence,
-> and no `AGENT_STOP` kill-switch is implemented anywhere in the harness. An agent acts on this
-> file when the operator points it here (or a session-start read order includes it) — nothing
-> more. The earlier header claiming "the harness reads this on a cadence" and an `AGENT_STOP`
-> kill-switch described an aspiration, not a built feature (the built-but-claimed class this
-> project guards against). Wiring a real steering-check into the orchestrator's boundary cadence
-> + a real kill-switch is a named backlog item (see BACKLOG "2026-07-12 health-review
-> follow-ups"). Until that ships: to steer a running loop, interrupt the session directly.
-
-Convention (from Anthropic's `STEER.md`): write a directive here; when an agent is directed to
-this file it surfaces the directive, acts, and moves it to Consumed. Empty = no active steering.
+> **Wired 2026-07-12 (health review F-3).** This is now a **real harness behavior**, not a manual
+> convention: `kata-orchestrate` (≥ 0.12.0) reads this file at every wave/task boundary via
+> `tools/kata_steer.py`, backed by the contract in `protocol/steering.md`. Write a directive under
+> `## Active directives`; the running loop surfaces it at the next boundary, acts on it (or escalates
+> if it would change the frozen plan), and moves it to `## Consumed / delivered`. **Graceful stop:**
+> create an `AGENT_STOP` file in the run's `.kata/` dir OR add a `## AGENT_STOP` line here — the loop
+> halts cleanly at the next boundary (parks in-flight work, refreshes the handoff), never a blind
+> mid-task kill. Empty `## Active directives` = no active steering.
 
 ## Active directives
 _(none active — the BUILD-THROUGH directive below was DELIVERED 2026-06-20 and is consumed.)_
