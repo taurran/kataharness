@@ -315,7 +315,10 @@ class TestDedupe:
         # adval G-2: the sidecar records a crossing only after the directive is
         # printed — source-order pin (emit precedes _write_last_notified).
         src = GAUGE_CHECK.read_text(encoding="utf-8")
-        assert src.index("print(") < src.index("_write_last_notified(temp_dir")
+        # Match the CALL (positional args), not the def at module top.
+        emit_at = src.index('"hookSpecificOutput"')
+        record_at = src.index("_write_last_notified(temp_dir, session_id")
+        assert emit_at < record_at
 
     def test_corrupt_sidecar_treated_as_absent(self, tmp_path: Path) -> None:
         sid = _sid()
