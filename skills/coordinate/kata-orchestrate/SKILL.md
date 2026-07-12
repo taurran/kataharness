@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.12.0
+version: 0.12.1
 category: coordinate
 status: beta
 agnostic: true
@@ -586,7 +586,10 @@ by [[kata-selfhandoff]] and are **not re-decided here**; this step is the conduc
 
 - **Boundary placement (CA-L12).** The conductor evaluates the trigger at
   **wave/frontier-recompute boundaries only**; **never mid-task** (existing [[kata-selfhandoff]] mandate,
-  unchanged).
+  unchanged). On Claude, once the hook chain is installed via `kata_install.py --install-hooks`, the
+  UserPromptSubmit gauge-check hook (CG-L1/D152) additionally injects a `[KATA CONTEXT GAUGE]` directive on
+  every user turn when crossed — machinery, not memory; absent the deployed chain, this boundary check is
+  the only gauge consultation.
 - **Select the bridge file (CA-L1 bridge resolution — pinned convention).** Before calling `resolve_gauge`
   you must locate the `kata_bridge_path`. **The Claude adapter exposes NO session-id to the running
   conductor**: the SessionStart hook (`adapters/claude/hooks/kata-sessionstart.py`) receives `session_id` on

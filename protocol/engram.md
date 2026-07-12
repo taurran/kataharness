@@ -86,7 +86,7 @@ clean-room D30 promise made concrete: they drop in later **without re-contractin
 | **C2 — Fail to the human** | Backend **absent / slow / erroring / low-confidence** ⇒ **fall through to asking the human.** Never silent auto-proceed on a failed or uncertain CONSULT. | The "when in doubt, stop and make the human decide" safety spine (GB3/GB4); a flaky backend must not become a drift vector. |
 | **C3 — Privacy / scoping / redaction** | Define what the fingerprint MAY read (no secrets/PII — the **same redaction gate as `kata-handoff` §7**) and write; **project-scope** fingerprints (a private-project fingerprint must not leak preferences into a public KataHarness run); the LEARN path passes a redaction filter before any write. | D30 clean-room + the user's security domain; without it the LEARN path is a data-exfiltration / IP-leak surface. |
 | **C4 — LOCKED-decision guardrail** | CONSULT may **NEVER** auto-resolve a conflict with a LOCKED decision. Any `lockedDecisionInTension` (D52 escalation schema) ⇒ **always** a human escalation, never an engram auto-approve. | The hardest no-drift rule (D1); `kata-orchestrate` already forbids silently re-deciding LOCKED decisions. |
-| **C5 — Supersession / decay** | Learned patterns are **supersedable** — the user can reverse a preference; the fingerprint must support supersede-not-rewrite + a staleness/decay story. | The project supersedes, never rewrites (D57/D58/D59); a matured fingerprint must not pin a reversed preference. |
+| **C5 — Supersession / decay** | Learned patterns are **supersedable** — the user can reverse a preference; the fingerprint must support supersede-not-rewrite + a staleness/decay story. **Derived-view carve-out (D151/SB-L3):** loop-emitted pages (`produced-by: loop`) are **regenerable projections** of the durable raw ledger — rewriting one loses nothing, so the emitter may overwrite them idempotently; it **refuses, fail-closed, to touch any non-loop page** (`produced-by: wiki | agent`, or missing/unparseable frontmatter). C5 continues to protect hand-curated pages unweakened. | The project supersedes, never rewrites (D57/D58/D59); a matured fingerprint must not pin a reversed preference. |
 | **C6 — Audit every auto-resolution** | Every engram CONSULT that auto-resolves (human never asked) **still lands in the drift ledger / a CONSULT-decision log.** | Preserves the no-drift audit surface even when autonomy increases (symmetry with the LEARN log). |
 
 ## Seam registry
@@ -144,7 +144,8 @@ cross-linked **synthesis pages** *over* them. Markdown, Obsidian-native, no embe
 - **YAML frontmatter:** `produced-by: loop | wiki | agent` (the provenance marker — the loop feed writes
   `loop`); `source:` (the raw artifact paths it synthesizes); `date:`; `tags:` (namespaced taxonomy, e.g.
   `kata/synthesis/<topic>`); `scope: project | universal` (C3 project-scoping — a private project's synthesis
-  must not leak into a public run).
+  must not leak into a public run); optional `redactions: N` (SB-L4 — the count of redact-and-mark scrubs the
+  emitter applied to this page; present only when N>0).
 - **Body:** a tight synthesis of one coherent pattern (a recurring decision rationale, a preference signal, a
   lesson cluster) with `[[wikilinks]]` to the raw artifacts and to sibling synthesis pages. One page = one
   pattern, not a dump.
@@ -153,13 +154,22 @@ cross-linked **synthesis pages** *over* them. Markdown, Obsidian-native, no embe
   **Honest maturity note:** today §7 is a **prose contract** the emitting agent must honor — there is no
   automated filter yet. A **structural redaction filter + a test seam** land with β-runtime (BACKLOG); until
   then "fail-closed" is an instruction, not an enforced guarantee. This is the egress surface — treat it as such.
+  **D151 re-scope (loop feed, operator-directed 2026-07-12):** for the **loop feed** the engine
+  (`tools/learn_feed.py`, SB-L4) applies a **deterministic redact-and-mark scrub** — matches are replaced with
+  `[REDACTED:<class>]`, counted in the emit report + the page's `redactions: N` frontmatter — and it **never
+  blocks emit**. This consciously re-scopes C3's fail-closed gate for the loop feed (D151/G4): vault security
+  is the operator's responsibility. Agent-authored pages (the kata-improve β prose path) remain under the
+  fail-closed §7 contract above.
 
 **Emit target + no-op (BC1):** pages are written to **`engram.learnFeed.dir`** (`protocol/config.md`). Absent ⇒
 **no emit** (the no-op path — the feed is purely additive, like every seam). This dir is the LEARN-feed target,
 **distinct from `engram.backend`** (the CONSULT backend, still gated/off): the feed is active now; CONSULT is not.
 
-**Producer:** the loop feed rides the `kata-improve` **LEARN-feed emit-only sub-mode** (seam E6), run at
-IMPROVE / handoff time — out of the one-shot loop budget, never a per-task hook.
+**Producers (two, one schema):** (1) the **grill-close emit** (D151/G1) — at every grill's convergence-gate
+SHIP-to-close, `tools/learn_feed.py` emits the run's resolved ledger entries (see the `kata-grill` RUBRIC's
+grill-close emit step); and (2) the `kata-improve` **LEARN-feed emit-only sub-mode** (seam E6), the broader
+re-synthesis over the same engine, run at IMPROVE / handoff time — out of the one-shot loop budget, never a
+per-task hook.
 
 ## Lifecycle of a seam
 

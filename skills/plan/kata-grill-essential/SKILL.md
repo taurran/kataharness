@@ -5,7 +5,7 @@ description: >-
   the output does not need to be drift-proof — e.g., exploratory spikes, throwaway prototypes, or
   time-boxed pre-reads before a fuller grill.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: plan
 status: beta
 agnostic: true
@@ -44,7 +44,9 @@ tree, top-risk only) so downstream consumers know the coverage.
 ledger to a **fresh-context [[kata-review]] (essential tier) scoped to the branches that were grilled**.
 A SHIP from that pass closes the Essential grill; a HOLD names an under-specified branch to resolve before
 closing. No tier self-certifies — Essential narrows the *tree* it grills, not the *backstop* that gates
-it. The convergence gate is a structural invariant; a tier may reduce depth but may NOT drop it.
+it. The convergence gate is a structural invariant; a tier may reduce depth but may NOT drop it. On SHIP,
+run the RUBRIC's **grill-close emit** (the `tools/learn_feed.py` second-brain feed — no-op when
+`engram.learnFeed.dir` is unset; never blocks the close).
 
 **This tier does NOT replace a Standard grill before a production freeze.** Use it when a PoC or one-shot
 outcome is acceptable and the user has explicitly accepted the reduced coverage.

@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.4.0
+version: 0.5.0
 category: coordinate
 status: beta
 agnostic: true
@@ -199,6 +199,12 @@ budget: {calls: 10}}`) unless the operator edited the event list or budget at th
 never write a premium block. Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;
 a second validation pass here would be redundant bloat). Then hand off to the loop ([[kata-orchestrate]]).
+
+**Second-brain learn feed (`engram.learnFeed.dir`, SB-L7):** at config-write, seed `engram.learnFeed.dir`
+from `kata_settings.default_learn_feed_dir(settings)` (`tools/kata_settings.py`) when `vaultDir` is set —
+`<vaultDir>/second-brain/wiki/pages/synthesis`, computed top-down from `vaultDir`. The operator may override
+the seeded path. `vaultDir` absent ⇒ leave the key unset (the learn feed is then a no-op — BC1; never invent
+a feed dir).
 
 **Security-scan posture (`securityScan`, Lever 2 / F6):** write `"when-available"` by default — run a
 scan when a scanner is wired and the toolchain supports it, else degrade-and-surface (never a silent skip,

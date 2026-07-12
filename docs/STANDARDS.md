@@ -131,7 +131,8 @@ D33). Core repo skills never carry these fields.
 
 - `AGENTS.md` is **canonical** (cross-tool industry norm). `CLAUDE.md` is a **pointer** + Claude-only
   notes. Adapters for other tools map the canonical instructions to that tool's instruction file
-  (e.g. `.cursorrules`, Kiro/Codex equivalents). One source of truth, many pointers.
+  (e.g. `.cursorrules`, Kiro/Codex equivalents) *(planned — only `adapters/claude/` ships this
+  normalization today; CG-L5/A4)*. One source of truth, many pointers.
 - Both entrypoints load **`protocol/prime-directives.md`** first (the behavioral contract on every
   run) — see AGENTS.md *Read first* and the CLAUDE.md redirect.
 

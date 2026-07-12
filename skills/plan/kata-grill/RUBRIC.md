@@ -8,7 +8,8 @@ The tier-invariant grill method. The `kata-grill-<tier>` skills set only depth; 
 > + the RS research subagent + a `kata-defer` assumption log surfaced at the gate/handoff). Grill (up-front,
 > with-human) and RS (in-loop, without-human) are **one ambiguity-resolution spectrum**; skipping the grill
 > *shifts* resolution along it, it never removes it. When a grill *does* run (light/standard/full), it adds
-> alignment certainty by construction and its decision ledger feeds the cognitive fingerprint (D72).
+> alignment certainty by construction and its decision ledger feeds the second brain at grill close via the
+> `tools/learn_feed.py` emitter (D151 — see the grill-close emit step below).
 
 ---
 
@@ -150,6 +151,26 @@ declaring the grill done, hand the decision ledger to a **fresh-context adversar
 in its "could two independent builders still diverge here?" mode). This mirrors the no-write evaluator in
 EXECUTE — the one who did the work does not certify it. Only when that fresh pass returns SHIP is the grill
 complete; a HOLD names the under-specified branch → back to Phase 1.
+
+## Grill-close emit — feed the second brain (D151/G1)
+
+The moment the fresh pass returns SHIP and the ledger checkpoints its final entry, this grill's resolutions
+become second-brain signal — each resolved branch, the human's choice, and the rationale. When
+`engram.learnFeed.dir` is set (kata.config / `protocol/config.md`), run the LEARN-feed emitter over the run's
+ledger before handing off:
+
+```
+python tools/learn_feed.py --ledger <the run's GRILL-LEDGER.md> --decisions .planning/DECISIONS.md \
+    --feed-dir <engram.learnFeed.dir> --log-path <kata_settings.default_learn_log_path(settings)> \
+    --project <the target repo/project name> --kind <the run kind>
+```
+
+Pass `--decisions .planning/DECISIONS.md` only when that file is present. `engram.learnFeed.dir` unset ⇒
+**no-op** (BC1 — the feed is purely additive; a run without a configured second brain behaves exactly as
+before). The emit **never blocks the grill close** — an emitter failure is surfaced and the close proceeds.
+Surface the emit report to the operator as one line (pages written / skipped-identical / redactions /
+open-skipped). This step is what makes the D151 claim above true: the ledger feeds the second brain via
+`tools/learn_feed.py`, and future grills read it back through recall's config-gated second-brain source.
 
 ## Handoff to FREEZE
 

@@ -5,7 +5,7 @@ description: >-
   e.g., security-critical systems, public APIs with long backward-compat horizons, or architectures that
   are genuinely hard to reverse.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: plan
 status: beta
 agnostic: true
@@ -41,7 +41,9 @@ Run the **full Standard-depth method (see the RUBRIC)** **plus**:
   second-order effects (downstream systems, dependent services, data at rest/transit).
 - **Two fresh-context convergence passes.** Run [[kata-review]] twice with a fresh context between passes.
   The first pass gates the main decision tree; the second pass gates the security/edge-case layer added by
-  Advanced. Both must return SHIP before the grill is complete.
+  Advanced. Both must return SHIP before the grill is complete. On the final SHIP, run the RUBRIC's
+  **grill-close emit** (the `tools/learn_feed.py` second-brain feed — no-op when `engram.learnFeed.dir` is
+  unset; never blocks the close).
 
 The Advanced tier is strictly a superset of Standard — it produces the same artifact types (ledger + glossary
 + ADRs) but with higher coverage, deeper adversarial probing, and the double convergence gate.
