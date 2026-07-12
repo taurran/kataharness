@@ -212,10 +212,21 @@ def test_dispatch_empty_result_coder_is_failed():
 
 
 def test_normalize_researcher_requires_claim():
-    payload = kd.normalize("researcher", json.dumps({"claim": "x", "groundsToPlan": "y"}))
+    payload = kd.normalize(
+        "researcher", json.dumps({"claim": "x", "source": "doc:1", "groundsToPlan": "y"})
+    )
     assert payload["claim"] == "x"
     with pytest.raises(ValueError, match="claim"):
         kd.normalize("researcher", json.dumps({"source": "s"}))
+
+
+def test_normalize_researcher_rejects_ungrounded_claim():
+    # Q-13: a claim without a source citation is an ungrounded claim — not a finding.
+    # It must be rejected (default-FAIL), never flow in as a completed result.
+    with pytest.raises(ValueError, match="ungrounded|source"):
+        kd.normalize("researcher", json.dumps({"claim": "the sky is green", "groundsToPlan": "y"}))
+    with pytest.raises(ValueError, match="ungrounded|source"):
+        kd.normalize("researcher", json.dumps({"claim": "x", "source": "  "}))
 
 
 def test_normalize_evaluator_score_range():

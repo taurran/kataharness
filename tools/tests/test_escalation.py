@@ -603,6 +603,7 @@ def test_write_escalation_rejects_traversal_taskid(tmp_path):
     the filename (CWE-23). Mutation-proof: dropping the guard writes outside
     <kata_dir>/escalations/ and this raises-assertion goes RED."""
     import pytest
+
     from escalation import build_escalation, write_escalation
 
     kata_dir = tmp_path / ".kata"
@@ -624,10 +625,11 @@ def test_write_escalation_rejects_traversal_taskid(tmp_path):
 def test_write_escalation_rejects_backslash_taskid(tmp_path):
     """Windows-style separator variant is also rejected."""
     import pytest
+
     from escalation import build_escalation, write_escalation
 
     payload = build_escalation(
-        taskId="sub\evil",
+        taskId=r"sub\evil",
         kind="research-needed",
         decisionNeeded="d.",
         optionsConsidered=["a", "b"],

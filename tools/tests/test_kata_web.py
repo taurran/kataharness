@@ -348,8 +348,9 @@ class TestHandlerRoundTrip:
     """
 
     def _make_server(self, tmp_path):
-        import kata_web
         from http.server import ThreadingHTTPServer
+
+        import kata_web
 
         kata_dir = tmp_path / ".kata"
         kata_dir.mkdir()
@@ -362,6 +363,7 @@ class TestHandlerRoundTrip:
     def test_root_returns_html(self, tmp_path):
         import http.client
         import threading
+
         import kata_web
 
         server = self._make_server(tmp_path)
@@ -385,6 +387,7 @@ class TestHandlerRoundTrip:
     def test_api_view_returns_json(self, tmp_path):
         import http.client
         import threading
+
         import kata_web
 
         server = self._make_server(tmp_path)
@@ -406,9 +409,54 @@ class TestHandlerRoundTrip:
             t.join(timeout=2)
             server.server_close()
 
+    def test_api_view_corrupt_board_returns_error_state(self, tmp_path, monkeypatch):
+        """S-6: a corrupt/unreadable board surfaces a DISTINCT error state, not 'waiting'."""
+        import http.client
+        import threading
+
+        import kata_web
+
+        # Force build_web_view to blow up as a corrupt board would.
+        def _boom(_kata_dir):
+            raise RuntimeError("corrupt board")
+        monkeypatch.setattr(kata_web, "build_web_view", _boom)
+
+        server = self._make_server(tmp_path)
+        port = server.server_address[1]
+        t = threading.Thread(target=server.handle_request, daemon=True)
+        t.start()
+        try:
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+            conn.request("GET", "/api/view")
+            resp = conn.getresponse()
+            assert resp.status == 200  # fail-soft (localhost dev surface)
+            data = json.loads(resp.read().decode("utf-8"))
+            # distinct error state — NOT the idle "waiting" state
+            assert data.get("status") == "error"
+            assert data.get("waiting") is False
+        finally:
+            conn.close()
+            t.join(timeout=2)
+            server.server_close()
+
+    def test_error_view_helper_distinct_from_waiting(self):
+        """_error_view is distinguishable from the idle waiting payload."""
+        import kata_web
+        ev = kata_web._error_view()
+        assert ev["status"] == "error"
+        assert ev["waiting"] is False
+        assert ev["error"]
+
+    def test_page_html_has_error_render_path(self):
+        """PAGE_HTML must contain the client-side error render branch (S-6)."""
+        import kata_web
+        assert 'data.status === "error"' in kata_web.PAGE_HTML
+        assert "renderError" in kata_web.PAGE_HTML
+
     def test_unknown_path_returns_404(self, tmp_path):
         import http.client
         import threading
+
         import kata_web
 
         server = self._make_server(tmp_path)

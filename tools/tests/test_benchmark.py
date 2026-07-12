@@ -151,7 +151,6 @@ if str(_TOOLS) not in sys.path:
 
 import benchmark as bm  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Test-fixture helpers
 # ---------------------------------------------------------------------------
@@ -186,9 +185,9 @@ def _usage(
     escalations: int = 0,
     thrash_iters: int = 0,
     subagent_dispatches: int = 0,
-    cost_usd: Optional[float] = 0.01,
-    tokens_in: Optional[int] = 1000,
-    tokens_out: Optional[int] = 300,
+    cost_usd: float | None = 0.01,
+    tokens_in: int | None = 1000,
+    tokens_out: int | None = 300,
 ) -> dict:
     return {
         "label": label,
@@ -207,9 +206,9 @@ def _usage(
 def _make_arm(
     tmp_path: Path,
     label: str,
-    result: Optional[dict] = None,
-    mutation: Optional[dict] = None,
-    usage: Optional[dict] = None,
+    result: dict | None = None,
+    mutation: dict | None = None,
+    usage: dict | None = None,
 ) -> Path:
     """Create a minimal arm directory with .kata/ JSON artifacts."""
     root = tmp_path / label
@@ -592,6 +591,30 @@ class TestMutationMultiplier:
         assert arm["mutation_available"] is False
         assert abs(arm["q"] - 1.0) < 1e-9  # no penalty applied
 
+    def test_mutation_present_missing_key_not_full_credit(self, tmp_path):
+        """Q-9 (D136): mutation.json present but missing allNonVacuous ⇒ NOT full credit.
+
+        A present-but-truncated mutation.json (file exists → mutation_available=True)
+        that omits the allNonVacuous key must be treated as vacuous, not silently
+        given the full 1.0 multiplier — mirrors FIX 5 (truncated RESULT.json → FAIL).
+        """
+        # Present file, but the key is absent (truncated write).
+        root = _make_arm(tmp_path, "arm-a", mutation={"records": []})  # no allNonVacuous
+        sc = bm.score_arms(
+            {"arm-a": root},
+            f2p_p2p_results={"arm-a": _GATE_PASS},
+        )
+        arm = _arm_by_label(sc, "arm-a")
+        assert arm["mutation_available"] is True, (
+            "Q-9: the file is present → mutation_available must be True"
+        )
+        assert arm["detail"]["mutation_multiplier"] < 1.0, (
+            "Q-9: missing allNonVacuous on a present file ⇒ vacuous multiplier, not 1.0"
+        )
+        assert arm["q"] < 1.0, (
+            "Q-9: a truncated mutation.json must NOT earn the full 1.0 Q"
+        )
+
 
 # ---------------------------------------------------------------------------
 # TestAxisC
@@ -808,6 +831,73 @@ class TestParetoAndScalar:
         assert abs(arm["composite"] - expected) < 1e-9, (
             f"composite={arm['composite']} ≠ Q/(1+λ·C) = {expected}"
         )
+
+
+# ---------------------------------------------------------------------------
+# TestCompositeTieBreak (DET-11) — exact ties break by label, not insertion order
+# ---------------------------------------------------------------------------
+
+
+class TestCompositeTieBreak:
+    """DET-11: an EXACT composite tie is broken by lexicographically-first label.
+
+    Before the fix the rank sort (reverse=True) and the pareto-best max() both
+    resolved ties by arm insertion order — a non-deterministic scorecard artifact.
+    After the fix both use an explicit secondary tie-break on the arm label, so
+    rank-1 (and pareto-best) is the lexicographically-first label regardless of
+    the order arms are supplied.
+    """
+
+    def _tied_pair(self, tmp_path: Path, first: str, second: str) -> dict:
+        """Two arms with identical usage + identical gate results → exact composite tie."""
+        root_first = _make_arm(
+            tmp_path, first,
+            usage=_usage(first, wall_clock_s=10.0, tool_calls=5, cost_usd=0.02),
+        )
+        root_second = _make_arm(
+            tmp_path, second,
+            usage=_usage(second, wall_clock_s=10.0, tool_calls=5, cost_usd=0.02),
+        )
+        # Insertion order = (first, second) as given by the caller.
+        return bm.score_arms(
+            {first: root_first, second: root_second},
+            f2p_p2p_results={
+                first: {"f2p": {"t1": True}, "p2p": {}},
+                second: {"f2p": {"t1": True}, "p2p": {}},
+            },
+        )
+
+    def test_rank_one_is_lexicographically_first_forward_order(self, tmp_path):
+        """Input order (arm-a, arm-z): exact tie ⇒ rank-1 is 'arm-a'."""
+        sc = self._tied_pair(tmp_path / "fwd", "arm-a", "arm-z")
+        arm_a = _arm_by_label(sc, "arm-a")
+        arm_z = _arm_by_label(sc, "arm-z")
+        assert arm_a["composite"] == pytest.approx(arm_z["composite"]), (
+            "Fixture invariant: the two arms must have an exact composite tie"
+        )
+        assert arm_a["rank"] == 1, "DET-11: lexicographically-first label must be rank 1"
+        assert arm_z["rank"] == 2
+
+    def test_rank_one_is_lexicographically_first_reversed_order(self, tmp_path):
+        """Input order (arm-z, arm-a): rank-1 is STILL 'arm-a' (insertion order ignored)."""
+        sc = self._tied_pair(tmp_path / "rev", "arm-z", "arm-a")
+        arm_a = _arm_by_label(sc, "arm-a")
+        arm_z = _arm_by_label(sc, "arm-z")
+        assert arm_a["composite"] == pytest.approx(arm_z["composite"])
+        assert arm_a["rank"] == 1, (
+            "DET-11: rank-1 must be 'arm-a' regardless of input arm order"
+        )
+        assert arm_z["rank"] == 2
+
+    def test_pareto_best_is_lexicographically_first_on_tie(self, tmp_path):
+        """pareto-best recommendation resolves an exact tie to the first label, both orders."""
+        for sub, a, b in (("p1", "arm-a", "arm-z"), ("p2", "arm-z", "arm-a")):
+            sc = self._tied_pair(tmp_path / sub, a, b)
+            pareto = [r for r in sc["recommendations"] if r["kind"] == "pareto-best"]
+            assert len(pareto) == 1
+            assert pareto[0]["arm"] == "arm-a", (
+                f"DET-11: pareto-best must be 'arm-a' on an exact tie (input order {a},{b})"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -1156,7 +1246,7 @@ class TestTraversalGuard:
         clone_root.mkdir()
         called: list = []
 
-        def fake_rnt(test_path: str, test_name: str, *, cwd: Optional[str] = None) -> bool:
+        def fake_rnt(test_path: str, test_name: str, *, cwd: str | None = None) -> bool:
             called.append((test_path, test_name))
             return True
 
@@ -1267,7 +1357,7 @@ class TestRunDualGate:
         calls: list = []
 
         def fake_run_named_test(
-            test_path: str, test_name: str, *, cwd: Optional[str] = None
+            test_path: str, test_name: str, *, cwd: str | None = None
         ) -> bool:
             calls.append((test_path, test_name))
             return True  # all pass
@@ -1283,21 +1373,25 @@ class TestRunDualGate:
         assert result["f2p"]["tests/test_foo.py::test_f2p"] is True
         assert result["p2p"]["tests/test_bar.py::test_p2p"] is True
 
-    def test_run_dual_gate_malformed_id_returns_false(self, tmp_path):
-        """A test-ID without '::' is malformed and returns False (fail-safe)."""
+    def test_run_dual_gate_malformed_id_raises(self, tmp_path):
+        """A test-ID without '::' is an authoring error → ValueError (Q-8 / D136).
+
+        UPDATED for finding Q-8: the OLD behavior returned False, silently
+        scoring a typo'd criteria ID as an arm F2P/P2P *failure* ("arm failed"
+        when the truth is "criteria malformed").  The fix raises instead — never
+        a silent False.  run_named_test must not be invoked.
+        """
         clone_root = tmp_path / "clone"
         clone_root.mkdir()
 
-        with patch("mutation_check.run_named_test", return_value=True):
-            result = bm.run_dual_gate(
-                clone_root,
-                f2p_ids=["no_separator_here"],
-                p2p_ids=[],
-            )
-
-        assert result["f2p"]["no_separator_here"] is False, (
-            "Malformed test-ID (no '::') must return False, not call run_named_test"
-        )
+        with patch("mutation_check.run_named_test", return_value=True) as mock_rnt:
+            with pytest.raises(ValueError, match=r"malformed test-ID|::"):
+                bm.run_dual_gate(
+                    clone_root,
+                    f2p_ids=["no_separator_here"],
+                    p2p_ids=[],
+                )
+        mock_rnt.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -1474,7 +1568,7 @@ class TestRunDualGateCwd:
         clone_root.mkdir()
         calls: list = []
 
-        def fake_rnt(test_path: str, test_name: str, *, cwd: Optional[str] = None) -> bool:
+        def fake_rnt(test_path: str, test_name: str, *, cwd: str | None = None) -> bool:
             calls.append({"test_path": test_path, "test_name": test_name, "cwd": cwd})
             return True
 
@@ -1492,7 +1586,7 @@ class TestRunDualGateCwd:
         clone_root.mkdir()
         calls: list = []
 
-        def fake_rnt(test_path: str, test_name: str, *, cwd: Optional[str] = None) -> bool:
+        def fake_rnt(test_path: str, test_name: str, *, cwd: str | None = None) -> bool:
             calls.append({"test_path": test_path, "test_name": test_name, "cwd": cwd})
             return True
 

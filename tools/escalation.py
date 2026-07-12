@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List, Optional
 
 # ---------------------------------------------------------------------------
 # Constants — enum-equivalent sets (keep in sync with protocol/escalation.md)
@@ -45,18 +44,18 @@ _VALID_GROUNDS_TO_PLAN = frozenset({"YES", "NO", "PARTIAL"})
 
 
 def build_escalation(
-    taskId: Optional[str] = None,
-    kind: Optional[str] = None,
-    decisionNeeded: Optional[str] = None,
-    optionsConsidered: Optional[List[str]] = None,
-    agentRecommendation: Optional[str] = None,
-    rationale: Optional[str] = None,
+    taskId: str | None = None,
+    kind: str | None = None,
+    decisionNeeded: str | None = None,
+    optionsConsidered: list[str] | None = None,
+    agentRecommendation: str | None = None,
+    rationale: str | None = None,
     *,
-    lockedDecisionInTension: Optional[str] = None,
-    costOfWaiting: Optional[str] = None,
-    costOfProceeding: Optional[str] = None,
+    lockedDecisionInTension: str | None = None,
+    costOfWaiting: str | None = None,
+    costOfProceeding: str | None = None,
     status: str = "open",
-    resolution: Optional[str] = None,
+    resolution: str | None = None,
 ) -> dict:
     """Validate inputs and build the protocol/escalation.md payload dict.
 

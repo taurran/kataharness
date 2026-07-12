@@ -31,7 +31,6 @@ import pytest
 import kata_install as ki
 import kata_version as kv
 
-
 # ---------------------------------------------------------------------------
 # Shared fixture
 # ---------------------------------------------------------------------------
@@ -1322,6 +1321,7 @@ def test_c2_fork_source_in_materialized_json_when_overlay_also_present(
 def test_c2_validate_unknown_base_stops_install(fake_home, tmp_path):
     """validate_shadows: unknown supersedes target → install STOPS (raises ValueError)."""
     import json as _j_ub
+
     import kata_overlay as ko
 
     asd = tmp_path / "bad-toolkit-ub"
@@ -1354,6 +1354,7 @@ def test_c2_validate_unknown_base_stops_install(fake_home, tmp_path):
 def test_c2_validate_double_supersede_stops_install(fake_home, tmp_path):
     """validate_shadows: two forks claim same upstream → install STOPS (raises ValueError)."""
     import json as _j_ds
+
     import kata_overlay as ko
 
     asd = tmp_path / "conflict-toolkit"

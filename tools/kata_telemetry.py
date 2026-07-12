@@ -33,7 +33,7 @@ import json
 import statistics
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -120,7 +120,7 @@ def _normalize(path: str) -> str:
 
 def _now_utc() -> str:
     """Return the current UTC time as an ISO-8601 ``...Z`` string."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _run_git(
@@ -433,7 +433,22 @@ def evidence_digest(repo_root: str, paths: list[str], *, commit: str | None) -> 
         TelemetryError: On empty *paths* or an unresolvable path.
     """
     entries = evidence_entries(repo_root, paths, commit=commit)
-    return hashlib.sha256("\n".join(entries).encode("utf-8")).hexdigest()
+    # DET-10 (DETERMINISM-DOCTRINE law 4 — length-prefix every multi-item digest):
+    # netstring-frame each entry (``f"{len(b)}:"`` + bytes — the exact
+    # benchmark_control.content_hash / contract_edges._netstring_hash in-repo
+    # pattern) before hashing. A bare "\n".join is frame-ambiguous: a git-legal
+    # newline in a filename lets two different (path, blob) partitions stream the
+    # same bytes and collide (the D98 collision lesson). This is a digest-SCHEMA
+    # change — the value differs from the pre-DET-10 bare-join digest. No committed
+    # artifact/test pins the old literal (round-trip tests assert stamp==verify,
+    # preserved: both modes hash the identical entry list). The entry contract is
+    # unversioned, so there is no schema counter to bump.
+    h = hashlib.sha256()
+    for entry in entries:
+        b = entry.encode("utf-8")
+        h.update(f"{len(b)}:".encode("ascii"))
+        h.update(b)
+    return h.hexdigest()
 
 
 # ---------------------------------------------------------------------------

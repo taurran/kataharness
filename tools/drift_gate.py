@@ -43,10 +43,8 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Union
-
 
 # ---------------------------------------------------------------------------
 # §5 v1 FAST-FOLLOW SEAM — structural_drift_verdict (NOT IMPLEMENTED IN v1)
@@ -106,6 +104,11 @@ DEFAULT_SCRUB_PATTERNS: list[str] = [
     r"(?i:timestamp|epoch|ts|time)[\"'\s:=]+\d{10,13}",
     # POSIX /tmp/ paths
     r"/tmp/[^\s]+",
+    # macOS per-user temp dirs (TMPDIR default): /var/folders/xx/.../T/... (DET-12).
+    # NARROW: rooted at the fixed /var/folders/ prefix, so only the OS temp tree is
+    # scrubbed — a /var/folders literal is the temp-dir root by construction, never
+    # a business value.
+    r"/var/folders/[^\s]+",
     # Windows %TEMP% / AppData\Local\Temp paths
     r"[A-Za-z]:\\[^\\]+\\AppData\\Local\\Temp\\[^\s]+",
 ]
@@ -145,7 +148,13 @@ def parse_test_outcomes(output_text: str) -> dict[str, str]:
     """
     outcomes: dict[str, str] = {}
     for match in _OUTCOME_LINE_RE.finditer(output_text):
-        test_id = match.group(1)
+        # DET-12: normalize the node-id path separator to '/'. pytest emits the
+        # OS-native separator, so a Windows-authored AEL id (``tests\x.py::t``) and
+        # a Linux run's id (``tests/x.py::t``) name the SAME test but would mismatch
+        # the AEL / classify_transitions set-compare. Only the path segment (before
+        # '::') carries a separator; pytest names after '::' never do, so a blanket
+        # replace is safe.
+        test_id = match.group(1).replace("\\", "/")
         status = match.group(2)
         outcomes[test_id] = "green" if status == "PASSED" else "red"
     return outcomes
@@ -492,13 +501,13 @@ def defer_record(finding: dict, reason: str) -> dict:
         "finding_id": str(finding_id),
         "finding": finding,
         "reason": reason,
-        "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "utc": datetime.now(tz=UTC).isoformat(),
     }
 
 
 def emit_deferrals(
     records: list[dict],
-    path: Union[str, Path],
+    path: str | Path,
 ) -> None:
     """Write deferred-fix records as JSON to *path*.
 
@@ -634,13 +643,13 @@ def build_drift_report(
         "behavioral": behavioral,
         "snapshot": snapshot,
         "verdict": overall,
-        "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "utc": datetime.now(tz=UTC).isoformat(),
     }
 
 
 def emit_drift_report(
     report: dict,
-    path: Union[str, Path],
+    path: str | Path,
 ) -> None:
     """Write a drift report as JSON to *path*.
 

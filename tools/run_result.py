@@ -15,10 +15,8 @@ from __future__ import annotations
 import json
 import re
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Union
-
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -58,7 +56,7 @@ def build_result(
     exit_code: int,
     baseline_sha: str,
     result_sha: str,
-    utc: Union[str, None] = None,
+    utc: str | None = None,
 ) -> dict:
     """Build a machine-checkable result dict for a single gate run.
 
@@ -79,7 +77,7 @@ def build_result(
                     stdoutTail, baselineSha, resultSha, utc.
     """
     if utc is None:
-        utc = datetime.now(tz=timezone.utc).isoformat()
+        utc = datetime.now(tz=UTC).isoformat()
 
     counts = _parse_pytest_counts(output)
 
@@ -97,7 +95,7 @@ def build_result(
     }
 
 
-def write_result(result: dict, path: Union[str, Path]) -> None:
+def write_result(result: dict, path: str | Path) -> None:
     """Write *result* as indented JSON to *path*.
 
     Parameters

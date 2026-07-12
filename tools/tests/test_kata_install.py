@@ -24,8 +24,8 @@ from pathlib import Path
 
 import pytest
 
-import kata_install as ki
 import kata_dispatch
+import kata_install as ki
 
 
 @pytest.fixture()

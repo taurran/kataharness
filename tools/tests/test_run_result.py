@@ -11,7 +11,6 @@ from pathlib import Path
 
 import run_result
 
-
 REQUIRED_KEYS = {
     "gateName",
     "command",

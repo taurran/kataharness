@@ -9,7 +9,6 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-from typing import Optional
 
 
 def mutation_verdict(baseline_passed: bool, mutated_passed: bool) -> dict:
@@ -61,7 +60,7 @@ def run_named_test(
     test_path: str,
     test_name: str,
     *,
-    cwd: Optional[str] = None,
+    cwd: str | None = None,
     timeout: float = 600.0,
 ) -> bool:
     """Run a single named pytest test via ``uv run pytest`` and return True if it passed.
@@ -95,9 +94,14 @@ def run_named_test(
     Returns:
         True if pytest exits 0 (test passed), False otherwise (including timeout).
     """
-    run_env: Optional[dict] = None
+    # DET-09: gate/score subprocesses run in a sanitized env so the same clone
+    # scores identically across hosts — strip PYTEST_ADDOPTS + disable plugin
+    # autoload (pytest-randomly etc.) which can flip the Axis-Q boolean
+    # (DETERMINISM-DOCTRINE law 8). cwd's PYTHONPATH prepend composes on top.
+    run_env: dict = os.environ.copy()
+    run_env.pop("PYTEST_ADDOPTS", None)
+    run_env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
     if cwd is not None:
-        run_env = os.environ.copy()
         existing_pp = run_env.get("PYTHONPATH", "")
         run_env["PYTHONPATH"] = cwd + (os.pathsep + existing_pp if existing_pp else "")
 

@@ -278,11 +278,20 @@ def diff_stat(ref: str) -> str:
     Args:
         ref: Git ref (commit hash, branch, tag, etc.) to diff against HEAD.
 
+    Pinned for determinism (DET-06, DETERMINISM-DOCTRINE law 6): a bare
+    ``git diff --stat`` auto-sizes its output to the ``COLUMNS`` env var (falling
+    back to the terminal width), so the same diff yields byte-different diffstat
+    strings per terminal width. The string is stored verbatim in the durable
+    ``footprint.json`` (via :func:`manifest` → ``gate_emit``), so a width-varying
+    stat is a non-reproducible durable artifact. ``--stat=200`` and
+    ``--stat-graph-width=200`` pin the total and graph column widths independent
+    of ``COLUMNS`` / TTY, so the stat is byte-stable across operator terminals.
+
     Returns:
         Raw stat string from git.
     """
     result = subprocess.run(
-        ["git", "diff", "--stat", ref],
+        ["git", "diff", "--stat=200", "--stat-graph-width=200", ref],
         capture_output=True,
         text=True,
         check=True,

@@ -35,7 +35,6 @@ import pytest
 
 import recall
 
-
 _SOURCE = (Path(__file__).resolve().parent.parent / "recall.py")
 _FIX = Path(__file__).resolve().parent / "fixtures" / "recall"
 

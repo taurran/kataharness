@@ -70,9 +70,9 @@ import hashlib
 import json
 import re
 import shlex
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 # ---------------------------------------------------------------------------
 # Public constants
@@ -465,7 +465,7 @@ def _record_install(
             "classification": dep.get("classification", "build-time"),
             "project": project_path or "",
             "branch": branch or "",
-            "installedAt": datetime.now(timezone.utc).isoformat(),
+            "installedAt": datetime.now(UTC).isoformat(),
             "used": True,
         }
     )
@@ -885,6 +885,13 @@ def run_preflight(
             Full ``kata.config`` dict.  The engine reads the ``preflight`` block
             (``protocol/config.md:29-36``) and ``target.baselineGate``
             (``protocol/config.md:22``).  Safe defaults when absent.
+
+            F5 footgun note: ``preflight.allowed_registries`` holds MANAGER NAMES
+            (``"pip"``, ``"uv"``, ``"npm"``, ``"cargo"``) — NOT registry URLs.  It
+            is intersected with ``ALLOWED_MANAGERS`` (Guard 1); the default is the
+            manager set.  Setting registry URLs here blocks EVERY dependency (no URL
+            is a valid manager name).  The name is retained for backward-compat;
+            forced per-manager registry URLs are in ``_MANAGER_REGISTRY_URLS``.
         runner:
             Injectable ``(argv: list[str]) -> (exit_code: int, stdout: str)``.
             Used for both ``verify`` and ``install`` calls.  Default: real
@@ -947,6 +954,12 @@ def run_preflight(
     # --- Extract preflight config (protocol/config.md:29-36) ---
     kata_cfg: dict = kata_config or {}
     preflight_cfg: dict = kata_cfg.get("preflight", {})
+    # F5 footgun note: despite its name, ``preflight.allowed_registries`` holds
+    # MANAGER NAMES (e.g. "pip", "npm", "uv", "cargo") — NOT registry URLs.  It is
+    # intersected with ``ALLOWED_MANAGERS`` at Guard 1 below.  The default is the
+    # manager set, and an operator who sets registry URLs here makes EVERY dep
+    # block (no URL is ∈ ALLOWED_MANAGERS).  Name kept for backward-compat; the
+    # forced per-manager registry URLs live in ``_MANAGER_REGISTRY_URLS``.
     allowed_registries: set[str] = set(
         preflight_cfg.get("allowed_registries", list(ALLOWED_MANAGERS))
     )
@@ -1122,6 +1135,9 @@ def run_preflight(
         manager: str | None = dep.get("manager")
 
         # ---- Guard 1: manager must be in BOTH the global allowlist AND the config's allowed_registries
+        # NOTE (F5): ``allowed_registries`` is compared against ``manager`` — it holds
+        # MANAGER NAMES ("pip"/"npm"/…), NOT registry URLs.  Setting URLs there blocks
+        # every dep (a URL is never ∈ ALLOWED_MANAGERS).  See the extraction note above.
         if manager not in ALLOWED_MANAGERS or manager not in allowed_registries:
             blockers.append(
                 f"dep {name!r}: manager {manager!r} not in allowlist "

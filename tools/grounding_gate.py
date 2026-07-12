@@ -25,8 +25,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
-
 
 # ---------------------------------------------------------------------------
 # Path-traversal guard (mirrors gate_emit._safe_path)
@@ -78,8 +76,25 @@ def grounding_verdict(
         claim.  **Never assumed True** — default-FAIL: the caller must assert this.
     locked_conflict:
         True if folding this finding would contradict a LOCKED decision.
+
+    Raises
+    ------
+    ValueError
+        If ``finding["groundsToPlan"]`` is absent or not one of
+        ``{"YES", "NO", "PARTIAL"}``.  ``build_finding`` enforces this enum, but
+        other producers can construct a finding dict directly — an unvalidated
+        lowercase/typo/absent value would silently skip the ESCALATE branch
+        (D136 — decision code hard-fails on malformed input, never a silent
+        permissive default).
     """
-    if locked_conflict or finding.get("groundsToPlan") == "NO":
+    grounds = finding.get("groundsToPlan")
+    if grounds not in {"YES", "NO", "PARTIAL"}:
+        raise ValueError(
+            "grounding_gate: finding['groundsToPlan'] must be one of "
+            f"{{'YES', 'NO', 'PARTIAL'}}, got {grounds!r} "
+            "(D136 — no silent permissive default)"
+        )
+    if locked_conflict or grounds == "NO":
         return "ESCALATE"
     if not source_supports:
         return "REJECT"
@@ -127,7 +142,7 @@ def build_verdict(
 # ---------------------------------------------------------------------------
 
 
-def write_grounding(kata_dir: str, verdicts: List[dict]) -> str:
+def write_grounding(kata_dir: str, verdicts: list[dict]) -> str:
     """Write ``<kata_dir>/grounding.json`` and return the absolute path.
 
     Parameters
@@ -145,10 +160,18 @@ def write_grounding(kata_dir: str, verdicts: List[dict]) -> str:
     out = _safe_path(kata_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    payload = {
-        "verdicts": verdicts,
-        "allGrounded": all(v["verdict"] == "GROUND" for v in verdicts),
-    }
+    if verdicts:
+        payload = {
+            "verdicts": verdicts,
+            "allGrounded": all(v["verdict"] == "GROUND" for v in verdicts),
+        }
+    else:
+        # Q-3 (D136): an empty verdict list makes ``all(...)`` vacuously True,
+        # which would write allGrounded:true — a spurious fold-authorization
+        # signal derived from zero decision input.  The module does not raise on
+        # empty input elsewhere (it degrades / fail-closes), so emit an explicit
+        # non-permissive vacuous marker rather than a silent permissive default.
+        payload = {"verdicts": [], "allGrounded": False, "vacuous": True}
 
     grounding_path = out / "grounding.json"
     grounding_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

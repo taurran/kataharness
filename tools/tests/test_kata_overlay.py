@@ -312,6 +312,40 @@ class TestApplyOverlayFrontmatter:
         assert fm["model"] == "sonnet"
         assert fm["tags"] == ["kata/meta", "kata/spine"]
 
+    # F4: a non-indented block-list item `- k: v` must NOT be misread as a
+    # top-level key (which truncated the owning key's value-block).
+    _SKILL_BLOCK_LIST = (
+        "---\n"
+        "name: kata-list\n"
+        "steps:\n"
+        "- run: build\n"
+        "- run: test\n"
+        "model: sonnet\n"
+        "---\n"
+        "\n"
+        "## Output\n"
+        "body\n"
+    )
+
+    def test_override_block_list_of_mappings_reconstructs(self) -> None:
+        """Overriding a key whose value is a `- k: v` block list replaces it
+        wholesale — no stray list items strand after the new flow line (F4)."""
+        entry = self._entry({"steps": ["lint", "ship"]})
+        result = ko.apply_overlay(self._SKILL_BLOCK_LIST, entry)
+        fm, _ = parse_frontmatter(result)  # would raise on stranded list items
+        assert fm["steps"] == ["lint", "ship"]
+        # Non-overridden keys survive; the mapping-list did not truncate them.
+        assert fm["name"] == "kata-list"
+        assert fm["model"] == "sonnet"
+
+    def test_scalar_override_preserves_block_list_of_mappings(self) -> None:
+        """Overriding a scalar next to a `- k: v` block list leaves the list intact (F4)."""
+        entry = self._entry({"model": "haiku"})
+        result = ko.apply_overlay(self._SKILL_BLOCK_LIST, entry)
+        fm, _ = parse_frontmatter(result)
+        assert fm["model"] == "haiku"
+        assert fm["steps"] == [{"run": "build"}, {"run": "test"}]
+
 
 # ---------------------------------------------------------------------------
 # TestApplyOverlayPrepend

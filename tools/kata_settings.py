@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import kata_version
@@ -215,7 +215,7 @@ def write_settings(
 
 def _utc_now_iso() -> str:
     """Current instant as an ISO-8601 UTC string (matches kata_version stamps)."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _merge_write(updates: dict, home: str | Path | None) -> Path:

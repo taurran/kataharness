@@ -21,7 +21,6 @@ from pathlib import Path
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -198,6 +197,7 @@ def test_prove_many_collects_verdicts(tmp_path):
 def test_default_runner_timeout_returns_false(monkeypatch, capsys):
     """Q-4: subprocess.TimeoutExpired → False (failure-shaped), never an unhandled raise."""
     import subprocess
+
     import mutation_run
 
     def hung_run(*args, **kwargs):
@@ -231,3 +231,58 @@ def test_default_runner_forwards_default_timeout_600(monkeypatch):
     assert seen.get("timeout") == 600.0, (
         "Q-4: _default_runner must bound the subprocess with a 600s default timeout"
     )
+
+
+# ---------------------------------------------------------------------------
+# DET-09 (2026-07-12 health review): sanitized gate env (the determinism win).
+# shell=True is deliberately RETAINED — the test_cmd contract uses shell
+# metacharacters (`cd /d "<dir>" && <py> -m pytest ...`); argv-tokenizing it
+# would break every mutation-proof caller. The env sanitization (stripping
+# PYTEST_ADDOPTS + disabling plugin autoload) is what actually removes the
+# cross-host nondeterminism (those flip the Axis-Q boolean).
+# ---------------------------------------------------------------------------
+
+def test_default_runner_env_is_sanitized(monkeypatch):
+    """The gate subprocess env strips PYTEST_ADDOPTS and disables plugin autoload
+    (DET-09). Mutation-proof: without _sanitized_gate_env this assertion goes RED."""
+    import mutation_run
+
+    monkeypatch.setenv("PYTEST_ADDOPTS", "-x --ff")
+    seen: dict = {}
+
+    class _Ok:
+        returncode = 0
+
+    def spy_run(*args, **kwargs):
+        seen.update(kwargs)
+        return _Ok()
+
+    monkeypatch.setattr(mutation_run.subprocess, "run", spy_run)
+    mutation_run._default_runner("echo ok")
+    env = seen.get("env") or {}
+    assert "PYTEST_ADDOPTS" not in env, "PYTEST_ADDOPTS must be stripped from the gate env"
+    assert env.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD") == "1"
+
+
+def test_default_runner_preserves_shell_contract(monkeypatch):
+    """shell=True is retained (the test_cmd shell-string contract) AND the env is
+    sanitized — both properties on the same call."""
+    import mutation_run
+
+    monkeypatch.setenv("PYTEST_ADDOPTS", "-x")
+    seen: dict = {}
+
+    class _Ok:
+        returncode = 0
+
+    def spy_run(*args, **kwargs):
+        seen["cmd"] = args[0] if args else kwargs.get("args")
+        seen["shell"] = kwargs.get("shell", False)
+        seen["env"] = kwargs.get("env")
+        return _Ok()
+
+    monkeypatch.setattr(mutation_run.subprocess, "run", spy_run)
+    mutation_run._default_runner('cd /d "x" && py -m pytest')
+    assert seen["shell"] is True, "shell=True is the test_cmd contract; must be preserved"
+    assert isinstance(seen["cmd"], str), "shell command stays a string"
+    assert "PYTEST_ADDOPTS" not in (seen["env"] or {}), "env still sanitized under shell"

@@ -133,7 +133,6 @@ if str(_TOOLS) not in sys.path:
 
 import benchmark_def  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Shared fixtures / helpers
 # ---------------------------------------------------------------------------
@@ -144,7 +143,7 @@ _VALID_HASH: str = "a" * 64  # 64 lowercase hex chars — passes validation
 def _make_control(
     kind: str = "code",
     ref: str = "/control/ref",
-    content_hash: Optional[str] = None,
+    content_hash: str | None = None,
 ) -> dict:
     """Build a valid control dict for build_def tests."""
     return {
@@ -171,7 +170,7 @@ def _make_arm(label: str = "baseline") -> dict:
 
 def _make_provenance(
     tool_version: str = "0.1.0",
-    skill_versions: Optional[dict] = None,
+    skill_versions: dict | None = None,
 ) -> dict:
     return {
         "tool_version": tool_version,
@@ -196,10 +195,10 @@ def _make_valid_build_args(**overrides) -> dict:
 
 
 def _make_scorecard(
-    benchmark_id: Optional[str] = None,
+    benchmark_id: str | None = None,
     q: float = 0.8,
     c_norm: float = 0.3,
-    provenance: Optional[dict] = None,
+    provenance: dict | None = None,
 ) -> dict:
     """Build a minimal scorecard dict (mirrors scorecard_schema shape from S2)."""
     arm = {
@@ -1227,3 +1226,36 @@ class TestLoadCriteria:
         assert "p2p" in result
         assert isinstance(result["f2p"], list)
         assert isinstance(result["p2p"], list)
+
+
+# --- DET-13 fold (2026-07-12 health review): content-addressed benchmark_id ------
+
+def test_content_addressed_id_deterministic():
+    """DET-13 (DETERMINISM-DOCTRINE law 9): the content-addressed id derivation is
+    deterministic for identical inputs — same content_hash + criteria ⇒ same id on
+    any machine, no persist-and-reuse round-trip. Contrast with uuid.uuid4() (minted
+    random each build, comparable only after persist)."""
+    ch = "a" * 64
+    crit = {"f2p": ["tests/x.py::t1"], "p2p": ["tests/y.py::t2"]}
+    id1 = benchmark_def.content_addressed_id(ch, crit)
+    id2 = benchmark_def.content_addressed_id(ch, crit)
+    assert id1 == id2
+    assert id1.startswith("benchmark_ca_")
+
+
+def test_content_addressed_id_order_independent():
+    """Criteria ids are sorted before framing — caller order never changes the id."""
+    ch = "a" * 64
+    a = benchmark_def.content_addressed_id(ch, {"f2p": ["b::t", "a::t"], "p2p": []})
+    b = benchmark_def.content_addressed_id(ch, {"f2p": ["a::t", "b::t"], "p2p": []})
+    assert a == b
+
+
+def test_content_addressed_id_distinct_on_different_inputs():
+    """Different content_hash OR different criteria ⇒ distinct id (no collision)."""
+    crit = {"f2p": ["tests/x.py::t1"], "p2p": []}
+    base = benchmark_def.content_addressed_id("a" * 64, crit)
+    assert base != benchmark_def.content_addressed_id("b" * 64, crit)
+    assert base != benchmark_def.content_addressed_id(
+        "a" * 64, {"f2p": ["tests/x.py::t1"], "p2p": ["tests/z.py::t9"]}
+    )

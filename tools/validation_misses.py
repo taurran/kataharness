@@ -299,8 +299,54 @@ def append_miss(entry: dict, path: str | Path) -> bool:
         return False
 
 
+def read_misses_with_skips(path: str | Path) -> tuple[list[dict], int]:
+    """Parse the manifest, returning both the entries AND the malformed-line count.
+
+    Q-18: a corrupted misses manifest silently erasing the recurrence signal is a
+    real risk — the ledger exists precisely to preserve that signal. This variant
+    surfaces ``skippedLines`` so an advisory consumer can raise a NOTE. The read
+    stays non-fatal: a corrupt line never crashes a gate/build.
+
+    Args:
+        path: The manifest file path.
+
+    Returns:
+        ``(results, skipped)`` — ``results`` is the list of valid entry dicts in
+        file order; ``skipped`` counts non-empty lines that failed to parse as a
+        JSON object (non-JSON *or* valid-JSON-but-not-a-dict). An absent or
+        unreadable file returns ``([], 0)``.
+    """
+    p = Path(path)
+    if not p.exists():
+        return [], 0
+    try:
+        text = p.read_text(encoding="utf-8")
+    except OSError:
+        return [], 0
+    results: list[dict] = []
+    skipped = 0
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        try:
+            obj = json.loads(stripped)
+        except (json.JSONDecodeError, ValueError):
+            skipped += 1  # non-JSON line — skip but count so it is not invisible
+            continue
+        if isinstance(obj, dict):
+            results.append(obj)
+        else:
+            skipped += 1  # valid JSON but not an object (e.g. bare list/number)
+    return results, skipped
+
+
 def read_misses(path: str | Path) -> list[dict]:
     """Parse all JSON lines from the manifest; skip malformed lines (never crash).
+
+    Thin BC wrapper over ``read_misses_with_skips`` that drops the skipped-line
+    count. Use ``read_misses_with_skips`` when the caller needs to surface a
+    ``skippedLines`` NOTE (a silently corrupted manifest erases recurrence signal).
 
     Args:
         path: The manifest file path.
@@ -310,24 +356,7 @@ def read_misses(path: str | Path) -> list[dict]:
         Malformed lines (non-JSON, non-dict) are silently skipped so a corrupt
         line never crashes a gate/build.
     """
-    p = Path(path)
-    if not p.exists():
-        return []
-    try:
-        text = p.read_text(encoding="utf-8")
-    except OSError:
-        return []
-    results: list[dict] = []
-    for line in text.splitlines():
-        stripped = line.strip()
-        if not stripped:
-            continue
-        try:
-            obj = json.loads(stripped)
-            if isinstance(obj, dict):
-                results.append(obj)
-        except (json.JSONDecodeError, ValueError):
-            pass  # skip malformed line — reader must never crash
+    results, _skipped = read_misses_with_skips(path)
     return results
 
 

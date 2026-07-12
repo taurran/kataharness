@@ -456,8 +456,9 @@ def test_safe_path_rejects_dotdot_in_middle():
 
 def test_safe_path_accepts_normal_path(tmp_path):
     """_safe_path must resolve a clean path without raising."""
-    from graph_gen import _safe_path
     from pathlib import Path
+
+    from graph_gen import _safe_path
 
     result = _safe_path(str(tmp_path / "sub" / "dir"))
     assert isinstance(result, Path)
@@ -628,3 +629,22 @@ def test_ref_edge_target_is_lexicographically_pinned(tmp_path):
     assert all(t.startswith("aa_early.py") for t in ref_targets), (
         f"ref target must be the lexicographically-first candidate; got {ref_targets}"
     )
+
+
+# --- DET-14 fold (2026-07-12 health review): injectable generatedAt --------------
+
+def test_build_graph_generated_at_injectable(tmp_path):
+    """DET-14 (DETERMINISM-DOCTRINE law 7): generatedAt is an injectable clock — a
+    pinned value must appear verbatim in meta so callers/tests get a byte-stable
+    durable artifact instead of datetime.now() diff-noise on regeneration."""
+    from graph_gen import build_graph
+    pinned = "2020-01-01T00:00:00+00:00"
+    g = build_graph(tmp_path, generated_at=pinned)
+    assert g["meta"]["generatedAt"] == pinned
+
+
+def test_build_graph_generated_at_defaults_to_now(tmp_path):
+    """BC: an absent generated_at still stamps a real ISO time (field never dropped)."""
+    from graph_gen import build_graph
+    g = build_graph(tmp_path)
+    assert isinstance(g["meta"]["generatedAt"], str) and g["meta"]["generatedAt"]

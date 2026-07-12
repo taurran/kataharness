@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -26,7 +26,7 @@ import kata_gauge
 from kata_gauge import GaugeError
 
 # A fixed reference "now" (tz-aware UTC) used across staleness tests.
-_NOW = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
+_NOW = datetime(2026, 7, 4, 12, 0, 0, tzinfo=UTC)
 _NOW_EPOCH = _NOW.timestamp()
 
 

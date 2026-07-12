@@ -21,7 +21,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -193,7 +193,7 @@ def _extract_imports(
     source_bytes: bytes,
     rel_path: str,
     all_rel_paths: set[str],
-    source_roots: "list[str] | None" = None,
+    source_roots: list[str] | None = None,
 ) -> list[tuple[str, str]]:
     """Return list of (src_rel_path, dst_rel_path) file→file import edges.
 
@@ -301,7 +301,7 @@ def _discover_source_roots(all_rel_paths: set[str]) -> list[str]:
 
 
 def _module_to_path(
-    module_name: str, src_dir: str, source_roots: "list[str] | tuple[str, ...]" = ()
+    module_name: str, src_dir: str, source_roots: list[str] | tuple[str, ...] = ()
 ) -> list[str]:
     """Convert dotted module name to candidate repo-relative .py paths.
 
@@ -356,7 +356,7 @@ def _resolve_module(
     module_name: str,
     src_dir: str,
     all_rel_paths: set[str],
-    source_roots: "list[str] | None" = None,
+    source_roots: list[str] | None = None,
 ) -> str | None:
     """Try to find a matching repo-relative path for a module name.
 
@@ -476,6 +476,7 @@ def build_graph(
     root: str | Path,
     files: list[str | Path] | None = None,
     prev: dict | None = None,
+    generated_at: str | None = None,
 ) -> dict:
     """Build (or incrementally update) kata.graph.json.
 
@@ -485,6 +486,13 @@ def build_graph(
     files: Optional explicit list of .py file paths to include (still filtered by skip dirs).
     prev:  Previously-built graph dict. If provided, reuse nodes/edges for files whose
            content hash is unchanged; re-parse only changed files.
+    generated_at: Optional ISO-8601 UTC stamp for ``meta.generatedAt`` (DET-14).
+           Injectable clock (DETERMINISM-DOCTRINE law 7): a raw ``datetime.now()`` in
+           the durable artifact makes an otherwise-unchanged graph diff-noisy on every
+           regeneration. Nothing hashes this field — ``meta.repoHash`` is computed over
+           ``file_hash_map`` only, EXCLUDING ``meta`` — so the stamp is a documented
+           hint-only field, but pinning it lets callers/tests produce byte-stable
+           artifacts. Defaults to ``datetime.now(tz=timezone.utc).isoformat()`` when None.
 
     Returns
     -------
@@ -702,7 +710,12 @@ def build_graph(
     meta = {
         "backend": "tree-sitter",
         "repoHash": _repo_hash(file_hash_map),
-        "generatedAt": datetime.now(tz=timezone.utc).isoformat(),
+        # DET-14: injectable clock (DETERMINISM-DOCTRINE law 7). Nothing hashes
+        # generatedAt (repoHash excludes meta), but pinning it keeps the durable
+        # artifact byte-stable on regeneration of an unchanged tree.
+        "generatedAt": generated_at
+        if generated_at is not None
+        else datetime.now(tz=UTC).isoformat(),
     }
 
     return {

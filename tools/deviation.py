@@ -338,13 +338,28 @@ def run_funnel(finding: dict) -> dict:
         ``funnel_stop`` is ``None`` when the funnel ran to completion; otherwise
         the stage name where it stopped early.
     """
+    # Q-6 (D136): ``refuted`` and ``sparse_signal`` are docstring-contract keys
+    # whose absent value would default to the PERMISSIVE branch (not-refuted /
+    # not-sparse → auto-fix-eligible-eligible).  Hard-require both — a finding
+    # missing either is malformed input, never a silent permissive default.
+    if "refuted" not in finding:
+        raise ValueError(
+            "deviation.run_funnel: finding missing required key 'refuted' "
+            "(D136 — no silent permissive default)"
+        )
+    if "sparse_signal" not in finding:
+        raise ValueError(
+            "deviation.run_funnel: finding missing required key 'sparse_signal' "
+            "(D136 — no silent permissive default)"
+        )
+
     # L-1: coerce present-but-null values to [] so None never causes a TypeError
     votes: list[bool] = finding.get("votes") or []
     corroborators: list[dict] = finding.get("corroborators") or []
-    refuted: bool = finding.get("refuted", False)
+    refuted: bool = finding["refuted"]
     msas: float = finding.get("msas", 0.0)
     structural_prior: float = finding.get("structural_prior", 0.0)
-    sparse_signal: bool = finding.get("sparse_signal", False)
+    sparse_signal: bool = finding["sparse_signal"]
 
     # Step 1 — self-consistency gate
     sc_tally = tally_self_consistency(votes)

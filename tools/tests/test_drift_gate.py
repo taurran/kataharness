@@ -1228,3 +1228,33 @@ class TestMutationProof:
             "test_green_in_before_absent_from_after_blocks must catch removal of "
             "blocking.append(gtid)"
         )
+
+
+# --- DET-12 fold (2026-07-12 health review): temp-path scrub + id normalization ---
+
+def test_scrub_var_folders_macos_temp_path():
+    r"""DET-12: macOS per-user temp dirs (/var/folders/... — the TMPDIR default) must
+    scrub like /tmp and Windows AppData\Local\Temp, or an AEL snapshot authored on
+    macOS carries a machine-specific temp path that never byte-matches."""
+    import drift_gate as dg
+    text = "tmp=/var/folders/xy/9zk_h/T/pytest-of-user/pytest-3/test0 end"
+    scrubbed = dg.scrub_nondeterminism(text)
+    assert "/var/folders/" not in scrubbed
+    assert "<scrubbed>" in scrubbed
+
+
+def test_parse_test_outcomes_normalizes_backslash_node_id():
+    r"""DET-12: pytest emits the OS-native path separator, so a Windows run's
+    ``tests\x.py::t`` names the SAME test as a Linux ``tests/x.py::t``. The parser
+    normalizes the separator to '/' so the AEL / transition set-compare matches."""
+    import drift_gate as dg
+    out = dg.parse_test_outcomes(r"tests\pkg\x.py::TestA::t_one PASSED [100%]")
+    assert out == {"tests/pkg/x.py::TestA::t_one": "green"}
+
+
+def test_parse_test_outcomes_windows_and_posix_ids_match():
+    """The Windows-authored id and the POSIX-run id map to the SAME normalized key."""
+    import drift_gate as dg
+    win = dg.parse_test_outcomes(r"tests\x.py::t FAILED [ 50%]")
+    posix = dg.parse_test_outcomes("tests/x.py::t FAILED [ 50%]")
+    assert win == posix == {"tests/x.py::t": "red"}

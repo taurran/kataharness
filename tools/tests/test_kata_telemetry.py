@@ -11,12 +11,11 @@ from __future__ import annotations
 
 import json
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
 import kata_telemetry as kt
-
 
 # ---------------------------------------------------------------------------
 # real-git helpers (the test_footprint / test_contract_gate pattern)
@@ -438,13 +437,13 @@ def test_resolve_estimate_nonnumeric_raises(bad):
 
 def test_slack_ratio_none_estimate():
     events = [{"ts": "2026-07-04T10:00:00Z", "done": 2, "owned": 4}]
-    assert kt.slack_ratio(events, None, datetime.now(timezone.utc)) is None
+    assert kt.slack_ratio(events, None, datetime.now(UTC)) is None
 
 
 def test_slack_ratio_zero_progress_none():
     """Zero-progress guard (v2-MED-6): done == 0 ⇒ None, never a manufactured trigger."""
     events = [{"ts": "2026-07-04T10:00:00Z", "done": 0, "owned": 1}]
-    now = datetime(2026, 7, 4, 11, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 4, 11, 0, 0, tzinfo=UTC)
     assert kt.slack_ratio(events, 30.0, now) is None
 
 
@@ -452,7 +451,7 @@ def test_slack_ratio_computes():
     # start 10:00, now 10:30 = 30 min elapsed; done/owned = 2/4 = 0.5;
     # estimate 30 min → denom = 15 → ratio 2.0.
     events = [{"ts": "2026-07-04T10:00:00Z", "done": 2, "owned": 4}]
-    now = datetime(2026, 7, 4, 10, 30, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 4, 10, 30, 0, tzinfo=UTC)
     assert kt.slack_ratio(events, 30.0, now) == pytest.approx(2.0)
 
 
@@ -462,7 +461,7 @@ def test_slack_ratio_non_monotonic_raises():
         {"ts": "2026-07-04T10:05:00Z", "done": 1, "owned": 4},
         {"ts": "2026-07-04T10:00:00Z", "done": 2, "owned": 4},
     ]
-    now = datetime(2026, 7, 4, 10, 30, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 4, 10, 30, 0, tzinfo=UTC)
     with pytest.raises(kt.TelemetryError, match="non-monotonic"):
         kt.slack_ratio(events, 30.0, now)
 
@@ -470,7 +469,7 @@ def test_slack_ratio_non_monotonic_raises():
 def test_slack_ratio_unparseable_ts_raises():
     """RAISES: an unparseable timestamp."""
     events = [{"ts": "not-a-timestamp", "done": 1, "owned": 4}]
-    now = datetime(2026, 7, 4, 10, 30, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 4, 10, 30, 0, tzinfo=UTC)
     with pytest.raises(kt.TelemetryError, match="unparseable"):
         kt.slack_ratio(events, 30.0, now)
 
@@ -1518,3 +1517,18 @@ def test_build_ledger_row_byte_stable_across_producer_dict_order():
     row_b = kt.build_ledger_row(b)
     assert row_a == row_b, "producer dict order leaked into the serialized ledger row"
     assert json.loads(row_a) == json.loads(row_b)
+
+
+# --- DET-10 fold (2026-07-12 health review): netstring-framed evidence digest ----
+
+def test_evidence_digest_netstring_disambiguates_newline_collision(monkeypatch):
+    """DET-10: two entry partitions that collide under a bare '\n'.join must
+    produce DISTINCT digests once netstring length-prefixed. A git-legal newline
+    in a filename lets ``["a\nb"]`` (one entry) and ``["a", "b"]`` (two entries)
+    stream the same bytes under bare join — the length prefix removes the frame
+    ambiguity (the benchmark_control.content_hash / contract_edges pattern)."""
+    partitions = iter([["a\nb"], ["a", "b"]])
+    monkeypatch.setattr(kt, "evidence_entries", lambda *a, **k: next(partitions))
+    d1 = kt.evidence_digest(".", ["x"], commit=None)
+    d2 = kt.evidence_digest(".", ["x"], commit=None)
+    assert d1 != d2, "bare-join collision leaked — evidence digest is not netstring-framed"

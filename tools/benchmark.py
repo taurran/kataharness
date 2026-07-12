@@ -42,17 +42,15 @@ from __future__ import annotations
 
 import json
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union
-
 
 # ---------------------------------------------------------------------------
 # CWE-23 path-traversal guard (mirrors usage_meter._guard_path)
 # ---------------------------------------------------------------------------
 
 
-def _guard_path(raw: Union[str, Path]) -> Path:
+def _guard_path(raw: str | Path) -> Path:
     """Reject paths containing ``..`` traversal (CWE-23).  Does NOT resolve.
 
     Args:
@@ -123,7 +121,7 @@ def _guard_node_id(test_id: str, clone_root: Path) -> None:
 # Profile table — λ and partial-credit weights (per DESIGN §3.4)
 # ---------------------------------------------------------------------------
 
-_PROFILES: Dict[str, dict] = {
+_PROFILES: dict[str, dict] = {
     "balanced": {
         "lambda_": 1.0,
         "f2p_weight": 0.6,
@@ -147,7 +145,7 @@ _PROFILES: Dict[str, dict] = {
 _DEFAULT_PROFILE = "balanced"
 
 # Axis C: non-nullable fields (always present in usage.json per S1 schema)
-_NON_NULLABLE_C_FIELDS: List[str] = [
+_NON_NULLABLE_C_FIELDS: list[str] = [
     "wallClockS",
     "toolCalls",
     "escalations",
@@ -301,7 +299,7 @@ def scorecard_schema() -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _load_json(path: Path) -> Optional[dict]:
+def _load_json(path: Path) -> dict | None:
     """Load JSON from *path*; return None if the file is absent or unreadable."""
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -310,8 +308,8 @@ def _load_json(path: Path) -> Optional[dict]:
 
 
 def _compute_arm_q(
-    result_json: Optional[dict],
-    mutation_json: Optional[dict],
+    result_json: dict | None,
+    mutation_json: dict | None,
     f2p_results: dict,
     p2p_results: dict,
     weights: dict,
@@ -391,7 +389,11 @@ def _compute_arm_q(
     # -- Mutation multiplier (anti-weak-test; DESIGN §3.1.3) --
     mutation_available = mutation_json is not None
     if mutation_json is not None:
-        all_non_vacuous = bool(mutation_json.get("allNonVacuous", True))
+        # Q-9 (D136): a present-but-truncated mutation.json missing the
+        # allNonVacuous key must NOT receive the full 1.0 multiplier — mirror
+        # FIX 5, which treats a truncated RESULT.json as FAIL.  Missing key on a
+        # present file ⇒ treat as vacuous (default False, not permissive True).
+        all_non_vacuous = bool(mutation_json.get("allNonVacuous", False))
         mut_multiplier = 1.0 if all_non_vacuous else weights["mut_mult_vacuous"]
     else:
         # Absent mutation.json → no penalization; labeled mutation_available=False
@@ -423,7 +425,7 @@ def _compute_arm_q(
     return q, detail
 
 
-def _validate_numeric(v: object) -> Optional[float]:
+def _validate_numeric(v: object) -> float | None:
     """Return a validated non-negative finite float, or None.
 
     FIX C1 READ-PATH GUARD: any raw usage metric value that is negative, NaN,
@@ -449,7 +451,7 @@ def _validate_numeric(v: object) -> Optional[float]:
     return fv
 
 
-def _compute_c_norm_for_arms(usage_list: List[Optional[dict]]) -> List[dict]:
+def _compute_c_norm_for_arms(usage_list: list[dict | None]) -> list[dict]:
     """Normalize Axis C across all arms.
 
     Returns a list of ``{"c_norm": float, "tokens_unavailable": bool,
@@ -486,9 +488,9 @@ def _compute_c_norm_for_arms(usage_list: List[Optional[dict]]) -> List[dict]:
 
     # --- Collect and validate raw values (FIX C1) ---
     # field_vals[f][i] = validated float or None (missing/invalid)
-    field_vals: Dict[str, List[Optional[float]]] = {f: [] for f in _NON_NULLABLE_C_FIELDS}
-    cost_vals: List[Optional[float]] = []   # validated costUSD (None = missing or C1-rejected)
-    cost_raw_null: List[bool] = []          # True when original costUSD was null/absent
+    field_vals: dict[str, list[float | None]] = {f: [] for f in _NON_NULLABLE_C_FIELDS}
+    cost_vals: list[float | None] = []   # validated costUSD (None = missing or C1-rejected)
+    cost_raw_null: list[bool] = []          # True when original costUSD was null/absent
 
     for u in usage_list:
         uj = u or {}
@@ -500,15 +502,15 @@ def _compute_c_norm_for_arms(usage_list: List[Optional[dict]]) -> List[dict]:
 
     # --- Per-field max for normalization ---
     # None means "no arm reported this field" → drop that field for everyone (FIX C2 edge).
-    field_maxes: Dict[str, Optional[float]] = {
+    field_maxes: dict[str, float | None] = {
         f: max((v for v in vs if v is not None), default=None)
         for f, vs in field_vals.items()
     }
-    cost_max: Optional[float] = max(
+    cost_max: float | None = max(
         (v for v in cost_vals if v is not None), default=None
     )
 
-    results: List[dict] = []
+    results: list[dict] = []
     for i in range(n):
         cost_val = cost_vals[i]
 
@@ -522,7 +524,7 @@ def _compute_c_norm_for_arms(usage_list: List[Optional[dict]]) -> List[dict]:
             usage_incomplete = True
 
         # --- Normalize non-nullable fields (FIX C2: impute 1.0 for missing) ---
-        norms: List[float] = []
+        norms: list[float] = []
         for field in _NON_NULLABLE_C_FIELDS:
             v = field_vals[field][i]
             mx = field_maxes[field]
@@ -560,9 +562,9 @@ def _compute_c_norm_for_arms(usage_list: List[Optional[dict]]) -> List[dict]:
 
 
 def _build_recommendations(
-    floor_passer_labels: List[str],
-    arm_records: Dict[str, dict],
-) -> List[dict]:
+    floor_passer_labels: list[str],
+    arm_records: dict[str, dict],
+) -> list[dict]:
     """Build deterministic, data-derived factual observations (FIX 3).
 
     No judgment — purely derived from scored arm data (pareto/composite/c_norm/rank).
@@ -580,14 +582,17 @@ def _build_recommendations(
     Returns:
         List of recommendation dicts with at least ``kind`` and ``arm`` keys.
     """
-    recs: List[dict] = []
+    recs: list[dict] = []
     if not floor_passer_labels:
         return recs
 
-    # pareto-best: arm with highest composite (ties broken by label order)
-    best = max(
+    # pareto-best: arm with highest composite.  DET-11: ties broken by
+    # lexicographically-first label (deterministic, not arm insertion order) —
+    # matches the rank sort's tie-break.  ``min`` over (-composite, label) picks
+    # the highest composite, then the smallest label on an exact tie.
+    best = min(
         floor_passer_labels,
-        key=lambda lb: arm_records[lb].get("composite") or 0.0,
+        key=lambda lb: (-(arm_records[lb].get("composite") or 0.0), lb),
     )
     recs.append({"kind": "pareto-best", "arm": best})
 
@@ -633,12 +638,12 @@ def _build_recommendations(
 
 
 def score_arms(
-    arm_map: Dict[str, Union[str, Path]],
+    arm_map: dict[str, str | Path],
     *,
     profile: str = _DEFAULT_PROFILE,
-    f2p_p2p_results: Optional[Dict[str, dict]] = None,
-    benchmark_id: Optional[str] = None,
-    provenance: Optional[dict] = None,
+    f2p_p2p_results: dict[str, dict] | None = None,
+    benchmark_id: str | None = None,
+    provenance: dict | None = None,
 ) -> dict:
     """Score every arm in *arm_map* and return a benchmark scorecard.
 
@@ -695,8 +700,8 @@ def score_arms(
     ordered_labels = list(arm_map.keys())
 
     # -- Load artifacts per arm and compute Axis Q --
-    arm_records: Dict[str, dict] = {}
-    usage_list: List[Optional[dict]] = []
+    arm_records: dict[str, dict] = {}
+    usage_list: list[dict | None] = []
 
     for label in ordered_labels:
         root = Path(arm_map[label])
@@ -740,7 +745,7 @@ def score_arms(
         usage_list.append(usage_json)
 
     # -- Collect floor-passers (efficiency gate — mutation-proven line below) --
-    floor_passer_labels: List[str] = []
+    floor_passer_labels: list[str] = []
     for label in ordered_labels:
         if arm_records[label]["floor_passed"]:
             arm_records[label]["in_efficiency_set"] = True
@@ -758,7 +763,7 @@ def score_arms(
 
     # -- Composite + rank for floor-passers only (DESIGN §3.4 R-A RESOLVED) --
     lambda_ = weights["lambda_"]
-    passer_composites: List[tuple] = []  # (composite_value, label)
+    passer_composites: list[tuple] = []  # (composite_value, label)
     for label in floor_passer_labels:
         c = arm_records[label]["c_norm"]
         q = arm_records[label]["q"]
@@ -768,8 +773,11 @@ def score_arms(
         arm_records[label]["pareto"] = {"q": q, "c": c_for_scalar}
         passer_composites.append((composite, label))
 
-    # Sort descending by composite → assign rank (1 = best among passers)
-    passer_composites.sort(key=lambda t: t[0], reverse=True)
+    # Sort descending by composite → assign rank (1 = best among passers).
+    # DET-11: explicit secondary tie-break by label so an EXACT composite tie is
+    # resolved deterministically (lexicographically-first label ranks first),
+    # never by arm insertion order.  (-composite ascending = composite desc.)
+    passer_composites.sort(key=lambda t: (-t[0], t[1]))
     for rank_pos, (_, label) in enumerate(passer_composites, start=1):
         arm_records[label]["rank"] = rank_pos
 
@@ -800,7 +808,7 @@ def score_arms(
         "arms": arms_list,
         "floor_passers": floor_passer_labels,
         "floor_failers": floor_failer_labels,
-        "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "utc": datetime.now(tz=UTC).isoformat(),
         # FIX A2: stamp identity fields when provided so compute_delta.sameDefinition can be True.
         # When benchmark_id/provenance are None (not provided), they are omitted (not stamped as null).
         **({"benchmark_id": benchmark_id} if benchmark_id is not None else {}),
@@ -813,7 +821,7 @@ def score_arms(
 # ---------------------------------------------------------------------------
 
 
-def emit_scorecard(path: Union[str, Path], scorecard: dict) -> None:
+def emit_scorecard(path: str | Path, scorecard: dict) -> None:
     """Write *scorecard* as JSON to *path* (CWE-23 path-traversal guarded).
 
     Intended destination: ``.kata/benchmark/<run-id>.json``.
@@ -839,9 +847,9 @@ def emit_scorecard(path: Union[str, Path], scorecard: dict) -> None:
 
 
 def run_dual_gate(
-    clone_root: Union[str, Path],
-    f2p_ids: List[str],
-    p2p_ids: List[str],
+    clone_root: str | Path,
+    f2p_ids: list[str],
+    p2p_ids: list[str],
 ) -> dict:
     """Run F2P and P2P test-IDs via mutation_check.run_named_test (INTERNAL sink).
 
@@ -884,7 +892,14 @@ def run_dual_gate(
         still applies (verifies rel_path stays inside the clone root).
         """
         if "::" not in test_id:
-            return False  # malformed test-ID: fail safe
+            # Q-8 (D136): a '::'-less test-ID is an authoring error, not a test
+            # failure.  Returning False silently scores it as an arm F2P/P2P
+            # failure ("arm failed" when the truth is "criteria malformed").
+            # _guard_node_id raises on bad paths — be consistent and raise here.
+            raise ValueError(
+                f"benchmark: malformed test-ID (no '::' separator): {test_id!r} "
+                "(D136 — authoring error, not a silent test failure)"
+            )
         _guard_node_id(test_id, root)  # FIX 2: traversal guard (load-bearing)
         sep = test_id.rfind("::")
         rel_path = test_id[:sep]

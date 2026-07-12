@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import validate_skills as v
 
-
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -154,7 +153,7 @@ def test_model_guard_zero_violations_in_real_tree():
     skills = v.load_skills()
     findings = v.check_model_in_skill_frontmatter(skills)
     assert findings == [], (
-        f"real skill tree must have no model: in SKILL.md frontmatter; violations found:\n"
+        "real skill tree must have no model: in SKILL.md frontmatter; violations found:\n"
         + "\n".join(f"  {f.level}: {f.where}: {f.msg}" for f in findings)
     )
 

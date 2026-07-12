@@ -23,9 +23,8 @@ from __future__ import annotations
 
 import json
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Union
 
 import tree_sitter_python as tsp
 from tree_sitter import Language, Parser
@@ -46,6 +45,14 @@ _PARSER = Parser(_PY_LANG)
 # The one contract-namespace prefix (posix) a dangling import must target to be a
 # gate finding — imports outside contracts/ are the provider/dependent's own tree.
 _CONTRACTS_PREFIX = "contracts/"
+
+# Q-16 (2026-07-12 health review): every git subprocess call carries this timeout so a
+# stale index.lock or a credential prompt in a hostile target repo can never stall the
+# FINAL GATE forever.  Fail-closed — a timeout is folded into the existing git-error
+# path (RAISES ValueError → NEEDS_WORK), never a silent permissive pass.
+# subprocess.TimeoutExpired is NOT a CalledProcessError/OSError, so it is named
+# explicitly in each except set.
+_GIT_TIMEOUT_S = 60
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +99,7 @@ def pinned_contracts(builds_against: object) -> dict[str, str]:
 def _scan_integration_commits(
     repo_root: str,
     integration_branch: str,
-    plan_path: Union[str, Path],
+    plan_path: str | Path,
 ) -> list[list[str]]:
     """Return per-commit body line-lists of THIS run's integration commits, newest-first.
 
@@ -149,8 +156,9 @@ def _scan_integration_commits(
             capture_output=True,
             text=True,
             check=True,
+            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung fork-point ⇒ RAISE (fail-closed)
         )
-    except (subprocess.CalledProcessError, OSError) as exc:
+    except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired) as exc:
         raise ValueError(
             f"contract_gate: git error resolving plan fork-point for {plan_spec!r} on "
             f"{integration_branch!r} — the audit cannot bound its scan (M1-L9). "
@@ -183,8 +191,9 @@ def _scan_integration_commits(
             capture_output=True,
             text=True,
             check=True,
+            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung scan ⇒ RAISE (fail-closed)
         )
-    except (subprocess.CalledProcessError, OSError) as exc:
+    except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired) as exc:
         raise ValueError(
             f"contract_gate: git error scanning integration commits on "
             f"{integration_branch!r} (M1-L9). Resolve manually. ({exc})"
@@ -208,7 +217,7 @@ def _scan_integration_commits(
 def parse_trailer_events(
     repo_root: str,
     integration_branch: str,
-    plan_path: Union[str, Path],
+    plan_path: str | Path,
 ) -> list[tuple[int, str, str, str]]:
     """Return ``(commit_index, kind, id, hash|"")`` events, newest-first.
 
@@ -398,7 +407,7 @@ def verify_contract_gate(
     repo_root: str,
     integration_branch: str,
     builds_against: object,
-    plan_path: Union[str, Path],
+    plan_path: str | Path,
 ) -> dict:
     """Independently re-derive contract-edge soundness at the FINAL gate (M1-L3/L8 +
     obligations i/iii). Returns ``{"passed": bool, "vacuous": bool, "findings": [...]}``.
@@ -498,7 +507,7 @@ def write_contract_gate(kata_dir: str | Path, verdict: dict) -> Path:
     kata_path = Path(kata_dir)
     kata_path.mkdir(parents=True, exist_ok=True)
     payload = dict(verdict)
-    payload["utc"] = datetime.now(timezone.utc).isoformat()
+    payload["utc"] = datetime.now(UTC).isoformat()
     out = kata_path / "contract-gate.json"
     out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return out

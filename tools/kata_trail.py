@@ -38,6 +38,12 @@ from typing import Any
 
 _TRAIL_REF = "refs/kata/trail"
 
+# Q-16 (2026-07-12 health review): every git subprocess call carries this timeout so a
+# stale index.lock or a credential prompt in a hostile target repo can never stall the
+# snapshot forever.  The durability path is FAIL-SOFT — a timeout returns a skip
+# sentinel (never raises to a compaction caller), exactly like every other git error.
+_GIT_TIMEOUT_S = 60
+
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -48,7 +54,9 @@ def _run(args: list[str], *, cwd: Path) -> subprocess.CompletedProcess:
     """Run a git plumbing command and raise CalledProcessError on non-zero exit.
 
     shell=False is enforced by passing a fixed argv list.  Never accepts
-    untrusted strings in the command position.
+    untrusted strings in the command position.  A ``_GIT_TIMEOUT_S`` timeout (Q-16)
+    raises ``subprocess.TimeoutExpired``, which ``snapshot_board`` maps to a skip
+    sentinel (fail-soft — never raised to the caller).
     """
     return subprocess.run(
         args,
@@ -56,6 +64,7 @@ def _run(args: list[str], *, cwd: Path) -> subprocess.CompletedProcess:
         capture_output=True,
         text=True,
         check=True,
+        timeout=_GIT_TIMEOUT_S,
     )
 
 
@@ -136,6 +145,7 @@ def snapshot_board(repo_root: str = ".") -> dict[str, Any]:
             cwd=str(root),
             capture_output=True,
             check=True,
+            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung mktree ⇒ skip sentinel (fail-soft)
         )
         if tree_result.returncode != 0:
             raise subprocess.CalledProcessError(
@@ -149,7 +159,7 @@ def snapshot_board(repo_root: str = ".") -> dict[str, Any]:
         # Chain onto the prior trail ref if it exists (creates history).
         # git commit-tree does NOT touch the index or working tree.
         # ------------------------------------------------------------------ #
-        now_utc = datetime.datetime.now(datetime.timezone.utc).strftime(
+        now_utc = datetime.datetime.now(datetime.UTC).strftime(
             "%Y-%m-%dT%H:%M:%SZ"
         )
         commit_args = [
@@ -196,6 +206,10 @@ def snapshot_board(repo_root: str = ".") -> dict[str, Any]:
         # Unreachable (the loop always returns), but satisfies type checkers
         return {"skipped": "ref-lock"}  # pragma: no cover
 
+    except subprocess.TimeoutExpired as exc:
+        # Q-16: a git call exceeded _GIT_TIMEOUT_S (stale lock / credential prompt in a
+        # hostile target). Fail-soft — skip, never raise to the compaction caller.
+        return {"skipped": f"git-timeout: {exc.timeout}s"}
     except subprocess.CalledProcessError as exc:
         # Any git plumbing error other than a handled lock failure
         return {"skipped": f"git-error: {exc.returncode} {exc.stderr.strip()!r}"}

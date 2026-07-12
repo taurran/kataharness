@@ -109,3 +109,46 @@ def test_run_named_test_forwards_default_timeout_600():
     assert call_kwargs.get("timeout") == 600.0, (
         "Q-4: run_named_test must bound the subprocess with a 600s default timeout"
     )
+
+
+def test_run_named_test_env_is_sanitized(monkeypatch, tmp_path):
+    """DET-09: run_named_test strips PYTEST_ADDOPTS + disables plugin autoload."""
+    import mutation_check
+
+    monkeypatch.setenv("PYTEST_ADDOPTS", "-x")
+    seen: dict = {}
+
+    class _Ok:
+        returncode = 0
+
+    def spy_run(*args, **kwargs):
+        seen.update(kwargs)
+        return _Ok()
+
+    monkeypatch.setattr(mutation_check.subprocess, "run", spy_run)
+    mutation_check.run_named_test(str(tmp_path / "t.py"), "test_x")
+    env = seen.get("env") or {}
+    assert "PYTEST_ADDOPTS" not in env
+    assert env.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD") == "1"
+
+
+def test_run_named_test_sanitized_env_composes_with_cwd_pythonpath(monkeypatch, tmp_path):
+    """The cwd PYTHONPATH prepend composes on top of the sanitized env (DET-09)."""
+    import os as _os
+
+    import mutation_check
+
+    seen: dict = {}
+
+    class _Ok:
+        returncode = 0
+
+    def spy_run(*args, **kwargs):
+        seen.update(kwargs)
+        return _Ok()
+
+    monkeypatch.setattr(mutation_check.subprocess, "run", spy_run)
+    mutation_check.run_named_test(str(tmp_path / "t.py"), "test_x", cwd=str(tmp_path))
+    env = seen.get("env") or {}
+    assert env.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD") == "1"
+    assert str(tmp_path) in env.get("PYTHONPATH", "")

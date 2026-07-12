@@ -30,7 +30,6 @@ import pytest
 import contract_edges as ce
 import contract_gate as cg
 
-
 # ---------------------------------------------------------------------------
 # Surface bodies (distinct interface surfaces; body-fill leaves the surface fixed)
 # ---------------------------------------------------------------------------
@@ -581,3 +580,34 @@ def test_scan_integration_commits_argv_pins(tmp_path, monkeypatch):
     assert _pin_present(fork_cmd, "core.quotepath=off")
     assert _pin_present(scan_cmd, "log.showSignature=false")
     assert _pin_present(scan_cmd, "core.quotepath=off")
+
+
+# ============================================================================
+# Q-16 (2026-07-12 health review) — git timeout fails closed (RAISE, not pass)
+# ============================================================================
+
+
+def test_scan_forkpoint_timeout_raises(tmp_path, monkeypatch):
+    """Q-16: a hung fork-point resolution ⇒ ValueError (fail-closed) — the final
+    gate never swallows a timeout into a permissive unbounded/empty scan."""
+    def fake_run(cmd, **kwargs):
+        if "-1" in cmd:
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=cg._GIT_TIMEOUT_S)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(cg.subprocess, "run", fake_run)
+    with pytest.raises(ValueError):
+        cg._scan_integration_commits(str(tmp_path), "integration", tmp_path / "PLAN.md")
+
+
+def test_scan_bounded_timeout_raises(tmp_path, monkeypatch):
+    """Q-16: a hung bounded commit scan (fork-point resolves) ⇒ ValueError
+    (fail-closed) — never a permissive empty commit list."""
+    def fake_run(cmd, **kwargs):
+        if "-1" in cmd:  # fork-point resolves
+            return subprocess.CompletedProcess(cmd, 0, stdout="abc123\n", stderr="")
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=cg._GIT_TIMEOUT_S)
+
+    monkeypatch.setattr(cg.subprocess, "run", fake_run)
+    with pytest.raises(ValueError):
+        cg._scan_integration_commits(str(tmp_path), "integration", tmp_path / "PLAN.md")
