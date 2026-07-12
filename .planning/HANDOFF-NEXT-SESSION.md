@@ -59,6 +59,10 @@ initiate 0.4.0 · bootstrap 0.5.0 · selfhandoff 0.2.1 · orchestrate 0.12.1.
 
 ## 2. ★★ NEXT SESSION — START HERE (operator-priority order)
 
+> **The FULL sequenced action plan (phases A–E, every open item with context/pointers/acceptance)
+> is `.planning/NEXT-SESSION-ORIENTATION.md` — the in-depth orientation written 2026-07-12b.
+> Read it after the mandated read order; the two items below are its Phase B.**
+
 1. **"ELEVATE" recommendation step (BACKLOG 2026-07-12b #1).** At the END of every grill session —
    on EACH KataHarness execution — use the run's deep context + task understanding to make ONE
    brainstormed recommendation (more only if the user asks) that elevates the design/function of
