@@ -179,8 +179,28 @@ def write_escalation(kata_dir: str, payload: dict) -> str:
     escalations_dir = root / "escalations"
     escalations_dir.mkdir(parents=True, exist_ok=True)
 
+    # taskId reaches the filename and can carry LLM/worker-derived content, so it
+    # needs the same CWE-23 guard as kata_dir (2026-07-12 health review F2): reject
+    # path separators, `..`, and leading `-` before joining, then assert the
+    # resolved path stays inside escalations_dir.
     task_id = payload["taskId"]
+    if (
+        not isinstance(task_id, str)
+        or not task_id
+        or "/" in task_id
+        or "\\" in task_id
+        or ".." in task_id
+        or task_id.startswith("-")
+        or "\x00" in task_id
+    ):
+        raise ValueError(
+            f"write_escalation: unsafe taskId {task_id!r} (path-traversal guard)"
+        )
     out_path = escalations_dir / f"{task_id}.json"
+    if out_path.resolve().parent != escalations_dir.resolve():
+        raise ValueError(
+            f"write_escalation: taskId {task_id!r} escapes escalations dir (path-traversal guard)"
+        )
 
     # Non-clobber guard: refuse to silently overwrite an open escalation with a
     # DIFFERENT decisionNeeded (defense-in-depth for the IaC Tier-1/Tier-2 clobber risk

@@ -592,3 +592,47 @@ def test_mutation_proof_non_clobber_different_decision():
         _src(), asserted_line, _cmd("test_write_escalation_clobber_different_decision_raises")
     )
     assert verdict["nonVacuous"] is True, f"different_decision check not load-bearing: {verdict}"
+
+
+# ---------------------------------------------------------------------------
+# write_escalation — F2 (2026-07-12 health review): taskId path-traversal guard
+# ---------------------------------------------------------------------------
+
+def test_write_escalation_rejects_traversal_taskid(tmp_path):
+    """A taskId carrying path separators / .. must be rejected before it reaches
+    the filename (CWE-23). Mutation-proof: dropping the guard writes outside
+    <kata_dir>/escalations/ and this raises-assertion goes RED."""
+    import pytest
+    from escalation import build_escalation, write_escalation
+
+    kata_dir = tmp_path / ".kata"
+    payload = build_escalation(
+        taskId="../../evil",
+        kind="research-needed",
+        decisionNeeded="d.",
+        optionsConsidered=["a", "b"],
+        agentRecommendation="a",
+        rationale="r.",
+    )
+    with pytest.raises(ValueError, match="traversal"):
+        write_escalation(str(kata_dir), payload)
+    # nothing escaped the escalations dir
+    assert not (tmp_path / "evil.json").exists()
+    assert not (tmp_path.parent / "evil.json").exists()
+
+
+def test_write_escalation_rejects_backslash_taskid(tmp_path):
+    """Windows-style separator variant is also rejected."""
+    import pytest
+    from escalation import build_escalation, write_escalation
+
+    payload = build_escalation(
+        taskId="sub\evil",
+        kind="research-needed",
+        decisionNeeded="d.",
+        optionsConsidered=["a", "b"],
+        agentRecommendation="a",
+        rationale="r.",
+    )
+    with pytest.raises(ValueError, match="traversal"):
+        write_escalation(str(tmp_path / ".kata"), payload)

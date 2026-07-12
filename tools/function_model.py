@@ -186,8 +186,9 @@ def _walk_verify(node: ast.expr) -> None:  # noqa: C901
         # (`(((10**1000)**1000)**1000)`) explodes the integer multiplicatively
         # while each exponent stays under any per-exponent cap and the whole
         # expression stays under the node cap → resource-exhaustion DoS. Boolean
-        # pre/postconditions never need `**`. (Mult/LShift grow size only
-        # linearly in node count, so they stay bounded.)
+        # pre/postconditions never need `**`. (int*int Mult and LShift grow
+        # size only linearly in node count; sequence*int Mult is capped at
+        # eval time — see the F1 guard in _eval_node.)
         if isinstance(node.op, ast.Pow):
             raise ValueError("Exponentiation (**) rejected in assertion (resource-exhaustion guard)")
         _walk_verify(node.left)
@@ -387,6 +388,24 @@ def _eval_node(node: ast.expr, names: dict) -> Any:  # noqa: C901
                 raise ValueError(
                     f"Shift {right} exceeds cap {_MAX_SHIFT} (resource-exhaustion guard)"
                 )
+        # Sequence-repetition DoS guard (2026-07-12 health review F1): seq*int
+        # (`[0]*N`, `"a"*N`) allocates memory proportional to the count VALUE,
+        # not node count -- the same class as `**`/`<<`. The walk-time
+        # "Mult grows linearly" reasoning holds for int*int only. Boolean
+        # pre/postconditions never legitimately repeat a sequence at scale.
+        if isinstance(node.op, ast.Mult):
+            _seq_types = (str, bytes, bytearray, list, tuple)
+            for _seq, _count in ((left, right), (right, left)):
+                if (
+                    isinstance(_seq, _seq_types)
+                    and isinstance(_count, int)
+                    and not isinstance(_count, bool)
+                    and abs(_count) > _MAX_SHIFT
+                ):
+                    raise ValueError(
+                        f"Sequence repetition x{_count} exceeds cap {_MAX_SHIFT} "
+                        "(resource-exhaustion guard)"
+                    )
         return fn(left, right)
 
     if isinstance(node, ast.Compare):

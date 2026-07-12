@@ -690,3 +690,44 @@ class TestEvaluateSpecMalformedCall:
         import function_model as fm
         out = fm.evaluate_spec(self._add_fm(), {"inputs": "nope", "result": 1})
         assert out["ok"] is False
+
+
+# --------------------------------------------------------------------------- #
+# F1 (2026-07-12 health review): sequence-repetition DoS guard in _safe_eval
+# --------------------------------------------------------------------------- #
+class TestSequenceRepetitionGuard:
+    """`[0]*N` / `"a"*N` allocate memory proportional to N (not node count) --
+    the same DoS class as `**`/`<<`. _safe_eval must reject a large seq*int
+    repeat rather than execute it. Mutation-proof: deleting the Mult cap in
+    _eval_node lets these allocate and the raise-assertions go RED."""
+
+    def _fm(self, postcondition: str) -> dict:
+        return {
+            "module": "tools/x.py",
+            "intent_summary": "seq-repeat probe",
+            "preconditions": [],
+            "postconditions": [postcondition],
+            "behavioral_examples": [],
+            "derivation_sources": ["types"],
+            "confidence": 0.5,
+        }
+
+    def test_list_repetition_over_cap_recorded_as_violation(self):
+        import function_model as fm
+        res = fm.evaluate_spec(self._fm("len([0] * 9999999999) >= 0"), {"inputs": {}, "result": 0})
+        # The cap raises during eval; evaluate_spec records it, never allocates 10^10.
+        assert res["ok"] is False
+        assert any("resource-exhaustion" in v or "Sequence repetition" in v
+                   for v in res["violations"]), res["violations"]
+
+    def test_str_repetition_over_cap_recorded_as_violation(self):
+        import function_model as fm
+        res = fm.evaluate_spec(self._fm('len("a" * 9999999999) >= 0'), {"inputs": {}, "result": 0})
+        assert res["ok"] is False
+        assert any("resource-exhaustion" in v or "Sequence repetition" in v
+                   for v in res["violations"]), res["violations"]
+
+    def test_small_repetition_still_allowed(self):
+        import function_model as fm
+        res = fm.evaluate_spec(self._fm("len([0] * 3) == 3"), {"inputs": {}, "result": 0})
+        assert res["ok"] is True, res
