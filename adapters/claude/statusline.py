@@ -45,7 +45,10 @@ def _main() -> None:
     # --- read stdin and delegate to the agnostic core ---
     import kata_statusline  # noqa: PLC0415  (import inside function for path safety)
 
-    stdin_text = sys.stdin.read()
+    # Bytes-read + explicit UTF-8 (mirror of the stdout reconfigure above): Windows
+    # text-mode stdin defaults to the ANSI codepage — a non-ASCII cwd/payload would
+    # UnicodeDecodeError into a silent blank statusline (F7).
+    stdin_text = sys.stdin.buffer.read().decode("utf-8", errors="replace")
     result = kata_statusline.statusline_from_event(stdin_text)
     # statusline_from_event is already fail-soft; print with no trailing newline
     print(result, end="")
@@ -53,5 +56,10 @@ def _main() -> None:
 
 try:
     _main()
-except Exception:  # noqa: BLE001  (fail-soft: never crash or hang Claude's statusline)
-    pass
+except Exception as _exc:  # noqa: BLE001  (fail-soft: never crash or hang Claude's statusline)
+    # One stderr breadcrumb (host surfaces hook/statusline stderr in debug) so a
+    # permanently-broken install is distinguishable from "no kata run" (F8).
+    try:
+        print(f"[kata-statusline] fail-soft: {type(_exc).__name__}: {_exc}", file=sys.stderr)
+    except Exception:  # noqa: BLE001
+        pass
