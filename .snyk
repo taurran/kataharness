@@ -58,4 +58,12 @@ ignore:
           Operator-controlled local CLI; all paths are operator-supplied. Severity: LOW.
           File-level ignore is count-independent. Risk accepted per Approach C. Expiry: 2027-06-30.
         expires: '2027-06-30T00:00:00.000Z'
+    - 'tools/kata_host_settings.py':
+        reason: >-
+          FALSE POSITIVE: same _safe_abs '..'-rejection class as tools/kata_install.py
+          (D152 host-settings merge module, 2026-07-12) — Snyk's taint engine does not
+          credit the guard idiom. Operator-controlled local CLI editing the operator's
+          own ~/.claude/settings.json behind an explicit consent flag. Severity: LOW.
+          Risk accepted per Approach C, same rationale/expiry as the sibling entry.
+        expires: '2027-06-30T00:00:00.000Z'
 patch: {}

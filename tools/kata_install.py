@@ -1120,6 +1120,123 @@ def _sweep_managed_slots(
 
 
 # ---------------------------------------------------------------------------
+# Hooks verb (CG-L2 — NEW, ADDITIVE; engine lives in kata_host_settings)
+# ---------------------------------------------------------------------------
+
+
+def _hooks_verb(args, use_json: bool) -> int:
+    """Dispatch ``--install-hooks`` / ``--uninstall-hooks`` into ``kata_host_settings``.
+
+    Consent flow (CG-L2, FROZEN): print the unified settings diff + the explicit
+    disclosure that these are GLOBAL hooks affecting every Claude Code session on the
+    machine (containment = each hook's F-3 kata-scope gate), then require interactive
+    confirmation or ``--yes``.  ``--dry-run`` prints the diff and writes nothing.
+    Headless ``--json``: machine JSON report to stdout, human notes to stderr.
+
+    Exit codes reuse the semantic table: 0 OK / 1 no-consent / 2 USAGE (flag conflict,
+    headless without --yes) / 3 NOT_FOUND (non-claude platform, bad path) /
+    4 PERMISSION (OSError) / 5 CONFLICT-class (unparseable host settings — fail-closed,
+    never guess, D136).
+    """
+    import kata_host_settings
+
+    if args.install_hooks and args.uninstall_hooks:
+        print(
+            "error: --install-hooks and --uninstall-hooks are mutually exclusive",
+            file=sys.stderr,
+        )
+        return 2  # USAGE
+    p = (args.platform or "").strip().casefold()
+    if p != "claude":
+        print(
+            f"error: --install-hooks/--uninstall-hooks support only --platform claude "
+            f"(got {args.platform!r}) — host settings are Claude Code's",
+            file=sys.stderr,
+        )
+        return 3  # NOT_FOUND
+    uninstall: bool = args.uninstall_hooks
+    verb = "uninstall-hooks" if uninstall else "install-hooks"
+    home = args.home if args.home is not None else _default_home()
+
+    def _apply(dry: bool) -> tuple[dict | None, int]:
+        try:
+            return (
+                kata_host_settings.apply_hooks_change(
+                    home,
+                    host_dir=args.host_dir,
+                    uninstall=uninstall,
+                    dry_run=dry,
+                ),
+                0,
+            )
+        except kata_host_settings.HostSettingsError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return None, 5  # CONFLICT-class: unparseable host settings — fail closed
+        except OSError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return None, 4  # PERMISSION
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return None, 3  # NOT_FOUND (bad path / traversal)
+
+    # Plan pass (never writes) — the diff shown for consent.
+    plan, code = _apply(dry=True)
+    if plan is None:
+        return code
+
+    _emit(f"kata {verb}: proposed change to {plan['path']}", as_json=use_json)
+    _emit(
+        plan["diff"] if plan["changed"] else "(no change — already in the desired state)",
+        as_json=use_json,
+    )
+    _emit(
+        "DISCLOSURE: these are GLOBAL Claude Code hooks — once installed they run in "
+        "EVERY Claude Code session on this machine, not only kata runs. Containment: "
+        "each hook's kata-scope gate exits silently unless the session's cwd shows "
+        "kata-run evidence (a .kata/ dir or kata.config file).",
+        as_json=use_json,
+    )
+
+    if args.dry_run:
+        if use_json:
+            print(json.dumps(plan))
+        _emit("dry-run: nothing written", as_json=use_json)
+        return 0
+    if not plan["changed"]:
+        if use_json:
+            print(json.dumps(plan))
+        return 0
+
+    # Consent: --yes (--non-interactive) OR an interactive y/N prompt. A headless run
+    # without --yes is REFUSED (never silently edit the operator's global settings).
+    if not args.non_interactive:
+        if sys.stdin.isatty():
+            answer = input("Apply this GLOBAL settings change? [y/N] ").strip().casefold()
+            if answer not in ("y", "yes"):
+                _emit("aborted: no consent — nothing written", as_json=use_json)
+                return 1
+        else:
+            print(
+                f"error: --{verb} edits your GLOBAL Claude Code settings and requires "
+                f"explicit consent: re-run with --yes (headless) or from an interactive "
+                f"terminal",
+                file=sys.stderr,
+            )
+            return 2  # USAGE
+
+    result, code = _apply(dry=False)
+    if result is None:
+        return code
+    if use_json:
+        print(json.dumps(result))
+    else:
+        print(json.dumps({k: v for k, v in result.items() if k != "diff"}, indent=2))
+    if result.get("backup"):
+        _emit(f"backup written: {result['backup']}", as_json=use_json)
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -1323,6 +1440,27 @@ def main(argv: list[str] | None = None) -> int:
             "Default: 'master'."
         ),
     )
+    # NEW flags (CG-L2 — conductor-gauge chain deployment; engine in kata_host_settings)
+    parser.add_argument(
+        "--install-hooks",
+        dest="install_hooks",
+        action="store_true",
+        help=(
+            "merge kata's rendered Claude Code statusLine + hooks "
+            "(adapters/claude/settings.snippet.json) into your GLOBAL ~/.claude/settings.json. "
+            "Consent-gated: prints the settings diff and requires confirmation or --yes; "
+            "combine with --dry-run to preview without writing"
+        ),
+    )
+    parser.add_argument(
+        "--uninstall-hooks",
+        dest="uninstall_hooks",
+        action="store_true",
+        help=(
+            "remove exactly kata's hook entries from ~/.claude/settings.json and unwrap the "
+            "statusLine chain back to your original command (consent-gated like --install-hooks)"
+        ),
+    )
     args = parser.parse_args(argv)
 
     use_json: bool = args.use_json
@@ -1346,6 +1484,10 @@ def main(argv: list[str] | None = None) -> int:
         # Answers override flag / env values
         parent_dir = answers.get("parentDir", parent_dir)
         vault_dir = answers.get("vaultDir", vault_dir)
+
+    # CG-L2 dispatch: consent-gated GLOBAL host-settings merge (engine: kata_host_settings)
+    if args.install_hooks or args.uninstall_hooks:
+        return _hooks_verb(args, use_json)
 
     # Write settings when parentDir is known (--parent-dir, KATA_PARENT_DIR, or --answers-json)
     if parent_dir:
