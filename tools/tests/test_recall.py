@@ -20,8 +20,14 @@ provenance:    sources_read lists exactly the present sources.
 degradation:   all sources absent ⇒ empty payload, no crash.
 purity:        source scan — no eval/exec/subprocess/shell; no embedding/vector import.
 guard:         a '..' path raises ValueError (CWE-23).
+SB-L5 (feed_dir): BC pin (feed_dir absent == feed_dir=None, identical payload);
+               happy path (synthesis page surfaces, source='second-brain', N1 gate
+               still excludes a non-overlapping page); malformed page skipped;
+               '..' feed_dir rejected; sorted-walk determinism; frontmatter-absent
+               tolerance; sources_read includes a present feed_dir; excerpt bounded.
 Mutation proofs (a–g): overlap gate, recency component, always-surface branch,
                stale-does-not-filter, '..' guard, vocab-OPEN schema, evidence-projection.
+Mutation proofs (h–j): feed-join line, N1-still-gates-feed, sorted-walk line.
 """
 
 from __future__ import annotations
@@ -530,6 +536,176 @@ def test_reuses_recurrence_detect_detect_from_paths():
 
 
 # ---------------------------------------------------------------------------
+# SB-L5 — feed_dir: the optional config-gated second-brain 7th source
+# ---------------------------------------------------------------------------
+
+_PAGE_CONVERSE = """---
+produced-by: loop
+date: 2026-07-01
+scope: project
+tags:
+  - kata/synthesis/decision-pattern
+  - kata/decision-pattern/coding
+---
+
+# Converse decision pattern
+
+Prefer converse prose over popup questions when grilling design decisions.
+
+## Options considered
+
+- popups vs prose
+"""
+
+_PAGE_ORTHOGONAL = """---
+produced-by: loop
+date: 2026-07-02
+tags:
+  - qqfnord/unrelated
+---
+
+# Zzz qqfnord flotsam
+
+Wholly unrelated xylophone quorum jetsam.
+"""
+
+
+def _feed(tmp_path: Path) -> Path:
+    d = tmp_path / "feed"
+    d.mkdir()
+    return d
+
+
+def _write_page(feed: Path, name: str, text: str) -> Path:
+    p = feed / name
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(text, encoding="utf-8")
+    return p
+
+
+def test_feed_dir_none_byte_identical_bc_pin(tmp_path):
+    """BC pin (SB-L5): the SAME inputs minus ``feed_dir`` (kwarg absent) and with
+    ``feed_dir=None`` produce a byte-identical payload — the six-source behavior
+    is unchanged when the 7th source is unconfigured (BC1)."""
+    kwargs = dict(
+        lessons_path=_FIX / "LESSONS-LEARNED.md",
+        decisions_path=_FIX / "DECISIONS.md",
+        intent_path=_FIX / "INTENT.md",
+        understand_path=_FIX / "understand.md",
+        misses_path=_FIX / "validation-misses.jsonl",
+        handled_path=tmp_path / "absent-handled.jsonl",
+        query_terms=["converse", "recall"], kind="project",
+        generated_ts="2026-07-12T00:00:00Z",
+    )
+    without_kwarg = recall.recall_from_paths(**kwargs)
+    with_none = recall.recall_from_paths(**kwargs, feed_dir=None)
+    assert json.dumps(without_kwarg) == json.dumps(with_none)
+
+
+def test_feed_page_surfaces_and_n1_gates(tmp_path):
+    """Happy path (mutation-load-bearing, h/i): a synthesis page whose tokens
+    overlap the query SURFACES (source='second-brain', frontmatter provenance);
+    a non-overlapping page in the same feed is EXCLUDED by the N1 gate."""
+    feed = _feed(tmp_path)
+    _write_page(feed, "converse.md", _PAGE_CONVERSE)
+    _write_page(feed, "orthogonal.md", _PAGE_ORTHOGONAL)
+    payload = recall.recall_from_paths(
+        feed_dir=feed, query_terms=["converse", "grill"], kind="project",
+        generated_ts="2026-07-12T00:00:00Z",
+    )
+    assert recall.validate_payload(payload) == []
+    brains = [r for r in payload["records"] if r["source"] == "second-brain"]
+    assert len(brains) == 1, "only the overlapping page passes the N1 gate"
+    rec = brains[0]
+    assert rec["title"] == "Converse decision pattern"
+    assert rec["provenance"]["produced_by"] == "loop"
+    assert rec["provenance"]["date"] == "2026-07-01"
+    assert "popup" in rec["excerpt"]  # first non-heading body paragraph
+    assert "kata" in rec["tags"]      # frontmatter tags tokenized in
+    assert "qqfnord" not in json.dumps(payload["records"]), "N1: zero overlap ⇒ excluded"
+
+
+def test_malformed_feed_page_skipped(tmp_path):
+    """A malformed/undecodable page is SKIPPED (tolerant), never raises; the
+    healthy sibling page still parses."""
+    feed = _feed(tmp_path)
+    _write_page(feed, "good.md", _PAGE_CONVERSE)
+    (feed / "bad.md").write_bytes(b"\xff\xfe\x00 not utf-8 \xff")
+    recs = recall.parse_synthesis_pages(feed)
+    assert [r["title"] for r in recs] == ["Converse decision pattern"]
+
+
+def test_feed_dir_dotdot_rejected():
+    """A '..' feed_dir raises ValueError (CWE-23) — both surfaces."""
+    with pytest.raises(ValueError, match=r"\.\."):
+        recall.parse_synthesis_pages("../evil-feed")
+    with pytest.raises(ValueError, match=r"\.\."):
+        recall.recall_from_paths(
+            feed_dir="../evil-feed", query_terms=[], kind="project",
+        )
+
+
+def test_parse_synthesis_pages_sorted_walk(tmp_path):
+    """Determinism (Doctrine law 2, mutation-load-bearing j): the recursive walk
+    is sorted — creation order does NOT leak into record order."""
+    feed = _feed(tmp_path)
+    _write_page(feed, "beta.md", "# Beta page\n\nbeta body\n")
+    _write_page(feed, "alpha.md", "# Alpha page\n\nalpha body\n")
+    _write_page(feed, "sub/gamma.md", "# Gamma page\n\ngamma body\n")
+    recs = recall.parse_synthesis_pages(feed)
+    assert [r["title"] for r in recs] == ["Alpha page", "Beta page", "Gamma page"]
+
+
+def test_feed_page_without_frontmatter_tolerated(tmp_path):
+    """A page with NO frontmatter still parses: produced_by='unknown', date None."""
+    feed = _feed(tmp_path)
+    _write_page(feed, "plain.md", "# Plain converse note\n\nA body line about converse.\n")
+    recs = recall.parse_synthesis_pages(feed)
+    assert len(recs) == 1
+    assert recs[0]["source"] == "second-brain"
+    assert recs[0]["provenance"]["produced_by"] == "unknown"
+    assert recs[0]["provenance"]["date"] is None
+    assert recs[0]["stale"] is False
+
+
+def test_feed_page_title_falls_back_to_stem(tmp_path):
+    """No `# ` heading ⇒ title = filename stem."""
+    feed = _feed(tmp_path)
+    _write_page(feed, "mise--serving-scale.md", "prose only, about converse scaling\n")
+    recs = recall.parse_synthesis_pages(feed)
+    assert recs[0]["title"] == "mise--serving-scale"
+
+
+def test_feed_excerpt_bounded(tmp_path):
+    """The excerpt is the first non-heading paragraph, bounded in length."""
+    feed = _feed(tmp_path)
+    long_para = "converse " + "x" * 1000
+    _write_page(feed, "long.md", f"# Long converse page\n\n{long_para}\n")
+    recs = recall.parse_synthesis_pages(feed)
+    assert 0 < len(recs[0]["excerpt"]) <= recall._EXCERPT_MAX
+    assert len(recs[0]["excerpt"]) < len(long_para)
+
+
+def test_sources_read_includes_feed_dir(tmp_path):
+    """provenance.sources_read includes feed_dir when present on disk, not when absent."""
+    feed = _feed(tmp_path)
+    _write_page(feed, "p.md", _PAGE_CONVERSE)
+    payload = recall.recall_from_paths(
+        feed_dir=feed, query_terms=["converse"], kind="project",
+        generated_ts="2026-07-12T00:00:00Z",
+    )
+    assert str(feed) in payload["provenance"]["sources_read"]
+
+    absent = tmp_path / "no-such-feed"
+    payload2 = recall.recall_from_paths(
+        feed_dir=absent, query_terms=["converse"], kind="project",
+        generated_ts="2026-07-12T00:00:00Z",
+    )
+    assert str(absent) not in payload2["provenance"]["sources_read"]
+    assert payload2["records"] == []  # absent feed contributes nothing, no crash
+
+
+# ---------------------------------------------------------------------------
 # Mutation non-vacuity proofs (a–g) — spawn real subprocess via prove_non_vacuous
 # ---------------------------------------------------------------------------
 
@@ -662,3 +838,52 @@ def test_mutation_proof_evidence_projection():
         _src(), asserted_line, _cmd("test_recurrence_projects_out_evidence")
     )
     assert verdict["nonVacuous"] is True, f"evidence-projection not load-bearing: {verdict}"
+
+
+def test_mutation_proof_feed_join_pool():
+    """(h) Removing the feed-join line keeps second-brain pages out of the pool.
+
+    Asserted line (exact, 4-space indent):
+        '    candidate_records.extend(parse_synthesis_pages(feed_dir))'
+    Removed → the module STILL imports (clean semantic mutation) but feed pages
+    never reach selection → test_feed_page_surfaces_and_n1_gates goes red.
+    """
+    import mutation_run
+    asserted_line = "    candidate_records.extend(parse_synthesis_pages(feed_dir))"
+    verdict = mutation_run.prove_non_vacuous(
+        _src(), asserted_line, _cmd("test_feed_page_surfaces_and_n1_gates")
+    )
+    assert verdict["nonVacuous"] is True, f"feed-join not load-bearing: {verdict}"
+
+
+def test_mutation_proof_n1_gates_feed_records():
+    """(i) The N1 overlap gate is load-bearing for feed records too.
+
+    Asserted line (exact, 8-space indent — the SAME gate as proof (a)):
+        '        if not token_overlap(cand, query_terms):'
+    Removed → orphaned `continue` → IndentationError on import →
+    test_feed_page_surfaces_and_n1_gates goes red (the non-overlapping page
+    would otherwise be surfaced — N1 must still gate feed records).
+    """
+    import mutation_run
+    asserted_line = "        if not token_overlap(cand, query_terms):"
+    verdict = mutation_run.prove_non_vacuous(
+        _src(), asserted_line, _cmd("test_feed_page_surfaces_and_n1_gates")
+    )
+    assert verdict["nonVacuous"] is True, f"N1 gate not load-bearing for feed: {verdict}"
+
+
+def test_mutation_proof_sorted_walk():
+    """(j) Removing the sorted walk breaks deterministic feed ordering.
+
+    Asserted line (exact, 8-space indent):
+        '        pages = sorted(root.rglob("*.md"))'
+    Removed → empty ``try`` body → IndentationError on import →
+    test_parse_synthesis_pages_sorted_walk goes red.
+    """
+    import mutation_run
+    asserted_line = '        pages = sorted(root.rglob("*.md"))'
+    verdict = mutation_run.prove_non_vacuous(
+        _src(), asserted_line, _cmd("test_parse_synthesis_pages_sorted_walk")
+    )
+    assert verdict["nonVacuous"] is True, f"sorted walk not load-bearing: {verdict}"

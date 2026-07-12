@@ -17,8 +17,11 @@ LEARN feed, D74 — emit-only, out of scope here).
   selection / staleness / read-only rules in this doc. It validates **SHAPE — required keys + types —
   ONLY**; it **never** closes a `source` / `backend` / `produced_by` vocabulary.
 - **The files-only default adapter** = `recall.recall_from_paths(...)` + the per-source parsers
-  (`recall.parse_lessons` / `parse_decisions` / `parse_intent` / `parse_understand`): the default backend
-  that serves the contract from six on-disk artifacts. It is **one implementation** of the contract.
+  (`recall.parse_lessons` / `parse_decisions` / `parse_intent` / `parse_understand` /
+  `parse_synthesis_pages`): the default backend that serves the contract from six on-disk artifacts
+  **plus an optional config-gated seventh — the second-brain feed dir** (`feed_dir`, records
+  `source="second-brain"`; absent ⇒ byte-identical six-source behavior; SB-L5/D151). It is **one
+  implementation** of the contract.
 - An external store (Obsidian / kiban / kagami) is a *different adapter answering the same contract* — it
   drops in later **without re-contracting**. Keep the two strictly separate so the seam survives.
 

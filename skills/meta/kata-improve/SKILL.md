@@ -6,7 +6,7 @@ description: >-
   bump versions. Targets the skills/ tree (not product code); decides WHAT to change and delegates new-skill
   authoring to kata-write-skill.
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: meta
 status: beta
 agnostic: true
@@ -103,17 +103,23 @@ fingerprint has raw material. It changes **no skill and no product code** — ou
 Run it at IMPROVE / handoff time (engram seam E6), never as a per-task hook (keep it out of the one-shot budget).
 
 - **Observe → synthesize → emit.** Read `DECISIONS.md`, `LESSONS-LEARNED.md`, the run's `GRILL-LEDGER.md`(s),
-  and any `REVIEW-*.md`. Emit compact, cross-linked **synthesis pages** per the **wiki-synthesis output schema
-  in `protocol/engram.md`** (Karpathy LLM-Wiki raw↔synthesis split;
-  frontmatter `produced-by: loop`, `source:`, `scope:`; `[[wikilinks]]`; one page = one pattern). **Grill
-  ledgers are a primary feed (D72)** — each resolved decision + the human's choice + rationale is fingerprint
-  signal.
+  and any `REVIEW-*.md`. **The engine is `tools/learn_feed.py`** (the SB-L1 emitter CLI: `--ledger <p>...
+  [--decisions <p>] --feed-dir <d> --log-path <p> --project <slug> --kind <k>`) — it mines the ledgers +
+  DECISIONS bullets mechanically and renders the pages per the **wiki-synthesis output schema in
+  `protocol/engram.md`** (Karpathy LLM-Wiki raw↔synthesis split; frontmatter `produced-by: loop`, `source:`,
+  `scope:`; `[[wikilinks]]`; one page = one pattern). **Honest scope:** the CLI covers ledgers + DECISIONS;
+  the LESSONS-LEARNED / REVIEW-* synthesis remains **agent-authored** per this prose (same page schema,
+  written by this sub-mode, not the CLI). **Grill ledgers are a primary feed (D72)** — each resolved
+  decision + the human's choice + rationale is fingerprint signal.
 - **Zero CONSULT (structural).** This sub-mode **never reads a fingerprint back into planning or execution** —
   there is no CONSULT call-site. It is purely additive; emitting cannot influence any build (BC2).
 - **Redaction is a HARD pre-write gate (C3).** Every page passes the **`kata-handoff` §7 redaction filter**
   (no secrets / keys / PII) and is **project-scoped** (`scope:`) **before any write**. Redaction failure ⇒ do
-  not emit that page (fail-closed). This is the data-exfiltration / IP-leak surface — never bypass it. *(Maturity:
-  §7 is a prose contract today; a structural redaction filter + test seam land with β-runtime — see `protocol/engram.md`.)*
+  not emit that page (fail-closed). This is the data-exfiltration / IP-leak surface — never bypass it.
+  **D151 re-scope (loop feed):** for the loop feed the engine (`tools/learn_feed.py`) applies a
+  **deterministic redact-and-mark scrub** (`[REDACTED:<class>]`, counted in the report + page frontmatter —
+  never blocks emit), operator-directed 2026-07-12 (D151/G4) — vault security is the operator's
+  responsibility. The fail-closed §7 prose gate above continues to govern the agent-authored pages.
 - **No-op if unconfigured (BC1).** Emit only when `engram.learnFeed.dir` is set (`protocol/config.md`); absent
   ⇒ write nothing. Distinct from `engram.backend` (the CONSULT backend, still gated/off).
 - **Output:** N synthesis pages written to `engram.learnFeed.dir` (provenance `produced-by: loop`), plus a

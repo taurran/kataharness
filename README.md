@@ -61,8 +61,9 @@ token/wall-clock efficiency, in one loop.
   reads the evidence and must return PASS — backed by an **adversarial review** before every merge. In this
   project's own build, those fresh-context reviews have repeatedly caught real defects a 2,895-test green
   suite had blessed (the v0.2.1 merge gate alone caught and folded two HIGHs).
-- **🔋 The run outlives the context window.** v0.2.1's gauge-driven self-handoff + crash-proof resume: a
-  compaction, crash, or killed terminal costs you a wave boundary, not the run.
+- **🔋 The run outlives the context window.** v0.2.1's gauge-driven self-handoff + crash-proof resume
+  (once the hook chain is installed via `kata_install.py --install-hooks`): a compaction, crash, or
+  killed terminal costs you a wave boundary, not the run.
 - **🧠 A learning loop with a gate.** Telemetry from instrumented runs feeds threshold calibration; lessons
   flow back into the shipped skills — and the candidate-skill promotion path is **two-stage and human-gated**,
   never silent self-modification *(gate built and validated; first candidate yet to pass through it)*.
@@ -165,12 +166,14 @@ the chunk is redone → green. `inlineEval: off | telemetry | on`; leave it off 
 byte-for-byte unchanged.
 
 ### 🔋 Context autonomy — the 8-hour walk-away *(v0.2.1)*
-Long runs used to rot once the context window filled. Now the conductor watches its own **context
-gauge** and hands off to itself at 70% full: it writes a durable `HANDOFF.md` and commits it **before**
-any reset, then a hook re-anchors the fresh context and picks up at the next task boundary — **no work
-lost**. On Claude it reads the gauge from a statusline **bridge** that never clobbers your own
-statusline; where there's no gauge (headless `-p` runs, which we **verified never update the
-statusline**), it falls back to a fixed rotation cadence that gives the same guarantee.
+Long runs used to rot once the context window filled. Now — once the hook chain is installed via
+`kata_install.py --install-hooks` — the conductor watches its own **context gauge** and hands off to
+itself at 70% full: it writes a durable `HANDOFF.md` and commits it **before** any reset, then a hook
+re-anchors the fresh context and picks up at the next task boundary — **no work lost**. On Claude it
+reads the gauge from a statusline **bridge** that never clobbers your own statusline; where there's no
+gauge (headless `-p` runs, which we **verified never update the statusline**), it falls back to a fixed
+rotation cadence that gives the same guarantee. (The live host-fired-compaction leg, R6, remains a
+named-open proof — see Docs / status.)
 
 A single **preflight approval** collects everything an unattended run needs up front — installs,
 permissions, the model-cost gate, the recovery checks — so it never stalls waiting on you. And a
@@ -284,19 +287,19 @@ is the machine source of truth for what exists and at what version.
 | `kata-context` | 0.1.0 | 1 | plan | beta | adapted-from mattpocock/skills {ubiquitous-language, grill-with-docs CONTEXT-FORMAT} | Build/maintain CONTEXT.md shared/ubiquitous language |
 | `kata-design-doc` | 0.1.0 | 2 | plan | beta | adapted-from mattpocock/skills {to-prd} + superpowers brainstorming + GSD spec-phase | Synthesize the frozen design doc / spec |
 | `kata-graph` | 0.1.0 | 3 | plan | beta | adapted-from aider repo-map (MIT — tree-sitter tag-queries + personalized PageRank + token budget) + Graphify (safishamsi/graphify, MIT — AST graph + MCP oracle get_neighbors/shortest_path/get_pr_impact) | Token-budgeted structural map of an existing repo (version-up ingestion); builds kata.graph.json |
-| `kata-grill-advanced` | 0.1.0 | 5 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
-| `kata-grill-essential` | 0.1.0 | 3 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
-| `kata-grill-standard` | 0.1.0 | 4 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
+| `kata-grill-advanced` | 0.2.0 | 5 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
+| `kata-grill-essential` | 0.2.0 | 3 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
+| `kata-grill-standard` | 0.2.0 | 4 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
 | `kata-plan-advanced` | 0.1.4 | 4 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
 | `kata-plan-essential` | 0.1.4 | 2 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
 | `kata-plan-standard` | 0.1.4 | 3 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
 | `kata-research` | 0.1.0 | 3 | plan | beta | new (KataHarness original, loop-cognition RS-GB1/2/3, D62) — fresh-context no-write evaluator pattern (L4/L5) applied to in-loop research; escalation-routed like kata-orchestrate's no-re-plan escape valve (D52) | Research a must-deliver gap with no in-plan solution; ground every claim; return findings for the grounding gate, never re-plan |
 | `kata-board` | 0.1.0 | 2 | coordinate | beta | adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3 | Append-only mailbox/message board for lateral peer comms |
-| `kata-bootstrap` | 0.4.0 | 2 | coordinate | beta | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
-| `kata-initiate` | 0.3.0 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
+| `kata-bootstrap` | 0.5.0 | 2 | coordinate | beta | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
+| `kata-initiate` | 0.4.0 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
 | `kata-loop` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
 | `kata-onboard` | 0.2.0 | 3 | coordinate | beta | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
-| `kata-orchestrate` | 0.12.0 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
+| `kata-orchestrate` | 0.12.1 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
 | `kata-preflight` | 0.3.0 | 2 | coordinate | beta | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner from _subprocess_runner in tools/kata_dispatch.py | — |
 | `kata-readiness` | 0.2.2 | 1 | coordinate | beta | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
 | `kata-sprint` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C) | Own the sprint boundary (G1–G4 change-control); incremental delivery only |
@@ -323,9 +326,9 @@ is the machine source of truth for what exists and at what version.
 | `kata-defer` | 0.1.0 | 1 | handoff | beta | new (KataHarness original, D42/D43 GB9) — the structural complement to the no-drift spine; assumption-log role added by D71 (Priming-and-Grill autonomous floor) | Park off-plan items + log grill-skip assumptions at the boundary, never drift the frozen plan |
 | `kata-handoff` | 0.2.0 | 1 | handoff | beta | adapted-from mattpocock/skills {handoff} + Anthropic reset-with-handoff / compaction guidance | Two-way durable handoff (session/agent/tool) |
 | `kata-orient` | 0.3.0 | 2 | handoff | beta | new (KataHarness original, loop-cognition AO-GB1/2/3 + D76) — receiving half of the two-way handoff (spine #5); three-tier assembly echoes Hermes prompt_builder (stable/context/volatile); nested-AGENTS.md rollup standard | Assemble a subagent's launch orientation: three-tier, task-type-tailored, derived pointers+callouts, routed questions — the read half of handoff |
-| `kata-selfhandoff` | 0.2.0 | 1 | handoff | beta | adapted-from Anthropic compaction guidance + mattpocock caveman compression | Configurable context-threshold self-handoff (delegates artifact to kata-handoff) |
+| `kata-selfhandoff` | 0.2.1 | 1 | handoff | beta | adapted-from Anthropic compaction guidance + mattpocock caveman compression | Configurable context-threshold self-handoff (delegates artifact to kata-handoff) |
 | `kata-understand` | 0.1.0 | 2 | handoff | beta | new (KataHarness original, Phase 2 GL-R2c / DESIGN §3 / PLAN-phase2 Task C1) — comprehension-map half of the closeout back-half; backed by the F2 graph runtime (tools/graph_gen.py → kata.graph.json) | — |
-| `kata-improve` | 0.2.0 | 1 | meta | beta | adapted-from the Improvement Kata (Toyota Kata) + mattpocock/skills engineering/improve-codebase-architecture | Fold cross-run lessons back into the skills/ tree; calls kata-write-skill |
+| `kata-improve` | 0.3.0 | 1 | meta | beta | adapted-from the Improvement Kata (Toyota Kata) + mattpocock/skills engineering/improve-codebase-architecture | Fold cross-run lessons back into the skills/ tree; calls kata-write-skill |
 | `kata-promote` | 0.1.0 | 2 | meta | beta | new (KataHarness original, loop-cognition ML / LC-GB3/GB4/GB5, D60-D69) — two-stage gate vs Hermes' no-gate instant-universal model (RESEARCH.md bake-off: borrow the closed loop, keep our human gate) | Stage-2 human gate: promote a grounded agent-distilled candidate skill (experimental→stable + scope bump) into the toolkit; honors engram.autonomy |
 | `kata-write-skill` | 0.1.0 | 1 | meta | beta | adapted-from mattpocock/skills productivity/write-a-skill | Author new skills to STANDARDS (points, not restates); kata-improve calls it |
 <!-- SKILL-INDEX:END -->

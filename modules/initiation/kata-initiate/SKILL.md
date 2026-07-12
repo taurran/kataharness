@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.3.0
+version: 0.4.0
 category: coordinate
 status: beta
 agnostic: true
@@ -116,7 +116,8 @@ Contract doc: `protocol/recall.md` (the Recall read-CONTRACT — selection/stale
 slice, forward-ref OK). Engine: `tools/recall.py`.
 
 **1. Build the payload.** Call `recall.recall_from_paths(...)` (`tools/recall.py :: recall_from_paths` — the
-files-only default adapter; surface verified present) over the six on-disk sources, with `query_terms` derived
+files-only default adapter; surface verified present) over the six on-disk sources (plus the config-gated
+second-brain 7th, below), with `query_terms` derived
 from the run's **goal + CONTEXT** terms (for a `version-up`, also fold in the prior INTENT goal) and `kind` set
 to the classified run kind:
 
@@ -128,6 +129,7 @@ to the classified run kind:
 | `understand_path` | `.kata/understand.md` (the understand-map, written by [[kata-understand]]) |
 | `misses_path` | `.planning/validation-misses.jsonl` |
 | `handled_path` | `.planning/recurrence-handled.jsonl` |
+| `feed_dir` | `engram.learnFeed.dir` when set (the second-brain synthesis pages — config-gated 7th source; absent ⇒ omit) |
 | `query_terms` | tokens from the run goal + pinned `CONTEXT.md` terms (+ prior-INTENT goal on version-up) |
 | `kind` | `project` \| `research` \| `version-up` |
 

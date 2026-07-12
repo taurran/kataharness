@@ -13,7 +13,11 @@ The contract vs the adapter (the load-bearing separation)
   payload shape) + the selection/staleness/read-only rules. It validates **SHAPE
   (required keys + types) ONLY** — it **NEVER** closes a source/backend vocabulary.
 * **The files-only adapter** = ``recall_from_paths(...)`` + the per-source parsers:
-  the default backend that serves the contract from six on-disk artifacts.
+  the default backend that serves the contract from six on-disk artifacts, plus an
+  optional config-gated SEVENTH source — the second-brain synthesis feed dir
+  (``feed_dir``, SB-L5): ``parse_synthesis_pages`` reads ``*.md`` synthesis pages
+  (sorted recursive walk) as ``source="second-brain"`` candidates. Unconfigured
+  (``feed_dir=None``) the adapter behaves byte-identically to the six-source form.
 
 B1 — OPEN adapter-supplied labels (pinned IN the schema)
 --------------------------------------------------------
@@ -59,6 +63,7 @@ match_score            — token-overlap + recency component (pure; no embedding
 token_overlap          — the case-insensitive token-overlap set (the N1 predicate)
 select_records         — overlap>0 GATE, then recency RANKS the passers (N1)
 parse_lessons / parse_decisions / parse_intent / parse_understand — source parsers
+parse_synthesis_pages  — the optional 7th source: second-brain feed dir (SB-L5)
 build_payload          — assemble a contract-shaped payload
 recall_from_paths      — the files-only default adapter entry point
 _guard_path            — ``..`` traversal guard (CWE-23)
@@ -109,6 +114,10 @@ _BULLET_RE = re.compile(r"^- \*\*(?P<anchor>.+?)\*\*\s*(?P<body>.*)$", re.MULTIL
 _HEADING_RE = re.compile(r"^#{1,6}\s+(?P<name>.+?)\s*$")
 _LIST_RE = re.compile(r"^\s*[-*]\s+(?P<item>.+?)\s*$")
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
+# Synthesis-page title: the FIRST `# ` (h1) heading (SB-L5); fallback = file stem.
+_H1_RE = re.compile(r"^#\s+(?P<name>.+?)\s*$", re.MULTILINE)
+# Excerpt bound for synthesis pages — short, description-level (existing excerpt norms).
+_EXCERPT_MAX = 240
 
 
 # ---------------------------------------------------------------------------
@@ -690,6 +699,77 @@ def parse_understand(src, *, source_path: str | None = None, date=None) -> list[
     return records
 
 
+def _first_paragraph(body: str) -> str:
+    """The first non-heading body paragraph, bounded to ``_EXCERPT_MAX`` chars.
+
+    Heading lines and leading blanks are skipped; the paragraph ends at the next
+    blank line or heading. Pure text handling — no I/O.
+    """
+    para: list[str] = []
+    for line in body.splitlines():
+        stripped = line.strip()
+        if not stripped or _HEADING_RE.match(stripped):
+            if para:
+                break
+            continue
+        para.append(stripped)
+    return " ".join(para)[:_EXCERPT_MAX]
+
+
+def _parse_synthesis_page(page: Path) -> dict | None:
+    """Parse ONE second-brain synthesis page → a RecallRecord, or None.
+
+    Tolerant: ANY per-page failure (unreadable, undecodable, malformed) ⇒ ``None``
+    — the page is skipped and the walk continues; never raises into the caller.
+    ``produced_by`` = the frontmatter ``produced-by`` value (kept verbatim, e.g.
+    'loop'); absent ⇒ 'unknown'. Title = first ``# `` heading, else the file stem.
+    """
+    try:
+        text = page.read_text(encoding="utf-8")
+        meta, body = _parse_frontmatter(text)
+        raw_produced = meta.get("produced-by")
+        produced_by = str(raw_produced) if raw_produced is not None else "unknown"
+        m = _H1_RE.search(body)
+        title = m.group("name").strip() if m else page.stem
+        raw_tags = meta.get("tags") or []
+        if isinstance(raw_tags, list):
+            tag_text = " ".join(str(t) for t in raw_tags)
+        else:
+            tag_text = str(raw_tags)
+        return _make_record(
+            source="second-brain", source_path=str(page), title=title,
+            excerpt=_first_paragraph(body), date=meta.get("date"),
+            produced_by=produced_by, extra_tag_text=tag_text,
+        )
+    except Exception:  # noqa: BLE001 — a malformed page is skipped, never raises (SB-L5)
+        return None
+
+
+def parse_synthesis_pages(feed_dir) -> list[dict]:
+    """Parse second-brain synthesis pages under ``feed_dir`` → RecallRecords (SB-L5).
+
+    The optional, config-gated 7th recall source: a SORTED recursive walk
+    (``sorted(rglob("*.md"))`` — Determinism Doctrine law 2) of the LEARN-feed dir.
+    Each page yields one candidate with ``source="second-brain"`` and frontmatter
+    provenance (``produced-by`` / ``date`` / ``tags``). READ-ONLY and tolerant:
+    ``feed_dir=None`` or an absent/unreadable dir ⇒ ``[]``; a malformed page is
+    skipped; a ``..`` component raises ``ValueError`` (CWE-23, ``_guard_path``).
+    """
+    if feed_dir is None:
+        return []
+    root = _guard_path(feed_dir)
+    try:
+        pages = sorted(root.rglob("*.md"))
+    except OSError:
+        return []  # unreadable feed dir ⇒ contributes nothing, never crashes
+    records: list[dict] = []
+    for page in pages:
+        rec = _parse_synthesis_page(page)
+        if rec is not None:
+            records.append(rec)
+    return records
+
+
 # ---------------------------------------------------------------------------
 # RecurrenceRecord projection (N3 — drop raw evidence)
 # ---------------------------------------------------------------------------
@@ -746,6 +826,7 @@ def recall_from_paths(
     query_terms,
     kind,
     generated_ts: str | None = None,
+    feed_dir=None,
 ) -> dict:
     """The files-only default adapter — read six sources, return a contract payload.
 
@@ -754,9 +835,14 @@ def recall_from_paths(
     via ``recurrence_detect.detect_from_paths`` (reused by name — no re-clustering),
     projected to RecurrenceRecords (N3). Pure: no exec, no write. Absent sources
     contribute ``[]`` and never crash; a ``..`` path raises ``ValueError`` (CWE-23).
+
+    ``feed_dir`` (SB-L5) is the optional, config-gated 7th source: the second-brain
+    LEARN-feed dir, read via ``parse_synthesis_pages`` into the SAME candidate pool
+    BEFORE selection (the N1 gate + recency rank apply unchanged). ``feed_dir=None``
+    (the default) ⇒ byte-identical behavior to the six-source form (BC1).
     """
     # CWE-23 — guard all supplied paths at the adapter boundary (.. ⇒ ValueError).
-    for p in (lessons_path, decisions_path, intent_path, understand_path, misses_path, handled_path):
+    for p in (lessons_path, decisions_path, intent_path, understand_path, misses_path, handled_path, feed_dir):
         if p is not None:
             _guard_path(p)
 
@@ -765,6 +851,8 @@ def recall_from_paths(
     candidate_records.extend(parse_decisions(decisions_path, source_path=_spath(decisions_path)))
     candidate_records.extend(parse_intent(intent_path, source_path=_spath(intent_path)))
     candidate_records.extend(parse_understand(understand_path, source_path=_spath(understand_path)))
+    # SB-L5 — feed pages join the ORDINARY pool before selection (None ⇒ []).
+    candidate_records.extend(parse_synthesis_pages(feed_dir))
 
     records = select_records(candidate_records, query_terms)
 
@@ -775,10 +863,10 @@ def recall_from_paths(
         raw_recurrences = recurrence_detect.detect_from_paths(misses_path, hp)
     recurrences = [_recurrence_record(r) for r in raw_recurrences]
 
-    # sources_read = exactly the sources present on disk (tolerant).
+    # sources_read = exactly the sources present on disk (tolerant; incl. feed_dir).
     sources_read = [
         str(p)
-        for p in (lessons_path, decisions_path, intent_path, understand_path, misses_path, handled_path)
+        for p in (lessons_path, decisions_path, intent_path, understand_path, misses_path, handled_path, feed_dir)
         if p is not None and _exists(p)
     ]
 

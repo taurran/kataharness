@@ -13,6 +13,10 @@ Claude Code adapter features:
    additively surfaces `.planning/HANDOFF.md` freshness (CA-L17).
 4. **SessionStart(compact) hook** — re-anchors a post-compaction / respawned session
    on the newest `.planning/HANDOFF.md` (CA-L18).
+5. **UserPromptSubmit gauge-check hook** — mechanizes the conductor's 0.70
+   context-gauge check on every user turn (CG-L1/D152); kata-scope-gated, deduped,
+   structurally never-exit-2. Deployed (with the other hooks) via
+   `kata_install.py --install-hooks`.
 
 ---
 
@@ -147,6 +151,72 @@ The `SessionStart` entry in `settings.snippet.json` wires this script with the
 
 Same `<repo>` / venv substitution rules as the PreCompact entry above. The hook is
 stdlib-only, so any Python 3.12+ interpreter works.
+
+---
+
+## UserPromptSubmit gauge-check hook (CG-L1)
+
+`adapters/claude/hooks/kata-gauge-check.py` fires on **every user prompt** and makes the
+conductor's 0.70 context-gauge check machinery instead of prose (D152; fixes audit
+C-1/C-2). It reads the kata statusline **bridge** (`tempfile.gettempdir()/kata-ctx-<session_id>.json`
+— the writer's exact resolution, never a raw `%TEMP%` env read), evaluates the existing
+tested gauge engine (`kata_gauge.resolve_gauge` → `trigger_crossed`), and when the
+trigger fraction is crossed injects a one-line `[KATA CONTEXT GAUGE]` directive telling
+the conductor its context fraction and to execute `kata-selfhandoff` at the next task
+boundary.
+
+Behavioral contract (mirrored from the hook's docstring — DESIGN CG-L1, FROZEN 2026-07-12):
+
+- **Kata-scope gate (F-3, mandatory, first).** Inject ONLY when the stdin `cwd` shows
+  kata-run evidence — a `.kata/` dir or `kata.config` file at or above cwd (bounded
+  upward walk, 10 levels, stops at the filesystem root). A global hook must not push
+  kata directives into non-kata sessions; outside kata scope it prints nothing.
+- **Once-per-crossing dedupe (F-3).** A sidecar `kata-gauge-notified-<session_id>.json`
+  (same temp dir, atomic temp+`os.replace` writes) records the last-notified fraction;
+  it re-notifies only when the fraction has grown ≥ 0.05 since the last notification.
+  A corrupt sidecar is treated as absent (notify rather than never-notify).
+- **Never exit 2 (F-8, structural).** A UserPromptSubmit exit 2 **blocks and erases the
+  user's prompt**, so the entire body runs under one try/except and the process always
+  exits 0 — below-threshold, absent/stale/corrupt bridge, unsafe `session_id`, or ANY
+  failure ⇒ silent no-op (one stderr breadcrumb on exceptions).
+
+### Grounding — UserPromptSubmit (GROUNDED-BY-PATTERN, pending live smoke)
+
+The SessionStart hook's `hookSpecificOutput.additionalContext` injection is the
+**CONFIRMED** mechanism (GROUNDING-CLAUDE.md G2, official hooks docs). This hook reuses
+the same output shape with `hookEventName: "UserPromptSubmit"`, and reads the same
+documented stdin fields the other hooks receive (`session_id`, `cwd`). Status:
+**GROUNDED-BY-PATTERN** — the stdin fields + `additionalContext` mechanism for the
+UserPromptSubmit event specifically are inferred from the documented hook-event pattern
+and the unit/integration suite (`tools/tests/test_kata_gauge_check.py`), pending the
+live smoke scheduled this session (freeze-gate F-9). Not yet marked CONFIRMED.
+
+### Hook installation
+
+The `UserPromptSubmit` entry in `settings.snippet.json` wires this script:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"<repo>/tools/.venv/Scripts/python.exe\" \"<repo>/adapters/claude/hooks/kata-gauge-check.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Same `<repo>` / venv substitution rules as above; the hook itself is stdlib-only (it
+imports `tools/kata_gauge.py` by path), so any Python 3.12+ interpreter works. The
+consent-gated deployer for the whole chain — statusline + all three hooks, resolved
+paths, append-never-replace merge, backup, uninstall round-trip — is
+`kata_install.py --install-hooks` (merge engine: `tools/kata_host_settings.py`, CG-L2).
 
 ---
 

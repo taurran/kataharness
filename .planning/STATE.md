@@ -8,6 +8,37 @@ last_updated: "2026-07-05T09:00:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-07-12b — SECOND Fable 5 session: BOTH handoff deep reviews DONE + D151/D152 BUILT;
+> branch `feat/second-brain-loop`, PR pending):** The two operator-ordered deep reviews ran outside
+> the loop (D33): **(1) conductor self-handoff — root-caused.** It never fired because the gauge
+> check was unenforced prose living only in kata-orchestrate's wave loop (audit C-1/C-2) AND the
+> bridge/hook chain was never deployed (D-1/D-2: installer wrote no host settings; snippet had
+> `<repo>` placeholders; live profile: GSD owns statusLine, no PreCompact hook, zero bridge files
+> ever) AND no reset backstop (C-3/C-4, R6 named-open). **(2) pointer structure SOUND** — all six
+> `da9bc92` PD wirings verified present; AGENTS.md-canonical zero-drift; recall engine real+tested
+> but one prose call site (B1). **(3) second brain: the loop did NOT exist** — β feed prose-only,
+> live vault EMPTY since install, grill responses never reached it (RUBRIC:11 doc-drift F2).
+> **Operator directed G1-G5 (D151/D152, PD-1 "BUILT and not deferred"):** freeze-gate (HOLD→11
+> folds→SHIP) → 5 TDD builders → prose wave → 2-reviewer adval (SHIP-WITH-FIXES ×2, all folded:
+> G-1 dedupe drop-re-arm, G-2 emit-before-record, R-1..R-7 doc-truth). **SHIPPED: `tools/
+> learn_feed.py`** (grill→second-brain emitter; corpus-verified grammar; redact-and-mark per the
+> G4 operator re-scope of C3) · grill-close emit step (RUBRIC + tier skills 0.2.0) · **recall 7th
+> source** (`feed_dir`, BC byte-pinned) · seeding helpers (kata_settings) · **`adapters/claude/
+> hooks/kata-gauge-check.py`** (UserPromptSubmit; kata-scope gate; dedupe; never-exit-2) ·
+> **`tools/kata_host_settings.py` + `kata_install.py --install-hooks/--uninstall-hooks`**
+> (consent-gated merge; frozen-five md5-identical; GSD statusline CHAIN-ELIGIBLE per live dry-run)
+> · router stanza home-templating + `/kata-start` verb · engram.md dual-producer/C3-C5 amendments ·
+> guard-family tripwire enumerated (fired as designed on the 2 new guards). **LIVE-PROVEN (n=1):
+> 11 real MM-ledger pages emitted into the PokeVault second brain (`decision-patterns/`), idempotent
+> re-run 0/11, recall read-back surfaced all 11 (`produced_by=loop`).** Gauntlet: **pytest 3476/3 ·
+> integration 2/2 · ruff clean · validator 48/0/0 · Snyk med+ 0 on new code** (one pre-existing
+> accepted statusline_chain MED; .snyk python/PT extended to kata_host_settings). Session hazards:
+> mid-build session-limit kill (all 5 builders resumed clean) + one TRANSIENT file corruption
+> (recurrence_detect IndentationError, self-healed, byte-clean vs HEAD) — worktree hazard still
+> live. **NEXT: operator PR merge gate; operator decision on LIVE `--install-hooks` (dry-run
+> verified); then R6/F-9 live smokes; NEXT SESSION: "elevate" grill-close recommendation + grill
+> single-question UX (BACKLOG 2026-07-12b #1/#2).** *(Prior CURRENT blocks below are history.)*
+
 > **CURRENT (2026-07-12 — FABLE 5 FULL HEALTH REVIEW shipped + MERGED; master `da9bc92`, pushed):**
 > A three-round health review run OUTSIDE the loop (D33 no-self-cert) + a pre-merge adversarial
 > validation. **Verdict: NOT a facade** (0 FALSE/0 UNSUBSTANTIATED of ~19 public claims; 259/259

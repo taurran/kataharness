@@ -69,18 +69,23 @@ def _safe_path(raw: str | Path) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Stanza body (static; deterministic)
+# Stanza body (deterministic template; `{home}` = the harness home back-pointer)
 # ---------------------------------------------------------------------------
+
+#: Default harness-home back-pointer (CG-L4). The literal `~`-form is the BC
+#: pin: rendering with this default is byte-identical to the pre-`home`-param
+#: stanza's prime-directives line — existing call sites keep today's bytes.
+DEFAULT_HOME = "~/.kata-home"
 
 _STANZA_BODY = """\
 ## KataHarness
 
 KataHarness is installed in this project.
 
-**Prime Directives** (loaded every run — `~/.kata-home/protocol/prime-directives.md`): never silently defer/stub/skip designed work (ask first); absolute truthfulness — a stub reported as built is drift.
+**Prime Directives** (loaded every run — `{home}/protocol/prime-directives.md`): never silently defer/stub/skip designed work (ask first); absolute truthfulness — a stub reported as built is drift.
 
 **Entrypoints**
-- `kata-bootstrap` — start a new kata run
+- `/kata-start` — begin a kata run (kata-initiate, the canonical front door; `kata-bootstrap` is the pre-loop configurator)
 - `kata-validate`  — adversarially validate a payload or an agent's output
 
 **Run state**
@@ -95,6 +100,20 @@ _Managed by KataHarness._"""
 # Body: the ~15-line instruction budget + the CA-L20 resume/compact re-anchor line
 # (universal fallback for platforms with no SessionStart hook — DESIGN CA-L20 / §4 row 8)
 # + the standing Prime Directives reminder (loaded on every execution, 2026-07-12).
+# CG-L4 (2026-07-12): the prime-directives back-pointer is templated via `{home}`
+# (custom KATA_HOME installs render their real home); the start verb is
+# `/kata-start` (kata-initiate, the canonical front door) with kata-bootstrap
+# named as the pre-loop configurator.
+
+
+def _render_home(home: str | Path) -> str:
+    """Render *home* for embedding in the stanza: forward slashes only.
+
+    The default ``~/.kata-home`` passes through unchanged (the `~`-form is
+    preserved — BC pin); a Windows path like ``C:\\kata\\home`` renders as
+    ``C:/kata/home``. Pure text templating — no filesystem sink, no resolve.
+    """
+    return str(home).replace("\\", "/")
 
 
 # ---------------------------------------------------------------------------
@@ -102,16 +121,17 @@ _Managed by KataHarness._"""
 # ---------------------------------------------------------------------------
 
 
-def render_stanza(summary: str = "") -> str:
+def render_stanza(summary: str = "", home: str | Path = DEFAULT_HOME) -> str:
     """Return the full router stanza string including begin/end markers.
 
     Deterministic and byte-stable for identical inputs.  The body (between the
-    markers) contains ~17 Markdown lines: a project pointer, the two entrypoints
-    (``kata-bootstrap``, ``kata-validate``), the four run-state locations
-    (``.kata/``, ``.planning/``, ``INTENT.md``, ``kata.config``), and the CA-L20
-    standing line (resume/compact sessions re-anchor via ``.planning/HANDOFF.md``
-    before doing anything else — the universal fallback for hook-less platforms).
-    No HTML tags appear in the body.
+    markers) contains ~17 Markdown lines: a project pointer, the entrypoints
+    (``/kata-start`` — kata-initiate, the canonical front door, with
+    ``kata-bootstrap`` as the pre-loop configurator — and ``kata-validate``),
+    the four run-state locations (``.kata/``, ``.planning/``, ``INTENT.md``,
+    ``kata.config``), and the CA-L20 standing line (resume/compact sessions
+    re-anchor via ``.planning/HANDOFF.md`` before doing anything else — the
+    universal fallback for hook-less platforms).  No HTML tags appear in the body.
 
     Parameters
     ----------
@@ -119,8 +139,13 @@ def render_stanza(summary: str = "") -> str:
         Optional one-line install summary appended below the project pointer.
         An empty string (the default) omits the line — output is byte-identical
         to previous calls with no summary (BC guarantee).
+    home:
+        The harness-home back-pointer templated into the Prime Directives line
+        (CG-L4). Rendered with forward slashes. The default ``~/.kata-home``
+        preserves the pre-param bytes (BC guarantee) — pass the real
+        ``KATA_HOME`` for custom-home installs.
     """
-    body = _STANZA_BODY
+    body = _STANZA_BODY.format(home=_render_home(home))
     if summary:
         # Insert the summary line after the blank line that follows the header,
         # keeping the body within the ~15-line budget for short summaries.
@@ -220,6 +245,7 @@ def _strip_stanza(content: str) -> str:
 def write_stanza(
     agents_md_path: str | Path,
     summary: str = "",
+    home: str | Path = DEFAULT_HOME,
 ) -> None:
     """Idempotent UPSERT of the KataHarness router stanza into the target AGENTS.md.
 
@@ -236,9 +262,12 @@ def write_stanza(
         Path to the target project's AGENTS.md.  Must not contain ``..``.
     summary:
         Optional one-line install summary forwarded to :func:`render_stanza`.
+    home:
+        Harness-home back-pointer forwarded to :func:`render_stanza` (CG-L4).
+        Default ``~/.kata-home`` preserves existing call sites' bytes (BC).
     """
     path = _safe_path(agents_md_path)
-    stanza = render_stanza(summary)
+    stanza = render_stanza(summary, home=home)
 
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)

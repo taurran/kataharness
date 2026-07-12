@@ -2417,3 +2417,27 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   the pre-fix FP trigger mix** — modeled-not-measured, inputs cited, C-3 n=1 caveat stated; live A/B
   queued post-R6 (BACKLOG ★ 6). **Gauntlet at tag: pytest 3120 pass / 3 skip · validate_skills 48/0/0 ·
   Snyk medium+ 0.** Tests +225 over v0.2.1. Tagged **v0.3.0**.
+
+- **D151 — Grill responses are second-brain input; the loop closes (operator-directed 2026-07-12).**
+  Spec: `.planning/specs/second-brain-loop/DESIGN.md` (SB-L1…L8, FROZEN). G1 emit at grill close ·
+  G2 one synthesis page per LOCKED grill decision (engram wiki-synthesis schema) into a dedicated
+  `decision-patterns/` section for coding/research WORKFLOW decision patterns + `wiki/log.md` append ·
+  G3 the feed dir becomes a config-gated 7th recall source (`recall_from_paths(feed_dir=…)`, BC1
+  absent⇒byte-identical) · **G4 redaction re-scoped by the operator**: light-touch deterministic
+  scrub (redact-and-mark, never block) — "the user's responsibility to manage and secure their own
+  vault"; this consciously re-scopes engram C3's fail-closed pre-write gate for the loop feed.
+  Engine: NEW `tools/learn_feed.py` (stdlib, deterministic per Doctrine laws 2/3/5/6/7). Conscious
+  C5 deviation recorded: loop pages are regenerable derived views (idempotent overwrite of
+  `produced-by: loop` only; refuses to touch wiki/agent pages). *Why:* the 2026-07-12 audit proved
+  the learn→store→recall loop did not exist (β feed prose-only, vault empty, RUBRIC:11 doc-drift);
+  grill resolutions are the densest operator-decision signal the harness produces.
+- **D152 — Conductor gauge check is machinery; the chain deploys by consent (operator-directed
+  2026-07-12: "BUILT and not deferred").** Spec: `.planning/specs/conductor-gauge-wiring/DESIGN.md`
+  (CG-L1…L7, FROZEN). NEW UserPromptSubmit hook `kata-gauge-check.py` evaluates the existing
+  `kata_gauge` engine every user turn and injects the 0.70 directive as additionalContext —
+  session-shape-independent (kills audit C-1/C-2). NEW consent-gated `kata_install.py
+  --install-hooks/--uninstall-hooks`: resolved-path snippet merge into `~/.claude/settings.json`
+  (fail-closed read, backup, atomic, idempotent, statusLine chained-never-clobbered via the
+  existing CA-L1 wrapper) — the executable bootstrap slot 6 (kills D-1/D-2). Router stanza A2/A3 +
+  doc-truth A4/F3/CG-L6 in the same pass. R6 stays a named-open leg: this build makes the live
+  proof possible, it does not claim it proven.

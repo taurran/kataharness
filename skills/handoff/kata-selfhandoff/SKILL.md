@@ -6,7 +6,7 @@ description: >-
   survive long runs without context rot. It is the TRIGGER POLICY only; it delegates the handoff artifact to
   kata-handoff and never re-implements the format.
 license: Apache-2.0
-version: 0.2.0
+version: 0.2.1
 category: handoff
 status: beta
 agnostic: true
@@ -34,7 +34,10 @@ schema). Do not duplicate the handoff template here.
   `context_window.total_tokens`, post-cap: a capped session's real frame IS the cap). One key
   (`contextTrigger`, §2), shown in bootstrap's **advanced drawer**, **never interactively asked** (no new
   dial). It is read via the gauge (`kata_gauge`) and evaluated at **wave/frontier boundaries by the conductor**
-  ([[kata-orchestrate]]) — this skill states the policy; the conductor fires it. Do **not** hard-code a number
+  ([[kata-orchestrate]]) — this skill states the policy; the conductor fires it. On Claude, a **mechanical
+  per-turn check** additionally enforces this once the hook chain is installed via `kata_install.py
+  --install-hooks` (the UserPromptSubmit gauge-check hook, CG-L1/D152); without the deployed chain the
+  boundary check remains conductor prose. Do **not** hard-code a number
   at the call site — read `contextTrigger` (default `0.70` when absent).
   - **Smart-zone framing (CA-L7).** The operating target is the **smart zone** — *above the context floor*
     (kata-orient 3-tier load complete), *below the rot ceiling*. A note for 1M frames: a lower value is one

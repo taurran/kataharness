@@ -31,6 +31,21 @@ The brief's example values ("e.g. 300000 on a 1M window; 60000 on 200k" to fire 
 **reserve** semantics. The binary proves **ceiling** semantics. Correct examples: fire at ~80% of a
 200k frame ⇒ set ~160000; ~80% of 1M ⇒ ~800000. Floor is 100k (can't set lower).
 
+## G1b. UserPromptSubmit hook — GROUNDED-BY-PATTERN (2026-07-12, D152/CG-L1; flip to CONFIRMED at the F-9 live smoke)
+
+- **Stdin fields**: `session_id` + `cwd` present in the UserPromptSubmit payload — same envelope family as
+  SessionStart/PreCompact (G2); mirrored from the established hook stdin-parsing pattern
+  (`kata-sessionstart.py`), not yet re-verified against a live UserPromptSubmit payload for kata's OWN hook.
+- **Context injection**: `hookSpecificOutput.additionalContext` — the SAME mechanism CONFIRMED for
+  SessionStart (G2), and observed working live for UserPromptSubmit in this operator's environment (the
+  kata-target-toggle UserPromptSubmit hook injects additionalContext every session start). Kata's
+  `kata-gauge-check.py` reproduces the exact envelope with `hookEventName: "UserPromptSubmit"`.
+- **Exit-code hazard**: UserPromptSubmit exit 2 BLOCKS AND ERASES the user's prompt — the gauge-check hook
+  is structurally never-exit-2 (whole body under one try/except exiting 0; pinned by test).
+- **CONFIRMED pending**: run the F-9 live smoke (install via `kata_install.py --install-hooks`, cross the
+  threshold in a kata cwd, observe the injected directive), then flip this entry and the adapter README's
+  GROUNDED-BY-PATTERN marker.
+
 ## G2. Hooks — VERIFIED from official docs (code.claude.com/docs/en/hooks.md)
 
 - **SessionStart matchers**: `startup` | `resume` | `clear` | `compact` — a hook CAN fire specifically
