@@ -257,9 +257,13 @@ def _split_frontmatter(text: str) -> tuple[str | None, str]:
     return parts[1], parts[2]
 
 
-# Top-level frontmatter key line: starts with a non-space char, has a colon,
-# no leading whitespace (so indented continuation / list items are NOT keys).
-_TOP_KEY_RE = re.compile(r"^(\S[^:]*):")
+# Top-level frontmatter key line: starts with a non-space, non-``-`` char and has
+# a colon, with no leading whitespace.  The ``(?!-)`` guard (F4) excludes a
+# non-indented block-list item such as ``- name: x`` — a ``-`` is a non-space
+# char, so without the guard ``- name`` was misread as a top-level key and
+# truncated the owning key's value-block.  (Indented continuation / list items
+# are already excluded by the no-leading-whitespace anchor.)
+_TOP_KEY_RE = re.compile(r"^(?!-)(\S[^:]*):")
 
 # Characters that force double-quoting of a scalar to keep it a valid, safe
 # YAML/SKILL.md value.  Over-quoting is harmless (it round-trips identically);
@@ -318,7 +322,8 @@ def _edit_frontmatter(fm_text: str, overrides: dict) -> str:
     by a single flow-style line); a key absent from the base is appended.  Every
     NON-overridden line is left byte-identical (no reformatting of untouched keys).
 
-    A top-level key line matches ``^(\\S[^:]*):``.  Its value-block extends from
+    A top-level key line matches ``^(?!-)(\\S[^:]*):`` (non-indented, non-list).
+    Its value-block extends from
     that line through all following lines that are blank, indented (leading
     whitespace), or list items (``-`` …), up to (not including) the next
     top-level key.  Trailing blank lines within a rebuilt block are re-emitted so

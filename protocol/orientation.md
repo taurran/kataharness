@@ -17,7 +17,7 @@ drop **stable**. Each tier names its sources; absent sources degrade gracefully 
 
 | Tier | Holds | Sources |
 |---|---|---|
-| **stable** | identity · the spine · conventions · model-routing — the non-negotiables, same every task | root `AGENTS.md` (+ adapter `CLAUDE.md` notes), `docs/STANDARDS.md` |
+| **stable** | identity · **the Prime Directives** · the spine · conventions · model-routing — the non-negotiables, same every task | `protocol/prime-directives.md` (always injected, never summarized away), root `AGENTS.md` (+ adapter `CLAUDE.md` notes), `docs/STANDARDS.md` |
 | **context** | where the work sits + who it collaborates with | the **frozen DESIGN/PLAN slice** for this task · **nearest-module `AGENTS.md`/`CLAUDE.md`** (vertical rollup) · `CONTEXT.md` glossary · relevant ADRs · **lateral adjacency pointers** (below) |
 | **volatile** | the assignment + current state | task `<action>`/`<owned files>`/`<acceptance>` · `kata-board`/state · open escalations · any inbound `kata-handoff` artifact |
 

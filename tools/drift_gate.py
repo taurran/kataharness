@@ -43,10 +43,8 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Union
-
 
 # ---------------------------------------------------------------------------
 # §5 v1 FAST-FOLLOW SEAM — structural_drift_verdict (NOT IMPLEMENTED IN v1)
@@ -106,6 +104,11 @@ DEFAULT_SCRUB_PATTERNS: list[str] = [
     r"(?i:timestamp|epoch|ts|time)[\"'\s:=]+\d{10,13}",
     # POSIX /tmp/ paths
     r"/tmp/[^\s]+",
+    # macOS per-user temp dirs (TMPDIR default): /var/folders/xx/.../T/... (DET-12).
+    # NARROW: rooted at the fixed /var/folders/ prefix, so only the OS temp tree is
+    # scrubbed — a /var/folders literal is the temp-dir root by construction, never
+    # a business value.
+    r"/var/folders/[^\s]+",
     # Windows %TEMP% / AppData\Local\Temp paths
     r"[A-Za-z]:\\[^\\]+\\AppData\\Local\\Temp\\[^\s]+",
 ]
@@ -145,7 +148,13 @@ def parse_test_outcomes(output_text: str) -> dict[str, str]:
     """
     outcomes: dict[str, str] = {}
     for match in _OUTCOME_LINE_RE.finditer(output_text):
-        test_id = match.group(1)
+        # DET-12: normalize the node-id path separator to '/'. pytest emits the
+        # OS-native separator, so a Windows-authored AEL id (``tests\x.py::t``) and
+        # a Linux run's id (``tests/x.py::t``) name the SAME test but would mismatch
+        # the AEL / classify_transitions set-compare. Only the path segment (before
+        # '::') carries a separator; pytest names after '::' never do, so a blanket
+        # replace is safe.
+        test_id = match.group(1).replace("\\", "/")
         status = match.group(2)
         outcomes[test_id] = "green" if status == "PASSED" else "red"
     return outcomes
@@ -165,10 +174,15 @@ def classify_transitions(
         ``{test_id: transition_class}`` where transition_class is one of:
         ``"green->green"`` / ``"green->red"`` / ``"red->green"`` / ``"red->red"``
         / ``"added"`` (only in after) / ``"removed"`` (only in before).
+        Keys are in sorted test-ID order (deterministic; see DET-07 note below).
     """
+    # DET-07: iterate in SORTED order — a bare set union is PYTHONHASHSEED-
+    # ordered, which made downstream durable artifacts (drift_verdict's
+    # blocking[] / concatenated reason) byte-unstable across runs.  Mirrors the
+    # sorted() already used by characterization_snapshot_verdict.
     all_ids = set(before) | set(after)
     transitions: dict[str, str] = {}
-    for tid in all_ids:
+    for tid in sorted(all_ids):
         if tid not in before:
             transitions[tid] = "added"
         elif tid not in after:
@@ -227,6 +241,10 @@ def drift_verdict(
     """§5 behavioral drift gate — the core decision engine.
 
     Enforces the P2b behavioral drift contract:
+      0. Empty ``before`` (no baseline at all) ⇒ BLOCK immediately with reason
+         ``empty-baseline`` — a verdict over zero baseline tests certifies
+         NOTHING and must never PASS vacuously (D136 fail-closed; finding Q-1,
+         2026-07-12 health review).
       1. ``validate_allowed_exceptions`` first — invalid AEL ⇒ BLOCK immediately.
       2. Any ``green->red`` transition outside the AEL ⇒ BLOCK.
       3. Every AEL test must flip ``red->green`` — a still-RED nominee ⇒ BLOCK
@@ -245,7 +263,38 @@ def drift_verdict(
     Returns:
         ``{"verdict": "PASS"|"BLOCK", "blocking": list[str],
            "flipped": list[str], "reason": str}``.
+        ``blocking`` and ``reason`` are deterministically ordered (DET-07) —
+        two calls with logically identical inputs produce byte-identical output
+        regardless of PYTHONHASHSEED or caller dict insertion order.
     """
+    # Step 0 — Q-1 fail-closed guard (D136): an EMPTY baseline certifies
+    # nothing.  ``parse_test_outcomes`` returns {} on unparseable runner output,
+    # and without this guard an empty ``before`` would sail through every check
+    # below (no transitions, no vanished greens, no AEL nominees) and PASS
+    # vacuously — "all baseline-green tests stayed green" over ZERO tests.
+    # This mirrors the existing fail-closed posture (vanished-baseline-green /
+    # empty-AFTER both BLOCK), so it returns a BLOCK verdict rather than
+    # raising — callers already consume BLOCK dicts.
+    #
+    # DECISION — the guard fires for ANY empty ``before``, regardless of the
+    # AEL.  An empty ``before`` with a NON-empty AEL is never legitimate
+    # either: an AEL entry is valid only if it is RED-in-before, which is
+    # impossible against an empty baseline (``validate_allowed_exceptions``
+    # would reject every entry anyway).  Blocking here first surfaces the true
+    # root cause — a missing/unparseable baseline run — instead of a
+    # misleading per-entry AEL-rejection reason.
+    if not before:
+        return {
+            "verdict": "BLOCK",
+            "blocking": [],
+            "flipped": [],
+            "reason": (
+                "empty-baseline: BEFORE outcome map is empty (absent or "
+                "unparseable baseline run) — a drift verdict over zero "
+                "baseline tests certifies nothing; failing closed (D136)."
+            ),
+        }
+
     blocking: list[str] = []
     reasons: list[str] = []
 
@@ -281,8 +330,9 @@ def drift_verdict(
     # "every baseline-green test stays green".  Require set(before-green) ⊆
     # set(after); a vanished baseline-green test BLOCKS.  (A green-in-before test
     # can never be a valid AEL entry — the AEL must be red-in-before — so this
-    # never conflicts with the AEL rules.)
-    for gtid, status in before.items():
+    # never conflicts with the AEL rules.)  Sorted iteration (DET-07) keeps
+    # blocking[]/reason byte-stable regardless of caller insertion order.
+    for gtid, status in sorted(before.items()):
         if status == "green" and gtid not in after:
             blocking.append(gtid)
             reasons.append(f"baseline-green test vanished from after-run: {gtid}")
@@ -451,13 +501,13 @@ def defer_record(finding: dict, reason: str) -> dict:
         "finding_id": str(finding_id),
         "finding": finding,
         "reason": reason,
-        "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "utc": datetime.now(tz=UTC).isoformat(),
     }
 
 
 def emit_deferrals(
     records: list[dict],
-    path: Union[str, Path],
+    path: str | Path,
 ) -> None:
     """Write deferred-fix records as JSON to *path*.
 
@@ -593,13 +643,13 @@ def build_drift_report(
         "behavioral": behavioral,
         "snapshot": snapshot,
         "verdict": overall,
-        "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "utc": datetime.now(tz=UTC).isoformat(),
     }
 
 
 def emit_drift_report(
     report: dict,
-    path: Union[str, Path],
+    path: str | Path,
 ) -> None:
     """Write a drift report as JSON to *path*.
 

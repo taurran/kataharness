@@ -10,7 +10,7 @@ import json
 import os
 import sys
 import types
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -53,7 +53,6 @@ def _vm(
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import kata_statusline  # noqa: E402  (must come after sys.path update)
-
 
 # ---------------------------------------------------------------------------
 # render_statusline — waiting / idle line
@@ -381,7 +380,8 @@ class TestStatuslineFromEvent:
 
         monkeypatch.setattr(kata_statusline, "build_statusline", _exploding_build)
 
-        import tempfile, os
+        import os
+        import tempfile
         with tempfile.TemporaryDirectory() as d:
             kata_dir = Path(d) / ".kata"
             kata_dir.mkdir()
@@ -479,7 +479,7 @@ class TestWriteBridge:
 
         result = kata_statusline.write_bridge(tmp_path, self._payload())
         gauge = kata_gauge.read_bridge(
-            result, now_utc=datetime.now(timezone.utc)
+            result, now_utc=datetime.now(UTC)
         )
         assert gauge["mode"] == "full"
         assert gauge["total_tokens"] == 200000
@@ -498,7 +498,7 @@ class TestWriteBridge:
         data = json.loads(result.read_text(encoding="utf-8"))
         assert data["total_tokens"] is None
         gauge = kata_gauge.read_bridge(
-            result, now_utc=datetime.now(timezone.utc)
+            result, now_utc=datetime.now(UTC)
         )
         assert gauge["mode"] == "percentage-only"
 

@@ -79,7 +79,9 @@ def _build_context(*, handoff_exists: bool) -> str:
 
 def _main() -> None:
     """Read the SessionStart event and, for anchor sources, inject the re-anchor context."""
-    raw = sys.stdin.read()
+    # Bytes-read + explicit UTF-8: Windows text-mode stdin defaults to the ANSI
+    # codepage, so a non-ASCII cwd would UnicodeDecodeError into a silent no-op (F7).
+    raw = sys.stdin.buffer.read().decode("utf-8", errors="replace")
     payload = json.loads(raw) if raw.strip() else {}
     source = payload.get("source") if isinstance(payload, dict) else None
     if not _should_anchor(source):
@@ -104,5 +106,10 @@ def _main() -> None:
 if __name__ == "__main__":
     try:
         _main()
-    except Exception:  # noqa: BLE001  (fail-soft: never break the user's session)
-        pass
+    except Exception as exc:  # noqa: BLE001  (fail-soft: never break the user's session)
+        # One stderr breadcrumb so a broken install is distinguishable from a
+        # clean no-op (F8); still exit 0, never block the session.
+        try:
+            print(f"[kata-sessionstart] fail-soft: {type(exc).__name__}: {exc}", file=sys.stderr)
+        except Exception:  # noqa: BLE001
+            pass

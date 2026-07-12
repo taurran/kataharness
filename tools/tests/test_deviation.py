@@ -916,6 +916,55 @@ class TestRunFunnelNullCoerce:
 
 
 # ---------------------------------------------------------------------------
+# Q-6 regression — run_funnel hard-requires refuted + sparse_signal (D136)
+# ---------------------------------------------------------------------------
+
+class TestRunFunnelRequiredKeys:
+    """Q-6: `refuted` and `sparse_signal` are docstring-contract keys.
+
+    Before the fix, ``finding.get("refuted", False)`` and
+    ``finding.get("sparse_signal", False)`` defaulted an ABSENT key to the
+    PERMISSIVE branch (not-refuted / not-sparse → auto-fix-eligible-eligible).
+    After the fix, an absent key hard-fails (D136 — no silent permissive default).
+    """
+
+    def _base(self) -> dict:
+        return {
+            "module": "tools/x.py",
+            "locus": "add",
+            "votes": [True, True, True],
+            "corroborators": [{"module": "tools/x.py", "locus": "add", "source": "test"}],
+            "refuted": False,
+            "msas": 0.9,
+            "structural_prior": 0.8,
+            "sparse_signal": False,
+        }
+
+    def test_missing_refuted_raises(self):
+        """Finding missing 'refuted' ⇒ ValueError (not permissive not-refuted)."""
+        import deviation as dev
+        finding = self._base()
+        del finding["refuted"]
+        with pytest.raises(ValueError, match=r"refuted"):
+            dev.run_funnel(finding)
+
+    def test_missing_sparse_signal_raises(self):
+        """Finding missing 'sparse_signal' ⇒ ValueError (not permissive not-sparse)."""
+        import deviation as dev
+        finding = self._base()
+        del finding["sparse_signal"]
+        with pytest.raises(ValueError, match=r"sparse_signal"):
+            dev.run_funnel(finding)
+
+    def test_both_present_still_runs(self):
+        """Positive control: both keys present ⇒ funnel runs to completion."""
+        import deviation as dev
+        result = dev.run_funnel(self._base())
+        assert result["funnel_stop"] is None
+        assert result["route"] == "auto-fix-eligible"
+
+
+# ---------------------------------------------------------------------------
 # Mutation proofs — prove load-bearing lines actually bite
 # ---------------------------------------------------------------------------
 

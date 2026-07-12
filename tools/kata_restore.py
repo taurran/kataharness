@@ -29,16 +29,22 @@ import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import yaml
-
 
 # ---------------------------------------------------------------------------
 # Ref constant (mirrors kata_trail.py)
 # ---------------------------------------------------------------------------
 
 _TRAIL_REF = "refs/kata/trail"
+
+# Q-16 (2026-07-12 health review): every git subprocess call carries this timeout so a
+# stale index.lock or a credential prompt in a hostile target repo can never stall the
+# restore read forever.  A timeout maps to each call site's EXISTING failure/degraded
+# path (never a success-shaped result) — subprocess.TimeoutExpired is NOT a subclass of
+# CalledProcessError/OSError, so it is added explicitly to each except set.
+_GIT_TIMEOUT_S = 60
 
 
 # ---------------------------------------------------------------------------
@@ -82,9 +88,10 @@ def _ref_exists(root: Path, ref: str) -> bool:
             cwd=str(root),
             capture_output=True,
             check=True,
+            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung rev-parse ⇒ ref treated as absent
         )
         return True
-    except (subprocess.CalledProcessError, OSError):
+    except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired):
         return False
 
 
@@ -105,6 +112,9 @@ def read_board_from_trail(repo_root: str = ".") -> str:
     ------
     subprocess.CalledProcessError
         When refs/kata/trail or board.md is absent in the ref.
+    subprocess.TimeoutExpired
+        When the git read exceeds ``_GIT_TIMEOUT_S`` (Q-16).  ``restore`` maps this to
+        the board-unreadable degraded path, never a silent success.
     """
     root = Path(repo_root).resolve()
     result = subprocess.run(
@@ -113,6 +123,7 @@ def read_board_from_trail(repo_root: str = ".") -> str:
         capture_output=True,
         text=True,
         check=True,
+        timeout=_GIT_TIMEOUT_S,  # Q-16: a hung read ⇒ restore() degrades (board-unreadable)
     )
     return result.stdout
 
@@ -213,7 +224,7 @@ _KATA_SUPERSEDE_PREFIX_RE = re.compile(r"^\s*Kata-Supersede\s*:", re.IGNORECASE)
 _FM_RE = re.compile(r"^---[ \t]*\n(.*?)\n---", re.DOTALL)
 
 
-def parse_plan_tasks(plan_path: Union[str, Path]) -> set[str]:
+def parse_plan_tasks(plan_path: str | Path) -> set[str]:
     """Parse task-ids from a frozen PLAN.md's YAML frontmatter.
 
     The YAML frontmatter ``ownership:``, ``waves:``, ``depends_on:``, and
@@ -313,7 +324,7 @@ def parse_plan_tasks(plan_path: Union[str, Path]) -> set[str]:
 def collect_integrated_tasks(
     repo_root: str,
     integration_branch: str,
-    plan_path: Union[str, Path, None] = None,
+    plan_path: str | Path | None = None,
 ) -> set[str]:
     """Scan integration-branch commits for ``Kata-Task:`` trailers.
 
@@ -359,7 +370,7 @@ def collect_integrated_tasks(
 def collect_integrated_tasks_ex(
     repo_root: str,
     integration_branch: str,
-    plan_path: Union[str, Path, None] = None,
+    plan_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Like :func:`collect_integrated_tasks`, but returns a structured degraded signal.
 
@@ -439,8 +450,8 @@ def collect_integrated_tasks_ex(
 def _scan_integration_commit_bodies(
     repo_root: str,
     integration_branch: str,
-    plan_path: Union[str, Path, None] = None,
-) -> "tuple[list[str] | None, list[str]]":
+    plan_path: str | Path | None = None,
+) -> tuple[list[str] | None, list[str]]:
     """Return ``(lines, degraded_reasons)`` for THIS run's integration commits.
 
     The shared bounded scan behind ``collect_integrated_tasks`` (Kata-Task /
@@ -469,7 +480,7 @@ def _scan_integration_commit_bodies(
     # that touched plan_path.  That commit was made before this run started
     # (PLAN is frozen+committed before build), so anything after it is this run.
     # ------------------------------------------------------------------
-    fork_point: Union[str, None] = None
+    fork_point: str | None = None
     if plan_path is not None:
         plan_abs = Path(plan_path).resolve()
         # Use a path relative to the repo root when possible — more portable.
@@ -478,29 +489,46 @@ def _scan_integration_commit_bodies(
         except ValueError:
             plan_spec = str(plan_abs)
 
+        # Determinism pins (DET-02/DET-03, DETERMINISM-DOCTRINE law 1/5): the
+        # single-pathspec shape activates an operator `log.follow=true`, which
+        # follows renames to an OLDER commit — a wrong fork point silently
+        # ingests prior-run trailers (under-dispatch); `log.showSignature=false`
+        # keeps gpg: lines out of the parsed %H stdout; `core.quotepath=off`
+        # for path-output symmetry with the other pinned calls.
         try:
             fp_result = subprocess.run(
                 [
-                    "git", "log", "-1", "--format=%H",
+                    "git",
+                    "-c", "log.follow=false",
+                    "-c", "log.showSignature=false",
+                    "-c", "core.quotepath=off",
+                    "log", "-1", "--format=%H",
                     integration_branch, "--", plan_spec,
                 ],
                 cwd=str(root),
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=_GIT_TIMEOUT_S,  # Q-16: a hung fork-point ⇒ unbounded fallback (degraded)
             )
             sha = fp_result.stdout.strip()
             if sha:
                 fork_point = sha
-        except (subprocess.CalledProcessError, OSError):
+        except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired):
             pass
 
     if fork_point is not None:
         # Bounded scan: only THIS run's integration commits (after plan-freeze).
         # Prior-run trailers live on ancestors of fork_point → correctly excluded.
         # `--` at end = end-of-options / no path filter (defense-in-depth).
+        # `log.showSignature=false` (DET-03): a signed commit under an operator
+        # `log.showSignature=true` injects gpg: lines into the parsed %B stream;
+        # `core.quotepath=off` for symmetry with the other pinned calls.
         git_cmd = [
-            "git", "log", f"{fork_point}..{integration_branch}",
+            "git",
+            "-c", "log.showSignature=false",
+            "-c", "core.quotepath=off",
+            "log", f"{fork_point}..{integration_branch}",
             "--format=%B", "--",
         ]
     else:
@@ -518,8 +546,12 @@ def _scan_integration_commit_bodies(
             # (no NOTE, not degraded).
             reasons.append("integration-scan-unbounded")
         # `--` at end = end-of-options / no path filter (defense-in-depth).
+        # Same DET-03 pins as the bounded scan (parsed %B stream).
         git_cmd = [
-            "git", "log", "--format=%B", integration_branch, "--",
+            "git",
+            "-c", "log.showSignature=false",
+            "-c", "core.quotepath=off",
+            "log", "--format=%B", integration_branch, "--",
         ]
 
     try:
@@ -529,8 +561,9 @@ def _scan_integration_commit_bodies(
             capture_output=True,
             text=True,
             check=True,
+            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung scan ⇒ None (integration-history-unreadable)
         )
-    except (subprocess.CalledProcessError, OSError):
+    except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired):
         return None, reasons
 
     return result.stdout.splitlines(), reasons
@@ -539,7 +572,7 @@ def _scan_integration_commit_bodies(
 def parse_supersede_trailers(
     repo_root: str,
     integration_branch: str,
-    plan_path: Union[str, Path, None] = None,
+    plan_path: str | Path | None = None,
 ) -> dict[str, str]:
     """Parse ``Kata-Supersede: <contractId>@<newSurfaceHash>`` trailers → ``{id: hash}``.
 
@@ -657,8 +690,9 @@ def cleanup_stale_task(repo_root: str, task_id: str) -> None:
             cwd=str(root),
             capture_output=True,
             check=True,
+            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung prune ⇒ best-effort skip (non-fatal)
         )
-    except (subprocess.CalledProcessError, OSError):
+    except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired):
         pass  # prune failure is non-fatal
 
     # 2. Force-delete the dead worker's task branch.
@@ -670,8 +704,9 @@ def cleanup_stale_task(repo_root: str, task_id: str) -> None:
             cwd=str(root),
             capture_output=True,
             check=True,
+            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung branch delete ⇒ best-effort skip (non-fatal)
         )
-    except (subprocess.CalledProcessError, OSError):
+    except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired):
         pass  # branch may not exist; non-fatal
 
 
@@ -682,7 +717,7 @@ def cleanup_stale_task(repo_root: str, task_id: str) -> None:
 
 def restore(
     repo_root: str = ".",
-    plan_path: Union[str, None] = None,
+    plan_path: str | None = None,
     integration_branch: str = "integration",
 ) -> dict[str, Any]:
     """Full restore flow (DESIGN §2 B3, the five steps).
@@ -755,10 +790,16 @@ def restore(
         return _empty
 
     # Step 2 — read board from the orphan ref; fold to frontier
+    # Q-14: the orphan-trail board read is fail-soft (board "corroborates, never gates",
+    # so an empty frontier keeps the re-dispatch DIRECTION safe), but the loss must be
+    # VISIBLE to a programmatic caller — a silent "" here previously set no degraded
+    # signal.  Record board-unreadable so degraded/degraded_reasons carry it below.
+    board_unreadable = False
     try:
         board_content = read_board_from_trail(repo_root)
     except Exception:  # noqa: BLE001
         board_content = ""
+        board_unreadable = True
 
     frontier = fold_board(board_content)
 
@@ -777,6 +818,14 @@ def restore(
     )
     integrated = integrated_ex["tasks"]
     redispatch = compute_redispatch_set(plan_tasks, integrated)
+
+    # Aggregate the degraded signal: the integration-scan reasons PLUS the Q-14
+    # board-unreadable loss (set above).  Both are ADDITIVE to the return contract.
+    degraded_reasons = list(integrated_ex["reasons"])
+    degraded = bool(integrated_ex["degraded"])
+    if board_unreadable:
+        degraded_reasons.append("board-unreadable")
+        degraded = True
 
     # Step 4 — C2 cleanup for each task to be re-dispatched
     for task_id in redispatch:
@@ -797,6 +846,6 @@ def restore(
         "integrated":       integrated,
         "board_frontier":   frontier,
         "board_content":    board_content,
-        "degraded":         integrated_ex["degraded"],
-        "degraded_reasons": integrated_ex["reasons"],
+        "degraded":         degraded,
+        "degraded_reasons": degraded_reasons,
     }

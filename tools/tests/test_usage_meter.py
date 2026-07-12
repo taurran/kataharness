@@ -187,6 +187,17 @@ class TestBuildUsage:
         assert entry["label"] == "my-arm"
         assert entry["model"] == "claude-opus-4-5"
 
+    def test_rate_table_date_emitted(self):
+        """S-5: build_usage stamps rateTableDate so a stale cost axis is visible."""
+        import usage_meter as um
+        entry = um.build_usage(
+            label="arm-a", model="m1", wall_clock_s=5.0, tool_calls=3,
+        )
+        assert "rateTableDate" in entry
+        assert entry["rateTableDate"] == um._RATE_TABLE_DATE
+        # And the schema permits it (additionalProperties is False).
+        assert "rateTableDate" in um.usage_schema()["properties"]
+
     def test_wall_clock_coerced_to_float(self):
         """wallClockS is stored as a float (injectable clock: pass elapsed directly)."""
         import usage_meter as um
@@ -216,15 +227,17 @@ class TestBuildUsage:
 
     def test_invalid_label_raises_type_error(self):
         """Passing a non-str label raises TypeError."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         with pytest.raises(TypeError):
             um.build_usage(label=123, model="m", wall_clock_s=1.0, tool_calls=0)
 
     def test_invalid_wall_clock_raises_type_error(self):
         """Passing a non-numeric wall_clock_s raises TypeError."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         with pytest.raises(TypeError):
             um.build_usage(label="arm", model="m", wall_clock_s="fast", tool_calls=0)
 
@@ -232,8 +245,9 @@ class TestBuildUsage:
 
     def test_negative_cost_usd_raises_value_error(self):
         """Negative cost_usd is rejected with ValueError (gaming vector guard)."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         with pytest.raises(ValueError, match="cost_usd"):
             um.build_usage(
                 label="arm", model="m", wall_clock_s=1.0, tool_calls=0,
@@ -242,8 +256,9 @@ class TestBuildUsage:
 
     def test_negative_wall_clock_s_raises_value_error(self):
         """Negative wall_clock_s is rejected with ValueError."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         with pytest.raises(ValueError, match="wall_clock_s"):
             um.build_usage(
                 label="arm", model="m", wall_clock_s=-1.0, tool_calls=0,
@@ -251,8 +266,9 @@ class TestBuildUsage:
 
     def test_negative_tokens_in_raises_value_error(self):
         """Negative tokens_in is rejected with ValueError."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         with pytest.raises(ValueError, match="tokens_in"):
             um.build_usage(
                 label="arm", model="m", wall_clock_s=1.0, tool_calls=0,
@@ -261,8 +277,9 @@ class TestBuildUsage:
 
     def test_negative_tool_calls_raises_value_error(self):
         """Negative tool_calls is rejected with ValueError."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         with pytest.raises(ValueError, match="tool_calls"):
             um.build_usage(
                 label="arm", model="m", wall_clock_s=1.0, tool_calls=-3,
@@ -307,8 +324,9 @@ class TestBuildUsage:
 
     def test_nan_cost_usd_raises_value_error(self):
         """NaN cost_usd is rejected with ValueError (C1-writer: isfinite guard)."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         with pytest.raises(ValueError, match="cost_usd"):
             um.build_usage(
                 label="arm", model="m", wall_clock_s=1.0, tool_calls=0,
@@ -317,8 +335,9 @@ class TestBuildUsage:
 
     def test_inf_wall_clock_s_raises_value_error(self):
         """+inf wall_clock_s is rejected with ValueError (C1-writer: isfinite guard)."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         with pytest.raises(ValueError, match="wall_clock_s"):
             um.build_usage(
                 label="arm", model="m", wall_clock_s=float("inf"), tool_calls=0,
@@ -326,8 +345,9 @@ class TestBuildUsage:
 
     def test_neg_inf_wall_clock_s_raises_value_error(self):
         """-inf wall_clock_s is rejected with ValueError (C1-writer: isfinite guard)."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         with pytest.raises(ValueError, match="wall_clock_s"):
             um.build_usage(
                 label="arm", model="m", wall_clock_s=float("-inf"), tool_calls=0,
@@ -520,8 +540,9 @@ class TestWriteLoad:
 
     def test_write_guard_rejects_traversal(self, tmp_path):
         """write_usage raises ValueError when path contains '..' traversal (CWE-23)."""
-        import usage_meter as um
         import pytest
+
+        import usage_meter as um
         bad_path = tmp_path / ".." / "evil" / "usage.json"
         with pytest.raises(ValueError, match=r"\.\."):
             um.write_usage(bad_path, self._full_entry())

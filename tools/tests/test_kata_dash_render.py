@@ -14,7 +14,6 @@ import pytest
 # ---------------------------------------------------------------------------
 import kata_dash
 
-
 # ---------------------------------------------------------------------------
 # Helpers: render_bar
 # ---------------------------------------------------------------------------
@@ -360,8 +359,9 @@ class TestNewTitle:
 
     def test_build_frame_title_contains_kaizen_no_kata(self):
         """build_frame output panel title must contain '改善型'."""
-        from rich.console import Console
         from io import StringIO
+
+        from rich.console import Console
 
         vm = _normal_view_model()
         frame = kata_dash.build_frame(vm, tick=0)
@@ -374,8 +374,9 @@ class TestNewTitle:
 
     def test_waiting_panel_title_contains_kaizen_no_kata(self):
         """waiting Panel must also use '改善型' title."""
-        from rich.console import Console
         from io import StringIO
+
+        from rich.console import Console
 
         vm = _waiting_view_model()
         frame = kata_dash.build_frame(vm, tick=0)
@@ -387,8 +388,9 @@ class TestNewTitle:
 
     def test_build_frame_does_not_contain_old_motif(self):
         """build_frame must NOT contain the old '道' or the torii '⛩' (removed per operator)."""
-        from rich.console import Console
         from io import StringIO
+
+        from rich.console import Console
 
         vm = _normal_view_model()
         frame = kata_dash.build_frame(vm, tick=0)
@@ -439,8 +441,9 @@ class TestProgressLabelInRow:
 
     def test_build_frame_shows_progress_label_in_task_row(self):
         """build_frame renders a task row containing the progressLabel text."""
-        from rich.console import Console
         from io import StringIO
+
+        from rich.console import Console
 
         vm = _normal_view_model()
         # Add a task with a progressLabel

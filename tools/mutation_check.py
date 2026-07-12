@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import Optional
+import sys
 
 
 def mutation_verdict(baseline_passed: bool, mutated_passed: bool) -> dict:
@@ -60,7 +60,8 @@ def run_named_test(
     test_path: str,
     test_name: str,
     *,
-    cwd: Optional[str] = None,
+    cwd: str | None = None,
+    timeout: float = 600.0,
 ) -> bool:
     """Run a single named pytest test via ``uv run pytest`` and return True if it passed.
 
@@ -84,20 +85,40 @@ def run_named_test(
                    *cwd* is also prepended to ``PYTHONPATH`` so imports from the
                    clone root resolve.  Default None = current working directory
                    (BC, unchanged behavior).
+        timeout:   Wall-clock bound in seconds for the pytest subprocess
+                   (default 600).  On ``subprocess.TimeoutExpired`` this returns
+                   **False** — a timeout is a FAILURE-shaped verdict, never a
+                   hang and never an exception surfacing as success (D136: no
+                   silent-permissive default; the gate goes red).
 
     Returns:
-        True if pytest exits 0 (test passed), False otherwise.
+        True if pytest exits 0 (test passed), False otherwise (including timeout).
     """
-    run_env: Optional[dict] = None
+    # DET-09 (surgical — adval R1): this is the SCORING path (benchmark dual-gate),
+    # so it must not DEFLATE a target's numbers. Strip PYTEST_ADDOPTS (env-injected
+    # order/early-exit nondeterminism) but KEEP plugin autoload — blanket-disabling it
+    # makes a target's pytest-asyncio/mock/django tests FAIL under the gate when they
+    # PASS normally (a gold F2P scored unresolved). We block only the one nondeterminism
+    # plugin by argv (`-p no:randomly`, a harmless no-op when it isn't installed).
+    # cwd's PYTHONPATH prepend composes on top. (DETERMINISM-DOCTRINE law 8.)
+    run_env: dict = os.environ.copy()
+    run_env.pop("PYTEST_ADDOPTS", None)
     if cwd is not None:
-        run_env = os.environ.copy()
         existing_pp = run_env.get("PYTHONPATH", "")
         run_env["PYTHONPATH"] = cwd + (os.pathsep + existing_pp if existing_pp else "")
 
-    result = subprocess.run(
-        ["uv", "run", "pytest", f"{test_path}::{test_name}", "-q"],
-        capture_output=True,
-        cwd=cwd,
-        env=run_env,
-    )
+    try:
+        result = subprocess.run(
+            ["uv", "run", "pytest", "-p", "no:randomly", f"{test_path}::{test_name}", "-q"],
+            capture_output=True,
+            cwd=cwd,
+            env=run_env,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        print(
+            f"[kata] gate runner timeout after {timeout}s: {test_path}::{test_name}",
+            file=sys.stderr,
+        )
+        return False
     return result.returncode == 0

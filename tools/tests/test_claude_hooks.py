@@ -156,6 +156,52 @@ class TestSessionStartSubprocess:
 
 
 # --------------------------------------------------------------------------- #
+# kata-precompact.py — F1: snapshots the SESSION repo (payload cwd), not the home
+# --------------------------------------------------------------------------- #
+class TestPrecompactTargetsSessionRepo:
+    """2026-07-12 health review F1: the hook must snapshot the board in the repo
+    named by the PreCompact payload ``cwd`` — NOT the harness home derived from
+    __file__. Before the fix, an installed ~/.kata-home deployment snapshotted the
+    home (no board) and silently no-op'd the Gap-1 durability guarantee."""
+
+    def _init_repo_with_board(self, tmp_path: Path) -> Path:
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+        kata = tmp_path / ".kata"
+        kata.mkdir()
+        (kata / "board.md").write_text("# board\nCLAIM t1\n", encoding="utf-8")
+        return tmp_path
+
+    def test_snapshots_the_payload_cwd_repo(self, tmp_path: Path) -> None:
+        repo = self._init_repo_with_board(tmp_path)
+        payload = {"hook_event_name": "PreCompact", "cwd": str(repo)}
+        cp = _run(PRECOMPACT, json.dumps(payload))
+        assert cp.returncode == 0, cp.stderr
+        # The trail ref must now exist IN THE SESSION REPO (proves it targeted cwd,
+        # not the harness home). This fails RED if repo_root reverts to __file__.
+        ref = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", "refs/kata/trail"],
+            cwd=repo, capture_output=True, text=True,
+        )
+        assert ref.returncode == 0 and ref.stdout.strip(), (
+            "precompact must commit refs/kata/trail in the payload-cwd repo"
+        )
+        out = json.loads(cp.stdout)
+        assert "custom_instructions" in out
+
+    def test_no_board_in_session_repo_is_silent_noop(self, tmp_path: Path) -> None:
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        cp = _run(PRECOMPACT, json.dumps({"cwd": str(tmp_path)}))
+        assert cp.returncode == 0
+        assert cp.stdout.strip() == ""  # no board -> nothing emitted
+
+    def test_garbage_stdin_fail_soft(self) -> None:
+        cp = _run(PRECOMPACT, "}{ not json")
+        assert cp.returncode == 0  # never blocks compaction
+
+
+# --------------------------------------------------------------------------- #
 # kata-precompact.py — unit tests for the CA-L17 HANDOFF suffix
 # --------------------------------------------------------------------------- #
 class TestPrecompactHandoffSuffix:

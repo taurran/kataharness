@@ -43,6 +43,15 @@ drift_verdict:
     TestDriftVerdict::test_ael_valid_afl_test_passes
     TestDriftVerdict::test_red_red_does_not_block
 
+empty-baseline guard (finding Q-1, 2026-07-12 health review):
+    TestEmptyBaselineGuard::test_empty_before_empty_ael_blocks
+    TestEmptyBaselineGuard::test_empty_before_empty_after_empty_ael_blocks
+    TestEmptyBaselineGuard::test_empty_before_nonempty_ael_blocks_as_empty_baseline
+
+deterministic ordering (finding DET-07):
+    TestDeterministicOrdering::test_classify_transitions_keys_sorted
+    TestDeterministicOrdering::test_drift_verdict_insertion_order_invariant
+
 scrub_nondeterminism / snapshots_match:
     TestScrubAndSnapshots::test_scrubs_iso_timestamp
     TestScrubAndSnapshots::test_scrubs_uuid
@@ -494,6 +503,133 @@ class TestDriftVerdict:
             f"A vanished red-in-before test must not trip the green-vanish rule; got {result}"
         )
         assert result["blocking"] == []
+
+
+# ---------------------------------------------------------------------------
+# Q-1: empty-baseline guard (2026-07-12 health review)
+# ---------------------------------------------------------------------------
+
+
+class TestEmptyBaselineGuard:
+    """Q-1: an EMPTY before map must never produce a vacuous PASS.
+
+    parse_test_outcomes returns {} on unparseable runner output; without the
+    Step 0 guard, drift_verdict({}, after, allowed_exceptions=[]) sailed
+    through every check and returned PASS having certified NOTHING.  The guard
+    must BLOCK with reason ``empty-baseline`` (mirroring the module's existing
+    BLOCK-verdict idiom, not an exception).  Each test here asserts on that
+    specific reason token, so deleting the guard makes these tests go red
+    (the fall-through result is PASS with a different reason) — the guard is
+    mutation-proven by construction.
+    """
+
+    def test_empty_before_empty_ael_blocks(self):
+        """Q-1 core: empty before + empty AEL + non-empty after → BLOCK, not vacuous PASS."""
+        import drift_gate as dg
+        result = dg.drift_verdict({}, {"t_a": "green"}, allowed_exceptions=[])
+        assert result["verdict"] == "BLOCK", (
+            f"An empty baseline must BLOCK (vacuous-PASS defect Q-1); got {result}"
+        )
+        assert "empty-baseline" in result["reason"], (
+            f"BLOCK reason must carry the 'empty-baseline' token; got {result['reason']!r}"
+        )
+
+    def test_empty_before_empty_after_empty_ael_blocks(self):
+        """Q-1 exact scenario: BOTH runs unparseable ({} / {}) → BLOCK, never PASS."""
+        import drift_gate as dg
+        result = dg.drift_verdict({}, {}, allowed_exceptions=[])
+        assert result["verdict"] == "BLOCK", (
+            f"Two empty outcome maps certify nothing and must BLOCK; got {result}"
+        )
+        assert "empty-baseline" in result["reason"]
+        assert result["flipped"] == []
+
+    def test_empty_before_nonempty_ael_blocks_as_empty_baseline(self):
+        """Empty before + NON-empty AEL → still BLOCK, with the empty-baseline reason.
+
+        Decision (documented in drift_verdict Step 0): an empty baseline with a
+        non-empty AEL is never legitimate — an AEL entry is valid only if it is
+        RED-in-before, which is impossible against an empty baseline.  The
+        guard fires FIRST so the reason names the true root cause (missing/
+        unparseable baseline) rather than a misleading AEL-rejection.
+        """
+        import drift_gate as dg
+        result = dg.drift_verdict(
+            {}, {"t_buggy": "green"}, allowed_exceptions=["t_buggy"]
+        )
+        assert result["verdict"] == "BLOCK"
+        assert "empty-baseline" in result["reason"], (
+            "The empty-baseline guard must fire before the AEL integrity check "
+            f"so the root cause is named; got {result['reason']!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# DET-07: deterministic ordering of transitions / blocking / reason
+# ---------------------------------------------------------------------------
+
+
+class TestDeterministicOrdering:
+    """DET-07: verdict artifacts must be byte-stable across hash seeds / insertion order.
+
+    classify_transitions previously iterated ``set(before) | set(after)``
+    (PYTHONHASHSEED-ordered), so drift_verdict's blocking[] and concatenated
+    reason — persisted into durable drift reports — were byte-unstable.  Both
+    must now be deterministic (sorted iteration, mirroring
+    characterization_snapshot_verdict).
+    """
+
+    def test_classify_transitions_keys_sorted(self):
+        """classify_transitions returns keys in sorted order regardless of insertion order."""
+        import drift_gate as dg
+        # Build inputs in deliberately reversed insertion order
+        ids = [f"tests/test_m.py::test_{c}" for c in "zyxwvutsrq"]
+        before = {tid: "green" for tid in ids}
+        after = {tid: "green" for tid in reversed(ids)}
+        result = dg.classify_transitions(before, after)
+        assert list(result) == sorted(result), (
+            f"Transition keys must be sorted for determinism; got {list(result)}"
+        )
+
+    def test_drift_verdict_insertion_order_invariant(self):
+        """Two calls with inputs built in different insertion orders → identical output.
+
+        Covers both blocking sources: unallowed green→red regressions (Step 2)
+        and vanished baseline-green tests (Step 2b).  The full result dicts —
+        including blocking order and the concatenated reason string — must be
+        byte-identical, and each blocking segment must be in sorted order.
+        """
+        import drift_gate as dg
+        regressed = [f"t_reg_{c}" for c in "gcaebdfh"]      # green→red in after
+        vanished = [f"t_gone_{c}" for c in "dcba"]          # green, absent from after
+        stable = [f"t_ok_{i}" for i in range(8)]            # green→green
+
+        def build(order: int) -> tuple[dict[str, str], dict[str, str]]:
+            all_before = [(tid, "green") for tid in regressed + vanished + stable]
+            all_after = [
+                (tid, "red" if tid in regressed else "green")
+                for tid in regressed + stable
+            ]
+            if order:  # reversed insertion order for the second call
+                all_before = list(reversed(all_before))
+                all_after = list(reversed(all_after))
+            return dict(all_before), dict(all_after)
+
+        before1, after1 = build(0)
+        before2, after2 = build(1)
+        result1 = dg.drift_verdict(before1, after1, allowed_exceptions=[])
+        result2 = dg.drift_verdict(before2, after2, allowed_exceptions=[])
+
+        assert result1 == result2, (
+            "drift_verdict must be insertion-order invariant (DET-07); "
+            f"got\n{result1}\nvs\n{result2}"
+        )
+        assert result1["verdict"] == "BLOCK"
+        # Each blocking segment (Step 2 regressions, then Step 2b vanishes)
+        # must itself be in sorted order — not just stable-by-accident.
+        assert result1["blocking"] == sorted(regressed) + sorted(vanished), (
+            f"blocking must be deterministically sorted per segment; got {result1['blocking']}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1092,3 +1228,33 @@ class TestMutationProof:
             "test_green_in_before_absent_from_after_blocks must catch removal of "
             "blocking.append(gtid)"
         )
+
+
+# --- DET-12 fold (2026-07-12 health review): temp-path scrub + id normalization ---
+
+def test_scrub_var_folders_macos_temp_path():
+    r"""DET-12: macOS per-user temp dirs (/var/folders/... — the TMPDIR default) must
+    scrub like /tmp and Windows AppData\Local\Temp, or an AEL snapshot authored on
+    macOS carries a machine-specific temp path that never byte-matches."""
+    import drift_gate as dg
+    text = "tmp=/var/folders/xy/9zk_h/T/pytest-of-user/pytest-3/test0 end"
+    scrubbed = dg.scrub_nondeterminism(text)
+    assert "/var/folders/" not in scrubbed
+    assert "<scrubbed>" in scrubbed
+
+
+def test_parse_test_outcomes_normalizes_backslash_node_id():
+    r"""DET-12: pytest emits the OS-native path separator, so a Windows run's
+    ``tests\x.py::t`` names the SAME test as a Linux ``tests/x.py::t``. The parser
+    normalizes the separator to '/' so the AEL / transition set-compare matches."""
+    import drift_gate as dg
+    out = dg.parse_test_outcomes(r"tests\pkg\x.py::TestA::t_one PASSED [100%]")
+    assert out == {"tests/pkg/x.py::TestA::t_one": "green"}
+
+
+def test_parse_test_outcomes_windows_and_posix_ids_match():
+    """The Windows-authored id and the POSIX-run id map to the SAME normalized key."""
+    import drift_gate as dg
+    win = dg.parse_test_outcomes(r"tests\x.py::t FAILED [ 50%]")
+    posix = dg.parse_test_outcomes("tests/x.py::t FAILED [ 50%]")
+    assert win == posix == {"tests/x.py::t": "red"}

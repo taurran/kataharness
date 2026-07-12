@@ -18,7 +18,6 @@ from pathlib import Path
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Import check
 # ---------------------------------------------------------------------------
@@ -309,9 +308,9 @@ def test_safe_path_rejects_dotdot():
 
 def test_demo_plus_dashboard_renders_without_error(tmp_path):
     """Running demo --once then kata_dash --once on the same dir must not crash."""
+    import kata_dash
     import kata_dash_demo
     import kata_dash_model
-    import kata_dash
 
     kata_dir = tmp_path / ".kata"
     kata_dash_demo.main(["--kata-dir", str(kata_dir), "--once"])

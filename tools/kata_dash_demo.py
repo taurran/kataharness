@@ -25,9 +25,8 @@ from __future__ import annotations
 
 import argparse
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 import kata_board
 
@@ -49,13 +48,13 @@ def _safe_path(raw: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Low-level write helpers (write the frozen format directly, no kata_board)
+# Low-level write helpers (board lines delegate to the shared kata_board emitter)
 # ---------------------------------------------------------------------------
 
 
 def _utc_now() -> str:
     """Return current UTC timestamp in ISO-8601 format."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _append_board_line(
@@ -227,7 +226,7 @@ def _run_demo(
 # ---------------------------------------------------------------------------
 
 
-def main(argv: Optional[list] = None) -> None:
+def main(argv: list | None = None) -> None:
     """CLI entry-point for the KataHarness dashboard replay/demo driver."""
     parser = argparse.ArgumentParser(
         prog="kata_dash_demo",

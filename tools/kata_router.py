@@ -36,8 +36,6 @@ sink is reached.  Mirrors ``kata_board._safe_path`` and
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
-
 
 # ---------------------------------------------------------------------------
 # Marker constants — the idempotency primitive
@@ -52,7 +50,7 @@ END_MARKER = "<!-- kata:end -->"
 # ---------------------------------------------------------------------------
 
 
-def _safe_path(raw: Union[str, Path]) -> Path:
+def _safe_path(raw: str | Path) -> Path:
     """Reject path-traversal (CWE-23) in an operator-supplied path, then resolve.
 
     Blocks any ``..`` segment — the traversal-escape primitive — so a crafted
@@ -218,7 +216,7 @@ def _strip_stanza(content: str) -> str:
 
 
 def write_stanza(
-    agents_md_path: Union[str, Path],
+    agents_md_path: str | Path,
     summary: str = "",
 ) -> None:
     """Idempotent UPSERT of the KataHarness router stanza into the target AGENTS.md.
@@ -255,7 +253,7 @@ def write_stanza(
     path.write_text(updated, encoding="utf-8")
 
 
-def remove_stanza(agents_md_path: Union[str, Path]) -> None:
+def remove_stanza(agents_md_path: str | Path) -> None:
     """Remove exactly the KataHarness marker block from AGENTS.md.
 
     Preserves all content outside the ``<!-- kata:begin -->…<!-- kata:end -->``

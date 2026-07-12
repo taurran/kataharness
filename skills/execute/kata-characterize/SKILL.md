@@ -13,7 +13,7 @@ description: >-
 license: Apache-2.0
 version: 0.1.0
 category: execute
-status: experimental
+status: beta
 agnostic: true
 cost-weight: 3
 allowed-tools: [Read, Grep, Glob, Bash, Write]

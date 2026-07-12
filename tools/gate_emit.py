@@ -23,12 +23,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, List, Optional, Union
 
 import footprint as _footprint
 import run_result
-
 
 # ---------------------------------------------------------------------------
 # Public function
@@ -38,14 +38,14 @@ import run_result
 def emit_gate_artifacts(
     gate_name: str,
     command: str,
-    footprint: List[str],
+    footprint: list[str],
     baseline_sha: str,
     result_sha: str,
-    out_dir: Union[str, Path],
+    out_dir: str | Path,
     *,
-    mutation_records: Optional[List[dict]] = None,
-    runner: Optional[Callable[[str], tuple]] = None,
-    utc: Optional[str] = None,
+    mutation_records: list[dict] | None = None,
+    runner: Callable[[str], tuple] | None = None,
+    utc: str | None = None,
 ) -> dict:
     """Compose run_result / footprint / mutation_check into the gate artifact set.
 
@@ -86,6 +86,8 @@ def emit_gate_artifacts(
         ``passed``          — int: test-case passed count
         ``failed``          — int: test-case failed count
         ``skipped``         — int: test-case skipped count
+        ``parsedCounts``    — bool: True if a pytest summary line was matched;
+                              False means counts are unavailable (not a clean 0/0)
         ``exitCode``        — int: process exit code from the gate command
     """
     if runner is None:
@@ -108,6 +110,12 @@ def emit_gate_artifacts(
         result_sha=result_sha,
         utc=utc,
     )
+    # Q-10: distinguish "0 passed / 0 failed" that was actually parsed from a
+    # pytest summary line from non-pytest gate output where NO count line matched.
+    # In the latter case build_result defaults every count to 0 — a success-shaped
+    # 0/0 that is NOT truth.  Surface parsedCounts=false so a consumer knows the
+    # counts are unavailable rather than reading a fabricated clean result (D136).
+    result["parsedCounts"] = bool(run_result._PYTEST_COUNT_RE.search(output))
     result_path = out / "RESULT.json"
     run_result.write_result(result, result_path)
 
@@ -124,7 +132,7 @@ def emit_gate_artifacts(
     # ------------------------------------------------------------------
     # 3. Write mutation.json if mutation_records were supplied
     # ------------------------------------------------------------------
-    mutation_path: Optional[Path] = None
+    mutation_path: Path | None = None
     if mutation_records is not None:
         mutation_payload = {
             "records": mutation_records,
@@ -146,6 +154,7 @@ def emit_gate_artifacts(
         "passed": result["passed"],
         "failed": result["failed"],
         "skipped": result["skipped"],
+        "parsedCounts": result["parsedCounts"],
         "exitCode": result["exitCode"],
     }
 
@@ -204,3 +213,8 @@ if __name__ == "__main__":
         out_dir=_safe_path(args.out),
     )
     print(json.dumps(summary, indent=2))
+    # Q-10: fail closed (D136).  A nonzero gate exit OR an out-of-footprint change
+    # is a gate FAILURE — the CLI must exit nonzero so a caller/CI never reads the
+    # printed summary as success while the underlying gate was red.
+    if summary["exitCode"] != 0 or not summary["withinFootprint"]:
+        sys.exit(1)

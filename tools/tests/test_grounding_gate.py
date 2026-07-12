@@ -86,6 +86,40 @@ class TestGroundingVerdict:
         f = _finding(grounds_to_plan="PARTIAL")
         assert grounding_verdict(f, source_supports=False, locked_conflict=False) == "REJECT"
 
+    # -- Q-1 (D136): groundsToPlan enum must be validated, not silently defaulted --
+
+    def test_absent_grounds_to_plan_raises(self):
+        """Absent groundsToPlan ⇒ ValueError (Q-1: no silent ESCALATE-skip)."""
+        from grounding_gate import grounding_verdict
+
+        f = {"claim": "c", "source": "s", "confidence": "HIGH"}  # no groundsToPlan
+        with pytest.raises(ValueError, match=r"groundsToPlan"):
+            grounding_verdict(f, source_supports=True, locked_conflict=False)
+
+    def test_lowercase_no_grounds_to_plan_raises(self):
+        """A lowercase 'no' would skip ESCALATE under the old == 'NO' check ⇒ raises."""
+        from grounding_gate import grounding_verdict
+
+        f = _finding(grounds_to_plan="no")
+        with pytest.raises(ValueError, match=r"groundsToPlan"):
+            grounding_verdict(f, source_supports=True, locked_conflict=False)
+
+    def test_typo_grounds_to_plan_raises(self):
+        """A bogus/typo groundsToPlan value ⇒ ValueError (D136)."""
+        from grounding_gate import grounding_verdict
+
+        f = _finding(grounds_to_plan="MAYBE")
+        with pytest.raises(ValueError, match=r"groundsToPlan"):
+            grounding_verdict(f, source_supports=True, locked_conflict=False)
+
+    def test_none_grounds_to_plan_raises(self):
+        """Explicit None groundsToPlan ⇒ ValueError (D136)."""
+        from grounding_gate import grounding_verdict
+
+        f = _finding(grounds_to_plan=None)  # type: ignore[arg-type]
+        with pytest.raises(ValueError, match=r"groundsToPlan"):
+            grounding_verdict(f, source_supports=True, locked_conflict=False)
+
 
 # ---------------------------------------------------------------------------
 # build_verdict
@@ -204,13 +238,20 @@ class TestWriteGrounding:
         assert loaded["verdicts"] == verdicts
         assert loaded["allGrounded"] is False
 
-    def test_empty_verdicts_all_grounded_vacuous_true(self, tmp_path: Path):
-        """Empty list: vacuous all() == True (no counter-evidence)."""
+    def test_empty_verdicts_all_grounded_false_vacuous(self, tmp_path: Path):
+        """Empty list: allGrounded MUST be false + vacuous:true (Q-3 / D136).
+
+        UPDATED for finding Q-3: the OLD behavior wrote allGrounded:true (a
+        vacuous ``all([]) == True``), a spurious fold-authorization signal from
+        zero decision input.  The fix emits an explicit non-permissive vacuous
+        marker instead.
+        """
         from grounding_gate import write_grounding
 
         out = write_grounding(str(tmp_path / "kata"), [])
         data = json.loads(Path(out).read_text(encoding="utf-8"))
-        assert data["allGrounded"] is True
+        assert data["allGrounded"] is False
+        assert data["vacuous"] is True
         assert data["verdicts"] == []
 
     def test_written_as_utf8_indent2(self, tmp_path: Path):

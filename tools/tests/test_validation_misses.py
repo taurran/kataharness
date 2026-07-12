@@ -22,7 +22,6 @@ from pathlib import Path
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Helper: canonical valid entry
 # ---------------------------------------------------------------------------
@@ -341,6 +340,33 @@ def test_read_misses_tolerates_malformed_line(tmp_path):
     results = vm.read_misses(target)
     assert len(results) == 1, f"Expected 1 valid entry, got {len(results)}"
     assert results[0]["ts"] == "2026-01-01T00:00:00Z"
+
+
+def test_read_misses_with_skips_surfaces_malformed_count(tmp_path):
+    """Q-18: read_misses_with_skips returns the count of malformed lines so a
+    corrupted manifest cannot silently erase the recurrence signal."""
+    import validation_misses as vm
+
+    target = tmp_path / "misses.jsonl"
+    valid = _valid_entry(ts="2026-01-01T00:00:00Z")
+    target.write_text(
+        "not valid json {{{\n"
+        + json.dumps(valid) + "\n"
+        + "[1, 2, 3]\n",  # valid JSON but not a dict — also malformed for this ledger
+        encoding="utf-8",
+    )
+    results, skipped = vm.read_misses_with_skips(target)
+    assert len(results) == 1
+    assert skipped == 2, f"Expected 2 malformed lines surfaced, got {skipped}"
+
+
+def test_read_misses_with_skips_absent_file(tmp_path):
+    """An absent manifest surfaces zero skipped lines (non-fatal)."""
+    import validation_misses as vm
+
+    results, skipped = vm.read_misses_with_skips(tmp_path / "nope.jsonl")
+    assert results == []
+    assert skipped == 0
 
 
 def test_read_misses_round_trips_appended(tmp_path):

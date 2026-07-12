@@ -52,16 +52,26 @@ _KATA_DEFAULT_HOME="${HOME}/.kata-home"
 #                                             --yes / --non-interactive
 #   Forwarded unchanged:                      everything else
 #                                             (--platform, --json, --dry-run …)
+#
+#   Engine args are rebuilt into the positional parameters ("$@") via
+#   `set -- "$@" …` so values with spaces (e.g. --target-dir "/a b/x")
+#   survive and nothing glob-expands (SC2086). Each pass shifts one ORIGINAL
+#   arg off the front and appends its translation to the back; after $_argc
+#   passes, "$@" holds exactly the engine pass-through args. The engine
+#   invocations below quote "$@".
 # --------------------------------------------------------------------------
 _check=0
 _discard_local=0
 _factory_reset=0
 _hard=0
 _yes=0
-_engine_args=""
 
-while [ "$#" -gt 0 ]; do
-    case "$1" in
+_argc=$#
+_i=0
+while [ "${_i}" -lt "${_argc}" ]; do
+    _arg=$1
+    shift
+    case "${_arg}" in
         --check)
             _check=1
             ;;
@@ -70,32 +80,32 @@ while [ "$#" -gt 0 ]; do
             ;;
         --factory-reset|--reinstall)
             _factory_reset=1
-            _engine_args="${_engine_args} --factory-reset"
+            set -- "$@" --factory-reset
             ;;
         --hard)
             _hard=1
-            _engine_args="${_engine_args} --hard"
+            set -- "$@" --hard
             ;;
         --yes|--non-interactive)
             _yes=1
-            _engine_args="${_engine_args} --non-interactive"
+            set -- "$@" --non-interactive
             ;;
         *)
-            _engine_args="${_engine_args} $1"
+            set -- "$@" "${_arg}"
             ;;
     esac
-    shift
+    _i=$((_i + 1))
 done
 
 # Default --platform to 'claude' when not supplied (mirror install.sh)
-case " ${_engine_args} " in
+case " $* " in
     *" --platform "*) ;;
-    *) _engine_args="--platform claude${_engine_args:+ }${_engine_args}" ;;
+    *) set -- --platform claude "$@" ;;
 esac
 
 # Pass the git ref through so the engine stamps the ACTUAL ref (not hardcoded
 # "master") into .kata-version — stamp-ref honesty (DESIGN B2 --ref).
-_engine_args="${_engine_args} --ref ${KATA_REF}"
+set -- "$@" --ref "${KATA_REF}"
 
 # --------------------------------------------------------------------------
 # Step 1 — resolve the harness home (no cloning — must already be present)
@@ -166,13 +176,12 @@ if [ "${_factory_reset}" = "1" ]; then
     fi
 
     # Invoke engine: --factory-reset [--hard] --git-sha <sha> [engine-args]
-    # shellcheck disable=SC2086
     if command -v uv > /dev/null 2>&1; then
-        exec uv run python tools/kata_install.py --git-sha "${_git_sha}" ${_engine_args}
+        exec uv run python tools/kata_install.py --git-sha "${_git_sha}" "$@"
     elif command -v python3 > /dev/null 2>&1; then
-        exec python3 tools/kata_install.py --git-sha "${_git_sha}" ${_engine_args}
+        exec python3 tools/kata_install.py --git-sha "${_git_sha}" "$@"
     elif command -v python > /dev/null 2>&1; then
-        exec python tools/kata_install.py --git-sha "${_git_sha}" ${_engine_args}
+        exec python tools/kata_install.py --git-sha "${_git_sha}" "$@"
     else
         printf 'kata-update: error: Python not found.\n' >&2
         printf 'Install uv (https://docs.astral.sh/uv/) or Python 3.12+.\n' >&2
@@ -262,13 +271,12 @@ printf 'kata-update: advanced to %.12s (ref: %s)\n' "${_new_sha}" "${KATA_REF}"
 # Step 6 — invoke engine --update --git-sha <sha>; propagate exit via exec.
 # ALL git is done above; the engine stays git-free (DESIGN Invariant 3).
 # --------------------------------------------------------------------------
-# shellcheck disable=SC2086
 if command -v uv > /dev/null 2>&1; then
-    exec uv run python tools/kata_install.py --update --git-sha "${_new_sha}" ${_engine_args}
+    exec uv run python tools/kata_install.py --update --git-sha "${_new_sha}" "$@"
 elif command -v python3 > /dev/null 2>&1; then
-    exec python3 tools/kata_install.py --update --git-sha "${_new_sha}" ${_engine_args}
+    exec python3 tools/kata_install.py --update --git-sha "${_new_sha}" "$@"
 elif command -v python > /dev/null 2>&1; then
-    exec python tools/kata_install.py --update --git-sha "${_new_sha}" ${_engine_args}
+    exec python tools/kata_install.py --update --git-sha "${_new_sha}" "$@"
 else
     printf 'kata-update: error: Python not found.\n' >&2
     printf 'Install uv (https://docs.astral.sh/uv/) or Python 3.12+.\n' >&2

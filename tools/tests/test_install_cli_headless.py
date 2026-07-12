@@ -33,7 +33,6 @@ import pytest
 
 import kata_install as ki
 
-
 # ---------------------------------------------------------------------------
 # Shared fixture (mirrors fake_home in test_kata_install.py; local copy so
 # this file has zero cross-file fixture dependencies)

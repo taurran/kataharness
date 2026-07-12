@@ -25,7 +25,6 @@ import pytest
 
 import kata_trail  # module under test (must be importable after kata_trail.py is created)
 
-
 # ---------------------------------------------------------------------------
 # Internal git helpers for test setup + verification
 # ---------------------------------------------------------------------------
@@ -259,3 +258,27 @@ def test_snapshot_skips_gracefully_on_busy_lock(tmp_path):
 
     # Lock file still in place (helper must not clean it up)
     assert lock_file.exists(), "Lock file should still exist; helper must not remove it"
+
+
+# ---------------------------------------------------------------------------
+# Test 6 — Q-16 (2026-07-12 health review): git timeout is fail-soft (skip)
+# ---------------------------------------------------------------------------
+
+
+def test_snapshot_skips_on_git_timeout(tmp_path, monkeypatch):
+    """Q-16: a hung git call (stale lock / credential prompt in a hostile target)
+    must fail-soft to a skip sentinel — never a raise to the compaction caller and
+    never a hang."""
+    repo = _make_git_repo(tmp_path)
+    kata_dir = repo / ".kata"
+    kata_dir.mkdir()
+    (kata_dir / "board.md").write_text("board content\n", encoding="utf-8")
+
+    def _raise_timeout(*_a, **_k):
+        raise subprocess.TimeoutExpired(cmd=["git"], timeout=kata_trail._GIT_TIMEOUT_S)
+
+    monkeypatch.setattr(kata_trail.subprocess, "run", _raise_timeout)
+
+    result = kata_trail.snapshot_board(str(repo))
+    assert "skipped" in result, f"timeout must fail-soft to a skip sentinel, got: {result}"
+    assert "timeout" in result["skipped"]

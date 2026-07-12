@@ -27,15 +27,14 @@ import re
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Union
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Internal path-traversal guard (CWE-23 — mirror kata_dash._safe_path)
 # ---------------------------------------------------------------------------
 
 
-def _safe_path(raw: Union[str, Path]) -> Path:
+def _safe_path(raw: str | Path) -> Path:
     """Reject any path containing '..' segments, then resolve.
 
     Consistent with kata_dash._safe_path and gate_emit._safe_path.
@@ -115,7 +114,7 @@ def render_statusline(view_model) -> str:  # duck-typed, no rich
 # ---------------------------------------------------------------------------
 
 
-def build_statusline(kata_dir: Union[str, Path]) -> str:
+def build_statusline(kata_dir: str | Path) -> str:
     """Read <kata_dir>/board.md + state.json and return the one-line statusline.
 
     Applies a .. guard on kata_dir (CWE-23).
@@ -172,7 +171,7 @@ def _is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def write_bridge(temp_dir: Union[str, Path], payload_dict: Any) -> Union[Path, None]:
+def write_bridge(temp_dir: str | Path, payload_dict: Any) -> Path | None:
     """Write the kata superset context-usage bridge file (CA-L1 / CA-L2).
 
     Writes ``<temp_dir>/kata-ctx-<session_id>.json`` with the CA-L2 superset schema

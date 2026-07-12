@@ -33,15 +33,13 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
-from typing import Optional, Union
-
 
 # ---------------------------------------------------------------------------
 # Path-traversal guard (CWE-23) — mirrors _guard_path in validation_misses.py
 # ---------------------------------------------------------------------------
 
 
-def _guard_path(raw: Union[str, Path]) -> Path:
+def _guard_path(raw: str | Path) -> Path:
     """Reject paths containing ``..`` traversal (CWE-23).  Does NOT resolve.
 
     Resolution is deliberately left to the caller's I/O block: a pathological
@@ -84,6 +82,7 @@ def usage_schema() -> dict:
     escalations       — number of escalations (int)
     thrashIters       — number of fix-loop thrash iterations (int)
     subagentDispatches — number of subagent dispatches (int)
+    rateTableDate     — vintage (YYYY-MM) of the default rate table (str, optional)
 
     tokensIn/tokensOut/costUSD are nullable (type includes "null") because token
     capture is host-dependent.  wallClockS and toolCalls are always present.
@@ -151,6 +150,14 @@ def usage_schema() -> dict:
                 "type": "integer",
                 "description": "Number of subagent dispatches during this arm.",
             },
+            "rateTableDate": {
+                "type": "string",
+                "description": (
+                    "Vintage (YYYY-MM) of the default $/token rate table used for "
+                    "costUSD, so a stale cost axis is visible.  Optional for BC with "
+                    "usage.json written before this field existed."
+                ),
+            },
         },
         "additionalProperties": False,
     }
@@ -167,9 +174,9 @@ def build_usage(
     model: str,
     wall_clock_s: float,
     tool_calls: int,
-    tokens_in: Optional[int] = None,
-    tokens_out: Optional[int] = None,
-    cost_usd: Optional[float] = None,
+    tokens_in: int | None = None,
+    tokens_out: int | None = None,
+    cost_usd: float | None = None,
     escalations: int = 0,
     thrash_iters: int = 0,
     subagent_dispatches: int = 0,
@@ -301,12 +308,20 @@ def build_usage(
         "escalations": escalations,
         "thrashIters": thrash_iters,
         "subagentDispatches": subagent_dispatches,
+        # S-5: stamp the default rate-table vintage so a stale cost axis is visible.
+        "rateTableDate": _RATE_TABLE_DATE,
     }
 
 
 # ---------------------------------------------------------------------------
 # Rate-table pricing
 # ---------------------------------------------------------------------------
+
+# Date the hard-coded default prices below were last verified (YYYY-MM).  Emitted
+# into usage.json as ``rateTableDate`` so a stale cost axis is VISIBLE to a
+# benchmark consumer rather than silently trusted — update this whenever
+# ``_DEFAULT_RATE_TABLE`` is refreshed.
+_RATE_TABLE_DATE: str = "2026-06"
 
 # v1 default per-model $/token price list — update this constant as pricing
 # changes.  Prices are USD per token (NOT per 1K tokens).
@@ -354,11 +369,11 @@ def default_rate_table() -> dict:
 
 
 def cost_from_rate_table(
-    tokens_in: Optional[int],
-    tokens_out: Optional[int],
+    tokens_in: int | None,
+    tokens_out: int | None,
     model: str,
     rate_table: dict,
-) -> Optional[float]:
+) -> float | None:
     """Compute USD cost from a per-model rate table.
 
     Multi-model arms are each priced from their own entry in rate_table.
@@ -391,7 +406,7 @@ def cost_from_rate_table(
 # ---------------------------------------------------------------------------
 
 
-def write_usage(path: Union[str, Path], entry: dict) -> None:
+def write_usage(path: str | Path, entry: dict) -> None:
     """Write a usage entry as JSON to *path* (e.g. ``.kata/usage.json``).
 
     CWE-23 guarded: rejects any path containing ``..`` before touching the
@@ -411,8 +426,13 @@ def write_usage(path: Union[str, Path], entry: dict) -> None:
     dest.write_text(json.dumps(entry, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def load_usage(path: Union[str, Path]) -> dict:
+def load_usage(path: str | Path) -> dict:
     """Load a usage entry dict from *path*.
+
+    External API (W-3): this is the read-side counterpart to ``write_usage()``,
+    provided for out-of-process consumers of ``.kata/usage.json`` (benchmark
+    aggregators / reporting). It has no in-repo engine caller by design — do not
+    remove it as dead code; the write/read pair is the public usage.json contract.
 
     Args:
         path: Path to a JSON file previously written by ``write_usage()``.

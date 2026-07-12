@@ -2,6 +2,43 @@
 
 Promote to ROADMAP milestones when ready.
 
+> **★ 2026-07-12 HEALTH-REVIEW FOLLOW-UPS (Fable 5 full review — `.planning/REVIEW-FABLE5-2026-07-12.md`
+> is the findings ledger; fixed-this-session items are marked there; these are the NAMED deferrals):**
+> 1. **STEERING channel real wiring** (F-3 follow-up): a boundary-cadence STEERING.md check in
+>    kata-orchestrate + a real AGENT_STOP kill-switch. STEERING.md header now states honestly that
+>    today it is a manual convention.
+> 2. **Gate-input validation pass** (Q-2/Q-3/Q-6): grounding_gate `groundsToPlan` enum + empty-verdicts
+>    vacuous-true; deviation.run_funnel hard-require `refuted`/`sparse_signal`.
+> 3. **Benchmark integrity trio** (Q-8/Q-9/DET-11): malformed test-ID raise (not fail-as-test-failure);
+>    truncated mutation.json ⇒ vacuous; explicit rank tie-break key.
+> 4. **Gate-runner env sanitization** (DET-09): strip PYTEST_ADDOPTS / control plugin autoload; replace
+>    mutation_run shell=True with argv. (Timeouts shipped this session.)
+> 5. **Determinism residuals** (DET-06 diffstat COLUMNS; DET-10 evidence-digest netstring at next
+>    digest-schema rev; DET-12 mac temp-path scrub + node-id separators; DET-13 content-addressed
+>    benchmark id; DET-14 graph generatedAt sidecar-if-hashed).
+> 6. **Small honesty/robustness LOWs** (Q-10 gate_emit exit codes + parsedCounts; Q-13 researcher
+>    normalize grounding parity; Q-14 board-unreadable degraded flag; Q-15 approval CORRUPT-vs-absent;
+>    Q-16 git timeouts; Q-17 precompact stderr trace; Q-18 ledger skippedLines; S-5 rate-table date;
+>    S-6 web-viewer error surface; W-3 orphan helpers; W-6 banner invocation form; W-7 kata-validate
+>    scope hint; L-3 proposal-path convention — kata-improve's LOCKED PROPOSAL dir vs where the
+>    one real T2 proposal lives; M-2 ruff --fix pass over tests/).
+> 6b. **Gauntlet gaps (M-1)**: add ruff + a type checker (hints exist, unverified) + a coverage
+>    floor (one-off 2026-07-12 measurement: 97% total) + an SCA path that works with uv
+>    (uv export → pip-audit; Snyk resolver can't read the uv manifest — deferred-security note).
+> 6c. **Round-2 residual LOWs** (adapters/second-opinion): kata_overlay list-item key
+>    regex (F4 — misreads non-indented `- k: v` as a top-level key); kata_preflight
+>    `allowed_registries` naming footgun (holds manager names, not URLs); precompact
+>    `custom_instructions` output-key assumption (F6 — verify the host actually reads it,
+>    or drop to the ref-commit-only guarantee); kata_trail error-path tests (T-3);
+>    kata_dispatch injection-only seam is accepted/documented (T-4).
+> 6d. **CI is absent entirely** (T-1/T-2): the 2 integration tests + the 3 symlink install
+>    tests never run automatically; add the S-07 CI exception and a pre-tag checklist that
+>    runs `-m integration` and one non-Windows (or Dev-Mode) suite pass.
+> 7. **`_safe_path` consolidation** (Q-12): shared helper or validator textual-identity check over the
+>    16 hand-copies.
+> 8. **Push discipline**: `f40a973` sits on local master unpushed (direct-to-master docs commit) —
+>    operator decision to push or re-route.
+
 > **★ v0.2.1 POST-MERGE TEST QUEUE (2026-07-05, operator-directed order — R6 leads):**
 > 1. **R6 — live host-fired compaction end-to-end** (the ONE unproven leg of CA-A1): an ATTENDED
 >    interactive session in a throwaway profile where a REAL auto-compact fires ⇒ SessionStart(compact)

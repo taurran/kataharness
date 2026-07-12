@@ -17,9 +17,8 @@ Coverage:
 
 from __future__ import annotations
 
-import yaml
 import pytest
-
+import yaml
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -263,7 +262,7 @@ def test_write_intent_utf8_encoding(tmp_path):
 
 def test_write_intent_content_matches_build_intent(tmp_path):
     """write_intent must write exactly what build_intent returns."""
-    from intent_scaffold import write_intent, build_intent
+    from intent_scaffold import build_intent, write_intent
     target = tmp_path / "INTENT.md"
     write_intent(str(target), FULL_ANSWERS)
     expected = build_intent(FULL_ANSWERS)

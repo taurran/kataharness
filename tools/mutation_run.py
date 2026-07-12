@@ -19,10 +19,11 @@ same trust level as the existing gate (operator/orchestrator).
 
 from __future__ import annotations
 
+import os
 import subprocess
+import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, List, Optional
-
 
 # ---------------------------------------------------------------------------
 # Path-traversal guard (CWE-23) — mirrors gate_emit._safe_path
@@ -50,9 +51,46 @@ def _safe_source_path(raw: str) -> Path:
 # Default subprocess runner (injectable so tests are pure)
 # ---------------------------------------------------------------------------
 
-def _default_runner(cmd: str) -> bool:
-    """Run *cmd* in a shell and return True if it exits 0 (tests passed)."""
-    result = subprocess.run(cmd, shell=True, capture_output=True)
+def _sanitized_gate_env() -> dict:
+    """Return an env for gate/score subprocesses with nondeterminism stripped (DET-09).
+
+    A gate's exit code feeds a scored/gated result, so the run must be reproducible
+    across hosts (DETERMINISM-DOCTRINE law 8). ``PYTEST_ADDOPTS`` (e.g. ``-x --ff``)
+    and pytest plugin autoload (e.g. pytest-randomly) can flip a boolean that reaches
+    Axis-Q. We strip ``PYTEST_ADDOPTS`` and disable plugin autoload; PATH/uv/git env
+    is preserved. Autoload-disable (env) beats ``-p no:randomly`` (argv) because the
+    gate command is arbitrary — it may not be pytest at all, where an injected argv
+    flag would break it; a target that needs an autoloaded plugin opts back in via
+    ``-p <plugin>`` / config (which still loads under autoload-disable).
+    """
+    env = os.environ.copy()
+    env.pop("PYTEST_ADDOPTS", None)
+    env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
+    return env
+
+
+def _default_runner(cmd: str, *, timeout: float = 600.0) -> bool:
+    """Run *cmd* in a shell (sanitized env) and return True if it exits 0.
+
+    Deterministic gate execution (DET-09): the command runs under a **sanitized
+    env** — ``PYTEST_ADDOPTS`` stripped, plugin autoload disabled — which is the
+    determinism win that matters (those flip the Axis-Q boolean across hosts).
+    ``shell=True`` is deliberately RETAINED: the ``test_cmd`` contract is a shell
+    string using shell metacharacters (``cd /d "<dir>" && <py> -m pytest ...``),
+    so argv-tokenizing it would break every caller; the sink runs at
+    operator/orchestrator trust and is registered in ``protocol/exec-safety.md``.
+    A hung command is bounded by *timeout* (seconds, default 600); on
+    ``subprocess.TimeoutExpired`` the runner returns **False** — a timeout is a
+    FAILURE-shaped verdict, never a hang and never an exception surfacing as
+    success (D136: no silent-permissive default; the gate goes red).
+    """
+    try:
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, timeout=timeout, env=_sanitized_gate_env()
+        )
+    except subprocess.TimeoutExpired:
+        print(f"[kata] gate runner timeout after {timeout}s: {cmd!r}", file=sys.stderr)
+        return False
     return result.returncode == 0
 
 
@@ -65,7 +103,7 @@ def prove_non_vacuous(
     asserted_line: str,
     test_cmd: str,
     *,
-    runner: Optional[Callable[[str], bool]] = None,
+    runner: Callable[[str], bool] | None = None,
 ) -> dict:
     """Run the deterministic, restoring non-vacuity PROVE step for one asserted line.
 
@@ -140,10 +178,10 @@ def prove_non_vacuous(
 
 
 def prove_many(
-    specs: List[dict],
+    specs: list[dict],
     *,
-    runner: Optional[Callable[[str], bool]] = None,
-) -> List[dict]:
+    runner: Callable[[str], bool] | None = None,
+) -> list[dict]:
     """Run prove_non_vacuous over a list of spec dicts and collect verdicts.
 
     Each spec dict must contain:
@@ -162,7 +200,7 @@ def prove_many(
     Returns:
         List of ``{testWentRed, nonVacuous}`` dicts.
     """
-    results: List[dict] = []
+    results: list[dict] = []
     for spec in specs:
         verdict = prove_non_vacuous(
             spec["source_path"],

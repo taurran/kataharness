@@ -47,7 +47,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 STAMP_FILENAME = ".kata-version"
@@ -111,7 +111,7 @@ def write_stamp(
         "gitSha": git_sha,
         "suiteSemver": suite_semver,
         "ref": ref,
-        "installedAt": datetime.now(timezone.utc).isoformat(),
+        "installedAt": datetime.now(UTC).isoformat(),
         "linkMode": link_mode,
         "platform": platform,
     }
@@ -186,7 +186,7 @@ def compute_manifest(home: str | Path) -> dict:
         }
     return {
         "schema": _SCHEMA,
-        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "generatedAt": datetime.now(UTC).isoformat(),
         "gitSha": "",  # placeholder; write_manifest injects the real value
         "skills": skills,
     }

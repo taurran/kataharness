@@ -63,9 +63,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from collections.abc import Iterable, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable, Sequence
 
 # ---------------------------------------------------------------------------
 # Schema / artifact constants
@@ -665,7 +665,7 @@ def iac_apply_schema() -> dict:
 
 
 def _now_iso() -> str:
-    return datetime.now(tz=timezone.utc).isoformat()
+    return datetime.now(tz=UTC).isoformat()
 
 
 def build_iac_apply_artifact(

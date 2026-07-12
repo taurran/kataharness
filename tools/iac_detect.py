@@ -32,7 +32,6 @@ from __future__ import annotations
 
 import re
 from pathlib import Path, PurePath
-from typing import Optional
 
 # ---------------------------------------------------------------------------
 # CWE-23 path-traversal guard (mirrors kata_settings._safe_abs:39-44)
@@ -178,8 +177,8 @@ def _is_cfn_stateful(resource_type: str) -> bool:
 
 def classify_file(
     path: str | Path,
-    content: Optional[str] = None,
-) -> Optional[str]:
+    content: str | None = None,
+) -> str | None:
     """Classify a single file as an IaC kind or None.
 
     Args:
@@ -271,7 +270,7 @@ def classify_task(
 def force_classify(
     path: str | Path,
     overrides: dict[str, str],
-) -> Optional[str]:
+) -> str | None:
     """Honor an operator force-classify list (paths/globs → kind).
 
     Iterates ``overrides`` in insertion order; returns the kind for the first
@@ -464,7 +463,7 @@ def scan_cfn_changeset(desc: dict) -> list[dict]:
 
         action: str = rc.get("Action", "")
         replacement: str = rc.get("Replacement", "False")
-        policy_action: Optional[str] = rc.get("PolicyAction")  # absent = None
+        policy_action: str | None = rc.get("PolicyAction")  # absent = None
         resource_type: str = rc.get("ResourceType", "")
 
         # RequiresRecreation=Always is a forced replacement even when Replacement=False

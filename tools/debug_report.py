@@ -54,9 +54,8 @@ load_debug_report      — read the report back
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Union
 
 import deviation
 
@@ -311,7 +310,7 @@ def snyk_report_schema() -> dict:
 def build_confidence_map(
     function_models: list[dict],
     *,
-    graph_modules: Union[list[str], None] = None,
+    graph_modules: list[str] | None = None,
 ) -> dict:
     """Classify each module as assessed / low_confidence / skipped (LD5 v1 heuristic).
 
@@ -374,7 +373,7 @@ def build_confidence_map(
 # ---------------------------------------------------------------------------
 
 
-def _index_by_finding_id(records: Union[list, None]) -> dict:
+def _index_by_finding_id(records: list | None) -> dict:
     """Index artifact records by their stored ``finding_id`` field.
 
     The drift report / fix manifest / deferral records each carry a
@@ -394,9 +393,9 @@ def _index_by_finding_id(records: Union[list, None]) -> dict:
 
 def build_deviation_table(
     findings: list[dict],
-    drift_reports: Union[list[dict], None],
-    fix_manifests: Union[list[dict], None],
-    deferrals: Union[list[dict], None],
+    drift_reports: list[dict] | None,
+    fix_manifests: list[dict] | None,
+    deferrals: list[dict] | None,
 ) -> list[dict]:
     """Build one deviation -> fix -> pinning-test row per finding (DESIGN §6).
 
@@ -479,7 +478,7 @@ def build_deviation_table(
 # ---------------------------------------------------------------------------
 
 
-def _as_count(value: object) -> Union[int, None]:
+def _as_count(value: object) -> int | None:
     """Return *value* as a non-bool int, else None (missing/malformed count)."""
     if isinstance(value, bool):
         return None
@@ -490,7 +489,7 @@ def _as_count(value: object) -> Union[int, None]:
     return None
 
 
-def _snyk_rollup(snyk_reports: Union[list[dict], None]) -> dict:
+def _snyk_rollup(snyk_reports: list[dict] | None) -> dict:
     """Roll up the REAL Snyk before/after verdicts (honest about unavailability).
 
     A report with ``available: false`` is rolled up as unavailable — never as
@@ -568,10 +567,10 @@ def _snyk_rollup(snyk_reports: Union[list[dict], None]) -> dict:
 
 
 def build_proof_rollup(
-    drift_reports: Union[list[dict], None],
+    drift_reports: list[dict] | None,
     result_json: dict,
     mutation_json: dict,
-    snyk_reports: Union[list[dict], None],
+    snyk_reports: list[dict] | None,
 ) -> dict:
     """Roll up the LD12 regression + security proof.
 
@@ -670,7 +669,7 @@ def build_debug_report(
             "confidence_heuristic_note": _CONFIDENCE_HEURISTIC_NOTE,
             "live_run_note": _LIVE_RUN_NOTE,
         },
-        "utc": datetime.now(tz=timezone.utc).isoformat(),
+        "utc": datetime.now(tz=UTC).isoformat(),
     }
 
 
@@ -679,7 +678,7 @@ def build_debug_report(
 # ---------------------------------------------------------------------------
 
 
-def emit_debug_report(report: dict, path: Union[str, Path]) -> None:
+def emit_debug_report(report: dict, path: str | Path) -> None:
     """Write the LD12 report as JSON to *path* (e.g. ``.kata/debug/closeout.json``).
 
     Creates parent directories if absent.  Overwrites any existing file.
@@ -693,7 +692,7 @@ def emit_debug_report(report: dict, path: Union[str, Path]) -> None:
     dest.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def load_debug_report(path: Union[str, Path]) -> dict:
+def load_debug_report(path: str | Path) -> dict:
     """Load an LD12 report dict from *path*.
 
     Args:

@@ -30,7 +30,6 @@ import pytest
 import contract_edges as ce
 import contract_gate as cg
 
-
 # ---------------------------------------------------------------------------
 # Surface bodies (distinct interface surfaces; body-fill leaves the surface fixed)
 # ---------------------------------------------------------------------------
@@ -542,3 +541,73 @@ def test_parse_trailer_events_surfaces_malformed_invalidated(tmp_path, capsys):
     cg.parse_trailer_events(str(repo), "integration", str(plan))
     out = capsys.readouterr().out
     assert "malformed" in out.lower() and "Kata-Invalidated" in out
+
+
+# ============================================================================
+# DET-02 / DET-03 (2026-07-12 health review) — git-config pins on parsed stdout
+# ============================================================================
+
+
+def _pin_present(cmd: list[str], setting: str) -> bool:
+    """True iff ``-c <setting>`` appears in *cmd* (the pinned-argv shape)."""
+    return any(cmd[i] == "-c" and cmd[i + 1] == setting for i in range(len(cmd) - 1))
+
+
+def test_scan_integration_commits_argv_pins(tmp_path, monkeypatch):
+    """DET-02: fork-point resolution (single-pathspec `git log -1`) must pin
+    log.follow=false — operator log.follow=true follows renames to an OLDER
+    commit, a wrong fork point that ingests prior-run trailers — plus
+    log.showSignature=false (gpg: lines corrupt the parsed %H) and
+    core.quotepath=off. DET-03: the commit-delimited scan must pin
+    log.showSignature=false (gpg: lines silently shift commit_index — the
+    temporal-invalidation comparison would misread commit order)."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        if "-1" in cmd:  # fork-point resolution
+            return subprocess.CompletedProcess(cmd, 0, stdout="abc123\n", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(cg.subprocess, "run", fake_run)
+    cg._scan_integration_commits(str(tmp_path), "integration", tmp_path / "PLAN.md")
+
+    assert len(calls) == 2, "expected exactly fork-point + bounded-scan git calls"
+    fork_cmd, scan_cmd = calls
+    assert fork_cmd[0] == "git" and scan_cmd[0] == "git"
+    assert _pin_present(fork_cmd, "log.follow=false")
+    assert _pin_present(fork_cmd, "log.showSignature=false")
+    assert _pin_present(fork_cmd, "core.quotepath=off")
+    assert _pin_present(scan_cmd, "log.showSignature=false")
+    assert _pin_present(scan_cmd, "core.quotepath=off")
+
+
+# ============================================================================
+# Q-16 (2026-07-12 health review) — git timeout fails closed (RAISE, not pass)
+# ============================================================================
+
+
+def test_scan_forkpoint_timeout_raises(tmp_path, monkeypatch):
+    """Q-16: a hung fork-point resolution ⇒ ValueError (fail-closed) — the final
+    gate never swallows a timeout into a permissive unbounded/empty scan."""
+    def fake_run(cmd, **kwargs):
+        if "-1" in cmd:
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=cg._GIT_TIMEOUT_S)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(cg.subprocess, "run", fake_run)
+    with pytest.raises(ValueError):
+        cg._scan_integration_commits(str(tmp_path), "integration", tmp_path / "PLAN.md")
+
+
+def test_scan_bounded_timeout_raises(tmp_path, monkeypatch):
+    """Q-16: a hung bounded commit scan (fork-point resolves) ⇒ ValueError
+    (fail-closed) — never a permissive empty commit list."""
+    def fake_run(cmd, **kwargs):
+        if "-1" in cmd:  # fork-point resolves
+            return subprocess.CompletedProcess(cmd, 0, stdout="abc123\n", stderr="")
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=cg._GIT_TIMEOUT_S)
+
+    monkeypatch.setattr(cg.subprocess, "run", fake_run)
+    with pytest.raises(ValueError):
+        cg._scan_integration_commits(str(tmp_path), "integration", tmp_path / "PLAN.md")

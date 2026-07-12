@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Import checks
 # ---------------------------------------------------------------------------
@@ -34,10 +33,10 @@ def test_no_rich_import():
     if "kata_dash_model" in sys.modules:
         del sys.modules["kata_dash_model"]
 
-    import kata_dash_model as m
-
     # Check the module's source does not import rich
     import inspect
+
+    import kata_dash_model as m
     source = inspect.getsource(m)
     assert "import rich" not in source, "kata_dash_model must not import rich"
 
@@ -224,7 +223,7 @@ def test_task_row_fields():
 
 def test_view_model_fields():
     """ViewModel must have all fields defined in the frozen contract."""
-    from kata_dash_model import ViewModel, TaskRow
+    from kata_dash_model import TaskRow, ViewModel
 
     vm = ViewModel(
         spec="test-spec",
@@ -281,7 +280,7 @@ FIXTURE_BOARD = """\
 
 def test_build_view_model_returns_view_model():
     """build_view_model must return a ViewModel instance."""
-    from kata_dash_model import build_view_model, ViewModel
+    from kata_dash_model import ViewModel, build_view_model
 
     vm = build_view_model(FIXTURE_BOARD, FIXTURE_STATE)
     assert isinstance(vm, ViewModel)

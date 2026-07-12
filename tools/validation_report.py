@@ -33,15 +33,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Union
-
 
 # ---------------------------------------------------------------------------
 # Path-traversal guard (CWE-23) — mirrors grounding_gate._safe_path / kata_board._safe_path
 # ---------------------------------------------------------------------------
 
 
-def _safe_path(raw: Union[str, Path]) -> Path:
+def _safe_path(raw: str | Path) -> Path:
     """Reject path-traversal (CWE-23) in an operator-supplied path, then resolve.
 
     Blocks any ``..`` segment — the traversal-escape primitive — so a crafted
@@ -348,7 +346,7 @@ def render_table(findings: list[dict], na_legs: list[str]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def emit_findings(path: Union[str, Path], report: dict) -> None:
+def emit_findings(path: str | Path, report: dict) -> None:
     """Write the validation report to *path* as JSON.
 
     Intended for ``.kata/validation/findings.json`` — the machine source of
@@ -367,7 +365,7 @@ def emit_findings(path: Union[str, Path], report: dict) -> None:
     dest.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def load_findings(path: Union[str, Path]) -> dict:
+def load_findings(path: str | Path) -> dict:
     """Load a validation report dict from *path* (round-trip with emit_findings).
 
     Args:

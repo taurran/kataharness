@@ -37,7 +37,6 @@ from pathlib import Path
 
 import pytest
 
-
 _SOURCE = (Path(__file__).resolve().parent.parent / "recurrence_detect.py")
 
 
@@ -520,6 +519,23 @@ def test_read_handled_tolerates_malformed(tmp_path):
     result = rd.read_handled(target)
     assert len(result) == 1
     assert result[0]["status"] == "proposed"
+
+
+def test_read_handled_with_skips_surfaces_malformed_count(tmp_path):
+    """Q-18: read_handled_with_skips surfaces the malformed-line count so a
+    corrupted sidecar cannot silently erase the handled signal."""
+    import recurrence_detect as rd
+
+    target = tmp_path / "h.jsonl"
+    target.write_text(
+        "not json {{{\n"
+        + json.dumps(_handled()) + "\n"
+        + "42\n",  # valid JSON but not a dict — also malformed for this sidecar
+        encoding="utf-8",
+    )
+    results, skipped = rd.read_handled_with_skips(target)
+    assert len(results) == 1
+    assert skipped == 2, f"Expected 2 malformed lines surfaced, got {skipped}"
 
 
 def test_read_handled_round_trips_appended(tmp_path):

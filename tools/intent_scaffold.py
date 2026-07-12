@@ -27,7 +27,6 @@ from typing import Any
 
 import yaml
 
-
 # ---------------------------------------------------------------------------
 # Allowed values (protocol/intent.md schema — PINNED D88)
 # ---------------------------------------------------------------------------
@@ -214,8 +213,8 @@ def _safe_path(raw: str) -> Path:
 
     Blocks any ``..`` segment — the traversal-escape primitive — so a crafted
     argument cannot climb out of the intended tree.  Mirrors
-    ``gate_emit._safe_path`` (raises ``ValueError`` here vs. ``SystemExit``
-    there, so callers can catch it cleanly in tests).
+    ``gate_emit._safe_path`` (both raise ``ValueError`` since the repo-wide
+    guard unification, v0.1.0 cluster item 3).
     """
     p = Path(raw)
     if any(part == ".." for part in p.parts):

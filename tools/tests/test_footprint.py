@@ -378,3 +378,83 @@ def test_changed_in_task_raises_on_no_common_ancestor(tmp_path, monkeypatch):
     import subprocess as sp
     with pytest.raises((sp.CalledProcessError, ValueError)):
         footprint.changed_in_task("integration", "task/T9")
+
+
+# --- DET-04 / DET-05 fold (2026-07-12 health review): git-config pins -------------
+
+def _pin_present(cmd: list[str], setting: str) -> bool:
+    """True iff ``-c <setting>`` appears in *cmd* (the pinned-argv shape)."""
+    return any(cmd[i] == "-c" and cmd[i + 1] == setting for i in range(len(cmd) - 1))
+
+
+def test_changed_since_argv_pins_quotepath_and_no_renames(monkeypatch):
+    """DET-05: changed_since feeds footprint.json/withinFootprint (a compared
+    verdict input) — the argv must pin core.quotepath=off AND --no-renames so
+    the changed set cannot vary with operator diff.renames / quotepath config."""
+    captured: dict = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(footprint.subprocess, "run", fake_run)
+    assert footprint.changed_since("HEAD~1") == []
+    cmd = captured["cmd"]
+    assert cmd[0] == "git"
+    assert _pin_present(cmd, "core.quotepath=off")
+    assert "--no-renames" in cmd
+
+
+def test_changed_in_task_argv_pins_quotepath(monkeypatch):
+    """DET-04: the lane-check diff must pin core.quotepath=off — an octal-quoted
+    non-ASCII path never matches its footprint prefix (a FALSE lane-drift trip)."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        if "merge-base" in cmd:
+            return subprocess.CompletedProcess(cmd, 0, stdout="abc123\n", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(footprint.subprocess, "run", fake_run)
+    assert footprint.changed_in_task("integration", "task/T1") == []
+    diff_cmd = calls[-1]
+    assert "diff" in diff_cmd
+    assert _pin_present(diff_cmd, "core.quotepath=off")
+    assert "--no-renames" in diff_cmd
+
+
+def test_changed_in_task_non_ascii_path_not_octal_quoted(tmp_path, monkeypatch):
+    """DET-04 behavioral: with repo core.quotepath=on (mimicking operator config),
+    a non-ASCII path would be emitted octal-quoted (a double-quoted string with
+    backslash-octal escapes) and never match a footprint prefix. The -c pin must
+    override the config: the verbatim path carries no quote and no backslash."""
+    repo = tmp_path
+    _seed_repo(repo)
+    _git(["config", "core.quotepath", "on"], repo)
+    _git(["checkout", "-b", "task/T10"], repo)
+    (repo / "café.py").write_text("x = 1\n", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "non-ascii path"], repo)
+
+    monkeypatch.chdir(repo)
+    got = footprint.changed_in_task("integration", "task/T10")
+    assert len(got) == 1
+    assert '"' not in got[0], "octal-quoted path leaked — the quotepath pin lost"
+    assert "\\" not in got[0], "backslash-octal escape leaked — the quotepath pin lost"
+
+
+def test_changed_since_non_ascii_path_not_octal_quoted(tmp_path, monkeypatch):
+    """DET-05 behavioral: same quotepath-pin proof for changed_since."""
+    repo = tmp_path
+    _seed_repo(repo)
+    _git(["config", "core.quotepath", "on"], repo)
+    (repo / "naïve.txt").write_text("n", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "second"], repo)
+
+    monkeypatch.chdir(repo)
+    got = footprint.changed_since("HEAD~1")
+    assert len(got) == 1
+    assert '"' not in got[0], "octal-quoted path leaked — the quotepath pin lost"
+    assert "\\" not in got[0], "backslash-octal escape leaked — the quotepath pin lost"

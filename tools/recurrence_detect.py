@@ -337,12 +337,55 @@ def validate_handled(record: dict) -> list[str]:
     return errors
 
 
+def read_handled_with_skips(path: str | Path) -> tuple[list[dict], int]:
+    """Parse the handled sidecar, returning both records AND the malformed count.
+
+    Q-18: mirrors ``validation_misses.read_misses_with_skips``. A silently
+    corrupted sidecar erases the handled signal the ledger exists to preserve, so
+    this variant surfaces ``skippedLines`` for an advisory NOTE. The read stays
+    non-fatal: a corrupt line never crashes a gate/build.
+
+    Args:
+        path: The handled-sidecar file path.
+
+    Returns:
+        ``(results, skipped)`` — valid record dicts in file order plus the count
+        of non-empty lines that failed to parse as a JSON object. An absent or
+        unreadable file returns ``([], 0)``.
+    """
+    p = Path(path)
+    if not p.exists():
+        return [], 0
+    try:
+        text = p.read_text(encoding="utf-8")
+    except OSError:
+        return [], 0
+    results: list[dict] = []
+    skipped = 0
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        try:
+            obj = json.loads(stripped)
+        except (json.JSONDecodeError, ValueError):
+            skipped += 1  # non-JSON line — skip but count so it is not invisible
+            continue
+        if isinstance(obj, dict):
+            results.append(obj)
+        else:
+            skipped += 1  # valid JSON but not an object (e.g. bare list/number)
+    return results, skipped
+
+
 def read_handled(path: str | Path) -> list[dict]:
     """Parse all JSON lines from the handled sidecar; skip malformed lines.
 
+    Thin BC wrapper over ``read_handled_with_skips`` that drops the skipped count.
     Mirrors ``validation_misses.read_misses``: an absent file returns ``[]``;
     malformed (non-JSON, non-dict) lines are silently skipped so a corrupt line
-    never crashes a gate/build.
+    never crashes a gate/build. Use ``read_handled_with_skips`` when the caller
+    needs to surface a ``skippedLines`` NOTE.
 
     Args:
         path: The handled-sidecar file path.
@@ -350,24 +393,7 @@ def read_handled(path: str | Path) -> list[dict]:
     Returns:
         List of valid record dicts in file order; ``[]`` for an absent file.
     """
-    p = Path(path)
-    if not p.exists():
-        return []
-    try:
-        text = p.read_text(encoding="utf-8")
-    except OSError:
-        return []
-    results: list[dict] = []
-    for line in text.splitlines():
-        stripped = line.strip()
-        if not stripped:
-            continue
-        try:
-            obj = json.loads(stripped)
-            if isinstance(obj, dict):
-                results.append(obj)
-        except (json.JSONDecodeError, ValueError):
-            pass  # skip malformed line — reader must never crash
+    results, _skipped = read_handled_with_skips(path)
     return results
 
 

@@ -495,3 +495,39 @@ def test_i1_intent_md_missing_required_term_errors(tmp_path, monkeypatch):
     assert any("readiness" in f.msg for f in errors), (
         f"check_protocol_schemas must ERROR on missing 'readiness' in intent.md; findings: {findings}"
     )
+
+
+# ── Q-7: zero-skill discovery must NOT self-certify (D33/D136) ────────────────
+
+def test_main_zero_skills_discovered_exits_1(tmp_path, monkeypatch, capsys):
+    """main() over an EMPTY tree must print an ERROR and exit 1 (Q-7).
+
+    A validator that reports '0 skills checked — 0 error(s)' and exits green is
+    self-certifying over an empty set (D33/D136 silent-permissive default) —
+    an empty discovery set means the tree is missing or mis-rooted.
+    """
+    monkeypatch.setattr(v, "SKILLS_DIR", tmp_path / "skills")
+    monkeypatch.setattr(v, "MODULES_DIR", tmp_path / "modules")
+    rc = v.main([])
+    captured = capsys.readouterr()
+    assert rc == 1, "zero skills discovered must exit non-zero, never certify green"
+    assert "ERROR" in captured.err
+    assert "0 skills discovered" in captured.err
+
+
+def test_main_zero_skills_blocks_write_mode_too(tmp_path, monkeypatch, capsys):
+    """--write over an empty tree must ALSO exit 1 before touching the README index."""
+    monkeypatch.setattr(v, "SKILLS_DIR", tmp_path / "skills")
+    monkeypatch.setattr(v, "MODULES_DIR", tmp_path / "modules")
+    rc = v.main(["--write"])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "0 skills discovered" in captured.err
+    assert "README index regenerated" not in captured.out, (
+        "an empty tree must never regenerate the README index"
+    )
+
+
+def test_main_real_tree_nonempty_guard_does_not_misfire():
+    """Regression: the real tree discovers >0 skills, so the Q-7 guard stays silent there."""
+    assert len(v.load_skills()) > 0, "real tree must discover skills (guard precondition)"

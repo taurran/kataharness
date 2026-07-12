@@ -8,7 +8,7 @@ description: >-
 license: Apache-2.0
 version: 0.2.0
 category: handoff
-status: experimental
+status: beta
 agnostic: true
 cost-weight: 1
 allowed-tools: [Read, Grep, Glob, Write, Bash]

@@ -28,7 +28,6 @@ import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Optional
 
 # ---------------------------------------------------------------------------
 # Security: path-traversal guard (CWE-23, mirrored from kata_dash._safe_path)
@@ -98,6 +97,19 @@ def view_to_dict(view_model) -> dict:
 # ---------------------------------------------------------------------------
 # I/O reader — mirrors kata_dash main()._read_sources()
 # ---------------------------------------------------------------------------
+
+
+def _error_view(detail: str = "internal") -> dict:
+    """Fail-soft /api/view payload for a corrupt/unreadable board.
+
+    S-6: a corrupt board must be operator-VISIBLE, not disguised as the idle
+    "waiting for a run" state.  ``status="error"`` (distinct from ``waiting``)
+    drives a visible error panel in the page.  ``waiting`` is explicitly False so
+    no consumer mistakes this for idle.  Fail-soft: the caller still returns 200
+    on this localhost-only dev surface — the error is in the rendered state, not
+    a hidden key.
+    """
+    return {"status": "error", "waiting": False, "error": detail}
 
 
 def build_web_view(kata_dir: str) -> dict:
@@ -232,6 +244,8 @@ PAGE_HTML = """\
     }
     .idle .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
     .idle p { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; }
+    /* Error state — distinct from idle so a corrupt board is not read as "waiting". */
+    .idle.error { color: var(--blocked); }
 
     /* ── Task list ──────────────────────────────────────────────────── */
     .task-row {
@@ -398,6 +412,15 @@ PAGE_HTML = """\
       );
     }
 
+    function renderError(detail) {
+      return el("div", {className: "idle error"},
+        el("div", {className: "icon"}, "⚠"),
+        el("strong", {textContent: "error — board could not be read"}),
+        el("p", {textContent: "The kata board is corrupt or unreadable" +
+          (detail ? " (" + detail + ")" : "") + " — this is not an idle run."})
+      );
+    }
+
     function renderTaskRow(task) {
       var bar   = renderBar(task.percent, 16);
       var filled = Math.round(task.percent / 100 * 16);
@@ -447,6 +470,14 @@ PAGE_HTML = """\
           (data.updatedUtc ? "  ·  " + data.updatedUtc : "");
       } else {
         metaEl.textContent = data.updatedUtc || "";
+      }
+
+      // ---- error path (corrupt / unreadable board) ----
+      // Distinct from idle: a corrupt board must NOT render as "waiting for a run".
+      if (data.status === "error") {
+        root.innerHTML = "";
+        root.appendChild(renderError(data.error));
+        return;
       }
 
       // ---- waiting / idle path ----
@@ -567,8 +598,12 @@ class Handler(BaseHTTPRequestHandler):
                 data = build_web_view(self.server.kata_dir)
                 body = json.dumps(data, ensure_ascii=False).encode("utf-8")
             except Exception:
-                # Fail-safe: return empty waiting dict rather than 500
-                body = json.dumps({"waiting": True, "error": "internal"}).encode("utf-8")
+                # S-6: surface a DISTINCT error state — a corrupt/unreadable board
+                # must not masquerade as the idle "waiting for a run" state (which
+                # hid the failure in a key the page never rendered).  Fail-soft:
+                # still 200 on this localhost-only dev surface; the page renders a
+                # visible error panel (status="error"), never an idle spinner.
+                body = json.dumps(_error_view()).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -590,7 +625,7 @@ class Handler(BaseHTTPRequestHandler):
 # ---------------------------------------------------------------------------
 
 
-def main(argv: Optional[list] = None) -> None:
+def main(argv: list | None = None) -> None:
     """CLI: serve the web viewer for a .kata directory.
 
     Security: binds 127.0.0.1 ONLY — never 0.0.0.0.

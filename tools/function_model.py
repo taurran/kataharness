@@ -186,8 +186,9 @@ def _walk_verify(node: ast.expr) -> None:  # noqa: C901
         # (`(((10**1000)**1000)**1000)`) explodes the integer multiplicatively
         # while each exponent stays under any per-exponent cap and the whole
         # expression stays under the node cap → resource-exhaustion DoS. Boolean
-        # pre/postconditions never need `**`. (Mult/LShift grow size only
-        # linearly in node count, so they stay bounded.)
+        # pre/postconditions never need `**`. (int*int Mult and LShift grow
+        # size only linearly in node count; sequence*int Mult is capped at
+        # eval time — see the F1 guard in _eval_node.)
         if isinstance(node.op, ast.Pow):
             raise ValueError("Exponentiation (**) rejected in assertion (resource-exhaustion guard)")
         _walk_verify(node.left)
@@ -387,6 +388,30 @@ def _eval_node(node: ast.expr, names: dict) -> Any:  # noqa: C901
                 raise ValueError(
                     f"Shift {right} exceeds cap {_MAX_SHIFT} (resource-exhaustion guard)"
                 )
+        # Sequence-repetition DoS guard (2026-07-12 health review F1 + adval
+        # DEFECT-1): seq*int (`[0]*N`, `"a"*N`) allocates memory proportional to
+        # the RESULT length -- the same class as `**`/`<<`. Bounding the count
+        # operand alone is a facade: `[0]*1000*1000*1000` keeps every count under
+        # the cap while the product explodes to 10^9. Because `*` is left-
+        # associative and each intermediate is materialized and re-checked
+        # bottom-up, bounding the RESULTING length (len(seq) * count) here kills
+        # the chain -- the 2nd op sees a 1000-element operand and fires. Boolean
+        # pre/postconditions never legitimately build a sequence past this cap.
+        if isinstance(node.op, ast.Mult):
+            _seq_types = (str, bytes, bytearray, list, tuple)
+            for _seq, _count in ((left, right), (right, left)):
+                if (
+                    isinstance(_seq, _seq_types)
+                    and isinstance(_count, int)
+                    and not isinstance(_count, bool)
+                ):
+                    _result_len = len(_seq) * abs(_count)
+                    if _result_len > _MAX_SHIFT:
+                        raise ValueError(
+                            f"Sequence repetition to length {_result_len} exceeds "
+                            f"cap {_MAX_SHIFT} (resource-exhaustion guard)"
+                        )
+                    break  # matched the seq*int form; don't re-check the reversed pair
         return fn(left, right)
 
     if isinstance(node, ast.Compare):

@@ -9,7 +9,7 @@ description: >-
 license: Apache-2.0
 version: 0.1.0
 category: coordinate
-status: experimental
+status: beta
 agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Write, Edit, AskUserQuestion]

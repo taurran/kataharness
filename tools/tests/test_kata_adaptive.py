@@ -29,10 +29,9 @@ from kata_adaptive import (
     AdaptiveError,
     anchor_switch_reset,
     apply_delta,
-    l2_base_rung,
-    state_from_recount,
     bump_pending,
     can_spend,
+    l2_base_rung,
     modulate_step,
     new_state,
     record_gate_result,
@@ -42,6 +41,7 @@ from kata_adaptive import (
     render_tier_decision,
     resolve_adaptive_config,
     resolve_budget,
+    state_from_recount,
 )
 
 

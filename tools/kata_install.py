@@ -713,6 +713,50 @@ def uninstall(
                 if path not in left_intact:
                     left_intact.append(path)
 
+        # Remove flat-linked command files + the commands manifest (2026-07-12
+        # health review F3: install links adapters/claude/commands/*.md into
+        # <host>/commands/ and records them in .kata-commands.json, but uninstall
+        # previously left both behind as orphans). Same ownership test as skills:
+        # a symlink resolving under harness_home, OR a file named in the manifest.
+        commands_dst = hd / "commands"
+        manifest_path = hd / _COMMANDS_MANIFEST
+        managed_cmds: set[str] = set()
+        if manifest_path.exists():
+            try:
+                managed_cmds = set(
+                    json.loads(manifest_path.read_text(encoding="utf-8")).get("managed", [])
+                )
+            except (json.JSONDecodeError, OSError):
+                managed_cmds = set()
+        if commands_dst.is_dir():
+            src_commands_dir = home / "adapters" / "claude" / "commands"
+            candidate_names = managed_cmds | {
+                f.name for f in src_commands_dir.glob("*.md")
+            } if src_commands_dir.is_dir() else managed_cmds
+            for name in sorted(candidate_names):
+                cmd = commands_dst / name
+                if not cmd.exists() and not cmd.is_symlink():
+                    continue
+                if cmd.is_symlink():
+                    try:
+                        resolved = cmd.resolve()
+                    except (OSError, RuntimeError):
+                        left_intact.append(str(cmd))
+                        continue
+                    if resolved.is_relative_to(home.resolve()):
+                        cmd.unlink()
+                        removed.append(f"commands/{name}")
+                    else:
+                        left_intact.append(str(cmd))
+                elif name in managed_cmds:
+                    # copy-mode install (no symlink); manifest attests ownership
+                    cmd.unlink()
+                    removed.append(f"commands/{name}")
+                else:
+                    left_intact.append(str(cmd))
+        if manifest_path.exists():
+            manifest_path.unlink()
+
     # Unlink settings file (idempotent: absent -> no-op)
     sp = kata_settings.settings_path(home)
     if sp.exists():
@@ -1415,7 +1459,7 @@ def main(argv: list[str] | None = None) -> int:
             else ("mixed" if len(_methods_upd) > 1 else "unknown")
         )
 
-        # Post-link materialize pass (no-op stub in Phase A; Phase B wires in overlay)
+        # Post-link materialize pass (applies fork shadows + overlay entries; Phase B/C2)
         _p_upd = (args.platform or "").strip().casefold()
         _hd_raw_upd = args.host_dir
         if _p_upd == "claude":

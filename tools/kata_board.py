@@ -21,17 +21,15 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Union
-
 
 # ---------------------------------------------------------------------------
 # Path guard
 # ---------------------------------------------------------------------------
 
 
-def _safe_path(raw: Union[str, Path]) -> Path:
+def _safe_path(raw: str | Path) -> Path:
     """Reject path-traversal (CWE-23) in an operator-supplied path, then resolve.
 
     Blocks any ``..`` segment — the traversal-escape primitive — so a crafted
@@ -58,7 +56,7 @@ def _safe_path(raw: Union[str, Path]) -> Path:
 
 
 def append_event(
-    kata_dir: Union[str, Path],
+    kata_dir: str | Path,
     agent: str,
     type: str,  # noqa: A002  (shadowing built-in intentional — matches protocol)
     task: str,
@@ -90,7 +88,7 @@ def append_event(
     """
     kata_dir = _safe_path(kata_dir)
     kata_dir.mkdir(parents=True, exist_ok=True)  # first event of a run creates .kata/
-    utc_now = datetime.now(timezone.utc).isoformat()
+    utc_now = datetime.now(UTC).isoformat()
     line = f"{utc_now} | {agent} | {type} | {task} | {msg}\n"
 
     board_path = kata_dir / "board.md"
@@ -99,7 +97,7 @@ def append_event(
 
 
 def append_progress(
-    kata_dir: Union[str, Path],
+    kata_dir: str | Path,
     agent: str,
     task: str,
     step: int,
@@ -144,7 +142,7 @@ def append_progress(
 # ---------------------------------------------------------------------------
 
 
-def write_state(kata_dir: Union[str, Path], state: dict) -> None:
+def write_state(kata_dir: str | Path, state: dict) -> None:
     """Atomically write state.json to <kata_dir>/state.json.
 
     Uses write-to-temp + os.replace so a concurrent reader never observes a
@@ -181,7 +179,7 @@ def write_state(kata_dir: Union[str, Path], state: dict) -> None:
 
 
 def update_task(
-    kata_dir: Union[str, Path],
+    kata_dir: str | Path,
     state: dict,
     task: str,
     status: str,
@@ -210,6 +208,6 @@ def update_task(
         The mutated state dict (same object as the *state* parameter).
     """
     state.setdefault("tasks", {})[task] = status
-    state["updatedUtc"] = datetime.now(timezone.utc).isoformat()
+    state["updatedUtc"] = datetime.now(UTC).isoformat()
     write_state(kata_dir, state)
     return state

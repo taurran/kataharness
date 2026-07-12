@@ -28,9 +28,8 @@ from __future__ import annotations
 
 import hashlib
 import shutil
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Union
-
 
 # ---------------------------------------------------------------------------
 # Sentinel suffix — single source of truth for the naming convention
@@ -188,7 +187,7 @@ def clone_control(
     ref_dir: str | Path,
     dest: str | Path,
     *,
-    copy_fn: Union[Callable[[Path, Path], None], None] = None,
+    copy_fn: Callable[[Path, Path], None] | None = None,
 ) -> Path:
     """Clone the immutable reference into *dest* using ``shutil.copytree``.
 
@@ -238,7 +237,7 @@ def clone_control(
 def prune(
     copy_dir: str | Path,
     *,
-    rm_fn: Union[Callable[[Path], None], None] = None,
+    rm_fn: Callable[[Path], None] | None = None,
 ) -> None:
     """Remove a spawned ``*-katabenchmark<N>`` benchmark copy (R4 convenience).
 

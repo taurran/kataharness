@@ -253,8 +253,21 @@ def normalize(role: str, raw_text: str) -> dict:
     if role == "researcher":
         if not (data.get("claim") or data.get("groundsToPlan")):
             raise ValueError("researcher result missing both claim and groundsToPlan (default-FAIL)")
+        claim = data.get("claim")
+        source = data.get("source")
+        # Q-13: an ungrounded claim is not a finding.  Mirror escalation.build_finding's
+        # source-required rule (D136 fail-closed): when a claim is asserted, its citation
+        # is mandatory and must be a non-empty string.  Without this a cross-model
+        # researcher result with a claim but no source silently flowed in as completed.
+        # (The confidence/groundsToPlan enum from build_finding is NOT replicated here:
+        # this role's schema uses a numeric confidence and free-text groundsToPlan.)
+        if claim and not (isinstance(source, str) and source.strip()):
+            raise ValueError(
+                "researcher result has an ungrounded claim: 'source' citation is required "
+                "and must be a non-empty string (default-FAIL)"
+            )
         return {
-            "claim": data.get("claim"), "source": data.get("source"),
+            "claim": claim, "source": source,
             "confidence": data.get("confidence"), "groundsToPlan": data.get("groundsToPlan"),
         }
     # coder / orchestrator: pass through the worker's reported object, but reject an empty one

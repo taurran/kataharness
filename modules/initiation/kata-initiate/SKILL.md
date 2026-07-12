@@ -6,9 +6,9 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.2.1
+version: 0.2.2
 category: coordinate
-status: experimental
+status: beta
 agnostic: true
 cost-weight: 3
 allowed-tools: [Read, Grep, Glob, Write, Edit, AskUserQuestion]
@@ -179,7 +179,7 @@ being closed, not the code change.
 | `target.kind` + `target.path` | "I'd run it [on this project / on a new repo / on the harness itself] — [path if known]." |
 | `target.vault` | "I'd link your PokeVault / I'd skip the vault for this run / I'd aim at [path]." |
 | `target.platform` | "We're running on [Claude / Codex / …]." |
-| `roles` (multi-model routing) | **(Only when `confirmed_platforms()` (`tools/kata_settings.py:109`) returns a non-host platform AND the human opts in.)** "I'd route [coder=Claude · validator=Codex · researcher=Kiro / all roles on Claude]." Omit this line when single-host or when the human declined. |
+| `roles` (multi-model routing) | **(Only when `confirmed_platforms()` (`tools/kata_settings.py:121`) returns a non-host platform AND the human opts in.)** "I'd route [coder=Claude · validator=Codex · researcher=Kiro / all roles on Claude]." Omit this line when single-host or when the human declined. |
 | `grillDepth` | "I'd suggest [skip / light / standard / full] planning depth, because [one-line rationale from Phase 0]." |
 | Dual-control execute | "After planning, you confirm before anything runs. That stays in your hands." |
 
@@ -270,7 +270,7 @@ chooses to work on a copy, also ask for a **destination folder**, then
 
 ### 2e. Multi-modal routing — "Make this run multi-modal?" (skip if single-host)
 
-**Precondition:** call `confirmed_platforms()` (`tools/kata_settings.py:109`). If the result contains **only the host platform** (no non-host platform has been installed and confirmed), **skip this phase entirely** — do not surface the question, do not add `roles` to the mirror, and treat the run as single-host (BC1, `protocol/config.md:27` — absent `roles` ⇒ all roles on host).
+**Precondition:** call `confirmed_platforms()` (`tools/kata_settings.py:121`). If the result contains **only the host platform** (no non-host platform has been installed and confirmed), **skip this phase entirely** — do not surface the question, do not add `roles` to the mirror, and treat the run as single-host (BC1, `protocol/config.md:27` — absent `roles` ⇒ all roles on host).
 
 When at least one **non-host** platform is present in `confirmedPlatforms`, surface this question via `AskUserQuestion` after the rest of the Phase 2 setup:
 
@@ -367,7 +367,7 @@ weakening of it.
 5. `target.platform` — the agent host driving this run.
 6. `grillDepth` — the planning depth (skip / light / standard / full).
 7. Dual-control execute — the human's understanding that they confirm before anything runs.
-8. **Multi-model routing** (`roles`) — the per-role platform assignment, or single-host (absent). **Applies only when `confirmed_platforms()` (`tools/kata_settings.py:109`) lists a non-host platform.** If Phase 2e was skipped (single-host) or the human declined, record this as single-host / absent. If the human opted in, the confirmed `roles` mapping must have been named in the mirror.
+8. **Multi-model routing** (`roles`) — the per-role platform assignment, or single-host (absent). **Applies only when `confirmed_platforms()` (`tools/kata_settings.py:121`) lists a non-host platform.** If Phase 2e was skipped (single-host) or the human declined, record this as single-host / absent. If the human opted in, the confirmed `roles` mapping must have been named in the mirror.
 9. **Acceptance / success criteria** (`acceptanceCriteria`) — the checkable "how we'll know it's done" list confirmed in step 2g. **Handled exactly like conditional value #8:** when there are no checkable criteria for this run (e.g. a `research` run, or the human explicitly opts out), an explicit "no acceptance criteria for this run" is a valid confirmation and the run PASSES with an **empty `acceptanceCriteria`**. The gate fails only on an un-itemized, unconfirmed value — never on a legitimately empty or research run.
 
 If any value was not named in the mirror — or the human's response was ambiguous on that value
@@ -387,7 +387,7 @@ individually against the mirror transcript and the frozen `INTENT.md`.
 - [ ] `target.platform` was named in the mirror.
 - [ ] `grillDepth` was named in the mirror, with its rationale.
 - [ ] Dual-control execute was named in the mirror (the human was told they confirm before anything runs).
-- [ ] Multi-model routing (`roles`) was handled correctly: either (a) `confirmed_platforms()` (`tools/kata_settings.py:109`) returned only the host ⇒ Phase 2e was skipped (no mirror entry required); or (b) a non-host platform was confirmed ⇒ the human was asked and the outcome — confirmed `roles` assignment or all-on-host decline — was named in the mirror.
+- [ ] Multi-model routing (`roles`) was handled correctly: either (a) `confirmed_platforms()` (`tools/kata_settings.py:121`) returned only the host ⇒ Phase 2e was skipped (no mirror entry required); or (b) a non-host platform was confirmed ⇒ the human was asked and the outcome — confirmed `roles` assignment or all-on-host decline — was named in the mirror.
 - [ ] Acceptance criteria (step 2g) were handled correctly: either (a) each acceptance criterion was individually named in the mirror and the human confirmed or corrected it; OR (b) the human explicitly confirmed "no acceptance criteria for this run" — and that confirmed-absent decision was named in the mirror (not silently assumed).
 
 **Human confirmation — each value survived into the frozen `INTENT.md` unchanged or was explicitly corrected:**

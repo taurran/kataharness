@@ -60,12 +60,11 @@ load_criteria(control_dir, *, criteria_ref)     — load + validate criteria →
 
 from __future__ import annotations
 
+import hashlib
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -83,7 +82,7 @@ _URL_SCHEMES: tuple = ("http://", "https://")
 # ---------------------------------------------------------------------------
 
 
-def _guard_path(raw: Union[str, Path]) -> Path:
+def _guard_path(raw: str | Path) -> Path:
     """Reject paths containing ``..`` traversal (CWE-23).  Does NOT resolve.
 
     Args:
@@ -338,23 +337,71 @@ def def_schema() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# (A) Content-addressed id derivation (DET-13, opt-in)
+# ---------------------------------------------------------------------------
+
+
+def content_addressed_id(content_hash: str, criteria: dict) -> str:
+    """Derive a deterministic content-addressed ``benchmark_id`` (DET-13, opt-in).
+
+    DETERMINISM-DOCTRINE law 9 ("content-addressed ids are strictly stronger and
+    preferred where the content hash already exists"): a ``uuid.uuid4()`` id is
+    minted-random, so the SAME benchmark definition (byte-identical control +
+    criteria) yields a DIFFERENT id every build — the id is only comparable
+    (``compute_delta.sameDefinition``) after the caller persists and re-reads it.
+    This helper derives the id from the pinned ``control.content_hash`` plus the
+    sorted criteria id-lists, so identical inputs ⇒ identical id on any machine,
+    with no persist-and-reuse round-trip required.
+
+    The digest is netstring length-prefixed (the ``benchmark_control.content_hash``
+    / ``contract_edges._netstring_hash`` in-repo pattern, DETERMINISM-DOCTRINE law
+    4) so different ``(content_hash, f2p, p2p)`` partitions cannot collide. Criteria
+    ids are sorted before framing so caller order never changes the id.
+
+    OPT-IN: pass the result as ``build_def(benchmark_id=...)``. The default
+    ``build_def`` behavior (``uuid.uuid4()`` when ``benchmark_id is None``) is
+    UNCHANGED, so existing ``repeat_from`` flows that persist+reuse a uuid are
+    unaffected.
+
+    Args:
+        content_hash: The 64-char SHA-256 hex from ``benchmark_control.content_hash``.
+        criteria: A ``{"f2p": [...], "p2p": [...]}`` dict (the ``load_criteria`` shape);
+                  missing keys are treated as empty lists.
+
+    Returns:
+        A ``"benchmark_ca_<hex>"``-prefixed content-addressed id (deterministic).
+    """
+    h = hashlib.sha256()
+    for label, value in (
+        ("content_hash", content_hash),
+        ("f2p", "\n".join(sorted(criteria.get("f2p", []) or []))),
+        ("p2p", "\n".join(sorted(criteria.get("p2p", []) or []))),
+    ):
+        for part in (label, value):
+            b = part.encode("utf-8")
+            h.update(f"{len(b)}:".encode("ascii"))
+            h.update(b)
+    return f"benchmark_ca_{h.hexdigest()}"
+
+
+# ---------------------------------------------------------------------------
 # (A) Build
 # ---------------------------------------------------------------------------
 
 
 def build_def(
     *,
-    benchmark_id: Optional[str] = None,
-    parent_benchmark_id: Optional[str] = None,
+    benchmark_id: str | None = None,
+    parent_benchmark_id: str | None = None,
     control: dict,
     criteria_ref: str,
-    arms: List[dict],
+    arms: list[dict],
     metric: dict,
     k_repeats: int = 1,
     inputs: dict,
     naming: str,
     provenance: dict,
-    created: Optional[str] = None,
+    created: str | None = None,
 ) -> dict:
     """Build a validated Benchmark Definition dict (pure).
 
@@ -442,7 +489,7 @@ def build_def(
 
     # -- Generate IDs / timestamps --
     bid = benchmark_id if benchmark_id is not None else str(uuid.uuid4())
-    ts = created if created is not None else datetime.now(tz=timezone.utc).isoformat()
+    ts = created if created is not None else datetime.now(tz=UTC).isoformat()
 
     return {
         "schema": "benchmark_def/v1",
@@ -469,7 +516,7 @@ def build_def(
 # ---------------------------------------------------------------------------
 
 
-def write_def(path: Union[str, Path], definition: dict) -> None:
+def write_def(path: str | Path, definition: dict) -> None:
     """Write *definition* as durable JSON to *path* (CWE-23 guarded).
 
     Durable storage (D81): the definition is the pointable, replayable artifact.
@@ -477,6 +524,18 @@ def write_def(path: Union[str, Path], definition: dict) -> None:
     The disposable run artifacts (scorecard JSON, spawned copies) live in
     ``.kata/`` and sibling copy directories; this durable artifact is kept
     separate so it can be pointed to by other systems and registries.
+
+    ``benchmark_id`` persist-and-reuse contract (DET-13, DETERMINISM-DOCTRINE law
+    9): ``build_def`` mints a RANDOM ``uuid.uuid4()`` ``benchmark_id`` when the
+    caller passes none, and ``created`` defaults to the wall clock — so the id is
+    NOT reproducible across builds. ``compute_delta.sameDefinition`` compares two
+    scorecards' ``benchmark_id`` values, so a ``repeat_from`` run MUST reuse the
+    STORED id from this durable artifact (load it via :func:`load_def` /
+    :func:`resolve_repeat_from`, then pass it back as
+    ``build_def(benchmark_id=...)``) — NOT mint a fresh one, which would read as a
+    different definition. Callers wanting a reproducible id WITHOUT the
+    persist-and-reuse round-trip should derive it via :func:`content_addressed_id`
+    and pass it to ``build_def``.
 
     Args:
         path:       Destination path.  Must not contain ``..`` (CWE-23).
@@ -491,7 +550,7 @@ def write_def(path: Union[str, Path], definition: dict) -> None:
     dest.write_text(json.dumps(definition, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def load_def(path: Union[str, Path]) -> dict:
+def load_def(path: str | Path) -> dict:
     """Load a Benchmark Definition dict from *path* (CWE-23 guarded).
 
     Args:
@@ -517,7 +576,7 @@ def load_def(path: Union[str, Path]) -> dict:
 def resolve_repeat_from(
     location: str,
     *,
-    registry: Optional[Dict[str, str]] = None,
+    registry: dict[str, str] | None = None,
 ) -> dict:
     """Resolve an existing Benchmark Definition by location.
 
@@ -576,7 +635,7 @@ def resolve_repeat_from(
 # ---------------------------------------------------------------------------
 
 
-def _top_arm(scorecard: dict) -> Optional[dict]:
+def _top_arm(scorecard: dict) -> dict | None:
     """Return the rank-1 arm (best among floor-passers), or None if absent."""
     for arm in scorecard.get("arms", []):
         if arm.get("rank") == 1:
@@ -787,9 +846,9 @@ def _guard_node_id(node_id: str) -> str:
 
 
 def load_criteria(
-    control_dir: Union[str, Path],
+    control_dir: str | Path,
     *,
-    criteria_ref: Optional[str] = None,
+    criteria_ref: str | None = None,
 ) -> dict:
     """Load and validate the embedded benchmark criteria from a control directory.
 
@@ -884,11 +943,11 @@ def load_criteria(
     # Node-ID validation (defense-in-depth; run_dual_gate._guard_node_id re-checks)
     # MUTATION-PROVEN: removing the _guard_node_id(nid) call in the f2p loop
     # causes test_load_criteria_node_id_dotdot_in_f2p_raises to go red.
-    f2p: List[str] = []
+    f2p: list[str] = []
     for nid in data["fail_to_pass"]:
         _guard_node_id(nid)
         f2p.append(nid)
-    p2p: List[str] = []
+    p2p: list[str] = []
     for nid in data["pass_to_pass"]:
         _guard_node_id(nid)
         p2p.append(nid)

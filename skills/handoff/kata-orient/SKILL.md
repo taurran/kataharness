@@ -7,9 +7,9 @@ description: >-
   (routed: answer-inline / research-needed / human-required). Invoke from kata-orchestrate per dispatch so a
   worker starts oriented, not cold.
 license: Apache-2.0
-version: 0.2.1
+version: 0.3.0
 category: handoff
-status: experimental
+status: beta
 agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob]
@@ -40,7 +40,9 @@ or dispatch. The full contract is **`protocol/orientation.md`** — this skill i
    `evaluate`/`review` / `grill`/`plan`) from the invoked skill + the task shape. The type drives steps 3–5
    (which docs, which callouts, which questions) — `protocol/orientation.md` → *Task-type awareness*.
 2. **Assemble the three tiers, priority-ordered, capped to the prime frame:**
-   - **stable** — identity · spine · conventions · model-routing (root `AGENTS.md`/`CLAUDE.md`, [[STANDARDS]]).
+   - **stable** — identity · **the Prime Directives** (`protocol/prime-directives.md` — always
+     injected verbatim-in-substance, never summarized away) · spine · conventions · model-routing
+     (root `AGENTS.md`/`CLAUDE.md`, [[STANDARDS]]).
    - **context** — the frozen DESIGN/PLAN slice · **vertical rollup** (root invariants + the *nearest-module*
      `AGENTS.md`/`CLAUDE.md` along the task's owned-files path) · `CONTEXT.md` glossary · relevant ADRs ·
      **lateral adjacency pointers** projected from [[kata-graph]]'s `kata.graph.json` (collaborating modules — a

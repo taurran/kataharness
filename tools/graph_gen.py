@@ -21,7 +21,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -193,7 +193,7 @@ def _extract_imports(
     source_bytes: bytes,
     rel_path: str,
     all_rel_paths: set[str],
-    source_roots: "list[str] | None" = None,
+    source_roots: list[str] | None = None,
 ) -> list[tuple[str, str]]:
     """Return list of (src_rel_path, dst_rel_path) file→file import edges.
 
@@ -301,7 +301,7 @@ def _discover_source_roots(all_rel_paths: set[str]) -> list[str]:
 
 
 def _module_to_path(
-    module_name: str, src_dir: str, source_roots: "list[str] | tuple[str, ...]" = ()
+    module_name: str, src_dir: str, source_roots: list[str] | tuple[str, ...] = ()
 ) -> list[str]:
     """Convert dotted module name to candidate repo-relative .py paths.
 
@@ -356,7 +356,7 @@ def _resolve_module(
     module_name: str,
     src_dir: str,
     all_rel_paths: set[str],
-    source_roots: "list[str] | None" = None,
+    source_roots: list[str] | None = None,
 ) -> str | None:
     """Try to find a matching repo-relative path for a module name.
 
@@ -476,6 +476,7 @@ def build_graph(
     root: str | Path,
     files: list[str | Path] | None = None,
     prev: dict | None = None,
+    generated_at: str | None = None,
 ) -> dict:
     """Build (or incrementally update) kata.graph.json.
 
@@ -485,6 +486,13 @@ def build_graph(
     files: Optional explicit list of .py file paths to include (still filtered by skip dirs).
     prev:  Previously-built graph dict. If provided, reuse nodes/edges for files whose
            content hash is unchanged; re-parse only changed files.
+    generated_at: Optional ISO-8601 UTC stamp for ``meta.generatedAt`` (DET-14).
+           Injectable clock (DETERMINISM-DOCTRINE law 7): a raw ``datetime.now()`` in
+           the durable artifact makes an otherwise-unchanged graph diff-noisy on every
+           regeneration. Nothing hashes this field — ``meta.repoHash`` is computed over
+           ``file_hash_map`` only, EXCLUDING ``meta`` — so the stamp is a documented
+           hint-only field, but pinning it lets callers/tests produce byte-stable
+           artifacts. Defaults to ``datetime.now(tz=timezone.utc).isoformat()`` when None.
 
     Returns
     -------
@@ -492,14 +500,15 @@ def build_graph(
     """
     root = Path(root).resolve()
 
-    # 1. Discover files
+    # 1. Discover files — sorted: discovery order must never leak into the artifact
+    # (rglob order is filesystem-dependent; DETERMINISM-DOCTRINE law 2, DET-01).
     if files is not None:
-        py_files = [Path(f) for f in files]
+        py_files = sorted(Path(f) for f in files)
     else:
-        py_files = [
+        py_files = sorted(
             p for p in root.rglob("*.py")
             if not _is_under_skip_dir(p, root)
-        ]
+        )
 
     def _rel(p: Path) -> str:
         try:
@@ -593,14 +602,16 @@ def build_graph(
     # First pass: collect symbols for new files
     new_file_symbols: dict[str, list[dict]] = {}  # rel_path → symbol dicts with ids
 
-    for rel_path in new_file_paths:
+    # Iterate sets in sorted order everywhere below — set iteration is
+    # PYTHONHASHSEED-dependent and must not drive node/edge order (DET-01).
+    for rel_path in sorted(new_file_paths):
         data = file_bytes_map[rel_path]
         raw_syms = _extract_symbols(data, rel_path)
         syms_with_ids = _assign_collision_ids(raw_syms, rel_path)
         new_file_symbols[rel_path] = syms_with_ids
 
     # 6. Build nodes for new files
-    for rel_path in new_file_paths:
+    for rel_path in sorted(new_file_paths):
         data = file_bytes_map[rel_path]
         h = file_hash_map[rel_path]
 
@@ -641,7 +652,7 @@ def build_graph(
     # 7. Build import edges for new files
     # (import edges involving changed files; reused import edges already added above)
     source_roots = _discover_source_roots(all_rel_paths)  # F2: src-layout, computed once
-    for rel_path in new_file_paths:
+    for rel_path in sorted(new_file_paths):
         data = file_bytes_map[rel_path]
         import_pairs = _extract_imports(data, rel_path, all_rel_paths, source_roots)
         for src_path, dst_path in import_pairs:
@@ -658,8 +669,13 @@ def build_graph(
     for n in all_nodes:
         if n["kind"] == "symbol":
             symbol_id_by_name.setdefault(n["name"], []).append(n["id"])
+    # Sort candidate lists: _extract_refs picks the FIRST out-of-file candidate, so
+    # candidate order decides the ref-edge TARGET — node insertion order must not
+    # pick graph topology (DET-01; DETERMINISM-DOCTRINE law 3).
+    for _ids in symbol_id_by_name.values():
+        _ids.sort()
 
-    for rel_path in new_file_paths:
+    for rel_path in sorted(new_file_paths):
         data = file_bytes_map[rel_path]
         file_symbol_ids = {
             n["id"] for n in all_nodes
@@ -694,7 +710,12 @@ def build_graph(
     meta = {
         "backend": "tree-sitter",
         "repoHash": _repo_hash(file_hash_map),
-        "generatedAt": datetime.now(tz=timezone.utc).isoformat(),
+        # DET-14: injectable clock (DETERMINISM-DOCTRINE law 7). Nothing hashes
+        # generatedAt (repoHash excludes meta), but pinning it keeps the durable
+        # artifact byte-stable on regeneration of an unchanged tree.
+        "generatedAt": generated_at
+        if generated_at is not None
+        else datetime.now(tz=UTC).isoformat(),
     }
 
     return {

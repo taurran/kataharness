@@ -8,7 +8,7 @@ description: >-
 license: Apache-2.0
 version: 0.4.0
 category: execute
-status: experimental
+status: beta
 agnostic: true
 cost-weight: 3
 allowed-tools: [Read, Grep, Glob, Edit, Write, Bash]

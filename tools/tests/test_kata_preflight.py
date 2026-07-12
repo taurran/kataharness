@@ -21,7 +21,6 @@ import pytest
 
 import kata_preflight as pf
 
-
 # ---------------------------------------------------------------------------
 # Test-only helpers
 # ---------------------------------------------------------------------------
@@ -1149,6 +1148,7 @@ def test_mutation_prove_non_vacuous():
     """
     import sys
     from pathlib import Path as _Path
+
     import mutation_run
 
     source = str(_Path(__file__).resolve().parent.parent / "kata_preflight.py")
@@ -1178,6 +1178,7 @@ def test_mutation_prove_colon_guard():
     """
     import sys
     from pathlib import Path as _Path
+
     import mutation_run
 
     source = str(_Path(__file__).resolve().parent.parent / "kata_preflight.py")
@@ -1461,6 +1462,7 @@ class TestBundleAuditEvent:
 def _prove(asserted_line: str, test_node: str) -> dict:
     import sys
     from pathlib import Path as _Path
+
     import mutation_run
 
     source = str(_Path(__file__).resolve().parent.parent / "kata_preflight.py")

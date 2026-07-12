@@ -19,7 +19,10 @@ Fail-closed vs fail-soft (D136 / M4-L10):
 Execution surface (``protocol/exec-safety.md``): every git call is
 ``subprocess.run`` with a fixed argv list and ``shell=False``; no third-party
 imports; ``core.quotepath=off`` + ``--no-renames`` pin the path-listing calls so a
-staged deletion is visible and the digest is deterministic across operator configs.
+staged deletion is visible and the digest is deterministic across operator configs;
+``log.showSignature=false`` pins the log/show family so signed commits cannot
+inject ``gpg:`` lines into parsed stdout (DET-03 — the pins live in one place,
+:func:`_run_git`).
 """
 
 from __future__ import annotations
@@ -30,7 +33,7 @@ import json
 import statistics
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -117,7 +120,7 @@ def _normalize(path: str) -> str:
 
 def _now_utc() -> str:
     """Return the current UTC time as an ISO-8601 ``...Z`` string."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _run_git(
@@ -127,8 +130,13 @@ def _run_git(
 
     ``core.quotepath=off`` is pinned so unicode paths are emitted verbatim (not
     octal-escaped) — the digest and lane-drift sets must be byte-stable across
-    operator git configs. On a git or OS error (when *check*), the failure is
-    wrapped in :class:`TelemetryError` (D139 — never a silent ``[]`` on git failure).
+    operator git configs. ``log.showSignature=false`` is pinned (DET-03) so a
+    signed commit under an operator ``log.showSignature=true`` cannot inject
+    ``gpg:`` lines into parsed log/show stdout — :func:`scan_checkpoints` parses
+    ``%P%n%B`` positionally and a gpg preamble would misparse ``%P`` (the parent
+    line). Both pins are load-bearing for digest stability. On a git or OS error
+    (when *check*), the failure is wrapped in :class:`TelemetryError` (D139 —
+    never a silent ``[]`` on git failure).
 
     Args:
         repo_root: Directory the git command runs in (the worker's worktree root).
@@ -143,7 +151,7 @@ def _run_git(
     """
     try:
         return subprocess.run(
-            ["git", "-c", "core.quotepath=off", *args],
+            ["git", "-c", "core.quotepath=off", "-c", "log.showSignature=false", *args],
             cwd=str(Path(repo_root).resolve()),
             capture_output=True,
             text=True,
@@ -425,7 +433,22 @@ def evidence_digest(repo_root: str, paths: list[str], *, commit: str | None) -> 
         TelemetryError: On empty *paths* or an unresolvable path.
     """
     entries = evidence_entries(repo_root, paths, commit=commit)
-    return hashlib.sha256("\n".join(entries).encode("utf-8")).hexdigest()
+    # DET-10 (DETERMINISM-DOCTRINE law 4 — length-prefix every multi-item digest):
+    # netstring-frame each entry (``f"{len(b)}:"`` + bytes — the exact
+    # benchmark_control.content_hash / contract_edges._netstring_hash in-repo
+    # pattern) before hashing. A bare "\n".join is frame-ambiguous: a git-legal
+    # newline in a filename lets two different (path, blob) partitions stream the
+    # same bytes and collide (the D98 collision lesson). This is a digest-SCHEMA
+    # change — the value differs from the pre-DET-10 bare-join digest. No committed
+    # artifact/test pins the old literal (round-trip tests assert stamp==verify,
+    # preserved: both modes hash the identical entry list). The entry contract is
+    # unversioned, so there is no schema counter to bump.
+    h = hashlib.sha256()
+    for entry in entries:
+        b = entry.encode("utf-8")
+        h.update(f"{len(b)}:".encode("ascii"))
+        h.update(b)
+    return h.hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -1278,7 +1301,13 @@ def build_ledger_row(run_summary: dict) -> str:
         )
     if run_summary.get("calibration"):
         row["calibration"] = True
-    return json.dumps(row, separators=(",", ":"))
+    # DET-08: sort_keys pins the serialized byte order — pass-through maps
+    # (streaksByClass, taskDurationsByClass, effectiveModes, …) would otherwise
+    # leak PRODUCER dict-insertion order into the committed calibration ledger
+    # (two byte-different rows for the same run summary). Safe: every reader
+    # (read_ledger + the *_of accessors + class_median) is key-based, never
+    # position- or byte-based.
+    return json.dumps(row, separators=(",", ":"), sort_keys=True)
 
 
 def append_ledger_row(path: str | Path, row: str) -> None:

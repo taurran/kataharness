@@ -37,7 +37,6 @@ import pytest
 import kata_restore
 import kata_trail
 
-
 # ---------------------------------------------------------------------------
 # Shared git helpers
 # ---------------------------------------------------------------------------
@@ -1170,3 +1169,167 @@ def test_collect_integrated_checkpoint_trailers_are_inert(tmp_path):
     )
     assert ex["tasks"] == {"T1"}
     assert ex["degraded"] is False
+
+
+# ---------------------------------------------------------------------------
+# DET-02 / DET-03 (2026-07-12 health review) — git-config pins on parsed stdout
+# ---------------------------------------------------------------------------
+
+
+def _pin_present(cmd: list[str], setting: str) -> bool:
+    """True iff ``-c <setting>`` appears in *cmd* (the pinned-argv shape)."""
+    return any(cmd[i] == "-c" and cmd[i + 1] == setting for i in range(len(cmd) - 1))
+
+
+def test_scan_commit_bodies_argv_pins_bounded(tmp_path, monkeypatch):
+    """DET-02: the fork-point `git log -1 -- <plan>` must pin log.follow=false
+    (single-pathspec shape activates operator log.follow=true → an OLDER
+    fork point → prior-run trailers ingested → under-dispatch) plus
+    log.showSignature=false / core.quotepath=off. DET-03: the bounded %B scan
+    must pin log.showSignature=false (gpg: lines pollute the parsed body stream)."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        if "-1" in cmd:  # fork-point resolution
+            return subprocess.CompletedProcess(cmd, 0, stdout="abc123\n", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(kata_restore.subprocess, "run", fake_run)
+    lines, reasons = kata_restore._scan_integration_commit_bodies(
+        str(tmp_path), "integration", tmp_path / "PLAN.md"
+    )
+    assert lines == [] and reasons == []
+
+    assert len(calls) == 2, "expected exactly fork-point + bounded-scan git calls"
+    fork_cmd, scan_cmd = calls
+    assert _pin_present(fork_cmd, "log.follow=false")
+    assert _pin_present(fork_cmd, "log.showSignature=false")
+    assert _pin_present(fork_cmd, "core.quotepath=off")
+    assert _pin_present(scan_cmd, "log.showSignature=false")
+    assert _pin_present(scan_cmd, "core.quotepath=off")
+
+
+def test_scan_commit_bodies_argv_pins_unbounded_fallback(tmp_path, monkeypatch, capsys):
+    """DET-03: the unbounded-fallback %B scan (fork-point unresolvable) carries
+    the same showSignature/quotepath pins as the bounded scan."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(kata_restore.subprocess, "run", fake_run)
+    lines, reasons = kata_restore._scan_integration_commit_bodies(
+        str(tmp_path), "integration", tmp_path / "PLAN.md"
+    )
+    assert lines == []
+    assert "integration-scan-unbounded" in reasons  # the degraded path was taken
+
+    scan_cmd = calls[-1]
+    assert _pin_present(scan_cmd, "log.showSignature=false")
+    assert _pin_present(scan_cmd, "core.quotepath=off")
+
+
+# ---------------------------------------------------------------------------
+# Q-16 (2026-07-12 health review) — git subprocess timeouts fail closed/degraded
+# ---------------------------------------------------------------------------
+
+
+def _raise_timeout(*_a, **_k):
+    raise subprocess.TimeoutExpired(cmd=["git"], timeout=kata_restore._GIT_TIMEOUT_S)
+
+
+def test_ref_exists_timeout_returns_false(tmp_path, monkeypatch):
+    """Q-16: a hung `git rev-parse` ⇒ _ref_exists returns False (never hangs), so
+    detect_lost_run treats the trail as absent — never a success-shaped True."""
+    monkeypatch.setattr(kata_restore.subprocess, "run", _raise_timeout)
+    assert kata_restore._ref_exists(Path(tmp_path), kata_restore._TRAIL_REF) is False
+
+
+def test_scan_forkpoint_timeout_falls_back_unbounded(tmp_path, monkeypatch, capsys):
+    """Q-16: a hung fork-point resolution ⇒ the module's existing degraded path
+    (unbounded fallback, over-dispatch-safe) — NOT a hang, NOT a wrong fork bound."""
+    def fake_run(cmd, **kwargs):
+        if "-1" in cmd:  # fork-point resolution hangs
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=kata_restore._GIT_TIMEOUT_S)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(kata_restore.subprocess, "run", fake_run)
+    lines, reasons = kata_restore._scan_integration_commit_bodies(
+        str(tmp_path), "integration", tmp_path / "PLAN.md"
+    )
+    assert lines == []
+    assert "integration-scan-unbounded" in reasons  # degraded, never a wrong bound
+
+
+def test_scan_main_scan_timeout_history_unreadable(tmp_path, monkeypatch):
+    """Q-16: a hung bounded %B scan ⇒ (None, reasons) ⇒ collect_ex reports the MOST
+    degraded path (empty set + integration-history-unreadable), never a success set."""
+    def fake_run(cmd, **kwargs):
+        if "-1" in cmd:  # fork-point resolves
+            return subprocess.CompletedProcess(cmd, 0, stdout="abc123\n", stderr="")
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=kata_restore._GIT_TIMEOUT_S)
+
+    monkeypatch.setattr(kata_restore.subprocess, "run", fake_run)
+    ex = kata_restore.collect_integrated_tasks_ex(
+        str(tmp_path), "integration", plan_path=tmp_path / "PLAN.md"
+    )
+    assert ex["tasks"] == set()
+    assert ex["degraded"] is True
+    assert ex["reasons"] == ["integration-history-unreadable"]
+
+
+def test_read_board_from_trail_timeout_raises(tmp_path, monkeypatch):
+    """Q-16: a hung `git cat-file` read RAISES TimeoutExpired (never returns a
+    success-shaped empty board); restore()'s fail-soft handler maps it to degraded."""
+    monkeypatch.setattr(kata_restore.subprocess, "run", _raise_timeout)
+    with pytest.raises(subprocess.TimeoutExpired):
+        kata_restore.read_board_from_trail(str(tmp_path))
+
+
+def test_cleanup_stale_task_timeout_is_swallowed(tmp_path, monkeypatch):
+    """Q-16: a hung worktree-prune / branch-delete during cleanup is best-effort —
+    swallowed so restore continues (never raises to the caller, never hangs)."""
+    monkeypatch.setattr(kata_restore.subprocess, "run", _raise_timeout)
+    kata_restore.cleanup_stale_task(str(tmp_path), "T1")  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# Q-14 (2026-07-12 health review) — board-unreadable degraded signal
+# ---------------------------------------------------------------------------
+
+
+def test_restore_board_unreadable_sets_degraded(tmp_path, monkeypatch):
+    """Q-14: when the orphan-trail board read raises, restore() must set degraded=True
+    and append 'board-unreadable' (never a silent empty frontier) and still COMPLETE.
+
+    MUTATION PROOF: dropping the ``board_unreadable`` branch in restore() makes this
+    test go RED (degraded False / reason absent) while direction stays safe."""
+    repo = _make_git_repo(tmp_path)
+    plan_path = _make_plan(repo, ["T1", "T2"])
+    _commit_plan(repo)
+    _git(["checkout", "-b", "integration"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+
+    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    _write_board_and_snapshot(repo, board)
+    _delete_tier3(repo)  # lost-run condition
+
+    # Board read raises (a Q-16 timeout or a corrupt ref) — restore must degrade, not
+    # crash, and must not silently drop the loss.
+    def _boom(*_a, **_k):
+        raise subprocess.TimeoutExpired(cmd=["git", "cat-file"], timeout=60)
+
+    monkeypatch.setattr(kata_restore, "read_board_from_trail", _boom)
+
+    result = kata_restore.restore(
+        repo_root=str(repo), plan_path=str(plan_path), integration_branch="integration"
+    )
+    assert result["lost_run"] is True
+    assert result["degraded"] is True
+    assert "board-unreadable" in result["degraded_reasons"]
+    # Board corroborates but never gates: the re-dispatch set is still
+    # PLAN-minus-integration despite the empty frontier.
+    assert "T2" in result["redispatch"] and "T1" not in result["redispatch"]
+    assert result["board_content"] == ""

@@ -11,7 +11,6 @@ from pathlib import Path
 
 import run_result
 
-
 REQUIRED_KEYS = {
     "gateName",
     "command",
@@ -187,3 +186,72 @@ def test_write_result_accepts_str_path():
         run_result.write_result(result, path)
         loaded = json.loads(Path(path).read_text(encoding="utf-8"))
     assert loaded == result
+
+
+# ---------------------------------------------------------------------------
+# run_gate — Q-4 timeout (a hung gate must go RED, never hang; D136)
+# ---------------------------------------------------------------------------
+
+
+def test_run_gate_timeout_returns_failure_shaped_result(monkeypatch):
+    """Q-4: subprocess.TimeoutExpired → (output-with-note, nonzero exit), never a raise."""
+    import subprocess
+
+    def hung_run(*args, **kwargs):
+        raise subprocess.TimeoutExpired(
+            cmd="pytest -q", timeout=kwargs.get("timeout"), output="partial gate output"
+        )
+
+    monkeypatch.setattr(run_result.subprocess, "run", hung_run)
+
+    output, exit_code = run_result.run_gate("pytest -q", timeout=0.01)
+    assert exit_code == 124, "timeout must map to a NONZERO exit code (gate red)"
+    assert "[kata] gate runner timeout after 0.01s" in output
+    assert "partial gate output" in output, "partial output captured before the hang is preserved"
+
+
+def test_run_gate_timeout_result_feeds_build_result_as_failure(monkeypatch):
+    """The timeout tuple composes into build_result as a failed (exitCode != 0) gate."""
+    import subprocess
+
+    monkeypatch.setattr(
+        run_result.subprocess,
+        "run",
+        lambda *a, **k: (_ for _ in ()).throw(
+            subprocess.TimeoutExpired(cmd="c", timeout=k.get("timeout"))
+        ),
+    )
+
+    output, exit_code = run_result.run_gate("c", timeout=1.0)
+    result = run_result.build_result(
+        gate_name="smoke",
+        command="c",
+        output=output,
+        exit_code=exit_code,
+        baseline_sha="a",
+        result_sha="b",
+        utc="2026-01-01T00:00:00+00:00",
+    )
+    assert result["exitCode"] != 0
+    assert "[kata] gate runner timeout" in result["stdoutTail"]
+
+
+def test_run_gate_forwards_default_timeout_600(monkeypatch):
+    """The default 600s timeout is forwarded to subprocess.run (bounded, overridable)."""
+    seen: dict = {}
+
+    class _Proc:
+        stdout = "1 passed"
+        returncode = 0
+
+    def spy_run(*args, **kwargs):
+        seen.update(kwargs)
+        return _Proc()
+
+    monkeypatch.setattr(run_result.subprocess, "run", spy_run)
+
+    output, exit_code = run_result.run_gate("pytest -q")
+    assert (output, exit_code) == ("1 passed", 0)
+    assert seen.get("timeout") == 600.0, (
+        "Q-4: run_gate must bound the subprocess with a 600s default timeout"
+    )
