@@ -20,6 +20,7 @@ same trust level as the existing gate (operator/orchestrator).
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 from typing import Callable, List, Optional
 
@@ -50,9 +51,19 @@ def _safe_source_path(raw: str) -> Path:
 # Default subprocess runner (injectable so tests are pure)
 # ---------------------------------------------------------------------------
 
-def _default_runner(cmd: str) -> bool:
-    """Run *cmd* in a shell and return True if it exits 0 (tests passed)."""
-    result = subprocess.run(cmd, shell=True, capture_output=True)
+def _default_runner(cmd: str, *, timeout: float = 600.0) -> bool:
+    """Run *cmd* in a shell and return True if it exits 0 (tests passed).
+
+    A hung test command is bounded by *timeout* (seconds, default 600).  On
+    ``subprocess.TimeoutExpired`` the runner returns **False** — a timeout is a
+    FAILURE-shaped verdict, never a hang and never an exception surfacing as
+    success (D136: no silent-permissive default; the gate goes red).
+    """
+    try:
+        result = subprocess.run(cmd, shell=True, capture_output=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        print(f"[kata] gate runner timeout after {timeout}s: {cmd!r}", file=sys.stderr)
+        return False
     return result.returncode == 0
 
 

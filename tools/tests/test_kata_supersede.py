@@ -14,7 +14,8 @@ Coverage:
 - resolve_shadows: two forks same upstream → _CONFLICT_PATH sentinel
 - resolve_shadows: inline list form (supersedes: [kata-x]) → resolves
 - resolve_shadows: multiline list form (- kata-x on next line) → resolves
-- resolve_shadows: path with '..' traversal → {} (guarded, fail-closed)
+- resolve_shadows: path with '..' traversal → ValueError PROPAGATES (fail-loud,
+  D136 — the guard must never be swallowed into a silent-permissive {})
 - validate_shadows: valid single shadow → []
 - validate_shadows: unknown upstream (not in base_names) → ERROR
 - validate_shadows: conflict sentinel (two forks same upstream) → ERROR
@@ -276,9 +277,21 @@ class TestResolveShadows:
 
     # --- Path safety --------------------------------------------------------
 
-    def test_path_with_dotdot_traversal_returns_empty(self) -> None:
-        """A path with '..' traversal is rejected (CWE-23 guard) → {}."""
-        assert resolve_shadows(Path("..") / "some" / "dir") == {}
+    def test_path_with_dotdot_traversal_raises_value_error(self) -> None:
+        """A path with '..' traversal raises ValueError (CWE-23 guard, fail-LOUD).
+
+        Mutation-proven guard for the D136 fix: if anyone re-adds the old
+        ``except ValueError: return {}`` swallow, resolve_shadows returns {}
+        instead of raising and this test goes red.  Silent-permissive here
+        means promoted forks are silently not honored — never acceptable.
+        """
+        with pytest.raises(ValueError, match="traversal"):
+            resolve_shadows(Path("..") / "some" / "dir")
+
+    def test_dotdot_traversal_error_names_the_offending_path(self) -> None:
+        """The propagated error carries the offending path so callers surface it loudly."""
+        with pytest.raises(ValueError, match="some"):
+            resolve_shadows(Path("..") / "some" / "dir")
 
     # --- Unreadable SKILL.md ----------------------------------------------------------------
 

@@ -189,15 +189,23 @@ def resolve_shadows(agentskills_dir) -> dict[str, Path]:
         Mapping of upstream skill name → promoted fork directory.
         A conflict entry (two forks for the same upstream) maps to
         ``_CONFLICT_PATH``; call ``validate_shadows`` to surface the error.
+
+    Raises
+    ------
+    ValueError
+        If ``agentskills_dir`` contains a ``..`` segment (CWE-23 traversal
+        guard).  This propagates — fail-loud, matching the repo-wide
+        ``_safe_path`` family behavior (D136: no silent-permissive default).
     """
     if agentskills_dir is None:
         return {}
 
-    try:
-        base = _safe_abs(agentskills_dir)
-    except ValueError:
-        # Path with '..' traversal — refuse silently (fail-closed).
-        return {}
+    # D136: a '..'-traversal path raises ValueError — it PROPAGATES.  Swallowing
+    # it here would be a silent-permissive default (forks silently not honored);
+    # every other _safe_abs/_safe_path family member surfaces the error loudly,
+    # and kata_install._materialize_pass already places this call outside any
+    # stamp-write ``except Exception`` guard, so the caller sees it.
+    base = _safe_abs(agentskills_dir)
 
     if not base.is_dir():
         return {}

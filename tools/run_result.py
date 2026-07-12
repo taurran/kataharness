@@ -109,17 +109,30 @@ def write_result(result: dict, path: Union[str, Path]) -> None:
     Path(path).write_text(json.dumps(result, indent=2), encoding="utf-8")
 
 
-def run_gate(command: str) -> tuple[str, int]:
+def run_gate(command: str, *, timeout: float = 600.0) -> tuple[str, int]:
     """Run *command* in a subprocess and return (combined_output, exit_code).
 
     stdout and stderr are merged into a single string (same order as terminal).
     This is a thin convenience wrapper; the core logic lives in :func:`build_result`.
+
+    A hung gate command is bounded by *timeout* (seconds, default 600).  On
+    ``subprocess.TimeoutExpired`` this returns a FAILURE-shaped result — any
+    partial output plus a ``[kata] gate runner timeout`` note, with exit code
+    124 (the conventional timeout code; nonzero → gate red).  It never hangs
+    and never raises through as success (D136: no silent-permissive default).
     """
-    proc = subprocess.run(
-        command,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
+    try:
+        proc = subprocess.run(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        partial = exc.stdout or ""
+        if isinstance(partial, bytes):  # TimeoutExpired may carry bytes even with text=True
+            partial = partial.decode("utf-8", errors="replace")
+        return partial + f"\n[kata] gate runner timeout after {timeout}s\n", 124
     return proc.stdout, proc.returncode

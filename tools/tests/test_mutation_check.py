@@ -74,3 +74,38 @@ def test_run_named_test_cwd_none_is_bc_default():
     assert call_kwargs.get("cwd") is None, (
         "BC: cwd=None → subprocess.run must receive cwd=None (unchanged behavior)"
     )
+
+
+# ---------------------------------------------------------------------------
+# Q-4 timeout tests — a hung pytest subprocess must go RED, never hang (D136)
+# ---------------------------------------------------------------------------
+
+
+def test_run_named_test_timeout_returns_false(capsys):
+    """Q-4: subprocess.TimeoutExpired → False (failure-shaped), never an unhandled raise."""
+    import subprocess
+    from unittest.mock import patch
+
+    boom = subprocess.TimeoutExpired(cmd="uv run pytest", timeout=0.01)
+    with patch("subprocess.run", side_effect=boom):
+        result = mutation_check.run_named_test(
+            "tests/test_foo.py", "test_bar", timeout=0.01
+        )
+    assert result is False, "a timed-out gate run must be a FAILURE verdict (gate red)"
+    captured = capsys.readouterr()
+    assert "[kata] gate runner timeout" in captured.err
+
+
+def test_run_named_test_forwards_default_timeout_600():
+    """The default 600s timeout is forwarded to subprocess.run (bounded, overridable)."""
+    from unittest.mock import MagicMock, patch
+
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        mutation_check.run_named_test("tests/test_foo.py", "test_bar")
+
+    call_kwargs = mock_run.call_args[1]
+    assert call_kwargs.get("timeout") == 600.0, (
+        "Q-4: run_named_test must bound the subprocess with a 600s default timeout"
+    )

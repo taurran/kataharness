@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from typing import Optional
 
 
@@ -61,6 +62,7 @@ def run_named_test(
     test_name: str,
     *,
     cwd: Optional[str] = None,
+    timeout: float = 600.0,
 ) -> bool:
     """Run a single named pytest test via ``uv run pytest`` and return True if it passed.
 
@@ -84,9 +86,14 @@ def run_named_test(
                    *cwd* is also prepended to ``PYTHONPATH`` so imports from the
                    clone root resolve.  Default None = current working directory
                    (BC, unchanged behavior).
+        timeout:   Wall-clock bound in seconds for the pytest subprocess
+                   (default 600).  On ``subprocess.TimeoutExpired`` this returns
+                   **False** — a timeout is a FAILURE-shaped verdict, never a
+                   hang and never an exception surfacing as success (D136: no
+                   silent-permissive default; the gate goes red).
 
     Returns:
-        True if pytest exits 0 (test passed), False otherwise.
+        True if pytest exits 0 (test passed), False otherwise (including timeout).
     """
     run_env: Optional[dict] = None
     if cwd is not None:
@@ -94,10 +101,18 @@ def run_named_test(
         existing_pp = run_env.get("PYTHONPATH", "")
         run_env["PYTHONPATH"] = cwd + (os.pathsep + existing_pp if existing_pp else "")
 
-    result = subprocess.run(
-        ["uv", "run", "pytest", f"{test_path}::{test_name}", "-q"],
-        capture_output=True,
-        cwd=cwd,
-        env=run_env,
-    )
+    try:
+        result = subprocess.run(
+            ["uv", "run", "pytest", f"{test_path}::{test_name}", "-q"],
+            capture_output=True,
+            cwd=cwd,
+            env=run_env,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        print(
+            f"[kata] gate runner timeout after {timeout}s: {test_path}::{test_name}",
+            file=sys.stderr,
+        )
+        return False
     return result.returncode == 0

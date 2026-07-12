@@ -189,3 +189,45 @@ def test_prove_many_collects_verdicts(tmp_path):
     for r in results:
         assert "nonVacuous" in r
         assert "testWentRed" in r
+
+
+# ---------------------------------------------------------------------------
+# Q-4 timeout tests — a hung test command must go RED, never hang (D136)
+# ---------------------------------------------------------------------------
+
+def test_default_runner_timeout_returns_false(monkeypatch, capsys):
+    """Q-4: subprocess.TimeoutExpired → False (failure-shaped), never an unhandled raise."""
+    import subprocess
+    import mutation_run
+
+    def hung_run(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="sleep-forever", timeout=kwargs.get("timeout"))
+
+    monkeypatch.setattr(mutation_run.subprocess, "run", hung_run)
+
+    assert mutation_run._default_runner("sleep-forever", timeout=0.01) is False, (
+        "a timed-out gate command must be a FAILURE verdict (gate red)"
+    )
+    captured = capsys.readouterr()
+    assert "[kata] gate runner timeout" in captured.err
+
+
+def test_default_runner_forwards_default_timeout_600(monkeypatch):
+    """The default 600s timeout is forwarded to subprocess.run (bounded, overridable)."""
+    import mutation_run
+
+    seen: dict = {}
+
+    class _Ok:
+        returncode = 0
+
+    def spy_run(*args, **kwargs):
+        seen.update(kwargs)
+        return _Ok()
+
+    monkeypatch.setattr(mutation_run.subprocess, "run", spy_run)
+
+    assert mutation_run._default_runner("echo ok") is True
+    assert seen.get("timeout") == 600.0, (
+        "Q-4: _default_runner must bound the subprocess with a 600s default timeout"
+    )
