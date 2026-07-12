@@ -67,6 +67,8 @@ from collections.abc import Iterable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fs_atomic import atomic_write_text
+
 # ---------------------------------------------------------------------------
 # Schema / artifact constants
 # ---------------------------------------------------------------------------
@@ -694,7 +696,8 @@ def emit_iac_apply(artifact: dict, path: str | Path) -> None:
     """Write the sibling runtime artifact as JSON (creates parent dirs)."""
     dest = _safe_abs(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    # D159: atomic tmp+os.replace — a concurrent reader never sees a partial file.
+    atomic_write_text(dest, json.dumps(artifact, indent=2))
 
 
 def load_iac_apply(path: str | Path) -> dict | None:

@@ -11,6 +11,7 @@
         irm https://raw.githubusercontent.com/taurran/kataharness/master/update.ps1 | iex
         .\update.ps1 --check                       # report available, no mutation
         .\update.ps1 --discard-local               # proceed past a dirty-base abort
+        .\update.ps1 --clear-stale-locks           # delete stale .git ref locks (printed), then update
         .\update.ps1 --factory-reset [--hard] [--yes]
 
     ENVIRONMENT VARIABLES
@@ -40,6 +41,7 @@ $_KataRef = if ($env:KATA_REF) { $env:KATA_REF } else { 'master' }
 # --------------------------------------------------------------------------
 $_check = $false
 $_discardLocal = $false
+$_clearStaleLocks = $false
 $_factoryReset = $false
 $_hard = $false
 $_yes = $false
@@ -47,6 +49,7 @@ $_engineArgs = @()
 foreach ($a in $args) {
     if ($a -eq '--check') { $_check = $true }
     elseif ($a -eq '--discard-local') { $_discardLocal = $true }
+    elseif ($a -eq '--clear-stale-locks') { $_clearStaleLocks = $true }
     elseif ($a -eq '--factory-reset' -or $a -eq '--reinstall') { $_factoryReset = $true; $_engineArgs += '--factory-reset' }
     elseif ($a -eq '--hard') { $_hard = $true; $_engineArgs += '--hard' }
     elseif ($a -eq '--yes' -or $a -eq '--non-interactive') { $_yes = $true; $_engineArgs += '--non-interactive' }
@@ -123,6 +126,99 @@ function Invoke-GitCheckout {
     Assert-GitOk "checkout '$_KataRef'"
 }
 
+# --------------------------------------------------------------------------
+# D157 - stale ref-lock guard + post-fetch remote-truth verification.
+# Observed failure (2026-07-12b): a stale .git\refs\remotes\origin\master.lock
+# (left by an interrupted fetch) made 'git fetch' SILENTLY fail to advance the
+# remote-tracking ref; rev-parse returned the STALE sha and the hard reset
+# "advanced" to the OLD sha - a silent-stale-install. Two guards close the
+# class: Assert-NoStaleGitLocks (pre-fetch) and Assert-RemoteTruth (post-fetch).
+# --------------------------------------------------------------------------
+function Get-StaleGitLocks {
+    $_locks = @()
+    $_remotesDir = '.git\refs\remotes'
+    if (Test-Path $_remotesDir -PathType Container) {
+        $_locks += @(Get-ChildItem -Path $_remotesDir -Recurse -File -Force -Filter '*.lock' |
+            ForEach-Object { $_.FullName })
+    }
+    $_packedLock = '.git\packed-refs.lock'
+    if (Test-Path $_packedLock -PathType Leaf) {
+        $_locks += @((Get-Item -Force $_packedLock).FullName)
+    }
+    # No comma-wrap: an empty result must unroll to a zero-length pipeline so the
+    # caller's @() sees Count 0 (a `,@()` here would smuggle one empty element).
+    return $_locks
+}
+
+# PRE-FETCH: abort on any stale lock (printing each path + age); delete only
+# with the explicit --clear-stale-locks flag, printing every removed path -
+# never silently.
+function Assert-NoStaleGitLocks {
+    $_locks = @(Get-StaleGitLocks)
+    if ($_locks.Count -eq 0) { return }
+    if ($_clearStaleLocks) {
+        if ($_check) {
+            Write-Host 'kata-update: ABORT - --check is a no-mutation path; stale lock(s) present but NOT deleted:'
+            foreach ($_lk in $_locks) { Write-Host "  $_lk" }
+            Write-Host 'Re-run --clear-stale-locks WITHOUT --check to delete them.'
+            throw 'kata-update: ABORT - --check with --clear-stale-locks refuses to mutate'
+        }
+        Write-Host 'kata-update: --clear-stale-locks - removing stale git lock file(s):'
+        foreach ($_lk in $_locks) {
+            Write-Host "  removing $_lk"
+            Remove-Item -Force -Confirm:$false $_lk
+        }
+        return
+    }
+    Write-Host 'kata-update: ABORT - stale git lock file(s) detected before fetch:'
+    $_now = Get-Date
+    foreach ($_lk in $_locks) {
+        $_ageSec = [int](($_now - (Get-Item -Force $_lk).LastWriteTime).TotalSeconds)
+        Write-Host "  $_lk (age: ${_ageSec}s)"
+    }
+    Write-Host ''
+    Write-Host 'An interrupted fetch can leave these behind; fetching over them SILENTLY'
+    Write-Host 'fails to advance the remote-tracking ref (silent-stale-install, D157).'
+    Write-Host 'Confirm no other git process is running, then re-run with --clear-stale-locks.'
+    throw 'kata-update: ABORT - stale git lock file(s); re-run with --clear-stale-locks'
+}
+
+# POST-FETCH: one 'git ls-remote origin <ref>' call confirms the local
+# remote-tracking target equals the REAL remote sha BEFORE any reset. A pinned
+# sha target has no remote ref to verify (immutable) - skipped with a NOTE.
+function Assert-RemoteTruth {
+    param([string]$Target)
+    $_lsRef = $null
+    if ($Target -eq "origin/$_KataRef") { $_lsRef = "refs/heads/$_KataRef" }
+    elseif ($Target -eq "refs/tags/$_KataRef") { $_lsRef = "refs/tags/$_KataRef" }
+    if (-not $_lsRef) {
+        Write-Host "kata-update: NOTE - target '$Target' is a pinned sha; ls-remote verification not applicable."
+        return
+    }
+    $_localTargetSha = (git rev-parse --verify --quiet $Target)
+    if ($LASTEXITCODE -ne 0 -or -not $_localTargetSha) {
+        throw "kata-update: ABORT - could not resolve local target '$Target' after fetch."
+    }
+    $_lsOut = @(git ls-remote origin $_lsRef)
+    if ($LASTEXITCODE -ne 0) {
+        throw 'kata-update: ABORT - git ls-remote origin failed immediately after a successful fetch; that is suspicious (the network was just reachable) - refusing to proceed.'
+    }
+    $_remoteSha = $null
+    foreach ($_line in $_lsOut) {
+        if (-not $_line) { continue }
+        $_parts = "$_line" -split "`t"
+        if ($_parts.Count -ge 2 -and $_parts[1] -eq $_lsRef) { $_remoteSha = $_parts[0]; break }
+    }
+    if (-not $_remoteSha) {
+        throw "kata-update: ABORT - ls-remote returned no sha for '$_lsRef' on origin."
+    }
+    if ($_localTargetSha -ne $_remoteSha) {
+        Write-Host "  local  $Target = $_localTargetSha"
+        Write-Host "  remote $_lsRef = $_remoteSha"
+        throw 'kata-update: ABORT - fetch did not advance the remote-tracking ref - likely a stale ref lock; re-run with --clear-stale-locks'
+    }
+}
+
 function Invoke-Engine {
     param([string[]]$EngineArgs)
     if (Get-Command uv -ErrorAction SilentlyContinue) {
@@ -174,6 +270,7 @@ if ($_factoryReset) {
             if ($confirm -ne 'YES') { throw 'kata-update: aborted.' }
         }
         if (Test-GitClone) {
+            Assert-NoStaleGitLocks
             Write-Host "kata-update: fetching and resetting to $_KataRef ..."
             git fetch origin
             Assert-GitOk 'fetch'
@@ -198,6 +295,8 @@ if (-not (Test-GitClone)) {
     throw 'kata-update: this home is not a git clone - re-install to update'
 }
 
+# D157: stale-lock guard runs BEFORE the fetch
+Assert-NoStaleGitLocks
 Write-Host 'kata-update: fetching origin ...'
 git fetch origin
 Assert-GitOk 'fetch'
@@ -208,12 +307,18 @@ $_remoteSha = (git rev-parse --verify --quiet $_target)
 if ($LASTEXITCODE -ne 0 -or -not $_remoteSha) {
     throw "kata-update: could not resolve update target '$_target'"
 }
+# Peel annotated tags to their COMMIT for HEAD comparisons: `reset --hard` lands
+# HEAD on the peeled commit, so comparing HEAD against a tag-OBJECT sha would
+# false-abort every annotated-tag update (adval env-hardening finding 1).
+# Assert-RemoteTruth still compares UNPEELED shas (internally consistent).
+$_remoteCommit = (git rev-parse --verify --quiet "$_target^{commit}")
+if ($LASTEXITCODE -ne 0 -or -not $_remoteCommit) { $_remoteCommit = $_remoteSha }
 
 # --check: report current vs available, no mutation
 if ($_check) {
     $_lShort = $_localSha.Substring(0, [Math]::Min(12, $_localSha.Length))
-    $_rShort = $_remoteSha.Substring(0, [Math]::Min(12, $_remoteSha.Length))
-    if ($_localSha -eq $_remoteSha) {
+    $_rShort = $_remoteCommit.Substring(0, [Math]::Min(12, $_remoteCommit.Length))
+    if ($_localSha -eq $_remoteCommit) {
         Write-Host "kata-update --check: already current at $_lShort (ref: $_KataRef)"
     } else {
         Write-Host 'kata-update --check: update available'
@@ -238,11 +343,20 @@ if ($_dirtyLines.Count -gt 0) {
     $_dirtyLines | ForEach-Object { Write-Host $_ }
 }
 
+# D157 POST-FETCH truth check - BEFORE any checkout/reset: the local
+# remote-tracking target must equal the REAL remote sha (one ls-remote call).
+Assert-RemoteTruth $_target
+
 Invoke-GitCheckout
 git reset --hard $_target
 Assert-GitOk "reset --hard '$_target'"
 $_newSha = (git rev-parse HEAD)
 Assert-GitOk 'rev-parse HEAD'
+# D157(c) - the advancement message prints ONLY on true advancement: HEAD must
+# equal the verified target sha (pinned to the ls-remote truth above).
+if ($_newSha -ne $_remoteCommit) {
+    throw "kata-update: ABORT - reset did not land on the verified sha (HEAD $_newSha != $_remoteCommit)."
+}
 $_nShort = $_newSha.Substring(0, [Math]::Min(12, $_newSha.Length))
 Write-Host "kata-update: advanced to $_nShort (ref: $_KataRef)"
 

@@ -27,6 +27,8 @@ from typing import Any
 
 import yaml
 
+from fs_atomic import atomic_write_text
+
 # ---------------------------------------------------------------------------
 # Allowed values (protocol/intent.md schema — PINNED D88)
 # ---------------------------------------------------------------------------
@@ -200,7 +202,8 @@ def write_intent(path: str, answers: dict) -> None:
     _safe_path(path)  # raises ValueError on traversal
     content = build_intent(answers)
     dest = Path(path)
-    dest.write_text(content, encoding="utf-8")
+    # D159: atomic tmp+os.replace — a concurrent reader never sees a partial file.
+    atomic_write_text(dest, content)
 
 
 # ---------------------------------------------------------------------------

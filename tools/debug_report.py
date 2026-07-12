@@ -58,6 +58,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import deviation
+from fs_atomic import atomic_write_text
 
 # ---------------------------------------------------------------------------
 # LD5 low_cap — single source of truth is deviation.DEFAULT_THRESHOLDS
@@ -689,7 +690,8 @@ def emit_debug_report(report: dict, path: str | Path) -> None:
     """
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    # D159: atomic tmp+os.replace — a concurrent reader never sees a partial file.
+    atomic_write_text(dest, json.dumps(report, indent=2, ensure_ascii=False))
 
 
 def load_debug_report(path: str | Path) -> dict:
