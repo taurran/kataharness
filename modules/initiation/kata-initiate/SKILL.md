@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.4.1
+version: 0.5.0
 category: coordinate
 status: beta
 agnostic: true
@@ -337,7 +337,7 @@ For reference — the depth options and their meanings:
 | `skip` | Trust the priming prompt; no grill runs. Ambiguity resolved in-loop. |
 | `light` | Shallow grill — top-risk branches only. |
 | `standard` | Full method, full decision tree. **Default for non-trivial work.** |
-| `full` | Standard + adversarial stress-test + convergence gate. High-stakes / hard-to-reverse. |
+| `full` | Standard + exhaustive adversarial stress-test + a second convergence pass. High-stakes / hard-to-reverse. (The non-waivable convergence gate + ELEVATE close-out apply at EVERY depth that runs a grill — D33/D153.) |
 
 Record the confirmed depth as `grillDepth` in `INTENT.md`. The human always chooses; the pre-selection
 is a proposal inside the mirror, not a default that is silently carried forward.
@@ -476,13 +476,17 @@ the selected depth. Two independent paths can end the grill — either suffices:
 ### Path A — user says "execute"
 The user may type **"execute"** (or equivalent: "go", "ship it", "skip the rest") at **any point
 during the grill**. This is a **hard bail**: stop all remaining grill rounds immediately. Proceed
-directly to Phase 6 with the grill in its current state.
+directly to Phase 6 with the grill in its current state — the RUBRIC close-out is **forgone** (no
+convergence pass, no ELEVATE, no emit; D153); checkpoint one plain ledger line ("grill ended via
+operator 'execute' — Path A; ELEVATE forgone") so the forgoing is evaluator-checkable.
 
 ### Path B — grill self-proposes execute
 After each grill round, `[[kata-grill-standard]]` self-assesses readiness: *"Are there any remaining
 decision branches whose resolution would materially change the plan?"* When the answer is no — the
 decision tree is resolved enough to one-shot — the grill **proposes execute** with a one-paragraph
-rationale. The user confirms (Y/n). On confirm, proceed to Phase 6. On reject, run another round.
+rationale. The user confirms (Y/n). **On confirm, the grill runs its RUBRIC close-out — convergence
+pass → ELEVATE → record → emit (D153); a convergence HOLD reopens the named branch first — then
+proceed to Phase 6.** On reject, run another round.
 
 **Neither path is the "right" path.** Both produce the same output. The grill does not block
 execution when the user has enough confidence; the grill does not force execution when the user

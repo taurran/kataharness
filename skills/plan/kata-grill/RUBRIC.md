@@ -175,28 +175,39 @@ ELEVATE → record → emit.
 - **Interaction:** posed as ONE structured question through the same single-question binding as the rest of
   the grill (Claude: one `AskUserQuestion`) — the recommendation with its grounding, options **Accept (lock it
   in)** / **Decline**, free text always available. "Tell me more" ⇒ elaborate in-step, then re-pose the SAME
-  question (no ledger entry of its own). "Give me another" ⇒ record #1 as declined-superseded, pose the
-  alternative as the next single question. **ELEVATE is posed at most ONCE per grill close** — operator-
-  requested alternatives occur WITHIN the single step; harness-initiated re-elevation is forbidden.
+  question (no ledger entry of its own). "Give me another" ⇒ record #1 with Decision
+  "Declined — superseded by request for an alternative (<reason if given>)", then pose the alternative as the
+  next single question, recorded on its own `EV-{n}` entry. **ELEVATE is posed at most ONCE per grill close** —
+  operator-requested alternatives occur WITHIN the single step; harness-initiated re-elevation is forbidden.
 - **Recording (before the emit, always):** every outcome is a normal checkpointed ledger entry with a
   **dedicated `EV-{n}` anchor and a `· LOCKED` status token** — `### EV-{n} — Elevate: <short title> · LOCKED`
   — so the SB-L1 grammar emits it (`learn_feed._ANCHOR_RE` requires a digit/dash-segment anchor; a heading
   without one is not an entry and silently never emits; the anchor also names the emitted page, so never
-  collide with an existing anchor). Decision field by outcome: **Accepted** ⇒ the recommendation (compiled
-  into the frozen DESIGN like any other resolution); **Declined** ⇒ "Declined — <operator's reason>", or
-  "Declined — no reason given" on a bare decline (never pose a follow-up question to extract a reason);
-  **no grounded elevation** ⇒ "No grounded elevation beyond the resolved design";
-  **accept-with-modification** ⇒ the operator's modified form, rationale noting the correction. Declines and
-  the null result feed the second brain too — a decline is preference signal.
+  collide with an existing anchor). `EV-{n}` numbering is **per-ledger sequential**. **Title safety:** the
+  `<short title>` must NOT contain `·` or `—` followed by a status word (locked/resolved/open) — the parser
+  takes the FIRST status token on the line, so a title like "keep it — open by default" silently parses as
+  status *open* and never emits. Decision field by outcome: **Accepted** ⇒ the recommendation (rationale =
+  the operator's acceptance + the grounding; compiled into the frozen DESIGN like any other resolution);
+  **Declined** ⇒ "Declined — <operator's reason>", or "Declined — no reason given" on a bare decline (never
+  pose a follow-up question to extract a reason); **no grounded elevation** ⇒ the entry is
+  `### EV-{n} — Elevate: none found · LOCKED` with Decision "No grounded elevation beyond the resolved
+  design"; **accept-with-modification** ⇒ the operator's modified form, rationale noting the correction.
+  Declines and the null result feed the second brain too — a decline is preference signal. A **Path-A bail**
+  (no ELEVATE) still checkpoints one plain ledger line — "grill ended via operator 'execute' — Path A;
+  ELEVATE forgone" — so an evaluator can distinguish a legitimate bail from an ELEVATE omission. Entry format
+  incl. the EV shape: `resources/DECISION-LEDGER.md`.
 - **If an acceptance opens genuinely NEW branches** (the exception — pose recommendations edge-defined):
   resolve them via the normal Phase-1 loop, then run a **scoped** fresh-context convergence check over ONLY
   those branches — one pass per attempt regardless of tier, re-run until SHIP; a HOLD sends the named branch
-  back to Phase 1. On SHIP, resume at recording → emit — never a second ELEVATE.
+  back to Phase 1. On SHIP, resume at recording → emit — never a second ELEVATE. A **decline that reveals a
+  genuinely unresolved branch** ("decline — but this makes me realize X is undefined") routes through the SAME
+  machinery: resolve the revealed branch via Phase 1, scoped re-check, then recording → emit.
 
 ## Grill-close emit — feed the second brain (D151/G1)
 
-The moment the fresh pass returns SHIP, the ELEVATE outcome (D153, above) is recorded, and the ledger
-checkpoints its final entry, this grill's resolutions become second-brain signal — each resolved branch, the human's choice, and the rationale. When
+The moment the fresh pass returns SHIP (on the acceptance-opened-branches path: the scoped re-check's
+SHIP), the ELEVATE outcome (D153, above) is recorded, and the ledger checkpoints its final entry, this
+grill's resolutions become second-brain signal — each resolved branch, the human's choice, and the rationale. When
 `engram.learnFeed.dir` is set (kata.config / `protocol/config.md`), run the LEARN-feed emitter over the run's
 ledger before handing off:
 

@@ -1,7 +1,16 @@
 # DESIGN — elevate-grill-ux (B1 + B2, one initiative)
 
-**Status:** **FROZEN (D153)** — freeze-gate v1 HOLD (8 findings, folded) → re-gate v2
-SHIP-WITH-FIXES (8 findings, folded below). Operator-directed
+**Status:** **FROZEN (D153); BUILT; ADVAL'D** — freeze-gate v1 HOLD (8 findings, folded) → re-gate
+v2 SHIP-WITH-FIXES (8 findings, folded) → built → 2-reviewer fresh-context adval SHIP-WITH-FIXES ×2
+(13 findings, all folded: A1-1 untracked operator config swept into the feat commit — removed from
+the index; A1-2/3/4/5, A2-2, A2-6 RUBRIC recording-spec pins restored/hardened incl. per-ledger
+sequential numbering + the status-vocab-in-title parser hazard; A2-1 HIGH kata-initiate Phase 5
+Path A/B close-out contradiction fixed — Path B on-confirm now runs convergence → ELEVATE → record
+→ emit, Path A explicitly forgoes with an evaluator-checkable bail ledger line (A2-4); A2-3
+DECISION-LEDGER.md EV-{n} shape + Edges-exemption added; A2-5 decline-reveals-a-gap routed through
+the scoped-check machinery; A2-7 depth-table gate wording fixed). kata-initiate bump raised
+0.4.1 → **0.5.0** (the adval-driven Path A/B close-out prose is new capability, not wording).
+Operator-directed
 2026-07-12 (BACKLOG 2026-07-12b #1/#2); built 2026-07-12c in an operator-away autonomous session
 (mid-session operator authorization: "I approve of all commits/pushes/merges this section … when I
 am back we will do a full evaluation"). Provisional items are consolidated in §RATIFY below.
@@ -13,7 +22,10 @@ D-record: **D153** on freeze.
   returns SHIP and the ledger checkpoints its final entry…" becomes "…returns SHIP, the ELEVATE
   outcome is recorded, and the ledger checkpoints its final entry…"**)
 - `skills/plan/kata-grill-{essential,standard,advanced}/SKILL.md` — MINOR 0.2.0 → 0.3.0
-- `modules/initiation/kata-initiate/SKILL.md` — PATCH 0.4.0 → 0.4.1 (two named line targets, F-5)
+- `modules/initiation/kata-initiate/SKILL.md` — 0.4.0 → 0.5.0 (two named line targets F-5 + the
+  adval A2-1 Phase 5 Path A/B close-out alignment + A2-7 depth-table wording)
+- `skills/plan/kata-grill/resources/DECISION-LEDGER.md` — EV-{n} entry shape + Edges-exemption
+  (adval A2-3)
 - `protocol/engram.md` — new seam-registry row for the ELEVATE decision point + producer-line
   alignment (F-2; its own maintenance rule requires the row land in the same change)
 

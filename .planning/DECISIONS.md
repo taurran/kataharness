@@ -2456,8 +2456,12 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   per interaction — Claude adapter hard binding: one `AskUserQuestion` call, exactly one question,
   never a multi-question dump ("throwing five out there isn't a good UX"); non-Claude hosts keep
   prose questioning; general non-grill design discussion stays conversational prose. Surfaces:
-  grill RUBRIC (ELEVATE section + Interaction format) · tier skills 0.3.0 · kata-initiate 0.4.1
-  (two batching-ambiguous call sites pinned) · engram.md seam E24 + producer alignment.
+  grill RUBRIC (ELEVATE section + Interaction format) · tier skills 0.3.0 · kata-initiate 0.5.0
+  (two batching-ambiguous call sites pinned + Phase 5 Path A/B close-out alignment per adval A2-1:
+  Path B on-confirm runs convergence → ELEVATE → record → emit; Path A forgoes with an
+  evaluator-checkable bail ledger line) · DECISION-LEDGER.md EV-{n} shape + Edges-exemption ·
+  engram.md seam E24 + producer alignment. Adval: 2 fresh-context reviewers SHIP-WITH-FIXES ×2,
+  all 13 findings folded.
   **PROVISIONAL (operator ratification at return, DESIGN §RATIFY):** tier-uniform behavior ·
   elevate via the single-question surface · declines-feed-second-brain · skip-depth ⇒ no ELEVATE.
   **Honesty label: built + freeze-gated + adval'd; LIVE-UNPROVEN (n=0)** — the live smoke (a real
