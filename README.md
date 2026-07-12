@@ -69,7 +69,9 @@ token/wall-clock efficiency, in one loop.
   pass-to-pass evidence and produces an **honest scorecard** — quality you can measure, not vibes.
 - **🧩 Tool-agnostic core + thin adapters.** One agnostic core (protocol, skills, planning engine, quality
   loop) with per-tool adapters and per-platform config guides — not locked to one vendor.
-- **🪶 Zero-dependency install.** A pure-stdlib Python engine; one command drops it into your agent host.
+- **🪶 Zero-dependency install.** A pure-stdlib Python **installer** — one command drops it into your
+  agent host. (Engine extras — yaml for crash-restore, tree-sitter for the code graph, rich for the
+  dashboard — resolve automatically via `uv` from the shipped lockfile.)
 
 ---
 
@@ -145,7 +147,8 @@ logged as an auditable line.
 On this repo's own prior build, the shipped engine **modeled an 86% cut in premium-model calls
 (59→8)** while telling real failures from false alarms with **perfect precision — every one of 13
 noise signals correctly ignored**, so no good work is redone on a false trigger *(modeled from
-committed inputs, not yet measured live; a real A/B is queued)*. None of this turns on unless you add
+committed inputs, not yet measured live; the precision figure rests on an n=1 overturn
+observation — the model's weakest assumption — and a real A/B is queued)*. None of this turns on unless you add
 the config; without it, every part stays off.
 
 ### ⚡ The inline evaluator/reroll — catch a bad chunk as it happens *(v0.2.0)*
@@ -191,7 +194,9 @@ Quality you can *measure*, not just assert. A two-axis scoring engine ranks cand
 **fail-to-pass / pass-to-pass** test evidence (weighted by the same mutation check above) and prints an
 **honest scorecard** — it tells a real all-pass from a hollow one, and gives **no credit for tests that
 never ran**. *(v0.1 scores single-arm and repeat runs; the multi-arm bake-off — run N approaches at
-once and promote the winner — is next.)*
+once and promote the winner — is next. Honest maturity: the scoring machinery is live-proven on a
+**synthetic** control only — it has not yet scored a real operator-supplied control repo, so treat
+results to date as machinery proof, not real-repo benchmarks.)*
 
 ### 🔁 Crash-proof resume
 A crash, a closed terminal, or a mid-build auto-compaction no longer costs you the run. KataHarness
@@ -204,6 +209,14 @@ keeps a **durable, git-committed progress trail** and rebuilds the exact spot it
   already durable at every checkpoint regardless.)*
 - **Task-level restore.** On `/kata-resume`, it reads the git history to see which tasks actually
   finished and re-runs only the rest — no double work, no dropped work, no manual cleanup.
+
+### 📊 Live run dashboard + web viewer
+Watch a run without interrupting it: a **rich terminal dashboard** (`tools/kata_dash.py` — per-worker
+heartbeat bars, wave/gate ribbon) and a **localhost-only web viewer** (`tools/kata_web.py`) render the
+live board read-only from the same durable artifacts the run already writes. Point either at a running
+target from a side terminal; they never write, never gate, and double as the status surface on hosts
+with no statusline. *(Shipped in the early sprint milestones; see `adapters/claude/README.md` for the
+side-terminal recipe.)*
 
 ### 🎛️ Frontmatter as the contract — and no model IDs, ever
 Every skill carries machine-read policy in its frontmatter: a **version** (format-enforced), a
@@ -274,10 +287,10 @@ is the machine source of truth for what exists and at what version.
 | `kata-research` | 0.1.0 | 3 | plan | beta | new (KataHarness original, loop-cognition RS-GB1/2/3, D62) — fresh-context no-write evaluator pattern (L4/L5) applied to in-loop research; escalation-routed like kata-orchestrate's no-re-plan escape valve (D52) | Research a must-deliver gap with no in-plan solution; ground every claim; return findings for the grounding gate, never re-plan |
 | `kata-board` | 0.1.0 | 2 | coordinate | beta | adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3 | Append-only mailbox/message board for lateral peer comms |
 | `kata-bootstrap` | 0.4.0 | 2 | coordinate | beta | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
-| `kata-initiate` | 0.2.1 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
+| `kata-initiate` | 0.2.2 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
 | `kata-loop` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
 | `kata-onboard` | 0.2.0 | 3 | coordinate | beta | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
-| `kata-orchestrate` | 0.11.0 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
+| `kata-orchestrate` | 0.11.1 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
 | `kata-preflight` | 0.3.0 | 2 | coordinate | beta | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner from _subprocess_runner in tools/kata_dispatch.py | — |
 | `kata-readiness` | 0.2.2 | 1 | coordinate | beta | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
 | `kata-sprint` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C) | Own the sprint boundary (G1–G4 change-control); incremental delivery only |
@@ -303,7 +316,7 @@ is the machine source of truth for what exists and at what version.
 | `kata-closeout` | 0.1.0 | 2 | handoff | beta | new (KataHarness original — Phase 2 Kata Loop back-half, D89/DESIGN §3) | — |
 | `kata-defer` | 0.1.0 | 1 | handoff | beta | new (KataHarness original, D42/D43 GB9) — the structural complement to the no-drift spine; assumption-log role added by D71 (Priming-and-Grill autonomous floor) | Park off-plan items + log grill-skip assumptions at the boundary, never drift the frozen plan |
 | `kata-handoff` | 0.2.0 | 1 | handoff | beta | adapted-from mattpocock/skills {handoff} + Anthropic reset-with-handoff / compaction guidance | Two-way durable handoff (session/agent/tool) |
-| `kata-orient` | 0.2.1 | 2 | handoff | beta | new (KataHarness original, loop-cognition AO-GB1/2/3 + D76) — receiving half of the two-way handoff (spine #5); three-tier assembly echoes Hermes prompt_builder (stable/context/volatile); nested-AGENTS.md rollup standard | Assemble a subagent's launch orientation: three-tier, task-type-tailored, derived pointers+callouts, routed questions — the read half of handoff |
+| `kata-orient` | 0.3.0 | 2 | handoff | beta | new (KataHarness original, loop-cognition AO-GB1/2/3 + D76) — receiving half of the two-way handoff (spine #5); three-tier assembly echoes Hermes prompt_builder (stable/context/volatile); nested-AGENTS.md rollup standard | Assemble a subagent's launch orientation: three-tier, task-type-tailored, derived pointers+callouts, routed questions — the read half of handoff |
 | `kata-selfhandoff` | 0.2.0 | 1 | handoff | beta | adapted-from Anthropic compaction guidance + mattpocock caveman compression | Configurable context-threshold self-handoff (delegates artifact to kata-handoff) |
 | `kata-understand` | 0.1.0 | 2 | handoff | beta | new (KataHarness original, Phase 2 GL-R2c / DESIGN §3 / PLAN-phase2 Task C1) — comprehension-map half of the closeout back-half; backed by the F2 graph runtime (tools/graph_gen.py → kata.graph.json) | — |
 | `kata-improve` | 0.2.0 | 1 | meta | beta | adapted-from the Improvement Kata (Toyota Kata) + mattpocock/skills engineering/improve-codebase-architecture | Fold cross-run lessons back into the skills/ tree; calls kata-write-skill |

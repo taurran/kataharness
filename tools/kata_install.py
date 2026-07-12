@@ -1415,7 +1415,7 @@ def main(argv: list[str] | None = None) -> int:
             else ("mixed" if len(_methods_upd) > 1 else "unknown")
         )
 
-        # Post-link materialize pass (no-op stub in Phase A; Phase B wires in overlay)
+        # Post-link materialize pass (applies fork shadows + overlay entries; Phase B/C2)
         _p_upd = (args.platform or "").strip().casefold()
         _hd_raw_upd = args.host_dir
         if _p_upd == "claude":

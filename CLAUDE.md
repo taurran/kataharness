@@ -13,7 +13,9 @@ conventions, and the routing. Then read `docs/DESIGN.md`, `docs/STANDARDS.md`, a
   skill. **Critical work** (judgment / planning / grilling / evaluation / the gate) runs at the **anchor**;
   **economy work** (build / encode / refactor / reporting / lower-priority loops) tiers **down** on the anchor's
   model family (Anthropic `haiku < sonnet < opus < fable·mythos`: coding −1; economy **−1 in advanced, −2 in
-  standard/essential** — economy lands on Opus/Sonnet 5; other families keep the generic one-rung default),
+  standard/essential** — economy lands on Opus/Sonnet 5; **non-Anthropic families currently run
+  everything at the anchor** — their ladders in `kata_models.py` are empty placeholders until those
+  adapters land, so no tier-down applies),
   clamped to the family floor and falling back if a tier is unavailable. Skills carry **no
   `model:` frontmatter** — a hard alias there force-switches the host model and breaks when that model is
   gated/unavailable (the Fable outage). Evaluation additionally runs as a fresh-context **no-write** subagent.

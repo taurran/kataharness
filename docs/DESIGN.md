@@ -1,6 +1,10 @@
 # DESIGN.md — KataHarness charter
 
-**Status:** draft v0 (foundation). Supersedes the project-local `cpp-*` harness in CryptoPortfolioPlanner,
+**Status:** draft v0 (foundation) — **historical charter.** The vision/spine/architecture here
+remain canonical; the *inventory details* (skill tables, "Built (15)" counts, family names) reflect
+the early v0.1 build and have NOT tracked later releases — the generated README catalog and
+`CHANGELOG.md` are the current-state sources of truth (per-feature specs live in
+`.planning/specs/`). Supersedes the project-local `cpp-*` harness in CryptoPortfolioPlanner,
 which was the medium it was incubated in. Read with `AGENTS.md` (canonical) and `docs/STANDARDS.md`.
 
 ## Vision

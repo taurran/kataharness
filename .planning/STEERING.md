@@ -1,10 +1,19 @@
 # STEERING — KataHarness
 
-Operator → agent steering channel (mid-run direction without a restart). The harness reads this on a
-cadence; entries are consumed and cleared. Empty = no active steering.
+Operator → agent steering channel (mid-run direction without a restart).
 
-> Convention (from Anthropic's `STEER.md`): write a directive here; the running loop surfaces it,
-> acts, and clears it. `AGENT_STOP` (presence of the file) is the kill-switch.
+> **Honesty note (2026-07-12 health review):** this file is a **manual convention, not an
+> automated harness behavior**. No skill, tool, or hook currently reads this file on a cadence,
+> and no `AGENT_STOP` kill-switch is implemented anywhere in the harness. An agent acts on this
+> file when the operator points it here (or a session-start read order includes it) — nothing
+> more. The earlier header claiming "the harness reads this on a cadence" and an `AGENT_STOP`
+> kill-switch described an aspiration, not a built feature (the built-but-claimed class this
+> project guards against). Wiring a real steering-check into the orchestrator's boundary cadence
+> + a real kill-switch is a named backlog item (see BACKLOG "2026-07-12 health-review
+> follow-ups"). Until that ships: to steer a running loop, interrupt the session directly.
+
+Convention (from Anthropic's `STEER.md`): write a directive here; when an agent is directed to
+this file it surfaces the directive, acts, and moves it to Consumed. Empty = no active steering.
 
 ## Active directives
 _(none active — the BUILD-THROUGH directive below was DELIVERED 2026-06-20 and is consumed.)_

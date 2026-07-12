@@ -49,7 +49,7 @@ def _safe_path(raw: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Low-level write helpers (write the frozen format directly, no kata_board)
+# Low-level write helpers (board lines delegate to the shared kata_board emitter)
 # ---------------------------------------------------------------------------
 
 
