@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.11.0
+version: 0.11.1
 category: coordinate
 status: beta
 agnostic: true
@@ -263,7 +263,7 @@ exists.) -->
 
    **Definition write (A2):** after the clone, compute `benchmark_control.content_hash(ref_dir)` to pin the control reference byte-for-byte. Then **branch on `repeat_from`** (the field in the `benchmark` config block loaded at step 1):
    - **Non-repeat run** (no `repeat_from`): mint a fresh stable UUID as `benchmark_id`. Leave `parent_benchmark_id` absent — this is a new, independent benchmark definition.
-   - **`repeat_from` run**: call `benchmark_def.resolve_repeat_from(location)` (`tools/benchmark_def.py`) NOW, at setup — load the prior definition and **reuse its `benchmark_id`** verbatim for this run. Leave `parent_benchmark_id` absent — a plain repeat is NOT a fork; `parent_benchmark_id` is the lineage pointer only for an explicit fork that derives a new benchmark with a *different* `benchmark_id`. Reusing the same `benchmark_id` across a `repeat_from` run is what makes `compute_delta` return `sameDefinition:true` — the honest harness-delta (C-on/C-off, D99). Without this reuse, `sameDefinition` is always `false` and every honest repeat wrongly reports a definition drift.
+   - **`repeat_from` run**: call `benchmark_def.resolve_repeat_from(location)` (`tools/benchmark_def.py`) NOW, at setup — load the prior definition, then **verify the immutable control has not drifted before reusing anything from it**: call `benchmark_control.detect_drift(ref_dir, <prior definition's control.content_hash>)` (`tools/benchmark_control.py`); on drift ⇒ **STOP + escalate** (`protocol/escalation.md`) — the control is the experiment's constant, and a drifted reference invalidates every delta this run would report (the pinned hash exists precisely for this check; 2026-07-12 health-review W-1). Clean ⇒ **reuse its `benchmark_id`** verbatim for this run. Leave `parent_benchmark_id` absent — a plain repeat is NOT a fork; `parent_benchmark_id` is the lineage pointer only for an explicit fork that derives a new benchmark with a *different* `benchmark_id`. Reusing the same `benchmark_id` across a `repeat_from` run is what makes `compute_delta` return `sameDefinition:true` — the honest harness-delta (C-on/C-off, D99). Without this reuse, `sameDefinition` is always `false` and every honest repeat wrongly reports a definition drift.
 
    Then call `benchmark_def.build_def(control={"kind": <kind>, "ref": <ref_dir>, "content_hash": <hash>}, arms=<arms list from benchmark config>, metric={"profile": <cfg.profile>, "floor_gate": true}, inputs={"system": <system prompt>, "prompt": <priming prompt>, "input_refs": <input refs or []>}, naming="<base>-katabenchmark{N}", criteria_ref=benchmark_def.CRITERIA_FILE, benchmark_id=<benchmark_id from branch above>, provenance={"tool_version": <version>, "skill_versions": <map>})` (`tools/benchmark_def.py` — S3) to build the durable, content-pinned definition. Call `benchmark_def.write_def(def_out, definition)` to persist it — `def_out` is the required config field loaded in step 1; the STOP at step 1 for a missing `def_out` exists precisely because this write must happen before dispatch. Record `benchmark_id` and `provenance` for stamping into the scorecard at closeout via `score_arms(benchmark_id=<benchmark_id>, provenance=<provenance>, ...)`. Record each clone root as the arm's artifact base; each root is the directory under which the arm's run emits `.kata/{RESULT,mutation,usage}.json`.
 
@@ -333,7 +333,9 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      not the per-task worktree (S3b lesson: per-task worktrees have their own `.kata/` paths; only the
      integration root's `.kata/board.md` is the shared board the orchestrator and evaluator read).
    - **emit a `PROGRESS` heartbeat (F3 — mandated, not optional):** append a `PROGRESS` line to the shared
-     board **per owned-module completed AND at least once per `livenessDeadline`/2 of wall-clock** (a long
+     board via the purpose-built `kata_board.append_progress(kata_dir, agent, task, step, n, label)`
+     (`tools/kata_board.py` — it emits the exact required `msg` shape; don't hand-roll it through
+     `append_event`) **per owned-module completed AND at least once per `livenessDeadline`/2 of wall-clock** (a long
      single module must not read as dark), with `msg` = `<modulesDone>/<modulesOwned> <label>`; a task with
      no countable modules (docs/config-only) heartbeats as `0/1 <label>` until its single unit completes.
      The dispatch prompt tells the worker the deadline. This is the worker's liveness signal (a worker that
@@ -987,7 +989,7 @@ This section is **additive** — the host/`Agent`-tool path (step 2 of the loop 
 **At each role-group dispatch site**, if `resolved_roles[role]["platform"] ≠ host_platform`:
 
 1. Build a task-brief via `kata_dispatch.build_brief(task_id, role, platform, model=..., objective=..., result_path=..., ...)` (`tools/kata_dispatch.py:42`). Use `sandbox="read-only"` for read-only roles (validator, researcher); `sandbox="write"` for coder.
-2. Call `kata_dispatch.dispatch(brief, worktree)` (`tools/kata_dispatch.py:176`) — this launches the platform's headless CLI in the worktree (N2 adapter) and captures a normalized RESULT envelope (N3).
+2. Call `kata_dispatch.dispatch(brief, worktree)` (`tools/kata_dispatch.py:177`) — this launches the platform's headless CLI in the worktree (N2 adapter) and captures a normalized RESULT envelope (N3).
 3. Read the RESULT envelope; fold the role's `payload` per the per-role contract: validator → `{verdict, findings}`; researcher → `{claim, source, confidence, groundsToPlan}`; coder → the gate RESULT shape.
 
 **Role-group → dispatch-site map (L-MP5):**
@@ -1218,7 +1220,8 @@ After the frontier drains (all tasks integrated), on the integration branch:
    re-confirm.** It is *additive* to the [[kata-evaluate]] gate (item 9 *reproduces* artifacts; this *attacks* the
    whole build), never a replacement.
    - **Scope — "code/contract-bearing" is an evaluator/operator judgment, NOT the `codeBearing` footprint flag.**
-     `footprint.codeBearing` keys off *code* extensions only (`tools/footprint.py`), so a pure **protocol/skill
+     the `codeBearing` key in `footprint.json` (computed by `footprint.code_bearing`, `tools/footprint.py`)
+     keys off *code* extensions only, so a pure **protocol/skill
      `.md` contract edit is `codeBearing:false` yet IS contract-bearing** (this very loop-hardening change was —
      and a naïve `codeBearing` gate would have skipped its own red-team). Trigger the red-team when the build
      changes **executable logic (`codeBearing:true`) OR a contract/protocol/skill surface** (`protocol/**`,
