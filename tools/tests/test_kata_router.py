@@ -237,6 +237,100 @@ def test_write_stanza_idempotent_double_write_line_once(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# CG-L4 — home templating of the prime-directives back-pointer
+# ---------------------------------------------------------------------------
+
+BACKPOINTER_DEFAULT = "`~/.kata-home/protocol/prime-directives.md`"
+
+
+def test_render_stanza_default_home_byte_identical_to_no_arg():
+    """Omitting `home` and passing the default literal render byte-identically (BC pin)."""
+    assert kata_router.render_stanza() == kata_router.render_stanza(home="~/.kata-home")
+
+
+def test_render_stanza_default_home_preserves_tilde_backpointer():
+    """The default render keeps today's `~`-form back-pointer bytes (BC pin).
+
+    Mutation-proof: resolving/rewriting the default home → this fails.
+    """
+    body = "\n".join(_body_lines(kata_router.render_stanza()))
+    assert BACKPOINTER_DEFAULT in body
+
+
+def test_render_stanza_custom_home_templates_backpointer():
+    """A custom home replaces the back-pointer path; the default form is gone."""
+    stanza = kata_router.render_stanza(home="C:/kata/custom-home")
+    assert "`C:/kata/custom-home/protocol/prime-directives.md`" in stanza
+    assert "~/.kata-home" not in stanza
+
+
+def test_render_stanza_custom_home_forward_slashes():
+    """A Windows backslash home is rendered with forward slashes only."""
+    stanza = kata_router.render_stanza(home="C:\\kata\\custom-home")
+    assert "`C:/kata/custom-home/protocol/prime-directives.md`" in stanza
+    assert "\\" not in stanza
+
+
+def test_render_stanza_custom_home_accepts_path_object():
+    """A pathlib.Path home is accepted and rendered with forward slashes."""
+    stanza = kata_router.render_stanza(home=Path("C:/kata/custom-home"))
+    assert "`C:/kata/custom-home/protocol/prime-directives.md`" in stanza
+
+
+def test_render_stanza_custom_home_deterministic():
+    assert kata_router.render_stanza(home="C:/x") == kata_router.render_stanza(home="C:/x")
+
+
+def test_write_stanza_forwards_home(tmp_path):
+    """write_stanza(home=...) writes the templated back-pointer into AGENTS.md."""
+    agents_md = tmp_path / "AGENTS.md"
+    kata_router.write_stanza(str(agents_md), home="D:\\alt\\kata-home")
+    content = agents_md.read_text(encoding="utf-8")
+    assert "`D:/alt/kata-home/protocol/prime-directives.md`" in content
+    assert "~/.kata-home" not in content
+
+
+def test_write_stanza_default_home_bc(tmp_path):
+    """write_stanza without home writes today's default back-pointer bytes (BC)."""
+    agents_md = tmp_path / "AGENTS.md"
+    kata_router.write_stanza(str(agents_md))
+    assert BACKPOINTER_DEFAULT in agents_md.read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# CG-L4 — entry-point lines: /kata-start is the canonical front door
+# ---------------------------------------------------------------------------
+
+
+def test_render_stanza_start_verb_is_kata_start():
+    """The start bullet uses `/kata-start` (kata-initiate, the canonical front door).
+
+    Mutation-proof: reverting the start verb to a bare kata-bootstrap bullet → fails.
+    """
+    body_lines = _body_lines(kata_router.render_stanza())
+    start_line = next((ln for ln in body_lines if "/kata-start" in ln), None)
+    assert start_line is not None, "No `/kata-start` line found in stanza body"
+    assert "kata-initiate" in start_line, "start line must name kata-initiate"
+    assert "front door" in start_line, "start line must call it the canonical front door"
+
+
+def test_render_stanza_names_bootstrap_as_preloop_configurator():
+    """kata-bootstrap is still named, glossed as the pre-loop configurator."""
+    body = "\n".join(_body_lines(kata_router.render_stanza()))
+    assert "kata-bootstrap" in body
+    bootstrap_line = next(
+        ln for ln in body.splitlines() if "kata-bootstrap" in ln
+    )
+    assert "pre-loop configurator" in bootstrap_line
+
+
+def test_render_stanza_start_verb_precedes_validate():
+    """`/kata-start` is the first entrypoint, ahead of kata-validate."""
+    stanza = kata_router.render_stanza()
+    assert stanza.index("/kata-start") < stanza.index("kata-validate")
+
+
+# ---------------------------------------------------------------------------
 # render_stanza — determinism
 # ---------------------------------------------------------------------------
 

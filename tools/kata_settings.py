@@ -4,8 +4,13 @@ KataHarness lives in one central place ("harness home") and remembers **two
 settings** so each run can find the project to work on:
 
 - ``parentDir`` — the default parent project folder (overridable per run).
-- ``vaultDir``  — where the vault / second brain sits (optional; the learning
-  component reads/writes here). Absent ⇒ learning is a no-op (BC1).
+- ``vaultDir``  — where the vault / second brain sits (optional). Seeds the
+  second-brain learn-feed paths top-down via ``default_learn_feed_dir``
+  (``<vaultDir>/second-brain/wiki/pages/synthesis``) and
+  ``default_learn_log_path`` (``<vaultDir>/second-brain/wiki/log.md``) —
+  the values kata-bootstrap writes into ``engram.learnFeed.dir`` / the emit
+  log path at config-write (SB-L7). Absent ⇒ both helpers return ``None``
+  and the learn feed is a no-op (BC1).
 - ``telemetryLedger`` — absolute path to the harness repo's committed M4
   telemetry ledger (``.planning/telemetry-ledger.md``); the locator target-repo
   runs use to READ (slack class-medians) and APPEND (closeout row) — identical
@@ -27,6 +32,8 @@ settings_path(home=None) -> Path
 build_settings(parent_dir, vault_dir=None) -> dict   # pure; validates + resolves
 read_settings(home=None) -> dict                      # {} when absent
 write_settings(parent_dir, vault_dir=None, home=None) -> Path
+default_learn_feed_dir(settings) -> str | None        # SB-L7 seeding helper (pure)
+default_learn_log_path(settings) -> str | None        # SB-L7 seeding helper (pure)
 
 Security: operator-supplied paths are ``..``-guarded (CWE-23) then resolved to
 absolute before storage, mirroring gate_emit._safe_path.
@@ -97,6 +104,47 @@ def read_settings(home: str | Path | None = None) -> dict:
         return json.loads(p.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return {}  # corrupt/unreadable ⇒ treat as absent, fall back to in-repo defaults
+
+
+# ---------------------------------------------------------------------------
+# SB-L7 — second-brain loop config seeding (pure helpers; freeze-gate F-2)
+#
+# BOTH paths are computed TOP-DOWN from vaultDir — the log path is NEVER
+# derived from the feed dir via `..` (F-2: each consumer receives its path as
+# supplied, guarded independently). vaultDir is already `..`-guarded at the
+# write boundary (build_settings), but each helper RE-GUARDS defensively —
+# a settings dict is attacker-influenceable on-disk input to decision code.
+# ---------------------------------------------------------------------------
+
+
+def default_learn_feed_dir(settings: dict) -> str | None:
+    """The default second-brain learn-feed dir seeded from ``vaultDir`` (SB-L7).
+
+    ``<vaultDir>/second-brain/wiki/pages/synthesis`` as an absolute resolved
+    string when ``vaultDir`` is set; ``None`` when absent/blank (the learn feed
+    is then a no-op — BC1). ``..`` in ``vaultDir`` ⇒ ``ValueError`` (CWE-23
+    re-guard). Pure: no filesystem writes, no existence requirement.
+    """
+    vault = settings.get("vaultDir")
+    if vault in (None, ""):
+        return None
+    base = _safe_abs(vault)  # defensive re-guard + resolve to absolute
+    return str(base / "second-brain" / "wiki" / "pages" / "synthesis")
+
+
+def default_learn_log_path(settings: dict) -> str | None:
+    """The default second-brain emit-log path seeded from ``vaultDir`` (SB-L7).
+
+    ``<vaultDir>/second-brain/wiki/log.md`` as an absolute resolved string when
+    ``vaultDir`` is set; ``None`` when absent/blank. Computed top-down from
+    ``vaultDir`` — NEVER via ``..`` from the feed dir (freeze-gate F-2).
+    ``..`` in ``vaultDir`` ⇒ ``ValueError`` (CWE-23 re-guard). Pure.
+    """
+    vault = settings.get("vaultDir")
+    if vault in (None, ""):
+        return None
+    base = _safe_abs(vault)  # defensive re-guard + resolve to absolute
+    return str(base / "second-brain" / "wiki" / "log.md")
 
 
 def add_confirmed_platform(platform: str, home: str | Path | None = None) -> list[str]:

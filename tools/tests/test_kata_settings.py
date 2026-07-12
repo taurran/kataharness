@@ -513,3 +513,77 @@ def test_record_accepted_defaults_corrupt_file_fails_closed(tmp_path):
             home=tmp_path,
         )
     assert sp.read_text(encoding="utf-8") == garbage
+
+
+# ---------------------------------------------------------------------------
+# SB-L7 / CG-L5 — second-brain loop config seeding helpers (pure, top-down)
+# ---------------------------------------------------------------------------
+
+
+def test_default_learn_feed_dir_happy(tmp_path):
+    """vaultDir set ⇒ <vaultDir>/second-brain/wiki/pages/synthesis, absolute+resolved."""
+    settings = {"vaultDir": str(tmp_path)}
+    out = ks.default_learn_feed_dir(settings)
+    expected = tmp_path.resolve() / "second-brain" / "wiki" / "pages" / "synthesis"
+    assert out == str(expected)
+    assert Path(out).is_absolute()
+
+
+def test_default_learn_log_path_happy(tmp_path):
+    """vaultDir set ⇒ <vaultDir>/second-brain/wiki/log.md, absolute+resolved."""
+    settings = {"vaultDir": str(tmp_path)}
+    out = ks.default_learn_log_path(settings)
+    assert out == str(tmp_path.resolve() / "second-brain" / "wiki" / "log.md")
+    assert Path(out).is_absolute()
+
+
+def test_learn_helpers_computed_top_down_not_via_feed_dir(tmp_path):
+    """F-2: the log path is derived from vaultDir directly — NEVER `..` off the feed dir.
+
+    The log lands at wiki/log.md, a SIBLING of wiki/pages/ — reachable from the
+    feed dir only via `..`, so equality with the top-down form proves top-down.
+    """
+    settings = {"vaultDir": str(tmp_path)}
+    feed = ks.default_learn_feed_dir(settings)
+    log = ks.default_learn_log_path(settings)
+    assert ".." not in Path(feed).parts
+    assert ".." not in Path(log).parts
+    # log.md is NOT under the feed dir (sibling branch of the wiki tree)
+    assert not log.startswith(feed)
+    assert Path(log).parent == Path(feed).parent.parent  # both under <vault>/second-brain/wiki
+
+
+@pytest.mark.parametrize("settings", [{}, {"vaultDir": None}, {"vaultDir": ""}])
+def test_default_learn_feed_dir_none_when_vault_absent(settings):
+    """Absent/blank vaultDir ⇒ None (learn feed is a no-op, BC1)."""
+    assert ks.default_learn_feed_dir(settings) is None
+
+
+@pytest.mark.parametrize("settings", [{}, {"vaultDir": None}, {"vaultDir": ""}])
+def test_default_learn_log_path_none_when_vault_absent(settings):
+    assert ks.default_learn_log_path(settings) is None
+
+
+def test_default_learn_feed_dir_rejects_traversal(tmp_path):
+    """`..` in vaultDir is re-guarded defensively (CWE-23) — ValueError, never a path."""
+    settings = {"vaultDir": str(tmp_path / ".." / "evil")}
+    with pytest.raises(ValueError):
+        ks.default_learn_feed_dir(settings)
+
+
+def test_default_learn_log_path_rejects_traversal(tmp_path):
+    settings = {"vaultDir": str(tmp_path / ".." / "evil")}
+    with pytest.raises(ValueError):
+        ks.default_learn_log_path(settings)
+
+
+def test_learn_helpers_resolve_relative_vault(tmp_path, monkeypatch):
+    """A relative vaultDir still yields an absolute resolved string."""
+    monkeypatch.chdir(tmp_path)
+    settings = {"vaultDir": "vault"}
+    feed = ks.default_learn_feed_dir(settings)
+    log = ks.default_learn_log_path(settings)
+    assert Path(feed).is_absolute() and Path(log).is_absolute()
+    assert Path(feed) == (
+        tmp_path / "vault" / "second-brain" / "wiki" / "pages" / "synthesis"
+    ).resolve()
