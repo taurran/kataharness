@@ -8,8 +8,9 @@ Operator → agent steering channel (mid-run direction without a restart).
 > `## Active directives`; the running loop surfaces it at the next boundary, acts on it (or escalates
 > if it would change the frozen plan), and moves it to `## Consumed / delivered`. **Graceful stop:**
 > create an `AGENT_STOP` file in the run's `.kata/` dir OR add a `## AGENT_STOP` line here — the loop
-> halts cleanly at the next boundary (parks in-flight work, refreshes the handoff), never a blind
-> mid-task kill. Empty `## Active directives` = no active steering.
+> halts at the next boundary (parks in-flight work, refreshes the handoff), never a blind mid-task
+> kill. Like all boundary behavior this is **conductor-invoked, not host-enforced** — for a hard kill,
+> terminate the session directly. Empty `## Active directives` = no active steering.
 
 ## Active directives
 _(none active — the BUILD-THROUGH directive below was DELIVERED 2026-06-20 and is consumed.)_

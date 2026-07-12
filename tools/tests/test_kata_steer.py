@@ -89,6 +89,16 @@ def test_absent_file_is_fail_soft(tmp_path):
     assert kata_steer.read_active_directives(tmp_path / "nope.md") == []
 
 
+def test_real_directive_starting_with_none_is_not_dropped(tmp_path):
+    """adval #3: a real directive that merely starts with '(none-blocking)' must NOT be
+    skipped as the italic placeholder — only the shipped `_( none … )_` form is a placeholder."""
+    p = _steering(tmp_path, "## Active directives\n(none-blocking) refactor the auth module\n")
+    assert kata_steer.read_active_directives(p) == ["(none-blocking) refactor the auth module"]
+    # but the actual italic placeholder is still skipped
+    p2 = _steering(tmp_path, "## Active directives\n_(none active — nothing pending)_\n")
+    assert kata_steer.read_active_directives(p2) == []
+
+
 def test_only_active_section_scoped(tmp_path):
     body = (
         "## Preamble\n- not a directive (wrong section)\n"

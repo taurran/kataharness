@@ -41,11 +41,17 @@ detectable. A nondeterministic gate is a gate that cannot be trusted twice.
 7. **Injectable clocks for anything that decides.** Decision code takes `now` as a parameter
    (`kata_gauge.read_bridge`, `slack_ratio`); a raw `datetime.now()` is legal only in log
    stamps and documented hint-only fields (`recall._is_stale`).
-8. **Gate subprocesses run in a declared environment, argv-only.** Anything whose exit code
-   feeds a gate or score: no `shell=True`, explicit env handling (strip `PYTEST_ADDOPTS`,
-   control plugin autoload where the target allows), and the invocation recorded in the
-   artifact. *(Stragglers: `mutation_run._default_runner`, `mutation_check.run_named_test` —
-   DET-09.)* Gate runners also carry timeouts — a hung gate is a nondeterministic outcome.
+8. **Gate subprocesses run in a declared environment.** Anything whose exit code feeds a gate
+   or score strips env-injected nondeterminism (`PYTEST_ADDOPTS`) and records its invocation.
+   **Prefer surgical over blanket:** on a known-pytest path (`mutation_check.run_named_test`,
+   the scoring path) keep plugin autoload and block only the nondeterminism plugin by argv
+   (`-p no:randomly`) — a blanket `PYTEST_DISABLE_PLUGIN_AUTOLOAD` would make a target's
+   autoload-reliant tests (pytest-asyncio/mock/django) FAIL under the gate when they pass
+   normally, *deflating* the score (adval R1). Reserve the blanket env-disable for the
+   arbitrary-command path (`mutation_run._default_runner`) where argv can't be injected; there
+   `shell=True` is retained because the `test_cmd` contract is a shell string (operator-trust,
+   exec-safety-registered). Gate runners also carry timeouts — a hung gate is a
+   nondeterministic outcome.
 9. **Randomness mints identity only.** No randomness in sampling, tie-breaking, or scoring,
    ever. A minted id (`uuid4`) is persisted then compared as stored data; content-addressed
    ids are strictly stronger and preferred where the content hash already exists.

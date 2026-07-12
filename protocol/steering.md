@@ -35,6 +35,12 @@ Directives, `protocol/prime-directives.md`, exist to prevent.)
   (steering is additive, never run-fatal); the stop check is biased toward halting (an unreadable
   file whose bytes carry the sentinel still stops — halting is the safe direction the operator asked
   for).
+- **Honest limit — the stop is prose-gated, not host-enforced.** Like every other boundary behavior
+  (liveness, self-handoff), the conductor *invokes* `kata_steer` at the boundary because this skill
+  tells it to; there is no host-level hook that fires `AGENT_STOP` independently. A runaway or
+  non-compliant conductor that skips the boundary step would not honor a stop. The engine is real and
+  tested; the *guarantee* is bounded by conductor adherence, at parity with the rest of the loop. For
+  a hard, host-enforced kill, terminate the session directly.
 
 ## Producer / consumer
 

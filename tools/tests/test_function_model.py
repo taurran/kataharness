@@ -731,3 +731,23 @@ class TestSequenceRepetitionGuard:
         import function_model as fm
         res = fm.evaluate_spec(self._fm("len([0] * 3) == 3"), {"inputs": {}, "result": 0})
         assert res["ok"] is True, res
+
+    def test_chained_repetition_over_cap_rejected(self):
+        """adval DEFECT-1: `[0]*1000*1000` keeps every COUNT under the cap while the
+        product explodes. The guard must bound the RESULT length, not the count —
+        this is RED against the count-only guard (which never fired on the chain)."""
+        import function_model as fm
+        res = fm.evaluate_spec(
+            self._fm("len([0] * 1000 * 1000) >= 0"), {"inputs": {}, "result": 0}
+        )
+        assert res["ok"] is False
+        assert any("resource-exhaustion" in v or "Sequence repetition" in v
+                   for v in res["violations"]), res["violations"]
+
+    def test_chained_str_repetition_over_cap_rejected(self):
+        """The same chained bypass via str repetition is rejected."""
+        import function_model as fm
+        res = fm.evaluate_spec(
+            self._fm('len("a" * 1000 * 1000) >= 0'), {"inputs": {}, "result": 0}
+        )
+        assert res["ok"] is False

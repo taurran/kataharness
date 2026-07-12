@@ -56,4 +56,6 @@ evidence: verdict NEEDS_WORK, finding class `prime-directive-violation`.
 **Producers:** `kata-orient` (injects this file into every launch orientation, stable tier) ·
 adapters (render it into the platform's instruction surface). **Consumers:** every dispatched
 agent · `kata-evaluate` / `kata-review` / `kata-slop-check` (grade against it). Registered in
-`validate_skills.py` `REQUIRED_PROTOCOL` — erasing or hollowing this file fails the validator.
+`validate_skills.py` `REQUIRED_PROTOCOL` — erasing this file, or removing any of its load-bearing
+terms (PD-1, PD-2, DRIFT, …), fails the validator. (Like every `REQUIRED_PROTOCOL` entry this is a
+term-presence check, not a semantic-completeness one — it catches deletion, not arbitrary rewording.)

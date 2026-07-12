@@ -94,20 +94,22 @@ def run_named_test(
     Returns:
         True if pytest exits 0 (test passed), False otherwise (including timeout).
     """
-    # DET-09: gate/score subprocesses run in a sanitized env so the same clone
-    # scores identically across hosts — strip PYTEST_ADDOPTS + disable plugin
-    # autoload (pytest-randomly etc.) which can flip the Axis-Q boolean
-    # (DETERMINISM-DOCTRINE law 8). cwd's PYTHONPATH prepend composes on top.
+    # DET-09 (surgical — adval R1): this is the SCORING path (benchmark dual-gate),
+    # so it must not DEFLATE a target's numbers. Strip PYTEST_ADDOPTS (env-injected
+    # order/early-exit nondeterminism) but KEEP plugin autoload — blanket-disabling it
+    # makes a target's pytest-asyncio/mock/django tests FAIL under the gate when they
+    # PASS normally (a gold F2P scored unresolved). We block only the one nondeterminism
+    # plugin by argv (`-p no:randomly`, a harmless no-op when it isn't installed).
+    # cwd's PYTHONPATH prepend composes on top. (DETERMINISM-DOCTRINE law 8.)
     run_env: dict = os.environ.copy()
     run_env.pop("PYTEST_ADDOPTS", None)
-    run_env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
     if cwd is not None:
         existing_pp = run_env.get("PYTHONPATH", "")
         run_env["PYTHONPATH"] = cwd + (os.pathsep + existing_pp if existing_pp else "")
 
     try:
         result = subprocess.run(
-            ["uv", "run", "pytest", f"{test_path}::{test_name}", "-q"],
+            ["uv", "run", "pytest", "-p", "no:randomly", f"{test_path}::{test_name}", "-q"],
             capture_output=True,
             cwd=cwd,
             env=run_env,

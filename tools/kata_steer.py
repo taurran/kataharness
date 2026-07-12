@@ -34,15 +34,29 @@ from pathlib import Path
 _STOP_FILENAME = "AGENT_STOP"
 _STOP_SENTINEL = "## AGENT_STOP"
 _ACTIVE_HEADING = "## Active directives"
-# The placeholder line the template ships with — never a real directive.
-_EMPTY_MARKERS = ("_(none", "(none")
+
+
+def _is_placeholder(stripped: str) -> bool:
+    """True for the ``_(none active …)_`` template placeholder — NOT a real directive.
+
+    Tight match (adval finding #3): an italic-parenthetical whose inner text opens with
+    "none". A real directive that merely happens to start with "(none-blocking)…" is NOT a
+    placeholder — directives are normally ``- `` bullets, and only the shipped italic
+    ``_( … )_`` placeholder is skipped.
+    """
+    if stripped.startswith("_(") and stripped.endswith(")_"):
+        inner = stripped[2:-2].strip().lower()
+        return inner.startswith("none")
+    return False
 
 
 def _safe_path(raw: str | Path) -> Path:
     """Reject path-traversal (CWE-23) in an operator-supplied path, then resolve.
 
-    Mirrors the canonical guard (kata_board._safe_path); kept textually in sync
-    (validate_skills asserts the family stays identical).
+    Mirrors the canonical guard (kata_board._safe_path). The path-guard family's
+    ONE enforced invariant — every member rejects a ``..`` component with
+    ValueError — is pinned by ``tests/test_path_guard_family.py`` (behavioral,
+    not textual identity).
     """
     p = Path(raw)
     if any(part == ".." for part in p.parts):
@@ -92,7 +106,7 @@ def read_active_directives(steering_path: str | Path) -> list[str]:
             continue
         if not stripped:
             continue
-        if any(stripped.lower().startswith(m) for m in _EMPTY_MARKERS):
+        if _is_placeholder(stripped):
             continue
         directives.append(stripped)
     return directives
