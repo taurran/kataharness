@@ -131,9 +131,20 @@ def _scan_integration_commits(
     # Resolve fork-point: most recent commit on integration_branch that touched the
     # frozen PLAN (committed before the run started). A git error or an empty result
     # both RAISE (gate semantics — never fall back to an unbounded scan).
+    # Determinism pins (DET-02/DET-03, DETERMINISM-DOCTRINE law 1/5): the single-
+    # pathspec shape activates an operator `log.follow=true`, which follows renames
+    # to an OLDER commit — a wrong fork point silently ingests prior-run trailers;
+    # `log.showSignature=false` keeps gpg: lines out of the parsed %H stdout;
+    # `core.quotepath=off` for path-output symmetry with the other pinned calls.
     try:
         fp = subprocess.run(
-            ["git", "log", "-1", "--format=%H", integration_branch, "--", plan_spec],
+            [
+                "git",
+                "-c", "log.follow=false",
+                "-c", "log.showSignature=false",
+                "-c", "core.quotepath=off",
+                "log", "-1", "--format=%H", integration_branch, "--", plan_spec,
+            ],
             cwd=str(root),
             capture_output=True,
             text=True,
@@ -155,10 +166,17 @@ def _scan_integration_commits(
         )
 
     # Bounded, commit-delimited scan of THIS run's commits (after plan-freeze).
+    # `log.showSignature=false` is load-bearing (DET-03): a signed commit under an
+    # operator `log.showSignature=true` injects gpg: lines into the parsed stdout,
+    # silently shifting commit_index — the temporal-invalidation comparison would
+    # read the WRONG commit ordering. `core.quotepath=off` for symmetry.
     try:
         result = subprocess.run(
             [
-                "git", "log", f"{fork_point}..{integration_branch}",
+                "git",
+                "-c", "log.showSignature=false",
+                "-c", "core.quotepath=off",
+                "log", f"{fork_point}..{integration_branch}",
                 "--format=%x00%H%n%B", "--",
             ],
             cwd=str(root),

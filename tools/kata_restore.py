@@ -478,10 +478,20 @@ def _scan_integration_commit_bodies(
         except ValueError:
             plan_spec = str(plan_abs)
 
+        # Determinism pins (DET-02/DET-03, DETERMINISM-DOCTRINE law 1/5): the
+        # single-pathspec shape activates an operator `log.follow=true`, which
+        # follows renames to an OLDER commit — a wrong fork point silently
+        # ingests prior-run trailers (under-dispatch); `log.showSignature=false`
+        # keeps gpg: lines out of the parsed %H stdout; `core.quotepath=off`
+        # for path-output symmetry with the other pinned calls.
         try:
             fp_result = subprocess.run(
                 [
-                    "git", "log", "-1", "--format=%H",
+                    "git",
+                    "-c", "log.follow=false",
+                    "-c", "log.showSignature=false",
+                    "-c", "core.quotepath=off",
+                    "log", "-1", "--format=%H",
                     integration_branch, "--", plan_spec,
                 ],
                 cwd=str(root),
@@ -499,8 +509,14 @@ def _scan_integration_commit_bodies(
         # Bounded scan: only THIS run's integration commits (after plan-freeze).
         # Prior-run trailers live on ancestors of fork_point → correctly excluded.
         # `--` at end = end-of-options / no path filter (defense-in-depth).
+        # `log.showSignature=false` (DET-03): a signed commit under an operator
+        # `log.showSignature=true` injects gpg: lines into the parsed %B stream;
+        # `core.quotepath=off` for symmetry with the other pinned calls.
         git_cmd = [
-            "git", "log", f"{fork_point}..{integration_branch}",
+            "git",
+            "-c", "log.showSignature=false",
+            "-c", "core.quotepath=off",
+            "log", f"{fork_point}..{integration_branch}",
             "--format=%B", "--",
         ]
     else:
@@ -518,8 +534,12 @@ def _scan_integration_commit_bodies(
             # (no NOTE, not degraded).
             reasons.append("integration-scan-unbounded")
         # `--` at end = end-of-options / no path filter (defense-in-depth).
+        # Same DET-03 pins as the bounded scan (parsed %B stream).
         git_cmd = [
-            "git", "log", "--format=%B", integration_branch, "--",
+            "git",
+            "-c", "log.showSignature=false",
+            "-c", "core.quotepath=off",
+            "log", "--format=%B", integration_branch, "--",
         ]
 
     try:

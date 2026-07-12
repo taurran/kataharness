@@ -144,6 +144,14 @@ def manifest(
 def changed_since(ref: str) -> list[str]:
     """Return a list of files changed since *ref* using ``git diff --name-only``.
 
+    Pinned for determinism (DET-05, DETERMINISM-DOCTRINE law 1/5): the consumer
+    (``footprint.json``'s ``withinFootprint``) is a compared verdict input, so the
+    changed set must be byte-stable across operator git configs. ``--no-renames``
+    keeps a rename visible as delete+add regardless of ``diff.renames`` (the same
+    load-bearing pin ``changed_in_task`` documents for this consumer class);
+    ``core.quotepath=off`` emits non-ASCII paths verbatim instead of octal-quoted
+    (an octal-quoted path never matches a footprint prefix).
+
     Args:
         ref: Git ref (commit hash, branch, tag, etc.) to diff against HEAD.
 
@@ -151,7 +159,7 @@ def changed_since(ref: str) -> list[str]:
         Sorted list of changed file paths (forward-slash normalized).
     """
     result = subprocess.run(
-        ["git", "diff", "--name-only", ref],
+        ["git", "-c", "core.quotepath=off", "diff", "--name-only", "--no-renames", ref],
         capture_output=True,
         text=True,
         check=True,
@@ -178,6 +186,12 @@ def changed_in_task(base_ref: str, task_ref: str = "HEAD") -> list[str]:
     the deletion of the foreign source is invisible to the lane check, and the
     result silently depends on the operator's ``diff.renames`` config. A lane
     check wants the add AND the delete, deterministically.
+
+    ``core.quotepath=off`` is equally load-bearing (DET-04): with quotepath ON
+    (the git default) a non-ASCII path is emitted octal-quoted
+    (``"caf\\303\\251.py"``) and never matches its footprint prefix — a FALSE
+    lane-drift trip. The pin emits the path verbatim so the partition compares
+    real paths.
 
     Fail-closed (adval F5-2, D136): MULTIPLE merge-bases (criss-cross topology)
     make the three-dot base timestamp-dependent — the wrong pick both leaks
@@ -209,7 +223,10 @@ def changed_in_task(base_ref: str, task_ref: str = "HEAD") -> list[str]:
             f"and cannot drive the lane check (D136 fail-closed). Escalate."
         )
     result = subprocess.run(
-        ["git", "diff", "--name-only", "--no-renames", f"{base_ref}...{task_ref}"],
+        [
+            "git", "-c", "core.quotepath=off",
+            "diff", "--name-only", "--no-renames", f"{base_ref}...{task_ref}",
+        ],
         capture_output=True,
         text=True,
         check=True,

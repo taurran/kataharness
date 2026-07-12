@@ -1469,3 +1469,52 @@ def test_new_keys_row_json_roundtrip_byte_stable(tmp_path):
     # same serialization pins as the builder (compact separators, default ensure_ascii
     # — the ``×`` rides as the × escape, byte-identical to the committed rows)
     assert json.dumps(rows[0], separators=(",", ":")) == row_str
+
+
+# ===========================================================================
+# DET-03 / DET-08 (2026-07-12 health review) — pins + ledger byte stability
+# ===========================================================================
+
+
+def test_run_git_argv_pins_quotepath_and_show_signature(tmp_path, monkeypatch):
+    """DET-03: _run_git is the single pin site — its fixed argv must carry
+    core.quotepath=off (digest/lane-drift byte stability) AND
+    log.showSignature=false (a signed commit under operator
+    log.showSignature=true injects gpg: lines that misparse %P in
+    scan_checkpoints' positional %P%n%B read)."""
+    captured: dict = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(kt.subprocess, "run", fake_run)
+    kt._run_git(str(tmp_path), ["show", "-s", "--format=%P%n%B", "HEAD"])
+
+    cmd = captured["cmd"]
+    assert cmd[0] == "git"
+    sub_idx = cmd.index("show")
+    pins = {
+        cmd[i + 1] for i in range(sub_idx - 1) if cmd[i] == "-c"
+    }
+    assert "core.quotepath=off" in pins
+    assert "log.showSignature=false" in pins
+
+
+def test_build_ledger_row_byte_stable_across_producer_dict_order():
+    """DET-08: two run summaries identical up to dict INSERTION ORDER must
+    serialize to identical bytes — pass-through maps must not leak producer
+    dict order into the committed calibration ledger. Readers are key-based
+    (read_ledger + the *_of accessors + class_median), so sort_keys is safe."""
+    a = {"runId": "r1", "target": "t", "utc": "2026-07-12T00:00:00Z"}
+    a["streaksByClass"] = {"code": [3, 1], "doc": [2]}
+    a["effectiveModes"] = {"on": 2, "off": 1}
+
+    b = {"utc": "2026-07-12T00:00:00Z", "target": "t", "runId": "r1"}
+    b["effectiveModes"] = {"off": 1, "on": 2}
+    b["streaksByClass"] = {"doc": [2], "code": [3, 1]}
+
+    row_a = kt.build_ledger_row(a)
+    row_b = kt.build_ledger_row(b)
+    assert row_a == row_b, "producer dict order leaked into the serialized ledger row"
+    assert json.loads(row_a) == json.loads(row_b)

@@ -1170,3 +1170,63 @@ def test_collect_integrated_checkpoint_trailers_are_inert(tmp_path):
     )
     assert ex["tasks"] == {"T1"}
     assert ex["degraded"] is False
+
+
+# ---------------------------------------------------------------------------
+# DET-02 / DET-03 (2026-07-12 health review) — git-config pins on parsed stdout
+# ---------------------------------------------------------------------------
+
+
+def _pin_present(cmd: list[str], setting: str) -> bool:
+    """True iff ``-c <setting>`` appears in *cmd* (the pinned-argv shape)."""
+    return any(cmd[i] == "-c" and cmd[i + 1] == setting for i in range(len(cmd) - 1))
+
+
+def test_scan_commit_bodies_argv_pins_bounded(tmp_path, monkeypatch):
+    """DET-02: the fork-point `git log -1 -- <plan>` must pin log.follow=false
+    (single-pathspec shape activates operator log.follow=true → an OLDER
+    fork point → prior-run trailers ingested → under-dispatch) plus
+    log.showSignature=false / core.quotepath=off. DET-03: the bounded %B scan
+    must pin log.showSignature=false (gpg: lines pollute the parsed body stream)."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        if "-1" in cmd:  # fork-point resolution
+            return subprocess.CompletedProcess(cmd, 0, stdout="abc123\n", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(kata_restore.subprocess, "run", fake_run)
+    lines, reasons = kata_restore._scan_integration_commit_bodies(
+        str(tmp_path), "integration", tmp_path / "PLAN.md"
+    )
+    assert lines == [] and reasons == []
+
+    assert len(calls) == 2, "expected exactly fork-point + bounded-scan git calls"
+    fork_cmd, scan_cmd = calls
+    assert _pin_present(fork_cmd, "log.follow=false")
+    assert _pin_present(fork_cmd, "log.showSignature=false")
+    assert _pin_present(fork_cmd, "core.quotepath=off")
+    assert _pin_present(scan_cmd, "log.showSignature=false")
+    assert _pin_present(scan_cmd, "core.quotepath=off")
+
+
+def test_scan_commit_bodies_argv_pins_unbounded_fallback(tmp_path, monkeypatch, capsys):
+    """DET-03: the unbounded-fallback %B scan (fork-point unresolvable) carries
+    the same showSignature/quotepath pins as the bounded scan."""
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(kata_restore.subprocess, "run", fake_run)
+    lines, reasons = kata_restore._scan_integration_commit_bodies(
+        str(tmp_path), "integration", tmp_path / "PLAN.md"
+    )
+    assert lines == []
+    assert "integration-scan-unbounded" in reasons  # the degraded path was taken
+
+    scan_cmd = calls[-1]
+    assert _pin_present(scan_cmd, "log.showSignature=false")
+    assert _pin_present(scan_cmd, "core.quotepath=off")

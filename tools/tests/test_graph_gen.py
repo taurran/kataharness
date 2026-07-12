@@ -577,3 +577,54 @@ def test_submodule_import_edge_resolves(tmp_path):
     assert ("user.py", "pkg/mod.py") in edges
     edges2 = _extract_imports(b"from . import mod\n", "pkg/__init__.py", paths)
     assert ("pkg/__init__.py", "pkg/mod.py") in edges2
+
+
+# ---------------------------------------------------------------------------
+# Determinism (2026-07-12 health review, DET-01 / DETERMINISM-DOCTRINE laws 2-3)
+# ---------------------------------------------------------------------------
+
+def test_build_graph_deterministic_across_file_order(tmp_path):
+    """Identical inputs => identical nodes/edges regardless of files= arg order.
+
+    Discovery order must never leak into the artifact: node order, edge order,
+    and (critically) ref-edge TARGET selection for multiply-defined symbol names
+    must not depend on input/file-listing order. Mutation check: this test fails
+    if the sorted() discovery/iteration in build_graph is removed.
+    """
+    from graph_gen import build_graph
+
+    # Two files defining the SAME symbol name, plus a caller — ref-target
+    # selection between the duplicates is the order-sensitive path.
+    (tmp_path / "dup_a.py").write_text("def shared_helper():\n    return 1\n", encoding="utf-8")
+    (tmp_path / "dup_b.py").write_text("def shared_helper():\n    return 2\n", encoding="utf-8")
+    (tmp_path / "caller.py").write_text(
+        "def use_it():\n    return shared_helper()\n", encoding="utf-8"
+    )
+
+    files = [tmp_path / "dup_a.py", tmp_path / "dup_b.py", tmp_path / "caller.py"]
+    g_fwd = build_graph(tmp_path, files=files)
+    g_rev = build_graph(tmp_path, files=list(reversed(files)))
+
+    assert g_fwd["nodes"] == g_rev["nodes"], "node list must be input-order-independent"
+    assert g_fwd["edges"] == g_rev["edges"], "edge list (incl. ref targets) must be input-order-independent"
+
+
+def test_ref_edge_target_is_lexicographically_pinned(tmp_path):
+    """With a multiply-defined symbol name, the best-effort ref edge picks the
+    lexicographically-first out-of-file candidate — pinned so graph topology
+    (and thus PageRank) cannot vary run-to-run."""
+    from graph_gen import build_graph
+
+    (tmp_path / "zz_late.py").write_text("def shared_helper():\n    return 1\n", encoding="utf-8")
+    (tmp_path / "aa_early.py").write_text("def shared_helper():\n    return 2\n", encoding="utf-8")
+    (tmp_path / "caller.py").write_text(
+        "def use_it():\n    return shared_helper()\n", encoding="utf-8"
+    )
+
+    g = build_graph(tmp_path)
+    ref_edges = [e for e in g["edges"] if e["kind"] == "ref"]
+    ref_targets = {e["dst"] for e in ref_edges if e["src"].startswith("caller.py")}
+    assert ref_targets, "expected a best-effort ref edge from caller.py"
+    assert all(t.startswith("aa_early.py") for t in ref_targets), (
+        f"ref target must be the lexicographically-first candidate; got {ref_targets}"
+    )
