@@ -2,6 +2,24 @@
 
 Promote to ROADMAP milestones when ready.
 
+> **★ 2026-07-12b SESSION QUEUE (deep reviews + second-brain loop; operator-directed):**
+> 1. **"ELEVATE" recommendation step (NEXT SESSION, operator-priority):** at the END of every grill
+>    session — on EACH KataHarness execution — the harness uses its deep context + task understanding
+>    to make ONE brainstormed recommendation (more only if the user asks) that elevates the design and
+>    function of the output. Always-on, single by default. Natural home: a grill-close step after the
+>    convergence gate, beside the D151 learn-feed emit (and its recommendation is itself grill-ledger
+>    material → second-brain input).
+> 2. **Grill single-question UX (operator note 2026-07-12):** the doc-grounded grill must ask via
+>    Claude's single-question output (AskUserQuestion) ONE question at a time — never a multi-question
+>    dump ("throwing five out there isn't a good UX"). Applies to the grill tier skills' interactive
+>    flow on the Claude adapter; general design discussion stays conversational prose.
+> 3. **Deep-review residuals NOT built this session** (ledgers: this session's audits; built items are
+>    D151/D152): C-4 autoCompactWindow backstop stays recommend-only (separate decision needed);
+>    R6 attended live-proof EXECUTION (now possible post-D152 install; run it); PostToolUse-cadence
+>    gauge sampling if UserPromptSubmit proves too coarse; B1 recall beyond initiation (kata-orient/
+>    workers); A5 platform docs carry no pointer-structure reinforcement (cosmetic); memory does not
+>    re-assert pointer discipline (orthogonal-by-design, revisit with engram CONSULT).
+
 > **★ 2026-07-12 HEALTH-REVIEW FOLLOW-UPS (Fable 5 full review — `.planning/REVIEW-FABLE5-2026-07-12.md`
 > is the findings ledger; fixed-this-session items are marked there; these are the NAMED deferrals):**
 > 1. **STEERING channel real wiring** (F-3 follow-up): a boundary-cadence STEERING.md check in
