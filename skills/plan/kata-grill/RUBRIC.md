@@ -167,7 +167,10 @@ python tools/learn_feed.py --ledger <the run's GRILL-LEDGER.md> --decisions .pla
 
 Pass `--decisions .planning/DECISIONS.md` only when that file is present. `engram.learnFeed.dir` unset ⇒
 **no-op** (BC1 — the feed is purely additive; a run without a configured second brain behaves exactly as
-before). The emit **never blocks the grill close** — an emitter failure is surfaced and the close proceeds.
+before). If the feed dir is set but the settings-derived log path is absent (`vaultDir` unset), ask the
+operator for a log path or skip the emit with a surfaced note — **never derive the log path from the feed
+dir** (freeze-gate F-2). The emit **never blocks the grill close** — an emitter failure is surfaced and the
+close proceeds.
 Surface the emit report to the operator as one line (pages written / skipped-identical / redactions /
 open-skipped). This step is what makes the D151 claim above true: the ledger feeds the second brain via
 `tools/learn_feed.py`, and future grills read it back through recall's config-gated second-brain source.

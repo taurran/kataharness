@@ -149,10 +149,11 @@ cross-linked **synthesis pages** *over* them. Markdown, Obsidian-native, no embe
 - **Body:** a tight synthesis of one coherent pattern (a recurring decision rationale, a preference signal, a
   lesson cluster) with `[[wikilinks]]` to the raw artifacts and to sibling synthesis pages. One page = one
   pattern, not a dump.
-- **Redaction (C3 — pre-write gate, fail-closed by contract):** every page passes the **`kata-handoff` §7
-  redaction filter** (no secrets / keys / PII) **before any write**; redaction failure ⇒ the page is not emitted.
+- **Redaction (C3 — pre-write gate, fail-closed by contract for agent-authored pages):** every
+  **agent-authored** page passes the **`kata-handoff` §7 redaction filter** (no secrets / keys / PII)
+  **before any write**; redaction failure ⇒ the page is not emitted.
   **Honest maturity note:** today §7 is a **prose contract** the emitting agent must honor — there is no
-  automated filter yet. A **structural redaction filter + a test seam** land with β-runtime (BACKLOG); until
+  automated **fail-closed** filter yet. A **structural redaction filter + a test seam** land with β-runtime (BACKLOG); until
   then "fail-closed" is an instruction, not an enforced guarantee. This is the egress surface — treat it as such.
   **D151 re-scope (loop feed, operator-directed 2026-07-12):** for the **loop feed** the engine
   (`tools/learn_feed.py`, SB-L4) applies a **deterministic redact-and-mark scrub** — matches are replaced with
@@ -168,8 +169,9 @@ cross-linked **synthesis pages** *over* them. Markdown, Obsidian-native, no embe
 **Producers (two, one schema):** (1) the **grill-close emit** (D151/G1) — at every grill's convergence-gate
 SHIP-to-close, `tools/learn_feed.py` emits the run's resolved ledger entries (see the `kata-grill` RUBRIC's
 grill-close emit step); and (2) the `kata-improve` **LEARN-feed emit-only sub-mode** (seam E6), the broader
-re-synthesis over the same engine, run at IMPROVE / handoff time — out of the one-shot loop budget, never a
-per-task hook.
+re-synthesis (the same engine covers ledgers/DECISIONS; the wider LESSONS/REVIEW inputs are agent-authored
+per kata-improve's honest-scope note), run at IMPROVE / handoff time — out of the one-shot loop budget,
+never a per-task hook.
 
 ## Lifecycle of a seam
 

@@ -295,6 +295,28 @@ class TestDedupe:
         assert cp.returncode == 0
         assert "80%" in _ctx_of(cp)
 
+    def test_drop_below_trigger_rearms_next_crossing(self, tmp_path: Path) -> None:
+        # MUTATION PROOF (adval G-1): a readable sub-trigger turn clears the sidecar,
+        # so a post-handoff context drop re-arms notification for the NEXT crossing —
+        # even one below the pre-drop high-water mark (0.80 -> 0.40 -> 0.75 notifies).
+        sid = _sid()
+        cwd = _mk_kata_cwd(tmp_path / "repo")
+        _write_bridge(tmp_path, sid, 80.0)
+        assert "80%" in _ctx_of(_run(_payload(sid, cwd), tmp_path))
+        _write_bridge(tmp_path, sid, 40.0)  # the drop: below trigger, gauge readable
+        cp = _run(_payload(sid, cwd), tmp_path)
+        assert cp.returncode == 0
+        assert cp.stdout.strip() == ""
+        assert not (tmp_path / f"kata-gauge-notified-{sid}.json").exists()  # re-armed
+        _write_bridge(tmp_path, sid, 75.0)  # re-climb past 0.70, below old mark
+        assert "75%" in _ctx_of(_run(_payload(sid, cwd), tmp_path))
+
+    def test_sidecar_written_after_emission(self, tmp_path: Path) -> None:
+        # adval G-2: the sidecar records a crossing only after the directive is
+        # printed — source-order pin (emit precedes _write_last_notified).
+        src = GAUGE_CHECK.read_text(encoding="utf-8")
+        assert src.index("print(") < src.index("_write_last_notified(temp_dir")
+
     def test_corrupt_sidecar_treated_as_absent(self, tmp_path: Path) -> None:
         sid = _sid()
         cwd = _mk_kata_cwd(tmp_path / "repo")

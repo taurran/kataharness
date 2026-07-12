@@ -182,21 +182,29 @@ def _main() -> None:
     if gauge.get("source") == "none":
         return  # absent / stale / corrupt bridge ⇒ silent (fail-closed walk exhausted)
 
+    sidecar = temp_dir / f"kata-gauge-notified-{session_id}.json"
+
     if not kata_gauge.trigger_crossed(gauge):  # DEFAULT_TRIGGER_FRACTION = 0.70
+        # Below trigger with a READABLE gauge: clear the dedupe high-water mark so a
+        # post-handoff/compaction context drop re-arms the notification for the next
+        # crossing (adval G-1 — without this, a fresh climb past 0.70 stays suppressed
+        # behind the pre-drop mark).
+        try:
+            sidecar.unlink()
+        except OSError:
+            pass  # absent or locked — nothing to re-arm / next readable sub-trigger turn retries
         return
 
     # ------------------------------------------------------------------ #
     # Once-per-crossing dedupe (F-3): notify on the first crossing; re-notify
     # only when the fraction has grown >= _RENOTIFY_GROWTH since last notice.
+    # A sub-trigger turn clears the sidecar above, so each CROSSING re-fires.
     # ------------------------------------------------------------------ #
     used_pct = float(gauge["used_pct"])
     fraction = used_pct / 100.0
-    sidecar = temp_dir / f"kata-gauge-notified-{session_id}.json"
     last = _read_last_notified(sidecar)
     if last is not None and fraction < last + _RENOTIFY_GROWTH - _FLOAT_EPS:
         return
-
-    _write_last_notified(temp_dir, session_id, fraction)
 
     trigger_pct = round(kata_gauge.DEFAULT_TRIGGER_FRACTION * 100)
     context = (
@@ -204,6 +212,8 @@ def _main() -> None:
         f"(trigger {trigger_pct}%). Execute kata-selfhandoff at the next task boundary "
         "— refresh .planning/HANDOFF.md before continuing new work."
     )
+    # Emit FIRST, then record the sidecar (adval G-2): a stdout failure must not
+    # mark the crossing as notified-without-delivering.
     print(
         json.dumps(
             {
@@ -214,6 +224,7 @@ def _main() -> None:
             }
         )
     )
+    _write_last_notified(temp_dir, session_id, fraction)
 
 
 if __name__ == "__main__":

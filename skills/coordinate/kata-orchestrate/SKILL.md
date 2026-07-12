@@ -587,8 +587,8 @@ by [[kata-selfhandoff]] and are **not re-decided here**; this step is the conduc
 - **Boundary placement (CA-L12).** The conductor evaluates the trigger at
   **wave/frontier-recompute boundaries only**; **never mid-task** (existing [[kata-selfhandoff]] mandate,
   unchanged). On Claude, once the hook chain is installed via `kata_install.py --install-hooks`, the
-  UserPromptSubmit gauge-check hook (CG-L1/D152) additionally injects a `[KATA CONTEXT GAUGE]` directive on
-  every user turn when crossed — machinery, not memory; absent the deployed chain, this boundary check is
+  UserPromptSubmit gauge-check hook (CG-L1/D152) additionally injects a `[KATA CONTEXT GAUGE]` directive
+  when the trigger is crossed (deduped once per crossing; re-notifies at ≥0.05 growth) — machinery, not memory; absent the deployed chain, this boundary check is
   the only gauge consultation.
 - **Select the bridge file (CA-L1 bridge resolution — pinned convention).** Before calling `resolve_gauge`
   you must locate the `kata_bridge_path`. **The Claude adapter exposes NO session-id to the running
