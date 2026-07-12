@@ -458,3 +458,29 @@ def test_changed_since_non_ascii_path_not_octal_quoted(tmp_path, monkeypatch):
     assert len(got) == 1
     assert '"' not in got[0], "octal-quoted path leaked — the quotepath pin lost"
     assert "\\" not in got[0], "backslash-octal escape leaked — the quotepath pin lost"
+
+
+# --- DET-06 fold (2026-07-12 health review; RECOVERED from stash@{0} 2026-07-12c —
+# the only artifact the 10:37 stash sweep permanently lost; the feature itself
+# shipped, this pin-test did not. See .planning/D1-CORRUPTION-FINDINGS.md.) -------
+
+
+def test_diff_stat_argv_pins_fixed_width(monkeypatch):
+    """DET-06: `git diff --stat` output width tracks COLUMNS/TTY, so the diffstat
+    string stored verbatim in the durable footprint.json is byte-different per
+    terminal width. The argv must pin a fixed --stat width so the durable stat is
+    reproducible across operator terminals."""
+    captured: dict = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(footprint.subprocess, "run", fake_run)
+    assert footprint.diff_stat("HEAD~1") == ""
+    cmd = captured["cmd"]
+    assert cmd[0] == "git"
+    assert "--stat=200" in cmd
+    assert "--stat-graph-width=200" in cmd
+    # a bare --stat (width-varying) must NOT be present
+    assert "--stat" not in cmd
