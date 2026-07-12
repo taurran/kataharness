@@ -40,9 +40,37 @@
   fingerprint).
 - All durable artifact writes use the atomic helper (D159); new writers must too (review point).
 
+## Stash forensics (2026-07-12c, operator-present follow-up) — FULLY ACCOUNTED
+
+Line-level sweep of all 25 stashed files (every line the stash added vs its base `9e0d2e0`, checked
+against master) + function-level verification of every flagged candidate:
+
+- **Re-applied and merged (verified present in master):** DET-06 footprint `--stat=200` pinning ·
+  DET-10 netstring `evidence_digest` · DET-12 drift_gate temp-scrub + separator normalization ·
+  benchmark_def `content_addressed_id` · kata_restore/deviation/grounding_gate/benchmark/trail/
+  telemetry/contract_gate/graph_gen edits + ALL their test additions · STEERING.md semantics ·
+  validate_skills lines. The session visibly re-typed the swept work within the hour (commits
+  11:03–11:38) — the discipline held.
+- **Deliberately superseded (NOT lost — replaced by the adval-R1 decision):** the stash's BLANKET
+  `PYTEST_DISABLE_PLUGIN_AUTOLOAD` + shell-to-argv rework of mutation_check/mutation_run and their
+  tests; master carries the post-R1 SURGICAL form (`-p no:randomly` on the pytest path; blanket env
+  + retained `shell=True` only on the arbitrary-command path) with its own tests.
+- **GENUINELY LOST (one artifact, ~20 lines): `test_diff_stat_argv_pins_fixed_width`** — the DET-06
+  mutation-guard test. The FEATURE shipped; its pin-test didn't, so a refactor could have silently
+  dropped `--stat=200` unnoticed. **RECOVERED from the stash 2026-07-12c** (test_footprint.py,
+  adapted verbatim — it was drop-in compatible).
+
+**MindBridge export implication:** the export reads GitHub/master — a stash is INVISIBLE to it.
+With the one lost test recovered, master now contains 100% of the stashed work (as-merged or
+deliberately-superseded), so the export misses nothing from this incident. The standing protection
+is the closeout tripwire: `git stash list` empty = nothing export-invisible left behind.
+
+**Stash disposition:** fully accounted; nothing further to recover → safe to `git stash drop`
+(operator's call — the forensics above is the durable record).
+
 ## ★ Operator actions at return
 
-1. Decide `stash@{0}`: diff → pop or drop (evidence preserved untouched this session).
+1. Decide `stash@{0}`: **forensics complete (above) — safe to drop**; or keep as artifact.
 2. Optional: Defender exclusion for `C:\Dev` (admin) — not required for correctness, reduces lock
    amplification under heavy parallel I/O.
 
