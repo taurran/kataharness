@@ -37,13 +37,24 @@ plan artifacts and never reach the second brain. `kata-grill/RUBRIC.md:11` claim
 ## LOCKED decisions
 
 - **SB-L1 — Engine `tools/learn_feed.py` (NEW, stdlib-only).** Pure parse/render core with an
-  injected clock; writes ONLY under the `..`-guarded feed dir + `wiki/log.md`. API:
-  `parse_grill_ledger(text) -> entries` (DECISION-LEDGER per-entry shape:
-  `### D{n} — title · LOCKED|open` + bold-field bullets; tolerant, LOCKED-only emitted),
+  injected clock; writes ONLY under the two `..`-guarded supplied paths: the feed dir and the
+  named log path (each guarded independently as supplied; the log is NEVER derived from the feed
+  dir — freeze-gate F-2). API: `parse_grill_ledger(text) -> entries` — **generalized grammar
+  (freeze-gate F-1, corpus-verified):** heading entries `### {anchor} — {title}` where `{anchor}`
+  is any ledger token (`MM-1`, `IP-A`, `R-1`, `GB1`, `D7`…), with a status vocabulary on the
+  heading line: `· LOCKED` / `· RESOLVED` / `— RESOLVED` (case-insensitive) ⇒ resolved;
+  `· open` or NO status ⇒ open, NOT emitted (explicit policy: only explicitly-resolved entries
+  are decision-pattern signal). Bullet-form ledgers (no `###` entries) parse to zero entries —
+  honest scope, noted in the emit report. Bold-field bullets under each heading are tolerant
+  (any subset of Question/Provenance/Options/Decision/Rationale/Edges).
   `parse_decisions_bullets(text)` (reuse recall's `- **anchor — title.** body` shape),
-  `render_page(entry, *, source_path, scope, kind, now) -> (relpath, content)`,
-  `emit(feed_dir, pages, *, log_path, now) -> report{written, skipped_identical, redactions}`,
-  CLI `python learn_feed.py --ledger <p>... --decisions <p> --feed-dir <d> --kind <k> [--scope project|universal] [--json]`.
+  `render_page(entry, *, project, source_path, scope, kind, now) -> (relpath, content)`,
+  `emit(feed_dir, pages, *, log_path, now) -> report{written, skipped_identical, redactions, parsed_open_skipped}`,
+  CLI `python learn_feed.py --ledger <p>... [--decisions <p>] --feed-dir <d> --log-path <p> --project <slug> --kind <k> [--scope project|universal] [--json]`.
+  `--project` is REQUIRED (freeze-gate F-5 — no cwd inference; the caller passes the target repo
+  name, deterministic across invocation dirs). Per-page writes are atomic temp+rename
+  (`write_bridge` convention); first-emit `--decisions` backfill volume (~150 pages on the
+  harness's own ADR log) is ACCEPTED and reported, not capped (freeze-gate F-10).
 - **SB-L2 — Page contract = engram.md wiki-synthesis schema, verbatim.** Frontmatter
   `produced-by: loop`, `source:` (raw artifact paths), `date:`, `scope:`,
   `tags:` sorted, namespaced: `kata/synthesis/decision-pattern` +
@@ -51,9 +62,12 @@ plan artifacts and never reach the second brain. `kata-grill/RUBRIC.md:11` claim
   research→research, version-up/debug→workflow). Body: Question / Options considered /
   Decision / Rationale / Edges with `[[wikilinks]]` to raw artifacts. One page = one pattern.
 - **SB-L3 — Determinism (Doctrine laws 2/3/5/6/7).** Deterministic filename
-  `<project-slug>--<Dn-anchor-slug>.md`; sorted tags; sorted dir walks; injectable `now`
-  (log-stamp only — pages carry the ledger's own date when present, else `now` date);
-  idempotent emit — identical content ⇒ skip (no rewrite), changed content ⇒ overwrite.
+  `<project-slug>--<anchor-slug>.md` (project from the required `--project` arg); sorted tags;
+  sorted dir walks; injectable `now` (log-stamp only — pages carry the ledger's own date when
+  present, else `now` date); idempotent emit — **identity comparison scrubs the `date:`
+  frontmatter line before comparing** (freeze-gate F-10, law 6: never byte-compare a wall-clock
+  stamp), so identical-content-different-day ⇒ skip; changed content ⇒ overwrite. Zero-page emit
+  appends NO log line (the log records actual writes only — freeze-gate F-2).
   **Conscious deviation from engram C5 supersede-not-rewrite:** loop-emitted pages are
   REGENERABLE DERIVED VIEWS of the durable raw ledger (which stays as-is per the raw↔synthesis
   split); rewriting a derived view loses nothing. C5 continues to protect hand-curated pages
@@ -69,18 +83,28 @@ plan artifacts and never reach the second brain. `kata-grill/RUBRIC.md:11` claim
   `..`-guard. Selection unchanged (N1 overlap gate + recency rank). Payload schema unchanged
   (`recall/v1`; `second-brain` is a new `source` label — the schema's source field is open).
 - **SB-L6 — Wiring (prose).** (a) `kata-grill` RUBRIC close: after convergence-gate SHIP,
-  run the SB-L1 CLI over the run's GRILL-LEDGER.md (+ `.planning/DECISIONS.md` when present);
+  run the SB-L1 CLI over the run's GRILL-LEDGER.md (+ `.planning/DECISIONS.md` when present),
+  passing `--feed-dir`/`--log-path`/`--project` seeded top-down from config (SB-L7);
   no-op when `engram.learnFeed.dir` unset (BC1). RUBRIC:11's "feeds the cognitive fingerprint
   (D72)" claim becomes TRUE and is reworded to cite the engine. (b) `kata-improve` β sub-mode
-  cites `tools/learn_feed.py` as its engine (wider inputs: + LESSONS, REVIEW-*). (c)
-  `kata-initiate` Phase 1b recall table gains the `feed_dir` row (config-gated). Version bumps
-  per STANDARDS §3 on all three + validator `--write` regen.
+  cites `tools/learn_feed.py` as its engine (wider inputs: + LESSONS, REVIEW-*); its §7
+  fail-closed-redaction sentence gains the G4/D151 loop-feed re-scope note. (c) `kata-initiate`
+  Phase 1b recall table gains the `feed_dir` row (config-gated). (d) **`protocol/engram.md`
+  is IN SCOPE (freeze-gate F-4):** C3 gains the D151 loop-feed re-scope note (redact-and-mark,
+  operator-directed), C5 gains the derived-view carve-out (`produced-by: loop` pages are
+  regenerable projections), the producer line gains the second producer (grill close, D151/G1),
+  and the page contract gains the optional `redactions: N` frontmatter field. Version bumps per
+  STANDARDS §3 on all touched skills + validator `--write` regen.
 - **SB-L7 — Config seeding (fixes F3).** `kata_settings.default_learn_feed_dir(settings) ->
-  str|None` = `<vaultDir>/second-brain/wiki/pages/synthesis` when `vaultDir` set, else None.
+  str|None` = `<vaultDir>/second-brain/wiki/pages/synthesis` when `vaultDir` set, else None;
+  sibling `default_learn_log_path(settings)` = `<vaultDir>/second-brain/wiki/log.md` —
+  BOTH computed top-down from vaultDir, never via `..` from the feed dir (freeze-gate F-2).
   `kata-bootstrap` prose: seed `engram.learnFeed.dir` from it at config-write (operator may
   override). Docstring claim in kata_settings becomes true.
-- **SB-L8 — Smoke (this session, live).** Emit from a real harness grill ledger into the live
-  vault (`C:\Users\taurr_nvs748q\PokeVault\PokeVault\second-brain\wiki\pages\synthesis\
+- **SB-L8 — Smoke (this session, live).** Emit from a real CONFORMING harness grill ledger
+  (e.g. `.planning/specs/multi-model-orchestration/GRILL-LEDGER.md`, `### MM-n … · LOCKED`
+  form — freeze-gate F-1) into the live vault
+  (`C:\Users\taurr_nvs748q\PokeVault\PokeVault\second-brain\wiki\pages\synthesis\
   decision-patterns\`), verify pages + log line; then `recall_from_paths(feed_dir=…)` with a
   matching query surfaces them. n=1 live proof of the closed loop, labeled honestly.
 
