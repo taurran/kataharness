@@ -9,7 +9,7 @@ last_updated: "2026-07-05T09:00:00.000Z"
 # STATE — KataHarness
 
 > **CURRENT (2026-07-12b — SECOND Fable 5 session: BOTH handoff deep reviews DONE + D151/D152 BUILT;
-> branch `feat/second-brain-loop`, PR pending):** The two operator-ordered deep reviews ran outside
+> MERGED PR #21 `c81db21`):** The two operator-ordered deep reviews ran outside
 > the loop (D33): **(1) conductor self-handoff — root-caused.** It never fired because the gauge
 > check was unenforced prose living only in kata-orchestrate's wave loop (audit C-1/C-2) AND the
 > bridge/hook chain was never deployed (D-1/D-2: installer wrote no host settings; snippet had
