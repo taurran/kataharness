@@ -54,11 +54,26 @@ def atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None
     fd, tmp_name = tempfile.mkstemp(
         dir=str(dest.parent), prefix=dest.name + ".", suffix=".kata-tmp"
     )
+    fd_owned = True  # until os.fdopen takes ownership (adval env-hardening finding 4)
     try:
-        with os.fdopen(fd, "w", encoding=encoding) as fh:
+        fh = os.fdopen(fd, "w", encoding=encoding)
+        fd_owned = False
+        with fh:
             fh.write(text)
+        # mkstemp creates 0600; write_text yields umask-derived (typically 0644).
+        # Match write_text on POSIX so the conversion stays drop-in (finding 3).
+        # Single-threaded CLI writers only — the momentary umask read is safe here.
+        if os.name != "nt":
+            umask = os.umask(0)
+            os.umask(umask)
+            os.chmod(tmp_name, 0o666 & ~umask)
         os.replace(tmp_name, dest)
     except BaseException:
+        if fd_owned:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
         try:
             os.unlink(tmp_name)
         except OSError:

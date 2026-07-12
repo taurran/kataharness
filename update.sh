@@ -180,6 +180,15 @@ guard_stale_locks() {
         return 0
     fi
     if [ "${_clear_stale_locks}" = "1" ]; then
+        if [ "${_check}" = "1" ]; then
+            printf 'kata-update: ABORT — --check is a no-mutation path; stale lock(s) present but NOT deleted:\n' >&2
+            printf '%s\n' "${_locks}" | while IFS= read -r _lk; do
+                [ -n "${_lk}" ] || continue
+                print_lock_age "${_lk}" >&2
+            done
+            printf 'Re-run --clear-stale-locks WITHOUT --check to delete them.\n' >&2
+            exit 1
+        fi
         printf 'kata-update: --clear-stale-locks — removing stale git lock file(s):\n'
         printf '%s\n' "${_locks}" | while IFS= read -r _lk; do
             [ -n "${_lk}" ] || continue
@@ -332,18 +341,24 @@ else
     exit 1
 fi
 _remote_sha=$(git rev-parse --verify --quiet "${_target}")
+# Peel annotated tags to their COMMIT for HEAD comparisons: `reset --hard` lands
+# HEAD on the peeled commit, so comparing HEAD against a tag-OBJECT sha would
+# false-abort every annotated-tag update (adval env-hardening finding 1).
+# verify_remote_truth still compares UNPEELED shas (tag object vs ls-remote tag
+# object — internally consistent).
+_remote_commit=$(git rev-parse --verify --quiet "${_target}^{commit}") || _remote_commit="${_remote_sha}"
 
 # --------------------------------------------------------------------------
 # --check: report current vs available, then exit without mutating (DESIGN §4.1)
 # --------------------------------------------------------------------------
 if [ "${_check}" = "1" ]; then
-    if [ "${_local_sha}" = "${_remote_sha}" ]; then
+    if [ "${_local_sha}" = "${_remote_commit}" ]; then
         printf 'kata-update --check: already current at %.12s (ref: %s)\n' \
             "${_local_sha}" "${KATA_REF}"
     else
         printf 'kata-update --check: update available\n'
         printf '  current:   %.12s\n' "${_local_sha}"
-        printf '  available: %.12s (ref: %s)\n' "${_remote_sha}" "${KATA_REF}"
+        printf '  available: %.12s (ref: %s)\n' "${_remote_commit}" "${KATA_REF}"
     fi
     exit 0
 fi
@@ -389,9 +404,9 @@ _new_sha=$(git rev-parse HEAD)
 
 # D157(c) — the advancement message prints ONLY on true advancement: HEAD must
 # equal the verified target sha (pinned to the ls-remote truth above).
-if [ "${_new_sha}" != "${_remote_sha}" ]; then
+if [ "${_new_sha}" != "${_remote_commit}" ]; then
     printf 'kata-update: ABORT — reset did not land on the verified sha (HEAD %.12s != %.12s).\n' \
-        "${_new_sha}" "${_remote_sha}" >&2
+        "${_new_sha}" "${_remote_commit}" >&2
     exit 1
 fi
 printf 'kata-update: advanced to %.12s (ref: %s)\n' "${_new_sha}" "${KATA_REF}"

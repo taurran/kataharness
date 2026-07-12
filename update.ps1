@@ -157,6 +157,12 @@ function Assert-NoStaleGitLocks {
     $_locks = @(Get-StaleGitLocks)
     if ($_locks.Count -eq 0) { return }
     if ($_clearStaleLocks) {
+        if ($_check) {
+            Write-Host 'kata-update: ABORT - --check is a no-mutation path; stale lock(s) present but NOT deleted:'
+            foreach ($_lk in $_locks) { Write-Host "  $_lk" }
+            Write-Host 'Re-run --clear-stale-locks WITHOUT --check to delete them.'
+            throw 'kata-update: ABORT - --check with --clear-stale-locks refuses to mutate'
+        }
         Write-Host 'kata-update: --clear-stale-locks - removing stale git lock file(s):'
         foreach ($_lk in $_locks) {
             Write-Host "  removing $_lk"
@@ -301,12 +307,18 @@ $_remoteSha = (git rev-parse --verify --quiet $_target)
 if ($LASTEXITCODE -ne 0 -or -not $_remoteSha) {
     throw "kata-update: could not resolve update target '$_target'"
 }
+# Peel annotated tags to their COMMIT for HEAD comparisons: `reset --hard` lands
+# HEAD on the peeled commit, so comparing HEAD against a tag-OBJECT sha would
+# false-abort every annotated-tag update (adval env-hardening finding 1).
+# Assert-RemoteTruth still compares UNPEELED shas (internally consistent).
+$_remoteCommit = (git rev-parse --verify --quiet "$_target^{commit}")
+if ($LASTEXITCODE -ne 0 -or -not $_remoteCommit) { $_remoteCommit = $_remoteSha }
 
 # --check: report current vs available, no mutation
 if ($_check) {
     $_lShort = $_localSha.Substring(0, [Math]::Min(12, $_localSha.Length))
-    $_rShort = $_remoteSha.Substring(0, [Math]::Min(12, $_remoteSha.Length))
-    if ($_localSha -eq $_remoteSha) {
+    $_rShort = $_remoteCommit.Substring(0, [Math]::Min(12, $_remoteCommit.Length))
+    if ($_localSha -eq $_remoteCommit) {
         Write-Host "kata-update --check: already current at $_lShort (ref: $_KataRef)"
     } else {
         Write-Host 'kata-update --check: update available'
@@ -342,8 +354,8 @@ $_newSha = (git rev-parse HEAD)
 Assert-GitOk 'rev-parse HEAD'
 # D157(c) - the advancement message prints ONLY on true advancement: HEAD must
 # equal the verified target sha (pinned to the ls-remote truth above).
-if ($_newSha -ne $_remoteSha) {
-    throw "kata-update: ABORT - reset did not land on the verified sha (HEAD $_newSha != $_remoteSha)."
+if ($_newSha -ne $_remoteCommit) {
+    throw "kata-update: ABORT - reset did not land on the verified sha (HEAD $_newSha != $_remoteCommit)."
 }
 $_nShort = $_newSha.Substring(0, [Math]::Min(12, $_newSha.Length))
 Write-Host "kata-update: advanced to $_nShort (ref: $_KataRef)"
