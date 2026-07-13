@@ -99,5 +99,7 @@ def resolve_start(payload: Any) -> Optional[Path]:
 
     try:
         return Path(raw).resolve()
-    except OSError:
+    except (OSError, ValueError):
+        # ValueError: e.g. a null byte in the path on POSIX — the "never raise"
+        # contract must hold for future consumers too (sweep finding 4).
         return None

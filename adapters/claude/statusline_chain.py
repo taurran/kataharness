@@ -62,6 +62,7 @@ eligibility, and runs it as the child.
 from __future__ import annotations
 
 import json
+import math
 import shlex
 import subprocess
 import sys
@@ -259,7 +260,9 @@ def _render_meter(payload: dict, kata_gauge) -> str:  # noqa: ANN001
     """
     context_window = payload.get("context_window")
     remaining = context_window.get("remaining_percentage") if isinstance(context_window, dict) else None
-    if not kata_gauge._is_number(remaining):
+    # NaN/Infinity pass _is_number but blow up round() — a malformed meter field must
+    # omit ONLY the meter, never blank the whole segment (v2-F6; sweep finding 3).
+    if not kata_gauge._is_number(remaining) or not math.isfinite(remaining):
         return ""
 
     used_pct = 100 - remaining

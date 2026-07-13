@@ -74,9 +74,13 @@ fallback (hook-appropriate posture) — only the start-string resolution + walk 
 payload-cwd parsing**: start resolution becomes
 `kata_scope.resolve_start(payload) or Path(os.getcwd())` — the hook's getcwd posture WRAPS the
 shared helper's None; the hook contains NO local payload-cwd parsing (v2-F1, drift-test-pinned).
-Near-identical behavior, one named delta stated honestly: the hook gains the
-`workspace.current_dir` fallback it lacked (practically inert — hook events don't carry
-`workspace`). Existing tests keep passing (builder adapts imports in tests, not semantics).
+Near-identical behavior, THREE named deltas stated honestly (sweep finding 5 added b/c): (a) the
+hook gains the `workspace.current_dir` fallback it lacked (practically inert — hook events don't
+carry `workspace`); (b) the getcwd fallback branch is no longer `.resolve()`d (the old code
+resolved both branches); (c) a payload cwd whose resolution errors now falls through to the
+getcwd posture instead of raising into the top-level fail-soft. All three match the frozen
+wording (`resolve_start(payload) or Path(os.getcwd())`) and none changes a gate outcome.
+Existing tests keep passing (builder adapts imports in tests, not semantics).
 
 ## S4 — tests (TDD)
 

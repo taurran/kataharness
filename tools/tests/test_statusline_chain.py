@@ -308,6 +308,21 @@ class TestMainEndToEnd:
         assert cp.returncode == 0
         assert cp.stdout == b""
 
+    def test_garbage_stdin_eligible_child_still_runs(self, tmp_path: Path) -> None:
+        # DESIGN S2 pinned clause (sweep finding 7): byte-identical passthrough
+        # does NOT depend on payload validity — an ELIGIBLE child still runs on
+        # unparseable stdin (garbage can never reach the kata leg either).
+        temp = tmp_path / "t"
+        temp.mkdir()
+        stub = tmp_path / "user_status.py"
+        stub.write_text(
+            "import sys\nsys.stdout.buffer.write(b'ELIGIBLE-RAN')\n", encoding="utf-8"
+        )
+        cmd = f'"{_fwd(Path(sys.executable))}" "{_fwd(stub)}"'
+        cp = _run_main([cmd], "}{ not json", temp)
+        assert cp.returncode == 0
+        assert cp.stdout == b"ELIGIBLE-RAN"
+
 
 # --------------------------------------------------------------------------- #
 # Source-level security pins

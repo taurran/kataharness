@@ -92,12 +92,27 @@ class TestWalk:
         assert mod.is_kata_scope(child, max_levels=1) is False  # cap=1 can't reach the parent
         assert mod.is_kata_scope(child, max_levels=2) is True
 
-    def test_root_stop_terminates(self) -> None:
-        # A root path's parent is itself: the walk must terminate, not spin.
+    def test_root_stop_exits_before_the_cap(self, monkeypatch) -> None:
+        # MUTATION PROOF (sweep finding 6 — the old assertion was tautological):
+        # at a filesystem root (parent == self) the walk must early-exit on the
+        # root-stop, NOT ride the 10-iteration cap. Count evidence probes: a
+        # root with no kata evidence must be probed exactly ONCE.
         root = Path(Path.cwd().anchor)
-        assert mod.find_kata_root(root) in (None, root) or isinstance(
-            mod.find_kata_root(root), Path
-        )  # terminates either way
+        probes: list[Path] = []
+        real_is_dir = Path.is_dir
+
+        def counting_is_dir(self: Path) -> bool:
+            if self.name == ".kata":
+                probes.append(self)
+            return real_is_dir(self)
+
+        monkeypatch.setattr(Path, "is_dir", counting_is_dir)
+        result = mod.find_kata_root(root)
+        assert len(probes) == 1, (
+            f"root-stop must probe the root exactly once, not spin to the cap "
+            f"(probed {len(probes)}x)"
+        )
+        assert result is None or result == root  # honest either way on this machine
 
     def test_oserror_probing_returns_none(self, tmp_path: Path, monkeypatch) -> None:
         # MUTATION PROOF (fail-soft): an OSError while probing ⇒ None, never a raise.
