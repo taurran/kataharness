@@ -10,10 +10,14 @@ kata-sessionstart.py, with ``hookEventName: "UserPromptSubmit"``).
 
 Contract (DESIGN CG-L1, FROZEN 2026-07-12):
 - Stdin: the UserPromptSubmit hook JSON; fields used are ``session_id`` and ``cwd``.
-- **Kata-scope gate (freeze-gate F-3, mandatory):** inject ONLY when ``cwd`` shows kata-run
+- **Kata-scope gate (freeze-gate F-3, mandatory):** inject ONLY when the cwd shows kata-run
   evidence — a ``.kata/`` dir or ``kata.config`` file at or above cwd, bounded upward walk
-  (cap :data:`_SCOPE_WALK_CAP` levels, stop at the filesystem root). A global hook must not
-  push kata directives into non-kata sessions. Not found ⇒ print nothing, exit 0.
+  (the shared ``kata_scope`` helper: cap ``kata_scope._SCOPE_WALK_CAP`` levels, stop at the
+  filesystem root). The start path is resolved by ``kata_scope.resolve_start`` (cwd first,
+  ``workspace.current_dir`` fallback) with this hook's ``os.getcwd()`` posture wrapping its
+  None (D160/EV-1 — ONE definition, drift-test-pinned; the hook keeps NO local payload-cwd
+  parsing of its own). A global hook must not push kata directives into non-kata sessions.
+  Not found ⇒ print nothing, exit 0.
 - Bridge: ``tempfile.gettempdir()/kata-ctx-<session_id>.json`` — the writer's EXACT
   resolution (kata_statusline.write_bridge / statusline_from_event; freeze-gate F-8 — never
   a raw ``%TEMP%`` env read). ``session_id`` is interpolated into filenames, so it is
@@ -54,10 +58,6 @@ from pathlib import Path
 #: kata_statusline._SAFE_SESSION_ID (the bridge WRITER's guard) exactly.
 _SAFE_SESSION_ID = re.compile(r"\A[A-Za-z0-9._-]+\Z")
 
-#: Kata-scope gate upward-walk bound (F-3): cwd + ancestors, capped at this many
-#: directory checks; the walk also stops at the filesystem root.
-_SCOPE_WALK_CAP = 10
-
 #: Dedupe re-notify growth (F-3): re-inject only when the current fraction has grown
 #: at least this much past the last-notified fraction.
 _RENOTIFY_GROWTH = 0.05
@@ -65,27 +65,6 @@ _RENOTIFY_GROWTH = 0.05
 #: Comparator slack for the growth check — floats only (0.75 + 0.05 style sums);
 #: never widens the gate by a meaningful amount.
 _FLOAT_EPS = 1e-9
-
-
-def _is_kata_scope(start: Path, *, max_levels: int = _SCOPE_WALK_CAP) -> bool:
-    """True iff kata-run evidence (`.kata/` dir or `kata.config` file) exists at or above
-    *start*, within a bounded upward walk (F-3 mandatory gate).
-
-    The walk checks *start* and its ancestors, at most *max_levels* directories, and stops
-    early at the filesystem root. Any OS error ⇒ False (silent no-op, never raise).
-    """
-    current = start
-    for _ in range(max_levels):
-        try:
-            if (current / ".kata").is_dir() or (current / "kata.config").is_file():
-                return True
-        except OSError:
-            return False
-        parent = current.parent
-        if parent == current:  # filesystem root reached
-            return False
-        current = parent
-    return False
 
 
 def _read_last_notified(sidecar: Path) -> float | None:
@@ -144,11 +123,18 @@ def _main() -> None:
 
     # ------------------------------------------------------------------ #
     # Kata-scope gate (F-3, mandatory, FIRST): a global hook must stay
-    # invisible outside kata runs — no bridge read, no output.
+    # invisible outside kata runs — no bridge read, no output. The walk +
+    # payload→start resolution live in the shared kata_scope helper (D160/
+    # EV-1, ONE definition); this hook wraps its None with the getcwd
+    # posture and keeps NO local payload-cwd parsing of its own (v2-F1).
     # ------------------------------------------------------------------ #
-    cwd = payload.get("cwd")
-    base = Path(cwd) if isinstance(cwd, str) and cwd else Path(os.getcwd())
-    if not _is_kata_scope(base.resolve()):
+    scope_dir = Path(__file__).resolve().parents[1]  # adapters/claude/ (kata_scope.py)
+    if str(scope_dir) not in sys.path:
+        sys.path.insert(0, str(scope_dir))
+    import kata_scope  # noqa: PLC0415  (deferred import — path must be set first)
+
+    start = kata_scope.resolve_start(payload) or Path(os.getcwd())
+    if not kata_scope.is_kata_scope(start):
         return
 
     # ------------------------------------------------------------------ #

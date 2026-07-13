@@ -7,7 +7,10 @@ Claude Code adapter features:
    context-usage **bridge file** that feeds the context-autonomy gauge (CA-L1/CA-L2).
 2. **statusLine chaining wrapper** — when the operator ALREADY has a `statusLine`
    command, kata **never clobbers** it: it offers a wrapper that runs the user's
-   command as a child and writes kata's own sibling bridge (CA-L1).
+   command as a child and writes kata's own sibling bridge (CA-L1). **In kata-scoped
+   cwds the wrapper renders kata's OWN segment instead and does NOT run the child**
+   (D160 replace-in-kata-scopes — kata renders kata state in kata scopes, the operator's
+   statusline owns everywhere else).
 3. **PreCompact hook** — auto-checkpoint that commits `.kata/board.md` to
    `refs/kata/trail` before context compaction, closing Gap 1 of restore-hardening;
    additively surfaces `.planning/HANDOFF.md` freshness (CA-L17).
@@ -228,6 +231,25 @@ for the case where the operator ALREADY has a `statusLine` command (e.g. the ope
 **chain**: run the user's command as a child, pass its stdin through unmodified, print the
 child's stdout **byte-identical**, and then write kata's OWN sibling bridge file. Two
 bridge files, zero contention (R-32) — the user's file is never touched.
+
+### Kata scopes — replace, not chain (D160, deliberate re-scope of CA-L1)
+
+The never-clobber guarantee above is **deliberately re-scoped by D160**: it holds
+**everywhere except a kata-scoped cwd**. When the payload cwd is inside a kata run — a
+`.kata/` directory or a `kata.config` file at or above cwd, the shared
+`adapters/claude/kata_scope.py` walk (the SAME definition the gauge hook uses, EV-1) — the
+wrapper renders kata's **own** one-line segment and **does NOT run the child**. kata renders
+kata state in kata scopes; the operator's statusline owns everywhere else. Outside kata
+scope (and on unparseable / cwd-less / non-kata stdin) the CHAIN and SKIP legs stay
+byte-identical, and `kata_statusline.write_bridge` still writes kata's sibling bridge on
+every leg — kata scope or not.
+
+The kata segment format is `kata │ <dirname> <meter> <run>`: a dim `kata` marker, the cwd
+basename (control-chars stripped), a 10-segment context meter (red band derived from the
+kata trigger fraction `kata_gauge.DEFAULT_TRIGGER_FRACTION`, yellow pre-warning band, colour
+and printed % keyed off the same rounded value), and a ` │ run` hint when the scope root's
+`.kata/board.md` is non-empty. Rendering is fail-soft: any error inside the kata leg emits
+nothing and exits 0 (the bridge still writes).
 
 ### The offer (fresh-profile vs existing-statusline)
 
