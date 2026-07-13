@@ -16,14 +16,15 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
 - **D6 — Per-skill semver in frontmatter; README index is the source of truth.** Frontmatter + naming
   are first-class. *Why:* the suite must be independently versionable and discoverable.
 - **D7 — Naming: `kata-<verb>`, categorized by loop phase.** Permeates skills/files/protocol/adapters.
-- **D8 — Self-handoff threshold is configurable and anti-over-conservative; task-boundary preferred;
-  re-anchor on plan.** *Why:* a naive fixed % kills sessions early / degrades context (user-flagged).
+- **D8 — Self-handoff threshold is configurable and anti-over-conservative; task-boundary preferred.**
+  re-anchor on plan.
+  *Why:* a naive fixed % kills sessions early / degrades context (user-flagged).
 - **D9 — Engram/cognitive-fingerprint = designed extension point, backlog (not v0.1).** Gated on a
   mature second brain (kiban/kagami).
 - **D10 — KataHarness is its own standalone public project, not a CPP sub-package.** *Why:* independent
   release; public vs private CPP; cross-tool by nature; own license/docs. CPP consumes it at v0.1.
-- **D11 — Durable artifacts are Obsidian-native (YAML frontmatter + [[wikilinks]] + tags); machine
-  coordination state kept separate.**
+- **D11 — Durable artifacts are Obsidian-native (YAML frontmatter + [[wikilinks]] + tags); machine.**
+  coordination state kept separate.
 - **D12 — Provenance required (`source:` frontmatter) when adapting external skills.** Stand on
   shoulders *and* attribute.
 - **D13 — Model routing for build vs test.** Building KataHarness skills → **Opus 4.8** (best foot
@@ -37,8 +38,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   Phase-3 design+plan to both.** Metrics: one-shot-to-green, plan-drift (target 0, esp. sleeve
   classification), interventions, gate integrity, handoff recovery, hygiene. **Validate the loop manually
   (Wizard-of-Oz) before building all skills.**
-- **D15 — Adversarial review (`kata-review`, fresh-context) is mandatory on everything built here, ≥ once,
-  before it is called done.** *Why:* the v0.1 adversarial pass (`.planning/REVIEW-v0.1.md`) caught real
+- **D15 — Adversarial review (`kata-review`, fresh-context) is mandatory on everything built here, ≥ once.**
+  before it is called done.
+  *Why:* the v0.1 adversarial pass (`.planning/REVIEW-v0.1.md`) caught real
   defects a conformance gate missed — over-claims, source name-drops, the griller grading itself, a racy
   board. Conformance ≠ correctness ([[LESSONS-LEARNED]] L6/L10). This is now standing process, not optional.
 - **D16 — v0.1 is NOT "validated" until a planning-VARIED A/B.** *Why:* the first A/B froze the plan for both
@@ -86,8 +88,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   directly without bootstrap → `[[kata-grill]]` resolves to `kata-grill-standard`). *Why:* the floor must be
   a *nice* one-shot (user) — Standard = production-reasonable. **Essential is a deliberate cost downshift;
   Advanced a deliberate upshift.** (Refines the earlier "floor leans Essential" assumption — floor = Standard.)
-- **D26 — Tier-family layout = peer tier-skills + a shared rubric resource; the bare family name is a
-  tier-agnostic alias (CONFIRMED, "Option A").** `skills/<cat>/kata-<verb>/RUBRIC.md` holds the tier-invariant
+- **D26 — Tier-family layout = peer tier-skills + a shared rubric resource; the bare family name is a.**
+  tier-agnostic alias (CONFIRMED, "Option A").
+  `skills/<cat>/kata-<verb>/RUBRIC.md` holds the tier-invariant
   method (no `SKILL.md` → not invocable); `kata-<verb>-<tier>/SKILL.md` are thin peers carrying ONLY their
   depth/breadth/stopping knob + a pointer to the rubric. The **bare `[[kata-<verb>]]` wikilink = the family**
   (tier-agnostic); `kata-orchestrate` resolves family→concrete tier via `kata.config` (fallback Standard,
@@ -100,14 +103,16 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   our own dev tooling) — skills stay pure markdown. Checks: required frontmatter incl. `cost-weight`,
   `name`==dir, README-index sync, tier-family membership, `[[wikilink]]`/rubric-pointer resolution
   (family aliases resolve to a folder, not a SKILL). Dogfoods spine #4.
-- **D28 — Frontmatter is the machine source of truth; the README index is the generated catalog + public
-  landing page (CONFIRMED).** The validator regenerates the README's mechanical columns
+- **D28 — Frontmatter is the machine source of truth; the README index is the generated catalog + public.**
+  landing page (CONFIRMED).
+  The validator regenerates the README's mechanical columns
   (version/category/status/cost-weight) from frontmatter; the "Use" prose + suite version/status are
   hand-authored. *Why:* kills the dual-maintenance drift class; the README's real value post-spin-off is as
   the GitHub front door / human discovery surface, not the machine truth. Supersedes the legacy STANDARDS §3
   "README is the source of truth" line.
-- **D29 — Dependency pre-flight is a mandatory spine phase (NEW REQUIREMENT; architecture recommended,
-  confirming).** A long-running closed loop must NEVER stall mid-flight on a missing tool/library/MCP/OSS
+- **D29 — Dependency pre-flight is a mandatory spine phase (NEW REQUIREMENT; architecture recommended.**
+  confirming).
+  A long-running closed loop must NEVER stall mid-flight on a missing tool/library/MCP/OSS
   repo/design-template/runtime/doc-capability. The grill+plan must **enumerate every external dependency**,
   record it in a **Dependency Manifest** (name · type · version · purpose · install cmd · **verify cmd** ·
   source/trust), and a **pre-flight gate pre-stages them — human-approved, then installed and verified —
@@ -120,8 +125,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   (manifest) + a **new `kata-preflight` skill** (approve/install/verify gate) + a `kata-orchestrate`
   precondition (refuse to dispatch until pre-flight cleared). Manifest schema → `protocol/dependencies.md`
   (an A1 foundations deliverable alongside `kata.config`).
-- **D30 — KataHarness is clean-room independent of the user's AWS-internal harness/PM suite; its tracking
-  surfaces are modular trackers with open pointers, not a PM system.** The user is building a related
+- **D30 — KataHarness is clean-room independent of the user's AWS-internal harness/PM suite; its tracking.**
+  surfaces are modular trackers with open pointers, not a PM system.
+  The user is building a related
   agent-harness + full project-management overlay for AWS-internal use (their design there). KataHarness is
   the **independent, general, non-AWS** version — **no AWS-internal IP is imported**; build only from
   general/public best practice + the user's general direction. The installed-library registry (D-registry),
@@ -130,15 +136,17 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   attach later via D20's independent-additive-module contract — the **core never depends on a PM layer**.
   This version stays the lite, general substrate. *Why:* protects the user's AWS-IP separation; keeps the
   public project original; preserves a clean seam for an optional heavier overlay without coupling.
-- **D-multisession — Multi-session/tmux is NOT a core dependency; the board/state/worktree protocol already
-  IS multi-session support; the spawn/launch mechanism is an adapter binding.** Orchestrator/executor/
+- **D-multisession — Multi-session/tmux is NOT a core dependency; the board/state/worktree protocol already.**
+  IS multi-session support; the spawn/launch mechanism is an adapter binding.
+  Orchestrator/executor/
   validator-in-separate-contexts works via the append-only board + single-writer state + worktree isolation
   (already core, agnostic, L3). The *launcher* (subagents vs panes) is tool-specific: Claude adapter = the
   `Agent` tool (subagents, one session — the user's stated preference over "many windows"); a future
   **session-pool/multiplexer launcher adapter** (backlog, v0.3+) targets the platform terminal (Windows
   Terminal/wezterm on the user's Win11 box; tmux on Linux — **tmux is Unix-only, wrong primitive to hard-code**).
-- **D-registry — Installed-library registry: machine-global, reference-counted, record-and-recommend (NEVER
-  auto-uninstall).** `kata-preflight` appends every install to a machine-global ledger (`~/.kata/
+- **D-registry — Installed-library registry: machine-global, reference-counted, record-and-recommend (NEVER.**
+  auto-uninstall).
+  `kata-preflight` appends every install to a machine-global ledger (`~/.kata/
   installed-registry.json`): package · version · source · **scope (global|project-local)** · requesting
   project/branch · timestamp · used/unused. A cleanup-report mode **reference-counts across projects**
   (safe-to-remove only if no other project's manifest still needs it) and recommends; the human executes.
@@ -181,8 +189,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   verbatim decisions. *Why:* consistency is the north star (D18) — if a cheap tier can silently skip the
   anti-drift/anti-bias machinery, the harness's core guarantee evaporates at exactly the tier most likely to
   ship fast.
-- **D24d — `kata-orchestrate` stays a single config-driven skill, NOT three per-mode variants (CONFIRMED;
-  reaffirms D21).** The tiered skills (grill/review/plan/diagnose) are forked because they carry
+- **D24d — `kata-orchestrate` stays a single config-driven skill, NOT three per-mode variants (CONFIRMED.**
+  reaffirms D21).
+  The tiered skills (grill/review/plan/diagnose) are forked because they carry
   judgment-heavy *branching prose* that risks context-rot/overstep across tiers; orchestrate is a
   *dispatcher* — what varies by mode (which skills/tiers, how many bake-off variants N) is a **data lookup
   from `kata.config`**, not a prose branch. Three orchestrators = three near-identical copies of the
@@ -227,8 +236,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `modules/closeout/kata-understand/` — opt-in, graph-backed (F2 runtime), git/diff fallback, writes
   `.kata/understand.md`. The "backlog / post-v0.1 / own later spec" framing here (and the deferred framing in
   D54/D55) no longer holds; the capability shipped as part of closeout.
-- **D41 — When designing `kata-graph` / `kata-understand`, evaluate OSS repo-mappers and bake in only the
-  necessary stripped-down steps. (GB8)** Evaluate against: Graphify, aider repo-map/tree-sitter, repomix,
+- **D41 — When designing `kata-graph` / `kata-understand`, evaluate OSS repo-mappers and bake in only the.**
+  necessary stripped-down steps. (GB8).
+  Evaluate against: Graphify, aider repo-map/tree-sitter, repomix,
   gitingest, code2prompt, ctags, DeepWiki-class comprehension tools. Extract minimal needed steps; do not
   over-port.
 - **D42 — `kata-defer`: in-loop deferral capture skill (new optional module). (GB9)** During a run, any
@@ -245,17 +255,19 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   Standard-fallback D25, pre-flight D29). Two scopes: harness-health (validator green / skills present /
   tools on PATH) + target-readiness (git repo + clean tree, AGENTS/CONTEXT present, deps installable,
   existing `kata.config` → re-entrant detection). Keeps bootstrap lean.
-- **D45 — Config validation = fail-closed load-guard in `kata-orchestrate` on READ, not a bootstrap
-  phase. (GB12)** Bootstrap writes `kata.config` by construction — a separate post-write validation step
+- **D45 — Config validation = fail-closed load-guard in `kata-orchestrate` on READ, not a bootstrap.**
+  phase. (GB12).
+  Bootstrap writes `kata.config` by construction — a separate post-write validation step
   is redundant bloat. `kata-orchestrate` guards on read: fail-closed if `kata.config` is malformed or
   references a non-existent tier/module/effort. The real risk is a stale/hand-edited/older-version config
   on a re-entrant run, which only a consumer-side load-guard catches. Consistent with default-FAIL spine.
-- **D46 — Bootstrap interview uses progressive disclosure: surface only run-shape-relevant config fields.
-  (GB13)** Ask only the `kata.config` fields relevant to the chosen run-shape; the default→go floor stays
+- **D46 — Bootstrap interview uses progressive disclosure: surface only run-shape-relevant config fields.**
+  (GB13).
+  Ask only the `kata.config` fields relevant to the chosen run-shape; the default→go floor stays
   fast, advanced fields appear only when the path needs them. Provenance: user — "Only ones relevant to
   the run shape."
-- **D47 — tree-sitter is the hard floor for `kata-graph`; grep-only is a labeled "reduced" fallback for
-  greenfield/exploration only; version-up BLOCKs at readiness if tree-sitter is absent. (GB1/GB1.1)**
+- **D47 — tree-sitter is the hard floor for `kata-graph`; grep-only is a labeled "reduced" fallback for.**
+  greenfield/exploration only; version-up BLOCKs at readiness if tree-sitter is absent. (GB1/GB1.1).
   "Agnostic" = tool-agnostic (Claude/Codex/Kiro), NOT dependency-free. tree-sitter is local, no API,
   `uv`-installable → a benign build-time dep in the D29 pre-flight manifest. Requiring it does not violate
   the agnostic core. A grep-only map emits "reduced — no AST" explicitly; it is never the default. Version-up
@@ -277,8 +289,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   edges (full-suite-green floor makes them unneeded — anti-bloat; user confirmed). *Provenance:* user
   confirmed the contract + "keep test edges out." *See* `.planning/specs/modes-A4-version-up/`
   (GRILL-LEDGER GB2/GB2.1–GB2.4, DESIGN L2).
-- **D49 — `kata.graph.json` is feature-agnostic and content-hash cached; seeding + blast-radius are use-time
-  projections, never cached. (GB8/GB8.1/GB8.2/GB2.3)** `seedSymbols` is a per-run projection input (tokenize
+- **D49 — `kata.graph.json` is feature-agnostic and content-hash cached; seeding + blast-radius are use-time.**
+  projections, never cached. (GB8/GB8.1/GB8.2/GB2.3).
+  `seedSymbols` is a per-run projection input (tokenize
   feature description → identifier-like tokens → case-insensitive match vs symbol `name` → ×10 PageRank boost;
   user-named files also boosted) — never stored in the cached artifact (fixes the GB2↔GB8 contradiction).
   The **digest** = top-rank signatures selected until a `[TUNABLE: budget=3000]`-token estimate (chars/4
@@ -288,8 +301,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   (contradicts agnostic cache). *Provenance:* user — "go with your rec" (agnostic cached graph · ~3k default
   · blast-radius in the planner). *See* `.planning/specs/modes-A4-version-up/`
   (GRILL-LEDGER GB8/GB8.1/GB8.2/GB2.3, DESIGN L3).
-- **D50 — version-up footprint ownership is bounded to modified-files ∪ depth-1 reverse-dependents; escalate
-  predicate is decidable. (GB9/GB9.1/GB9.2)** Grill Phase 0 invokes `kata-graph` when `target.kind ==
+- **D50 — version-up footprint ownership is bounded to modified-files ∪ depth-1 reverse-dependents; escalate.**
+  predicate is decidable. (GB9/GB9.1/GB9.2).
+  Grill Phase 0 invokes `kata-graph` when `target.kind ==
   existing` → injects the feature-seeded digest into grill + plan so design is resolved against the existing
   architecture. `kata-plan` scopes disjoint file-ownership = **footprint = modified-files (from frozen DESIGN)
   ∪ `[TUNABLE: marginDepth=1]`-hop reverse-dependents** over ref∪call; files outside are off-limits, owned by
@@ -302,8 +316,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   margin (owns half the repo, breaks disjoint partition). *Provenance:* user confirmed escalate-not-silent-
   expand "as long as there are protections against overuse." *See* `.planning/specs/modes-A4-version-up/`
   (GRILL-LEDGER GB9/GB9.1/GB9.2, DESIGN L4).
-- **D51 — Rolling DAG-frontier dispatch supersedes wave-gated dispatch; async escalation is the harness-wide
-  protocol. (GB9.3/GB9.3-rev)** A task is dispatchable iff (all `depends_on` integrated) ∧ (owned files
+- **D51 — Rolling DAG-frontier dispatch supersedes wave-gated dispatch; async escalation is the harness-wide.**
+  protocol. (GB9.3/GB9.3-rev).
+  A task is dispatchable iff (all `depends_on` integrated) ∧ (owned files
   disjoint from all in-flight tasks), regardless of original wave. Waves become a derived view, not a hard gate.
   Supersedes the current synchronous per-wave loop + synchronous escalation paragraph in
   `skills/coordinate/kata-orchestrate/SKILL.md`. **Async escalation:** park the escalating task + its
@@ -326,8 +341,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   one-line board message (breaks the L3 append-only invariant). *Provenance:* GB9.4 — "problem: board locks
   to a single one-line message; fused payload can't live there." *See* `.planning/specs/modes-A4-version-up/`
   (GRILL-LEDGER GB9.4, DESIGN L5).
-- **D53 — `kata-graph` is ONE optional module (`kata/module/graph`), name-by-job, compose-not-fork; pluggable
-  backend. (GB6/GB10 + D39 naming/D43 module)** One skill, pluggable backend tiers: grep-glob-Read (reduced
+- **D53 — `kata-graph` is ONE optional module (`kata/module/graph`), name-by-job, compose-not-fork; pluggable.**
+  backend. (GB6/GB10 + D39 naming/D43 module).
+  One skill, pluggable backend tiers: grep-glob-Read (reduced
   fallback) → tree-sitter floor (default) → Graphify-MCP oracle (accelerated). Each backend either fully
   produces the `kata.graph.json` contract or is not bound — no backend leaks its own format upward. No forked
   skills per backend. External skills (Graphify-MCP) are composed via the MCP adapter binding; never
@@ -336,8 +352,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   Bundled-by-default by the version-up run-shape preset; à-la-carte otherwise (D20/D43). *Provenance:*
   "no chimera" tenet + GB6 (bootstrap asks KG question) + GB10 (engram composability). *See*
   `.planning/specs/modes-A4-version-up/` (GRILL-LEDGER GB6/GB10 + RESEARCH, DESIGN L6).
-- **D54 — The Obsidian KG story ships as its OWN next spec under kata-understand; A4 does not add inert hooks.
-  (GB3/GB7)** A4 ships version-up execution + the `kata.graph.json` contract (the durable substrate). The
+- **D54 — The Obsidian KG story ships as its OWN next spec under kata-understand; A4 does not add inert hooks.**
+  (GB3/GB7).
+  A4 ships version-up execution + the `kata.graph.json` contract (the durable substrate). The
   complete Obsidian KG story — emit (contract→vault: node→note, edge→`[[wikilink]]`, community/kind→`#tag`),
   ingest (vault→contract: note→node, wikilink→edge, folds PortaVault in), bootstrap `knowledgeGraph` config,
   pluggable `frontmatterProfile` (base + dataview/breadcrumbs/juggl/custom plugin layers), and the
@@ -355,8 +372,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   future `kata-engram` feed. Distinct from `kata-report` (D32, build-log synthesis) and from `kata-graph`
   (pre-processing structural map → token-optimized planning input). Backlog; post-v0.1; own spec.
   *See* `.planning/specs/modes-A4-version-up/` (RESEARCH §5b, GRILL-LEDGER GB7).
-- **D56 — Engram-mediated escalation is a future harness-wide phase; gated on PortaVault + cognitive-fingerprint
-  synthesis. (GB10)** Every human-in-the-loop escalation should eventually route through the engram / cognitive
+- **D56 — Engram-mediated escalation is a future harness-wide phase; gated on PortaVault + cognitive-fingerprint.**
+  synthesis. (GB10).
+  Every human-in-the-loop escalation should eventually route through the engram / cognitive
   fingerprint: (a) consult the engram first — if the user's known patterns resolve it, auto-resolve + log; only
   novel decisions reach the human; (b) feed every human resolution back into the engram so the next identical
   escalation auto-resolves. Net: as the engram matures, human interrupts asymptotically decrease → the
@@ -368,8 +386,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   enter a human-in-the-loop escalation it should feed into our engram … add it as a future phase after
   PortaVault + cognitive fingerprint synthesis." *See* `.planning/specs/modes-A4-version-up/`
   (GRILL-LEDGER GB10, DESIGN §2 out-of-scope block).
-- **D57 — CPP is decoupled: no longer the test medium or the v0.1 consumer; the D16 A/B targets small,
-  one-shottable greenfield projects in a dedicated test directory.** Historical records (D10/D13/D14, L9/L10,
+- **D57 — CPP is decoupled: no longer the test medium or the v0.1 consumer; the D16 A/B targets small.**
+  one-shottable greenfield projects in a dedicated test directory.
+  Historical records (D10/D13/D14, L9/L10,
   REVIEW-v0.1, TEST-PLAN v1) stand as history; skill `source:` provenance keeps attributing `cpp-*` origins
   (D12). *Why:* user direction 2026-06-10. Small repeated one-shots give multiple paired measurements (better
   signal than one big task), drop the cross-project entanglement, and match the harness's actual purpose
@@ -381,8 +400,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `C:\Users\taurr_nvs748q\PokeVault\PokeVault`, with `toolkit/agent-sops/` present (verified 2026-06-10).
   KataHarness installs into and is field-tested from this vault when ready (under `toolkit/`). The D54
   "PortaVault must exist first" gate is **SATISFIED**. Forward references renamed; history unmodified.
-- **D59 — Model routing: deep/judgment work moves from Opus to Fable 5; Sonnet stays the lightweight
-  workhorse.** Building KataHarness (research, grilling, planning, design, orchestration, adversarial
+- **D59 — Model routing: deep/judgment work moves from Opus to Fable 5; Sonnet stays the lightweight.**
+  workhorse.
+  Building KataHarness (research, grilling, planning, design, orchestration, adversarial
   review) → **Claude Fable 5** (`claude-fable-5` — Anthropic's most capable model, the Mythos-class tier
   above Opus). Mechanical/lightweight work (workers, encode/refactor, evaluators) → **Sonnet**, unchanged.
   Skill frontmatter `model: opus` pins → `model: fable` (the Claude-adapter binding; the agnostic body is
@@ -393,8 +413,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
 
 <!-- loop-cognition spec (FROZEN 2026-06-18; freeze-gate audit HOLD→SHIP). Ledger:
      .planning/specs/loop-cognition/{GRILL-LEDGER,RESEARCH,DESIGN}.md -->
-- **D60 — loop-cognition: one umbrella spec, three loop enhancements (RS research subagent · AO agent
-  orientation · ML managed learning), spine-compatible. (LC-GB1)** Shared substrate = the grounding gate +
+- **D60 — loop-cognition: one umbrella spec, three loop enhancements (RS research subagent · AO agent.**
+  orientation · ML managed learning), spine-compatible. (LC-GB1).
+  Shared substrate = the grounding gate +
   `kata-graph`. No-drift (D1) holds within a run; new knowledge influences the build only past the grounding
   gate; learning persists only through a human gate. The spec name is NOT a category — skills are category-split
   (research→plan, orient→handoff, promote→meta; engram/second-brain → `cognition/`'s first tenant). *Provenance:*
@@ -407,13 +428,15 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   payload → orchestrator dispatches `kata-research` (no Write) → findings → D61 gate → orchestrator folds
   *grounded* findings via a **deliberate re-plan baked as a superseding decision**, or rejects; can't ground →
   escalate to human. `category: plan`. *Rejected:* worker-direct research (silent drift, spine #1). Never silent injection.
-- **D63 — `kata-orient` assembles launch orientation: orchestrator-owned, three-tier, prime-frame-budgeted.
-  (AO-GB1/2/3)** Tiers **stable→context→volatile** (Hermes `prompt_builder`). Vertical rollup = root invariants
+- **D63 — `kata-orient` assembles launch orientation: orchestrator-owned, three-tier, prime-frame-budgeted.**
+  (AO-GB1/2/3).
+  Tiers **stable→context→volatile** (Hermes `prompt_builder`). Vertical rollup = root invariants
   + nearest module file (2026 nearest-along-path standard); lateral = `kata-graph`-derived adjacency **pointers**,
   lazy (rot-proof, token-safe); capped to the prime frame (SC-GB7). Orchestrate gains **hooks only** (D24d
   intact). Contract → `protocol/orientation.md`; `kata-orient` = the read-side mirror of `kata-handoff`.
-- **D64 — managed learning: two-stage skill lifecycle, matched-but-marked taxonomy, vault-hosted +
-  configurable. (LC-GB3/5/7)** Stage 1 candidate (`experimental`/`scope:agent`, sandboxed) past the D61
+- **D64 — managed learning: two-stage skill lifecycle, matched-but-marked taxonomy, vault-hosted +.**
+  configurable. (LC-GB3/5/7).
+  Stage 1 candidate (`experimental`/`scope:agent`, sandboxed) past the D61
   grounding gate; Stage 2 **end-of-session human promotion gate** (`kata-promote`) → `experimental→stable` +
   scope bump. Same taxonomy + discriminators (`provenance:agent-distilled`, `scope`, tag `kata/origin/agent`,
   ≤60-char `summary`). Home install-seeded + first-run-configured (`agentSkills.dir`):
@@ -425,8 +448,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   high-confidence ∧ precedented`; novel/low-confidence/LOCKED-adjacent always stop the human (C2/C4). **The
   engram replaces human judgment, never the grounding gate (D61/D33).** Reuses `auto-continue-while-green` +
   engram C2/C4/C5/C6.
-- **D66 — second-brain LEARN feed; ONE wiki-synthesis output contract; the feed is an engram PREREQUISITE.
-  (LC-GB6 + RESEARCH §5/§7)** The loop mines decision artifacts into **Karpathy-LLM-Wiki-pattern synthesis
+- **D66 — second-brain LEARN feed; ONE wiki-synthesis output contract; the feed is an engram PREREQUISITE.**
+  (LC-GB6 + RESEARCH §5/§7).
+  The loop mines decision artifacts into **Karpathy-LLM-Wiki-pattern synthesis
   pages** (markdown, frontmatter taxonomy, cross-linked, `produced-by: loop|wiki|agent`), emitted via the
   agnostic LEARN contract, redaction-gated (C3). Two producers, **one schema** (a section of
   `protocol/engram.md`; the loop contract LEADS the immature vault). **Building the feed is the prerequisite for
@@ -462,8 +486,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   invalidity on a near-tie** (not outcome-driven → not p-hacking). Corpus/gates/builds kept as the reliability
   demonstration. Supersedes the "planning-varied A/B" framing (D16/TEST-PLAN); **v0.1 validation is re-scoped
   per D71.** *Provenance:* runs + user 2026-06-18; see PILOT-NOTES.md, L11.
-- **D71 — Priming-and-Grill: grill is an OPTIONAL human certainty layer over the priming prompt; autonomous-
-  reliability is the floor. (2026-06-18)** Every project starts from a **priming prompt** (the human's original
+- **D71 — Priming-and-Grill: grill is an OPTIONAL human certainty layer over the priming prompt; autonomous-.**
+  reliability is the floor. (2026-06-18).
+  Every project starts from a **priming prompt** (the human's original
   priming spec). **Grill = an optional, human-facing enrichment dial** — depth `skip | light | standard | full`
   (reuses the `kata-grill` A2 tier-family + a NEW skip rung; bootstrap-offered, D46; `kata-readiness` recommends
   depth from prompt richness/ambiguity). Grill interrogates the designer to resolve ambiguity and **enrich the
@@ -477,15 +502,17 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   floor. *Provenance:* user 2026-06-18 ("keep grill, make it an option… decline/light → fall back on the Nous
   autonomous-reliability approach… grill shores up the priming prompt… logical approach to rich context, not a
   bake-off").
-- **D72 — Grill output is a PRIMARY cognitive-fingerprint (engram LEARN) feed; a matured fingerprint pre-answers
-  future grills. (2026-06-18)** Grill ledgers (resolved decisions + the human's choices + rationale) are a
+- **D72 — Grill output is a PRIMARY cognitive-fingerprint (engram LEARN) feed; a matured fingerprint pre-answers.**
+  future grills. (2026-06-18).
+  Grill ledgers (resolved decisions + the human's choices + rationale) are a
   **primary** LEARN source for the second brain (reinforces D66; binds engram seams E4 option-biasing + E13
   convergence-gate). The virtuous cycle: as the fingerprint matures it **pre-answers** grill questions (D56
   AND-gate, default-human), so each grill both shores up the current project AND trains the engram for the next
   → human grill-effort asymptotically decreases. *Net-new vs D66:* names grill the *primary* feed + the cycle.
   *Provenance:* user 2026-06-18 ("grilling needs to feed into our cognitive fingerprinting… the agentic learning path").
-- **D73 — Grill-depth `skip` is a value of `tiers["kata-grill"]`, not a separate config field. (2026-06-18 —
-  D71 wiring micro-pick M1)** The Priming-and-Grill dial `skip | light | standard | full` maps to
+- **D73 — Grill-depth `skip` is a value of `tiers["kata-grill"]`, not a separate config field. (2026-06-18.**
+  D71 wiring micro-pick M1).
+  The Priming-and-Grill dial `skip | light | standard | full` maps to
   `tiers["kata-grill"] = skip | essential | standard | advanced` — **one source of truth**, no `grillDepth`
   field to diverge from the tier mechanism. `"skip"` means *dispatch no grill skill; freeze the priming prompt
   and engage the autonomous-reliability floor* (default-FAIL + RS [loop-cognition phase] + `kata-defer`
@@ -494,9 +521,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   the D71 assumption-log and D42 parking roles; **M3** `kata-defer` category = `handoff` (both artifacts surface
   at the gate/handoff boundary), module `kata/module/defer`. Wired in spec `priming-and-grill` (DESIGN FROZEN
   2026-06-18). *Provenance:* user-approved plan + micro-picks 2026-06-18.
-- **D74 — β LEARN feed: emit-only, zero CONSULT; `engram.learnFeed.dir` is the emit target, distinct from
-  `engram.backend`; the wiki-synthesis schema lives in `engram.md`. (2026-06-18 — loop-cognition β build, micro-
-  picks BP1/BP2)** Built the LEARN-only second-brain feed (D66; the **primary** fingerprint feed, D72) as a
+- **D74 — β LEARN feed: emit-only, zero CONSULT; `engram.learnFeed.dir` is the emit target, distinct from.**
+  `engram.backend`; the wiki-synthesis schema lives in `engram.md`. (2026-06-18 — loop-cognition β build, micro- picks BP1/BP2).
+  Built the LEARN-only second-brain feed (D66; the **primary** fingerprint feed, D72) as a
   **`kata-improve` emit-only sub-mode** (engram seam E6, run at IMPROVE/handoff — out of the one-shot budget). It
   mines DECISIONS/LESSONS/GRILL-LEDGERs/REVIEWs into **Karpathy-LLM-Wiki synthesis pages** (raw↔synthesis split,
   `produced-by: loop`, `scope:`, `[[wikilinks]]`) per a schema documented **in `protocol/engram.md`** (one
@@ -507,9 +534,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   D9/D56) — absent ⇒ no emit (no-op, BC1). **BP2:** `engram.md` added to the validator's `REQUIRED_PROTOCOL`
   (default-FAIL floor on the schema). Held 0.1.0 (policy A; no bump despite kata-improve's general semver rule).
   *Provenance:* user-approved β plan + BP1/BP2 2026-06-18.
-- **D75 — RS: `kata-research` is an escalation-routed, fresh-context, NO-WRITE in-loop research subagent;
-  findings pass a never-bypassed grounding gate before a deliberate superseding re-plan. (2026-06-19 —
-  loop-cognition RS-GB1/2/3 build)** The autonomous floor's in-loop ambiguity resolver (the without-human end of
+- **D75 — RS: `kata-research` is an escalation-routed, fresh-context, NO-WRITE in-loop research subagent.**
+  findings pass a never-bypassed grounding gate before a deliberate superseding re-plan. (2026-06-19 — loop-cognition RS-GB1/2/3 build).
+  The autonomous floor's in-loop ambiguity resolver (the without-human end of
   the grill↔RS spectrum, D71). **Routing (RS-GB1):** a worker hits a must-deliver feature with **no in-plan
   solution** → writes a `kind: "research-needed"` escalation (`protocol/escalation.md`) → the **orchestrator**
   (never the worker) dispatches `kata-research` (fresh-context, `allowed-tools: [Read,Grep,Glob,WebFetch,
@@ -524,8 +551,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   grill/context); **module `kata/module/research`** (fires only on a research-needed escalation — conditional/
   additive, not always-runs spine, though it is the floor's *designated* resolver). cost-weight 3; 26→27 skills.
   *Provenance:* user-approved RS plan (HANDOFF §4) 2026-06-19; frozen loop-cognition DESIGN L2/L3.
-- **D76 — AO: `kata-orient` is a SMART, task-type-aware launch orientation — the read half of the handoff;
-  extends frozen loop-cognition L4. (2026-06-19, user-directed)** New skill `kata-orient` (`category: handoff`,
+- **D76 — AO: `kata-orient` is a SMART, task-type-aware launch orientation — the read half of the handoff.**
+  extends frozen loop-cognition L4. (2026-06-19, user-directed).
+  New skill `kata-orient` (`category: handoff`,
   **`kata/spine`** — receiving half of spine #5; **read-only** `[Read, Grep, Glob]`, no Write/Agent — returns the
   assembled orientation + routed-question flags) + new contract **`protocol/orientation.md`**. Beyond the frozen
   L4 (three tiers stable→context→volatile; vertical rollup = root + nearest-module `AGENTS.md`; lateral =
@@ -545,9 +573,8 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   blast-radius); graceful degradation when graph/module-files absent. `REQUIRED_PROTOCOL += orientation.md`;
   27→28 skills. *Provenance:* user 2026-06-19 ("make it smart as a good employee… contextually-derived pointers
   and callouts from standard markdown… task type should cause relative questions… align handoff from both sides").
-- **D77 — ML: two-stage candidate→human-promotion gate (`kata-promote`); agent-distilled skills are
-  matched-but-marked + sandboxed until a human promotes them; `engram.autonomy` is a maturity∧config AND-gate,
-  default `always-human`; the grounding gate is never bypassed. (2026-06-19 — loop-cognition L5/L6, LC-GB3/4/5)**
+- **D77 — ML: two-stage candidate→human-promotion gate (`kata-promote`); agent-distilled skills are.**
+  matched-but-marked + sandboxed until a human promotes them; `engram.autonomy` is a maturity∧config AND-gate, default `always-human`; the grounding gate is never bypassed. (2026-06-19 — loop-cognition L5/L6, LC-GB3/4/5).
   Completes loop-cognition. **Stage 1 (L5):** the loop distils a reusable pattern into an **agent-distilled
   candidate** via `kata-write-skill` — `provenance: agent-distilled`, `scope: agent`, `summary` ≤60ch, tag
   `kata/origin/agent` (STANDARDS §1.3), written to `<agentSkills.dir>/candidates/` (**outside the repo
@@ -577,8 +604,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   explicit approval · G2 drift-labelling · G3 post-approval adversarial sweep (`kata-review`, re-approval cap
   **PINNED=2**, a backstop not a tunable) · G4 snowball guard (**predicate = blast-radius vs remaining-roadmap
   footprint ONLY**, numeric threshold removed, D18). G1–G4 never tiered (D33). Safety spine: when in doubt, stop.
-- **D80 — sequencing A+C: re-entrant `kata-bootstrap` routes, `kata-orchestrate` stays sprint-blind, NEW thin
-  `kata-sprint` owns the boundary. (SC-GB4)** B (outer loop in orchestrate) rejected on D24d + the D8 pause-mid-
+- **D80 — sequencing A+C: re-entrant `kata-bootstrap` routes, `kata-orchestrate` stays sprint-blind, NEW thin.**
+  `kata-sprint` owns the boundary. (SC-GB4).
+  B (outer loop in orchestrate) rejected on D24d + the D8 pause-mid-
   skill failure mode. Delivery-awareness lives only in HANDOFF-phase routing (one-shot → `kata-handoff`/
   `kata-selfhandoff`; incremental → `kata-sprint`). T1–T8 tertiary-drift register LOCKED.
 - **D81 — three-tier state; tier-3 `.kata/` cache is disposable, rebuilt from the git-committed trail. (SC-GB5)**
@@ -595,13 +623,15 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   threshold — replacing D8's user-set %. D8's surviving principles (anti-over-conservative, task-boundary-
   preferred) carry forward. `kata-selfhandoff` EXTEND; runs intra-sprint too. ~1M window + fraction are
   `[TUNABLE]` grounded against real model facts **at build time** (not pinned from memory).
-- **D84 — sprint baseline = the most recent green gate; sprinted version-up first-class, sprinted bake-off
-  trimmed. (SC-GB8/GB9)** A sprint is version-up-shaped whenever a prior green baseline exists (existing repo's
+- **D84 — sprint baseline = the most recent green gate; sprinted version-up first-class, sprinted bake-off.**
+  trimmed. (SC-GB8/GB9).
+  A sprint is version-up-shaped whenever a prior green baseline exists (existing repo's
   gate, else the prior sprint's). Reuses D50 footprint+regression + D51/D52 escalation verbatim; `kata-graph`
   à-la-carte on prime-frame pressure. Sprinted bake-off has no config path/offer/seam (revisit only on a concrete
   request once Spec B exists) — not forbidden, just not built.
-- **D85 — the `kata-plan` sprint-roadmap layer is NET-NEW (the feature's largest build surface), not latent.
-  (SC freeze-gate A1)** Roadmap-artifact schema pinned `{ projectDesignRef, frozenAt, sprints:[{ id, goal,
+- **D85 — the `kata-plan` sprint-roadmap layer is NET-NEW (the feature's largest build surface), not latent.**
+  (SC freeze-gate A1).
+  Roadmap-artifact schema pinned `{ projectDesignRef, frozenAt, sprints:[{ id, goal,
   gateCommand, demonstrableArtifactType, dagSeamRationale, dependsOn[] }] }`. `delivery` config field pinned
   (D3); `kata-report` minimal core built here = D32 v1 (not throwaway, D2). NEW skills: `kata-plan` roadmap
   layer · `kata-sprint` · `kata-report` v1. *Provenance for D78–D85:* sprint-cadence grill (2026-06-15) +
@@ -682,8 +712,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   are closed** — the Kata Loop is now "vetted, and demonstrably loops." pytest 445, validator 35/0, Snyk 0.
   *Provenance:* operator-driven S3b session 2026-06-21; record `specs/loop-hardening/{PLAN-s3b,REPORT-s3b}.md`.
 
-- **D94 — WS-2 EXERCISED END-TO-END (parallelism + in-loop RS path live-run once, n=1 — not yet automated-test-proven) — and the
-  `kata-slop-check` quality module shipped, both via one version-up dogfood.** (2026-06-22.) The WS-2 audit
+- **D94 — WS-2 EXERCISED END-TO-END (parallelism + in-loop RS path live-run once, n=1 — not yet automated-test-proven) — and the.**
+  `kata-slop-check` quality module shipped, both via one version-up dogfood.
+  (2026-06-22.) The WS-2 audit
   (`specs/ws2-loop-autonomy/AUDIT.md`) found concurrency well-designed but exercised once (dogfood #2, n=1) with
   **no automated test**, and in-loop learning/research autonomy largely **unwired**. Operator chose **in-context
   grading (zero new Python)** and to **wire the in-loop RS researcher now**. Vehicle = a real selected feature:
@@ -705,9 +736,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
 
 <!-- WS-3 user-friendliness (DESIGN+PLAN FROZEN, freeze-gate kata-review HOLD→SHIP; built 2026-06-24).
      Spec: .planning/specs/ws3-user-friendliness/{DESIGN,PLAN}.md (LOCKED L1–L11 / K1–K11). -->
-- **D95 — WS-3 user-friendliness BUILT: the human-facing surfaces are friendly, goal-anchored, and honest; WS-4
-  (offered backout) + WS-5 (closeout change-transparency) folded in. Built + gate-PASS + fresh-eval PASS, NOT yet
-  field-exercised (n=0 live UX runs).** (2026-06-24.) The last pre-public workstream. A brainstorm (grounded in
+- **D95 — WS-3 user-friendliness BUILT: the human-facing surfaces are friendly, goal-anchored, and honest; WS-4.**
+  (offered backout) + WS-5 (closeout change-transparency) folded in. Built + gate-PASS + fresh-eval PASS, NOT yet field-exercised (n=0 live UX runs).
+  (2026-06-24.) The last pre-public workstream. A brainstorm (grounded in
   Hermes/Devin/Claude-Code UX research) → frozen DESIGN (L1–L11) → freeze-gate `kata-review` (**HOLD→SHIP** — it
   caught a real documentation-only seam: backout was wired to a `pre-<run>` tag no surface creates; re-anchored to
   the emitted `.kata/RESULT.json.baselineSha`) → frozen PLAN (6-slice disjoint DAG) → an **orchestrated version-up
@@ -733,9 +764,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
 
 <!-- WS-3 follow-up — two-tier closeout (PLAN FROZEN + built 2026-06-24).
      Spec: .planning/specs/ws3-closeout-report/PLAN.md (LOCKED M1–M10). -->
-- **D96 — WS-3 follow-up: the closeout is now TWO-TIER — a concise CLI/GUI summary that links to a durable,
-  on-brand, self-contained HTML report; and this build WAS the WS-3 field-exercise (n=0→1). First KataHarness
-  logo defined.** (2026-06-24, merge `c265c42`.) Operator direction: emit a summary closeout in the CLI/GUI + a
+- **D96 — WS-3 follow-up: the closeout is now TWO-TIER — a concise CLI/GUI summary that links to a durable.**
+  on-brand, self-contained HTML report; and this build WAS the WS-3 field-exercise (n=0→1). First KataHarness logo defined.
+  (2026-06-24, merge `c265c42`.) Operator direction: emit a summary closeout in the CLI/GUI + a
   link to an in-depth report, "ideally a high-quality templatized clean/on-brand HTML report." Built as a
   3-slice non-code-bearing version-up dogfood (concurrent Sonnet workers, self-stamped): **(S1)**
   `modules/closeout/resources/closeout-report.template.html` — a **self-contained** (inline CSS+SVG, no external
@@ -757,8 +788,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
 
 <!-- WS-2 polish — worker self-timestamping + artifact-provable concurrency (built 2026-06-24).
      Spec: .planning/specs/ws2-polish/PLAN.md (LOCKED K1–K7). -->
-- **D97 — WS-2 polish: worker concurrency is now provable from artifacts (`.kata/concurrency.json`) via worker
-  self-stamping + an in-context snippet — NO new committed Python.** (2026-06-24, merge `4d8f01b`.) Closes the
+- **D97 — WS-2 polish: worker concurrency is now provable from artifacts (`.kata/concurrency.json`) via worker.**
+  self-stamping + an in-context snippet — NO new committed Python.
+  (2026-06-24, merge `4d8f01b`.) Closes the
   WS-2 honest gap surfaced by `specs/ws2-loop-autonomy/AUDIT.md` §7: the durable `.kata/board.md` timestamps were
   **orchestrator-written**, so they recorded concurrency but could not, on their own, distinguish a live run from
   a faithful replay (D94 caveat). Fix = a **worker self-stamp contract** (each worker appends `CLAIM`(start)/
@@ -784,8 +816,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   (D9/D56) — WS-2's autonomy posture remains *bounded, human-gated autonomy + now-provable parallelism*.
 
 <!-- Loop-hardening fold-back from the WS-2 red-team (kata-improve). Lesson: L12. -->
-- **D98 — The adversarial red-team (`kata-review`) is now a STANDING loop step on code/contract-bearing builds,
-  and `kata-evaluate` must reproduce derived artifacts rather than trust them.** (2026-06-24, operator-prompted
+- **D98 — The adversarial red-team (`kata-review`) is now a STANDING loop step on code/contract-bearing builds.**
+  and `kata-evaluate` must reproduce derived artifacts rather than trust them.
+  (2026-06-24, operator-prompted
   Improvement-Kata fold-back.) Trigger: the WS-2 polish build passed `kata-evaluate` 7/7, but a separate
   adversarial `kata-review` — run only because the operator asked — caught a real correctness defect (the
   concurrency artifact was computed over an un-cleared board; the committed copy disagreed with what the snippet
@@ -811,9 +844,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
 
 <!-- Strategy: the second-brain learning arc (Recall · Reason). Supersedes the "engram" framing.
      BRIEF: .planning/specs/second-brain-learning/BRIEF.md (pre-grill). -->
-- **D99 — Loop-learning strategy locked: ship Controlled (A) now, Gated-learning (C) is the destination,
-  Hermes-fluid (B) is a trap; and the learning subsystem is re-modeled as Second brain + Recall + Reason
-  (drop "engram").** (2026-06-24, operator strategy session; adversarially validated by a fresh-context
+- **D99 — Loop-learning strategy locked: ship Controlled (A) now, Gated-learning (C) is the destination.**
+  Hermes-fluid (B) is a trap; and the learning subsystem is re-modeled as Second brain + Recall + Reason (drop "engram").
+  (2026-06-24, operator strategy session; adversarially validated by a fresh-context
   red-team.) Three approaches to the loop's failure/learning topology were assessed and attacked:
   - **A — Controlled (NEXT):** staged gate cascade + a thrash-budget that escalates an oscillating fix-loop to a
     deliberate RE-PLAN; churn = defect signal; no in-loop learning. Ship the *honest* version: + wire the live RS
@@ -862,8 +895,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   adversarial review before any build).
 
 <!-- Approach-A hardening (D99). Spec: specs/fix-loop-hardening/. Lesson context: D98/L12. -->
-- **D100 — Fix-loop hardening: the orchestrator's fix-loop is now bounded (thrash budget) and its
-  re-verification scoped (material re-verification).** (2026-06-24, merge `fc7f4f7`; the Approach-A hardening
+- **D100 — Fix-loop hardening: the orchestrator's fix-loop is now bounded (thrash budget) and its.**
+  re-verification scoped (material re-verification).
+  (2026-06-24, merge `fc7f4f7`; the Approach-A hardening
   from D99.) Closes the "shorten-on-fail / does it churn?" gap: the fix-loop (`NEEDS_WORK → targeted fix → loop
   to PASS`) was unscoped (re-running the full expensive stack after each fix) and unbounded (no stop signal —
   the churn the spine fears). **Rule 1 (material re-verification):** after a fix, always re-run the cheap
@@ -891,8 +925,8 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   caught the **phantom-machinery / over-claimed-reuse class FOUR times** across this spec — the live case for
   D101's recurrence-hardening (and the memory `verify-primitives-before-claiming-reuse`).
 <!-- Recurrence hardening — the harness hardens its own agents. BRIEF: specs/recurrence-hardening/. -->
-- **D101 — Recurrence hardening: when a failure-class recurs across runs, the loop hardens the responsible
-  agent — automatically detected, deliberately gated. The harness-facing sibling of Reason/C (D99).**
+- **D101 — Recurrence hardening: when a failure-class recurs across runs, the loop hardens the responsible.**
+  agent — automatically detected, deliberately gated. The harness-facing sibling of Reason/C (D99).
   (2026-06-24, operator directive: *"when it happens over and over we need to harden the tool — that's how
   learning should work; I feel like it should be doing this."*) Today, hardening the harness's own agents
   (planner/coder/evaluator) against recurring failure-classes is **human-driven and per-instance** — a human
@@ -1704,8 +1738,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   adversarial review caught it — both logged (`d125-kata-validate`). **Gates:** pytest **1680** (+84: 78 engine +
   6 banner), validate **47 skills / 0**, Snyk **medium+ 0**. Records: `.planning/specs/kata-validate/`, `DECISIONS.md`
   D125, `validation-misses.jsonl` (F1/F1b).
-- **D126 — Feature 2 BUILT: install/onboarding final polish (one-command + headless + grill-for-goals + router
-  stanza) — 2026-06-29.** The install/onboarding surface is finished off in four gated slices, **ADDITIVE and
+- **D126 — Feature 2 BUILT: install/onboarding final polish (one-command + headless + grill-for-goals + router.**
+  stanza) — 2026-06-29.
+  The install/onboarding surface is finished off in four gated slices, **ADDITIVE and
   backward-compatible throughout** — the **5 `tools/kata_install.py` install-engine functions are byte-for-byte
   untouched** and **no working pattern is altered**. **LOCKED decisions:** **(G1) Cross-platform one-command +
   GitHub install** — NEW repo-root `install.sh` (`curl|sh`) + `install.ps1` (`irm|iex`) + `uninstall.sh` +
@@ -1848,8 +1883,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   all-`None` ⇒ today's behavior byte-for-byte. **W3-B gates:** pytest green (coverage test asserts every skill
   from `load_skills()` is in the map — count-agnostic, derives the set dynamically), validate 47/0 with A1 guard
   active, Snyk medium+ 0. Spec: `.planning/specs/model-tiering/{ASSESSMENT,DESIGN,PLAN}.md`.
-- **D132 — restore-hardening + continuous-replay + Claude slash-command surface (Option 2) — DECIDED 2026-06-30;
-  design PENDING (grill → freeze next session).** Does NOT supersede D131; it is the next initiative after v0.1.0
+- **D132 — restore-hardening + continuous-replay + Claude slash-command surface (Option 2) — DECIDED 2026-06-30.**
+  design PENDING (grill → freeze next session).
+  Does NOT supersede D131; it is the next initiative after v0.1.0
   ships. Two read-only assessments were run on 2026-06-30, both confirmed before the v0.1.0 tag was pushed:
   **(Assessment 1 — slash-command surface)** KataHarness ships **0** true Claude slash commands (the `/kata-*`
   in the README are skills rendered with a slash prefix, not `.claude/commands/` files). Gap = **discoverability**
@@ -1884,8 +1920,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   extends tier-3?); how mid-wave worker commits interact with the worktree / integration-branch model; what the
   PreCompact hook writes + commits and whether it can finish before the window closes; adapter-vs-core boundary
   for each piece. **★ FIRST ACTION next session: grill → freeze the design BEFORE any build.**
-- **D133 — recovery-ref git carve-out: narrow mechanical exception to the no-autonomous-git rule (kata-loop) —
-  FROZEN 2026-06-30.** `.planning/specs/restore-hardening/DESIGN.md` §3 + L5 (C1–C2). `kata-loop` forbids the
+- **D133 — recovery-ref git carve-out: narrow mechanical exception to the no-autonomous-git rule (kata-loop).**
+  FROZEN 2026-06-30.
+  `.planning/specs/restore-hardening/DESIGN.md` §3 + L5 (C1–C2). `kata-loop` forbids the
   conductor from carrying out git actions autonomously (those require explicit human approval inside
   `kata-closeout`). The durable board + PreCompact hook (B1/B2) necessarily commit without a turn-by-turn human
   approval, so this DESIGN carves out a **narrow, mechanical exception**: a mechanical helper MAY commit
@@ -1912,8 +1949,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   in B2 (restore read, `kata-orient`/`kata-readiness` + `kata_restore.py`). Supersedes the "continuous-replay is
   the SPINE" re-attach implication of D132 (the re-attach machinery described there is dropped; D132 itself is
   NOT edited — supersede-never-rewrite).
-- **D135 — board-is-the-trail; no separate continuous-replay journal — FROZEN 2026-06-30; supersedes D132's
-  "continuous-replay is the SPINE" scope.** `.planning/specs/restore-hardening/DESIGN.md` §0 C1 + L5. Building
+- **D135 — board-is-the-trail; no separate continuous-replay journal — FROZEN 2026-06-30; supersedes D132's.**
+  "continuous-replay is the SPINE" scope.
+  `.planning/specs/restore-hardening/DESIGN.md` §0 C1 + L5. Building
   a second append-only log alongside the board doubles the write + parse + divergence surface for a capability
   that already exists: `protocol/board.md` is *already* an append-only, worker-stamped event log
   (`CLAIM/DONE/BLOCK/ESCALATE/NOTE/DECISION/PROGRESS`, one line each), folded to a frontier snapshot by the
@@ -1925,8 +1963,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   *Why:* the board is already proven (all workers write to it, the concurrency reduce folds it, the evaluator
   reads it); adding a second log creates two sources of truth that can diverge; C1 (CUT) removes the
   highest-complexity piece of the original scope with no loss of capability the gap analysis requires.
-- **D136 — default-FAIL generalizes to built decision-code (silent-permissive-default guard) — FROZEN
-  2026-06-30; member of the D33 never-tiered structural-invariant family.** When a decision-bearing computation
+- **D136 — default-FAIL generalizes to built decision-code (silent-permissive-default guard) — FROZEN.**
+  2026-06-30; member of the D33 never-tiered structural-invariant family.
+  When a decision-bearing computation
   the loop BUILDS (a dispatch set, a resolver output, a pass/fail gate verdict) reads or parses an EXTERNAL
   ARTIFACT to drive that decision, an ABSENT or UNPARSEABLE artifact must hard-fail (raise), never fall through
   to a permissive default (empty set, None-inherit, vacuous-pass). A legitimately EMPTY COMPUTED result (e.g.
@@ -1991,8 +2030,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   fresh-context adversarial pass each caught a real defect the author's green tests did not — the
   reproduce-don't-trust + fresh-context discipline earning its keep on a repair of the harness's own
   instruments.
-- **D138 — Freeze/Float is the sanctioned Milestone 2 (operator-directed); + M1 DESIGN reconciliation
-  before P1 — 2026-07-02.** *Sanction:* the operator explicitly ingested the **Freeze/Float doctrine
+- **D138 — Freeze/Float is the sanctioned Milestone 2 (operator-directed); + M1 DESIGN reconciliation.**
+  before P1 — 2026-07-02.
+  *Sanction:* the operator explicitly ingested the **Freeze/Float doctrine
   (validated draft v2)** into the Milestone-1 pass ("ingest the following into this pass"), directed shipping
   M1 and opening M2 ("lets continue forward with this"), and greenlit building the P0 engine ("yes").
   Freeze/Float is therefore a **first-class, operator-directed initiative — Milestone 2**, ship order
@@ -2014,8 +2054,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   (M1-L9) — +2 mutation-proven tests (38 total in `test_contract_edges.py`). No skill edits; tool + spec only.
 
 <!-- Integrated adversarial validation of Milestone 1 → Freeze/Float M1-P1, pre-P2. -->
-- **D139 — Integrated cross-seam adval of 653f501..8902fb0 (9 fresh-context reviewers) + fold —
-  2026-07-02.** Before building M1-P2 (the float), the operator directed a comprehensive fresh-context
+- **D139 — Integrated cross-seam adval of 653f501..8902fb0 (9 fresh-context reviewers) + fold.**
+  2026-07-02.
+  Before building M1-P2 (the float), the operator directed a comprehensive fresh-context
   adversarial validation of EVERY change from Milestone 1 through M1-P1 — one reviewer per module/group
   (F1 preflight, F2 graph, F3 liveness, F4 seeding, F5 footprint, F6 security posture, P0 contract_edges,
   P1 kata_restore, docs/specs), each told to BREAK the change vs its spec. **Result: 9× SHIP-WITH-FIXES,
@@ -2060,8 +2101,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   kata-preflight 0.1.2. Suite 2236 → **2270** (+34 adval tests, each code-bearing fix mutation-proven: 13 guards disabled → red → reverted). Snyk medium+ 0. Fixes committed only on operator approval.
 
 <!-- Freeze/Float M1-P2: the float — built via the dogfooded loop, triple-gated. -->
-- **D140 — M1-P2 (the float) built: contract-edge scheduling wired, triple-freeze-gated, dogfooded —
-  2026-07-02.** The Freeze/Float behavior change landed: a `builds_against` dependent dispatches at
+- **D140 — M1-P2 (the float) built: contract-edge scheduling wired, triple-freeze-gated, dogfooded.**
+  2026-07-02.
+  The Freeze/Float behavior change landed: a `builds_against` dependent dispatches at
   freeze in parallel with its provider (M1-L2), with every companion live. *Process:* `PLAN-p2-float.md`
   was frozen only after THREE fresh-context adversarial freeze-gates — v1 HOLD (18 findings; headline:
   the trailer-placement contradiction deadlocked the compliant flow AND defeated the locked
@@ -2100,9 +2142,8 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   47/0/0; Snyk medium+ 0. Awaiting the operator merge gate.
 
 <!-- Freeze/Float M4: the inline evaluator/reroll. Spec: specs/inline-eval-m4/. -->
-- **D141 — M4 worker checkpoint-commit cadence: a deliberate PARTIAL SUPERSEDE of D134's "nothing
-  load-bearing depends on worker task-branch commits" + the telemetry-ledger commit authority — 2026-07-04
-  (design-time ruling, folded at the M4 freeze-gate; supersede-never-rewrite, D134 NOT edited).**
+- **D141 — M4 worker checkpoint-commit cadence: a deliberate PARTIAL SUPERSEDE of D134's "nothing.**
+  load-bearing depends on worker task-branch commits" + the telemetry-ledger commit authority — 2026-07-04 (design-time ruling, folded at the M4 freeze-gate; supersede-never-rewrite, D134 NOT edited).
   (a) **Commit-cadence supersede (gate HIGH-1):** M4 (specs/inline-eval-m4/DESIGN.md, M4-L2 as amended)
   INTRODUCES a mandated per-chunk worker checkpoint commit on the task branch, carrying a one-line
   `Kata-Checkpoint:` trailer (the M4 signal record). This makes worker task-branch commits LOAD-BEARING for
@@ -2128,8 +2169,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   mandate mid-build, and making commits load-bearing without recording the D134 tension would be silent
   drift on a FROZEN decision.
 
-- **D142 — operator-directed M4 observability addition: routed via branch 3 (P0.1 schema bump, no
-  mid-phase retrofit) — 2026-07-04.** The operator directed three additive observability items
+- **D142 — operator-directed M4 observability addition: routed via branch 3 (P0.1 schema bump, no.**
+  mid-phase retrofit) — 2026-07-04.
+  The operator directed three additive observability items
   mid-M4 (ledger cost columns; gate-time failure-kind enum; structured degraded-mode signal folding
   BACKLOG #16), with an explicit three-branch routing rule keyed on ACTUAL phase state. Verified
   state at receipt: DESIGN frozen (`1cd1a60`), PLAN-p0 frozen (`75ac522`), ledger schema v1 built
@@ -2163,8 +2205,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   this addendum + the T5 approval board `DECISION` — both closed same-day; all nine rubric surfaces otherwise
   PASS on independent re-derivation incl. 4/4 evidence-digest MATCH and a live mutation spot-check.)*
 
-- **D143 — M4-P1 built (the code-class mechanism): risk score + inline evaluator + ladder + reroll,
-  dogfooded + instrumented — 2026-07-04.** PLAN-p1-code-class frozen after a double gate (v1 HOLD 4
+- **D143 — M4-P1 built (the code-class mechanism): risk score + inline evaluator + ladder + reroll.**
+  dogfooded + instrumented — 2026-07-04.
+  PLAN-p1-code-class frozen after a double gate (v1 HOLD 4
   HIGH/4 MED/5 LOW — headline: the resolver-None never-anchor leg missing from implementing text, the
   THIRD resurfacing of that defect class, caught again; re-gate v2 SHIP-WITH-FIXES 1 HIGH/3 MED/3 LOW —
   headline: a mode-less object config silently coercing to `off`; all 20 folded). *Delivered:*
@@ -2209,8 +2252,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   the documented threshold is ≥5, so class_median correctly returns None at the shipped default; the
   8.35 figure was a below-threshold preview, not a live median.)*
 
-- **D144 — M4-P2 built (research + debug adapters): per-class leashes live, class extras DATA'd with
-  named-deferred producers — 2026-07-04.** PLAN-p2-adapters frozen after a double gate (v1 HOLD 3
+- **D144 — M4-P2 built (research + debug adapters): per-class leashes live, class extras DATA'd with.**
+  named-deferred producers — 2026-07-04.
+  PLAN-p2-adapters frozen after a double gate (v1 HOLD 3
   HIGH/4 MED/1 LOW — the milestone's most valuable catch: BOTH new signal sets pointed at artifacts
   that DO NOT EXIST in the claimed shapes (the deviation-funnel schema carries no hypothesis records;
   grounding.json is gate-time + gitignored tier-3; coverage_gap named a nonexistent trailer field),
@@ -2235,8 +2279,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   runs — the M4-L8 ≥3 threshold for bootstrap to OFFER `inlineEval: on` is met.** Gauntlet: 2505/3,
   validator 48/0/0 post-regen, Snyk 0.
 
-- **D145 — M4 LIVE PROOF complete: the ladder fired live, the float ran n=0→1, the A/B numbers are in —
-  2026-07-04.** One scratch one-shot (`textstat-lp`, 3 tasks, a REAL `builds_against: stats@pin` edge),
+- **D145 — M4 LIVE PROOF complete: the ladder fired live, the float ran n=0→1, the A/B numbers are in.**
+  2026-07-04.
+  One scratch one-shot (`textstat-lp`, 3 tasks, a REAL `builds_against: stats@pin` edge),
   two arms (`off` control / `on`), same frozen mini-PLAN, model constant (sonnet), one ARRANGED fault
   (labeled: T-F committed its true red state — snake_case un-lowercased, 3 failed/5 passed — at
   checkpoint 0 in the on arm; stopped-red DONE in the control arm). *The mechanism, live:* 4 green
@@ -2261,8 +2306,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   median-excluded; carries the milestone's FIRST real failureKinds entry + ladder telemetry). All
   numbers in `.planning/telemetry-ledger.md` + the board DECISION trail.
 
-- **D146 — Context-autonomy initiative FROZEN + built (v0.2.1 spine): the gauge-driven self-handoff
-  loop wired to existing policy — 2026-07-04.** OP-7's priority item for v0.2.1. The conductor's context
+- **D146 — Context-autonomy initiative FROZEN + built (v0.2.1 spine): the gauge-driven self-handoff.**
+  loop wired to existing policy — 2026-07-04.
+  OP-7's priority item for v0.2.1. The conductor's context
   is the run-fatal resource (R-26); this initiative **wires a gauge to the ALREADY-EXISTING self-handoff
   trigger prose** (kata-selfhandoff SKILL.md:30-45) — SR-1: no new threshold concept is invented. DESIGN
   frozen at `.planning/specs/context-autonomy/DESIGN.md` (CA-L1..CA-L44, §2 config rows, §3 gated
@@ -2306,8 +2352,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   A11 b/c) and the **operator merge gate**; D146 records the DESIGN freeze + the C1–C10 build state with C11
   pending. See D147 (the one named BC departure) and D148 (the gated premium amendment).
 
-- **D147 — The R-37 deliberate BC departure: one-shot configs (INCLUDING pre-v0.2.1) rotate context
-  UNCONDITIONALLY — 2026-07-04.** CA-L33 / DESIGN §4 row 1. The **ONE** named backward-compat departure in
+- **D147 — The R-37 deliberate BC departure: one-shot configs (INCLUDING pre-v0.2.1) rotate context.**
+  UNCONDITIONALLY — 2026-07-04.
+  CA-L33 / DESIGN §4 row 1. The **ONE** named backward-compat departure in
   the context-autonomy initiative, recorded so it is deliberate — not accidental. **What changes:** for
   **one-shot run shapes** auto-context rotation fires WITHOUT consulting `contextAutonomy` — including
   configs written before v0.2.1 that carry no `contextAutonomy` key. The general BC rule
@@ -2324,8 +2371,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   rotation, the fixture NAMES this departure), run in the C11 live-proof battery. Supersedes nothing; scopes
   R-18.
 
-- **D148 — Gated premium amendment to the frozen model-tiering DESIGN: Fable one rung ABOVE the anchor,
-  four-conjunct-gated — 2026-07-04.** DESIGN §3, delivered by task E3 as a **POST-FREEZE gated-amendment
+- **D148 — Gated premium amendment to the frozen model-tiering DESIGN: Fable one rung ABOVE the anchor.**
+  four-conjunct-gated — 2026-07-04.
+  DESIGN §3, delivered by task E3 as a **POST-FREEZE gated-amendment
   addendum APPENDED to `.planning/specs/model-tiering/DESIGN.md`** (the existing post-freeze-addendum
   precedent; supersede-never-rewrite — no frozen line edited). **Gating clause:** everything activates ONLY
   under `kata.config.models.premium` with all four conjuncts true; **absent `models.premium` (or the whole
@@ -2349,8 +2397,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   the inline-eval M4-L7 economy carve-outs (economy is structurally outside `premium.scope`). Gate: E3
   integration PASS — 1728-cell matrix clean, model-tiering frozen text byte-unchanged, D83 0.40 untouched.
 
-- **D149 — M4 Amendment #5 (gated, pre-merge): owned-scoped `verify_fail` (the C-1 signal-definition
-  fix) + the F2 dispatch-base index sentence — 2026-07-05.** The operator-directed v0.2.1 pre-merge tasks
+- **D149 — M4 Amendment #5 (gated, pre-merge): owned-scoped `verify_fail` (the C-1 signal-definition.**
+  fix) + the F2 dispatch-base index sentence — 2026-07-05.
+  The operator-directed v0.2.1 pre-merge tasks
   1–2 (HANDOFF §3), delivered as ONE post-freeze gated amendment appended to
   `.planning/specs/inline-eval-m4/DESIGN.md` (the Amendment #4/D148 precedent; no frozen line edited).
   **Inputs:** CALIBRATION-FINDINGS C-1 (retroactive 57-checkpoint scan: 13/13 would-be triggers false
@@ -2377,8 +2426,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   medium+ 0 (tools/ scan). Tests +10 incl. the mutation-pinned owned-beats-suite preference (the exact
   C-1 class as a named red-turn target). Supersedes nothing; extends A1-Q2/A1-Q4/M4-L4 by gated addendum.
 
-- **D150 — Adaptive-tiering initiative FROZEN (v0.3.0 spine): evidence-driven model routing, the
-  premium rung optimized by construction — 2026-07-05.** Operator-directed same-session arc: brainstorm →
+- **D150 — Adaptive-tiering initiative FROZEN (v0.3.0 spine): evidence-driven model routing, the.**
+  premium rung optimized by construction — 2026-07-05.
+  Operator-directed same-session arc: brainstorm →
   conversational grill (AT-R1..R7) → DESIGN → freeze-gate v1 **HOLD** (2 BLOCKER / 4 HIGH / 8 MED / 5 LOW —
   headline catches: the evaluator-escalation leg would have breached M4-L7's never-anchor line in advanced
   mode; a phantom registry event named a conductor-authored non-dispatch; a ledger v4 mint would have
@@ -2431,8 +2481,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `produced-by: loop` only; refuses to touch wiki/agent pages). *Why:* the 2026-07-12 audit proved
   the learn→store→recall loop did not exist (β feed prose-only, vault empty, RUBRIC:11 doc-drift);
   grill resolutions are the densest operator-decision signal the harness produces.
-- **D152 — Conductor gauge check is machinery; the chain deploys by consent (operator-directed
-  2026-07-12: "BUILT and not deferred").** Spec: `.planning/specs/conductor-gauge-wiring/DESIGN.md`
+- **D152 — Conductor gauge check is machinery; the chain deploys by consent (operator-directed.**
+  2026-07-12: "BUILT and not deferred").
+  Spec: `.planning/specs/conductor-gauge-wiring/DESIGN.md`
   (CG-L1…L7, FROZEN). NEW UserPromptSubmit hook `kata-gauge-check.py` evaluates the existing
   `kata_gauge` engine every user turn and injects the 0.70 directive as additionalContext —
   session-shape-independent (kills audit C-1/C-2). NEW consent-gated `kata_install.py
@@ -2441,8 +2492,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   existing CA-L1 wrapper) — the executable bootstrap slot 6 (kills D-1/D-2). Router stanza A2/A3 +
   doc-truth A4/F3/CG-L6 in the same pass. R6 stays a named-open leg: this build makes the live
   proof possible, it does not claim it proven.
-- **D153 — ELEVATE at grill close + one-question-at-a-time grill UX (operator-directed 2026-07-12;
-  built 2026-07-12c operator-away, "I approve of all commits/pushes/merges this section").** Spec:
+- **D153 — ELEVATE at grill close + one-question-at-a-time grill UX (operator-directed 2026-07-12.**
+  built 2026-07-12c operator-away, "I approve of all commits/pushes/merges this section").
+  Spec:
   `.planning/specs/elevate-grill-ux/DESIGN.md` (E1–E6/U1–U2/S/V, FROZEN; freeze-gate v1 HOLD 8 →
   re-gate v2 SHIP-WITH-FIXES 8, all 16 folded). **B1:** every grill close (post-convergence-SHIP,
   pre-emit) poses exactly ONE brainstormed recommendation grounded in the run's grill context that
@@ -2469,16 +2521,18 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   + ACCEPTED, `EV-1 · LOCKED` recorded, emitted to the REAL PokeVault (written=4, idempotent),
   recall read-back green. Scope: standalone essential-tier grill; the kata-initiate Path-A/B
   close-out legs ride the next real initiation run.
-- **D155 — recall's 7th source gets a first-run fallback (C2 residual, 2026-07-12c operator-away;
-  PROVISIONAL pending return ratification).** On a fresh project, Phase 1b runs before bootstrap
+- **D155 — recall's 7th source gets a first-run fallback (C2 residual, 2026-07-12c operator-away.**
+  PROVISIONAL pending return ratification).
+  On a fresh project, Phase 1b runs before bootstrap
   writes `kata.config`, so the config-gated `feed_dir` row could never fire in run 1 (2026-07-12b
   adval observation, BACKLOG #4). Now: no `kata.config` ⇒ kata-initiate resolves `feed_dir` via
   `kata_settings.default_learn_feed_dir(settings)` — caller-side resolution only; the recall engine
   signature, gating vocabulary, and BC are byte-unchanged. Cross-project recall works from the very
   first grill. Surfaces: kata-initiate 0.6.0 Phase 1b row · protocol/recall.md files-only-adapter
   paragraph.
-- **D156 — worker recall brief in launch orientation (C3 residual / audit finding B1, 2026-07-12c
-  operator-away; PROVISIONAL pending return ratification).** Workers never saw prior lessons
+- **D156 — worker recall brief in launch orientation (C3 residual / audit finding B1, 2026-07-12c.**
+  operator-away; PROVISIONAL pending return ratification).
+  Workers never saw prior lessons
   (recall was initiation-only). Now kata-orient builds a task-scoped recall brief into the CONTEXT
   tier: same engine + seven sources as Phase 1b (incl. D155), query terms from the task's action /
   owned files / DESIGN-slice terms, rendered as a handful of POINTERS (never inlined bodies);
@@ -2487,8 +2541,8 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   with engram CONSULT). kata-orchestrate untouched (it already injects whatever orient assembles —
   the logic lives in orient + the contract, per orientation.md producer/consumer). Surfaces:
   kata-orient 0.4.0 step 2b · protocol/orientation.md context-tier row + §Worker recall brief.
-- **D154 — autoCompactWindow backstop gets an OPT-IN write; recommend-only stays the default (C1
-  residual / audit C-4, 2026-07-12c operator-away; PROVISIONAL pending return ratification).**
+- **D154 — autoCompactWindow backstop gets an OPT-IN write; recommend-only stays the default (C1.**
+  residual / audit C-4, 2026-07-12c operator-away; PROVISIONAL pending return ratification).
   `kata_install.py --install-hooks --auto-compact-window N` (valid only together; N int in
   [100_000, 1_000_000] per GROUNDING-CLAUDE G1; violations = semantic exit 2) merges the top-level
   key through the SAME consent-gated backup-first atomic flow as the hooks merge — disclosure shows
@@ -2519,8 +2573,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   `--skip-slow`/`--fail-fast` (default run-all-then-report). PYTEST_ADDOPTS stripped (law 8).
   exec-safety registry row added (fixed argv, operator domain; outside the top-level mechanical
   scan — registered explicitly). +20 tests.
-- **D159 — atomic writes for the five proven-corruptible artifact writers (env-hardening,
-  2026-07-12c; closes the D1 corruption class — `.planning/D1-CORRUPTION-FINDINGS.md`).** NEW
+- **D159 — atomic writes for the five proven-corruptible artifact writers (env-hardening.**
+  2026-07-12c; closes the D1 corruption class — `.planning/D1-CORRUPTION-FINDINGS.md`).
+  NEW
   `tools/fs_atomic.py :: atomic_write_text` (same-dir mkstemp → write → `os.replace` → orphan
   cleanup; mirrors write_bridge/write_host_settings_atomic; new leaf module because all five sites
   are leaf modules — no shared home without an import cycle). Converted: function_model
@@ -2529,8 +2584,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   non-atomic ⇒ 22 IndentationErrors/8s, atomic ⇒ 0 corruption in 12,606 rewrites. +20 tests.
   Standing policy (D1 findings doc): conductor is the sole main-tree git writer; end-of-session
   stash-empty tripwire; reader-retry discipline.
-- **D160 — statusline decoupling: kata-native segment, replace-in-kata-scopes, vestiges dropped
-  (operator-grilled 2026-07-12c — ALSO the D153 live smoke, essential tier).** Assessment first
+- **D160 — statusline decoupling: kata-native segment, replace-in-kata-scopes, vestiges dropped.**
+  (operator-grilled 2026-07-12c — ALSO the D153 live smoke, essential tier).
+  Assessment first
   (operator: "GSD-like functionality should be baked into KataHarness but it should not use GSD
   itself"): the harness has ZERO runtime GSD dependency — provenance frontmatter + example text
   only; the real couplings were environment-level (global GSD statusline; GSD renderer painting
@@ -2543,8 +2599,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   parser-inert), .planning/config.json deleted. Convergence gate: fresh-context SHIP (2 findings
   folded). The SEGMENT BUILD is a new gated initiative (M8-adjacent, BACKLOG) — no behavior change
   until it lands. Ledger: `.planning/specs/statusline-decouple/GRILL-LEDGER.md`.
-- **D161 — return ratifications, ALL SEVEN provisionals LOCKED + stash closed (operator-grilled
-  one-at-a-time, 2026-07-12c late).** D153 §RATIFY: (1) E4 tier-uniform ELEVATE RATIFIED **with
+- **D161 — return ratifications, ALL SEVEN provisionals LOCKED + stash closed.**
+  Operator-grilled one-at-a-time, 2026-07-12c late.
+  D153 §RATIFY: (1) E4 tier-uniform ELEVATE RATIFIED **with
   rider** — the elevate brainstorm runs on the SAME model as the hosting grill (D131 relative
   routing unchanged; model choice alone scales the brainstorm with tier, no per-tier mechanism);
   (2) E6 single-question surface RATIFIED **with rider** — the free-text escape is ALWAYS present
@@ -2555,3 +2612,32 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   lost artifact recovered as PR #28; the stash-empty closeout tripwire is now cleanly enforceable —
   `git stash list` = 0). Riders baked into the grill RUBRIC ELEVATE section same commit. Nothing
   remains provisional from the 2026-07-12c autonomous run.
+- **D162 — kata-native statusline segment DESIGN FROZEN (the D160 build).**
+  2026-07-12c evening, operator-directed: "execute using the harness/loop, Opus for execution, standard mode".
+  Spec: `.planning/specs/statusline-decouple/DESIGN.md` (S1–S5; freeze-gate v1
+  HOLD 7 → re-gate v2 SHIP-WITH-FIXES 6, all 13 folded). Key mechanics: NEW
+  `adapters/claude/kata_scope.py` = THE one walk + THE one payload→start resolution
+  (`find_kata_root`/`is_kata_scope`/`resolve_start`, .resolve()-normalized, no getcwd fallback in
+  the wrapper — the hook WRAPS resolve_start's None with its own getcwd); chain wrapper kata leg
+  fires only on well-formed payload cwd + found root (garbage stdin ⇒ existing legs
+  byte-identical); segment = kata │ dirname (C0/C1-stripped) │ meter (red derived by import from
+  DEFAULT_TRIGGER_FRACTION, 55 = NEW display [TUNABLE], rounded-value bands) │ run-hint at the
+  found root (one walk, result reused); conjunctive drift test (walk logic + payload parsing only
+  in kata_scope); golden fixtures hermetic via tmp_path cwds. Out of scope: the fresh-profile
+  statusline.py renderer (named BACKLOG follow-up).
+- **D163 — catch-all adval sweep + the learn-feed collision/truncation fix + vault migration.**
+  (2026-07-12c evening, operator-directed "adval everything without a full adval").
+  Sweep
+  verdicts: PR #28 SHIP · #29 SHIP · #30 SHIP (1 LOW handoff staleness, folded at closeout) ·
+  D162 segment build SHIP-WITH-FIXES (5 folded: isfinite meter guard so NaN/Inf omits ONLY the
+  meter; resolve_start catches ValueError; real root-stop mutation proof replacing a tautology;
+  eligible-child+garbage-stdin e2e; hook-delta narration honesty) · **E5 backfill HOLD (HIGH):
+  the un-namespaced page name `<project>--<anchor>.md` let DECISIONS' global D1–D3 CLOBBER the
+  statusline-decouple ledger's D1–D3 pages — 3 of 4 D160 live-smoke evidence pages silently
+  overwritten; plus 70/95 backfill bodies truncated to their first physical line.** FIX (TDD,
+  Opus): page names now `<project>--<source-slug>--<anchor>.md` (ledger ⇒ parent-dir slug,
+  decisions ⇒ literal "decisions"); the decisions parser folds continuation lines (94/95 full
+  bodies). VAULT MIGRATED: all 107 old-scheme loop pages purged (produced-by-verified) and all
+  three sources re-emitted namespaced — 110 pages (95 decisions + 4 statusline-decouple incl.
+  the RESTORED EV-1/D1–D3 evidence + 11 multi-model); recall read-back green. Old-scheme names
+  retired; the emitter never touches non-loop pages (unchanged).

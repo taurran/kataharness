@@ -33,8 +33,19 @@ raw artifact. One page = one pattern. LF line endings.
 
 Determinism (SB-L3 — Doctrine laws 2/3/5/6/7)
 ----------------------------------------------
-Deterministic filename ``decision-patterns/<project-slug>--<anchor-slug>.md``
-(project from the REQUIRED ``--project`` arg — no cwd inference, F-5); sorted
+Deterministic filename
+``decision-patterns/<project-slug>--<source-slug>--<anchor-slug>.md`` (project
+from the REQUIRED ``--project`` arg — no cwd inference, F-5). The **source-slug**
+namespaces the page by its originating artifact so anchors that restart per
+source do not collide: for a ``--ledger`` file it is the ledger's PARENT
+directory name when that parent is not the shared ``.planning`` root
+(``.planning/specs/statusline-decouple/GRILL-LEDGER.md`` → ``statusline-decouple``),
+else the file stem; for ``--decisions`` it is the literal ``decisions``. Every
+segment is lowercased + filesystem-safe (:func:`_slug`). *Naming-contract note:*
+pages emitted under the earlier un-namespaced ``<project>--<anchor>.md`` scheme
+become ORPHANS the emitter never touches again (the produced-by guardrail is
+unchanged; idempotency is per-filename, so re-emits under the new scheme write
+fresh pages beside — not over — the orphans). Sorted
 tags; pages processed in sorted relpath order; **injectable ``now``** — the wall
 clock is minted ONLY in :func:`main` (law 7); idempotent emit — the identity
 comparison **scrubs the ``date:`` frontmatter line** before comparing (law 6:
@@ -71,6 +82,7 @@ Public surfaces (cite-able by name per protocol/reuse-claims.md)
 ----------------------------------------------------------------
 parse_grill_ledger      — heading-entry parser (anchor/status/date/fields/body)
 parse_decisions_bullets — ``- **anchor — title.** body`` parser (recall family)
+_source_slug            — source-artifact → filename namespace slug (collision guard)
 render_page             — one resolved entry → (relpath, page content)
 redact                  — the SB-L4 deterministic scrub → (text, counts-by-class)
 emit                    — atomic feed writes + session log → the emit report
@@ -87,7 +99,7 @@ import re
 import sys
 import tempfile
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 # ---------------------------------------------------------------------------
 # Contract constants (single source of truth)
@@ -223,6 +235,26 @@ def _slug(text: str) -> str:
     return s or "item"
 
 
+def _source_slug(source: str | Path) -> str:
+    """Filename namespace slug for a page, derived from its source artifact path.
+
+    The emitted page is ``<project>--<source-slug>--<anchor>.md``; the source-slug
+    prevents cross-source filename collisions (every spec GRILL-LEDGER restarts
+    anchors at ``D1`` and DECISIONS.md uses ``D``-anchors globally — without a
+    namespace a ``--decisions`` backfill would clobber a prior ledger's page). The
+    slug is the source file's PARENT directory name — the natural per-spec
+    namespace (``.planning/specs/statusline-decouple/GRILL-LEDGER.md`` →
+    ``statusline-decouple``) — falling back to the file STEM when the parent is the
+    shared ``.planning`` root (or absent). Lowercased + filesystem-safe via
+    :func:`_slug`. Determinism Doctrine: same input path ⇒ same slug
+    (``PurePosixPath`` on a forward-slashed path — OS-independent).
+    """
+    p = PurePosixPath(str(source).replace("\\", "/"))
+    parent = p.parent.name
+    base = p.stem if (not parent or parent == ".planning") else parent
+    return _slug(base)
+
+
 def _field_key(name: str) -> str | None:
     """Map a tolerant bold-field name to its canonical key (None = not a field)."""
     normalized = name.strip().lower()
@@ -327,29 +359,74 @@ def parse_decisions_bullets(text: str | None) -> list[dict]:
 
     Every DECISIONS bullet is a decided decision ⇒ ``status="resolved"`` (the F-10
     backfill path — volume accepted, not capped). Entry date = the file's
-    frontmatter ``date:`` (never mined from bullet prose). Pure.
+    frontmatter ``date:`` (never mined from bullet prose).
+
+    DECISIONS records WRAP over multiple physical lines: a record's body is the
+    text after the ``**…**`` bold anchor PLUS every following continuation line
+    (indented wraps, indented sub-bullets, or plain wrapped prose) up to — but not
+    including — the next ``- **`` bullet, a ``#`` heading, or a blank line followed
+    by non-indented content (a new paragraph / an HTML ``<!-- … -->`` section
+    separator ends the record). Capturing only the first physical line
+    (the prior ``_BULLET_RE.finditer``) truncated wrapped records mid-sentence.
+    Redaction runs over the FULL assembled body downstream in :func:`render_page`.
+    Pure.
     """
     src = text or ""
     meta, _ = _parse_frontmatter(src)
     fm_date = _first_date(meta.get("date"))
+
     entries: list[dict] = []
-    for m in _BULLET_RE.finditer(src):
-        raw = m.group("anchor").strip().rstrip(".").strip()
-        if not raw:
+    current_raw: str | None = None  # the `**…**` bold span of the open record
+    body: list[str] = []
+    pending_blank = False
+
+    def _flush() -> None:
+        nonlocal current_raw
+        if current_raw is None:
+            return
+        raw = current_raw.strip().rstrip(".").strip()
+        if raw:
+            anchor, dash, title = raw.partition("—")
+            anchor = anchor.strip()
+            title = title.strip() if dash else ""
+            if not anchor:
+                anchor, title = raw, ""
+            entries.append({
+                "anchor": anchor,
+                "title": title or raw,
+                "status": "resolved",
+                "date": fm_date,
+                "fields": {},
+                "body": "\n".join(body).strip(),
+            })
+        current_raw = None
+
+    for line in src.splitlines():
+        m = _BULLET_RE.match(line)
+        if m:  # a new top-level `- **…**` record starts here
+            _flush()
+            current_raw = m.group("anchor")
+            body = [m.group("body")]
+            pending_blank = False
             continue
-        anchor, dash, title = raw.partition("—")
-        anchor = anchor.strip()
-        title = title.strip() if dash else ""
-        if not anchor:
-            anchor, title = raw, ""
-        entries.append({
-            "anchor": anchor,
-            "title": title or raw,
-            "status": "resolved",
-            "date": fm_date,
-            "fields": {},
-            "body": m.group("body").strip(),
-        })
+        if current_raw is None:
+            continue  # content before the first bullet (frontmatter, intro prose)
+        if _HEADING_LINE_RE.match(line):  # a `#` heading ends the record
+            _flush()
+            pending_blank = False
+            continue
+        if not line.strip():  # defer: a blank may be internal OR a separator
+            pending_blank = True
+            continue
+        if pending_blank and not line[:1].isspace():
+            _flush()  # blank + non-indented ⇒ new paragraph; the line is outside
+            pending_blank = False
+            continue
+        if pending_blank:  # blank + indented ⇒ an internal blank within the record
+            body.append("")
+            pending_blank = False
+        body.append(line)
+    _flush()
     return entries
 
 
@@ -383,6 +460,7 @@ def render_page(
     scope: str,
     kind: str,
     now: datetime,
+    source_slug: str | None = None,
 ) -> tuple[str, str]:
     """Render ONE resolved entry into a wiki-synthesis page (SB-L2, verbatim).
 
@@ -391,11 +469,16 @@ def render_page(
     decision code: unknown ``kind``/``scope``, empty ``project``, missing anchor —
     never a silent permissive default.
 
+    Args:
+        source_slug: explicit filename namespace (the ``--decisions`` path pins the
+            literal ``"decisions"``). When ``None`` (the ``--ledger`` path) it is
+            derived from the source path via :func:`_source_slug`.
+
     Returns:
         ``(relpath, content)`` — relpath is the deterministic
-        ``decision-patterns/<project-slug>--<anchor-slug>.md`` (SB-L3); content
-        is the full page, LF-only, frontmatter ``redactions: N`` present only
-        when the SB-L4 scrub hit (redaction marks, never blocks).
+        ``decision-patterns/<project-slug>--<source-slug>--<anchor-slug>.md``
+        (SB-L3); content is the full page, LF-only, frontmatter ``redactions: N``
+        present only when the SB-L4 scrub hit (redaction marks, never blocks).
     """
     if kind not in _KIND_TAG:
         raise ValueError(f"learn-feed: unknown kind {kind!r} (expected one of {sorted(_KIND_TAG)})")
@@ -414,6 +497,9 @@ def render_page(
     sources = [s.replace("\\", "/") for s in sources]
     if not sources:
         raise ValueError("learn-feed: source_path is required")
+    # Filename namespace (collision guard): explicit slug (the --decisions literal
+    # "decisions") or derived from the source artifact path (the --ledger path).
+    src_slug = _slug(source_slug) if source_slug is not None else _source_slug(sources[0])
 
     title = str(entry.get("title") or "").strip()
     fields = entry.get("fields") or {}
@@ -449,7 +535,7 @@ def render_page(
         fm.append(f"redactions: {n_redactions}")
     fm.append("---")
 
-    relpath = f"{_FEED_SUBDIR}/{_slug(project)}--{_slug(anchor)}.md"
+    relpath = f"{_FEED_SUBDIR}/{_slug(project)}--{src_slug}--{_slug(anchor)}.md"
     return relpath, "\n".join(fm) + "\n\n" + body
 
 
@@ -646,6 +732,7 @@ def main(argv: list[str] | None = None) -> int:
                 relpath, content = render_page(
                     e, project=args.project, source_path=str(args.decisions),
                     scope=args.scope, kind=args.kind, now=now,
+                    source_slug="decisions",  # F-10 backfill namespace (defect 1)
                 )
                 pages[relpath] = (relpath, content)
         report = emit(

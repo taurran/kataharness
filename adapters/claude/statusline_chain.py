@@ -8,6 +8,15 @@ touch the user's own output or bridge file.  The wrapper then writes kata's OWN 
 bridge ``%TEMP%/kata-ctx-<session_id>.json`` (via ``kata_statusline.write_bridge`` — A1)
 with the CA-L2 superset schema, atomic temp+rename.  Two files, zero contention (R-32).
 
+**Kata-leg carve-out (D160 replace-in-kata-scopes — the ONE exception to the
+byte-identical passthrough above).** When the payload cwd is inside a kata scope
+(``kata_scope.find_kata_root`` returns a root — a ``.kata/`` dir or ``kata.config`` file
+at/above cwd), the wrapper renders kata's OWN one-line segment to stdout and **does NOT run
+the child** — kata renders kata state in kata scopes, the operator's statusline owns
+everywhere else.  Outside kata scope (and on unparseable / cwd-less / non-kata stdin) the
+CHAIN and SKIP legs stay byte-identical.  ``_write_kata_bridge`` still runs on every leg,
+kata scope or not.
+
 Reader priority (documented in README §statusLine chaining / cross-ref ``kata_gauge``):
     (1) kata bridge  →  (2) user bridge (4-field, %-only)  →  (3) deterministic fallback.
 
@@ -53,6 +62,7 @@ eligibility, and runs it as the child.
 from __future__ import annotations
 
 import json
+import math
 import shlex
 import subprocess
 import sys
@@ -80,6 +90,29 @@ _SHELL_METACHARS = frozenset("|&;<>()$`\\*?[]{}~!#%^\n\r\t")
 #: targets are therefore skip-not-chain: NEVER eligible.  Checked case-insensitively on
 #: the literal argv[0] token (no PATHEXT resolution is performed anywhere in this module).
 _BATCH_EXTENSIONS = frozenset({".bat", ".cmd", ".com"})
+
+# --------------------------------------------------------------------------- #
+# Kata-native segment (D160 replace-in-kata-scopes) — rendering constants.
+# --------------------------------------------------------------------------- #
+#: ANSI SGR codes. ``kata`` marker + dirname + run-hint are DIM so the operator can tell at
+#: a glance which renderer owns the line; the meter carries the band colour.
+_ANSI_DIM = "\x1b[2m"
+_ANSI_RESET = "\x1b[0m"
+_ANSI_RED = "\x1b[31m"
+_ANSI_YELLOW = "\x1b[33m"
+_ANSI_GREEN = "\x1b[32m"
+
+#: Segment field separator (U+2502 BOX DRAWINGS LIGHT VERTICAL, spaced) — matches the kata
+#: statusline family (`kata_statusline._SEP`).
+_SEG_SEP = " │ "
+
+#: Meter width in segments (10-segment bar, DESIGN S2).
+_METER_SEGMENTS = 10
+
+#: Meter yellow pre-warning band start, in displayed-percent. A NEW display-only [TUNABLE]
+#: introduced HERE (G4 fold): 55 is NOT a kata semantic — the RED boundary alone is derived
+#: from kata_gauge (DEFAULT_TRIGGER_FRACTION); yellow is a cosmetic early smell for the bar.
+_METER_YELLOW_PCT = 55  # [TUNABLE]
 
 
 def is_chain_eligible(command_str: str) -> bool:
@@ -171,6 +204,142 @@ def run_child(argv: List[str], stdin_bytes: bytes, timeout: int = _CHILD_TIMEOUT
         return b""
 
 
+def _import_kata_scope():
+    """Import the sibling ``kata_scope`` module (same dir), mirroring the bridge-import path
+    insert pattern. Returns the module. Raising is the caller's cue to take the existing
+    legs (it cannot confirm kata scope)."""
+    adapter_dir = Path(__file__).resolve().parent
+    if str(adapter_dir) not in sys.path:
+        sys.path.insert(0, str(adapter_dir))
+    import kata_scope  # noqa: PLC0415 — deferred import (path set first)
+
+    return kata_scope
+
+
+def _import_kata_gauge():
+    """Import ``kata_gauge`` from tools/ (the SAME sys.path pattern ``_write_kata_bridge``
+    uses) so the meter's RED boundary is DERIVED from ``DEFAULT_TRIGGER_FRACTION`` — never a
+    literal 70 (structural agreement with the D152 gauge)."""
+    tools_dir = Path(__file__).resolve().parents[2] / "tools"
+    if str(tools_dir) not in sys.path:
+        sys.path.insert(0, str(tools_dir))
+    import kata_gauge  # noqa: PLC0415 — deferred import (path set first)
+
+    return kata_gauge
+
+
+def _strip_control(text: str) -> str:
+    """Strip C0 (U+0000–U+001F), DEL (U+007F), and C1 (U+0080–U+009F) control characters.
+
+    Terminal-escape injection via a hostile directory name (an ESC/CSI in a dir basename)
+    is the vector (G7d fold): a directory named ``\\x1b[31mowned`` would recolour the whole
+    status bar. The ESC that drives every such attack lives in the C0 range, so stripping
+    C0/C1/DEL neutralizes the class while leaving printable names intact.
+    """
+    return "".join(ch for ch in text if not (ord(ch) < 0x20 or 0x7F <= ord(ch) <= 0x9F))
+
+
+def _bar10(used_pct: float) -> str:
+    """Return a 10-segment ``▰``/``▱`` bar for *used_pct* (0..100), clamped."""
+    filled = max(0, min(_METER_SEGMENTS, round(used_pct / 100 * _METER_SEGMENTS)))
+    return "▰" * filled + "▱" * (_METER_SEGMENTS - filled)
+
+
+def _render_meter(payload: dict, kata_gauge) -> str:  # noqa: ANN001
+    """Return the ` {bar} {used}%` meter, or "" when there is no numeric gauge to show.
+
+    ``used_pct`` = raw ``100 − remaining_percentage`` (kata's own semantics — exactly what
+    ``write_bridge`` records; NO GSD-style buffer normalization). The colour band and the
+    printed percent both key off the ROUNDED displayed value so they always agree: RED at/above
+    the kata trigger (``DEFAULT_TRIGGER_FRACTION × 100``, imported — never a literal 70),
+    YELLOW at/above the display-only pre-warning band, GREEN below.
+
+    ``remaining_percentage`` absent OR non-numeric (mirroring ``write_bridge``'s ``_is_number``)
+    ⇒ the meter is OMITTED (return "") — never blank the whole segment for a malformed meter
+    field (v2-F6).
+    """
+    context_window = payload.get("context_window")
+    remaining = context_window.get("remaining_percentage") if isinstance(context_window, dict) else None
+    # NaN/Infinity pass _is_number but blow up round() — a malformed meter field must
+    # omit ONLY the meter, never blank the whole segment (v2-F6; sweep finding 3).
+    if not kata_gauge._is_number(remaining) or not math.isfinite(remaining):
+        return ""
+
+    used_pct = 100 - remaining
+    displayed = round(used_pct)
+    red_boundary = kata_gauge.DEFAULT_TRIGGER_FRACTION * 100  # DERIVED, never a literal 70
+    if displayed >= red_boundary:
+        colour = _ANSI_RED
+    elif displayed >= _METER_YELLOW_PCT:
+        colour = _ANSI_YELLOW
+    else:
+        colour = _ANSI_GREEN
+    return f" {colour}{_bar10(used_pct)} {displayed}%{_ANSI_RESET}"
+
+
+def _render_run_hint(root: Path) -> str:
+    """Return ` │ run` (dim) when ``<root>/.kata/board.md`` exists non-empty, else "".
+
+    ``root`` is the value the ONE ``find_kata_root`` call in the kata leg already returned
+    (v2-F6: reuse its result — no second walk). Cheap existence+size check only; the board
+    is never parsed. A probe OSError ⇒ omit the hint (never blank the whole segment)."""
+    board = root / ".kata" / "board.md"
+    try:
+        if board.is_file() and board.stat().st_size > 0:
+            return f"{_SEG_SEP}{_ANSI_DIM}run{_ANSI_RESET}"
+    except OSError:
+        return ""
+    return ""
+
+
+def _render_segment(payload: dict, start: Path, root: Path) -> str:
+    """Render the pinned kata segment: ``kata │ {dirname}{meter}{run}`` (DESIGN S2).
+
+    ``{dirname}`` is the basename of the payload cwd (``start``), dim, with control chars
+    stripped; ``{meter}`` keys off ``context_window.remaining_percentage``; ``{run}`` keys off
+    the board at ``root`` (the ancestor the ONE walk returned)."""
+    kata_gauge = _import_kata_gauge()
+    marker = f"{_ANSI_DIM}kata{_ANSI_RESET}"
+    dirname = f"{_ANSI_DIM}{_strip_control(start.name)}{_ANSI_RESET}"
+    meter = _render_meter(payload, kata_gauge)
+    run = _render_run_hint(root)
+    return f"{marker}{_SEG_SEP}{dirname}{meter}{run}"
+
+
+def _kata_leg(payload: dict) -> Optional[str]:
+    """Return the kata segment (or "") when the cwd is kata-scoped, else None.
+
+    - ``None`` ⇒ NOT a kata scope (cwd-less / non-kata / scope undeterminable) ⇒ the caller
+      takes the existing byte-identical CHAIN/SKIP legs.
+    - ``""`` ⇒ kata scope confirmed but an error occurred INSIDE rendering ⇒ emit nothing,
+      still DO NOT run the child (fail-soft, exit 0).
+    - a non-empty string ⇒ the rendered segment to emit (child not run).
+    """
+    try:
+        kata_scope = _import_kata_scope()
+        start = kata_scope.resolve_start(payload)
+        if start is None:
+            return None
+        root = kata_scope.find_kata_root(start)
+        if root is None:
+            return None
+    except Exception:  # noqa: BLE001 — scope undeterminable ⇒ existing legs (never guess)
+        return None
+    try:
+        return _render_segment(payload, start, root)
+    except Exception:  # noqa: BLE001 — in-scope render error ⇒ emit nothing, never run child
+        return ""
+
+
+def _parse_payload(stdin_bytes: bytes) -> Optional[dict]:
+    """Parse stdin to a JSON object, or None (non-JSON / non-object). Never raises."""
+    try:
+        data = json.loads(stdin_bytes.decode("utf-8", errors="replace"))
+    except (ValueError, TypeError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def _write_kata_bridge(stdin_bytes: bytes) -> None:
     """Write kata's OWN superset bridge from the SAME stdin (A1's ``write_bridge``).
 
@@ -191,8 +360,20 @@ def _write_kata_bridge(stdin_bytes: bytes) -> None:
 
 
 def _main() -> None:
-    """Chain-or-skip: run the user's child (byte-identical passthrough), then write bridge."""
+    """Kata-leg-or-chain-or-skip: render kata's segment in kata scopes (child NOT run),
+    otherwise run the user's child (byte-identical passthrough); write kata's bridge always."""
     stdin_bytes = sys.stdin.buffer.read()
+
+    payload = _parse_payload(stdin_bytes)
+    segment = _kata_leg(payload) if payload is not None else None
+    if segment is not None:
+        # KATA leg (D160 replace-in-kata-scopes): emit kata's OWN segment ("" on an in-scope
+        # render error), NEVER run the child. The bridge below still writes on this leg too.
+        if segment:
+            sys.stdout.buffer.write(segment.encode("utf-8"))
+            sys.stdout.buffer.flush()
+        _write_kata_bridge(stdin_bytes)
+        return
 
     argv = child_argv(parse_tail(sys.argv))
     if argv is not None:

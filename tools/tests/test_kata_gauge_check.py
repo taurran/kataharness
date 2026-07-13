@@ -380,34 +380,14 @@ class TestUnit:
     def setup_method(self) -> None:
         self.mod = _load()
 
-    def test_scope_gate_finds_kata_dir_and_config(self, tmp_path: Path) -> None:
-        kata = tmp_path / "a"
-        (kata / ".kata").mkdir(parents=True)
-        assert self.mod._is_kata_scope(kata) is True
-        conf = tmp_path / "b"
-        conf.mkdir()
-        (conf / "kata.config").write_text("{}", encoding="utf-8")
-        assert self.mod._is_kata_scope(conf) is True
-
-    def test_scope_gate_stops_at_root_without_error(self) -> None:
-        # A root path's parent is itself: the walk must terminate, not spin.
-        root = Path(Path.cwd().anchor)
-        assert self.mod._is_kata_scope(root) in (True, False)  # terminates
-
-    def test_scope_gate_cap_is_exactly_bounded(self, tmp_path: Path) -> None:
-        # MUTATION PROOF (cap boundary): evidence at exactly max_levels-1 ancestors
-        # up is FOUND; one level deeper is NOT (cap ~10 — _SCOPE_WALK_CAP checks).
-        cap = self.mod._SCOPE_WALK_CAP
-        root = tmp_path / "repo"
-        (root / ".kata").mkdir(parents=True)
-        at_cap = root
-        for i in range(cap - 1):
-            at_cap = at_cap / f"d{i}"
-        at_cap.mkdir(parents=True, exist_ok=True)
-        assert self.mod._is_kata_scope(at_cap) is True
-        beyond = at_cap / "one-more"
-        beyond.mkdir()
-        assert self.mod._is_kata_scope(beyond) is False
+    def test_scope_gate_delegated_to_shared_helper(self, tmp_path: Path) -> None:
+        # EV-1/D160: the scope walk moved to adapters/claude/kata_scope.py (the ONE
+        # definition). The exhaustive walk semantics live in test_kata_scope.py; here we
+        # only pin that the hook consumes the shared helper (no local reimplementation).
+        src = GAUGE_CHECK.read_text(encoding="utf-8")
+        assert "import kata_scope" in src
+        assert "_is_kata_scope" not in src  # local walk removed
+        assert "kata_scope.resolve_start(payload) or Path(os.getcwd())" in src
 
     def test_safe_session_id_mirrors_writer_guard(self) -> None:
         # Re-gate (LOW obligation): the charset mirrors kata_statusline._SAFE_SESSION_ID.

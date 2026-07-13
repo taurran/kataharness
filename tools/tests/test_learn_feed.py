@@ -13,7 +13,7 @@ SB-L1 parse:   heading grammar (anchor vocab MM-1/IP-A/R-1/GB1/D7); status vocab
                trailing text; `· open`/no-status ⇒ open, NOT emitted; bullet-only
                ledgers ⇒ zero entries; bold-field bullets tolerant (any subset);
                parse_decisions_bullets (recall _BULLET_RE family).
-SB-L2 render:  relpath `decision-patterns/<project-slug>--<anchor-slug>.md`;
+SB-L2 render:  relpath `decision-patterns/<project-slug>--<source-slug>--<anchor-slug>.md`;
                frontmatter produced-by/source/date/scope/sorted tags (+redactions
                only when >0); kind→tag map; body sections present-fields-only with
                [[wikilinks]]; LF-only.
@@ -251,12 +251,133 @@ def test_parse_decisions_bullets_empty():
 
 
 # ---------------------------------------------------------------------------
+# DEFECT 2 — wrapped multi-line DECISIONS records are not truncated
+# ---------------------------------------------------------------------------
+# Real DECISIONS.md records wrap over multiple physical lines (2-space indented
+# continuations, indented sub-bullets), are separated by blank + `<!-- … -->`
+# section comments, and interleave `###` sub-headings. The prior `_BULLET_RE`
+# finditer captured ONLY the first physical line → 70/95 backfilled pages
+# truncated mid-sentence.
+
+WRAPPED_DECISIONS = """\
+---
+date: 2026-06-01
+---
+
+# Decisions
+
+- **D1 — The plan does not drift.** Orchestrator = plan-guardian (owns frozen plan, task assignment,
+  file-ownership, gating); peers execute + communicate, never re-plan; unknowns escalate. *Why:* drift
+  is the enemy of one-shot.
+- **D2 — Second record.** Body line one
+  continues onto line two.
+
+<!-- a section separator comment, NOT part of D2 -->
+- **D3 — Ladder.** Four rungs:
+  (1) default → go.
+  (2) add modules.
+
+### sprint-cadence (a sub-heading, NOT part of D3)
+- **D4 — After the heading.** Fresh record body.
+"""
+
+
+def test_decisions_bullet_body_not_truncated():
+    """Defect 2: the FULL wrapped body is folded in, not just the first line."""
+    entries = {e["anchor"]: e for e in learn_feed.parse_decisions_bullets(WRAPPED_DECISIONS)}
+    d1 = entries["D1"]["body"]
+    assert d1.startswith("Orchestrator = plan-guardian")
+    assert "file-ownership, gating" in d1   # 2nd physical line captured
+    assert "enemy of one-shot" in d1        # 3rd physical line captured
+
+
+def test_decisions_blank_then_comment_terminates_record():
+    """A blank line followed by non-indented content (an HTML section comment)
+    ends the record — the comment is NOT vacuumed into the body."""
+    entries = {e["anchor"]: e for e in learn_feed.parse_decisions_bullets(WRAPPED_DECISIONS)}
+    d2 = entries["D2"]["body"]
+    assert "continues onto line two." in d2
+    assert "section separator comment" not in d2
+
+
+def test_decisions_indented_subbullets_captured():
+    entries = {e["anchor"]: e for e in learn_feed.parse_decisions_bullets(WRAPPED_DECISIONS)}
+    d3 = entries["D3"]["body"]
+    assert "(1) default → go." in d3
+    assert "(2) add modules." in d3
+    assert "sprint-cadence" not in d3       # a `###` heading ends the record
+
+
+def test_decisions_heading_terminates_and_next_record_starts():
+    entries = {e["anchor"]: e for e in learn_feed.parse_decisions_bullets(WRAPPED_DECISIONS)}
+    assert entries["D4"]["body"] == "Fresh record body."
+
+
+def test_decisions_full_body_redacted():
+    """SB-L4 redaction runs over the FULL multi-line body, not just line 1."""
+    text = "- **D9 — leak.** first line ok\n  password: hunter2 on a wrapped line\n"
+    (entry,) = learn_feed.parse_decisions_bullets(text)
+    assert "hunter2" in entry["body"]       # captured into the body...
+    _, content = _render(entry)
+    assert "hunter2" not in content         # ...and scrubbed at render
+    assert "[REDACTED:password]" in content
+
+
+# ---------------------------------------------------------------------------
+# DEFECT 1 — source-namespaced filenames (no cross-source anchor collision)
+# ---------------------------------------------------------------------------
+# Every spec GRILL-LEDGER restarts anchors at D1 and DECISIONS.md uses D-anchors
+# globally, so the prior `<project>--<anchor>.md` scheme let a --decisions
+# backfill CLOBBER a prior ledger's page. New scheme:
+# `<project>--<source-slug>--<anchor>.md`.
+
+def test_source_slug_spec_dir():
+    assert learn_feed._source_slug(
+        ".planning/specs/statusline-decouple/GRILL-LEDGER.md"
+    ) == "statusline-decouple"
+
+
+def test_source_slug_backslash_path():
+    assert learn_feed._source_slug(
+        ".planning\\specs\\context-autonomy\\GRILL-LEDGER.md"
+    ) == "context-autonomy"
+
+
+def test_source_slug_planning_root_falls_back_to_stem():
+    """A file directly under `.planning` uses the file STEM, not the shared dir name."""
+    assert learn_feed._source_slug(".planning/DECISIONS.md") == "decisions"
+
+
+def test_render_relpath_is_source_namespaced():
+    relpath, _ = _render(source_path=".planning/specs/statusline-decouple/GRILL-LEDGER.md")
+    assert relpath == "decision-patterns/kataharness--statusline-decouple--mm-1.md"
+
+
+def test_render_relpath_explicit_source_slug():
+    """The --decisions path pins the literal `decisions` source-slug."""
+    relpath, _ = _render(source_path=".planning/DECISIONS.md", source_slug="decisions")
+    assert relpath == "decision-patterns/kataharness--decisions--mm-1.md"
+
+
+def test_render_no_cross_source_collision():
+    """Two DIFFERENT sources with the SAME anchor D1 ⇒ DISTINCT filenames (defect 1)."""
+    rp_a, _ = _render(_entry(anchor="D1"), source_path=".planning/specs/aa/GRILL-LEDGER.md")
+    rp_b, _ = _render(
+        _entry(anchor="D1"), source_path=".planning/DECISIONS.md", source_slug="decisions"
+    )
+    assert rp_a != rp_b
+    assert rp_a.endswith("kataharness--aa--d1.md")
+    assert rp_b.endswith("kataharness--decisions--d1.md")
+
+
+# ---------------------------------------------------------------------------
 # SB-L2 / SB-L3 — render_page
 # ---------------------------------------------------------------------------
 
 def test_render_relpath_deterministic():
     relpath, _ = _render()
-    assert relpath == "decision-patterns/kataharness--mm-1.md"
+    # default fixture source `.planning/specs/x/GRILL-LEDGER.md` ⇒ source-slug `x`
+    assert relpath == "decision-patterns/kataharness--x--mm-1.md"
 
 
 def test_render_frontmatter_contract():
@@ -398,14 +519,14 @@ def test_emit_writes_pages_and_report(tmp_path):
     pages = [_render(_entry(anchor=a)) for a in ("MM-1", "MM-2")]
     report = learn_feed.emit(feed, pages, log_path=logp, now=NOW)
     assert report == {"written": 2, "skipped_identical": 0, "redactions": 0, "parsed_open_skipped": 0}
-    assert (feed / "decision-patterns" / "kataharness--mm-1.md").exists()
-    assert (feed / "decision-patterns" / "kataharness--mm-2.md").exists()
+    assert (feed / "decision-patterns" / "kataharness--x--mm-1.md").exists()
+    assert (feed / "decision-patterns" / "kataharness--x--mm-2.md").exists()
 
 
 def test_emit_written_lf_only(tmp_path):
     feed, logp = _feed(tmp_path)
     learn_feed.emit(feed, [_render()], log_path=logp, now=NOW)
-    raw = (feed / "decision-patterns" / "kataharness--mm-1.md").read_bytes()
+    raw = (feed / "decision-patterns" / "kataharness--x--mm-1.md").read_bytes()
     assert b"\r" not in raw
 
 
@@ -424,7 +545,7 @@ def test_emit_atomic_temp_rename(tmp_path, monkeypatch):
     assert len(calls) == 1
     src, dst = calls[0]
     assert src != dst
-    assert dst.endswith("kataharness--mm-1.md")
+    assert dst.endswith("kataharness--x--mm-1.md")
     assert Path(src).parent == Path(dst).parent  # sibling temp — same-filesystem rename
     # no orphan temp files left behind
     leftovers = [p for p in (feed / "decision-patterns").iterdir() if not p.name.endswith(".md")]
@@ -444,7 +565,7 @@ def test_emit_idempotent_date_scrubbed(tmp_path):
     assert (r1["written"], r1["skipped_identical"]) == (1, 0)
     assert (r2["written"], r2["skipped_identical"]) == (0, 1)
     # the original file is untouched (still day1's date)
-    on_disk = (feed / "decision-patterns" / "kataharness--mm-1.md").read_text(encoding="utf-8")
+    on_disk = (feed / "decision-patterns" / "kataharness--x--mm-1.md").read_text(encoding="utf-8")
     assert "date: 2026-07-11\n" in on_disk
 
 
@@ -453,14 +574,14 @@ def test_emit_changed_content_overwrites(tmp_path):
     learn_feed.emit(feed, [_render(_entry(body="old text"))], log_path=logp, now=NOW)
     report = learn_feed.emit(feed, [_render(_entry(body="new text"))], log_path=logp, now=NOW)
     assert report["written"] == 1
-    on_disk = (feed / "decision-patterns" / "kataharness--mm-1.md").read_text(encoding="utf-8")
+    on_disk = (feed / "decision-patterns" / "kataharness--x--mm-1.md").read_text(encoding="utf-8")
     assert "new text" in on_disk
 
 
 def test_emit_refuses_foreign_produced_by(tmp_path):
     """C5 carve-out guard: produced-by ≠ loop ⇒ fail-closed refuse, file untouched."""
     feed, logp = _feed(tmp_path)
-    target = feed / "decision-patterns" / "kataharness--mm-1.md"
+    target = feed / "decision-patterns" / "kataharness--x--mm-1.md"
     target.parent.mkdir(parents=True)
     hand_curated = "---\nproduced-by: wiki\n---\n\n# curated\n"
     target.write_text(hand_curated, encoding="utf-8")
@@ -473,7 +594,7 @@ def test_emit_refuses_foreign_produced_by(tmp_path):
 def test_emit_refuses_missing_frontmatter(tmp_path):
     """Fail-closed includes missing/absent frontmatter (unknown provenance)."""
     feed, logp = _feed(tmp_path)
-    target = feed / "decision-patterns" / "kataharness--mm-1.md"
+    target = feed / "decision-patterns" / "kataharness--x--mm-1.md"
     target.parent.mkdir(parents=True)
     target.write_text("no frontmatter here\n", encoding="utf-8")
     with pytest.raises(ValueError):
@@ -484,14 +605,14 @@ def test_emit_refuses_missing_frontmatter(tmp_path):
 def test_emit_refusal_is_all_or_nothing(tmp_path):
     """The pre-scan refuses BEFORE any page is written (no partial session)."""
     feed, logp = _feed(tmp_path)
-    conflict = feed / "decision-patterns" / "kataharness--zz-9.md"
+    conflict = feed / "decision-patterns" / "kataharness--x--zz-9.md"
     conflict.parent.mkdir(parents=True)
     conflict.write_text("---\nproduced-by: agent\n---\nbody\n", encoding="utf-8")
     pages = [_render(_entry(anchor="AA-1")), _render(_entry(anchor="ZZ-9"))]
     with pytest.raises(ValueError):
         learn_feed.emit(feed, pages, log_path=logp, now=NOW)
     # the innocent page (sorted FIRST) was NOT written either
-    assert not (feed / "decision-patterns" / "kataharness--aa-1.md").exists()
+    assert not (feed / "decision-patterns" / "kataharness--x--aa-1.md").exists()
 
 
 def test_emit_overwrites_own_loop_pages(tmp_path):
@@ -570,7 +691,10 @@ CLI_LEDGER = """\
 
 
 def _cli_args(tmp_path, ledger_text=CLI_LEDGER):
-    ledger = tmp_path / "GRILL-LEDGER.md"
+    # Nest under a named spec dir so the source-slug is deterministic (`demo-spec`).
+    spec_dir = tmp_path / "demo-spec"
+    spec_dir.mkdir()
+    ledger = spec_dir / "GRILL-LEDGER.md"
     ledger.write_text(ledger_text, encoding="utf-8")
     feed = tmp_path / "feed"
     logp = tmp_path / "wiki" / "log.md"
@@ -589,7 +713,7 @@ def test_cli_end_to_end(tmp_path, capsys):
     assert report["written"] == 1
     assert report["parsed_open_skipped"] == 1  # D2 (· open) NOT emitted, counted
     assert "learn-feed:" in err                # human summary on stderr
-    page = feed / "decision-patterns" / "demo--d1.md"
+    page = feed / "decision-patterns" / "demo--demo-spec--d1.md"
     assert page.exists()
     content = page.read_text(encoding="utf-8")
     assert "produced-by: loop" in content
@@ -621,8 +745,9 @@ def test_cli_decisions_backfill(tmp_path, capsys):
     assert rc == 0
     report = json.loads(capsys.readouterr().out)
     assert report["written"] == 2  # F-10: backfill volume accepted, not capped
-    assert (feed / "decision-patterns" / "demo--d1.md").exists()
-    assert (feed / "decision-patterns" / "demo--d2.md").exists()
+    # --decisions pins the literal `decisions` source-slug (defect 1)
+    assert (feed / "decision-patterns" / "demo--decisions--d1.md").exists()
+    assert (feed / "decision-patterns" / "demo--decisions--d2.md").exists()
 
 
 def test_cli_requires_project(tmp_path):
