@@ -37,3 +37,16 @@
   even during the pre-build interim; config.json is untracked so deletion has no git impact.
 - **Doc-baked:** D160; applied on this branch (gate finding 1 fold — was a forward-claim, now true).
 
+### EV-1 — Elevate: shared kata-scope helper · LOCKED
+- **Recommendation:** the D1/D2 segment build extracts `_is_kata_scope` into ONE shared adapter
+  module (`adapters/claude/kata_scope.py`) consumed by BOTH the D152 gauge hook and the chain
+  wrapper, with a drift-test pinning both call sites to the shared helper. Grounding: D2 edge (a)
+  pins "kata-scoped" to one definition, but the definition physically lives only inside
+  `kata-gauge-check.py`; the segment build would otherwise copy it — creating exactly the
+  two-definitions drift the edge forbids — and scope semantics already produced a live surprise
+  this session (F-9 blocked by the upward-walk behavior).
+- **Decision:** Accepted (the recommendation) — a LOCKED design anchor for the segment build's
+  freeze-gate: shared `kata_scope.py` + drift test, both call sites pinned.
+- **Rationale:** operator accepted at the first live ELEVATE posing (2026-07-12c, D153 live smoke);
+  structural one-place answer to "am I in a kata scope?" beats review-enforced duplication.
+

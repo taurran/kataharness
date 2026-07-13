@@ -2464,9 +2464,11 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   all 13 findings folded.
   **PROVISIONAL (operator ratification at return, DESIGN §RATIFY):** tier-uniform behavior ·
   elevate via the single-question surface · declines-feed-second-brain · skip-depth ⇒ no ELEVATE.
-  **Honesty label: built + freeze-gated + adval'd; LIVE-UNPROVEN (n=0)** — the live smoke (a real
-  grill asking one-at-a-time + posing one elevate) requires the operator and is the first item of
-  the announced return evaluation.
+  **Honesty label: LIVE-PROVEN (n=1, 2026-07-12c)** — the D160 statusline-decoupling grill ran the
+  full contract live with the operator: one-question-at-a-time ×4, convergence SHIP, ELEVATE posed
+  + ACCEPTED, `EV-1 · LOCKED` recorded, emitted to the REAL PokeVault (written=4, idempotent),
+  recall read-back green. Scope: standalone essential-tier grill; the kata-initiate Path-A/B
+  close-out legs ride the next real initiation run.
 - **D155 — recall's 7th source gets a first-run fallback (C2 residual, 2026-07-12c operator-away;
   PROVISIONAL pending return ratification).** On a fresh project, Phase 1b runs before bootstrap
   writes `kata.config`, so the config-gated `feed_dir` row could never fire in run 1 (2026-07-12b

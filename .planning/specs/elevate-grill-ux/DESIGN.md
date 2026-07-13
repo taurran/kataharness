@@ -202,7 +202,13 @@ a divergent format.
   producer alignment.
 - Adval: 2 fresh-context reviewers SHIP.
 - Validator 48/0/0 (`--write` for README regen); pytest unchanged-green.
-- **Live smoke (a real grill demonstrably asking one-at-a-time + posing one elevate
-  recommendation): NAMED DEFERRAL — requires the operator at the keyboard; first item on return
-  (rides the operator's announced full evaluation).** Until then B1/B2 honesty label: built +
-  adval'd, live-unproven (n=0).
+- **Live smoke: DONE — LIVE-PROVEN n=1 (2026-07-12c, operator present).** A real essential-tier
+  grill (subject: the D160 statusline decoupling) ran the full contract live: four one-question
+  `AskUserQuestion` interactions (incl. an operator misclick correction handled in-flow) →
+  fresh-context convergence gate SHIP (2 findings folded) → ONE grounded ELEVATE posed (shared
+  kata-scope helper, grounded in the run's own D2 edge) → operator ACCEPTED →
+  `EV-1 … · LOCKED` ledger entry → grill-close emit **into the real PokeVault**
+  (`kataharness--ev-1.md` + 3 decision pages, written=4, idempotent re-run 0/4) → recall read-back
+  surfaced all four as `source="second-brain"`. **Honest scope:** proven on a standalone
+  essential-tier grill; the kata-initiate Phase-5 Path-A/Path-B close-out legs are not yet
+  live-exercised (they ride the next real initiation run).
