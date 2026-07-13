@@ -7,6 +7,28 @@ last_updated: "2026-07-12T23:30:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-07-12c FINAL — the evening execution block, operator-directed "top three on the
+> loop, Opus execution, standard mode, adval everything, hand off"; MERGED PR #31 `f855124`):**
+> **(1) D162 kata-native statusline segment BUILT + GATED + MERGED** — two freeze-gates HOLD(7)→
+> SHIP-WITH-FIXES(6) + the D163 sweep's 5 build folds (26 findings total); NEW
+> `adapters/claude/kata_scope.py` = THE one walk + THE one payload→start resolution (EV-1
+> honored); chain wrapper replace-in-kata-scopes leg (child not run in kata cwds, byte-identical
+> elsewhere); gauge hook delegates; conjunctive drift test; +50 tests;
+> **live-render-unproven** — rides the next repo-cwd session with F-9/R6. **(2) E5 backfill + the
+> D163 HIGH catch:** the sweep found the backfill had CLOBBERED 3 of 4 D160 live-smoke evidence
+> pages (un-namespaced cross-source anchor collision) + truncated 70/95 bodies; learn_feed FIXED
+> (source-namespaced `<project>--<source-slug>--<anchor>.md` + continuation-line parser, TDD at
+> Opus); vault purged + re-emitted — **182 coherent pages, EV-1 evidence RESTORED, recall
+> read-back green**; DECISIONS.md normalized (72 wrapped-bold anchors had been silently merging
+> into predecessors' pages since the beginning). **(3) E4 Kenjiri = MOOT** (completed 2026-07-01
+> v1.0.0 public; stale memory index corrected). Adval coverage FULL across today (D163 verdicts:
+> #28/#29/#30 SHIP · segment SHIP-WITH-FIXES folded · E5 HOLD → fixed + migrated). Gauntlet at
+> close: **pytest 3639/3 skip · integration 2/2 · ruff clean · validator 48/0/0 · Snyk med+ 0.**
+> D-records D162/D163. Execution workers at Opus (anchor−1, standard mode) per operator; gates at
+> anchor. **NEXT SESSION: start with cwd INSIDE the repo — F-9 + R6 + the segment's first live
+> render prove themselves passively; then the E-queue (E1 calibration / E2 adaptive A/B / E3
+> PokeVault install + MindBridge ingest).** *(Prior CURRENT blocks below are history.)*
+
 > **CURRENT (2026-07-12c — THIRD Fable 5 session: OPERATOR-AWAY AUTONOMOUS RUN through the phases
 > A–D plan; THREE PRs MERGED #24 `b107750` / #25 `fd0e7c2` / #26 `e369d17`; installed kata-home
 > advanced to `e369d17`):** Mid-session operator authorization ("I approve of all commits/pushes/
