@@ -2464,9 +2464,11 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   all 13 findings folded.
   **PROVISIONAL (operator ratification at return, DESIGN §RATIFY):** tier-uniform behavior ·
   elevate via the single-question surface · declines-feed-second-brain · skip-depth ⇒ no ELEVATE.
-  **Honesty label: built + freeze-gated + adval'd; LIVE-UNPROVEN (n=0)** — the live smoke (a real
-  grill asking one-at-a-time + posing one elevate) requires the operator and is the first item of
-  the announced return evaluation.
+  **Honesty label: LIVE-PROVEN (n=1, 2026-07-12c)** — the D160 statusline-decoupling grill ran the
+  full contract live with the operator: one-question-at-a-time ×4, convergence SHIP, ELEVATE posed
+  + ACCEPTED, `EV-1 · LOCKED` recorded, emitted to the REAL PokeVault (written=4, idempotent),
+  recall read-back green. Scope: standalone essential-tier grill; the kata-initiate Path-A/B
+  close-out legs ride the next real initiation run.
 - **D155 — recall's 7th source gets a first-run fallback (C2 residual, 2026-07-12c operator-away;
   PROVISIONAL pending return ratification).** On a fresh project, Phase 1b runs before bootstrap
   writes `kata.config`, so the config-gated `feed_dir` row could never fire in run 1 (2026-07-12b
@@ -2527,3 +2529,17 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   non-atomic ⇒ 22 IndentationErrors/8s, atomic ⇒ 0 corruption in 12,606 rewrites. +20 tests.
   Standing policy (D1 findings doc): conductor is the sole main-tree git writer; end-of-session
   stash-empty tripwire; reader-retry discipline.
+- **D160 — statusline decoupling: kata-native segment, replace-in-kata-scopes, vestiges dropped
+  (operator-grilled 2026-07-12c — ALSO the D153 live smoke, essential tier).** Assessment first
+  (operator: "GSD-like functionality should be baked into KataHarness but it should not use GSD
+  itself"): the harness has ZERO runtime GSD dependency — provenance frontmatter + example text
+  only; the real couplings were environment-level (global GSD statusline; GSD renderer painting
+  kata's STATE.md through the gsd_state_version schema; a GSD config.json in the repo). Grilled
+  one-question-at-a-time (B2 live-proven): (1) the chain wrapper grows a KATA-NATIVE segment;
+  (2) composition = REPLACE in kata scopes — kata-scoped cwd ⇒ kata segment only (child not run;
+  GSD context-monitor inert there BY DESIGN, code-verified fail-soft), elsewhere ⇒ byte-identical
+  passthrough (CA-L1 re-scoped deliberately); "kata-scoped" = the D152 `_is_kata_scope` rule, ONE
+  definition; (3) vestiges dropped — gsd_state_version key removed from STATE.md (code-verified
+  parser-inert), .planning/config.json deleted. Convergence gate: fresh-context SHIP (2 findings
+  folded). The SEGMENT BUILD is a new gated initiative (M8-adjacent, BACKLOG) — no behavior change
+  until it lands. Ledger: `.planning/specs/statusline-decouple/GRILL-LEDGER.md`.
