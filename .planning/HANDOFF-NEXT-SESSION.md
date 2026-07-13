@@ -38,12 +38,29 @@
   under the anchor-named file → `recall_from_paths` read it back as `source="second-brain"` →
   idempotent 0-rewrite. Your REAL vault was deliberately left untouched (no fixture pollution).
 
+> **★ SAME-DAY UPDATE 2 (2026-07-12c evening — operator directed "execute the top three on the
+> loop, Opus execution, standard mode, adval everything, then hand off"):** ALL EXECUTED —
+> **(1) the kata-native statusline segment is BUILT + GATED** (D162: two freeze-gates + the D163
+> sweep, 26 findings folded total; `kata_scope.py` ONE-walk/ONE-resolution; +50 tests;
+> live-render-unproven — rides the SAME next repo-cwd session as F-9/R6);
+> **(2) E5 backfill DONE — then caught by the sweep and FIXED (D163):** the un-namespaced page
+> names had CLOBBERED 3 of 4 D160 live-smoke evidence pages + truncated 70/95 bodies → learn_feed
+> now namespaces `<project>--<source-slug>--<anchor>.md` + folds continuation lines; the vault was
+> purged + re-emitted — **182 coherent pages** (167 decisions + 4 statusline-decouple incl. the
+> RESTORED EV-1 evidence + 11 MM), recall read-back green. DECISIONS.md normalized (72
+> wrapped-bold anchors reshaped — they had been silently merging into predecessors' pages);
+> **(3) E4 Kenjiri resume = MOOT** — the run completed 2026-07-01 (v1.0.0 shipped + gated + public;
+> the "PAUSED" memory index was stale, corrected).
+> **REMAINING (unchanged, one session): F-9 + R6 + the segment's first live render — start the
+> next session with cwd INSIDE the repo and all three prove themselves passively.**
+> The earlier same-day update + original checklist below are preserved for the record.
+
 > **★ SAME-DAY UPDATE (2026-07-12c late — operator returned and executed the checklist):** items
 > 1–4 + 6 are DONE (D160 statusline decoupling grilled live = the D153 smoke, LIVE-PROVEN n=1,
 > PR #29; stash forensics + one recovered artifact PR #28 + stash DROPPED; all seven provisionals
-> RATIFIED with two riders, D161). **REMAINING: item 5 only — F-9/R6 from a repo-cwd session** —
-> plus the queued kata-native statusline segment build (BACKLOG, gated, carries the accepted EV-1
-> shared-scope-helper anchor). The checklist below is preserved as written for the record.
+> RATIFIED with two riders, D161). REMAINING at that point: item 5 (F-9/R6) + the then-queued
+> segment build — **the build has SINCE SHIPPED (update 2 above)**. The checklist below is
+> preserved as written for the record.
 
 ## 2. ★★ OPERATOR RETURN CHECKLIST (your announced full evaluation)
 
