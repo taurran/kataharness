@@ -1,5 +1,4 @@
 ---
-gsd_state_version: 1.0
 milestone: M2-freeze-float
 milestone_name: "Freeze/Float (operator-directed, D138) — ship order M1→M4→M2→M3; M1 COMPLETE (PR #5); M4 COMPLETE (v0.2.0, D141–D145); context-autonomy v0.2.1 MERGED+TAGGED 2026-07-05; next: R6-first post-merge test queue, then M2 (shadow tasks) per ship order"
 status: in-progress
