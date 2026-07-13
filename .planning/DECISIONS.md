@@ -2555,3 +2555,16 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   lost artifact recovered as PR #28; the stash-empty closeout tripwire is now cleanly enforceable —
   `git stash list` = 0). Riders baked into the grill RUBRIC ELEVATE section same commit. Nothing
   remains provisional from the 2026-07-12c autonomous run.
+- **D163 reserved. D162 — kata-native statusline segment DESIGN FROZEN (the D160 build;
+  2026-07-12c evening, operator-directed "execute using the harness/loop, Opus for execution,
+  standard mode").** Spec: `.planning/specs/statusline-decouple/DESIGN.md` (S1–S5; freeze-gate v1
+  HOLD 7 → re-gate v2 SHIP-WITH-FIXES 6, all 13 folded). Key mechanics: NEW
+  `adapters/claude/kata_scope.py` = THE one walk + THE one payload→start resolution
+  (`find_kata_root`/`is_kata_scope`/`resolve_start`, .resolve()-normalized, no getcwd fallback in
+  the wrapper — the hook WRAPS resolve_start's None with its own getcwd); chain wrapper kata leg
+  fires only on well-formed payload cwd + found root (garbage stdin ⇒ existing legs
+  byte-identical); segment = kata │ dirname (C0/C1-stripped) │ meter (red derived by import from
+  DEFAULT_TRIGGER_FRACTION, 55 = NEW display [TUNABLE], rounded-value bands) │ run-hint at the
+  found root (one walk, result reused); conjunctive drift test (walk logic + payload parsing only
+  in kata_scope); golden fixtures hermetic via tmp_path cwds. Out of scope: the fresh-profile
+  statusline.py renderer (named BACKLOG follow-up).
