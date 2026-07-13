@@ -168,7 +168,10 @@ advice is a violation: if no grounded elevation exists, say so honestly in one l
 never invent filler (PD-2). More than one recommendation is offered ONLY if the operator asks. ELEVATE is
 **always-on wherever a grill runs, at every tier** (same D33-class posture as the convergence gate — a tier
 may scope the tree it grills, not the close-out behaviors); a `skip`-depth run has no grill and therefore no
-ELEVATE. A Path-A hard bail ("execute" typed mid-grill) forgoes ELEVATE — stop means stop; a confirmed Path-B
+ELEVATE. **The elevate brainstorm runs on the same model as the hosting grill** — D131 relative routing
+unchanged, no per-tier elevate mechanism; model choice alone scales the brainstorm with the tier (operator
+rider, D161). **The posed question ALWAYS carries the free-text escape** — on Claude the built-in "Other"
+input; non-Claude prose posings must include an explicit "or type your own" line (operator rider, D161). A Path-A hard bail ("execute" typed mid-grill) forgoes ELEVATE — stop means stop; a confirmed Path-B
 close (the grill self-proposes readiness) is a NORMAL close and runs the full sequence: convergence pass →
 ELEVATE → record → emit.
 

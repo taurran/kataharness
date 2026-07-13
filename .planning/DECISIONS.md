@@ -2543,3 +2543,15 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   parser-inert), .planning/config.json deleted. Convergence gate: fresh-context SHIP (2 findings
   folded). The SEGMENT BUILD is a new gated initiative (M8-adjacent, BACKLOG) — no behavior change
   until it lands. Ledger: `.planning/specs/statusline-decouple/GRILL-LEDGER.md`.
+- **D161 — return ratifications, ALL SEVEN provisionals LOCKED + stash closed (operator-grilled
+  one-at-a-time, 2026-07-12c late).** D153 §RATIFY: (1) E4 tier-uniform ELEVATE RATIFIED **with
+  rider** — the elevate brainstorm runs on the SAME model as the hosting grill (D131 relative
+  routing unchanged; model choice alone scales the brainstorm with tier, no per-tier mechanism);
+  (2) E6 single-question surface RATIFIED **with rider** — the free-text escape is ALWAYS present
+  (Claude "Other"; non-Claude prose posings must carry an explicit "or type your own" line);
+  (3) E5 declines-feed-second-brain RATIFIED; (4) E3 skip-depth ⇒ no ELEVATE RATIFIED. Plus:
+  D154 backstop opt-in write RATIFIED as built · D155 recall first-run fallback RATIFIED as built ·
+  D156 worker recall brief RATIFIED as built. **stash@{0} DROPPED** (forensics complete + the one
+  lost artifact recovered as PR #28; the stash-empty closeout tripwire is now cleanly enforceable —
+  `git stash list` = 0). Riders baked into the grill RUBRIC ELEVATE section same commit. Nothing
+  remains provisional from the 2026-07-12c autonomous run.

@@ -2,21 +2,25 @@
 
 Promote to ROADMAP milestones when ready.
 
-> **★ 2026-07-12c SESSION QUEUE (operator-return items — the FULL return checklist is
-> `.planning/HANDOFF-NEXT-SESSION.md` §2):**
-> 1. **RETURN EVALUATION (operator-announced):** live-smoke D153 (a real grill: one-question-at-a-
->    time + ONE elevate recommendation → EV entry → vault emit) — flips the B1/B2 honesty label
->    from mechanical-n=1 to live-proven; ratify the PROVISIONAL calls (D153 §RATIFY ×4, D154,
->    D155, D156); review PRs #24/#25/#26 (merged under the mid-session authorization).
-> 2. **stash@{0} decision** (`.planning/D1-CORRUPTION-FINDINGS.md`): ~25 files of 2026-07-12
->    health-review edits — diff against master, then pop or drop deliberately. Preserved untouched.
-> 3. **Statusline/GSD decision** (session notes Q0): keep chain (recommended) / kata-native
->    segment / drop GSD from the global slot (affects Mise). Chain verified HEALTHY; "no GSD
->    statusline" in non-GSD cwds is correct behavior.
-> 4. **F-9 + R6 live smokes** — need a session started with cwd INSIDE the harness repo (the
->    gauge hook's kata-scope gate walks UP from cwd; C:\Dev does not qualify). Then flip
->    GROUNDING-CLAUDE G1b + adapter README GROUNDED-BY-PATTERN → CONFIRMED.
+> **★ 2026-07-12c SESSION QUEUE — RETURN EVAL EXECUTED SAME DAY (operator present; D160/D161):**
+> 1. ~~Live-smoke D153~~ **DONE — LIVE-PROVEN n=1** (the D160 statusline grill; EV-1 accepted +
+>    emitted to the real vault + recall read-back; PR #29). Scope note: kata-initiate Path-A/B
+>    close-out legs ride the next real initiation run.
+> 2. ~~stash@{0}~~ **DONE — forensics complete** (one lost artifact recovered, PR #28) **+ DROPPED**
+>    (D161); stash-empty closeout tripwire cleanly enforceable.
+> 3. ~~Statusline/GSD decision~~ **DONE — D160** (grilled live): kata-native segment ·
+>    replace-in-kata-scopes · vestiges dropped. **NEW BUILD ITEM (gated, M8-adjacent): the
+>    kata-native statusline segment** — design anchors LOCKED in
+>    `.planning/specs/statusline-decouple/GRILL-LEDGER.md` incl. the accepted EV-1 (shared
+>    `adapters/claude/kata_scope.py` helper + drift test, both call sites pinned); needs its own
+>    freeze-gate before build.
+> 4. **F-9 + R6 live smokes — STILL OPEN** (the only remaining return item): need a session started
+>    with cwd INSIDE the harness repo (the gauge hook's kata-scope gate walks UP from cwd; C:\Dev
+>    does not qualify). Then flip GROUNDING-CLAUDE G1b + adapter README GROUNDED-BY-PATTERN →
+>    CONFIRMED.
 > 5. Optional: Defender exclusion for C:\Dev (admin; lock-amplification reduction only).
+> 6. ~~Ratify provisionals~~ **DONE — D161, all seven LOCKED** (two riders: elevate brainstorm
+>    inherits the hosting grill's model; free-text escape always present).
 > *(2026-07-12b queue disposition: #1 ELEVATE → DONE D153 PR #24 · #2 single-question UX → DONE
 > D153 PR #24 · #3 residuals → C-4 DONE D154, R6/F-9 open (cwd-blocked, above), PostToolUse
 > cadence still evidence-gated, B1 recall-beyond-initiation DONE D156, A5 + memory-pointer LOWs

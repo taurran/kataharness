@@ -187,12 +187,15 @@ a divergent format.
 - `kata-grill/RUBRIC.md`: not independently versioned (method doc) — carries the new sections.
 - `kata-initiate`: 0.4.0 → **0.4.1** (two real wording-alignment edits, F-5).
 
-## §RATIFY — held for operator ratification at return (one list)
+## §RATIFY — ALL RATIFIED by the operator 2026-07-12c (grilled one-at-a-time; D161)
 
-1. **FORK 1 (E4):** tier behavior = same at all tiers, grounding richness scales naturally.
-2. **FORK 2 (E6):** elevate posed via the single-question AskUserQuestion surface.
-3. **FORK 3 (E5):** declines (and the null "no grounded elevation" result) feed the second brain.
-4. **Skip-depth narrowing (E3):** `skip` grill-depth ⇒ no ELEVATE (nothing run to ground it in).
+1. **FORK 1 (E4): RATIFIED with rider** — tier-uniform behavior; the elevate brainstorm runs on
+   the SAME MODEL as the hosting grill (D131 routing unchanged) so quality scales with tier
+   through model choice alone, zero per-tier mechanism.
+2. **FORK 2 (E6): RATIFIED with rider** — single-question surface; the free-text escape is ALWAYS
+   present (Claude "Other" input; non-Claude prose must carry an explicit "or type your own").
+3. **FORK 3 (E5): RATIFIED** — declines and the null result feed the second brain.
+4. **Skip-depth narrowing (E3): RATIFIED** — `skip` grill-depth ⇒ no ELEVATE.
 
 ## Acceptance
 

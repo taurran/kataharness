@@ -38,6 +38,13 @@
   under the anchor-named file → `recall_from_paths` read it back as `source="second-brain"` →
   idempotent 0-rewrite. Your REAL vault was deliberately left untouched (no fixture pollution).
 
+> **★ SAME-DAY UPDATE (2026-07-12c late — operator returned and executed the checklist):** items
+> 1–4 + 6 are DONE (D160 statusline decoupling grilled live = the D153 smoke, LIVE-PROVEN n=1,
+> PR #29; stash forensics + one recovered artifact PR #28 + stash DROPPED; all seven provisionals
+> RATIFIED with two riders, D161). **REMAINING: item 5 only — F-9/R6 from a repo-cwd session** —
+> plus the queued kata-native statusline segment build (BACKLOG, gated, carries the accepted EV-1
+> shared-scope-helper anchor). The checklist below is preserved as written for the record.
+
 ## 2. ★★ OPERATOR RETURN CHECKLIST (your announced full evaluation)
 
 1. **Live-smoke D153** — run a real (small) grill in a kata-scoped cwd: verify one-question-at-a-
