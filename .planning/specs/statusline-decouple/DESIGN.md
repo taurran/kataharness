@@ -123,5 +123,12 @@ follow-up added in this PR.
 Freeze-gate SHIP → build → tests green (full suite + new) → ruff → validator 48/0/0 → Snyk med+ 0
 → fresh-context adval → **BACKLOG queue item 3 build-item closed + G5 follow-up item added**
 (G7a) → PR → merge. **Live smoke** (the segment actually rendering in a kata-cwd session) rides
-the SAME next session as F-9/R6 — one repo-cwd session collects all three. Honesty label until
-then: built + gated, live-render-unproven.
+the SAME next session as F-9/R6 — one repo-cwd session collects all three. Honesty label:
+**LIVE (n=1, 2026-07-13)** — first repo-cwd session after the merge, three citations:
+(1) operator visually confirmed the segment (`kata │ KataHarness ▰▱▱▱▱▱▱▱▱▱ 10% │ run`) in the
+live statusline, GSD child replaced in-kata-scope as designed; (2) the session's live bridge
+`%TEMP%/kata-ctx-f165e776-0d92-450e-af52-e6725e2d400e.json` written by the host-invoked chain
+from the repo cwd during the same session; (3) deterministic repro — the exact `settings.json`
+chain command fed a repo-cwd payload rendered the kata segment byte-stable with the child not
+run. *(Label history: built + gated, live-render-unproven from merge 2026-07-12c until this
+observation.)*

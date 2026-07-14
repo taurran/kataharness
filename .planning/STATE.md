@@ -14,7 +14,9 @@ last_updated: "2026-07-12T23:30:00.000Z"
 > `adapters/claude/kata_scope.py` = THE one walk + THE one payload→start resolution (EV-1
 > honored); chain wrapper replace-in-kata-scopes leg (child not run in kata cwds, byte-identical
 > elsewhere); gauge hook delegates; conjunctive drift test; +50 tests;
-> **live-render-unproven** — rides the next repo-cwd session with F-9/R6. **(2) E5 backfill + the
+> **live-render-unproven** *(→ flipped LIVE n=1 2026-07-13, operator-observed first repo-cwd
+> session; citations in the statusline-decouple spec §Acceptance)* — rides the next repo-cwd
+> session with F-9/R6. **(2) E5 backfill + the
 > D163 HIGH catch:** the sweep found the backfill had CLOBBERED 3 of 4 D160 live-smoke evidence
 > pages (un-namespaced cross-source anchor collision) + truncated 70/95 bodies; learn_feed FIXED
 > (source-namespaced `<project>--<source-slug>--<anchor>.md` + continuation-line parser, TDD at

@@ -42,7 +42,8 @@
 > loop, Opus execution, standard mode, adval everything, then hand off"):** ALL EXECUTED —
 > **(1) the kata-native statusline segment is BUILT + GATED** (D162: two freeze-gates + the D163
 > sweep, 26 findings folded total; `kata_scope.py` ONE-walk/ONE-resolution; +50 tests;
-> live-render-unproven — rides the SAME next repo-cwd session as F-9/R6);
+> live-render-unproven — rides the SAME next repo-cwd session as F-9/R6 *(→ flipped LIVE n=1
+> 2026-07-13, operator-observed; citations in the statusline-decouple spec §Acceptance)*);
 > **(2) E5 backfill DONE — then caught by the sweep and FIXED (D163):** the un-namespaced page
 > names had CLOBBERED 3 of 4 D160 live-smoke evidence pages + truncated 70/95 bodies → learn_feed
 > now namespaces `<project>--<source-slug>--<anchor>.md` + folds continuation lines; the vault was
