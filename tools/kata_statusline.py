@@ -9,7 +9,8 @@ Public API:
     build_statusline(kata_dir) -> str
         Read <kata_dir>/board.md + state.json, build ViewModel, return render_statusline().
     statusline_from_event(stdin_text: str) -> str
-        Parse the Claude statusLine stdin JSON, find cwd, call build_statusline().
+        Parse the Claude statusLine stdin JSON, resolve the kata scope via the shared
+        kata_scope walk (resolve_start + find_kata_root), call build_statusline().
         Fail-soft: ANY exception -> return "".
     write_bridge(temp_dir, payload_dict) -> Path | None
         Write the kata superset context-usage bridge file (CA-L1/CA-L2) from the
@@ -266,13 +267,24 @@ def write_bridge(temp_dir: str | Path, payload_dict: Any) -> Path | None:
 def statusline_from_event(stdin_text: str) -> str:
     """Parse the Claude statusLine stdin JSON and return the one-line statusline.
 
-    The Claude statusLine command receives a JSON object on stdin.  The relevant
-    field is 'cwd' (fallback: workspace.current_dir).  If no cwd is found, or
-    <cwd>/.kata/ does not exist, return "" (invisible outside a kata run).
+    The Claude statusLine command receives a JSON object on stdin. The start path is resolved
+    by the shared ``kata_scope`` helper (``resolve_start``: ``cwd`` first,
+    ``workspace.current_dir`` fallback — the repo-wide "cwd wins" convention), then the ONE
+    bounded upward walk (``kata_scope.find_kata_root``) looks for kata-run evidence at or above
+    it — a ``.kata/`` directory OR a ``kata.config`` file. No resolvable start, or no evidence
+    within the walk cap ⇒ return "" (invisible outside a kata run). Scope found ⇒ render
+    ``<root>/.kata`` (a path join, not a scope check).
+
+    Adopting the ONE walk (statusline-scope-unify U3) replaces the former single-level
+    ``<cwd>/.kata`` existence check and gives two deliberate behavior deltas: a subdirectory of
+    a kata repo now renders the SAME line as the repo root, and a ``kata.config``-only repo
+    (absent ``.kata/board.md`` + ``state.json``) now renders the idle line — coherent
+    "configured, no active run". Frozen long-format bytes are unchanged for every existing
+    in-``.kata``-cwd fixture.
 
     Fail-soft: ANY exception in the entire body returns "".
 
-    Spec: PLAN-s1.5.md § Task S1.5a / RESEARCH-s1.5.md § Claude stdin contract.
+    Spec: PLAN-s1.5.md § Task S1.5a / RESEARCH-s1.5.md § Claude stdin contract; U3.
     """
     try:
         if not stdin_text:
@@ -283,22 +295,25 @@ def statusline_from_event(stdin_text: str) -> str:
             return ""
 
         # CA-L1/CA-L2: write the kata superset bridge from the SAME stdin JSON,
-        # BEFORE the render path — the bridge must NOT depend on a kata cwd (a
-        # non-kata cwd still writes the gauge). write_bridge is fail-soft (never
-        # raises), so it cannot alter the rendered line.
+        # BEFORE and INDEPENDENT of the scope/render path — the bridge must NOT
+        # depend on a kata cwd (a non-kata cwd still writes the gauge).
+        # write_bridge is fail-soft (never raises), so it cannot alter the line.
         write_bridge(tempfile.gettempdir(), data)
 
-        cwd: str = data.get("cwd") or (
-            data.get("workspace", {}).get("current_dir") or ""
-        )
-        if not cwd:
+        # The ONE scope resolution + walk (U3): resolve_start (cwd → workspace)
+        # then find_kata_root's bounded upward walk. Lazy import mirrors this
+        # module's lazy-import style; kata_scope is a tools/ sibling, so a plain
+        # ``import kata_scope`` resolves it on the same sys.path.
+        import kata_scope  # noqa: PLC0415 — lazy import (sibling in tools/)
+
+        start = kata_scope.resolve_start(data)
+        if start is None:
+            return ""
+        root = kata_scope.find_kata_root(start)
+        if root is None:
             return ""
 
-        kata_dir = Path(cwd) / ".kata"
-        if not kata_dir.exists():
-            return ""
-
-        return build_statusline(kata_dir)
+        return build_statusline(root / ".kata")
 
     except (Exception, SystemExit):  # noqa: BLE001
         # fail-soft: never crash Claude's statusline. The shared _safe_path ..

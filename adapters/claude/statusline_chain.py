@@ -205,12 +205,12 @@ def run_child(argv: List[str], stdin_bytes: bytes, timeout: int = _CHILD_TIMEOUT
 
 
 def _import_kata_scope():
-    """Import the sibling ``kata_scope`` module (same dir), mirroring the bridge-import path
-    insert pattern. Returns the module. Raising is the caller's cue to take the existing
-    legs (it cannot confirm kata scope)."""
-    adapter_dir = Path(__file__).resolve().parent
-    if str(adapter_dir) not in sys.path:
-        sys.path.insert(0, str(adapter_dir))
+    """Import ``kata_scope`` from tools/ (its core home since U1 — the SAME sys.path pattern
+    ``_import_kata_gauge`` uses), mirroring the bridge-import path insert. Returns the module.
+    Raising is the caller's cue to take the existing legs (it cannot confirm kata scope)."""
+    tools_dir = Path(__file__).resolve().parents[2] / "tools"
+    if str(tools_dir) not in sys.path:
+        sys.path.insert(0, str(tools_dir))
     import kata_scope  # noqa: PLC0415 — deferred import (path set first)
 
     return kata_scope

@@ -1,7 +1,7 @@
 """test_kata_scope.py — the ONE shared kata-scope helper (D160/EV-1).
 
 Ports the gauge hook's former ``_is_kata_scope`` walk tests as the base (they moved here
-when the walk was extracted to ``adapters/claude/kata_scope.py``), and adds the
+when the walk was extracted to ``kata_scope`` — home ``tools/kata_scope.py`` since U1), and adds the
 ``resolve_start`` precedence contract (cwd wins over workspace.current_dir; non-string/empty
 ⇒ None; NO os.getcwd fallback here).
 
@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]  # tools/
 sys.path.insert(0, str(ROOT))
 
 REPO_ROOT = ROOT.parent
-KATA_SCOPE = REPO_ROOT / "adapters" / "claude" / "kata_scope.py"
+KATA_SCOPE = ROOT / "kata_scope.py"  # tools/kata_scope.py (U1 core home)
 
 
 def _load():

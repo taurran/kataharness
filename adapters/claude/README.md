@@ -237,7 +237,9 @@ bridge files, zero contention (R-32) — the user's file is never touched.
 The never-clobber guarantee above is **deliberately re-scoped by D160**: it holds
 **everywhere except a kata-scoped cwd**. When the payload cwd is inside a kata run — a
 `.kata/` directory or a `kata.config` file at or above cwd, the shared
-`adapters/claude/kata_scope.py` walk (the SAME definition the gauge hook uses, EV-1) — the
+`tools/kata_scope.py` walk (the SAME definition the gauge hook AND the fresh-profile renderer
+use — home moved to core by D164/B7 so `kata_statusline.statusline_from_event` could join
+without a core→adapter import; EV-1) — the
 wrapper renders kata's **own** one-line segment and **does NOT run the child**. kata renders
 kata state in kata scopes; the operator's statusline owns everywhere else. Outside kata
 scope (and on unparseable / cwd-less / non-kata stdin) the CHAIN and SKIP legs stay

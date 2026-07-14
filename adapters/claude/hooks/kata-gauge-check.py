@@ -128,7 +128,7 @@ def _main() -> None:
     # EV-1, ONE definition); this hook wraps its None with the getcwd
     # posture and keeps NO local payload-cwd parsing of its own (v2-F1).
     # ------------------------------------------------------------------ #
-    scope_dir = Path(__file__).resolve().parents[1]  # adapters/claude/ (kata_scope.py)
+    scope_dir = Path(__file__).resolve().parents[3] / "tools"  # tools/kata_scope.py (U1 home)
     if str(scope_dir) not in sys.path:
         sys.path.insert(0, str(scope_dir))
     import kata_scope  # noqa: PLC0415  (deferred import — path must be set first)

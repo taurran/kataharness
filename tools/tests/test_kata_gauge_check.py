@@ -381,8 +381,8 @@ class TestUnit:
         self.mod = _load()
 
     def test_scope_gate_delegated_to_shared_helper(self, tmp_path: Path) -> None:
-        # EV-1/D160: the scope walk moved to adapters/claude/kata_scope.py (the ONE
-        # definition). The exhaustive walk semantics live in test_kata_scope.py; here we
+        # EV-1/D160: the scope walk lives in tools/kata_scope.py (the ONE definition, U1
+        # core home). The exhaustive walk semantics live in test_kata_scope.py; here we
         # only pin that the hook consumes the shared helper (no local reimplementation).
         src = GAUGE_CHECK.read_text(encoding="utf-8")
         assert "import kata_scope" in src

@@ -24,7 +24,13 @@ Promote to ROADMAP milestones when ready.
 > 5. Optional: Defender exclusion for C:\Dev (admin; lock-amplification reduction only).
 > 6. ~~Ratify provisionals~~ **DONE — D161, all seven LOCKED** (two riders: elevate brainstorm
 >    inherits the hosting grill's model; free-text escape always present).
-> 7. **Unify `statusline.py` onto `kata_scope` (G5 follow-up, from the D162 build) — OPEN.** The
+> 7. ~~Unify `statusline.py` onto `kata_scope`~~ **DONE — D164, 2026-07-13 (spec
+>    `.planning/specs/statusline-scope-unify/DESIGN.md`):** `kata_scope` home moved to
+>    `tools/` (core; no-shim, both adapter consumers re-pointed at their own depths);
+>    `statusline_from_event` now routes through the ONE walk + ONE resolution — fresh profile
+>    gains subdir + `kata.config` recognition; drift test extended to all three consumers.
+>    Renderer restyle offered and operator-DECLINED (s1.5 freeze intact; decline = signal).
+>    *(Original item preserved below for the record.)* The
 >    fresh-profile renderer `adapters/claude/statusline.py` (`statusline_from_event`) still carries
 >    its OWN third kata-scope check (`<cwd>/.kata` existence) and is a SECOND kata renderer distinct
 >    from the chain wrapper's new segment. The D162 build (D1/D2) deliberately touched only the chain
