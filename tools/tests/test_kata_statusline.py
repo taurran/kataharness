@@ -305,6 +305,21 @@ class TestSafePath:
 # ---------------------------------------------------------------------------
 
 
+def _deep_nonkata(tmp_path: Path, depth: int = 12) -> Path:
+    """Return a cwd nested *depth* empty levels below tmp_path.
+
+    U3 adopts the bounded upward walk (kata_scope.find_kata_root, cap _SCOPE_WALK_CAP = 10),
+    so a "no evidence" assertion must confine the walk to a subtree we KNOW is empty — otherwise
+    a stray ``.kata``/``kata.config`` in a real ancestor of tmp_path could flip the result.
+    Nesting >= the walk cap keeps all probed dirs inside this empty subtree (mirrors the
+    test_statusline_chain fixture-hermeticity note)."""
+    d = tmp_path
+    for i in range(depth):
+        d = d / f"d{i}"
+    d.mkdir(parents=True)
+    return d
+
+
 class TestStatuslineFromEvent:
     def _make_kata_dir(self, tmp_path: Path) -> Path:
         kata_dir = tmp_path / ".kata"
@@ -338,11 +353,13 @@ class TestStatuslineFromEvent:
         result = kata_statusline.statusline_from_event("")
         assert result == ""
 
-    # --- .kata absent ---
+    # --- no evidence anywhere within the walk cap ---
 
-    def test_kata_dir_absent_returns_empty(self, tmp_path: Path):
-        # tmp_path exists but no .kata subdir
-        payload = json.dumps({"cwd": str(tmp_path)})
+    def test_no_evidence_within_walk_cap_returns_empty(self, tmp_path: Path):
+        # U3: a bare cwd with NO .kata/kata.config at or above it (within the bounded walk)
+        # renders nothing. Nested deep so the walk cannot escape into real-filesystem evidence.
+        cwd = _deep_nonkata(tmp_path)
+        payload = json.dumps({"cwd": str(cwd)})
         result = kata_statusline.statusline_from_event(payload)
         assert result == ""
 
@@ -423,6 +440,59 @@ class TestStatuslineFromEvent:
             payload = json.dumps({"cwd": d})
             result = kata_statusline.statusline_from_event(payload)
         assert result == ""
+
+    # --- U3 behavior deltas: walk semantics (subdir render + kata.config-only idle) ---
+
+    def test_subdir_of_kata_repo_renders_same_as_root(self, tmp_path: Path):
+        """U3 delta 1: a subdirectory of a kata repo now renders — byte-identical to the
+        line rendered from the repo root (the bounded walk finds the ancestor's .kata)."""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        self._make_kata_dir(repo)
+        subdir = repo / "src" / "pkg" / "mod"
+        subdir.mkdir(parents=True)
+
+        root_line = kata_statusline.statusline_from_event(
+            json.dumps({"cwd": str(repo)})
+        )
+        sub_line = kata_statusline.statusline_from_event(
+            json.dumps({"cwd": str(subdir)})
+        )
+        assert "KATAHARNESS 改善型" in root_line  # the root cwd renders (baseline)
+        assert sub_line == root_line  # subdir renders the SAME line
+
+    def test_kata_config_only_repo_renders_idle_line(self, tmp_path: Path):
+        """U3 delta 2: a kata.config-only repo (no .kata/board.md + state.json) now renders
+        the FROZEN idle line — coherent 'configured, no active run'."""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "kata.config").write_text("{}", encoding="utf-8")  # config, but no .kata/
+        result = kata_statusline.statusline_from_event(
+            json.dumps({"cwd": str(repo)})
+        )
+        assert result == "KATAHARNESS 改善型 │ ⏳ idle — no active run"
+
+    def test_resolve_start_cwd_wins_through_event(self, tmp_path: Path):
+        """U3: resolve_start's 'cwd wins over workspace.current_dir' convention holds end-to-end.
+        cwd → an ACTIVE kata repo, workspace → an IDLE kata repo; the ACTIVE line renders."""
+        active = tmp_path / "active"
+        active.mkdir()
+        self._make_kata_dir(active)  # board + in-progress state ⇒ active line
+        idle = tmp_path / "idle"
+        idle.mkdir()
+        (idle / "kata.config").write_text("{}", encoding="utf-8")  # ⇒ idle line
+
+        payload = json.dumps({
+            "cwd": str(active),
+            "workspace": {"current_dir": str(idle)},
+        })
+        result = kata_statusline.statusline_from_event(payload)
+
+        expected_active = kata_statusline.build_statusline(active / ".kata")
+        expected_idle = kata_statusline.build_statusline(idle / ".kata")
+        assert result == expected_active  # cwd (active) won
+        assert result != expected_idle  # NOT the workspace (idle) repo
+        assert result != "KATAHARNESS 改善型 │ ⏳ idle — no active run"
 
 
 # ---------------------------------------------------------------------------
@@ -651,8 +721,9 @@ class TestStatuslineFromEventBridge:
 
     def test_bridge_written_even_for_non_kata_cwd(self, tmp_path, monkeypatch):
         """A non-kata cwd still writes the gauge (bridge must not depend on .kata)."""
-        cwd = tmp_path / "plain"
-        cwd.mkdir()  # no .kata subdir
+        # Nested deep (U3): the bounded walk stays inside this empty subtree, so the "no .kata"
+        # assertion can't be flipped by real-filesystem evidence above tmp_path.
+        cwd = _deep_nonkata(tmp_path)  # no .kata anywhere within the walk cap
         bridge_dir = tmp_path / "temp"
         bridge_dir.mkdir()
         monkeypatch.setattr(

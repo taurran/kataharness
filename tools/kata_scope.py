@@ -1,13 +1,18 @@
-"""adapters/claude/kata_scope.py — the ONE definition of "am I in a kata scope?".
+"""tools/kata_scope.py — the ONE definition of "am I in a kata scope?".
 
-Shared kata-scope helper (D160 / EV-1 accepted at the 2026-07-12c live ELEVATE). This
-module is the SINGLE physical home of the bounded-upward-walk that answers "is this cwd
-inside a kata run?" — the behavior-identical extraction of the walk that used to live only
-inside ``adapters/claude/hooks/kata-gauge-check.py._is_kata_scope`` (freeze-gate F-3). BOTH
-consumers — the UserPromptSubmit gauge hook and the ``statusline_chain.py`` chain wrapper —
-import from here; a drift test (``tools/tests/test_kata_scope.py``) pins both call sites to
-this helper so the definition is never copied (the D2 edge-(a) "ONE definition, never two"
-made structural rather than review-enforced).
+Shared kata-scope helper (D160 / EV-1 accepted at the 2026-07-12c live ELEVATE; home moved
+to ``tools/`` core by the statusline-scope-unify item U1). This module is the SINGLE physical
+home of the bounded-upward-walk that answers "is this cwd inside a kata run?" — the
+behavior-identical extraction of the walk that used to live only inside
+``adapters/claude/hooks/kata-gauge-check.py._is_kata_scope`` (freeze-gate F-3). It lives in
+``tools/`` because the core renderer is now a consumer and core MUST NOT import adapter code;
+the module is pure stdlib, so it is core-legal. THREE consumers import from here — the
+UserPromptSubmit gauge hook (``adapters/claude/hooks/kata-gauge-check.py``), the
+``adapters/claude/statusline_chain.py`` chain wrapper, and the core renderer
+(``tools/kata_statusline.statusline_from_event``) — plus the drift tests
+(``tools/tests/test_kata_scope.py`` and ``tools/tests/test_statusline_chain.py``) that pin
+every call site to this helper so the definition is never copied (the D2 edge-(a) "ONE
+definition, never two" made structural rather than review-enforced).
 
 Pure stdlib, no third-party imports, no subprocess. The walk semantics are identical to the
 former gauge-hook helper: an ancestor carrying a ``.kata/`` directory OR a ``kata.config``
@@ -48,8 +53,8 @@ def find_kata_root(start: Path, *, max_levels: int = _SCOPE_WALK_CAP) -> Optiona
     filesystem root (a directory whose parent is itself). Any OS error while probing a
     directory ⇒ None (silent fail-soft — a scope check never raises).
 
-    This is the ONE bounded upward walk in the adapter (D160/EV-1). ``is_kata_scope`` and
-    both consumers (the gauge hook, the chain wrapper) route through it.
+    This is the ONE bounded upward walk repo-wide (D160/EV-1). ``is_kata_scope`` and all
+    three consumers (the gauge hook, the chain wrapper, the core renderer) route through it.
     """
     current = start
     for _ in range(max_levels):

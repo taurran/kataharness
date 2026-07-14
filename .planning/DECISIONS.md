@@ -2641,3 +2641,20 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   three sources re-emitted namespaced — 110 pages (95 decisions + 4 statusline-decouple incl.
   the RESTORED EV-1/D1–D3 evidence + 11 multi-model); recall read-back green. Old-scheme names
   retired; the emitter never touches non-loop pages (unchanged).
+- **D164 — kata-scope home moved to core; fresh-profile renderer unified onto the ONE walk (BACKLOG 7 / D162-G5 follow-up).**
+  2026-07-13, operator-grilled (single question): scope-check unification ONLY — the full
+  visual reconcile (fresh-profile line restyled into the D162 segment family) was offered and
+  **DECLINED**; the PLAN-s1.5 LOCKED long format stays frozen; the decline is preference
+  signal. Spec: `.planning/specs/statusline-scope-unify/DESIGN.md` (U1–U5; freeze-gate
+  SHIP-WITH-FIXES, 1 HIGH folded — the two adapter consumers sit at DIFFERENT depths, so each
+  mirrors its own kata_gauge import offset: chain `parents[2]/tools`, gauge hook
+  `parents[3]/tools`). Mechanics: `adapters/claude/kata_scope.py` → `tools/kata_scope.py`
+  (git mv, public surface byte-identical; supersedes D160/EV-1's "adapter home" wording —
+  core may not import adapter, the module is pure-stdlib core-legal; a re-export shim was
+  REJECTED: a module named kata_scope importing kata_scope self-shadows under the
+  adapter-dir-first sys.path insert); `statusline_from_event` drops its local payload parsing
+  + single-level `<cwd>/.kata` check for `resolve_start` + `find_kata_root` — the fresh
+  profile now renders from subdirs and recognizes `kata.config`-only repos (idle line);
+  bridge-before-render + fail-soft unchanged; conjunctive drift test extended to all THREE
+  consumers (chain, gauge hook, kata_statusline — walk + payload parsing live ONLY in
+  kata_scope).

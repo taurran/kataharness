@@ -34,8 +34,9 @@ sys.path.insert(0, str(ROOT))
 
 REPO_ROOT = ROOT.parent
 CHAIN = REPO_ROOT / "adapters" / "claude" / "statusline_chain.py"
-KATA_SCOPE = REPO_ROOT / "adapters" / "claude" / "kata_scope.py"
+KATA_SCOPE = ROOT / "kata_scope.py"  # tools/kata_scope.py (U1 core home)
 GAUGE_CHECK = REPO_ROOT / "adapters" / "claude" / "hooks" / "kata-gauge-check.py"
+STATUSLINE = ROOT / "kata_statusline.py"  # tools/kata_statusline.py — the third consumer (U3)
 
 
 def _load():
@@ -572,10 +573,12 @@ def _funcs_with_parent_walk(src_path: Path) -> list[str]:
 class TestScopeDrift:
     def test_upward_walk_defined_only_in_kata_scope(self) -> None:
         # MUTATION PROOF (drift): the parent-loop + evidence-literal walk exists in
-        # kata_scope.py and NOWHERE else. Copy it back into a consumer ⇒ RED.
+        # tools/kata_scope.py and NOWHERE else — repo-wide, across ALL THREE consumers.
+        # Copy it back into any consumer ⇒ RED.
         assert _funcs_with_parent_walk(KATA_SCOPE)  # find_kata_root carries it
         assert _funcs_with_parent_walk(CHAIN) == []
         assert _funcs_with_parent_walk(GAUGE_CHECK) == []
+        assert _funcs_with_parent_walk(STATUSLINE) == []  # U3: the core renderer too
 
     def test_run_hint_bare_kata_literal_is_not_a_false_positive(self) -> None:
         # The chain wrapper DOES contain a bare ".kata" literal (the run-hint board path);
@@ -583,18 +586,32 @@ class TestScopeDrift:
         assert ".kata" in CHAIN.read_text(encoding="utf-8")
         assert _funcs_with_parent_walk(CHAIN) == []
 
-    def test_both_consumers_import_the_shared_helper(self) -> None:
+    def test_all_three_consumers_import_the_shared_helper(self) -> None:
+        # U3: the chain wrapper, the gauge hook, AND the core renderer all route through
+        # the ONE kata_scope helper.
         assert "import kata_scope" in CHAIN.read_text(encoding="utf-8")
         assert "import kata_scope" in GAUGE_CHECK.read_text(encoding="utf-8")
+        assert "import kata_scope" in STATUSLINE.read_text(encoding="utf-8")
 
-    def test_neither_consumer_parses_payload_cwd_locally(self) -> None:
-        # v2-F1: neither consumer carries local payload-cwd parsing — cwd resolution is the
+    def test_no_consumer_parses_payload_cwd_locally(self) -> None:
+        # v2-F1 / U4: no consumer carries local payload-cwd parsing — cwd resolution is the
         # shared helper's job. The hook's start line IS the resolve_start-or-getcwd wrap.
         chain_src = CHAIN.read_text(encoding="utf-8")
         gauge_src = GAUGE_CHECK.read_text(encoding="utf-8")
+        statusline_src = STATUSLINE.read_text(encoding="utf-8")
         assert '.get("cwd")' not in chain_src
         assert '.get("cwd")' not in gauge_src
+        assert '.get("cwd")' not in statusline_src  # U3: no local cwd extraction in the renderer
         assert "kata_scope.resolve_start(payload) or Path(os.getcwd())" in gauge_src
+
+    def test_kata_statusline_routes_through_kata_scope(self) -> None:
+        # U3: statusline_from_event resolves + walks via kata_scope — no local walk, no local
+        # payload-cwd parsing, and the single-level ``Path(cwd) / ".kata"`` existence check is gone.
+        statusline_src = STATUSLINE.read_text(encoding="utf-8")
+        assert "kata_scope.resolve_start(data)" in statusline_src
+        assert "kata_scope.find_kata_root(start)" in statusline_src
+        # the former local check is deleted (no ``workspace``-dict cwd fallback parsing remains)
+        assert 'workspace", {}' not in statusline_src
 
 
 if __name__ == "__main__":  # pragma: no cover
