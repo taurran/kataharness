@@ -77,13 +77,17 @@ def _parse_result_json(stdout: str) -> dict:
 
 
 def test_no_flag_stdout_golden(fake_home, tmp_path, capsys):
-    """Without any new flag, stdout is pretty-JSON + note lines + the next-steps
-    banner; stderr is empty.
+    """Without any new flag, stdout is pretty-JSON (incl. the S2
+    ``vault_recommendation`` field on this vaultless install) + note lines + the
+    next-steps banner; stderr is exactly the one-line S2 PokeVault note.
 
-    This is the BC regression anchor (PLAN §Slice B test 7 + BUILD NIT 1).
-    Verifies the default mixed-stdout path is byte-for-byte the JSON+notes shape,
-    now followed by the post-install human guidance banner (human mode only).
+    This is the BC regression anchor (PLAN §Slice B test 7 + BUILD NIT 1),
+    amended per second-brain-target PLAN T2 (escalation E-T2-1, option (a)): it
+    now byte-pins the DESIGNED post-S2 output of the vaultless plain install —
+    still a strict golden, anchoring the designed contract.
     """
+    import kata_settings as ks
+
     host = tmp_path / "dot-claude"
     rc = ki.main(
         ["--platform", "claude", "--home", str(fake_home), "--host-dir", str(host)]
@@ -98,8 +102,13 @@ def test_no_flag_stdout_golden(fake_home, tmp_path, capsys):
     assert "linked" in result
     assert "method" in result
 
-    # Reconstruct expected stdout using the SAME format as install() -> print pipeline
+    # Reconstruct expected stdout using the SAME format as install() -> print pipeline.
+    # S2: main() attaches `vault_recommendation` to the result dict (last key) before
+    # printing — this install is vaultless with no remembered decline, so it recommends.
     reinstall_result = ki.install("claude", harness_home=fake_home, host_dir=host)
+    expected_rec = ks.vault_recommendation(ks.read_settings(home=fake_home), home=fake_home)
+    assert expected_rec["recommend"] is True  # vaultless + no decline ⇒ recommends
+    reinstall_result["vault_recommendation"] = expected_rec
     expected_json = json.dumps(reinstall_result, indent=2)
     expected_notes = "".join(
         f"  - {n}\n" for n in reinstall_result.get("notes", [])
@@ -121,10 +130,14 @@ def test_no_flag_stdout_golden(fake_home, tmp_path, capsys):
         + "\n"
     )
     expected_stdout = expected_json + "\n" + expected_notes + expected_banner
-    assert out == expected_stdout  # byte-identical to the current format
+    assert out == expected_stdout  # byte-identical to the designed format
 
-    # Nothing on stderr in non-json mode
-    assert err == ""
+    # stderr carries EXACTLY the one-line S2 note (byte-exact) in non-json mode
+    expected_note = (
+        "note: a second brain is optional (never required) — add one later by pointing "
+        f"--vault-dir at any vault, or start with PokeVault → {expected_rec['link']}\n"
+    )
+    assert err == expected_note
 
 
 # ---------------------------------------------------------------------------
