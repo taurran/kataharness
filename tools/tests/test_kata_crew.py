@@ -12,8 +12,10 @@ The D5 chip layout (byte-pin reference):
     ⚒ C·opus·H▰ C·opus·H▰ V·son·M▰ +2       (truncate at 3 chips + " +N")
     ""                                       (empty roster ⇒ crew slot vanishes)
 
-``render_crew`` renders each entry's ``model`` field VERBATIM (the conductor writes the
-shortname, e.g. "son"); ``render_model_chip`` lowercases the payload display_name's first token.
+``render_crew`` renders each entry's ``model`` field through the DISPLAY-ONLY abbreviation map
+(``sonnet``→``son``, ``mythos``→``myth`` — adval fold A); every other string renders verbatim.
+Role/model/effort are control-stripped (the G7d ANSI-injection class — adval fold B).
+``render_model_chip`` lowercases the payload display_name's first token.
 """
 
 from __future__ import annotations
@@ -158,6 +160,67 @@ def test_degrade_closed_entries_excluded():
     )
     # t1 is closed ⇒ only t2 renders
     assert kc.render_crew(roster, "", now=NOW, deadline_minutes=10) == f"{DIM}⚒ V·son·M▰{RESET}"
+
+
+# ======================================================================================
+# Fold A — display-only model abbreviation map (adval finding 2)
+# ======================================================================================
+
+
+def test_abbrev_sonnet_renders_son():
+    # a REAL conductor write of the ladder short-name "sonnet" renders the pinned `V·son·M` chip
+    roster = _roster({"t1": _entry("validator", "sonnet", "M", LIVE_1)})
+    assert kc.render_crew(roster, "", now=NOW, deadline_minutes=10) == f"{DIM}⚒ V·son·M▰{RESET}"
+
+
+def test_abbrev_mythos_renders_myth():
+    roster = _roster({"t1": _entry("coder", "mythos", "H", LIVE_1)})
+    assert kc.render_crew(roster, "", now=NOW, deadline_minutes=10) == f"{DIM}⚒ C·myth·H▰{RESET}"
+
+
+def test_abbrev_opus_fable_haiku_verbatim():
+    # ladder names within the one-line budget pass through unchanged
+    for model in ("opus", "fable", "haiku"):
+        roster = _roster({"t1": _entry("coder", model, "H", LIVE_1)})
+        assert (
+            kc.render_crew(roster, "", now=NOW, deadline_minutes=10)
+            == f"{DIM}⚒ C·{model}·H▰{RESET}"
+        )
+
+
+def test_abbrev_unknown_model_verbatim():
+    roster = _roster({"t1": _entry("coder", "gpt-5-codex", "H", LIVE_1)})
+    assert kc.render_crew(roster, "", now=NOW, deadline_minutes=10) == f"{DIM}⚒ C·gpt-5-codex·H▰{RESET}"
+
+
+# ======================================================================================
+# Fold B — ANSI-injection guard on roster content (adval finding 3, G7d class)
+# ======================================================================================
+
+
+def test_roster_ansi_injection_stripped():
+    # a hostile/corrupt dispatch.json with control bytes in role/model/effort renders STRIPPED,
+    # never raw: ESC (C0), CSI (C1 \x9b), and BEL vanish (byte-pinned)
+    roster = _roster({"t1": _entry("\x07coder", "op\x1bus\x9b", "H\x07", LIVE_1)})
+    rendered = kc.render_crew(roster, "", now=NOW, deadline_minutes=10)
+    assert rendered == f"{DIM}⚒ C·opus·H▰{RESET}"
+    assert rendered.count("\x1b") == 2  # only kata's own _ANSI_DIM + _ANSI_RESET remain
+
+
+def test_roster_full_csi_sequence_defanged():
+    # a full ESC[31m injection: the ESC is stripped, the printable remnant "[31m" stays INERT
+    # text (the same semantics as statusline_chain._strip_control on a hostile dirname) — the
+    # terminal never sees a live escape from roster content
+    roster = _roster({"t1": _entry("coder", "opus\x1b[31m", "H", LIVE_1)})
+    rendered = kc.render_crew(roster, "", now=NOW, deadline_minutes=10)
+    assert rendered == f"{DIM}⚒ C·opus[31m·H▰{RESET}"
+    assert rendered.count("\x1b") == 2  # no injected ESC survives
+
+
+def test_roster_control_only_role_renders_placeholder():
+    # a role that is ONLY control bytes degrades to the "?" placeholder, never raw escapes
+    roster = _roster({"t1": _entry("\x1b\x9b", "opus", "H", LIVE_1)})
+    assert kc.render_crew(roster, "", now=NOW, deadline_minutes=10) == f"{DIM}⚒ ?·opus·H▰{RESET}"
 
 
 # ======================================================================================

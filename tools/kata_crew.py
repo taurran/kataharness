@@ -69,6 +69,12 @@ _STALE_MARK = "▱"
 #: Truncate the chip run at this many chips, then append ` +N` (DESIGN D5).
 _MAX_CHIPS = 3
 
+#: DISPLAY-ONLY model abbreviations (adval fold A): the conductor writes ladder short-names
+#: ("sonnet", "mythos", ...) but the pinned D5 chips use the tighter forms ("son"). Applied
+#: inside :func:`_chip` only — never persisted; every other model string renders VERBATIM
+#: (opus/fable/haiku fit the one-line budget; unknown strings pass through unchanged).
+_MODEL_ABBREV = {"sonnet": "son", "mythos": "myth"}
+
 
 # --------------------------------------------------------------------------- #
 # Internal helpers
@@ -280,17 +286,35 @@ def liveness(
 # --------------------------------------------------------------------------- #
 # Rendering — the pinned D5 chip run
 # --------------------------------------------------------------------------- #
+def _strip_control(text: str) -> str:
+    """Strip C0 (U+0000–U+001F), DEL (U+007F), and C1 (U+0080–U+009F) control characters.
+
+    Terminal-escape injection is the vector (the G7d class, adval fold B — same rule as
+    ``statusline_chain._strip_control`` applies to the dirname): roster strings render into the
+    ANSI status line, so a hostile/corrupt ``dispatch.json`` carrying an ESC/CSI in role/model/
+    effort would recolour or forge the whole bar. Stripping C0/C1/DEL kills the class while
+    leaving printable names intact.
+    """
+    return "".join(ch for ch in text if not (ord(ch) < 0x20 or 0x7F <= ord(ch) <= 0x9F))
+
+
 def _role_letter(role: object) -> str:
     """First letter of the role, uppercased (C/V/R/O/E per the roles vocabulary); ``?`` if empty."""
-    text = str(role) if role else ""
+    text = _strip_control(str(role)) if role else ""
     return text[0].upper() if text else "?"
 
 
 def _chip(entry: dict, live: bool) -> str:
-    """One chip: ``<RoleLetter>·<model>·<effort><liveness>`` (model rendered VERBATIM)."""
+    """One chip: ``<RoleLetter>·<model>·<effort><liveness>``.
+
+    ``model`` goes through the display-only :data:`_MODEL_ABBREV` map (fold A: "sonnet" → "son");
+    unmapped strings render verbatim. Role/model/effort are control-stripped AFTER the
+    abbreviation lookup (fold B — the G7d ANSI-injection guard).
+    """
     role_letter = _role_letter(entry.get("role"))
-    model = str(entry.get("model") or "")
-    effort = str(entry.get("effort") or "")
+    model_raw = str(entry.get("model") or "")
+    model = _strip_control(_MODEL_ABBREV.get(model_raw, model_raw))
+    effort = _strip_control(str(entry.get("effort") or ""))
     mark = _LIVE_MARK if live else _STALE_MARK
     return f"{role_letter}{_DOT}{model}{_DOT}{effort}{mark}"
 
