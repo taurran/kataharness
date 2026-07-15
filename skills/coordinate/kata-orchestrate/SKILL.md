@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.12.1
+version: 0.13.0
 category: coordinate
 status: beta
 agnostic: true
@@ -286,6 +286,11 @@ an unrelated wave.
 events. The concurrency evidence (`protocol/board.md` → Concurrency evidence) computes over the whole board;
 stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`overlaps` and falsify the
 `worker-clock` provenance. A per-run board is the precondition for honest concurrency evidence.
+**Rotate/clear `.kata/dispatch.json` alongside it (freeze-gate F1 — the D3 LOCKED edge).** The crew
+roster (§ The loop step 2 below) is single-writer and run-scoped exactly like the board; a crashed prior
+run leaves never-closed entries whose open workers would otherwise render **phantom crew chips** on the
+statusline (a fabricated liveness signal — D4-class). Rotate/clear the roster on the **same run-start
+sweep** as the board so the first dispatch starts from an empty roster.
 
 1. **Isolate.** Use [[kata-worktree]] to give each dispatchable task-owner its own worktree on a per-task
    branch (a lone sequential task may run directly on the integration branch).
@@ -312,6 +317,23 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
      - `"cloudformation"` or `"cdk"` in the set → inject **`[[kata-iac-cloudformation]]`** as the execute-phase specialist.
      - Both ⇒ inject both specialists. A task may own both IaC kinds and ordinary code — no exclusion.
      - Mark the task as **IaC-classed**: its verify (step 3) runs the IaC gate in addition to its normal verify.
+   - **Roster entry (per dispatch — DISPLAY-ONLY; single-writer = the conductor).** At every worker
+     dispatch, write the crew roster entry via `kata_crew.write_roster_entry(kata_dir, task_id, role=<role>,
+     model=<shortname>, effort=<L|M|H>)` (`tools/kata_crew.py`), where `kata_dir` is the **integration /
+     target-repo root's `.kata/`** (the same shared root as the board — never a per-task worktree's `.kata/`):
+     - **`role`** from the roles vocabulary (`kata_roles.ROLE_GROUPS`: coder/validator/researcher/orchestrator/
+       evaluator) — a build worker dispatched via [[kata-tdd]] is `coder`; the chip shows its uppercased first
+       letter (C/V/R/O/E).
+     - **`model`** = the **D131-resolved** dispatch model's ladder short-name (haiku/sonnet/opus/fable/mythos) —
+       the § Dispatch-time model selection result just resolved above; on inherit-by-omission (`resolve` → `None`)
+       it is the **anchor's** short-name (the model the worker actually runs at).
+     - **`effort`** = the dispatch reasoning-effort tier (`L`/`M`/`H`).
+     The roster **feeds the statusline crew chips only** — it **never gates, never kills, and never feeds
+     liveness ENFORCEMENT** (the F3 liveness monitor below stays **board-driven**, not roster-driven). Close the
+     entry at the task gate (step 3) via `kata_crew.close_roster_entry(kata_dir, task_id)` so the chip clears
+     when the task leaves the active frontier. **Single-writer contract:** only the conductor writes the roster —
+     workers never touch `.kata/dispatch.json` (the D3 LOCKED edge; a phantom or worker-forged chip is a D4-class
+     fabricated signal).
    Each worker prompt MUST carry, and ONLY carry, its task (the orientation frames it; the task scopes it):
    - an instruction to **execute via [[kata-tdd]]** (the worker's execute-phase discipline — vertical
      red→green, stay in lane, escalate don't re-plan);
@@ -420,7 +442,9 @@ stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`o
    N=2: two staleness escalations on one task ⇒ route to [[kata-diagnose]], no new valve.)
 3. **Gate each task (default-FAIL).** When a subagent reports done, YOU read the diff and run the task's
    verify (tests + **the security scan**). Not done until evidence is read and passes. Confirm it touched
-   **only its owned files** (drift check).
+   **only its owned files** (drift check). **Close the worker's crew roster entry here** —
+   `kata_crew.close_roster_entry(kata_dir, task_id)` (§ The loop step 2) — so the crew chip clears when the
+   task leaves the active frontier; the close is DISPLAY-ONLY and never gates.
    **Security scan is tool-agnostic + posture-driven (Lever 2 / F6).** Use whatever scanner the toolchain
    provides — never assume a vendor, never shim tooling to force a scan. Honor `kata.config.securityScan`
    (absent ⇒ `when-available`, BC): `required` ⇒ fail-closed — **under `required`, scanner-absence or an
