@@ -125,7 +125,11 @@ Promote to ROADMAP milestones when ready.
 >    (AT-L22); measure premium calls, evaluator calls, wrongful-kill count, wall clock, tokens —
 >    the measured successors to SMOKE-MODELED's −86% premium-call / −93% FP-class-token modeled
 >    numbers. Rides the same post-R6 instrumented runs as the calibration follow-on.
-> 7. **PokeVault install / MindBridge ingest** — first real external deploys against v0.2.1.
+> 7. ~~PokeVault install / MindBridge ingest~~ **RESOLVED — D165 (PR #35, 2026-07-14), scope
+>    corrected by operator:** MindBridge is OUT of kata scope permanently (operator-side platform,
+>    never a work item — memory `mindbridge-hands-off`); "install" was reframed to **second brain
+>    = user-definable optional target** + the PokeVault recommend-once flow. E1/E2's instrumented
+>    unblock also landed in the same run (first verify.owned ledger row).
 
 > **★ ACTIVE INITIATIVE (2026-07-02, D138): Milestone 2 — Freeze/Float (operator-directed).** This is the
 > current focus, NOT any item below. Milestone 1 (Release Hardening) shipped (PR #4). Freeze/Float ship order
