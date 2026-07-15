@@ -103,3 +103,21 @@ writes by workers (single-writer stays the conductor) · gauge-hook changes.
 = frozen INTENT.md AC1–AC6. Gate chain: freeze-gate → dual-control → build (workers in
 worktrees, checkpoint mandate) → per-task gates → gauntlet + Snyk (when-available) →
 fresh-context adval → live smoke → PR → merge → closeout.
+
+**Evidence (run executed 2026-07-14):** freeze-gate SHIP-WITH-FIXES (3 findings — roster
+rotation · injectable now · liveness never-raise — folded into DESIGN **and** PLAN) ·
+dual-control "Execute" · three Opus workers in isolated worktrees, zero escalations · **AC4
+live smoke OBSERVED on the installed chain command:**
+`kata │ KataHarness ▰▰▰▰▱▱▱▱▱▱ 42% │ fable │ ⚒ C·opus·H▰ V·son·M▰ │ run` (real roster written
+via the real API, then cleaned) · gauntlet **pytest 3719+/3 skip (+52 new: 45 kata_crew + 16
+chain − shared) · integration 2/2 · ruff clean · validator 48/0/0** · Snyk med+ **0 new**
+(tools/ 0; adapters/ = the one pre-accepted `.snyk` fingerprint) · adval **HOLD → 3 findings
+folded → re-adval SHIP** — the HOLD's CRITICAL was the diff capturing `recurrence_detect.py`
+mid-mutation from a CONCURRENT background gauntlet: **the D1 phantom-corruption class
+ROOT-CAUSED live** (`mutation_run.prove_non_vacuous` mutates the real file in place —
+BACKLOG'd as its own gated fix; tree verified clean; diff regenerated on a quiet tree); the
+two real findings (model-abbrev display map `sonnet→son`/`mythos→myth` + G7d control-strip on
+roster content) folded with 9 new tests, per-slot isolation proven at the function level ·
+telemetry: **calibration row 2** (`subagent-monitor-2026-07-14`, tasks 3 · checkpoints 4+2
+fold-checkpoints · honest aggregates) — one more instrumented run until the `inlineEval "on"`
+offer threshold (≥3).
