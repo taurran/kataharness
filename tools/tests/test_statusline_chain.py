@@ -838,6 +838,55 @@ class TestPerSlotDegrade:
         assert seg == _BC_REFERENCE_SEGMENT  # both S1 slots gone ⇒ pre-edit segment
         assert "fable" not in seg
 
+    def test_render_crew_failure_leaves_model_chip_intact(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # MUTATION PROOF (the ACTUAL per-slot isolation claim, DESIGN S2): a render_crew-SPECIFIC
+        # failure (import fine, roster fine — only the crew render raises) blanks ONLY the crew
+        # slot; the model chip, rendered through the SAME kata_crew module, survives.
+        import kata_crew  # the same module _import_kata_crew returns (shared sys.modules entry)
+
+        def _boom(*a, **k):  # noqa: ANN002, ANN003, ANN202
+            raise RuntimeError("render_crew exploded")
+
+        monkeypatch.setattr(kata_crew, "render_crew", _boom)
+        payload = {
+            "model": {"display_name": "Fable 5"},
+            "context_window": {"remaining_percentage": 42},
+        }
+        seg = _render_full(
+            tmp_path,
+            payload=payload,
+            workers={"c1": _worker("coder", "opus", "H", "2026-07-14T11:59:00+00:00")},
+        )
+        assert "\x1b[2mfable\x1b[0m" in seg  # model chip INTACT
+        assert "⚒" not in seg and "C·opus·H" not in seg  # crew slot ABSENT (and its separator)
+        assert "kata" in seg and "58%" in seg  # gauge intact, nothing raised
+
+    def test_render_model_chip_failure_leaves_crew_intact(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # MUTATION PROOF (the mirror direction): a render_model_chip-SPECIFIC failure blanks
+        # ONLY the model slot; the crew chips, rendered through the SAME kata_crew module, survive.
+        import kata_crew
+
+        def _boom(*a, **k):  # noqa: ANN002, ANN003, ANN202
+            raise RuntimeError("render_model_chip exploded")
+
+        monkeypatch.setattr(kata_crew, "render_model_chip", _boom)
+        payload = {
+            "model": {"display_name": "Fable 5"},
+            "context_window": {"remaining_percentage": 42},
+        }
+        seg = _render_full(
+            tmp_path,
+            payload=payload,
+            workers={"c1": _worker("coder", "opus", "H", "2026-07-14T11:59:00+00:00")},
+        )
+        assert "fable" not in seg  # model slot ABSENT
+        assert "⚒ C·opus·H▰" in seg  # crew chips INTACT (fresh worker)
+        assert "kata" in seg and "58%" in seg  # gauge intact, nothing raised
+
 
 class TestSegmentSignatureF2:
     def test_render_segment_requires_now_keyword(self, tmp_path: Path) -> None:
