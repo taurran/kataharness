@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.5.1
+version: 0.6.0
 category: coordinate
 status: beta
 agnostic: true
@@ -183,6 +183,19 @@ approved like an install, **never an implied side effect**:
    *The stranding verdict* section owns the semantics): a walk-away-configured run with the full stranding
    conjunction ⇒ preflight `blockers` entry (`status: blocked`, launch refused); attended ⇒ WARN + proceed.
    The host-posture question that resolves `read_host_autocompact`'s unknown rides in this bundle.
+7. **The second-brain recommendation (the optional-target ask, SB / EV-1)** — when composing a run with
+   `vaultDir` unset AND `kata_settings.vault_recommendation(kata_settings.read_settings(home))` recommends,
+   surface ONE structured recommendation question (recommendation-first, 2–4 options, free-text escape):
+   **link PokeVault** (`git clone https://github.com/taurran/pokevault` + bootstrap, or install) · **name
+   their own vault path** · **decline**. Persist the answer at answer time — **accept-a-path** ⇒ the existing
+   `--vault-dir`/settings write path (`kata_settings.write_settings(..., vault_dir=<the path>)`); **decline**
+   ⇒ `kata_settings.record_vault_decline()` (EV-1 — surfaced once, re-armed only by an install/upgrade). This
+   slot and the [[kata-initiate]] Phase-2 vault ask read the **SAME live pull-check** (`vault_recommendation`):
+   if kata-initiate already persisted the answer this session (an accept-a-path write or a recorded decline),
+   the pull-check returns `recommend=False` and this slot is **skipped — it never re-asks** (the same-session
+   once-guard, HIGH-3). Second brain stays **optional** — never a requirement; the question **NEVER blocks**:
+   a headless/no-TTY composition skips it (the floor: the learn feed is simply a no-op, BC1). An accepted
+   path sets `vaultDir`, so the Phase-3 `engram.learnFeed.dir` seeding below picks it up unchanged.
 
 Record the operator's accepted answers via `kata_settings.record_accepted_defaults(entries)` (the C-1
 `{value, v, at}` schema) and the host posture via `kata_settings.record_host_posture(posture)` — both
