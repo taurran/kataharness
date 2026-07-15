@@ -422,3 +422,94 @@ def first_run_required(home: str | Path | None = None) -> dict:
     if recorded_sha != stamp_sha:
         return {"required": True, "reason": "sha-mismatch", "clause_skipped": False}
     return {"required": False, "reason": None, "clause_skipped": False}
+
+
+# ---------------------------------------------------------------------------
+# second-brain-target / S1 — the PokeVault recommendation engine (EV-1)
+#
+# Second brain is an OPTIONAL, user-definable TARGET (D2), never required. The
+# NEW build is the recommendation flow (D3) with the remembered-decline leg
+# (EV-1): recommend a starter vault when none is configured, remember an explicit
+# decline in the EXISTING acceptedDefaults store (no new store), and re-arm the
+# recommendation on the next upgrade — mirroring first_run_required's version
+# clause, INVERTED for a decline record.
+# ---------------------------------------------------------------------------
+
+POKEVAULT_LINK = "https://github.com/taurran/pokevault"
+_VAULT_REC_ITEM = "vault-recommendation"  # the acceptedDefaults key (existing C-1 schema)
+
+
+def _current_git_sha(home: str | Path | None) -> str | None:
+    """The current ``.kata-version`` stamp's ``gitSha`` (``None`` when no comparable stamp).
+
+    Mirrors ``first_run_required``'s stamp read exactly: an absent stamp or a
+    non-dict read yields ``None``; ``"unknown"`` is returned verbatim (the caller
+    decides whether that value skips the version clause).
+    """
+    stamp = kata_version.read_stamp(home if home is not None else harness_home())
+    return stamp.get("gitSha") if isinstance(stamp, dict) else None
+
+
+def vault_recommendation(settings: dict, home: str | Path | None = None) -> dict:
+    """The PokeVault second-brain recommendation decision (S1; pure w.r.t. ``settings``).
+
+    Returns ``{"recommend": bool, "reason": str, "link": <POKEVAULT_LINK>}``.
+    ``recommend=True`` IFF ``vaultDir`` is unset/empty **AND** no *un-lapsed*
+    remembered decline exists. The decline lives in
+    ``acceptedDefaults["vault-recommendation"]`` — the existing C-1 schema, no new
+    store — as ``{value: "declined", v: <gitSha-or-"unknown">, at: <ISO>}``.
+
+    **Re-arm (EV-1) — mirrors ``first_run_required``'s version clause, INVERTED for
+    a decline record:** a recorded decline whose ``v`` ≠ the current
+    ``.kata-version`` ``gitSha`` has LAPSED ⇒ recommend again (``reason``
+    ``"decline-lapsed"``). ``Stamp absent OR gitSha == "unknown"`` ⇒ the version
+    clause is SKIPPED and the decline HOLDS (dev in-repo posture — a dev tree must
+    not nag).
+
+    ``settings`` is the (lenient) ``read_settings`` output: a corrupt/absent file
+    degrades to ``{}`` upstream ⇒ "no decline recorded" ⇒ recommend when
+    ``vaultDir`` is also unset. A non-dict ``settings`` is treated the same way.
+    This function never writes — the WRITE stays fail-closed in
+    ``record_vault_decline``.
+    """
+    if not isinstance(settings, dict):
+        settings = {}
+    # A configured vault ⇒ nothing to recommend.
+    if settings.get("vaultDir") not in (None, ""):
+        return {"recommend": False, "reason": "vault-configured", "link": POKEVAULT_LINK}
+    # No remembered decline ⇒ recommend.
+    accepted = settings.get("acceptedDefaults")
+    entry = accepted.get(_VAULT_REC_ITEM) if isinstance(accepted, dict) else None
+    if not isinstance(entry, dict):
+        return {"recommend": True, "reason": "no-vault", "link": POKEVAULT_LINK}
+    # A decline exists — apply the (inverted) version clause to decide lapse.
+    recorded_v = entry.get("v")
+    stamp_sha = _current_git_sha(home)
+    clause_skipped = stamp_sha in (None, "", "unknown")
+    if clause_skipped:
+        # No comparable stamp ⇒ clause skipped ⇒ decline governs ⇒ hold.
+        return {"recommend": False, "reason": "declined", "link": POKEVAULT_LINK}
+    if recorded_v != stamp_sha:
+        return {"recommend": True, "reason": "decline-lapsed", "link": POKEVAULT_LINK}
+    return {"recommend": False, "reason": "declined", "link": POKEVAULT_LINK}
+
+
+def record_vault_decline(home: str | Path | None = None) -> None:
+    """Remember the operator's PokeVault decline (EV-1) — thin ``record_accepted_defaults`` wrapper.
+
+    Writes ``acceptedDefaults["vault-recommendation"] = {value: "declined", v:
+    <current stamp gitSha or "unknown">, at: <ISO-8601 UTC>}`` — the existing C-1
+    schema, no new store. ``v`` stamps the current ``.kata-version`` ``gitSha`` so
+    ``vault_recommendation`` can re-arm on the next upgrade (a ``gitSha`` change);
+    a stamp that is absent/blank/``"unknown"`` records ``"unknown"`` and the decline
+    then HOLDS until a comparable stamp appears (dev in-repo posture).
+
+    Fail-closed inherited from ``record_accepted_defaults`` (C-4): a corrupt
+    ``.kata-settings.json`` RAISES ``ValueError`` and is left byte-unchanged.
+    """
+    stamp_sha = _current_git_sha(home)
+    v = stamp_sha if stamp_sha else "unknown"  # None/"" ⇒ "unknown"; "unknown" preserved
+    record_accepted_defaults(
+        {_VAULT_REC_ITEM: {"value": "declined", "v": v, "at": _utc_now_iso()}},
+        home,
+    )
