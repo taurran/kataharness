@@ -2658,3 +2658,19 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   bridge-before-render + fail-soft unchanged; conjunctive drift test extended to all THREE
   consumers (chain, gauge hook, kata_statusline — walk + payload parsing live ONLY in
   kata_scope).
+- **D165 — E3 executed as the second-brain-target run (operator-reframed live); MindBridge is permanently out of kata scope.**
+  2026-07-13→14, the session's live-proof instrumented run (PR #35 `ed1b842`). The queued item
+  read "PokeVault install / MindBridge ingest"; the operator corrected BOTH halves mid-grill:
+  MindBridge is operator-side and never a kata work item (firm; stale doc mentions are boundary
+  markers — memory `mindbridge-hands-off`), and there is NO third install ("kataharness is
+  installed in our code repo and in claude — don't corrupt either"). What shipped instead:
+  **second brain = user-definable optional TARGET** — `kata_settings.vault_recommendation` +
+  `record_vault_decline` (decline-lapse mirrors the first-run version clause) · installer
+  stderr note on the vaultless plain-install path only (verb-excluded, golden re-pinned under
+  recorded escalation E-T2-1) · the per-discretion ask in bootstrap 0.6.0 / initiate 0.7.0 with
+  the immediate-persistence same-session once-guard · SETUP/README optional-target truth.
+  **First instrumented run emitting `verify.owned`** (7 real checkpoint trailers, 3 task
+  records, calibration-ledger row `second-brain-target-2026-07-13`) — E1/E2 UNBLOCKED. Full
+  trail: `.planning/specs/second-brain-target/` (grill ledger D1–D5+EV-1; freeze-gate
+  HOLD→SHIP-WITH-FIXES; adval SHIP-WITH-FIXES, all folded). Gauntlet at merge: pytest 3667/3 ·
+  integration 2/2 · ruff clean · validator 48/0/0 · Snyk med+ 0.

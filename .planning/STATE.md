@@ -7,6 +7,31 @@ last_updated: "2026-07-12T23:30:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-07-13→14 — THE LIVE-PROOF SESSION, first repo-cwd session; THREE PRs MERGED
+> #33 `219a0e6` / #34 `d0dda65` / #35 `ed1b842`):** **(1) D162 statusline segment → LIVE (n=1)**
+> — operator visually confirmed `kata │ KataHarness │ meter │ run`; label flipped with three
+> citations (PR #33). **(2) BACKLOG 7 → D164 (PR #34):** `kata_scope` home moved to `tools/`
+> core (no shim — self-shadow trap); `statusline_from_event` unified onto the ONE walk (fresh
+> profile now renders from subdirs + `kata.config` repos); drift test spans all three consumers;
+> renderer restyle offered and operator-DECLINED. **(3) E3 executed as the second-brain-target
+> run → D165 (PR #35), the FULL loop live:** bootstrap → readiness → mirror → standard grill
+> (operator reframed TWICE mid-grill: **MindBridge OUT permanently** — memory
+> `mindbridge-hands-off`; NO third install — **second brain = user-definable optional target**)
+> → convergence HOLD resolved → ELEVATE accepted (EV-1 remember-decline) → 6 pages emitted to
+> the vault → INTENT frozen → freeze-gate HOLD(3)→folded→re-gate → dual-control → 3 Opus
+> workers in worktrees (1 PD-1 escalation E-T2-1, resolved+recorded) → per-task gates →
+> gauntlet → adval SHIP-WITH-FIXES (2 conductor-artifact HIGHs folded: honest ledger
+> aggregates; kata.config untracked+gitignored). **E1/E2 UNBLOCKED — first verify.owned run**
+> (7 trailers · 3 task records · ledger row `second-brain-target-2026-07-13`). First-run marker
+> recorded. Housekeeping: 19 empty `_kata_*` dirs under C:\dev removed (d16+armA kept).
+> **F-9/R6: honestly UNOBSERVED** — context never crossed 0.70 (bridge read 39% used deep into
+> the session; host summarization reclaims space) and no auto-compact occurred; both remain
+> queued, not broken — no false fire all session is itself correct-behavior evidence. Gauntlet
+> at close: **pytest 3667/3 skip · integration 2/2 · ruff clean · validator 48/0/0 · Snyk med+
+> 0.** D-records D164/D165. **NEXT: E1 calibration proper + E2 adaptive A/B now have their
+> first real row (need ≥3 for inlineEval "on"-offer); F-9/R6 keep riding; E-queue rest.**
+> *(Prior CURRENT blocks below are history.)*
+
 > **CURRENT (2026-07-12c FINAL — the evening execution block, operator-directed "top three on the
 > loop, Opus execution, standard mode, adval everything, hand off"; MERGED PR #31 `f855124`):**
 > **(1) D162 kata-native statusline segment BUILT + GATED + MERGED** — two freeze-gates HOLD(7)→
