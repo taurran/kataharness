@@ -198,6 +198,11 @@ approval — granted *before* any run uses them**; that promotion gate is built 
 and honestly: no candidate has yet made the trip. The loop learns; nothing self-modifies silently,
 and nothing it learns runs without a gate.
 
+The lessons live in an **optional second brain** — a vault you point the harness at. It's a *target,
+never a requirement*: with no vault the learn feed is simply a no-op and everything else works, and
+**any vault path** is valid. A good starter is **PokeVault** (https://github.com/taurran/pokevault) —
+the installer surfaces it as a one-line hint when no vault is configured.
+
 ### 🏁 Built-in benchmarking
 Quality you can *measure*, not just assert. A two-axis scoring engine ranks candidate builds on real
 **fail-to-pass / pass-to-pass** test evidence (weighted by the same mutation check above) and prints an
@@ -295,8 +300,8 @@ is the machine source of truth for what exists and at what version.
 | `kata-plan-standard` | 0.1.4 | 3 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
 | `kata-research` | 0.1.0 | 3 | plan | beta | new (KataHarness original, loop-cognition RS-GB1/2/3, D62) — fresh-context no-write evaluator pattern (L4/L5) applied to in-loop research; escalation-routed like kata-orchestrate's no-re-plan escape valve (D52) | Research a must-deliver gap with no in-plan solution; ground every claim; return findings for the grounding gate, never re-plan |
 | `kata-board` | 0.1.0 | 2 | coordinate | beta | adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3 | Append-only mailbox/message board for lateral peer comms |
-| `kata-bootstrap` | 0.5.1 | 2 | coordinate | beta | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
-| `kata-initiate` | 0.6.0 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
+| `kata-bootstrap` | 0.6.0 | 2 | coordinate | beta | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
+| `kata-initiate` | 0.7.0 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
 | `kata-loop` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
 | `kata-onboard` | 0.2.0 | 3 | coordinate | beta | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
 | `kata-orchestrate` | 0.12.1 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |

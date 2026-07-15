@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.6.0
+version: 0.7.0
 category: coordinate
 status: beta
 agnostic: true
@@ -243,6 +243,29 @@ uninspected does not count (see the gate checklist below).
 Collect `target.vault` from the mirror conversation. The default parent project folder + vault location
 are remembered in the central settings file (`tools/kata_settings.py`); installer mechanics are shipped
 (`tools/kata_install.py` + `docs/SETUP.md`). Seed `target.vault`/`target.path` from the settings when present.
+
+**Second-brain recommendation (the optional-target ask, SB / EV-1).** When composing this run with
+`vaultDir` unset AND `kata_settings.vault_recommendation(kata_settings.read_settings())` recommends,
+surface — as part of resolving the mirror's `target.vault` value — ONE structured recommendation question
+(recommendation-first, 2–4 options, free-text escape): **link PokeVault**
+(`git clone https://github.com/taurran/pokevault` + bootstrap, or install) → `linked` · **name their own
+vault path** → `own:<path>` · **decline** → absent. Second brain is an **optional target** — never a
+requirement; the question **NEVER blocks**: a headless/no-TTY composition skips it (the floor: the learn
+feed is simply a no-op, BC1).
+
+**Persist the answer IMMEDIATELY, at the moment the human answers — the same-session once-guard (HIGH-3):**
+
+- **Accept a path** (the PokeVault clone/install destination, or their own vault dir) ⇒ call
+  `kata_settings.write_settings(..., vault_dir=<the path>)` **RIGHT THEN**.
+- **Decline** ⇒ call `kata_settings.record_vault_decline()` **RIGHT THEN** (EV-1 — surfaced once, re-armed
+  only by an install/upgrade).
+
+This write happens at answer time — it is **NOT deferred to the Phase-6 `INTENT.md` freeze**. Because a
+Phase-5 [[kata-bootstrap]] invocation in the SAME session reads the SAME live pull-check
+(`vault_recommendation`), persisting now means bootstrap's Phase-2.5 second-brain slot sees
+`recommend=False` and **never re-asks** (EV-1 "surfaces once" holds within a session, not only across
+sessions). The accepted path (or the decline → absent) becomes the mirror's confirmed `target.vault`,
+carried through the infer-then-confirm gate like every other load-bearing value.
 
 **Platform:**
 

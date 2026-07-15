@@ -1821,6 +1821,28 @@ def main(argv: list[str] | None = None) -> int:
             _emit(f"  - {note}", as_json=use_json)
         return _exit_code_for(result)
 
+    # second-brain-target / S2 — PokeVault recommendation decision (plain-install path
+    # only). Computed HERE, immediately before the plain-install install() call and AFTER
+    # every verb branch (--install-hooks/--uninstall-hooks, --confirm, --uninstall,
+    # --update, --factory-reset) has already returned — so NO verb ever emits it
+    # (freeze-gate HIGH-2). Recommend IFF the effective vault_dir is unset AND
+    # kata_settings.vault_recommendation() says recommend (vaultDir unset in settings AND no
+    # un-lapsed remembered decline). NEVER a prompt — a note cannot hang a headless run, so
+    # the _non_interactive "no interactive prompts today" contract holds (AC2's never-hang
+    # leg). The note RECORDS NOTHING: a note the user never answered is not a decline (only
+    # the interactive skill-surface decline writes one, S3). The field/note are EMITTED
+    # below in the plain-install print section (so a clobber/ValueError early-return never
+    # emits a half-note), riding the completed result together or not at all.
+    _vault_rec: dict | None = None
+    if not vault_dir:  # effective vault_dir (--vault-dir / KATA_VAULT_DIR / --answers-json) unset
+        import kata_settings as _ks_vrec
+
+        _rec = _ks_vrec.vault_recommendation(
+            _ks_vrec.read_settings(home=args.home), home=args.home
+        )
+        if _rec.get("recommend"):
+            _vault_rec = _rec
+
     # Install (existing path, now wrapped in try/except for semantic exit codes)
     try:
         result = install(args.platform, harness_home=args.home, host_dir=args.host_dir)
@@ -1878,6 +1900,18 @@ def main(argv: list[str] | None = None) -> int:
         elif _p_inst in _BEST_EFFORT and _hd_raw_inst is not None:
             _hd_inst = _safe_abs(_hd_raw_inst)
             _materialize_pass(_home_inst, _hd_inst / ".agents" / "skills", _link_mode_inst)
+
+    # S2: the recommendation rides the completed plain-install result — attach the
+    # `vault_recommendation` field to the result dict (surfaced under --json) and print the
+    # one-line note to stderr. Both together or neither; stderr keeps the --json stdout
+    # contract clean. Absent entirely when a vault is configured or a live decline holds.
+    if _vault_rec is not None:
+        result["vault_recommendation"] = _vault_rec
+        print(
+            "note: a second brain is optional (never required) — add one later by pointing "
+            f"--vault-dir at any vault, or start with PokeVault → {_vault_rec['link']}",
+            file=sys.stderr,
+        )
 
     if use_json:
         print(json.dumps(result))
