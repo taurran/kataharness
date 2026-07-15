@@ -25,9 +25,14 @@ import importlib.util
 import json
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+
+#: Fixed injected clock for byte-pinned kata-segment goldens (freeze-gate F2, Determinism law 7).
+#: Every render below passes this explicit ``now`` so no wall-clock read reaches the output.
+_FIXED_NOW = datetime(2026, 7, 14, 12, 0, 0, tzinfo=timezone.utc)
 
 ROOT = Path(__file__).resolve().parents[1]  # tools/
 sys.path.insert(0, str(ROOT))
@@ -363,7 +368,9 @@ def _render(
     start = tmp_path / start_name  # NOT created — _render_segment reads only .name
     cw = {} if remaining is _ABSENT else {"remaining_percentage": remaining}
     payload = {"context_window": cw}
-    return mod._render_segment(payload, start, root)
+    # now is REQUIRED post-F2 (freeze-gate F2, law 7); these no-roster renders never consume it
+    # (empty crew slot) but the signature demands it — pass the fixed clock.
+    return mod._render_segment(payload, start, root, now=_FIXED_NOW)
 
 
 class TestKataSegmentRender:
@@ -441,16 +448,18 @@ class TestKataLeg:
     def test_non_kata_payload_returns_none(self, tmp_path: Path) -> None:
         plain = tmp_path / "plain"
         plain.mkdir()
-        assert mod._kata_leg({"cwd": str(plain)}) is None
+        assert mod._kata_leg({"cwd": str(plain)}, now=_FIXED_NOW) is None
 
     def test_cwdless_payload_returns_none(self) -> None:
         # no cwd / workspace ⇒ resolve_start None ⇒ NOT the kata leg (no getcwd here).
-        assert mod._kata_leg({"session_id": "s"}) is None
+        assert mod._kata_leg({"session_id": "s"}, now=_FIXED_NOW) is None
 
     def test_kata_scope_returns_segment(self, tmp_path: Path) -> None:
         root = tmp_path / "repo"
         (root / ".kata").mkdir(parents=True)
-        seg = mod._kata_leg({"cwd": str(root), "context_window": {"remaining_percentage": 42}})
+        seg = mod._kata_leg(
+            {"cwd": str(root), "context_window": {"remaining_percentage": 42}}, now=_FIXED_NOW
+        )
         assert seg is not None and "kata" in seg
 
     def test_in_scope_render_error_returns_empty_not_none(
@@ -465,7 +474,7 @@ class TestKataLeg:
             raise RuntimeError("render blew up")
 
         monkeypatch.setattr(mod, "_render_segment", _boom)
-        assert mod._kata_leg({"cwd": str(root)}) == ""
+        assert mod._kata_leg({"cwd": str(root)}, now=_FIXED_NOW) == ""
 
 
 # --------------------------------------------------------------------------- #
@@ -612,6 +621,244 @@ class TestScopeDrift:
         assert "kata_scope.find_kata_root(start)" in statusline_src
         # the former local check is deleted (no ``workspace``-dict cwd fallback parsing remains)
         assert 'workspace", {}' not in statusline_src
+
+
+# --------------------------------------------------------------------------- #
+# Segment composition (subagent-monitor S2) — model chip + crew slots, byte-pinned
+# --------------------------------------------------------------------------- #
+#: The BC (backward-compat) reference: the EXACT segment the PRE-subagent-monitor code path
+#: produced for a no-model, no-roster, kata-cwd payload (start.name="repo", remaining=42 ⇒
+#: used 58%, yellow band). Captured from the pre-edit code BEFORE any S2 edit; the post-edit
+#: composition MUST reproduce it byte-for-byte when both new slots are empty (freeze-gate BC
+#: golden — empty slot ⇒ NO separator).
+_BC_REFERENCE_SEGMENT = "\x1b[2mkata\x1b[0m │ \x1b[2mrepo\x1b[0m \x1b[33m▰▰▰▰▰▰▱▱▱▱ 58%\x1b[0m"
+_BC_REFERENCE_HEX = (
+    "1b5b326d6b6174611b5b306d20e29482201b5b326d7265706f1b5b306d201b5b33336d"
+    "e296b0e296b0e296b0e296b0e296b0e296b0e296b1e296b1e296b1e296b1203538251b5b306d"
+)
+
+#: The pinned D5 layout, byte-exact (DESIGN S2 / the operator-picked layout):
+#: ``kata │ KataHarness ▰▱… 9% │ fable │ ⚒ C·opus·H▰ C·opus·H▰ V·son·M▱ │ run``.
+_D5_COMPOSITION_GOLDEN = (
+    "\x1b[2mkata\x1b[0m │ \x1b[2mKataHarness\x1b[0m "
+    "\x1b[32m▰▱▱▱▱▱▱▱▱▱ 9%\x1b[0m"
+    " │ \x1b[2mfable\x1b[0m"
+    " │ \x1b[2m⚒ C·opus·H▰ C·opus·H▰ V·son·M▱\x1b[0m"
+    " │ \x1b[2mrun\x1b[0m"
+)
+
+
+def _write_roster(root: Path, workers: dict) -> None:
+    """Write a conductor roster ``<root>/.kata/dispatch.json`` (single-writer format)."""
+    (root / ".kata").mkdir(parents=True, exist_ok=True)
+    (root / ".kata" / "dispatch.json").write_text(
+        json.dumps({"v": 1, "workers": workers}), encoding="utf-8"
+    )
+
+
+def _worker(role: str, model: str, effort: str, dispatched: str, closed=None) -> dict:
+    return {
+        "role": role,
+        "model": model,
+        "effort": effort,
+        "dispatchedAt": dispatched,
+        "closedAt": closed,
+    }
+
+
+def _render_full(
+    tmp_path: Path,
+    *,
+    payload: dict,
+    workers: dict | None = None,
+    board: str | None = None,
+    config: dict | None = None,
+    start_name: str = "repo",
+    now: datetime = _FIXED_NOW,
+) -> str:
+    """Render a full composed segment from an on-disk kata scope (roster + board + config)."""
+    root = tmp_path / "root"
+    (root / ".kata").mkdir(parents=True, exist_ok=True)
+    if workers is not None:
+        _write_roster(root, workers)
+    if board is not None:
+        (root / ".kata" / "board.md").write_text(board, encoding="utf-8")
+    if config is not None:
+        (root / "kata.config").write_text(json.dumps(config), encoding="utf-8")
+    start = tmp_path / start_name  # NOT created — only .name is read
+    return mod._render_segment(payload, start, root, now=now)
+
+
+class TestSegmentCompositionD5:
+    def test_composition_golden_byte_exact(self, tmp_path: Path) -> None:
+        # The full pinned D5 layout: model chip + 3-chip crew (▰▰▱) + run, byte-exact.
+        payload = {
+            "model": {"display_name": "Fable 5"},
+            "context_window": {"remaining_percentage": 91},  # used 9%
+        }
+        workers = {
+            # dispatched-times stale (>10m before now) but the board rescues the two coders;
+            # the validator has no heartbeat ⇒ stale ▱. Sort by dispatchedAt then taskId ⇒ c1,c2,v1.
+            "c1": _worker("coder", "opus", "H", "2026-07-14T11:40:00+00:00"),
+            "c2": _worker("coder", "opus", "H", "2026-07-14T11:45:00+00:00"),
+            "v1": _worker("validator", "son", "M", "2026-07-14T11:48:00+00:00"),
+        }
+        board = (
+            "## board\n\n"
+            "2026-07-14T11:58:00+00:00 | agent-c1 | PROGRESS | c1 | building\n"
+            "2026-07-14T11:59:00+00:00 | agent-c2 | PROGRESS | c2 | building\n"
+        )
+        seg = _render_full(
+            tmp_path, payload=payload, workers=workers, board=board, start_name="KataHarness"
+        )
+        assert seg == _D5_COMPOSITION_GOLDEN
+        assert seg.encode("utf-8") == _D5_COMPOSITION_GOLDEN.encode("utf-8")
+
+    def test_bc_golden_no_model_no_roster_byte_identical(self, tmp_path: Path) -> None:
+        # BC GOLDEN: no model field + no roster + no board ⇒ byte-identical to the pre-edit
+        # segment (empty slots contribute NO separator). Reference captured before any S2 edit.
+        payload = {"context_window": {"remaining_percentage": 42}}  # used 58%, yellow
+        seg = _render_full(tmp_path, payload=payload)  # no workers, no board, no config
+        assert seg == _BC_REFERENCE_SEGMENT
+        assert seg.encode("utf-8") == bytes.fromhex(_BC_REFERENCE_HEX)
+
+    def test_model_present_no_roster_omits_crew_and_its_separator(self, tmp_path: Path) -> None:
+        # model chip present, crew empty ⇒ a model separator but NO crew separator (empty slot
+        # vanishes). Byte-pinned.
+        payload = {
+            "model": {"display_name": "Opus 5"},
+            "context_window": {"remaining_percentage": 42},  # used 58%
+        }
+        seg = _render_full(tmp_path, payload=payload)  # no roster, no board
+        expected = (
+            "\x1b[2mkata\x1b[0m │ \x1b[2mrepo\x1b[0m "
+            "\x1b[33m▰▰▰▰▰▰▱▱▱▱ 58%\x1b[0m"
+            " │ \x1b[2mopus\x1b[0m"
+        )
+        assert seg == expected
+        assert "⚒" not in seg  # no crew marker
+
+    def test_roster_present_no_model_omits_model_and_its_separator(self, tmp_path: Path) -> None:
+        # crew present, model empty ⇒ a crew separator but NO model separator. Byte-pinned.
+        payload = {"context_window": {"remaining_percentage": 42}}  # no model field
+        workers = {"c1": _worker("coder", "opus", "H", "2026-07-14T11:59:00+00:00")}  # fresh
+        seg = _render_full(tmp_path, payload=payload, workers=workers)  # no board
+        expected = (
+            "\x1b[2mkata\x1b[0m │ \x1b[2mrepo\x1b[0m "
+            "\x1b[33m▰▰▰▰▰▰▱▱▱▱ 58%\x1b[0m"
+            " │ \x1b[2m⚒ C·opus·H▰\x1b[0m"
+        )
+        assert seg == expected
+
+    def test_out_of_kata_scope_model_payload_unchanged(self, tmp_path: Path) -> None:
+        # A model-bearing payload OUTSIDE a kata scope still returns None (the child runs; the
+        # new model field never flips scope or leaks into the CHAIN/SKIP legs).
+        plain = tmp_path / "plain"
+        plain.mkdir()
+        payload = {
+            "cwd": str(plain),
+            "model": {"display_name": "Fable 5"},
+            "context_window": {"remaining_percentage": 42},
+        }
+        assert mod._kata_leg(payload, now=_FIXED_NOW) is None
+
+    def test_liveness_deadline_read_from_config_flips_staleness(self, tmp_path: Path) -> None:
+        # A generous livenessDeadline in kata.config keeps a worker FRESH that the default-10
+        # window would call stale (dispatched 12m before now). Fail-soft reader is load-bearing.
+        payload = {"context_window": {"remaining_percentage": 42}}
+        workers = {"c1": _worker("coder", "opus", "H", "2026-07-14T11:48:00+00:00")}  # 12m old
+        stale = _render_full(tmp_path, payload=payload, workers=workers)  # default 10 ⇒ ▱
+        fresh = _render_full(
+            tmp_path, payload=payload, workers=workers, config={"livenessDeadline": 30}
+        )
+        assert "C·opus·H▱" in stale  # stale mark ▱ at default deadline
+        assert "C·opus·H▰" in fresh  # fresh mark ▰ once the window widens
+
+    def test_liveness_deadline_malformed_config_defaults_to_10(self, tmp_path: Path) -> None:
+        # Corrupt/malformed kata.config ⇒ default 10 (fail-soft, never raises). A 12m-old worker
+        # stays ▱ exactly as with no config.
+        payload = {"context_window": {"remaining_percentage": 42}}
+        workers = {"c1": _worker("coder", "opus", "H", "2026-07-14T11:48:00+00:00")}
+        root = tmp_path / "root"
+        (root / ".kata").mkdir(parents=True)
+        _write_roster(root, workers)
+        (root / "kata.config").write_text("}{ not json", encoding="utf-8")
+        seg = mod._render_segment(payload, tmp_path / "repo", root, now=_FIXED_NOW)
+        assert "C·opus·H▱" in seg  # defaulted window ⇒ stale
+
+    def test_config_bool_livenessdeadline_rejected(self) -> None:
+        # bool is an int subclass but is NEVER a minute count ⇒ default 10.
+        # (unit-level: exercise the reader directly on a scope with no config edge.)
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "kata.config").write_text(json.dumps({"livenessDeadline": True}), "utf-8")
+            assert mod._read_liveness_deadline(root) == mod._DEFAULT_LIVENESS_DEADLINE
+
+    def test_config_valid_int_livenessdeadline_read(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "kata.config").write_text(json.dumps({"livenessDeadline": 25}), "utf-8")
+            assert mod._read_liveness_deadline(root) == 25
+
+
+class TestPerSlotDegrade:
+    def test_crew_slot_degrades_independently(self, tmp_path: Path, monkeypatch) -> None:
+        # MUTATION PROOF (v2-F6): a crew-render failure blanks ONLY the crew slot — the gauge
+        # (marker + dirname + meter) survives, the child is never run, nothing raises.
+        def _boom():  # noqa: ANN202
+            raise RuntimeError("crew core exploded")
+
+        monkeypatch.setattr(mod, "_import_kata_crew", _boom)
+        payload = {"context_window": {"remaining_percentage": 42}}
+        # crew slot degrades to "" ⇒ byte-identical to the BC (empty-slot) reference.
+        seg = _render_full(
+            tmp_path,
+            payload=payload,
+            workers={"c1": _worker("coder", "opus", "H", "2026-07-14T11:59:00+00:00")},
+        )
+        assert seg == _BC_REFERENCE_SEGMENT
+        assert "⚒" not in seg  # no crew marker
+        assert "kata" in seg and "58%" in seg  # gauge intact
+
+    def test_model_slot_degrades_independently(self, tmp_path: Path, monkeypatch) -> None:
+        # A model-chip render failure blanks ONLY the model slot; gauge survives.
+        def _boom():  # noqa: ANN202
+            raise RuntimeError("crew core exploded")
+
+        monkeypatch.setattr(mod, "_import_kata_crew", _boom)
+        payload = {
+            "model": {"display_name": "Fable 5"},
+            "context_window": {"remaining_percentage": 42},
+        }
+        seg = _render_full(tmp_path, payload=payload)  # no roster
+        assert seg == _BC_REFERENCE_SEGMENT  # both S1 slots gone ⇒ pre-edit segment
+        assert "fable" not in seg
+
+
+class TestSegmentSignatureF2:
+    def test_render_segment_requires_now_keyword(self, tmp_path: Path) -> None:
+        # MUTATION PROOF (freeze-gate F2, law 7): now is REQUIRED (no default) — calling
+        # without it raises TypeError, so no wall-clock read can leak into a golden.
+        root = tmp_path / "root"
+        (root / ".kata").mkdir(parents=True)
+        with pytest.raises(TypeError):
+            mod._render_segment({}, tmp_path / "repo", root)  # type: ignore[call-arg]
+
+    def test_kata_leg_requires_now_keyword(self, tmp_path: Path) -> None:
+        root = tmp_path / "root"
+        (root / ".kata").mkdir(parents=True)
+        with pytest.raises(TypeError):
+            mod._kata_leg({"cwd": str(root)})  # type: ignore[call-arg]
+
+    def test_main_supplies_utc_now_once(self) -> None:
+        # _main reads the clock exactly once and threads it (source pin — the F2 contract).
+        src = CHAIN.read_text(encoding="utf-8")
+        assert "datetime.now(timezone.utc)" in src
+        assert src.count("datetime.now(") == 1  # ONE wall-clock read per tick
 
 
 if __name__ == "__main__":  # pragma: no cover
