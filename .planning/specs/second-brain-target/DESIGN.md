@@ -95,3 +95,20 @@ lives in the skill surface).
 dual-control operator confirm → orchestrated build (workers in worktrees, no-git in main tree;
 conductor sole git writer) → full gauntlet + Snyk (when-available) → fresh-context adval →
 PR → merge → `record_first_run` + closeout.
+
+**Evidence (run executed 2026-07-13→14):** freeze-gate HOLD(3 HIGH) → folded → re-gate
+SHIP-WITH-FIXES → residual folded · operator dual-control "Execute" · THREE Opus workers
+(anchor−1, D131 standard) in isolated worktrees — T1 BUILT (14 new tests; honest red→green
+checkpoint trail 1→0) · T3 BUILT (bootstrap 0.5.1→0.6.0, initiate 0.6.0→0.7.0; conductor
+once-guard trace PASS) · T2 BUILT via a PD-1 escalation (E-T2-1: the vaultless-plain-install
+golden byte-pins the surface S2 deliberately changes → conductor decision recorded in PLAN →
+golden re-pinned to the designed bytes; 10 new tests incl. the four verb-exclusions) ·
+**AC4 telemetry: 7 real `Kata-Checkpoint` trailer records across the three worker branches,
+3 per-task records in `.kata/telemetry/`, calibration-ledger row `second-brain-target-
+2026-07-13` (tasks 3 · checkpoints 7 · wallClockS 1695 · tokensOut 453502) — the FIRST
+instrumented run emitting `verify.owned` (E1/E2 unblocked)** · gauntlet: **pytest 3667/3 skip
+(+24) · integration 2/2 · ruff clean · validator 48/0/0** · Snyk Code med+ **0** (tools/) ·
+fresh-context adval **SHIP-WITH-FIXES** — 0 findings on the built S1–S4 logic; 2 HIGHs on
+conductor artifacts (hollow ledger aggregates → rebuilt with real sums; committed `kata.config`
+with personal paths → untracked + gitignored), both folded · zero vault writes beyond the
+grill-close emit (AC5) · MindBridge: zero trace (D1).
