@@ -2674,3 +2674,21 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   trail: `.planning/specs/second-brain-target/` (grill ledger D1–D5+EV-1; freeze-gate
   HOLD→SHIP-WITH-FIXES; adval SHIP-WITH-FIXES, all folded). Gauntlet at merge: pytest 3667/3 ·
   integration 2/2 · ruff clean · validator 48/0/0 · Snyk med+ 0.
+- **D166 — subagent-monitor: crew chips + main-session model in the kata statusline (claude-only); D1 phantom-corruption ROOT-CAUSED.**
+  2026-07-14 (PR #37 `0e41c2e`), operator-initiated same-session follow-on run. Grilled (ledger
+  D1–D5 + EV-1): claude-now/codex-parked-for-MindBridge-alignment/kiro-later; model chip from
+  payload `model.display_name`; crew chips (`⚒ C·opus·H▰` …) from a conductor-written
+  `.kata/dispatch.json` roster (single-writer, display-only, run-start rotation, board-heartbeat
+  corroboration via livenessDeadline); NO fabricated thinking signal (effort tier + liveness are
+  the truthful substitutes); per-worker-chip layout with 3+N truncation; EV-1 degrade-golden
+  family (segment never blanks/crashes/lies on bad crew data). NEW `tools/kata_crew.py` (+45
+  tests) · chain composition with injectable `now` (law 7) + per-slot degrade (+16 chain tests)
+  · orchestrate 0.13.0 roster mandate. Adval HOLD→SHIP arc: the HOLD's CRITICAL caught the diff
+  carrying a mid-mutation `recurrence_detect.py` — **the recurring phantom-corruption class
+  root-caused: `mutation_run.prove_non_vacuous` mutates the LIVE file in place; concurrent tree
+  reads during a gauntlet capture the window** (sandboxing fix = gated BACKLOG item; interim:
+  quiet tree during gauntlets). Two real adval findings folded (display abbrev `sonnet→son` /
+  `mythos→myth`; G7d control-strip on roster content). Live smoke observed on the installed
+  chain. Calibration row 2 (`subagent-monitor-2026-07-14`) — one more instrumented run to the
+  `inlineEval: "on"` offer threshold. Gauntlet at merge: pytest 3719+/3 · integration 2/2 · ruff
+  clean · validator 48/0/0 · Snyk med+ 0 new.
