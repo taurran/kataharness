@@ -198,6 +198,11 @@ approval — granted *before* any run uses them**; that promotion gate is built 
 and honestly: no candidate has yet made the trip. The loop learns; nothing self-modifies silently,
 and nothing it learns runs without a gate.
 
+The lessons live in an **optional second brain** — a vault you point the harness at. It's a *target,
+never a requirement*: with no vault the learn feed is simply a no-op and everything else works, and
+**any vault path** is valid. A good starter is **PokeVault** (https://github.com/taurran/pokevault) —
+the installer surfaces it as a one-line hint when no vault is configured.
+
 ### 🏁 Built-in benchmarking
 Quality you can *measure*, not just assert. A two-axis scoring engine ranks candidate builds on real
 **fail-to-pass / pass-to-pass** test evidence (weighted by the same mutation check above) and prints an

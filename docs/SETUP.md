@@ -4,7 +4,9 @@ KataHarness lives in **one central place** and installs into your agent platform
 It remembers **two settings** and, each run, finds the project to work on. That's the whole setup.
 
 > No vault yet? You don't need one — KataHarness runs fine pointed at a plain project folder.
-> A vault matters only for the **learning component** (the "second brain"); see *Vault* below.
+> A vault matters only for the **learning component** (the "second brain") — an **optional target**,
+> never a requirement. Any vault path works; a good starter is **PokeVault**
+> (https://github.com/taurran/pokevault). See *The two settings* below.
 
 ---
 
@@ -92,8 +94,10 @@ written by the installer when you pass `--parent-dir`, or by `kata-initiate` on 
 
 - **`parentDir`** — your **default parent project folder** (e.g. `C:/Dev/Projects`). Each run searches
   here for the project you name. You can point at a different folder for any single run.
-- **`vaultDir`** — where your **vault / second brain** sits (optional). The learning component reads and
-  writes here. Absent ⇒ learning is simply a no-op; everything else works.
+- **`vaultDir`** — where your **vault / second brain** sits (optional — a *target*, never a requirement).
+  The learning component reads and writes here; **any vault path works**. Absent ⇒ learning is simply a
+  no-op and everything else works. No vault yet? A good starter is **PokeVault** →
+  https://github.com/taurran/pokevault.
 
 These values **seed** the per-run `kata.config` path fields; a run may override them. With no settings
 file at all, KataHarness runs in-repo exactly as before (nothing changes).
