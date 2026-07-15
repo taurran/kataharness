@@ -67,6 +67,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -228,6 +229,19 @@ def _import_kata_gauge():
     return kata_gauge
 
 
+def _import_kata_crew():
+    """Import ``kata_crew`` from tools/ (the SAME sys.path pattern ``_import_kata_gauge`` uses)
+    so the model-chip and crew slots render through the pure, agnostic S1 core (subagent-monitor
+    DESIGN S2 — lazy import mirroring the gauge). Raising is caught per-slot by the callers so a
+    missing/broken core degrades ONLY that slot (v2-F6), never the whole segment."""
+    tools_dir = Path(__file__).resolve().parents[2] / "tools"
+    if str(tools_dir) not in sys.path:
+        sys.path.insert(0, str(tools_dir))
+    import kata_crew  # noqa: PLC0415 — deferred import (path set first)
+
+    return kata_crew
+
+
 def _strip_control(text: str) -> str:
     """Strip C0 (U+0000–U+001F), DEL (U+007F), and C1 (U+0080–U+009F) control characters.
 
@@ -292,21 +306,102 @@ def _render_run_hint(root: Path) -> str:
     return ""
 
 
-def _render_segment(payload: dict, start: Path, root: Path) -> str:
-    """Render the pinned kata segment: ``kata │ {dirname}{meter}{run}`` (DESIGN S2).
+#: Default liveness staleness window in minutes when ``<root>/kata.config`` has no (or a
+#: malformed) ``livenessDeadline`` key (subagent-monitor DESIGN S2 — fail-soft default 10).
+_DEFAULT_LIVENESS_DEADLINE = 10
 
-    ``{dirname}`` is the basename of the payload cwd (``start``), dim, with control chars
-    stripped; ``{meter}`` keys off ``context_window.remaining_percentage``; ``{run}`` keys off
-    the board at ``root`` (the ancestor the ONE walk returned)."""
+
+def _read_board_text(root: Path) -> str:
+    """Return the FULL text of ``<root>/.kata/board.md`` for liveness corroboration, or "".
+
+    Fail-soft: an absent board or any read error ⇒ "" (the ``liveness`` board parse then falls
+    back to ``dispatchedAt`` alone). Distinct from ``_render_run_hint``'s existence probe — the
+    crew slot needs the board CONTENT (CLAIM/PROGRESS self-stamps), not just its size."""
+    board = root / ".kata" / "board.md"
+    try:
+        return board.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
+
+def _read_liveness_deadline(root: Path) -> int:
+    """Read the liveness staleness window (minutes) from ``<root>/kata.config``, else the default.
+
+    Fail-soft (subagent-monitor DESIGN S2): absent/corrupt/malformed config, a missing key, or a
+    non-int (bool included — it is an ``int`` subclass but never a minute count) ⇒
+    :data:`_DEFAULT_LIVENESS_DEADLINE`. A statusline tick never raises for a bad config."""
+    config = root / "kata.config"
+    try:
+        data = json.loads(config.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return _DEFAULT_LIVENESS_DEADLINE
+    if not isinstance(data, dict):
+        return _DEFAULT_LIVENESS_DEADLINE
+    value = data.get("livenessDeadline")
+    if isinstance(value, bool) or not isinstance(value, int):
+        return _DEFAULT_LIVENESS_DEADLINE
+    return value
+
+
+def _render_model_slot(payload: dict) -> str:
+    """Render the main-session model chip via the S1 core, degrading ONLY this slot on failure.
+
+    Any error (import failure, malformed payload) ⇒ "" (v2-F6 per-slot degrade — never blank the
+    gauge, never raise up into ``_kata_leg`` where the whole segment would be lost)."""
+    try:
+        kata_crew = _import_kata_crew()
+        return kata_crew.render_model_chip(payload)
+    except Exception:  # noqa: BLE001 — per-slot degrade: model chip vanishes, segment survives
+        return ""
+
+
+def _render_crew_slot(root: Path, now: datetime) -> str:
+    """Render the crew chip run via the S1 core, degrading ONLY this slot on failure.
+
+    Reads the conductor's roster (``<root>/.kata/dispatch.json``, fail-soft), the board text for
+    liveness corroboration, and the ``livenessDeadline``; passes the injected ``now`` (freeze-gate
+    F2, Determinism law 7) so the render is clock-deterministic. Any error ⇒ "" (v2-F6 per-slot
+    degrade — a failing crew read NEVER blanks the gauge and NEVER runs the child)."""
+    try:
+        kata_crew = _import_kata_crew()
+        roster = kata_crew.read_roster(root / ".kata")
+        board_text = _read_board_text(root)
+        deadline = _read_liveness_deadline(root)
+        return kata_crew.render_crew(
+            roster, board_text, now=now, deadline_minutes=deadline
+        )
+    except Exception:  # noqa: BLE001 — per-slot degrade: crew vanishes, segment survives
+        return ""
+
+
+def _render_segment(payload: dict, start: Path, root: Path, *, now: datetime) -> str:
+    """Render the pinned kata segment (DESIGN S2, the D5 layout):
+
+    ``kata │ {dirname}{meter} │ {model-chip} │ {crew}{run}``
+
+    ``{dirname}`` is the basename of the payload cwd (``start``), dim, control chars stripped;
+    ``{meter}`` keys off ``context_window.remaining_percentage``; ``{model-chip}`` and ``{crew}``
+    are the S1 slots (each ABSENT — no leading separator — when empty, so the no-model no-roster
+    render stays byte-identical to the pre-subagent-monitor segment); ``{run}`` keys off the board
+    at ``root``. ``now`` is the injected clock (freeze-gate F2, law 7) threaded to crew liveness.
+    Each slot degrades independently (v2-F6): a failing crew/model render blanks only its own slot.
+    """
     kata_gauge = _import_kata_gauge()
     marker = f"{_ANSI_DIM}kata{_ANSI_RESET}"
     dirname = f"{_ANSI_DIM}{_strip_control(start.name)}{_ANSI_RESET}"
     meter = _render_meter(payload, kata_gauge)
+    model_chip = _render_model_slot(payload)
+    crew = _render_crew_slot(root, now)
     run = _render_run_hint(root)
-    return f"{marker}{_SEG_SEP}{dirname}{meter}{run}"
+    segment = f"{marker}{_SEG_SEP}{dirname}{meter}"
+    if model_chip:
+        segment += f"{_SEG_SEP}{model_chip}"
+    if crew:
+        segment += f"{_SEG_SEP}{crew}"
+    return f"{segment}{run}"
 
 
-def _kata_leg(payload: dict) -> Optional[str]:
+def _kata_leg(payload: dict, *, now: datetime) -> Optional[str]:
     """Return the kata segment (or "") when the cwd is kata-scoped, else None.
 
     - ``None`` ⇒ NOT a kata scope (cwd-less / non-kata / scope undeterminable) ⇒ the caller
@@ -326,7 +421,7 @@ def _kata_leg(payload: dict) -> Optional[str]:
     except Exception:  # noqa: BLE001 — scope undeterminable ⇒ existing legs (never guess)
         return None
     try:
-        return _render_segment(payload, start, root)
+        return _render_segment(payload, start, root, now=now)
     except Exception:  # noqa: BLE001 — in-scope render error ⇒ emit nothing, never run child
         return ""
 
@@ -364,8 +459,11 @@ def _main() -> None:
     otherwise run the user's child (byte-identical passthrough); write kata's bridge always."""
     stdin_bytes = sys.stdin.buffer.read()
 
+    # Freeze-gate F2 (Determinism law 7): read the wall clock ONCE at the top and thread it
+    # through the kata leg so every liveness comparison in a single tick sees one instant.
+    now = datetime.now(timezone.utc)
     payload = _parse_payload(stdin_bytes)
-    segment = _kata_leg(payload) if payload is not None else None
+    segment = _kata_leg(payload, now=now) if payload is not None else None
     if segment is not None:
         # KATA leg (D160 replace-in-kata-scopes): emit kata's OWN segment ("" on an in-scope
         # render error), NEVER run the child. The bridge below still writes on this leg too.

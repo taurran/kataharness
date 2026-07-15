@@ -2,6 +2,21 @@
 
 Promote to ROADMAP milestones when ready.
 
+> **★ 2026-07-14 — D1 PHANTOM-CORRUPTION ROOT CAUSE FOUND (caught live; HIGH-priority fix):**
+> `mutation_run.prove_non_vacuous` **mutates the REAL source file in place**
+> (`path.write_bytes` on e.g. `tools/recurrence_detect.py`), runs a pytest subprocess
+> (seconds-long window), then restores in a `finally`. ANY concurrent reader during the window
+> sees the mutated file — proven this session: a `git diff master` run while the background
+> gauntlet executed the mutation-proof tests captured the exact documented IndentationError
+> mutation in a patch file, while the tree was byte-clean before and after (the adval HOLD that
+> caught it). This explains BOTH prior sessions' "transient IndentationError, self-healed,
+> byte-clean vs HEAD" hauntings (2026-07-12, 2026-07-12b — same file, same error), and predicts
+> the persistent case: a hard process kill (e.g. session-limit kill) inside the window leaves
+> the mutation ON DISK. **Fix (own gated build):** mutate a sandboxed copy (temp tree +
+> path-redirected test invocation) — never the live file; interim discipline: never read/diff/
+> commit the tree while a gauntlet/mutation pass runs, and treat any IndentationError matching a
+> documented mutation-proof payload as this class. D-record at next closeout.
+
 > **★ 2026-07-12c SESSION QUEUE — RETURN EVAL EXECUTED SAME DAY (operator present; D160/D161):**
 > 1. ~~Live-smoke D153~~ **DONE — LIVE-PROVEN n=1** (the D160 statusline grill; EV-1 accepted +
 >    emitted to the real vault + recall read-back; PR #29). Scope note: kata-initiate Path-A/B
