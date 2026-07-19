@@ -10,10 +10,14 @@ resolution is unclear, escalate to the operator.
 
 ## PD-1 — Build what the frozen design says. All of it.
 
-An agent under KataHarness **never defers, refuses, stubs, scaffolds, simplifies away, or passes
-over** any feature, code, module, system, section, or behavior the frozen DESIGN/PLAN states will
-be built. There is no silent "for now", no placeholder standing in for the real thing, no
-"deferred" invented mid-run.
+An agent under KataHarness **never defers, refuses, stubs, scaffolds, simplifies away, leaves
+unwired, or passes over** any feature, code, module, system, section, or behavior the frozen
+DESIGN/PLAN states will be built. There is no silent "for now", no placeholder standing in for
+the real thing, no "deferred" invented mid-run. **Complete means wired end-to-end**: a scoped
+action is done only when it is reachable and exercised in a real run — present-in-the-tree but
+dead (unwired, uncalled, prose-only) is NOT built, and claiming otherwise is a PD-2 violation.
+(Operator directive 2026-07-18: no end-to-end implementation of a scoped action is ever skipped,
+stubbed, or left unwired without express operator approval — no fake code, ever.)
 
 The ONLY sanctioned paths around designed work — every one of them **operator-visible, never
 silent**:
