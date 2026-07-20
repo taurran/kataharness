@@ -359,7 +359,7 @@ adapter pattern (spine #3) applied to the second brain; it *is* the D30 clean-ro
 KataHarness at the Recall, not the raw folder. _Avoid_: putting decision logic in a Librarian (kills cross-vault
 consistency); pointing the core at a raw vault structure.
 
-**Reason** (the *Advisor*, `kata-reason`):
+**Reason** (the *decider*, `kata-reason`):
 KataHarness's **decider** — asks Recall to surface material, fuses it with research (RS + the grounding gate),
 returns a **calibrated recommendation that mirrors the user**. **Advisory, not authoritative** (it pre-fills; the
 gates/human dispose). The CONSULT read-path, finally named + skilled. _Recall serves; Reason decides._ _Avoid_:
@@ -749,3 +749,40 @@ _Avoid_: "+1" in prose (write "above-anchor premium").
 **auto-context (rotation)** — the whole context-autonomy behavior as a run posture: unconditional
 for one-shot delivery shape; ON-by-write-time-default with opt-out for incremental shapes;
 absent-at-load ⇒ OFF (BC for pre-v0.2.1 configs).
+
+## Advisor consult — the advisor-executor pattern (2026-07-19)
+**Advisor consult** (`kata-advise`):
+A **scoped, fresh-context, no-write consult to the Fable-class rung** (fable-target: anchor if already
+fable/mythos-class, else the family ladder's FABLE rung via `advisor_rung_of` — never one-rung-above
+arithmetic, never mythos by default) — the advisor-executor pattern applied to the loop.
+The advisor THINKS on one narrow question; the executor keeps the wheel. Advisory, never authoritative:
+advice never changes a gate verdict, is never auto-applied, never expands the frozen goal. Conductor-
+dispatched only; workers request via an `advice-requested` escalation. Distinct from **Reason (the decider,
+`kata-reason`)** — the deferred second-brain CONSULT decider; the model-consult surface is the Advisor now.
+_Avoid_: calling kata-reason "the Advisor" (re-titled 2026-07-19); counsel; mentor.
+
+**Advice payload** (`.kata/advice/<task-id>-<n>.json`, `protocol/advice.md`):
+The **machine-ingestible** consult artifact the AGENT consumes (conductor → redispatch brief / requesting
+planner) — diagnosis · recommended approach · risks · citations · optional illustrative sketch marked
+non-authoritative. Automated within execution; the human sees only an after-action rollup in the report.
+_Avoid_: a human-facing advice doc on the hot path; applying a sketch verbatim.
+
+**Advisor grant** (`advisor.approved` — the SOLE advisor legality record):
+The recorded consent that makes advisor consults legal — fully DECOUPLED from `models.premium` (which is
+byte-untouched by the feature). Advanced mode ⇒ a veto-able consent question at BOOTSTRAP composition
+(pre-planning, so planning consults are legal); standard mode ⇒ the ONCE-PER-RUN preflight opt-in ask
+(post-freeze, pre-execution; headless ⇒ default OFF + surfaced note, never blocks). Legality = a sibling
+gate in `kata_models` (approved ∧ event ∈ ADVISOR_EVENTS ∧ mode-arm ∧ rung-arm; at-fable anchors inherit,
+sub-fable anchors elevate to the fable rung via `advisor_rung_of`). NO-FIRE ⇒ unadvised-proceed, surfaced — never a consult
+without consent, never a block. _Avoid_: routing advisor legality or spend through `models.premium` /
+the premium pool (S-16/S-20); a blanket standard-mode premium unlock.
+
+**Advise-first ordering**:
+The failure-threshold contract: 2 gate rejections ⇒ scoped consult FIRST (same worker rung, advice rides
+the redispatch brief); a 3rd rejection ⇒ the existing D150 +1 bump WITH the standing advice. Consult and
+bump are ordered consequences of one counter. _Avoid_: bump-first; both-at-once (not the default).
+
+**Unadvised-proceed**:
+The advisor's fail posture: consult dispatch failure or budget exhaustion ⇒ surfaced board NOTE + the loop
+proceeds WITHOUT advice — advisory machinery never blocks and never gates (CA-L30-style loud lapse).
+_Avoid_: retry ladders for a failed consult; silent lapse.
