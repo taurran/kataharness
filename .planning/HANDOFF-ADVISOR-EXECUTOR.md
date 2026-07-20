@@ -5,7 +5,7 @@
 > sibling loop project. Maintained LIVE through the run — each phase appends its section as it
 > completes. Neutral naming by policy; no external project linkage on this surface.
 
-**Status:** EVALUATE fold complete — re-gate + closeout in progress.
+**Status:** COMPLETE — both re-gates green (evaluate PASS · adval SHIP); at operator merge gate.
 **Run date:** 2026-07-19 · **Anchor:** Fable 5 session · **Mode:** standard · one-shot · target `self`.
 
 ---
@@ -164,8 +164,29 @@ Full detail lives in the DESIGN's assessment section; the load-bearing facts:
   (c) the evaluator re-running gates itself but refusing to substitute its re-run for the
   run's own artifacts is the right default-FAIL posture — fix the evidence, not the verdict.
 
-### 2.6 CLOSEOUT
-*(pending: gate-artifact emission → re-gate → operator merge gate → rollup + report)*
+### 2.6 CLOSEOUT — DONE 2026-07-19/20
+- Gate artifacts emitted via `tools/gate_emit.py` at the final HEAD `159fc9b` (baseline
+  `0922cf6`): RESULT.json 537/0/0 · footprint codeBearing:true withinFootprint:true ·
+  mutation allNonVacuous:true. First emission under-declared the footprint
+  (withinFootprint:false) — re-emitted with the COMPLETE changed-file set; lesson: declare
+  records/prose in the footprint too, the gate checks changed ⊆ declared.
+- **Re-gates:** evaluate NEEDS_WORK→**PASS** (its MAJOR was exactly the missing artifacts —
+  emitted, verified, closed); adval SHIP-WITH-FIXES→**SHIP** (all HIGHs verified landed by
+  re-read; 2 residual LOWs closed same session: grill-spend seeding wired into orchestrate
+  0.14.2; the conductor's exercise artifact schema-conformed).
+- Branch: 6 commits `0922cf6..159fc9b` on `advisor/fable-advisor`; operator merge gate next.
+
+## 2b. Final numbers (the whole run)
+- Grill: 7 operator Qs · 28 LOCKED entries · 5 convergence passes (HOLD 8/3/3/2 → SHIP) ·
+  EV-1 accepted · 40 second-brain pages.
+- Freeze: SHIP-WITH-FIXES (2 HIGH incl. the would-have-bricked schema mismatch) · 7 folds ·
+  5 interpolations ratified.
+- Build: 6 tasks · 2 waves · 6 workers · ~330 new tests (218-model + 110-advisor + telemetry) ·
+  0 ownership violations · 0 forced deviations.
+- Judges: freeze-gate + 2 parallel finals + 2 re-gates, ALL fresh-context; every finding
+  written as supersession, never edits.
+- Final gates: pytest 3981/0 fail/3 pre-existing skips · validator 49/0/0 · ruff clean ·
+  Snyk med+ 0 · mutation non-vacuous · live n=1 consult with full artifact trail.
 
 ## 3. Transferable technique notes
 
