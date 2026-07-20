@@ -16,7 +16,15 @@ ADAPTIVE_EVENTS  : tuple[str, ...]         — ordered event registry (AT-L5); t
                    order IS the spend-priority documentation (AT-L13 FCFS — the
                    reservation set is the first two members)
 ADAPTIVE_EVENT_SITES : dict[str, str]      — event → covering dispatch site (AT-L5)
+ADVISOR_EVENTS   : tuple[str, ...]         — advisor consult event registry (§3.3),
+                   sibling to ADAPTIVE_EVENTS (byte-untouched, S-20)
+ADVISOR_EVENT_SITES : dict[str, str]       — advisor event → covering kata-advise site
 family_of(anchor) -> str | None
+advisor_rung_of(family, anchor) -> str | None  — advisor consult rung ("fable" for any
+                   sub-fable anchor, else None → inherit-at-anchor; §3.2, S-24)
+validate_advisor_block(advisor) -> None    — fail-closed advisor-block shape guard (D136)
+advisor_status(advisor, anchor, *, family, mode, event) -> {"fires", "reason", "rung"}
+                   — the advisor sibling legality gate (§3.2, S-16/S-21/S-24)
 step_down(anchor, steps, family) -> str | None
 classify_premium_scope(scope) -> str       — "classes" | "events" (AT-L15 type-dispatch)
 premium_rung_of(family, anchor) -> str | None  — one-rung-above helper (AT-L17)
@@ -181,6 +189,7 @@ SKILL_WORK_CLASS: dict[str, str] = {
     # -----------------------------------------------------------------------
     # plan/
     # -----------------------------------------------------------------------
+    "kata-advise":        "critical",  # advisor consult — judgment/consult work (S-7)
     "kata-comprehend":    "critical",  # understanding — research
     "kata-context":       "economy",   # context reporting
     "kata-design-doc":    "critical",  # design — orchestration
@@ -376,6 +385,49 @@ _SCOPE_OBJECT_KEYS: frozenset[str] = frozenset({"events", "budget"})
 _BUDGET_KEYS: frozenset[str] = frozenset({"calls", "tokensOut"})
 
 
+# ---------------------------------------------------------------------------
+# Advisor event registry (advisor-executor §3.3) — DATA, sibling to
+# ADAPTIVE_EVENTS (which stays BYTE-UNTOUCHED, S-20).
+# ---------------------------------------------------------------------------
+# Each event names a REAL covering kata-advise DISPATCH site (MED-12 discipline:
+# the conductor's own non-dispatched judgment can never be an event).  These live
+# in their OWN registry — an advisor event appearing in models.premium.scope.events
+# stays ILLEGAL (classify_premium_scope RAISES, exactly as today).
+
+ADVISOR_EVENTS: tuple[str, ...] = (
+    "advisor-fail-threshold",
+    "advisor-reroll-grounding",
+    "advisor-fix-loop-ceiling",
+    "advisor-worker-request",
+    "advisor-planning-consult",
+)
+
+ADVISOR_EVENT_SITES: dict[str, str] = {
+    "advisor-fail-threshold":
+        "the conductor's auto kata-advise dispatch at the S-11 failure threshold "
+        "(bump-pending observed, task unadvised) — kata-orchestrate loop, before the "
+        "deferred bump (advisor-executor §3.6a)",
+    "advisor-reroll-grounding":
+        "the conductor's auto kata-advise dispatch at corrective-action ladder trigger #2, "
+        "solicited BEFORE the tightened redispatch brief is authored (kata-orchestrate/"
+        "SKILL.md:817-823; §3.6b) — covers the NEW kata-advise dispatch, NOT the "
+        "conductor-authored grounding pass (the struck ladder-trigger-2-grounding "
+        "ADAPTIVE event is not resurrected; BLOCKER-2 stands)",
+    "advisor-fix-loop-ceiling":
+        "the conductor's kata-advise dispatch at the fix-loop thrash valve, ONLY after a "
+        "kata-diagnose fix-problem verdict (kata-orchestrate/SKILL.md:1235-1253; §3.6c)",
+    "advisor-worker-request":
+        "the conductor's kata-advise dispatch resolving an execution worker's "
+        "advice-requested escalation (§3.7; escalation machinery "
+        "kata-orchestrate/SKILL.md:1054-1080)",
+    "advisor-planning-consult":
+        "(a) the conductor's kata-advise dispatch resolving a planner-worker's "
+        "advice-requested escalation during in-harness plan/design authoring (S-17a); "
+        "(b) the session conductor's own direct kata-advise dispatch during the "
+        "conductor-inline grill (kata-initiate Phase 5 — S-17b). Both advanced+granted only",
+}
+
+
 def classify_premium_scope(scope: object) -> str:
     """Type-dispatch + fail-closed validation for ``models.premium.scope`` (AT-L15).
 
@@ -483,6 +535,46 @@ def premium_rung_of(family: str, anchor: str) -> str | None:
     if idx + 1 >= len(ladder):
         return None
     return ladder[idx + 1]
+
+
+def advisor_rung_of(family: str, anchor: str) -> str | None:
+    """Pure helper (advisor-executor §3.2, S-24): the advisor consult rung for
+    *anchor* within *family* — the ladder's ``"fable"`` short-name for any
+    sub-fable anchor, or ``None`` (arm (a) — inherit at the anchor).
+
+    This is the sibling of :func:`premium_rung_of`, but it is NOT one-rung-above
+    arithmetic: EVERY sub-fable anchor (sonnet AND haiku) consults **fable**, never
+    the rung immediately above.  The multi-rung cost jump on low anchors is
+    DELIBERATE — the feature IS a Fable-tier advisor (frozen goal); the budget pool
+    bounds the spend.  **Never mythos by default.**
+
+    Accepts a full model ID or a short-name anchor (normalized like every other
+    entry point).  ``family="auto"`` derives the family from the anchor, consistent
+    with :func:`step_down` / :func:`premium_rung_of`.
+
+    Returns ``None`` (arm (a) — inherit-at-anchor) when ANY of:
+      * the anchor is already fable/mythos-class (ladder index ≥ the ladder's
+        ``"fable"`` index),
+      * the family is unknown / its ladder is empty,
+      * the ladder has no ``"fable"`` rung,
+      * the anchor is not on the ladder.
+
+    Non-Anthropic families (empty ladders) therefore return ``None`` ⇒ arm (a)
+    inherit at the anchor (no fable-class rung exists in that family).
+    """
+    anchor = _normalize_anchor(anchor)
+    if family == "auto":
+        family = family_of(anchor) or ""
+    ladder = FAMILY_LADDERS.get(family)
+    if not ladder:
+        return None
+    if "fable" not in ladder:
+        return None
+    if anchor not in ladder:
+        return None
+    if ladder.index(anchor) >= ladder.index("fable"):
+        return None
+    return "fable"
 
 
 # ---------------------------------------------------------------------------
@@ -610,6 +702,195 @@ def premium_status(
             return {"fires": False, "reason": "event-not-in-scope"}
 
     return {"fires": True, "reason": "fires"}
+
+
+# ---------------------------------------------------------------------------
+# Advisor sibling legality gate (advisor-executor §3.2) — fail-closed,
+# DECOUPLED from models.premium (byte-untouched, S-16).  advisor.approved is the
+# SOLE advisor legality/spend grant.
+# ---------------------------------------------------------------------------
+
+# Full §4 key set of a present ``advisor`` block (unknown keys RAISE at every level).
+_ADVISOR_KEYS: frozenset[str] = frozenset(
+    {"enabled", "approved", "grantedMode", "budget", "hooks", "phases"}
+)
+_ADVISOR_BUDGET_KEYS: frozenset[str] = frozenset({"calls", "reserved"})
+_ADVISOR_HOOK_KEYS: frozenset[str] = frozenset(
+    {"failThreshold", "rerollTrigger", "fixLoopCeiling"}
+)
+_ADVISOR_GRANTED_MODES: frozenset[str] = frozenset({"advanced", "standard"})
+_ADVISOR_PHASES: frozenset[str] = frozenset({"planning", "execution", "fix-loop"})
+
+
+def _is_strict_int(value: object) -> bool:
+    """True iff *value* is a real ``int`` and NOT a ``bool`` (bool ⊂ int)."""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _validate_advisor(advisor: dict) -> None:
+    """Fail-closed shape guard for a present ``advisor`` config block (D136, S-5b).
+
+    Mirrors :func:`_validate_premium`, enumerating the FULL advisor-executor §4 key
+    set.  RAISES ``ValueError`` on ANY malformed field so the load-guard STOPs and
+    escalates — a present-but-broken block is NEVER silently coerced to OFF.
+
+    ``None`` is the *absent* case (all-OFF, byte-identical BC, S-4); it is handled
+    by the callers and never reaches this guard.
+
+    Rules
+    -----
+    * ``enabled`` — REQUIRED, strict ``bool``.
+    * ``approved`` — REQUIRED, strict ``bool`` (the SOLE legality/spend grant, S-16).
+    * ``grantedMode`` — OPTIONAL; when present ∈ {"advanced", "standard"}.
+    * ``budget`` — REQUIRED in a present block: a dict with strict ints
+      ``calls >= 0`` and ``0 <= reserved <= calls`` (both REQUIRED; bools rejected).
+    * ``hooks`` — OPTIONAL; when present a dict; ``failThreshold`` a strict int ≥ 1
+      (S-18 INTEGER), ``rerollTrigger`` a strict int, ``fixLoopCeiling`` a strict
+      ``bool`` (each validated when present).
+    * ``phases`` — OPTIONAL; when present a ``list[str]`` ⊆ {planning, execution,
+      fix-loop}.
+    * Unknown keys — top-level, in ``budget``, or in ``hooks`` — RAISE.
+    """
+    if not isinstance(advisor, dict):
+        raise ValueError(
+            f"advisor block must be a dict, got {type(advisor).__name__}"
+        )
+
+    unknown = set(advisor) - _ADVISOR_KEYS
+    if unknown:
+        raise ValueError(f"advisor block: unknown key(s) {sorted(unknown)}")
+
+    # enabled / approved — required strict bools.
+    if "enabled" not in advisor or not isinstance(advisor["enabled"], bool):
+        raise ValueError("advisor.enabled missing or non-boolean")
+    if "approved" not in advisor or not isinstance(advisor["approved"], bool):
+        raise ValueError("advisor.approved missing or non-boolean")
+
+    # grantedMode — optional; constrained value set when present.
+    if "grantedMode" in advisor:
+        gm = advisor["grantedMode"]
+        if not isinstance(gm, str) or gm not in _ADVISOR_GRANTED_MODES:
+            raise ValueError(
+                f"advisor.grantedMode must be one of {sorted(_ADVISOR_GRANTED_MODES)} "
+                f"when present, got {gm!r}"
+            )
+
+    # budget — REQUIRED in a present block (the layers-agree companion of
+    # resolve_advisor_budget's fail-close; a hand-edited block without a budget
+    # bricks the load-guard rather than silently defaulting).
+    if "budget" not in advisor:
+        raise ValueError("advisor.budget is required in a present advisor block")
+    budget = advisor["budget"]
+    if not isinstance(budget, dict):
+        raise ValueError("advisor.budget must be a dict")
+    unknown_b = set(budget) - _ADVISOR_BUDGET_KEYS
+    if unknown_b:
+        raise ValueError(f"advisor.budget: unknown key(s) {sorted(unknown_b)}")
+    if "calls" not in budget or not _is_strict_int(budget["calls"]) or budget["calls"] < 0:
+        raise ValueError("advisor.budget.calls must be an int >= 0")
+    if "reserved" not in budget or not _is_strict_int(budget["reserved"]):
+        raise ValueError("advisor.budget.reserved must be an int")
+    if not (0 <= budget["reserved"] <= budget["calls"]):
+        raise ValueError("advisor.budget.reserved must satisfy 0 <= reserved <= calls")
+
+    # hooks — optional; each member validated when present.
+    if "hooks" in advisor:
+        hooks = advisor["hooks"]
+        if not isinstance(hooks, dict):
+            raise ValueError("advisor.hooks must be a dict")
+        unknown_h = set(hooks) - _ADVISOR_HOOK_KEYS
+        if unknown_h:
+            raise ValueError(f"advisor.hooks: unknown key(s) {sorted(unknown_h)}")
+        if "failThreshold" in hooks:
+            ft = hooks["failThreshold"]
+            if not _is_strict_int(ft) or ft < 1:
+                raise ValueError("advisor.hooks.failThreshold must be an int >= 1")
+        if "rerollTrigger" in hooks and not _is_strict_int(hooks["rerollTrigger"]):
+            raise ValueError("advisor.hooks.rerollTrigger must be an int")
+        if "fixLoopCeiling" in hooks and not isinstance(hooks["fixLoopCeiling"], bool):
+            raise ValueError("advisor.hooks.fixLoopCeiling must be a bool")
+
+    # phases — optional; documentation of the G-9 matrix, not a switch.
+    if "phases" in advisor:
+        phases = advisor["phases"]
+        if not isinstance(phases, list):
+            raise ValueError("advisor.phases must be a list")
+        for ph in phases:
+            if not isinstance(ph, str) or ph not in _ADVISOR_PHASES:
+                raise ValueError(
+                    f"advisor.phases members must be in {sorted(_ADVISOR_PHASES)}, "
+                    f"got {ph!r}"
+                )
+
+
+# Exported name shared by the orchestrate load-guard and the gate (one validator —
+# the resolve_budget/classify_premium_scope layers-must-agree precedent).
+validate_advisor_block = _validate_advisor
+
+
+def advisor_status(
+    advisor: dict | None,
+    anchor: str,
+    *,
+    family: str,
+    mode: str,
+    event: str | None = None,
+) -> dict:
+    """The advisor sibling legality gate (advisor-executor §3.2, S-16/S-21/S-24).
+
+    Returns ``{"fires": bool, "reason": str, "rung": str | None}``.  ``rung`` is
+    computed by :func:`advisor_rung_of` and travels in the status so the S-24
+    conjunct (``rung == advisor_rung_of(anchor)``) is satisfied BY CONSTRUCTION:
+    the conductor dispatches ``kata-advise`` at EXACTLY ``status["rung"]``
+    (``None`` ⇒ OMIT the model parameter — arm (a) inherit-at-anchor, no premium
+    machinery consulted; a short-name ⇒ its ``ID_MAP`` id — arm (b)) and never
+    proposes its own rung.
+
+    NO-FIRE reasons, checked in this exact precedence order (the ``premium_status``
+    register):
+
+      * ``"absent"``               — *advisor* is ``None`` (no block; frozen
+                                     behaviour byte-for-byte, S-4)
+      * *(raise)*                  — present-but-malformed ⇒ ``ValueError`` (D136 —
+                                     not a reason)
+      * ``"not-enabled"``          — ``enabled`` is not ``True`` (gates hook WIRING,
+                                     S-26e)
+      * ``"not-approved"``         — ``approved`` is not ``True`` (gates SPEND, S-16)
+      * ``"mode-excluded"``        — ``mode`` ∉ {"advanced", "standard"} (essential
+                                     and unknown modes fail closed, G-8)
+      * ``"standard-not-granted"`` — ``mode == "standard"`` and
+                                     ``grantedMode != "standard"`` (G-2 carve-out arm
+                                     unsatisfied)
+      * ``"no-event"``             — no *event* supplied
+      * ``"unknown-event"``        — *event* ∉ :data:`ADVISOR_EVENTS`
+      * ``"fires"``                — every conjunct holds
+
+    A NO-FIRE on ANY conjunct ⇒ unadvised-proceed with a surfaced reason (board
+    NOTE) — NEVER a consult-at-anchor-without-consent, never a block (S-21).
+
+    A present-but-malformed block RAISES ``ValueError`` (fail-closed, D136).
+    """
+    if advisor is None:
+        return {"fires": False, "reason": "absent", "rung": None}
+
+    _validate_advisor(advisor)  # fail-closed: malformed ⇒ raise
+
+    rung = advisor_rung_of(family, anchor)
+
+    if advisor["enabled"] is not True:
+        return {"fires": False, "reason": "not-enabled", "rung": rung}
+    if advisor["approved"] is not True:
+        return {"fires": False, "reason": "not-approved", "rung": rung}
+    if mode not in _ADVISOR_GRANTED_MODES:
+        return {"fires": False, "reason": "mode-excluded", "rung": rung}
+    if mode == "standard" and advisor.get("grantedMode") != "standard":
+        return {"fires": False, "reason": "standard-not-granted", "rung": rung}
+    if event is None:
+        return {"fires": False, "reason": "no-event", "rung": rung}
+    if event not in ADVISOR_EVENTS:
+        return {"fires": False, "reason": "unknown-event", "rung": rung}
+
+    return {"fires": True, "reason": "fires", "rung": rung}
 
 
 # ---------------------------------------------------------------------------
