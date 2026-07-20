@@ -103,8 +103,48 @@ Full detail lives in the DESIGN's assessment section; the load-bearing facts:
   the author agent for fixes via message-resume preserves its full reading context at zero
   re-read cost.
 
-### 2.3b BUILD DISPATCH
-*(pending: fixes fold → operator dual-control confirm → W1/W2 worker waves)*
+### 2.3b BUILD DISPATCH — DONE 2026-07-19
+- Operator dual-control confirm received → branch `advisor/fable-advisor`; freeze artifacts
+  committed first (`0922cf6`).
+- **W1 (parallel, disjoint, no-git workers at Opus = anchor−1 standard coding):** T1
+  kata_models additions (registry/rung/validator/gate + 218 tests) · T2 NEW kata_advisor.py
+  (budget/state/EV-1 pairing, 110 tests) + additive telemetry key (209 tests, BC proven) ·
+  T3 three protocol docs. Conductor wave gate: byte-untouched claims DIFF-VERIFIED (not
+  trusted from reports), 687 tests, ruff, validator 48/0/0 → commit `1b5936a`.
+- **W2 (parallel, disjoint):** T4 kata-advise SKILL.md 0.1.0 (49th skill, A1 clean) · T5
+  four-hook prose wiring across 8 skills (orchestrate 0.14.0 w/ FIX-4 Leg-C anchoring;
+  bootstrap/preflight/initiate/design-doc/plan tiers bumped) · T6 D167 + README + CHANGELOG.
+  Cross-task README-index staleness resolved by the CONDUCTOR's `validate_skills.py --write`
+  reconcile (both workers correctly refused to cross ownership — the error was an
+  integration-order artifact, not a defect). Validator 49/0/0 → commit `badf63d`.
+- **Transferable techniques:** (a) workers report ownership-boundary blockers instead of
+  fixing them out-of-lane — the conductor owns cross-task reconciliation; (b) the conductor
+  re-verifies byte-untouched claims by git diff itself — worker self-reports are necessary
+  but not sufficient (PD-2 + no-self-cert applied to build waves); (c) per-wave commits by
+  the sole-git-writer conductor keep worker parallelism free of tree races.
+
+### 2.4 EXECUTE — integration gate + live exercise — DONE 2026-07-19
+- **Gauntlet:** pytest-unit PASS · pytest-integration PASS · ruff PASS · validator 49/0/0 PASS
+  (honest-exit runner `tools/scripts/gauntlet.py`). Snyk Code med+ = 0 on tools/.
+- **Live n=1 exercise (AC #1), operator-granted (FIX-2 path):** operator grant recorded as a
+  board DECISION → the REAL gate ran (`advisor_status` ⇒ fires, arm (a) inherit at the fable
+  anchor) → budget/spend/outcome through the REAL engine (`resolve_advisor_budget` 5/1,
+  `can_spend_advisor` True with reserve intact, `record_advisor_spend`, `record_outcome`
+  null-pending — honest: no failing advised attempt exists in an exercise) → request artifact
+  `.kata/advice/live-exercise-1-1.json` → fresh-context kata-advise dispatch at the session
+  anchor → structured response (schema-shaped, citation-dense) → disposition DECISION.
+- **The consult was genuinely useful (not a smoke ritual):** the question was the run's own
+  riskiest seam (S-11b bump-deferral vs engine consume semantics). The advisor CONFIRMED the
+  deferral legal (observe≠consume, double-bump structurally impossible) and surfaced a real
+  new risk — restart-mid-deferral loses the earned bump (accepted under-adapt), plus the rule
+  that the failbump DECISION line must be emitted only at consume time. These findings were
+  handed to the evaluate/adval judges as evidence; the pinning-test sketch goes to the
+  operator rollup (S-2: never auto-applied).
+- **Transferable technique:** make the live exercise EARN its keep — aim the n=1 consult at
+  the run's own most uncertain seam, so the proof-of-life doubles as real verification input.
+
+### 2.5 EVALUATE / ADVAL — IN PROGRESS
+*(fresh-context default-FAIL evaluate + adversarial review dispatched in parallel)*
 
 ### 2.4 EXECUTE
 *(pending)*
