@@ -176,6 +176,26 @@ Full detail lives in the DESIGN's assessment section; the load-bearing facts:
   0.14.2; the conductor's exercise artifact schema-conformed).
 - Branch: 6 commits `0922cf6..159fc9b` on `advisor/fable-advisor`; operator merge gate next.
 
+### 2.7 OPERATOR-ORDERED SMOKE + DETERMINISM PROOF — DONE 2026-07-20 (pre-merge)
+- **Deterministic smoke battery** (`smoke_advisor.py`, zero LLM calls, pure in-process):
+  6 seams — (1) gate matrix across mode×anchor×event incl. the post-API-rates reality
+  (opus/sonnet anchors elevate to fable, arm (b)) + all NO-FIRE reasons + 7 poison configs
+  all raising (D136); (2) rung table incl. full-id anchors; (3) budget reserve-floor
+  boundary + render→recount round-trip equality; (4) telemetry presence-discrimination +
+  byte-stability; (5) live-exercise artifact schema conformance; (6) the composed
+  advise-first loop dry: 2 rejections → consult → 3-observation deferral (nothing consumed)
+  → advised failure → exactly +1 consume → EV-1 advised-fail-bumped → recount==state.
+  **ALL PASS; double-run byte-equal (digest ac81085c83748ae1)**; artifact
+  `.kata/smoke-advisor.json`. Two engine guards fired DURING smoke authoring (AdvisorError
+  bad-enum, AdaptiveError raw-config) — fail-closed proven live.
+- **Adval-works proof, token-lean:** one fresh-context Opus auditor attacked the smoke for
+  vacuity/coverage/determinism-theater: verdict SOUND, with a coverage table showing every
+  skipped seam covered in the shipped suites (file:line), and two honest non-blocking notes
+  (seam5 validates a fixture; seam6's once-guard is orchestrator-side by design).
+- **Transferable technique:** verification under token pressure = deterministic in-process
+  battery (free) + ONE cheap-model adversarial auditor of the battery itself; reserve the
+  premium anchor for conducting, never for mechanical checks.
+
 ## 2b. Final numbers (the whole run)
 - Grill: 7 operator Qs · 28 LOCKED entries · 5 convergence passes (HOLD 8/3/3/2 → SHIP) ·
   EV-1 accepted · 40 second-brain pages.
