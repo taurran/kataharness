@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.14.1
+version: 0.14.2
 category: coordinate
 status: beta
 agnostic: true
@@ -1148,7 +1148,10 @@ is thereby structurally impossible.
 5. **State writes — single-writer orchestrator via `kata_board.write_state`.** `.kata/state.json` gains an
    `advisor` field `{used, byEvent, lapses, outcomes}` (S-23b). Every write goes through
    `kata_board.write_state` (never a direct file write); on restart, recount `used`/`byEvent` from the board's
-   advisor DECISION lines (the fix-loop-counter recount precedent).
+   advisor DECISION lines (the fix-loop-counter recount precedent). **At run start, seed the advisor spend
+   state by counting any existing `.kata/advice/grill-*.json` artifacts** — grill-time consults (kata-initiate
+   S-17b) have no `.kata/state.json` yet, so the artifact IS their durable spend record; each counts against
+   the run's `advisor.budget` before the first dispatch.
 6. **Payload + consumer.** Compose the `request` per `protocol/advice.md` (`taskId`, `phase`, ONE narrowly-scoped
    `question`, `scopedContext`), fold the returned `response` into `.kata/advice/<task-id>-<n>.json` (n = 1-based
    per-task ordinal), and write `meta` at disposition. The consumer is the **redispatch brief** (advice INLINED
