@@ -208,6 +208,21 @@ Full detail lives in the DESIGN's assessment section; the load-bearing facts:
 - Final gates: pytest 3981/0 fail/3 pre-existing skips · validator 49/0/0 · ruff clean ·
   Snyk med+ 0 · mutation non-vacuous · live n=1 consult with full artifact trail.
 
+## 2c. Known follow-on (surfaced by this run, briefed separately)
+
+The advisor's failure lapse is scoped **per-task**, not run-wide — deliberate (one flaky consult
+must not kill the advisor for a whole run), but it inverts under GLOBAL provider unavailability:
+every task's first consult then burns a doomed dispatch. It is bounded (budget exhaustion lapses
+run-wide at 5/10 calls) so the worst case is 5–10 pointless round-trips, then unadvised-to-
+completion with correct reporting — wasteful, not dangerous. Closing it properly turned out to be
+the front edge of a larger feature (per-provider quota detection → park the run → resume → surface
+the upgrade path), briefed in full at `.planning/specs/quota-resilience/REQUIREMENT.md`.
+
+**Transferable point:** a feature's *availability* failure mode deserves its own design pass. This
+one was correct for the era it was designed in (unlimited premium access) and became wrong the day
+the provider moved to metered rates — a few hours after merge. Ask "what happens when this
+dependency is simply gone?" at grill time, not at closeout.
+
 ## 3. Transferable technique notes
 
 - **Parallel grounding:** dispatch the codebase-assessment agent *before* entering the loop's

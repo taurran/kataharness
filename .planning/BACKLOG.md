@@ -2,6 +2,28 @@
 
 Promote to ROADMAP milestones when ready.
 
+> **★★ 2026-07-20 — NEXT INITIATIVE (operator-directed, intake brief WRITTEN, build NOT started):
+> QUOTA-RESILIENCE — per-provider rate-limit / token-exhaustion graceful stop + resume.**
+> Full grounded brief: **`.planning/specs/quota-resilience/REQUIREMENT.md`** (pre-grill; every
+> claim file:line-cited, verified against master `0d3abc6`). Ask: (1) advisor kill-switch when
+> Fable is unavailable — skip remaining consults, report at closeout; (2) the general feature —
+> detect provider quota/rate-limit exhaustion **per provider** (Anthropic/OpenAI/Cursor/Gemini),
+> tell the operator plainly, **park the run via the existing handoff machinery so `/kata-resume`
+> picks up exactly where it left off**, and emit the provider's upgrade command/URL.
+> **Ground truth:** the save/resume half is BUILT+WIRED (selfhandoff · gauge · steer · restore ·
+> `/kata-resume`) but triggers ONLY on context-utilization / operator-stop / crash — **quota is a
+> trigger nowhere**. The detection half is effectively GREENFIELD: `429` appears nowhere in the
+> repo; the 401/403 rules are SKILL prose with **no executable owner**; and **`tools/kata_dispatch.py:172-174`
+> DISCARDS `proc.stderr`**, destroying the provider signal before anything could classify it
+> (a standalone defect degrading ALL error reporting today — ~10-line fix, highest
+> value-per-token item on this list). Hardest leg = codex **hang-on-402 with no exit code**
+> (`docs/platforms/codex-cli.md:89`) landing in `TimeoutExpired`, indistinguishable from a slow
+> task. Scope agreed with the operator: **Tier 1 (consecutive-failure run-wide lapse + a
+> `kata_steer` kill-switch verb) + Tier 2 (stderr fix · classifier · human-required escalation +
+> breakthrough alert + auto-handoff · `degraded {scope:"provider"}`) in ONE version-up; Tier 3
+> (per-provider upgrade registry · silent-hang watchdog · preflight quota-headroom) is a
+> follow-on needing its own grill.** Seven open grill questions enumerated in the brief §4.
+
 > **★ 2026-07-14 — D1 PHANTOM-CORRUPTION ROOT CAUSE FOUND (caught live; HIGH-priority fix):**
 > `mutation_run.prove_non_vacuous` **mutates the REAL source file in place**
 > (`path.write_bytes` on e.g. `tools/recurrence_detect.py`), runs a pytest subprocess

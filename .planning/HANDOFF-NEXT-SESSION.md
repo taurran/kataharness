@@ -1,106 +1,136 @@
-# HANDOFF — operator return (written 2026-07-12c, end of the operator-away autonomous run)
+# HANDOFF — next session (written 2026-07-20, end of the advisor-executor session)
 
-> **Supersedes the 2026-07-12b handoff.** Ground truth at write time: master **`e369d17`** (three
-> PRs merged this session: #24 D153 elevate+UX · #25 D154/D155/D156 C-residuals · #26 D157/D158/
-> D159 hardening), gauntlet green (pytest **3577/3 skip** · integration **2/2** · ruff clean ·
-> validator **48/0/0** · Snyk med+ **0**), installed kata-home **advanced to `e369d17`** (48
-> skills relinked; the "drift detected … minor-a" NOTES were the known informational class, fired
-> on this session's own skill edits). ⚠ IGNORE `C:\Dev\CLAUDE.md` (unrelated Mise project).
-> Untracked `.planning/config.json` = the known operator artifact (briefly swept into a commit,
-> removed by adval A1-1, still on disk untracked). **`git stash list` is NOT empty by design** —
-> see §2 item 2. Session working log: `.planning/SESSION-NOTES-2026-07-12c.md`.
+> **Supersedes the 2026-07-12c handoff** (its return-checklist items were all executed same-day;
+> that history is preserved in `.planning/STATE.md` CURRENT blocks — nothing is lost).
+> **Ground truth at write time:** master **`0d3abc6`** (PR #39 merged, branch deleted local+remote,
+> tree clean, `git stash list` EMPTY). Gauntlet at merge: **pytest 3981 pass / 3 pre-existing skip ·
+> integration 2/2 · ruff clean · validator 49/0/0 · Snyk med+ 0 · mutation non-vacuous.**
+> ⚠ IGNORE `C:\Dev\CLAUDE.md` (unrelated Mise project).
 
-## 1. WHAT HAPPENED (operator authorized mid-session: "I approve of all commits/pushes/merges this
-   section. Run through using loop elements aligned with the plan. When I am back we will do a
-   full evaluation.")
+## 1. WHAT SHIPPED THIS SESSION — D167 advisor-executor (PR #39)
 
-- **A1 CONFIRMED:** the hook chain's first-ever live session — kata bridge + GSD child bridge both
-  written live, chain passthrough byte-identical e2e. "No GSD statusline" you observed = correct
-  (C:\Dev has no `.planning/`; GSD renders only in GSD projects). Decouple-GSD decision drafted
-  (§2 item 3). **F-9/R6 could NOT fire** — the gauge hook's kata-scope gate walks UP from cwd and
-  `C:\Dev` isn't kata-scoped; start the next kata session from the repo root.
-- **D153 (PR #24) — your two priority builds as ONE initiative:** ELEVATE (one grounded
-  recommendation at every grill close → `EV-{n} · LOCKED` ledger entry → rides the D151 emit,
-  declines are preference signal too) + one-question-per-`AskUserQuestion` grill UX. Full
-  discipline: freeze-gate HOLD(8) → re-gate SHIP-WITH-FIXES(8) → build → 2× fresh-context adval
-  SHIP-WITH-FIXES (13) — 29 findings folded, incl. a HIGH (kata-initiate Path-B prose contradicted
-  the close-out) and the emit-grammar trap (anchor + status-vocab rules now pinned in the RUBRIC).
-- **D154/D155/D156 (PR #25):** backstop opt-in write (`--install-hooks --auto-compact-window N`,
-  consent-gated, uninstall never removes) · recall first-run fallback · worker recall brief.
-- **D1 ROOT-CAUSED (`.planning/D1-CORRUPTION-FINDINGS.md`):** your "silent reverts" were a
-  `git stash` (evidence preserved); the phantom IndentationError class = non-atomic write races,
-  reproduced and killed (D159). Defender ruled out with event-log evidence.
-- **D157/D158/D159 (PR #26):** updater stale-lock + ls-remote truth guards (adval also caught an
-  annotated-tag false-abort the sandbox proof missed — peel fix landed) · honest-exit gauntlet
-  runner (`uv run python scripts/gauntlet.py` from tools/ — used for this session's final gate) ·
-  atomic writes for the five corruptible writers.
-- **Mechanical emit proof:** fixture `EV-1` (bare-decline shape) → `learn_feed.py` → page emitted
-  under the anchor-named file → `recall_from_paths` read it back as `source="second-brain"` →
-  idempotent 0-rewrite. Your REAL vault was deliberately left untouched (no fixture pollution).
+The **Fable-tier Advisor consult** (`kata-advise`, the 49th skill) — the advisor-executor pattern
+wired across the loop. Built by running the **full Kata Loop on the harness itself** at a Fable
+anchor: initiate → 7-question grill (28 LOCKED entries, **5 fresh-context convergence passes**,
+HOLD 8/3/3/2 → SHIP) → ELEVATE EV-1 accepted → freeze-gate SHIP-WITH-FIXES (7 folds) → 6 workers /
+2 waves → evaluate **PASS** (8/8 ACs) + adval **SHIP** → operator-ordered pre-merge smoke → merge.
 
-> **★ SAME-DAY UPDATE 2 (2026-07-12c evening — operator directed "execute the top three on the
-> loop, Opus execution, standard mode, adval everything, then hand off"):** ALL EXECUTED —
-> **(1) the kata-native statusline segment is BUILT + GATED** (D162: two freeze-gates + the D163
-> sweep, 26 findings folded total; `kata_scope.py` ONE-walk/ONE-resolution; +50 tests;
-> live-render-unproven — rides the SAME next repo-cwd session as F-9/R6 *(→ flipped LIVE n=1
-> 2026-07-13, operator-observed; citations in the statusline-decouple spec §Acceptance)*);
-> **(2) E5 backfill DONE — then caught by the sweep and FIXED (D163):** the un-namespaced page
-> names had CLOBBERED 3 of 4 D160 live-smoke evidence pages + truncated 70/95 bodies → learn_feed
-> now namespaces `<project>--<source-slug>--<anchor>.md` + folds continuation lines; the vault was
-> purged + re-emitted — **182 coherent pages** (167 decisions + 4 statusline-decouple incl. the
-> RESTORED EV-1 evidence + 11 MM), recall read-back green. DECISIONS.md normalized (72
-> wrapped-bold anchors reshaped — they had been silently merging into predecessors' pages);
-> **(3) E4 Kenjiri resume = MOOT** — the run completed 2026-07-01 (v1.0.0 shipped + gated + public;
-> the "PAUSED" memory index was stale, corrected).
-> **REMAINING (unchanged, one session): F-9 + R6 + the segment's first live render — start the
-> next session with cwd INSIDE the repo and all three prove themselves passively.**
-> The earlier same-day update + original checklist below are preserved for the record.
+**The contract (all LOCKED, compiled in `.planning/specs/advisor-executor/DESIGN.md`):**
+- `advisor.approved` is the **SOLE** legality record — fully decoupled; **`models.premium`,
+  `ADAPTIVE_EVENTS`, and `kata_adaptive.py` are BYTE-UNTOUCHED** (diff-proven at the gate).
+- **Fable-target rung** (`advisor_rung_of`): opus/sonnet/haiku anchors elevate to **fable**;
+  fable/mythos inherit at anchor (arm a); never one-rung arithmetic, never mythos by default.
+- **Advise-first, bump-second:** at the D150 fail threshold the conductor consults FIRST at the
+  same worker rung (orchestrator-side bump deferral — engine untouched); the bump consumes
+  normally on the next failure, advice riding along.
+- **Two-moment grants:** advanced consents at **bootstrap** composition (so planning consults are
+  legal); standard opts in **once per RUN** at **preflight** (post-freeze, pre-execution);
+  **essential excluded**; headless ⇒ OFF + surfaced note, never blocks.
+- **Own budget pool** (standard 5/1 reserved · advanced 10/2), FCFS + reserve floor, loud lapses.
+- **The gate NEVER consults** (judge independence); closeout never consults.
+- **EV-1 advice-effectiveness pairing** (`advised-pass` / `advised-fail-bumped` /
+  `advised-fail-ceiling`) in the telemetry ledger + after-action rollup.
+- BC: absent `advisor` block ⇒ byte-identical behavior.
 
-> **★ SAME-DAY UPDATE (2026-07-12c late — operator returned and executed the checklist):** items
-> 1–4 + 6 are DONE (D160 statusline decoupling grilled live = the D153 smoke, LIVE-PROVEN n=1,
-> PR #29; stash forensics + one recovered artifact PR #28 + stash DROPPED; all seven provisionals
-> RATIFIED with two riders, D161). REMAINING at that point: item 5 (F-9/R6) + the then-queued
-> segment build — **the build has SINCE SHIPPED (update 2 above)**. The checklist below is
-> preserved as written for the record.
+**Honesty labels (PD-2 — these travel with every claim):** the **dispatch mechanics** are
+live-exercised **n=1** (operator-granted consult: gate → budget → dispatch → structured response →
+disposition, full artifact trail at `.kata/advice/live-exercise-1-1.json`). The **four hooks are
+test- and smoke-proven prose — live-if-they-occur, UNFIRED** (no real task hit threshold-2 this
+run). Arm (b) (sub-fable anchor elevation) and the standard carve-out are test-proven, not
+live-proven.
 
-## 2. ★★ OPERATOR RETURN CHECKLIST (your announced full evaluation)
+**Pre-merge proof battery (operator-ordered):** 6-seam deterministic smoke, zero LLM calls,
+**double-run byte-equal** (digest `ac81085c83748ae1`, artifact `.kata/smoke-advisor.json`) — gate
+matrix across mode×anchor×event, all NO-FIRE reasons, 7/7 poison configs raising (D136), rung
+table, reserve-floor boundary, render→recount round-trip, telemetry presence-discrimination, and
+the composed advise-first loop walked dry end-to-end. A fresh-context Opus auditor attacked the
+battery itself for vacuity/coverage/determinism-theater: verdict **SOUND**.
 
-1. **Live-smoke D153** — run a real (small) grill in a kata-scoped cwd: verify one-question-at-a-
-   time interaction, then at close ONE elevate recommendation; accept or decline it; confirm the
-   `EV-1` ledger entry + the emit line + the page in your PokeVault `decision-patterns/`. This
-   flips B1/B2 from mechanical-n=1 to LIVE-PROVEN.
-2. **stash@{0}** — `git stash show -p stash@{0}` (~25 files, 2026-07-12 10:37): diff against
-   master (later commits redid some of it), then `pop` or `drop` deliberately.
-3. **Statusline/GSD decision** (Q0 draft in session notes): (a) keep chain — RECOMMENDED, zero
-   change, GSD renders only in GSD projects; (b) kata-native statusline segment for kata scopes —
-   new M8-adjacent build; (c) drop GSD from the slot — affects Mise sessions, not recommended.
-4. **Ratify the PROVISIONALS:** D153 §RATIFY (tier-uniform · elevate via single-question surface ·
-   declines feed second brain · skip-depth ⇒ no ELEVATE) + D154 (opt-in write exists) + D155
-   (first-run fallback) + D156 (worker recall brief). Each is one yes/adjust.
-5. **F-9 + R6** — start a session with cwd = the harness repo; work long; observe the
-   `[KATA CONTEXT GAUGE]` directive at 0.70 (F-9 → flip GROUNDING-CLAUDE G1b + adapter README to
-   CONFIRMED) and ride an auto-compaction e2e (R6). Both now genuinely possible.
-6. Optional: Defender exclusion for `C:\Dev` (admin) — comfort only, cause ruled out.
+## 2. ★★ START HERE NEXT SESSION — the quota-resilience initiative
 
-## 3. REMAINING QUEUE (after §2)
+**The operator's next build, briefed and ready to grill:**
+**`.planning/specs/quota-resilience/REQUIREMENT.md`** — a complete, file:line-cited intake brief
+(pre-grill, not frozen). Read it FIRST; it contains the whole research pass so you do not repeat it.
 
-BACKLOG "2026-07-12c SESSION QUEUE" + the standing E-queue (calibration proper E1 · adaptive live
-A/B E2 · PokeVault install / MindBridge ingest E3 · Kenjiri resume E4 · optional DECISIONS
-backfill E5 · health-review LOW/INFO residuals E6). PostToolUse gauge cadence stays
-evidence-gated (needs F-9 observations first).
+**One-paragraph version.** Detect per-provider rate-limit / token-quota exhaustion
+(Anthropic/OpenAI/Cursor/Gemini), tell the operator plainly they are out, **park the run via the
+existing handoff machinery so `/kata-resume` resumes exactly where it stopped**, and emit that
+provider's upgrade command or URL. Plus the advisor-specific kill-switch: skip remaining consults
+for the session and report the reason at closeout.
 
-## 4. STANDING ORDERS (updated this session)
+**The three findings that shape it:**
+1. **The save/resume half is BUILT+WIRED** — but every trigger is context-utilization,
+   operator-stop, or crash. **Quota is a trigger nowhere.**
+2. **The detection half is effectively GREENFIELD.** `429` appears nowhere in the repo; the
+   401/403 rules are SKILL prose with **no executable owner** (`kata_models.py` never sees an
+   error).
+3. **★ BLOCKER + standalone defect: `tools/kata_dispatch.py:172-174` discards `proc.stderr`.**
+   The provider's rate-limit message is destroyed before any classifier could see it. This
+   degrades ALL error reporting today. **~10 lines + tests. Highest value-per-token item in the
+   entire backlog — worth doing even if nothing else gets built.**
 
-All prior orders hold (cite-before-claim · done = gates+record+SHA · fresh-context adval before
-merge · D136 fail-closed · bump-on-modify + validator `--write` · branch→PR→merge · PD-1/PD-2).
-NEW (D1 findings, binding): **the conductor is the SOLE main-tree git writer** — subagents build
-no-git (or in their own worktrees); no stash/checkout-- /restore/branch-switch in the shared tree
-while any agent runs; **closeout tripwire: `git stash list` empty** (this session's sole entry is
-the deliberate §2-item-2 evidence) **+ `git status` reviewed**. Gate runs go through
-`tools/scripts/gauntlet.py` (D158) — never `pytest | tail && commit`.
+**Agreed scope:** Tier 1 (consecutive-failure run-wide lapse + a `kata_steer` kill-switch verb) +
+Tier 2 (stderr fix · classifier · `human-required` escalation + breakthrough alert + auto-handoff ·
+`degraded {scope:"provider"}`) in **ONE version-up**; Tier 3 (per-provider upgrade registry ·
+silent-hang watchdog · preflight quota-headroom) is a **follow-on needing its own grill** — its two
+legs each carry a policy decision that does not belong in the same freeze. Seven open grill
+questions are enumerated in the brief §4.
 
-## 5. GATE REPRODUCTION
+**To start:**
+```
+cd C:\Dev\Projects\KataHarness      # start cwd INSIDE the repo (statusline/gauge scope)
+/kata-start                          # → kata-initiate; hand it the REQUIREMENT.md as the brief
+```
+Framing for the mirror: `kind: version-up` · `target: self` · mode `standard` · grill `standard`.
 
-From `tools/`: `uv run python scripts/gauntlet.py` (all four gates, honest exit) — at close:
-pytest 3577/3 · integration 2/2 · ruff clean · validator 48/0/0; Snyk Code med+ 0 (tools/).
-EV emit re-verify (read-only, fixture): session scratchpad `ev-proof/` — or just run §2 item 1.
+## 3. SMALLER OUTSTANDING ITEMS (cheap, independent)
+
+1. **Relink the installed kata-home to `0d3abc6`** — it is still on the pre-advisor SHA, so the
+   49th skill is NOT installed yet. `& "$env:USERPROFILE\.kata-home\update.ps1"` from PowerShell
+   with all other Claude sessions closed (see the Windows-update memory: `claude update` silently
+   rolls back if any `claude.exe` holds the exe).
+2. **Optional `v0.4.0` tag** — CHANGELOG sits at `[Unreleased] — Advisor consult (kata-advise)`.
+   Operator's call; the advisor is a minor-version feature by semver.
+3. **Fold the advisor's own recommended pinning tests** — `TestAdvisorDeferralCompat` (three pins:
+   observe≠consume, exactly-one +1 after the advised failure, mid-deferral recount carries no
+   mark). The sketch is archived verbatim in `.kata/advice/live-exercise-1-1.json` — it was the
+   live consult's own output, deliberately NOT auto-applied (S-2).
+4. **E-queue (unchanged):** E1 calibration proper · E2 adaptive live A/B (both now have real rows
+   from D165/D167) · E6 health-review LOW/INFO residuals.
+5. **F-9 / R6 remain honestly UNOBSERVED** — context never crossed 0.70 and no auto-compaction
+   fired. Not broken; still queued. No false fire across two long sessions is itself
+   correct-behavior evidence.
+
+## 4. STANDING ORDERS (all prior orders hold)
+
+cite-before-claim · done = gates + record + SHA · fresh-context adval before merge · D136
+fail-closed · bump-on-modify + validator `--write` · branch → PR → merge · PD-1/PD-2 ·
+**the conductor is the SOLE main-tree git writer** (subagents build no-git or in their own
+worktrees) · closeout tripwire: `git stash list` empty + `git status` reviewed · gate runs go
+through `tools/scripts/gauntlet.py`, never `pytest | tail && commit`.
+
+**New this session (proven techniques, recorded in `.planning/LESSONS-LEARNED.md` and the transfer
+doc):** supersede-don't-edit for grill findings (it is what made 5 convergence passes converge
+instead of thrash) · the conductor re-verifies byte-untouched claims by `git diff` itself rather
+than trusting worker reports · workers report ownership-boundary blockers instead of crossing lanes
+(the conductor owns cross-task reconciliation) · aim the live n=1 exercise at the run's OWN riskiest
+seam so proof-of-life doubles as verification input · under token pressure, verify with a
+deterministic in-process battery (free) plus ONE cheap-model adversarial auditor **of the battery
+itself**.
+
+## 5. TRANSFER DOC (for the sibling loop project)
+
+**`.planning/HANDOFF-ADVISOR-EXECUTOR.md`** — the complete, neutral-named, reproduction-grade
+record of how this feature was designed and built end-to-end through the Kata Loop: the pattern
+source, the grounding assessment, a phase-by-phase process log, the convergence journey with its
+headline catches, and a running "transferable technique notes" section. Written for hand-off to
+another loop project; carries **no work-linkage** on any surface. Complete as of merge.
+
+## 6. GATE REPRODUCTION
+
+From `tools/`: `uv run python scripts/gauntlet.py` (all four gates, honest exit).
+Advisor smoke: `uv run python <scratchpad>/smoke_advisor.py` — the battery is session-scratchpad
+only and was NOT committed (it asserts against `.kata/` run artifacts). **If you want it as a
+permanent regression, promote it into `tools/tests/` with the fixture dependency replaced by a
+constructed artifact** — a good small next-session task, and it is the natural home for the
+`TestAdvisorDeferralCompat` pins from item 3 above.
