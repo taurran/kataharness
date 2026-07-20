@@ -6,7 +6,7 @@ description: >-
   manifest-hash checked), records installs to the machine-global D-registry, probes the target environment,
   and emits .kata/preflight.json. Default-FAIL; never tiered (D29/D33).
 license: Apache-2.0
-version: 0.3.0
+version: 0.4.0
 category: coordinate
 status: beta
 agnostic: true
@@ -109,6 +109,28 @@ prompt, never a hand-maintained list; an under-enumerated pitch is a consent def
 The approval record carries `grantedMode`; a re-entrant run that changes mode LAPSES it (the lapse executor
 is bootstrap — Phase 0/1 clears `approved` when `mode ≠ grantedMode`, and this gate re-asks). Enforcement of
 the four-conjunct fire rule and the failure/OMIT semantics lives at dispatch time in [[kata-orchestrate]].
+
+### The standard-mode advisor opt-in (advisor-executor — once per RUN, post-freeze; G-5/S-6/D29)
+
+**STANDARD mode ONLY**, and **independent of the premium offer above** (its own question — the advisor grant is
+DECOUPLED from `models.premium`, S-16). Asked **exactly once per RUN**, at the **post-freeze, pre-execution**
+preflight moment (S-6/D29 — advanced consents earlier, at [[kata-bootstrap]] composition; essential is never
+asked, G-8). No session-identity machinery: a second run in the same conversation asks again (accepted
+trade-off, G-5). Present it as its own plain question — *"Give this run a scoped Fable-tier Advisor it can
+consult on hard, repeatedly-failing tasks (execution + fix-loop)? Standard planning has no advisor."*
+
+- **Accept** ⇒ write `approved: true, grantedMode: "standard"` into the composed standard `advisor` block
+  (the block [[kata-bootstrap]] wrote as `{enabled: true, approved: false, budget: {calls: 5, reserved: 1},
+  hooks, phases: ["execution","fix-loop"]}`).
+- **Decline** ⇒ leave **`approved: false` and `grantedMode` ABSENT** — `approved` is authoritative; no
+  `grantedMode` value is ever required for the declined state (S-26b). The run proceeds UNADVISED, never
+  blocked.
+- **Headless / non-TTY standard preflight ⇒ default OFF + surfaced note — NEVER blocks** (G-5/S-6):
+  `approved` stays `false`, `grantedMode` absent, and a surfaced NOTE records the auto-decline.
+
+**Standard planning has NO advisor** — the honest temporal consequence of this post-freeze placement (G-9): by
+the time this ask fires, planning is already frozen. The gate + hook wiring in [[kata-orchestrate]]
+(§ Advisor consult) enforce availability; this ask only records the grant.
 
 ## Invariants (never relax)
 

@@ -4,7 +4,7 @@ description: >-
   Coarse vertical slices with disjoint ownership and a runnable gate per task. Pick this for PoC-grade plans,
   time-boxed spikes, or any context where a lightweight DAG is enough and full threat modeling is not warranted.
 license: Apache-2.0
-version: 0.1.4
+version: 0.2.0
 category: plan
 status: beta
 agnostic: true
@@ -50,3 +50,15 @@ without drift:
 **Explicitly does NOT** do finer-grained slice decomposition, STRIDE threat register, or per-task risk notes —
 those are Standard and Advanced. Mark the plan header as Essential-tier so downstream consumers know the
 coverage level.
+
+## Advice-request escalation (advisor-executor, S-17a — ADVANCED + granted ONLY; runtime-gated)
+When dispatched in-harness as a planner-worker, on a **genuinely hard planning question** you MAY request a
+scoped Fable-tier advisor consult by raising an **`advice-requested`** escalation (`protocol/escalation.md`) —
+question in `decisionNeeded`, async/non-halting (the standard park contract). **Only the conductor dispatches
+[[kata-advise]]** ([[kata-orchestrate]] § Advisor consult, event `advisor-planning-consult`); the advice
+returns **INLINED VERBATIM** in your redispatch brief under a marked `ADVICE` section. Advice is **advisory,
+never authoritative** (S-2) — it never re-decides a LOCKED decision or expands the frozen goal. This affordance
+is **ALIVE only on an ADVANCED run with an existing advisor grant**; on any other run the conductor's
+`advisor_status` gate NO-FIREs and you proceed unadvised. It rides **every tier variant because tier ≠ mode**
+(D24c cross-picking) — runtime-gated by the grant, not by the plan tier. (An advisory consult is not a decision
+source: an unresolved *decision branch* still routes back to grilling, never to advice.)

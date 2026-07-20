@@ -153,6 +153,18 @@ committed inputs, not yet measured live; the precision figure rests on an n=1 ov
 observation — the model's weakest assumption — and a real A/B is queued)*. None of this turns on unless you add
 the config; without it, every part stays off.
 
+### 🧭 The advisor — a Fable-tier second opinion when a task keeps failing *(new; engine test-proven, live n=1 pending)*
+When a hard task burns blind retries, the loop can consult a **Fable-tier advisor** instead of just
+trying again: a scoped, no-write second opinion that returns a diagnosis, an approach, and the risks —
+folded into the next attempt's brief. It is **advisory only — it never changes a gate verdict, is never
+auto-applied, and never expands the goal.** Grants are **mode-gated and consented**: advanced runs opt
+in at composition, standard runs opt in once per run at preflight, essential never gets it; the gate and
+closeout **never consult** (the judge and the builder never share an advisor). It draws from its **own
+budget pool**, separate from your premium-model spend, and every consult is a logged, auditable line.
+Add nothing to the config and it stays fully off. *(The engine — the legality gate, the Fable-target
+routing, the budget and telemetry — is test-proven; the live wiring is exercised n=1 on this repo's own
+fable-anchored dogfood run, and that honesty label travels with the claim.)*
+
 ### ⚡ The inline evaluator/reroll — catch a bad chunk as it happens *(v0.2.0)*
 A cheap way to catch a bad piece of work the moment it lands, without paying a model to babysit every
 step. The idea (scheduler *principles*, not code, adapted from DeepSeek's **DSpark** paper): watch a
@@ -277,7 +289,7 @@ upstream base stays pristine and is never edited or lost.
 `/kata` prints the index; `/kata-start`, `/kata-onboard`, `/kata-resume`, `/kata-status`, and `/kata-validate`
 route straight to the right skill — no logic to drift, always in sync with the toolkit.
 
-### 📚 48 versioned skills
+### 📚 49 versioned skills
 Across six families — `plan` · `coordinate` · `execute` · `evaluate` · `handoff` · `meta` — plus the
 `initiation` / `closeout` modules. Every skill carries a semver in its frontmatter; the generated catalog below
 is the machine source of truth for what exists and at what version.
@@ -288,24 +300,25 @@ is the machine source of truth for what exists and at what version.
 <!-- SKILL-INDEX:START -->
 | Skill | Ver | Cost | Category | Status | Source | Use |
 |---|---|---|---|---|---|---|
+| `kata-advise` | 0.1.0 | 3 | plan | experimental | new (KataHarness original, advisor-executor initiative — GRILL-LEDGER S-1/S-2/S-7/S-24, DESIGN §3.8/§5). Fresh-context no-write consult pattern (L4/L5) applied to a scoped Fable-tier advisor; conductor-dispatched only, mirroring kata-research's escalation-routed no-write dispatch (D62). | Fable-tier advisory consult on an intensive issue — diagnosis / approach / risks for the redispatch brief; advisory, never gates |
 | `kata-comprehend` | 0.1.0 | 3 | plan | beta | new (KataHarness original, Debug Mode P1 — function-model oracle, DESIGN LD2/LD7) | — |
 | `kata-context` | 0.1.0 | 1 | plan | beta | adapted-from mattpocock/skills {ubiquitous-language, grill-with-docs CONTEXT-FORMAT} | Build/maintain CONTEXT.md shared/ubiquitous language |
-| `kata-design-doc` | 0.1.0 | 2 | plan | beta | adapted-from mattpocock/skills {to-prd} + superpowers brainstorming + GSD spec-phase | Synthesize the frozen design doc / spec |
+| `kata-design-doc` | 0.2.0 | 2 | plan | beta | adapted-from mattpocock/skills {to-prd} + superpowers brainstorming + GSD spec-phase | Synthesize the frozen design doc / spec |
 | `kata-graph` | 0.1.0 | 3 | plan | beta | adapted-from aider repo-map (MIT — tree-sitter tag-queries + personalized PageRank + token budget) + Graphify (safishamsi/graphify, MIT — AST graph + MCP oracle get_neighbors/shortest_path/get_pr_impact) | Token-budgeted structural map of an existing repo (version-up ingestion); builds kata.graph.json |
 | `kata-grill-advanced` | 0.3.0 | 5 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
 | `kata-grill-essential` | 0.3.0 | 3 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
 | `kata-grill-standard` | 0.3.0 | 4 | plan | beta | adapted-from mattpocock/skills {grill-with-docs, grill-me, ubiquitous-language} + GSD discuss-phase/spec-phase interaction model | — |
-| `kata-plan-advanced` | 0.1.4 | 4 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
-| `kata-plan-essential` | 0.1.4 | 2 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
-| `kata-plan-standard` | 0.1.4 | 3 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
+| `kata-plan-advanced` | 0.2.0 | 4 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
+| `kata-plan-essential` | 0.2.0 | 2 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
+| `kata-plan-standard` | 0.2.0 | 3 | plan | beta | adapted-from mattpocock/skills {to-issues vertical-slicing} + GSD plan-phase + BMAD {trade-offs-over-verdicts} + CPP plan format | — |
 | `kata-research` | 0.1.0 | 3 | plan | beta | new (KataHarness original, loop-cognition RS-GB1/2/3, D62) — fresh-context no-write evaluator pattern (L4/L5) applied to in-loop research; escalation-routed like kata-orchestrate's no-re-plan escape valve (D52) | Research a must-deliver gap with no in-plan solution; ground every claim; return findings for the grounding gate, never re-plan |
 | `kata-board` | 0.1.0 | 2 | coordinate | beta | adapted-from Claude Agent Teams protocol (agnostic file reimplementation); CryptoPortfolioPlanner LESSONS-LEARNED L3 | Append-only mailbox/message board for lateral peer comms |
-| `kata-bootstrap` | 0.6.0 | 2 | coordinate | beta | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
-| `kata-initiate` | 0.7.0 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
+| `kata-bootstrap` | 0.7.0 | 2 | coordinate | beta | adapted-from GSD discuss-phase Q&A model + docs/MODES-DESIGN.md D24c composition ladder (KataHarness design) | Compose a run (run-shape + ladder), preview cost, write kata.config, launch |
+| `kata-initiate` | 0.8.0 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
 | `kata-loop` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
 | `kata-onboard` | 0.2.0 | 3 | coordinate | beta | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
-| `kata-orchestrate` | 0.13.0 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
-| `kata-preflight` | 0.3.0 | 2 | coordinate | beta | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner from _subprocess_runner in tools/kata_dispatch.py | — |
+| `kata-orchestrate` | 0.14.0 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
+| `kata-preflight` | 0.4.0 | 2 | coordinate | beta | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner from _subprocess_runner in tools/kata_dispatch.py | — |
 | `kata-readiness` | 0.2.2 | 1 | coordinate | beta | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
 | `kata-sprint` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C) | Own the sprint boundary (G1–G4 change-control); incremental delivery only |
 | `kata-worktree` | 0.1.0 | 1 | coordinate | beta | adapted-from CryptoPortfolioPlanner worktree proof (LESSONS-LEARNED L2/L3) | Per-owner git-worktree isolation for concurrent code |

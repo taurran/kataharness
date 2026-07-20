@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.13.0
+version: 0.14.0
 category: coordinate
 status: beta
 agnostic: true
@@ -81,6 +81,14 @@ does not drift.**
      resolved `{weights, tau}` are the run's inline-eval params, consumed by `kata_risk.should_trigger(...)` at each
      scan (§ The M4 scheduler). A string / absent value carries no override ⇒ `{weights, tau}` default to
      `kata_risk.DEFAULT_WEIGHTS`/`DEFAULT_TAU` (the same result `resolve_inline_eval_params` returns for a string).
+   - **`advisor` load-guard (advisor-executor — ADDITIVE; BC: absent ⇒ OFF strictly, byte-for-byte unchanged).**
+     When `kata.config.advisor` is **present**, validate it via `kata_models.validate_advisor_block(advisor)`
+     (the shared fail-closed validator, `tools/kata_models.py` — the SAME validator the § Advisor consult gate
+     uses, layers-must-agree). A raise ⇒ **STOP + escalate** (D136 fail-closed — a present-but-malformed
+     `advisor` block is **never** silently coerced to OFF; the same posture as the mode/effort/tiers/modules
+     guard above). An **ABSENT** block ⇒ the advisor is OFF for the whole run, every advisor leg inert, behavior
+     byte-identical to today (S-4). **Never infer the grant from `mode`** — an absent block is OFF even in
+     advanced (G-9). This load-guard gates the wiring in **§ Advisor consult (config-gated spine)** below.
 1. **PRE-FLIGHT gate** — conditional, fail-closed, BC-preserving (N5/D29). Call
    `kata_preflight.preflight_required(repo_root)`:
    - **`False`** (no `kata.dependencies.json` manifest): PRE-FLIGHT is not required — proceed
@@ -821,6 +829,15 @@ reuses the existing `DECISION` line and the existing kinds.
   LOW-13; see the *Research-needed → GROUND* route in `## Escalation`); the **contract-surface supersede route**
   (`## Escalation`) applies **ONLY** when the plan declares `builds_against` and a contract surface changes.
   **Never a silent plan patch.**
+  - **Advisor reroll-grounding hook (§3.6b; ADDITIVE, config-gated; BC: no `advisor` grant ⇒ inert, the
+    grounding pass above runs unchanged).** At trigger #2, **when no standing advice exists for the task**
+    (the shared once-guard / standing-advice suppression — § Advisor consult; **any**
+    `.kata/advice/<task-id>-*.json`, auto OR worker-requested, suppresses this hook), the loop **solicits a
+    scoped advisor consult FIRST** (event `advisor-reroll-grounding`) — **BEFORE the tightened redispatch
+    brief is authored, and the advice is folded INTO it** — one deterministic order (S-19c). The grounding
+    pass itself stays **conductor-authored and untiered** (BLOCKER-2's ruling stands; the advisor event covers
+    only the new `kata-advise` dispatch, never the grounding pass). Gate/dispatch/spend/NO-FIRE all run per
+    § Advisor consult. On a fable-anchored dogfood run this consult is ALIVE via arm (a).
 - **Trigger #3 ⇒ `kind: human-required`** — the **EXISTING kind, no enum change** (async-parked per the existing
   `## Escalation` contract, mirroring the thrash valve N=2 and the liveness ladder).
 - **Ladder arbitration (A1-Q5 verbatim — the ONE paragraph, M4 × liveness × fix-loop × kata-diagnose).** At most
@@ -1012,8 +1029,35 @@ downshifted=<True iff this attempt's dispatch carried a −1 delta>)`; after eve
 `reroll` (post-re-adjudication — an overturned verdict never counts, M4 Amendment #6 item 2) call
 `record_standing_reroll(state, task_id, task_class)`. When `bump_pending(state, cfg, task_id)` is
 True, the task's NEXT attempt dispatches one rung up (AT-L8: once per task; the bumped attempt is
-the `fail-bump-escalation` event; economy work NEVER bumps past the anchor, R-9). Bumped tasks are
+the `fail-bump-escalation` event; economy work NEVER bumps past the anchor, R-9) — **unless the
+advisor fail-threshold hook fires first — the bump defers one failure (§advisor)** (`§advisor` = the
+**§ Advisor consult (config-gated spine)** section below). Bumped tasks are
 exempt from downshift by construction (the engine enforces it).
+
+**Advisor fail-threshold hook — advise-first, bump-second (§3.6a; ADDITIVE, config-gated; BC: no
+`advisor` grant ⇒ this hook is inert and the `bump_pending` bump above fires unchanged, byte-for-byte
+as today).** This hook is ANCHORED here, adjacent to the Leg C bump it defers, so the skill body never
+carries two contradictory standing instructions about the same counter (FIX 4). At the S-11 failure
+threshold — `bump_pending` observed True (the ENGINE counter is authoritative when `models.adaptive` is
+PRESENT; `models.adaptive` ABSENT ⇒ the conductor maintains its own per-task rejection count mirroring
+engine semantics EXACTLY — gate rejections + standing rerolls both count, threshold
+`advisor.hooks.failThreshold`, integer default 2; `advisor.hooks.failThreshold` is IGNORED with a
+surfaced load NOTE when `models.adaptive` is present and it conflicts, S-18) — and **when no standing
+advice exists for the task** (the shared once-guard, § Advisor consult):
+- the loop fires a **SCOPED advisor consult FIRST** (event `advisor-fail-threshold`) and redispatches at
+  the **prior attempt's rung** with the advice folded into the brief — the pending bump is **DEFERRED
+  one failure**: the conductor **does NOT consult `modulate_step` for that one dispatch** and the engine's
+  counters/state are **not touched** for the deferral (`tools/kata_adaptive.py` BYTE-UNTOUCHED, S-11b —
+  advise-first is ORCHESTRATOR-SIDE bump deferral).
+- On the NEXT failure the normal path runs: `bump_pending` is STILL True, `modulate_step` consumes the
+  bump (+1), and the standing advice **rides the bumped redispatch brief** (G-3's advice-travels rule).
+  Consult and bump are ORDERED consequences of one counter, never simultaneous by default (both-at-once
+  was REJECTED as the default — a possible future config posture, not this build).
+- Evidence recording (`record_gate_result` / `record_standing_reroll`) continues normally throughout —
+  advised redispatches count toward streak/damper accounting as normal attempts, no special-casing
+  (S-15e).
+Gate/dispatch/spend/NO-FIRE/EV-1 all run per § Advisor consult. The consult resolves at
+`advisor_status["rung"]` (fable-anchored dogfood ⇒ arm (a), `rung=None`, ALIVE).
 
 **Ledger closeout additions:** accumulate `verdictByTier` (standing verdicts under their deciding
 tier; overturned screen verdicts under `overturned×<screen-tier>` — the kata_telemetry key grammar)
@@ -1024,6 +1068,108 @@ v3 keys, calibration's C-3 input.
 `kata_adaptive.anchor_switch_reset(state)` (bumps/streaks/dampers cleared, budget spend PRESERVED)
 + a board NOTE naming the reset. Anchor-relative state re-based against a different ladder is
 undefined arithmetic; reset is the honest posture.
+
+## Advisor consult (config-gated spine)
+
+**The advisor-executor pattern: a scoped, anchor-relative Fable-tier consult that closes the blind-retry gap**
+(`protocol/advice.md`, `skills/plan/kata-advise/SKILL.md`). This is a **config-gated spine, not a module** —
+gated on the `advisor` block validated at precondition 0 (§ Preconditions load-guard), **NOT** on any
+`kata/module/*` marker. **BC: an ABSENT `advisor` block ⇒ every leg here is inert and behavior is byte-identical
+to today (S-4); a present-but-malformed block ⇒ load-guard STOP (D136).** Legality is **fully DECOUPLED** from
+`models.premium` — the advisor **reuses the gate PATTERN and the ladder helpers, never the premium record or
+pool** (`models.premium` / `ADAPTIVE_EVENTS` / `tools/kata_adaptive.py` are BYTE-UNTOUCHED, S-16/S-20/S-11b).
+Advice is **advisory, never authoritative** (S-2): it never changes a gate verdict, is never auto-applied,
+never expands the frozen goal.
+
+**Where the hooks live (all orchestrator-side; anchored at their real dispatch sites — this section is the
+shared mechanics home they reference):**
+- **Fail-threshold hook (§3.6a)** — anchored adjacent to the Leg C `bump_pending` paragraph (§ Adaptive
+  tiering, Evidence recording): advise-first, bump-second.
+- **Reroll-grounding hook (§3.6b)** — anchored at § The corrective-action ladder, **trigger #2**:
+  solicit-before-authoring the tightened brief.
+- **Fix-loop-ceiling hook (§3.6c)** — anchored at § Final gate fix loop, **fix-problem verdict**:
+  diagnose-first, consult-second, reserve-backed.
+- **`advice-requested` escalation (§3.7)** — handled at `## Escalation`: worker/planner requests, conductor
+  dispatches, advice inlined verbatim.
+
+**Shared once-guard / standing-advice suppression (S-25 generalized by S-27).** **ANY** standing advice for a
+task — auto OR worker-requested, i.e. **any** `.kata/advice/<task-id>-*.json` exists — suppresses **BOTH** auto
+hooks (fail-threshold AND reroll-trigger): **one diagnosis per task**; the standing advice rides every
+subsequent redispatch; at threshold the bump then consumes normally (G-3's advice-travels rule). Corollary
+(S-11c): **at most ONE auto-consult per task across the two auto hooks** — they share this guard, no double-fire.
+The **fix-loop-ceiling** consult is **separate** (different phase, reserve-backed) and is NOT suppressed by this
+guard.
+
+**Dispatch mechanics (every consult, whatever the hook/escalation that triggered it):**
+1. **Gate — the SOLE legality check.** Call `kata_models.advisor_status(advisor, anchor, family=…, mode=…,
+   event=<the ADVISOR_EVENTS member>)` → `{fires, reason, rung}`. **A NO-FIRE on ANY conjunct** (`fires: False`)
+   ⇒ **unadvised-proceed with the surfaced `reason` as a board NOTE — NEVER a consult-at-anchor-without-consent,
+   never a block** (S-21). The NO-FIRE reasons (precedence order): `absent` · `not-enabled` · `not-approved` ·
+   `mode-excluded` (essential + unknown modes, G-8) · `standard-not-granted` (the G-2 carve-out arm unsatisfied)
+   · `no-event` · `unknown-event`.
+2. **Spend — the advisor's OWN pool, sole spend authority (S-12; NEVER the premium `can_spend`).** Before
+   dispatch, check `kata_advisor.can_spend_advisor(calls, reserved, kata_advisor.ADVISOR_RESERVED_EVENTS[mode],
+   state, event)` against `kata_advisor.resolve_advisor_budget(advisor)`. **Grant-before-dispatch (S-19a):** a
+   granted-then-FAILED dispatch **CONSUMES its budget call** — `kata_advisor.record_advisor_spend(state, event)`
+   commits BEFORE the dispatch outcome is known (matches the `kata_adaptive` dispatch-commit precedent; prevents
+   retry-mining). A denied spend records nothing and proceeds unadvised. **Exhaustion ⇒ loud lapse** for the
+   run's remainder: board DECISION + a `state.advisor.lapses[]` entry + handoff note; the loop proceeds
+   UNADVISED (never blocks).
+3. **Rung emission (S-24 — the S-24 conjunct satisfied BY CONSTRUCTION).** Dispatch `kata-advise` at EXACTLY
+   `status["rung"]`: **`None` ⇒ OMIT the `model` parameter** (arm (a) inherit-at-anchor — no premium machinery
+   consulted; the fable-anchored dogfood configuration is ALIVE here); **a short-name ⇒ emit its `ID_MAP` id**
+   (arm (b) — a sub-fable anchor consults `"fable"`, never one-rung-above arithmetic, never mythos). The
+   conductor NEVER proposes its own rung.
+4. **Board lines (S-3).** A **NOTE at request** (task, event, question summary), a **DECISION at disposition**
+   (`meta.disposition`, rendered by `kata_advisor.render_advisor_decision`), plus the **per-consult spend
+   DECISION line** — the durable recount trail `kata_advisor.recount_from_advisor_decisions` reads to restore
+   `used`/`byEvent`.
+5. **State writes — single-writer orchestrator via `kata_board.write_state`.** `.kata/state.json` gains an
+   `advisor` field `{used, byEvent, lapses, outcomes}` (S-23b). Every write goes through
+   `kata_board.write_state` (never a direct file write); on restart, recount `used`/`byEvent` from the board's
+   advisor DECISION lines (the fix-loop-counter recount precedent).
+6. **Payload + consumer.** Compose the `request` per `protocol/advice.md` (`taskId`, `phase`, ONE narrowly-scoped
+   `question`, `scopedContext`), fold the returned `response` into `.kata/advice/<task-id>-<n>.json` (n = 1-based
+   per-task ordinal), and write `meta` at disposition. The consumer is the **redispatch brief** (advice INLINED
+   VERBATIM under a marked `ADVICE` section — isolated worktrees cannot read the main tree's `.kata/`) or the
+   **requesting planner**. `response.sketch` is OPTIONAL and always `nonAuthoritative: true` — **never applied
+   verbatim** (G-7).
+
+**Fail postures (§3.10).**
+- **Consult dispatch failure** ⇒ surfaced board NOTE + proceed **UNADVISED** — one-step lapse to
+  unadvised-proceed, **never a ladder walk** (S-7); the consumed budget call stays consumed (S-19a).
+- **Malformed `advisor` config** ⇒ `ValueError` → load-guard STOP (D136; caught at precondition 0).
+- **Budget exhaustion / grant lapse** ⇒ loud lapse, unadvised to completion.
+- **`enabled: false, approved: true`** (hand-edited) converges on no-consult with a surfaced NO-FIRE
+  `not-enabled` reason (S-26e).
+
+**Grant lapse on a mid-run `/model` or mode switch (S-15c/S-19b/S-26c).** A mid-run anchor change or mode change
+**LAPSES the advisor grant in BOTH modes** — no legal re-ask moment remains in-run; the run completes
+**UNADVISED with a loud board NOTE (never silent)**; spend already recorded is preserved. The next run
+re-consents at its mode's moment. (This rides alongside the § Adaptive tiering `anchor_switch_reset` NOTE; the
+advisor lapse is its own surfaced line.)
+
+**EV-1 outcome recording (LOCKED, ELEVATE-accepted — §3.9).** After an advised redispatch resolves, record its
+OUTCOME via `kata_advisor.record_outcome(state, "<task-id>-<n>", outcome)` (single-writer state path), enum
+EXACTLY `{advised-pass, advised-fail-bumped, advised-fail-ceiling}`. Derivation (stated so no divergence): the
+advised redispatch **passes its gate** ⇒ `advised-pass`; it **fails and the D150 bump then fires** for the task
+⇒ `advised-fail-bumped`; it **fails with no bump available** (bump already consumed / `models.adaptive` absent /
+rung at its mode ceiling) ⇒ `advised-fail-ceiling`. A run ending before the pairing resolves records an explicit
+**`null`** (honest absence, never fabricated).
+
+**The gate and closeout NEVER consult (G-4 — stated here where the hooks are).** `kata-evaluate` /
+`kata-inline-eval` never consult (judge independence — a D33-class extension of no-self-cert: builder and judge
+never share an advisor). Closeout never consults. Planning is advisor-legal in **advanced only** (bootstrap
+consent); execution + fix-loop in **both granted modes**; **standard planning has NO advisor** (the honest
+temporal consequence of the post-freeze preflight opt-in, G-9).
+
+**After-action rollup + ledger key (at closeout — the human surface).** At the Final gate, fold the run's
+advisor activity into the run report as an **after-action rollup** (consult count, per-event breakdown, budget
+used/cap, lapses, each consult's EV-1 outcome) and add the ledger `advisor` key at closeout — see § Final gate
+step 8 (Telemetry ledger closeout) and § The loop report contract. The rollup is built from the telemetry
+`advisor` ledger key (`tools/kata_telemetry.py` — `kata_advisor.ledger_fragment(state, cap)`); **reports never
+gate** (S-2). Honesty labels travel with every claim (arm (a) live n=1 on the session anchor; arm (b) and the
+standard carve-out test-proven, not live-proven — PD-2).
 
 ## Cross-model dispatch (multi-model routing)
 
@@ -1061,6 +1207,23 @@ payload). You then **park** the escalating task **and its DAG-dependents** (remo
 **Classify every escalation** (you make the final routing call; the worker's `kind` is a hint you may re-classify):
 - **Orchestrator-resolvable** — e.g. a needed re-scope / re-partition of file-ownership. You decide it
   yourself and re-dispatch a tightened task; this **never reaches a human**.
+- **Advice-requested** (§3.7; ADDITIVE, config-gated; BC: no `advisor` grant ⇒ the kind is never raised, and
+  if one arrives on an ungranted run the gate NO-FIREs `not-approved`/`standard-not-granted` ⇒ the task
+  redispatches **UNADVISED** with a surfaced board NOTE, never blocked). A worker (or an in-harness
+  planner-worker — S-17a) requests a scoped advisor consult by raising the **`advice-requested`** escalation
+  kind (`protocol/escalation.md`), question carried in `decisionNeeded`. It is **async/non-halting** —
+  standard park semantics: the requesting attempt ENDS, the task + DAG-dependents park, the frontier keeps
+  draining. **Only the conductor dispatches `kata-advise`** (S-1; mirrors the `kata-research` escalation-dispatch
+  pattern above) — the worker never does. You compose the `protocol/advice.md` `request` from the escalation
+  payload, run the § Advisor consult dispatch (gate → `advisor_status` → rung emission → spend → DECISION),
+  then **redispatch the task with the advice payload INLINED VERBATIM under a marked `ADVICE` section of the
+  brief** — workers in isolated worktrees cannot read the main tree's `.kata/`, so a path reference would be
+  unreadable; the JSON is embedded. `.kata/advice/<task-id>-<n>.json` stays the durable conductor-side record.
+  The advised redispatch is a NEW attempt on the attempt branch, counted normally (S-15e). **Cap: 2
+  worker-requested consults per task** (S-23a — beyond the cap a surfaced NOTE, the budget is still the outer
+  bound; the per-task count is derived from the `.kata/advice/<task-id>-*.json` ordinals, no extra counter).
+  Event: `advisor-worker-request` (execution) or `advisor-planning-consult` (planner-worker — advanced+granted
+  only).
 - **Research-needed** — a must-deliver feature with **no in-plan solution** (RS-GB1). Dispatch [[kata-research]]
   as a **fresh-context, no-write** subagent, scoped to the escalation payload *(build + persist the payload via
   `tools/escalation.py` — `build_escalation(...)` → `write_escalation(kata_dir, payload)` →
@@ -1246,11 +1409,20 @@ After the frontier drains (all tasks integrated), on the integration branch:
       absent `kata/module/debug`, **no overlay** — plain [[kata-diagnose]], byte-for-byte unchanged (BC).
    3. **Fix-problem verdict:** the area is legitimately hard but fixable — this is **not** a human interrupt.
       Resume fixing with the diagnosis context.
+      **Advisor fix-loop-ceiling hook (§3.6c; ADDITIVE, config-gated; BC: no `advisor` grant ⇒ inert, resume
+      fixing unchanged).** `kata-diagnose` runs FIRST (cheap classification, above — existing contract
+      untouched); the advisor consult (event `advisor-fix-loop-ceiling`, **reserve-backed** — the standard
+      reserve (1) and one of the advanced reserve slots (2) cover it, S-13) fires **ONLY on this fix-problem
+      verdict** — the advice feeds the resumed fixing. **Never parallel** with `kata-diagnose` — diagnose-first,
+      consult-second (S-14). This hook is **separate from the two auto hooks** (different phase, reserve-backed)
+      and is **not** suppressed by the standing-advice once-guard. Gate/dispatch/spend/NO-FIRE/EV-1 per
+      § Advisor consult.
    4. **Plan-problem verdict:** escalate a **re-plan candidate** via the existing `kind: "human-required"`
       (no enum change — L6). Carry the thrash distinction in `decisionNeeded`/`rationale` (note that
       `kata-diagnose` ran first and returned plan-problem). Park the task + DAG-dependents; frontier keeps
-      draining. Deliberate, human-gated, supersede-not-rewrite, never silent. **(If the re-plan changes a
-      contract surface, execute the contract-surface supersede route in `## Escalation`.)**
+      draining. Deliberate, human-gated, supersede-not-rewrite, never silent. **NO advisor consult fires on a
+      plan-problem verdict** (§3.6c) — the human decides; advice would pre-empt them. **(If the re-plan changes
+      a contract surface, execute the contract-surface supersede route in `## Escalation`.)**
 
 7. **Adversarial red-team before merge — on a code/contract-bearing build (L12).** After [[kata-evaluate]]
    returns PASS, and **before merge-to-master**, dispatch [[kata-review]] (**≥ standard tier** — a merge-gate
@@ -1315,6 +1487,17 @@ After the frontier drains (all tasks integrated), on the integration branch:
        `recurrence_detect.detect_from_paths(...)` (or the [[kata-improve]] sub-mode) outside the Final gate.
 8. Commit; if a handoff is needed, [[kata-handoff]].
 
+   **Advisor after-action rollup (ADDITIVE — only when an `advisor` grant was active this run; BC: absent an
+   `advisor` block ⇒ silent no-op, no rollup emitted, byte-for-byte unchanged).** Fold the run's advisor
+   activity into the run report as a human-facing **after-action rollup** — consult count, per-event breakdown
+   (`state.advisor.byEvent`), budget used/cap, `lapses`, and **each consult's EV-1 outcome** (`advised-pass` /
+   `advised-fail-bumped` / `advised-fail-ceiling`, or explicit `null` for a pairing this run ended before
+   resolving). Build it from `kata_advisor.ledger_fragment(state, cap)` (§ Advisor consult). Honesty labels
+   travel (arm (a) live n=1 / arm (b) + standard carve-out test-proven, PD-2). **Reports never gate** (S-2).
+   When the Telemetry ledger closeout below builds a row, that row ALSO carries the presence-discriminated
+   `advisor` ledger key from the same fragment (§3.9) — additive; a run with no advisor activity omits the key
+   and the row stays byte-identical to a pre-feature row.
+
    **Telemetry ledger closeout (M4-P0 — ADDITIVE; only when the run's effective `inlineEval` mode ≠ `off`; BC:
    mode `off`/absent ⇒ this block is a silent no-op, no ledger row built or appended, byte-for-byte unchanged).**
    Build the compact per-run summary row and append it to the **committed** telemetry ledger:
@@ -1328,6 +1511,10 @@ After the frontier drains (all tasks integrated), on the integration branch:
       one entry per degrade event this run: resolver-`None`, missing kill binding, tools-dir unresolvable,
       absent-locator pending row; consumer: degraded-run exclusion in calibration/A-B). Old v1 rows stay valid —
       readers map them to `unclassified` kinds / null cost (`kata_telemetry.failure_kinds_of`); **no backfill.**
+      **When an `advisor` grant was active this run, include the presence-discriminated `advisor` ledger key in
+      `run_summary`** — value `kata_advisor.ledger_fragment(state, cap)` (§3.9; `build_ledger_row` validates it
+      fail-closed). **Absent an advisor block the key is omitted and the row is byte-identical to a pre-feature
+      row** (never null-backfilled).
       **Set `"calibration": true` in `run_summary` when this run is a calibration run** (a toy / instrumented run —
       `class_median` then EXCLUDES the row so calibration durations never bias the real class medians, gate v2 F6).
    2. **Resolve the ledger path (IDENTICAL to the read path — read/append symmetry, T4):** a **harness-repo run** ⇒

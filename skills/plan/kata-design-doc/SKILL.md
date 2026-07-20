@@ -5,7 +5,7 @@ description: >-
   truth both planning and execution serve. Use after grilling, before task-planning, to turn resolved
   decisions into a specific, testable, freeze-ready DESIGN with explicit acceptance and locked decisions.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: plan
 status: beta
 agnostic: true
@@ -66,6 +66,18 @@ the original spec/requirements.
 ## Output
 A `DESIGN.md` (SCREAMING-KEBAB, durable). Hand to [[kata-plan]] for the task-level execution plan. Once
 written, the DESIGN is **frozen** — changes are deliberate re-freezes, not edits-in-flight ([[kata-orchestrate]]).
+
+## Advice-request escalation (advisor-executor, S-17a — ADVANCED + granted ONLY; runtime-gated)
+When dispatched in-harness as a planner-worker, on a **genuinely hard design question** you MAY request a
+scoped Fable-tier advisor consult by raising an **`advice-requested`** escalation (`protocol/escalation.md`) —
+question in `decisionNeeded`, async/non-halting (the standard park contract). **Only the conductor dispatches
+[[kata-advise]]** ([[kata-orchestrate]] § Advisor consult, event `advisor-planning-consult`); the advice
+returns **INLINED VERBATIM** in your redispatch brief under a marked `ADVICE` section. The advice is
+**advisory, never authoritative** (S-2) — it never resolves a LOCKED decision or expands the frozen goal; an
+unresolved *decision branch* is still a signal to **return to grilling**, not to advice. This affordance is
+**ALIVE only on an ADVANCED run with an existing advisor grant** — on any other run the conductor's
+`advisor_status` gate NO-FIREs and you simply proceed unadvised. This instruction rides **every tier variant
+because tier ≠ mode** (D24c cross-picking); it is runtime-gated by the grant, not by the doc tier.
 
 ## Depth by mode
 The active mode is set in `kata.config` and passed in the task by the orchestrator. Do not guess or infer it.

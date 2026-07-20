@@ -2692,3 +2692,41 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   chain. Calibration row 2 (`subagent-monitor-2026-07-14`) — one more instrumented run to the
   `inlineEval: "on"` offer threshold. Gauntlet at merge: pytest 3719+/3 · integration 2/2 · ruff
   clean · validator 48/0/0 · Snyk med+ 0 new.
+- **D167 — Advisor consult (kata-advise): a Fable-tier advisor-executor surface, decoupled sibling gate, premium byte-untouched.**
+  2026-07-19 version-up (kind version-up, target self). Spec `.planning/specs/advisor-executor/`
+  (GRILL-LEDGER.md = 28 LOCKED entries G-1..G-9 · S-1..S-27 · EV-1; DESIGN.md + PLAN.md compile it —
+  this record compiles the ledger, which governs on any divergence). *What:* closes the gap that hard
+  tasks burn blind retries — a scoped, anchor-relative **Fable-tier advisor consult** (the
+  advisor-executor pattern): execution/coding workers ask narrow questions on intensive issues, and
+  the evaluation mechanic consults after a generation reset or repeated failures instead of another
+  blind retry; advisory, never authoritative. *Operator decisions (G-1..G-9 essence):* naming
+  `kata-advise` / config block `advisor` / concept "advisor consult" (G-1); D148 **narrow** amendment —
+  a standard opt-in unlocks advisor-events premium, advisor-events scope only (G-2); **advise-first,
+  bump-second** hook ordering (G-3); cross-phase matrix — planning advanced-only, execution + fix-loop
+  both granted modes, **the gate never consults, closeout never** (G-4); opt-in asked once per RUN at
+  preflight (G-5); own budget pool, mode-scaled **standard 5/1 · advanced 10/2** (G-6); machine-
+  ingestible agent-consumed payload with an after-action human rollup (G-7); essential **EXCLUDED**
+  (G-8); **two-moment grant** — advanced consent at bootstrap composition, standard at preflight (G-9).
+  *Structural LOCKs:* `advisor.approved` is the SOLE advisor legality record, fully **decoupled** from
+  `models.premium` (byte-untouched) — the D148 amendment realized as a **sibling gate** in `kata_models`,
+  not an edit to the premium contract (S-16); advisor targets the **FABLE** rung for ANY sub-fable
+  anchor via new pure `advisor_rung_of` (sonnet/haiku consult fable, never +1 arithmetic, never mythos;
+  fable/mythos anchor ⇒ inherit-at-anchor arm (a)) (S-24); the five advisor events live in their own
+  `ADVISOR_EVENTS` registry sibling to `ADAPTIVE_EVENTS` (byte-untouched) (S-20); own spend pool = sole
+  spend authority, legality ≠ spend (S-12/S-16); advise-first bump-deferral is orchestrator-side with
+  `tools/kata_adaptive.py` byte-untouched, and any standing advice suppresses both auto hooks
+  (S-11/S-25/S-27); EV-1 ELEVATE accepted — each consult telemetry row gains an
+  advised→pass / advised→fail→bumped / advised→fail→ceiling **outcome pairing**, making advisor ROI an
+  E1/E2 evidence question. *Verbatim-quotable LOCKED clauses:* "Advice NEVER changes a gate verdict, is
+  NEVER auto-applied, and NEVER expands the frozen goal" (S-2); "`advisor.approved` is the SOLE advisor
+  legality record … `models.premium` is BYTE-UNTOUCHED by this feature" (S-16); "The advisor targets
+  the FABLE rung for ANY sub-fable anchor" (S-24). *BC (AC #6):* absent `advisor` block ⇒ every leg OFF,
+  behavior byte-identical to today (S-4); `models.premium`, `ADAPTIVE_EVENTS`, and
+  `tools/kata_adaptive.py` byte-untouched; the default-FAIL gate never weakened. *Freeze journey:* the
+  grill converged over five fresh-context passes (HOLD 8 → HOLD 3 → HOLD 3 → HOLD 2 → SHIP, all findings
+  folded); the adversarial freeze-gate then returned SHIP-WITH-FIXES with 7 folds. *Honesty (PD-2):*
+  engine legs (legality gate, Fable-target routing, budget/spend/telemetry) are test-proven; the
+  prose-wired hooks are exercised **live n=1** on this repo's fable-anchored dogfood configuration (arm
+  (a) inherit-at-anchor) this run — arm (b) (sub-fable ⇒ Fable dispatch) and the standard-mode carve-out
+  are test-proven, not live-proven; labels travel with every claim. Additive feature (supersedes nothing);
+  re-titles the deferred kata-reason concept to "Reason (the decider)".

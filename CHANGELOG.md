@@ -8,6 +8,54 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [Unreleased] — Advisor consult (kata-advise): the Fable-tier advisor-executor pattern (D167)
+
+**Hard tasks stop burning blind retries.** A scoped, anchor-relative **Fable-tier advisor** the loop can
+consult — execution/coding workers ask a narrow question on an intensive issue, and the evaluation
+mechanic consults after a generation reset or repeated failures instead of retrying blind. The advice is
+**advisory only: it never changes a gate verdict, is never auto-applied, and never expands the frozen
+goal** (S-2). Grill converged over five fresh-context passes (HOLD 8 → HOLD 3 → HOLD 3 → HOLD 2 → SHIP);
+the adversarial freeze-gate then returned SHIP-WITH-FIXES (7 folds). Spec:
+`.planning/specs/advisor-executor/` (28 LOCKED entries G-1..G-9 · S-1..S-27 · EV-1; D167).
+
+### Added
+- **`skills/plan/kata-advise/SKILL.md`** (NEW, 0.1.0, experimental) — the fresh-context, no-write advisor
+  consult; conductor-dispatched only, returns a machine-ingestible `{diagnosis, approach, risks,
+  citations, optional non-authoritative sketch}` payload consumed by the agent (redispatch brief /
+  requesting planner), rolled up for the human after-action (G-7).
+- **`tools/kata_advisor.py`** (NEW, pure stdlib) — the advisor spend/state/outcome engine: own budget
+  pool (standard **5/1**, advanced **10/2**), FCFS + floor reservation, grant-before-dispatch commit,
+  board-DECISION recount trail, and the **EV-1 outcome pairing** (`advised-pass` / `advised-fail-bumped`
+  / `advised-fail-ceiling`) that makes advisor ROI an evidence question.
+- **Sibling legality gate (`kata_models`):** `advisor.approved` is the **SOLE** advisor legality record,
+  fully decoupled from `models.premium` — new pure `advisor_rung_of` (Fable-target for ANY sub-fable
+  anchor; sonnet/haiku consult **fable**, never +1, never mythos), the `advisor_status` gate, and the
+  `ADVISOR_EVENTS` registry (sibling to `ADAPTIVE_EVENTS`). The D148 amendment (G-2) is realized as a
+  sibling gate, not an edit to the premium contract (S-16/S-20/S-24).
+- **`advisor` config block** (`protocol/config.md`) + **`advice-requested` escalation kind**
+  (`protocol/escalation.md`, async/non-halting, cap 2 per task) + **`protocol/advice.md`** payload schema
+  of record.
+- **Two-moment grant + hooks** (kata-orchestrate / bootstrap / preflight / initiate / planner prose):
+  advanced consent at bootstrap composition, standard opt-in once per run at preflight, essential
+  excluded (G-5/G-8/G-9); advise-first / bump-second at the failure threshold, reroll-trigger-#2
+  grounding, fix-loop diagnose-first-then-consult; the gate and closeout never consult (G-4). Additive
+  presence-discriminated `advisor` telemetry ledger key.
+- **Semver bumps:** kata-orchestrate 0.13.0→0.14.0 · kata-bootstrap 0.6.0→0.7.0 · kata-preflight
+  0.3.0→0.4.0 · kata-initiate 0.7.0→0.8.0 · kata-design-doc 0.1.0→0.2.0 · kata-plan-essential/-standard/
+  -advanced 0.1.4→0.2.0 · kata-advise NEW at 0.1.0. Catalog **48→49** skills.
+
+### Backward compatibility
+- **Absent `advisor` block ⇒ every leg OFF; behavior byte-identical to today** (S-4 — the
+  `models.adaptive` precedent). `models.premium`, `ADAPTIVE_EVENTS`, and `tools/kata_adaptive.py` are
+  **byte-untouched** (S-16/S-20); an advisor event in `models.premium.scope.events` stays ILLEGAL. The
+  default-FAIL gate is never weakened. Malformed `advisor` block ⇒ load-guard STOP (D136 fail-closed).
+
+### Honesty
+- Engine legs (legality gate, Fable-target routing, budget/spend/telemetry) are **test-proven**. The
+  prose-wired hooks are exercised **live n=1** on this repo's fable-anchored dogfood run (arm (a)
+  inherit-at-anchor); arm (b) (sub-fable ⇒ Fable dispatch) and the standard-mode carve-out are
+  **test-proven, not live-proven** this run. Labels travel with every claim (PD-2).
+
 ## [0.3.0] — 2026-07-05 — Adaptive tiering: evidence-driven model routing (D150)
 
 **Model selection stops being a static table and starts learning from the run.** Three layers: **L0**
