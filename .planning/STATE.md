@@ -1,11 +1,48 @@
 ---
 milestone: M2-freeze-float
-milestone_name: "Freeze/Float (operator-directed, D138) — ship order M1→M4→M2→M3; M1 COMPLETE (PR #5); M4 COMPLETE (v0.2.0, D141–D145); context-autonomy v0.2.1 MERGED+TAGGED 2026-07-05; next: R6-first post-merge test queue, then M2 (shadow tasks) per ship order"
+milestone_name: "Advisor-executor SHIPPED (D167, PR #39, master 0d3abc6); NEXT = quota-resilience (brief at .planning/specs/quota-resilience/REQUIREMENT.md)"
 status: in-progress
-last_updated: "2026-07-12T23:30:00.000Z"
+last_updated: "2026-07-20T05:10:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-19/20 — ADVISOR-EXECUTOR SHIPPED: D167, PR #39 MERGED, master `0d3abc6`):**
+> The **Fable-tier Advisor consult** (`kata-advise`, the **49th** skill) — the advisor-executor
+> pattern wired across the loop — built by running the **FULL Kata Loop on the harness itself** at a
+> Fable anchor: initiate (readiness PASS · recall brief · mirror confirmed · INTENT frozen) → **7
+> operator questions + 28 LOCKED ledger entries + FIVE fresh-context convergence passes** (HOLD
+> 8/3/3/2 → SHIP) → **ELEVATE EV-1 accepted** (advice-effectiveness telemetry) → 40 pages emitted to
+> the Kiban second brain → freeze-gate **SHIP-WITH-FIXES** (7 folds; caught a config-schema mismatch
+> that would have bricked every default composed run, and the grant-timing paradox → the two-moment
+> grant model) → **6 workers / 2 waves** (~330 new tests, 0 ownership violations, 0 forced
+> deviations) → **evaluate PASS (8/8 ACs)** + **adval SHIP** → operator-ordered pre-merge proof →
+> merged. **Contract:** `advisor.approved` = SOLE legality record, fully decoupled (`models.premium`,
+> `ADAPTIVE_EVENTS`, `kata_adaptive.py` **BYTE-UNTOUCHED**, diff-proven) · **fable-target rung**
+> (`advisor_rung_of`: opus/sonnet/haiku ⇒ fable; fable/mythos inherit) · **advise-first, bump-second**
+> (orchestrator-side deferral, engine untouched) · **two-moment grants** (advanced = bootstrap
+> consent incl. planning; standard = once-per-RUN preflight ask; essential excluded; headless never
+> blocks) · own budget pool 5/1 std · 10/2 adv with loud lapses · **gate + closeout NEVER consult** ·
+> EV-1 outcome pairing · BC absent-block byte-identical. **HONESTY (PD-2):** dispatch mechanics are
+> **live n=1** (operator-granted consult, full artifact trail); the **four hooks are test+smoke-proven
+> prose — live-if-they-occur, UNFIRED**; arm (b) + the standard carve-out are test-proven only.
+> **Pre-merge battery:** 6-seam deterministic smoke, **double-run byte-equal** (digest
+> `ac81085c83748ae1`, `.kata/smoke-advisor.json`), fresh-context auditor verdict **SOUND**. Gauntlet
+> at merge: **pytest 3981/3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 ·
+> Snyk med+ 0 · mutation non-vacuous**. Records: **D167**, spec `.planning/specs/advisor-executor/`,
+> transfer doc `.planning/HANDOFF-ADVISOR-EXECUTOR.md`.
+> **★ NEXT SESSION: the QUOTA-RESILIENCE initiative — brief is WRITTEN and grounded at
+> `.planning/specs/quota-resilience/REQUIREMENT.md`** (per-provider rate-limit/token-exhaustion
+> detection → plain "you're out of tokens" → park the run via the existing handoff machinery →
+> `/kata-resume` picks up where it stopped → emit the provider's upgrade command/URL). Verified
+> ground truth: the **save/resume half is BUILT+WIRED but quota is a trigger NOWHERE**; the
+> **detection half is GREENFIELD** (`429` appears nowhere; the 401/403 rules are prose with no
+> executable owner); and **`tools/kata_dispatch.py:172-174` DISCARDS `proc.stderr`** — a standalone
+> defect destroying the very signal the feature needs (~10-line fix, highest value-per-token item
+> in the backlog). Scope agreed: **Tier 1 + Tier 2 in one version-up; Tier 3 its own grill.** Full
+> orientation + the smaller outstanding items (relink kata-home to `0d3abc6` · optional v0.4.0 tag ·
+> fold the advisor's own `TestAdvisorDeferralCompat` pins) in `.planning/HANDOFF-NEXT-SESSION.md`.
+> *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-13→14 — THE LIVE-PROOF SESSION, first repo-cwd session; THREE PRs MERGED
 > #33 `219a0e6` / #34 `d0dda65` / #35 `ed1b842`):** **(1) D162 statusline segment → LIVE (n=1)**
