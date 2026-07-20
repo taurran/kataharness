@@ -15,6 +15,7 @@ from datetime import UTC, datetime, timezone
 
 import pytest
 
+import kata_advisor as _ka
 import kata_telemetry as kt
 
 # ---------------------------------------------------------------------------
@@ -1532,3 +1533,149 @@ def test_evidence_digest_netstring_disambiguates_newline_collision(monkeypatch):
     d1 = kt.evidence_digest(".", ["x"], commit=None)
     d2 = kt.evidence_digest(".", ["x"], commit=None)
     assert d1 != d2, "bare-join collision leaked — evidence digest is not netstring-framed"
+
+
+# ===========================================================================
+# Advisor-executor run-ledger key (DESIGN §3.9 — additive, presence-discriminated;
+# the verdictByTier/tierEvents precedent). ABSENT ⇒ OMITTED, pre-feature row
+# byte-preserved (BC / AC #6). PRESENT ⇒ validated fail-closed (shape, non-negative
+# ints, EV-1 outcome enum, null-pending allowed).
+# ===========================================================================
+
+_ADVISOR_VALID = {
+    "consults": [
+        {"id": "T1-1", "outcome": "advised-pass"},
+        {"id": "T2-1", "outcome": None},  # pending pairing — explicit null is LEGAL
+    ],
+    "byEvent": {"advisor-fail-threshold": 1, "advisor-fix-loop-ceiling": 1},
+    "budgetUsed": 2,
+    "budgetCap": 5,
+    "lapses": ["budget-exhausted"],
+}
+
+
+# --- BC: absent ⇒ omitted, row byte-preserved (AC #6, S-4) -------------------
+
+
+def test_build_ledger_row_no_advisor_key_is_byte_preserved():
+    """A pre-feature run summary (no advisor key) ⇒ NO advisor key in the row, and the
+    row is deterministic/byte-identical for the identical summary (no null backfill)."""
+    summary = {"utc": "2026-07-12T00:00:00Z", "runId": "r1", "target": "t", "tasks": 3}
+    row_str = kt.build_ledger_row(summary)
+    assert row_str == kt.build_ledger_row(dict(summary))  # byte-identical
+    assert "advisor" not in json.loads(row_str)  # presence-discriminated, never null
+
+
+# --- valid present ⇒ carried, round-trips, stays v:3 -------------------------
+
+
+def test_build_ledger_row_advisor_valid_roundtrip(tmp_path):
+    ledger = tmp_path / "ledger.md"
+    ledger.write_text("# header\n", encoding="utf-8")
+    kt.append_ledger_row(
+        ledger, kt.build_ledger_row({"runId": "r1", "advisor": dict(_ADVISOR_VALID)})
+    )
+    rows = kt.read_ledger(ledger)
+    assert len(rows) == 1
+    assert rows[0]["v"] == 3  # additive key, NEVER a v4
+    assert rows[0]["advisor"] == _ADVISOR_VALID
+
+
+def test_build_ledger_row_advisor_from_ledger_fragment_roundtrips():
+    """The producer (kata_advisor.ledger_fragment) and the consumer (this validator)
+    agree end-to-end — a real fragment builds without RAISE and survives the row."""
+    state = _ka.new_advisor_state()
+    _ka.record_advisor_spend(state, "advisor-fail-threshold")
+    _ka.record_outcome(state, "T1-1", "advised-pass")
+    _ka.record_outcome(state, "T2-1", None)
+    frag = _ka.ledger_fragment(state, 5)
+    row = json.loads(kt.build_ledger_row({"runId": "r1", "advisor": frag}))
+    assert row["advisor"] == frag
+
+
+def test_build_ledger_row_advisor_every_outcome_enum_and_null_accepted():
+    consults = [{"id": f"T{i}-1", "outcome": o} for i, o in enumerate(list(_ka.ADVISOR_OUTCOMES) + [None])]
+    advisor = {"consults": consults, "byEvent": {}, "budgetUsed": 0, "budgetCap": 10, "lapses": []}
+    row = json.loads(kt.build_ledger_row({"runId": "r1", "advisor": advisor}))
+    assert row["advisor"]["consults"] == consults
+
+
+# --- present-but-malformed ⇒ RAISE (fail-closed, D136) -----------------------
+
+
+@pytest.mark.parametrize("bad_value", [None, [], "advisor", 3, True])
+def test_build_ledger_row_advisor_non_dict_raises(bad_value):
+    with pytest.raises(kt.TelemetryError, match="advisor"):
+        kt.build_ledger_row({"runId": "r1", "advisor": bad_value})
+
+
+@pytest.mark.parametrize("drop", sorted(kt._ADVISOR_LEDGER_KEYS))
+def test_build_ledger_row_advisor_missing_key_raises(drop):
+    advisor = {k: v for k, v in _ADVISOR_VALID.items() if k != drop}
+    with pytest.raises(kt.TelemetryError, match="advisor"):
+        kt.build_ledger_row({"runId": "r1", "advisor": advisor})
+
+
+def test_build_ledger_row_advisor_extra_key_raises():
+    advisor = dict(_ADVISOR_VALID, surprise="x")
+    with pytest.raises(kt.TelemetryError, match="advisor"):
+        kt.build_ledger_row({"runId": "r1", "advisor": advisor})
+
+
+@pytest.mark.parametrize("key", ["budgetUsed", "budgetCap"])
+@pytest.mark.parametrize("bad", [-1, 1.5, "2", None, True])
+def test_build_ledger_row_advisor_bad_budget_int_raises(key, bad):
+    advisor = dict(_ADVISOR_VALID, **{key: bad})
+    with pytest.raises(kt.TelemetryError, match="non-negative int"):
+        kt.build_ledger_row({"runId": "r1", "advisor": advisor})
+
+
+@pytest.mark.parametrize("bad", [-1, 1.5, "1", None, True])
+def test_build_ledger_row_advisor_bad_by_event_count_raises(bad):
+    advisor = dict(_ADVISOR_VALID, byEvent={"advisor-fail-threshold": bad})
+    with pytest.raises(kt.TelemetryError, match="non-negative int"):
+        kt.build_ledger_row({"runId": "r1", "advisor": advisor})
+
+
+@pytest.mark.parametrize("bad", [None, "x", 3, {"a": 1}])
+def test_build_ledger_row_advisor_by_event_non_dict_raises(bad):
+    advisor = dict(_ADVISOR_VALID, byEvent=bad) if not isinstance(bad, dict) else dict(_ADVISOR_VALID, byEvent={5: 1})
+    with pytest.raises(kt.TelemetryError, match="byEvent"):
+        kt.build_ledger_row({"runId": "r1", "advisor": advisor})
+
+
+@pytest.mark.parametrize("bad", [None, "budget-exhausted", ["ok", 5], [None]])
+def test_build_ledger_row_advisor_bad_lapses_raises(bad):
+    advisor = dict(_ADVISOR_VALID, lapses=bad)
+    with pytest.raises(kt.TelemetryError, match="lapses"):
+        kt.build_ledger_row({"runId": "r1", "advisor": advisor})
+
+
+def test_build_ledger_row_advisor_consults_non_list_raises():
+    advisor = dict(_ADVISOR_VALID, consults={"id": "T1-1", "outcome": None})
+    with pytest.raises(kt.TelemetryError, match="consults"):
+        kt.build_ledger_row({"runId": "r1", "advisor": advisor})
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        {"id": "T1-1"},  # missing outcome
+        {"outcome": None},  # missing id
+        {"id": "T1-1", "outcome": None, "extra": 1},  # extra key
+        {"id": "", "outcome": None},  # empty id
+        {"id": 5, "outcome": None},  # non-string id
+        "T1-1",  # non-object entry
+    ],
+)
+def test_build_ledger_row_advisor_bad_consult_shape_raises(entry):
+    advisor = dict(_ADVISOR_VALID, consults=[entry])
+    with pytest.raises(kt.TelemetryError, match="advisor.consults"):
+        kt.build_ledger_row({"runId": "r1", "advisor": advisor})
+
+
+@pytest.mark.parametrize("bad", ["pass", "advised", "PASS", "advised_pass", 1, True])
+def test_build_ledger_row_advisor_unknown_outcome_raises(bad):
+    advisor = dict(_ADVISOR_VALID, consults=[{"id": "T1-1", "outcome": bad}])
+    with pytest.raises(kt.TelemetryError, match="EV-1 enum"):
+        kt.build_ledger_row({"runId": "r1", "advisor": advisor})

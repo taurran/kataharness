@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.7.0
+version: 0.8.1
 category: coordinate
 status: beta
 agnostic: true
@@ -518,6 +518,24 @@ wants more certainty.
 During the grill, use [[kata-context]] to pin every resolved term into `CONTEXT.md` (inline, not
 batched). Use [[kata-bootstrap]] to write or update `kata.config` when run-shape or composition
 decisions are resolved in the grill (so the config is ready at Phase 6).
+
+**Conductor-inline advisor consult (advisor-executor, S-17b — ADVANCED + already-granted ONLY; ADDITIVE, BC:
+no `advisor` grant ⇒ inert).** During this grill the **session conductor MAY dispatch [[kata-advise]]
+directly** on a hard design question — the direct-dispatch arm of the `advisor-planning-consult` event (the
+other arm is a planner-worker's `advice-requested` escalation, S-17a). It draws the **same advisor budget** and
+runs the same § Advisor consult gate/dispatch/spend mechanics in [[kata-orchestrate]]. It is **ALIVE only when a
+grant ALREADY EXISTS at grill time** — i.e. re-entrant configs / loop-back runs whose `advisor` block was
+composed with `approved: true, grantedMode: "advanced"`. **On first-run flows the gate fail-closes** (no block
+composed yet — `advisor_status` returns `not-approved`/`absent`), recorded as the DELIBERATE temporal
+consequence of G-9, the same class as standard planning (S-26d). Never inferred from mode: an absent/ungranted
+block ⇒ no consult, a surfaced NO-FIRE NOTE, and the grill proceeds unadvised.
+
+**Spend carrier at grill time (no `.kata/state.json` exists yet).** A grill-time consult writes its advice
+artifact under `.kata/advice/` with task-id `grill-<n>` (`.kata/advice/grill-<n>.json`). Because no
+`.kata/state.json` has been created during the grill, **the artifact IS the durable spend record** at grill
+time — [[kata-orchestrate]] SEEDS its advisor spend state at run start by COUNTING the existing
+`.kata/advice/grill-*.json` artifacts, so grill-time draws are carried forward into the run's advisor budget
+accounting (never double-spent, never lost).
 
 **Config authority (avoid divergence):** the frozen `INTENT.md` `target` block (kind/path/vault/platform) is the
 **authoritative** record of *what* this run targets; `kata.config` is the *executable* projection

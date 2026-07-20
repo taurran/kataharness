@@ -209,3 +209,17 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
   (`--no-renames`). The unit reviews were all honest and all passed honestly — the holes lived between
   the units. Corollary: reviewer prompts must name the ADJACENT seams (what consumes this? what does this
   reuse?), not just the module's own spec.
+
+## 2026-07-19/20 — advisor-executor run (D167)
+- **The live n=1 exercise should target the run's own riskiest seam** — the advisor consult
+  aimed at the S-11b deferral question doubled as real verification input; two of its five
+  flagged risks were later confirmed genuinely open by the adval (the consult-failure re-fire
+  hole shipped exactly because the advice sentence "fall through unadvised" wasn't folded).
+  Advice consumed as evidence must be CHECKLISTED into the reviewers' briefs, not just archived.
+- **Supersede-don't-edit made 5 convergence passes converge instead of thrash** — each fresh
+  reviewer audited the LOCKED chain instead of re-deriving it.
+- **gate_emit footprints must declare records/prose too** — changed ⊆ declared is checked;
+  the first emission failed withinFootprint on .planning/README/CHANGELOG.
+- **The conductor violated its own new artifact contract** (sibling .response.json vs the
+  one-file-per-consult rule written the same day) — caught by the adval. New contracts bind
+  their author immediately; add them to the conductor's own checklist at write time.

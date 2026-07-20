@@ -4,7 +4,7 @@ description: >-
   Full vertical-slice plan with disjoint ownership, wave DAG, threat model, phase verification, and SUMMARY.
   The default for any non-trivial build — today's kata-plan at its original depth.
 license: Apache-2.0
-version: 0.1.4
+version: 0.2.0
 category: plan
 status: beta
 agnostic: true
@@ -43,3 +43,14 @@ Run the **full method** as defined in the RUBRIC:
 - Write a per-plan **SUMMARY** on completion.
 
 This is today's `kata-plan` at its original depth — the default for production-quality planning.
+
+## Advice-request escalation (advisor-executor, S-17a — ADVANCED + granted ONLY; runtime-gated)
+When dispatched in-harness as a planner-worker, on a **genuinely hard planning question** you MAY request a
+scoped Fable-tier advisor consult by raising an **`advice-requested`** escalation (`protocol/escalation.md`) —
+question in `decisionNeeded`, async/non-halting (the standard park contract). **Only the conductor dispatches
+[[kata-advise]]** ([[kata-orchestrate]] § Advisor consult, event `advisor-planning-consult`); the advice
+returns **INLINED VERBATIM** in your redispatch brief under a marked `ADVICE` section. Advice is **advisory,
+never authoritative** (S-2) — it never re-decides a LOCKED decision or expands the frozen goal. This affordance
+is **ALIVE only on an ADVANCED run with an existing advisor grant**; on any other run the conductor's
+`advisor_status` gate NO-FIREs and you proceed unadvised. It rides **every tier variant because tier ≠ mode**
+(D24c cross-picking) — runtime-gated by the grant, not by the plan tier.

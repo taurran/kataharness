@@ -746,3 +746,499 @@ class TestInlineEvalNeverAnchor:
     def test_inline_eval_registered_as_economy(self) -> None:
         """D131: kata-inline-eval is registered as economy work-class (forces the ladder tier-down)."""
         assert km.SKILL_WORK_CLASS.get("kata-inline-eval") == "economy"
+
+
+# ===========================================================================
+# 12. Advisor consult — event registry (advisor-executor §3.3, S-20)
+# ===========================================================================
+
+_ADVISOR_EVENTS_EXPECTED: tuple[str, ...] = (
+    "advisor-fail-threshold",
+    "advisor-reroll-grounding",
+    "advisor-fix-loop-ceiling",
+    "advisor-worker-request",
+    "advisor-planning-consult",
+)
+
+
+class TestAdvisorEventRegistry:
+    """ADVISOR_EVENTS is its OWN 5-member registry, disjoint from ADAPTIVE_EVENTS;
+    ADAPTIVE_EVENTS stays byte-untouched; an advisor event in the premium scope is
+    still ILLEGAL (fail-closed classify, S-20)."""
+
+    def test_advisor_events_exact_five_member_tuple(self) -> None:
+        assert isinstance(km.ADVISOR_EVENTS, tuple)
+        assert km.ADVISOR_EVENTS == _ADVISOR_EVENTS_EXPECTED
+        assert len(km.ADVISOR_EVENTS) == 5
+
+    def test_advisor_event_sites_covers_exactly_the_registry(self) -> None:
+        assert set(km.ADVISOR_EVENT_SITES) == set(km.ADVISOR_EVENTS)
+        # every site is a non-empty description string
+        for ev, site in km.ADVISOR_EVENT_SITES.items():
+            assert isinstance(site, str) and site.strip(), f"empty site for {ev!r}"
+
+    def test_advisor_events_disjoint_from_adaptive_events(self) -> None:
+        assert set(km.ADVISOR_EVENTS).isdisjoint(set(km.ADAPTIVE_EVENTS))
+
+    def test_adaptive_events_byte_untouched(self) -> None:
+        """S-20 regression pin: the ADAPTIVE_EVENTS tuple is exactly the frozen 7-member set."""
+        assert km.ADAPTIVE_EVENTS == (
+            "freeze-gate-verdict",
+            "re-gate-after-hold",
+            "escalation-adjudication",
+            "fix-loop-diagnose",
+            "final-initiative-review",
+            "gate-rejection-rework-review",
+            "fail-bump-escalation",
+        )
+
+    @pytest.mark.parametrize("advisor_event", _ADVISOR_EVENTS_EXPECTED)
+    def test_advisor_event_in_premium_scope_still_raises(self, advisor_event: str) -> None:
+        """S-20: an advisor event name in models.premium.scope.events is ILLEGAL —
+        classify_premium_scope RAISES exactly as today (advisor events never join the
+        adaptive vocabulary)."""
+        with pytest.raises(ValueError):
+            km.classify_premium_scope({"events": [advisor_event]})
+
+
+# ===========================================================================
+# 13. Advisor consult — advisor_rung_of (advisor-executor §3.2, S-24)
+# ===========================================================================
+
+class TestAdvisorRungOf:
+    """The advisor consult rung is the ladder's 'fable' for ANY sub-fable anchor —
+    never one-rung-above arithmetic, never mythos; None (inherit-at-anchor) at
+    fable/mythos, unknown/empty ladders, no-fable ladders, unknown anchors."""
+
+    @pytest.mark.parametrize("anchor", ["haiku", "sonnet", "opus"])
+    def test_sub_fable_anchor_consults_fable(self, anchor: str) -> None:
+        assert km.advisor_rung_of(ANTHROPIC, anchor) == "fable"
+
+    def test_sonnet_and_haiku_both_reach_fable_not_one_rung_above(self) -> None:
+        # premium_rung_of would give opus for sonnet, sonnet for haiku — advisor differs.
+        assert km.advisor_rung_of(ANTHROPIC, "sonnet") == "fable"
+        assert km.advisor_rung_of(ANTHROPIC, "haiku") == "fable"
+        assert km.premium_rung_of(ANTHROPIC, "sonnet") == "opus"   # contrast, not fable
+        assert km.premium_rung_of(ANTHROPIC, "haiku") == "sonnet"  # contrast
+
+    def test_fable_anchor_returns_none_inherit_at_anchor(self) -> None:
+        assert km.advisor_rung_of(ANTHROPIC, "fable") is None
+
+    def test_mythos_anchor_returns_none_never_above_fable(self) -> None:
+        assert km.advisor_rung_of(ANTHROPIC, "mythos") is None
+
+    def test_unknown_anchor_returns_none(self) -> None:
+        assert km.advisor_rung_of(ANTHROPIC, "gpt-99") is None
+
+    @pytest.mark.parametrize("family", ["openai", "gemini", "generic"])
+    def test_empty_ladder_families_return_none(self, family: str) -> None:
+        # No 'fable' rung on an empty ladder ⇒ None (arm (a) inherit at anchor).
+        assert km.advisor_rung_of(family, "opus") is None
+
+    def test_unknown_family_returns_none(self) -> None:
+        assert km.advisor_rung_of("nonesuch", "opus") is None
+
+    def test_family_auto_derivation(self) -> None:
+        assert km.advisor_rung_of("auto", "opus") == "fable"
+        assert km.advisor_rung_of("auto", "fable") is None
+        assert km.advisor_rung_of("auto", "gpt-99") is None
+
+    @pytest.mark.parametrize("short", ["haiku", "sonnet", "opus"])
+    def test_full_id_anchor_normalization(self, short: str) -> None:
+        full_id = km.ID_MAP[short]
+        assert km.advisor_rung_of("auto", full_id) == "fable"
+
+    def test_full_id_fable_anchor_returns_none(self) -> None:
+        assert km.advisor_rung_of("auto", km.ID_MAP["fable"]) is None
+
+
+# ===========================================================================
+# 14. Advisor consult — _validate_advisor / validate_advisor_block (D136)
+# ===========================================================================
+
+# The two canonical bootstrap compositions (advisor-executor §3.4) + the §4 example.
+_ADVISOR_ADVANCED_DEFAULT: dict = {
+    "enabled": True,
+    "approved": True,
+    "grantedMode": "advanced",
+    "budget": {"calls": 10, "reserved": 2},
+}
+_ADVISOR_ADVANCED_DECLINED: dict = {
+    "enabled": True,
+    "approved": False,
+    "grantedMode": "advanced",
+    "budget": {"calls": 10, "reserved": 2},
+}
+_ADVISOR_STANDARD_DEFAULT: dict = {
+    "enabled": True,
+    "approved": False,
+    "budget": {"calls": 5, "reserved": 1},
+}
+_ADVISOR_SECTION4_EXAMPLE: dict = {
+    "enabled": True,
+    "approved": True,
+    "grantedMode": "standard",
+    "budget": {"calls": 5, "reserved": 1},
+    "hooks": {"failThreshold": 2, "rerollTrigger": 2, "fixLoopCeiling": True},
+    "phases": ["execution", "fix-loop"],
+}
+_ADVISOR_ADVANCED_FULL: dict = {
+    "enabled": True,
+    "approved": True,
+    "grantedMode": "advanced",
+    "budget": {"calls": 10, "reserved": 2},
+    "hooks": {"failThreshold": 2, "rerollTrigger": 2, "fixLoopCeiling": True},
+    "phases": ["planning", "execution", "fix-loop"],
+}
+
+
+class TestValidateAdvisorRoundTrip:
+    """FIX-1 (mandatory): BOTH canonical bootstrap compositions — advanced default
+    AND standard default — round-trip the validator CLEAN.  A composed default that
+    bricks the load-guard is a producer bug this test catches before run time."""
+
+    @pytest.mark.parametrize("block", [
+        _ADVISOR_ADVANCED_DEFAULT,
+        _ADVISOR_ADVANCED_DECLINED,
+        _ADVISOR_STANDARD_DEFAULT,
+        _ADVISOR_SECTION4_EXAMPLE,
+        _ADVISOR_ADVANCED_FULL,
+    ])
+    def test_canonical_compositions_validate_clean(self, block: dict) -> None:
+        # Must not raise.
+        km.validate_advisor_block(block)
+
+    def test_exported_alias_is_the_validator(self) -> None:
+        assert km.validate_advisor_block is km._validate_advisor
+
+
+class TestValidateAdvisorMalformed:
+    """Every field's bad shape RAISES (D136 fail-closed) — never a silent OFF."""
+
+    def _base(self) -> dict:
+        # a deep-ish copy of a firing block to mutate per-test
+        return {
+            "enabled": True,
+            "approved": True,
+            "grantedMode": "advanced",
+            "budget": {"calls": 10, "reserved": 2},
+            "hooks": {"failThreshold": 2, "rerollTrigger": 2, "fixLoopCeiling": True},
+            "phases": ["planning", "execution", "fix-loop"],
+        }
+
+    def test_not_a_dict_raises(self) -> None:
+        for bad in (["enabled"], "advisor", 3, True):
+            with pytest.raises(ValueError):
+                km.validate_advisor_block(bad)  # type: ignore[arg-type]
+
+    def test_unknown_top_level_key_raises(self) -> None:
+        b = self._base()
+        b["extra"] = 1
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_enabled_missing_raises(self) -> None:
+        b = self._base(); del b["enabled"]
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_enabled_non_bool_raises(self) -> None:
+        b = self._base(); b["enabled"] = 1  # bool ⊂ int — an int is NOT a bool here
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_approved_missing_raises(self) -> None:
+        b = self._base(); del b["approved"]
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_approved_non_bool_raises(self) -> None:
+        b = self._base(); b["approved"] = 0
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_granted_mode_bad_value_raises(self) -> None:
+        b = self._base(); b["grantedMode"] = "essential"
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_granted_mode_wrong_type_raises(self) -> None:
+        b = self._base(); b["grantedMode"] = 1
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_missing_raises(self) -> None:
+        b = self._base(); del b["budget"]
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_not_dict_raises(self) -> None:
+        b = self._base(); b["budget"] = [10, 2]
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_unknown_key_raises(self) -> None:
+        b = self._base(); b["budget"] = {"calls": 10, "reserved": 2, "tokensOut": 5}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_calls_missing_raises(self) -> None:
+        b = self._base(); b["budget"] = {"reserved": 0}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_calls_bool_raises(self) -> None:
+        b = self._base(); b["budget"] = {"calls": True, "reserved": 0}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_calls_negative_raises(self) -> None:
+        b = self._base(); b["budget"] = {"calls": -1, "reserved": 0}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_reserved_missing_raises(self) -> None:
+        b = self._base(); b["budget"] = {"calls": 5}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_reserved_bool_raises(self) -> None:
+        b = self._base(); b["budget"] = {"calls": 5, "reserved": True}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_reserved_negative_raises(self) -> None:
+        b = self._base(); b["budget"] = {"calls": 5, "reserved": -1}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_reserved_exceeds_calls_raises(self) -> None:
+        b = self._base(); b["budget"] = {"calls": 2, "reserved": 3}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_budget_reserved_equals_calls_ok(self) -> None:
+        # boundary: reserved == calls is legal (0 <= reserved <= calls).
+        b = self._base(); b["budget"] = {"calls": 2, "reserved": 2}
+        km.validate_advisor_block(b)  # must not raise
+
+    def test_hooks_not_dict_raises(self) -> None:
+        b = self._base(); b["hooks"] = ["failThreshold"]
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_hooks_unknown_key_raises(self) -> None:
+        b = self._base(); b["hooks"] = {"failThreshold": 2, "bogus": 1}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_hooks_fail_threshold_zero_raises(self) -> None:
+        b = self._base(); b["hooks"] = {"failThreshold": 0}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_hooks_fail_threshold_bool_raises(self) -> None:
+        b = self._base(); b["hooks"] = {"failThreshold": True}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_hooks_fail_threshold_non_int_raises(self) -> None:
+        b = self._base(); b["hooks"] = {"failThreshold": "2"}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_hooks_reroll_trigger_bool_raises(self) -> None:
+        b = self._base(); b["hooks"] = {"rerollTrigger": True}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_hooks_fix_loop_ceiling_non_bool_raises(self) -> None:
+        b = self._base(); b["hooks"] = {"fixLoopCeiling": 1}
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_phases_not_list_raises(self) -> None:
+        b = self._base(); b["phases"] = "execution"
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_phases_bad_member_raises(self) -> None:
+        b = self._base(); b["phases"] = ["execution", "gate"]
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+    def test_phases_non_string_member_raises(self) -> None:
+        b = self._base(); b["phases"] = ["execution", 3]
+        with pytest.raises(ValueError):
+            km.validate_advisor_block(b)
+
+
+# ===========================================================================
+# 15. Advisor consult — advisor_status sibling gate (§3.2, S-16/S-21/S-24)
+# ===========================================================================
+
+def _advisor(**overrides: object) -> dict:
+    """A firing advisor block; override individual fields per-test."""
+    base = {
+        "enabled": True,
+        "approved": True,
+        "grantedMode": "advanced",
+        "budget": {"calls": 10, "reserved": 2},
+    }
+    base.update(overrides)
+    return base
+
+
+_FIRING_EVENT = "advisor-fail-threshold"
+
+
+class TestAdvisorStatusFiresMatrix:
+    """Every NO-FIRE reason in the §3.2 table, hit at least once, in precedence order;
+    both mode arms; both rung arms; absent."""
+
+    def test_absent_block(self) -> None:
+        assert km.advisor_status(None, "opus", family=ANTHROPIC, mode="standard",
+                                 event=_FIRING_EVENT) == {
+            "fires": False, "reason": "absent", "rung": None,
+        }
+
+    def test_malformed_block_raises_not_a_reason(self) -> None:
+        with pytest.raises(ValueError):
+            km.advisor_status({"enabled": True}, "opus", family=ANTHROPIC,
+                              mode="advanced", event=_FIRING_EVENT)
+
+    def test_not_enabled(self) -> None:
+        st = km.advisor_status(_advisor(enabled=False), "opus",
+                               family=ANTHROPIC, mode="advanced", event=_FIRING_EVENT)
+        assert st["fires"] is False and st["reason"] == "not-enabled"
+
+    def test_not_approved(self) -> None:
+        st = km.advisor_status(_advisor(approved=False), "opus",
+                               family=ANTHROPIC, mode="advanced", event=_FIRING_EVENT)
+        assert st["fires"] is False and st["reason"] == "not-approved"
+
+    def test_mode_excluded_essential(self) -> None:
+        st = km.advisor_status(_advisor(), "opus",
+                               family=ANTHROPIC, mode="essential", event=_FIRING_EVENT)
+        assert st["fires"] is False and st["reason"] == "mode-excluded"
+
+    def test_mode_excluded_unknown_mode_fail_closed(self) -> None:
+        st = km.advisor_status(_advisor(), "opus",
+                               family=ANTHROPIC, mode="bogus", event=_FIRING_EVENT)
+        assert st["fires"] is False and st["reason"] == "mode-excluded"
+
+    def test_standard_not_granted_when_granted_mode_absent(self) -> None:
+        adv = {"enabled": True, "approved": True, "budget": {"calls": 5, "reserved": 1}}
+        st = km.advisor_status(adv, "opus", family=ANTHROPIC, mode="standard",
+                               event=_FIRING_EVENT)
+        assert st["fires"] is False and st["reason"] == "standard-not-granted"
+
+    def test_standard_not_granted_when_granted_mode_advanced(self) -> None:
+        st = km.advisor_status(_advisor(grantedMode="advanced"), "opus",
+                               family=ANTHROPIC, mode="standard", event=_FIRING_EVENT)
+        assert st["fires"] is False and st["reason"] == "standard-not-granted"
+
+    def test_no_event(self) -> None:
+        st = km.advisor_status(_advisor(), "opus",
+                               family=ANTHROPIC, mode="advanced", event=None)
+        assert st["fires"] is False and st["reason"] == "no-event"
+
+    def test_unknown_event(self) -> None:
+        st = km.advisor_status(_advisor(), "opus",
+                               family=ANTHROPIC, mode="advanced", event="not-real")
+        assert st["fires"] is False and st["reason"] == "unknown-event"
+
+    # ---- firing: both mode arms ----
+
+    def test_advanced_fires(self) -> None:
+        st = km.advisor_status(_advisor(), "opus",
+                               family=ANTHROPIC, mode="advanced", event=_FIRING_EVENT)
+        assert st == {"fires": True, "reason": "fires", "rung": "fable"}
+
+    def test_standard_granted_fires(self) -> None:
+        adv = _advisor(grantedMode="standard", budget={"calls": 5, "reserved": 1})
+        st = km.advisor_status(adv, "opus", family=ANTHROPIC, mode="standard",
+                               event=_FIRING_EVENT)
+        assert st == {"fires": True, "reason": "fires", "rung": "fable"}
+
+    @pytest.mark.parametrize("event", _ADVISOR_EVENTS_EXPECTED)
+    def test_all_registered_events_fire(self, event: str) -> None:
+        st = km.advisor_status(_advisor(), "opus",
+                               family=ANTHROPIC, mode="advanced", event=event)
+        assert st["fires"] is True and st["reason"] == "fires"
+
+    # ---- firing: both rung arms (S-24) ----
+
+    @pytest.mark.parametrize("anchor", ["haiku", "sonnet", "opus"])
+    def test_sub_fable_anchor_fires_with_fable_rung(self, anchor: str) -> None:
+        st = km.advisor_status(_advisor(), anchor,
+                               family=ANTHROPIC, mode="advanced", event=_FIRING_EVENT)
+        assert st["fires"] is True and st["rung"] == "fable"
+
+    def test_fable_anchor_fires_with_none_rung(self) -> None:
+        st = km.advisor_status(_advisor(), "fable",
+                               family=ANTHROPIC, mode="advanced", event=_FIRING_EVENT)
+        assert st["fires"] is True and st["rung"] is None
+
+    def test_mythos_anchor_fires_with_none_rung(self) -> None:
+        st = km.advisor_status(_advisor(), "mythos",
+                               family=ANTHROPIC, mode="advanced", event=_FIRING_EVENT)
+        assert st["fires"] is True and st["rung"] is None
+
+    def test_full_id_anchor_normalized(self) -> None:
+        st = km.advisor_status(_advisor(), km.ID_MAP["opus"],
+                               family="auto", mode="advanced", event=_FIRING_EVENT)
+        assert st["fires"] is True and st["rung"] == "fable"
+
+    def test_rung_never_premium_arithmetic_never_mythos(self) -> None:
+        # sonnet anchor: advisor rung is fable, NOT opus (premium arithmetic) nor mythos.
+        st = km.advisor_status(_advisor(), "sonnet",
+                               family=ANTHROPIC, mode="advanced", event=_FIRING_EVENT)
+        assert st["rung"] == "fable"
+        assert st["rung"] != km.premium_rung_of(ANTHROPIC, "sonnet")  # != "opus"
+        assert st["rung"] != "mythos"
+
+
+class TestAdvisorStatusPrecedenceMutationGuards:
+    """Mutation-style guards: each conjunct precedes the next in the exact order of
+    the §3.2 register.  Flip a conjunct's order in kata_models and one of these fails."""
+
+    def test_not_enabled_precedes_not_approved(self) -> None:
+        # BOTH enabled and approved False ⇒ 'not-enabled' wins (enabled checked first).
+        st = km.advisor_status(_advisor(enabled=False, approved=False), "opus",
+                               family=ANTHROPIC, mode="advanced", event=_FIRING_EVENT)
+        assert st["reason"] == "not-enabled"
+
+    def test_not_approved_precedes_mode_excluded(self) -> None:
+        # approved False AND essential mode ⇒ 'not-approved' wins.
+        st = km.advisor_status(_advisor(approved=False), "opus",
+                               family=ANTHROPIC, mode="essential", event=_FIRING_EVENT)
+        assert st["reason"] == "not-approved"
+
+    def test_mode_excluded_precedes_standard_not_granted(self) -> None:
+        # essential + no grantedMode ⇒ 'mode-excluded' wins (mode checked before the
+        # standard carve-out arm).
+        adv = {"enabled": True, "approved": True, "budget": {"calls": 5, "reserved": 1}}
+        st = km.advisor_status(adv, "opus", family=ANTHROPIC, mode="essential",
+                               event=_FIRING_EVENT)
+        assert st["reason"] == "mode-excluded"
+
+    def test_standard_not_granted_precedes_no_event(self) -> None:
+        # standard + not granted + event None ⇒ 'standard-not-granted' wins.
+        adv = {"enabled": True, "approved": True, "budget": {"calls": 5, "reserved": 1}}
+        st = km.advisor_status(adv, "opus", family=ANTHROPIC, mode="standard", event=None)
+        assert st["reason"] == "standard-not-granted"
+
+    def test_no_event_precedes_unknown_event(self) -> None:
+        # event None ⇒ 'no-event' (not 'unknown-event').
+        st = km.advisor_status(_advisor(), "opus",
+                               family=ANTHROPIC, mode="advanced", event=None)
+        assert st["reason"] == "no-event"
+
+
+class TestAdvisorWorkClassEntry:
+    """S-7: kata-advise is registered critical (pre-staged by T1; the R5 coverage
+    test proves it live once T4's skill lands)."""
+
+    def test_kata_advise_is_critical(self) -> None:
+        assert km.SKILL_WORK_CLASS["kata-advise"] == "critical"

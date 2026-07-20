@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.6.0
+version: 0.7.0
 category: coordinate
 status: beta
 agnostic: true
@@ -197,13 +197,25 @@ approved like an install, **never an implied side effect**:
    a headless/no-TTY composition skips it (the floor: the learn feed is simply a no-op, BC1). An accepted
    path sets `vaultDir`, so the Phase-3 `engram.learnFeed.dir` seeding below picks it up unchanged.
 
+8. **The ADVANCED advisor consent (advisor-executor, G-9 — ADVANCED runs ONLY; independent of the premium
+   gate).** In **advanced** mode, present the advisor consult as a **pre-checked, one-veto-able consent** at
+   composition — "on by default" operationally = pre-checked; the operator may veto it. **Composition itself is
+   consent** (the `models.adaptive` compose-consent precedent, Phase 3 below): the answer sets `approved` in the
+   Phase-3 advanced `advisor` block, and planning consults are thereby legal in advanced. This consent is
+   **DECOUPLED from `models.premium`** — a premium decline never touches the advisor grant and this advisor veto
+   never touches the premium offer (S-16). **Headless/non-TTY advanced composition ⇒ the pre-checked consent
+   STANDS without an interactive veto** (G-9 — composition is consent; the veto is the attended affordance),
+   surfaced in the composed-config summary, never silent. **STANDARD and ESSENTIAL are NOT asked here** —
+   standard opts in later at [[kata-preflight]] (once per RUN, post-freeze); essential gets no advisor and no
+   ask (G-8).
+
 Record the operator's accepted answers via `kata_settings.record_accepted_defaults(entries)` (the C-1
 `{value, v, at}` schema) and the host posture via `kata_settings.record_host_posture(posture)` — both
 **audit-only, last-write-wins, never consulted for suppression**.
 
 ## Phase 3 — write kata.config + launch
 Write `kata.config` (JSON, branch root) per `protocol/config.md`: `mode`, `modules`, `effort`, `tiers`,
-`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**, **`securityScan`**, **`inlineEval`**.
+`ingested`, `preflight`, `bakeoff`, `skillVersions`, **`runShape`**, **`target`**, **`delivery`**, **`roles`**, **`models`**, **`securityScan`**, **`inlineEval`**, **`advisor`** (advanced/standard only — §3.4).
 **`models.adaptive` (D150 — compose = consent):** every Phase-3 composition writes the FULL `adaptive`
 block EXPLICITLY (all five keys, `protocol/config.md` defaults: `failBumpAt: 2, streakDownAt: 3,
 planComplexityDownshift: true, evaluatorEscalate: true, l2: false`) — a config bootstrap composes is
@@ -211,7 +223,30 @@ new consent, so adaptivity is baked in going forward; a config the loop merely L
 keeps every adaptive leg OFF (no retroactive flip — the D147/CA-L34 discipline). In ADVANCED mode with
 the premium offer approved, write the OBJECT-form `premium.scope` (`{events: <the 7-event registry>,
 budget: {calls: 10}}`) unless the operator edited the event list or budget at the gate; other modes
-never write a premium block. Bootstrap writes the config
+never write a premium block.
+
+**`advisor` block (advisor-executor — compose BY CONSTRUCTION in advanced + standard, NEVER essential; §3.4/§4;
+DECOUPLED from `models.premium`).** Write the `advisor` block per mode; **essential composes NO `advisor` block**
+(absent ⇒ OFF strictly, S-4/G-8):
+- **ADVANCED:** `{"enabled": true, "approved": <the Phase-2.5 slot-8 consent>, "grantedMode": "advanced",
+  "budget": {"calls": 10, "reserved": 2}, "hooks": {"failThreshold": 2, "rerollTrigger": 2,
+  "fixLoopCeiling": true}, "phases": ["planning", "execution", "fix-loop"]}`. `grantedMode: "advanced"` is
+  **cosmetic** — the advanced mode-arm ignores it; recorded for config completeness (S-23d). Planning is
+  advisor-legal in advanced.
+- **STANDARD (until the preflight opt-in):** `{"enabled": true, "approved": false, "budget": {"calls": 5,
+  "reserved": 1}, "hooks": {"failThreshold": 2, "rerollTrigger": 2, "fixLoopCeiling": true}, "phases":
+  ["execution", "fix-loop"]}`. **`grantedMode` is ABSENT** on the composed-and-not-yet-opted-in block —
+  [[kata-preflight]]'s once-per-RUN ask writes `approved: true, grantedMode: "standard"` on accept, or leaves
+  `approved: false` with `grantedMode` ABSENT on decline (S-26b). **Standard planning has NO advisor** — the
+  honest temporal consequence of the post-freeze placement (G-9). `phases` is **documentation of the G-9
+  availability matrix, NOT an independent switch** — the gate + hook wiring enforce availability, never this
+  field.
+- **Never inferred from `mode` on load** — an absent block is OFF even in advanced; a builder must never infer
+  the grant from the mode (G-9/S-4). Both compositions round-trip `kata_models.validate_advisor_block` clean by
+  construction (T1's tests guard this — a composed default that bricks the load-guard is a producer bug).
+Surface the advisor posture in the composed-config summary (never silent).
+
+Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;
 a second validation pass here would be redundant bloat). Then hand off to the loop ([[kata-orchestrate]]).
 

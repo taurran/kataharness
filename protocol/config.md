@@ -35,6 +35,7 @@
 | `contextTrigger` | number (0–1) | The conductor **trigger fraction** override; default **0.70** `[TUNABLE]` when absent (CA-L7). Shown only in bootstrap's advanced drawer; **never interactively asked** (no new dial, K5). Consulted only where rotation is active. Names the B1 one-shot self-handoff threshold source (CA-L8; see *Prime-frame sizing* below), distinct from and leaving unchanged the 0.40 sprint-sizing fraction. *(Key NAME is this DESIGN's compilation choice — structure locked, name freeze-gate-attackable.)* |
 | `models.premium` | `{ offer: "fable", approved: bool, scope: ["critical","coding"] \| { events: string[], budget?: { calls: int, tokensOut?: int } }, grantedMode: "advanced" }` | The premium-offer record (CA-L28..L31; model-tiering §3 Amendment #1 + **Amendment #2/D150**). Written by bootstrap after the preflight gate; consumed by `kata_models.resolve()`'s four-conjunct premium branch (NO-FIRE reason surfaced via `premium_status`). **`scope` is TYPE-DISPATCHED (AT-L15):** a LIST ⇒ the v0.2.1 run-long work-class semantics byte-for-byte; an OBJECT ⇒ the ADAPTIVE form — conjunct #2 reads "event ∈ scope.events" (the 7-event hard-moments registry, `kata_models.ADAPTIVE_EVENTS`), spend capped by `budget.calls` (default 10; last 2 reserved for freeze-gate events; exhaustion ⇒ LOUD lapse to the anchor, CA-L30 discipline). Absent `events` key in the object form ⇒ load RAISE; explicit `[]` ⇒ legal no-op. **Absent `premium` ⇒ the resolver's frozen behavior byte-for-byte** (§4 row 4). `grantedMode` ≠ current `mode` at re-entrant bootstrap ⇒ `approved` cleared (lapse). Economy is structurally excluded from premium in BOTH forms (R-9). |
 | `models.adaptive` | `{ failBumpAt?: 2, streakDownAt?: 3, planComplexityDownshift?: bool, evaluatorEscalate?: bool, l2?: false }` | The **adaptive-tiering L1/L2 switchboard** (D150, adaptive-tiering DESIGN §3; resolved by `kata_adaptive.resolve_adaptive_config`). **ABSENT ⇒ EVERY adaptive leg OFF** (load-time BC — no retroactive flip, the D147/CA-L34 discipline); **block PRESENT = consent** — absent keys inside a present block take the defaults shown (pinned per-key semantics). Bootstrap writes the full block explicitly at its next COMPOSITION (compose = consent — the operator's bake-it-in arm). `failBumpAt` (F): gate rejections + STANDING rerolls before the one-per-task rung bump. `streakDownAt` (K): consecutive first-pass acceptances before a `coding`-class downshift (×2 damper on a downshift-attributed rejection). `l2`: ledger acceptance-routing activation — **default OFF, named-deferred until post-R6 ledger volume** (AT-L19). Malformed ⇒ load-guard RAISE (D45/GB12). Every adaptive move is a board `tier:` DECISION line (the durable recount trail). Mid-run `/model` switch ⇒ adaptive state reset, budget spend preserved (AT-L17b). |
+| `advisor` | `{ enabled: bool, approved: bool, grantedMode?: "advanced"\|"standard", budget: { calls: int, reserved: int }, hooks?: { failThreshold: int, rerollTrigger: int, fixLoopCeiling: bool }, phases?: string[] }` | The **advisor-consult grant block** (advisor-executor DESIGN §4; validated fail-closed by `kata_models.validate_advisor_block`, spent via `kata_advisor`). Gives the loop a scoped, anchor-relative **Fable-tier advisor** consult surface (advisor-executor pattern). **`approved` is the SOLE advisor legality/spend grant** (S-16) — fully DECOUPLED from `models.premium` (byte-untouched: no schema change, no shared bool). Written by bootstrap consent (advanced, at composition) or the preflight opt-in (standard, once per RUN); **never written in essential** (G-8). **Absent ⇒ every leg OFF; behavior byte-identical to today** (S-4 — the `models.adaptive` precedent; a builder must NEVER infer the grant from `mode`). **Malformed ⇒ load-guard STOP + escalate** (D136 fail-closed — never a silent OFF). Model legality lives in the §advisor sibling gate (`advisor_status`); this block carries **no model id anywhere** (D59/D131). See *`advisor` block* below. |
 
 ### `preflight` block (D29)
 | Field | Type | Meaning |
@@ -56,6 +57,51 @@
 **BC guarantee (R3):** **Absent the `models` block ⇒ `resolve()` returns `None` everywhere ⇒ inherit by omission ⇒ today's single-model behavior, byte-for-byte.** No `models` block = zero resolver involvement: the host picks its own model (the operator's session model) as if model selection never happened. This guarantee is structural — any future extension to this block is additive; the absent-block path never changes.
 
 **Anchor and critical work (R7):** Zero-step critical work (advanced-critical + standard-critical; resolved rung `== anchor_index`) resolves to `None`/OMIT regardless — it **needs no anchor detection** and inherits by omission (always current, immune to a gated top rung and immune to a stale anchor). Only **below-anchor cells** read the anchor name to compute a rung: economy tier-down (`standard-coding`, `standard-economy`, `advanced-economy` *(Anthropic, `−1`)*, all `essential` work). An **unknown anchor** (id not found in the family ladder) → `resolve()` returns `None` → inherit — never a crash, never a forced model.
+
+### `advisor` block (advisor-executor DESIGN §4 — the advisor-consult grant)
+The advisor-executor pattern's grant record: a scoped, anchor-relative **Fable-tier advisor** consult surface
+the loop reaches when hard tasks would otherwise burn blind retries. Legality/spend is fully decoupled from
+`models.premium` (byte-untouched); MODEL legality lives in the sibling gate (`kata_models.advisor_status`),
+so this block carries **no model id anywhere** (D59/D131). The schema of record — a real composition (a
+standard-mode run after an ACCEPTED preflight opt-in):
+
+```json
+"advisor": {
+  "enabled": true,
+  "approved": true,
+  "grantedMode": "standard",
+  "budget": { "calls": 5, "reserved": 1 },
+  "hooks": { "failThreshold": 2, "rerollTrigger": 2, "fixLoopCeiling": true },
+  "phases": ["execution", "fix-loop"]
+}
+```
+
+*(The advanced composition differs: `grantedMode: "advanced"`, `budget: {calls: 10, reserved: 2}`,
+`phases: ["planning","execution","fix-loop"]`. Both canonical compositions round-trip
+`validate_advisor_block` clean.)*
+
+| Field | Type | Meaning |
+|---|---|---|
+| `enabled` | bool | Gates hook WIRING (S-26e). Both `enabled` and `approved` are required to consult; a hand-edited `enabled: false, approved: true` converges on no-consult with a surfaced NO-FIRE reason. |
+| `approved` | bool | **The SOLE advisor legality/spend grant** (S-16). Written by bootstrap consent (advanced) or the preflight opt-in (standard). Authoritative — `approved: false` is the declined state regardless of `grantedMode`. |
+| `grantedMode` | `"advanced" \| "standard"`, optional | The mode the grant was recorded under. `"standard"` is the G-2 carve-out marker checked by the gate's standard arm. **ABSENT on a declined standard run** (S-26b); `"advanced"` is cosmetic — the advanced arm ignores it (S-23d). |
+| `budget` | `{calls: int, reserved: int}` | The advisor's **OWN pool** (G-6): standard **5/1**, advanced **10/2**. Strict ints, `0 ≤ reserved ≤ calls`. **REQUIRED in a present block** — `resolve_advisor_budget` FAIL-CLOSES (raises) on an absent/malformed budget; the 5/1 · 10/2 values are BOOTSTRAP-COMPOSITION constants, NOT resolver fallbacks. Never draws from the premium pool; spent via `kata_advisor.can_spend_advisor` (FCFS + floor reservation). Reserve coverage per S-13 (standard reserve covers `advisor-fix-loop-ceiling`; advanced reserve covers `advisor-fix-loop-ceiling` + `advisor-reroll-grounding`). |
+| `hooks.failThreshold` | int (default 2) | The standalone-counter threshold, consulted **ONLY when `models.adaptive` is absent**; otherwise the engine's `failBumpAt` is authoritative and a conflicting value here is **IGNORED with a surfaced load NOTE** (S-18 — INTEGER; the counter has one semantics, two sources, never dual counters on one run). |
+| `hooks.rerollTrigger` | `2` | The corrective-action ladder trigger number the reroll-grounding hook rides (S-8). |
+| `hooks.fixLoopCeiling` | bool (`true`) | Wires the fix-loop-ceiling hook (S-8; ordering fixed by S-14 regardless — diagnose-first, consult only on a fix-problem verdict). |
+| `phases` | string[] | **Documentation of the G-9 availability matrix — NOT an independent switch.** Members ⊆ {`planning`, `execution`, `fix-loop`}. Bootstrap writes `["planning","execution","fix-loop"]` in advanced and `["execution","fix-loop"]` in standard; the sibling gate + hook wiring enforce availability, never this field. |
+
+- **Written by bootstrap by construction** in advanced and standard compositions; **never in essential** (G-8).
+- **Absent ⇒ all OFF, byte-identical to today** (S-4 — the `models.adaptive` precedent). A builder must never
+  infer the grant from `mode`; an absent block is OFF strictly (**no implicit `mode == advanced` ON**).
+- **Malformed ⇒ load-guard STOP + escalate** (D136 fail-closed via `validate_advisor_block` — never a silent
+  coercion to OFF): unknown keys (top-level / in `budget` / in `hooks`) RAISE, bools-as-ints RAISE,
+  `reserved > calls` RAISES, a non-int `failThreshold` RAISES.
+- **Grant lapse (S-15c/S-19b/S-26c):** a mid-run `/model` switch or mode change lapses the advisor grant in
+  BOTH modes (no legal re-ask moment remains in-run); the run completes unadvised with a loud NOTE, and spend
+  already recorded is preserved. The next run re-consents at its mode's moment.
+- The payload schema + producer/consumer + board-line + fail postures for a consult live in
+  `protocol/advice.md`; the request kind a worker/planner raises lives in `protocol/escalation.md`.
 
 ## Grill-depth dial (D71/D72 — Priming-and-Grill)
 Every run starts from a **priming prompt** (the human's original spec). The grill is an **optional human

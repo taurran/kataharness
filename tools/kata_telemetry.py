@@ -38,6 +38,7 @@ from pathlib import Path
 from typing import Any
 
 import footprint
+from kata_advisor import ADVISOR_OUTCOMES
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -88,6 +89,18 @@ _VERDICT_TIER_SEP = "×"
 # The exact five string keys of a ``tierEvents`` entry (AT-L7's adaptive-move audit
 # trail): missing/extra/non-str keys RAISE at build (fail-closed, D136).
 _TIER_EVENT_KEYS: frozenset[str] = frozenset({"at", "dispatch", "from", "to", "reason"})
+
+# Advisor-consult run-ledger key (advisor-executor, DESIGN §3.9 — additive,
+# presence-discriminated; the verdictByTier/tierEvents precedent). The row's ``advisor``
+# value carries EXACTLY these five keys; a per-consult row carries EXACTLY {id, outcome}.
+# The outcome vocabulary is the single-source-of-truth EV-1 enum imported from
+# :mod:`kata_advisor` (never re-listed here — the two layers must agree). ``None`` is a
+# LEGAL pending outcome (§3.9 explicit-null honesty). Absent ⇒ the key is OMITTED (the
+# pre-feature row shape is byte-preserved); present-but-malformed RAISES at build.
+_ADVISOR_LEDGER_KEYS: frozenset[str] = frozenset(
+    {"consults", "byEvent", "budgetUsed", "budgetCap", "lapses"}
+)
+_ADVISOR_CONSULT_KEYS: frozenset[str] = frozenset({"id", "outcome"})
 
 # Below this many total costly-verdict samples, :func:`overturn_rate` returns ``None``
 # (the class_median not-yet-meaningful discipline, A1-Q3 / AT-L18's min_samples=5).
@@ -1233,6 +1246,101 @@ def _validate_tier_events(raw: Any, *, where: str) -> list[dict]:
     return out
 
 
+def _validate_advisor_ledger(raw: Any, *, where: str) -> dict:
+    """Validate the additive advisor run-ledger value (fail-closed, both sides).
+
+    The advisor-executor rollup source (DESIGN §3.9), built by
+    ``kata_advisor.ledger_fragment``. Shape: EXACTLY the five keys
+    :data:`_ADVISOR_LEDGER_KEYS` — ``consults`` (a list of ``{id, outcome}`` rows;
+    ``id`` a non-empty string, ``outcome`` in :data:`ADVISOR_OUTCOMES` or ``None`` for a
+    pending pairing), ``byEvent`` (``{event: n}`` non-negative-int tally), ``budgetUsed``
+    / ``budgetCap`` (non-negative ints), and ``lapses`` (a ``list[str]``). A missing/
+    extra key, a wrong type, a negative/non-int count, or an unknown outcome RAISES (the
+    ``verdictByTier``/``failureKinds`` producer-bug precedent); a PRESENT ``None``/
+    non-object is malformed, never read as absent.
+
+    Args:
+        raw: The raw ``advisor`` value.
+        where: The raising context.
+
+    Returns:
+        The validated ``advisor`` value (fresh, fixed key order).
+
+    Raises:
+        TelemetryError: On any shape/type/vocabulary violation.
+    """
+    if not isinstance(raw, dict):
+        raise TelemetryError(
+            f"{where}: advisor must be a JSON object with keys "
+            f"{sorted(_ADVISOR_LEDGER_KEYS)} (got {raw!r}) — a present null/wrong type is "
+            "malformed, never absent (D136 fail-closed). Escalate."
+        )
+    if set(raw.keys()) != _ADVISOR_LEDGER_KEYS:
+        raise TelemetryError(
+            f"{where}: advisor keys {sorted(raw.keys())!r} must be EXACTLY "
+            f"{sorted(_ADVISOR_LEDGER_KEYS)} — missing/extra keys are a producer bug "
+            "(the tierEvents additive contract). Escalate."
+        )
+    for key in ("budgetUsed", "budgetCap"):
+        if not _is_int(raw[key]) or raw[key] < 0:
+            raise TelemetryError(
+                f"{where}: advisor.{key} must be a non-negative int (got {raw[key]!r}) — "
+                "a count is a tally, never coerced (D136). Escalate."
+            )
+    if not isinstance(raw["byEvent"], dict):
+        raise TelemetryError(
+            f"{where}: advisor.byEvent must be an object (got {raw['byEvent']!r}). Escalate."
+        )
+    by_event: dict[str, int] = {}
+    for event, count in raw["byEvent"].items():
+        if not isinstance(event, str) or not event:
+            raise TelemetryError(
+                f"{where}: advisor.byEvent key {event!r} must be a non-empty string. Escalate."
+            )
+        if not _is_int(count) or count < 0:
+            raise TelemetryError(
+                f"{where}: advisor.byEvent count for {event!r} must be a non-negative int "
+                f"(got {count!r}) — a count is a tally, never coerced (D136). Escalate."
+            )
+        by_event[event] = count
+    if not isinstance(raw["lapses"], list) or not all(isinstance(x, str) for x in raw["lapses"]):
+        raise TelemetryError(
+            f"{where}: advisor.lapses must be a list of strings (got {raw['lapses']!r}). Escalate."
+        )
+    if not isinstance(raw["consults"], list):
+        raise TelemetryError(
+            f"{where}: advisor.consults must be a JSON array of {{id, outcome}} objects "
+            f"(got {raw['consults']!r}). Escalate."
+        )
+    consults: list[dict] = []
+    for entry in raw["consults"]:
+        if not isinstance(entry, dict) or set(entry.keys()) != _ADVISOR_CONSULT_KEYS:
+            raise TelemetryError(
+                f"{where}: advisor.consults entry keys must be EXACTLY "
+                f"{sorted(_ADVISOR_CONSULT_KEYS)} (got {entry!r}). Escalate."
+            )
+        if not isinstance(entry["id"], str) or not entry["id"]:
+            raise TelemetryError(
+                f"{where}: advisor.consults id must be a non-empty string (got "
+                f"{entry['id']!r}). Escalate."
+            )
+        outcome = entry["outcome"]
+        if outcome is not None and outcome not in ADVISOR_OUTCOMES:
+            raise TelemetryError(
+                f"{where}: advisor.consults outcome {outcome!r} not in the EV-1 enum "
+                f"{sorted(ADVISOR_OUTCOMES)} (or null for pending) — an unknown outcome is "
+                "a producer bug (D136). Escalate."
+            )
+        consults.append({"id": entry["id"], "outcome": outcome})
+    return {
+        "consults": consults,
+        "byEvent": by_event,
+        "budgetUsed": raw["budgetUsed"],
+        "budgetCap": raw["budgetCap"],
+        "lapses": list(raw["lapses"]),
+    }
+
+
 def build_ledger_row(run_summary: dict) -> str:
     """Build the one-line JSON ledger row (schema v3, additive over v2/v1) from a run summary.
 
@@ -1267,6 +1375,13 @@ def build_ledger_row(run_summary: dict) -> str:
     the ``failureKinds`` producer-bug precedent); ABSENT ⇒ the key is OMITTED from the
     row entirely (never null — the pre-amendment v3 row shape is byte-preserved).
 
+    **Advisor-executor (DESIGN §3.9, additive — the row STAYS ``v: 3``):** one further
+    OPTIONAL, presence-discriminated ``advisor`` key (``kata_advisor.ledger_fragment``'s
+    ``{consults, byEvent, budgetUsed, budgetCap, lapses}`` after-action rollup). PRESENT
+    ⇒ validated fail-closed (:func:`_validate_advisor_ledger` — bad shape, negative
+    counts, or an unknown EV-1 outcome RAISE; a ``None`` per-consult outcome is a LEGAL
+    pending pairing); ABSENT ⇒ OMITTED, the pre-feature row byte-preserved.
+
     Args:
         run_summary: The run-summary dict (``runId``/``target`` + the metrics).
 
@@ -1298,6 +1413,13 @@ def build_ledger_row(run_summary: dict) -> str:
     if "tierEvents" in run_summary:
         row["tierEvents"] = _validate_tier_events(
             run_summary["tierEvents"], where="build_ledger_row"
+        )
+    # Advisor-executor additive key (DESIGN §3.9): PRESENCE-discriminated (absent ⇒
+    # omitted, the pre-feature row byte-preserved; present ⇒ fail-closed validation —
+    # a present None is malformed, not absent).
+    if "advisor" in run_summary:
+        row["advisor"] = _validate_advisor_ledger(
+            run_summary["advisor"], where="build_ledger_row"
         )
     if run_summary.get("calibration"):
         row["calibration"] = True
