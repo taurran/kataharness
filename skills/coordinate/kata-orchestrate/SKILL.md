@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.14.0
+version: 0.14.1
 category: coordinate
 status: beta
 agnostic: true
@@ -1056,6 +1056,10 @@ advice exists for the task** (the shared once-guard, § Advisor consult):
 - Evidence recording (`record_gate_result` / `record_standing_reroll`) continues normally throughout —
   advised redispatches count toward streak/damper accounting as normal attempts, no special-casing
   (S-15e).
+- **Accepted loss (S-11b corollary):** a conductor restart mid-deferral loses the earned-but-unconsumed bump —
+  `bumpCounters` are **structurally unrecountable** (no board DECISION mirrors them, unlike the `advisor:`
+  spend trail) — so the task simply RE-EARNS it on its next failures; this is the accepted **under-adapt**
+  direction, and the loop NEVER emits the fail-bump DECISION at earn time to compensate.
 Gate/dispatch/spend/NO-FIRE/EV-1 all run per § Advisor consult. The consult resolves at
 `advisor_status["rung"]` (fable-anchored dogfood ⇒ arm (a), `rung=None`, ALIVE).
 
@@ -1100,6 +1104,15 @@ subsequent redispatch; at threshold the bump then consumes normally (G-3's advic
 The **fix-loop-ceiling** consult is **separate** (different phase, reserve-backed) and is NOT suppressed by this
 guard.
 
+**A GRANTED-BUT-FAILED consult arms the guard too (the artifact-glob check alone is INSUFFICIENT).** A
+granted-then-FAILED dispatch (S-19a) writes **NO** advice artifact, so the `.kata/advice/<task-id>-*.json` glob
+would miss it and the auto hook could RE-FIRE and drain the budget on every subsequent failure. Therefore a
+granted-but-failed dispatch **COUNTS as the task's one auto-consult**: it records a **per-task lapse in
+`state.advisor.lapses[]`** (keyed to the task), and the once-guard suppresses BOTH auto hooks when **EITHER** an
+advice artifact exists **OR** that per-task lapse is present. The deferred pending bump then consumes
+**NORMALLY** on the next failure (fall through unadvised; advice never blocks). The re-fire / budget-drain loop
+is thereby structurally impossible.
+
 **Dispatch mechanics (every consult, whatever the hook/escalation that triggered it):**
 1. **Gate — the SOLE legality check.** Call `kata_models.advisor_status(advisor, anchor, family=…, mode=…,
    event=<the ADVISOR_EVENTS member>)` → `{fires, reason, rung}`. **A NO-FIRE on ANY conjunct** (`fires: False`)
@@ -1120,10 +1133,18 @@ guard.
    consulted; the fable-anchored dogfood configuration is ALIVE here); **a short-name ⇒ emit its `ID_MAP` id**
    (arm (b) — a sub-fable anchor consults `"fable"`, never one-rung-above arithmetic, never mythos). The
    conductor NEVER proposes its own rung.
-4. **Board lines (S-3).** A **NOTE at request** (task, event, question summary), a **DECISION at disposition**
-   (`meta.disposition`, rendered by `kata_advisor.render_advisor_decision`), plus the **per-consult spend
-   DECISION line** — the durable recount trail `kata_advisor.recount_from_advisor_decisions` reads to restore
-   `used`/`byEvent`.
+4. **Board lines (S-3).** Three lines per consult, with a HARD binding on which one carries the `advisor:`
+   prefix:
+   - a **NOTE at request** (task, event, question summary);
+   - a **DECISION at disposition** — the `meta.disposition` summary, **free text that MUST NOT begin
+     `advisor:`**;
+   - the **per-consult spend/recount DECISION line** — the SINGLE board line beginning `advisor:`
+     (`advisor: <consult-id> event <event>`), rendered by `kata_advisor.render_advisor_decision`. This
+     `advisor:`-prefixed line is the ONLY one the durable recount trail
+     `kata_advisor.recount_from_advisor_decisions` parses (it reads ONLY `advisor:`-prefixed lines) to restore
+     `used`/`byEvent`. A SECOND `advisor:`-prefixed line — e.g. a disposition line that began `advisor:` —
+     would **double-count or raise** in the recount, which is exactly why the disposition line is pinned to
+     free text and never begins `advisor:`.
 5. **State writes — single-writer orchestrator via `kata_board.write_state`.** `.kata/state.json` gains an
    `advisor` field `{used, byEvent, lapses, outcomes}` (S-23b). Every write goes through
    `kata_board.write_state` (never a direct file write); on restart, recount `used`/`byEvent` from the board's
@@ -1137,7 +1158,11 @@ guard.
 
 **Fail postures (§3.10).**
 - **Consult dispatch failure** ⇒ surfaced board NOTE + proceed **UNADVISED** — one-step lapse to
-  unadvised-proceed, **never a ladder walk** (S-7); the consumed budget call stays consumed (S-19a).
+  unadvised-proceed, **never a ladder walk** (S-7); the consumed budget call stays consumed (S-19a). It also
+  **ARMS the once-guard**: a granted-but-failed dispatch COUNTS as the task's one auto-consult, recorded as a
+  per-task `state.advisor.lapses[]` entry (a failed consult writes no artifact for the glob to catch), so
+  neither auto hook re-fires for the task and the deferred pending bump consumes **NORMALLY** on the next
+  failure — the re-fire / budget-drain loop is impossible.
 - **Malformed `advisor` config** ⇒ `ValueError` → load-guard STOP (D136; caught at precondition 0).
 - **Budget exhaustion / grant lapse** ⇒ loud lapse, unadvised to completion.
 - **`enabled: false, approved: true`** (hand-edited) converges on no-consult with a surfaced NO-FIRE

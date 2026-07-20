@@ -82,7 +82,9 @@ DAG-dependents park, and the frontier keeps draining (D51/D52). It is **not** a 
   pool is still the outer bound. The per-task count is derived from the durable `.kata/advice/<task-id>-*.json`
   ordinals (no extra counter state). One pathological task can never drain the pool.
 - **Legality is the advisor sibling gate, not this escalation:** a NO-FIRE (`advisor_status` — grant absent,
-  mode excluded, budget exhausted, …) ⇒ unadvised-proceed with a surfaced board NOTE, never a block. Advice is
+  mode excluded, …) ⇒ unadvised-proceed with a surfaced board NOTE, never a block. **Budget exhaustion is NOT
+  an `advisor_status` NO-FIRE reason** — it is a separate `can_spend_advisor` denial (the spend gate, not the
+  legality gate), which likewise ⇒ unadvised-proceed with a surfaced NOTE/lapse, never a block. Advice is
   **advisory, never authoritative** — it never changes a gate verdict, is never auto-applied, never expands
   the frozen goal (S-2). Full consult contract: `protocol/advice.md`; grant/budget: `protocol/config.md` (the
   `advisor` block). The `kind` enum's other values, payload schema, and async park/drain contract are

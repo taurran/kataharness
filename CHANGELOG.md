@@ -52,9 +52,11 @@ the adversarial freeze-gate then returned SHIP-WITH-FIXES (7 folds). Spec:
 
 ### Honesty
 - Engine legs (legality gate, Fable-target routing, budget/spend/telemetry) are **test-proven**. The
-  prose-wired hooks are exercised **live n=1** on this repo's fable-anchored dogfood run (arm (a)
-  inherit-at-anchor); arm (b) (sub-fable ⇒ Fable dispatch) and the standard-mode carve-out are
-  **test-proven, not live-proven** this run. Labels travel with every claim (PD-2).
+  **dispatch mechanics are exercised live n=1** — an operator-granted consult on this repo's fable-anchored
+  dogfood run (arm (a) inherit-at-anchor: gate → budget → dispatch → structured response → disposition). The
+  **four hooks are test-proven prose — live-if-they-occur, unexercised**; arm (b) (sub-fable ⇒ Fable
+  dispatch) and the standard-mode carve-out are **test-proven, not live-proven** this run. Labels travel with
+  every claim (PD-2).
 
 ## [0.3.0] — 2026-07-05 — Adaptive tiering: evidence-driven model routing (D150)
 

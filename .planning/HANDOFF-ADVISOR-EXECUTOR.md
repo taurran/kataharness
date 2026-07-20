@@ -5,7 +5,7 @@
 > sibling loop project. Maintained LIVE through the run — each phase appends its section as it
 > completes. Neutral naming by policy; no external project linkage on this surface.
 
-**Status:** IN PROGRESS — initiation complete, grill starting.
+**Status:** EVALUATE fold complete — re-gate + closeout in progress.
 **Run date:** 2026-07-19 · **Anchor:** Fable 5 session · **Mode:** standard · one-shot · target `self`.
 
 ---
@@ -143,17 +143,29 @@ Full detail lives in the DESIGN's assessment section; the load-bearing facts:
 - **Transferable technique:** make the live exercise EARN its keep — aim the n=1 consult at
   the run's own most uncertain seam, so the proof-of-life doubles as real verification input.
 
-### 2.5 EVALUATE / ADVAL — IN PROGRESS
-*(fresh-context default-FAIL evaluate + adversarial review dispatched in parallel)*
-
-### 2.4 EXECUTE
-*(pending)*
-
-### 2.5 EVALUATE / ADVAL
-*(pending)*
+### 2.5 EVALUATE / ADVAL — DONE 2026-07-19 (fold complete; re-gate pending)
+- **PART A kata-evaluate (fresh-context, default-FAIL): NEEDS_WORK on ONE MAJOR** — the run's
+  own machine-readable gate artifacts (.kata/RESULT.json/footprint.json/mutation.json) were
+  stale from a prior run; the gate re-ran every check itself (pytest 3981/0/3-preexisting-skip,
+  validator 49/0/0, ruff, Snyk med+ 0) and graded ALL EIGHT acceptance criteria MET on read
+  evidence — but correctly refused to PASS on its own re-run while the authoritative artifacts
+  pointed elsewhere. Remediation: emit fresh artifacts via gate_emit at the final HEAD.
+- **PART B adval (fresh-context red team): SHIP-WITH-FIXES** — engine clean (no fail-open path
+  found; gate/rung/reserve/enum all verified), 3 HIGH prose/doc fixes: F1 the consult-failure
+  re-fire hole (the ONE advice sentence that never shipped — the live consult had warned it);
+  F2 board-line/recount format ambiguity; F3 PD-2 honesty overclaim ("hooks live" vs the true
+  "dispatch mechanics live, hooks test-proven"). Plus containment (F4 payload-as-data clause),
+  artifact-layout (F5 one-file-per-consult — found against the CONDUCTOR's own sibling file),
+  and 4 LOWs. All folded by a fix worker (orchestrate 0.14.1, kata-advise 0.1.1, initiate
+  0.8.1) + conductor artifact merge + corrective board NOTE.
+- **Transferable techniques:** (a) run evaluate + adval in PARALLEL — they find disjoint
+  classes (process-evidence vs adversarial-content defects); (b) hand the live consult's risk
+  list to the adval as a checklist — 3 of 5 risks verified robust, 2 found genuinely open;
+  (c) the evaluator re-running gates itself but refusing to substitute its re-run for the
+  run's own artifacts is the right default-FAIL posture — fix the evidence, not the verdict.
 
 ### 2.6 CLOSEOUT
-*(pending)*
+*(pending: gate-artifact emission → re-gate → operator merge gate → rollup + report)*
 
 ## 3. Transferable technique notes
 

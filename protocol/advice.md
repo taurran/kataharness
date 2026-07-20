@@ -19,7 +19,15 @@ decision are untouchable by it. Advice serves; the executor decides.
 
 One artifact per consult, three top-level objects — `request` (composed by the conductor from the
 escalation payload / hook context), `response` (returned by the `kata-advise` dispatch), and `meta`
-(the conductor's disposition + provenance). The schema of record, field-for-field:
+(the conductor's disposition + provenance).
+
+**Exactly ONE artifact file per consult** — `.kata/advice/<task-id>-<n>.json`, and **no sibling files**. The
+shared once-guard, the per-task cap (S-23a), and the ordinal (`n`) derivation ALL glob `<task-id>-*.json`, so
+a stray sibling (a `.tmp`, a `.bak`, a partial second write) **corrupts** the guard, the cap count, and the
+next-ordinal computation at once. One consult writes exactly one JSON at its computed ordinal path and
+nothing else.
+
+The schema of record, field-for-field:
 
 ```json
 {
@@ -80,9 +88,13 @@ Two board lines per consult (`protocol/board.md` register), plus the spend line:
   summary. A NO-FIRE on any legality conjunct (`advisor_status`) is *also* a surfaced `NOTE` (the reason),
   and the loop proceeds **unadvised** — never a block.
 - **DECISION at disposition** (orchestrator-only ruling): how the advice was disposed of — the `meta.disposition`
-  summary. Rendered by `kata_advisor.render_advisor_decision`.
-- **The per-consult spend DECISION line** (§3.5): a `tier:`-style board `DECISION` recording the budget
-  draw — the durable recount trail `recount_from_advisor_decisions` reads to restore `used`/`byEvent`.
+  summary. **Free text that MUST NOT begin `advisor:`** — a second `advisor:`-prefixed line would double-count
+  or raise in the recount.
+- **The per-consult spend/recount DECISION line** (§3.5): the SINGLE board `DECISION` beginning `advisor:`
+  (`advisor: <consult-id> event <event>`), rendered by `kata_advisor.render_advisor_decision` — the durable
+  recount trail `recount_from_advisor_decisions` reads (it parses ONLY `advisor:`-prefixed lines) to restore
+  `used`/`byEvent`. Because a SECOND `advisor:`-prefixed line would double-count or raise, the disposition
+  DECISION above is pinned to free text and never begins `advisor:`.
 
 Reports and board lines **never gate** — they are the audit trail, not a control point (S-2).
 

@@ -2726,7 +2726,9 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   grill converged over five fresh-context passes (HOLD 8 → HOLD 3 → HOLD 3 → HOLD 2 → SHIP, all findings
   folded); the adversarial freeze-gate then returned SHIP-WITH-FIXES with 7 folds. *Honesty (PD-2):*
   engine legs (legality gate, Fable-target routing, budget/spend/telemetry) are test-proven; the
-  prose-wired hooks are exercised **live n=1** on this repo's fable-anchored dogfood configuration (arm
-  (a) inherit-at-anchor) this run — arm (b) (sub-fable ⇒ Fable dispatch) and the standard-mode carve-out
-  are test-proven, not live-proven; labels travel with every claim. Additive feature (supersedes nothing);
+  **dispatch mechanics are exercised live n=1** — an operator-granted consult on this repo's
+  fable-anchored dogfood configuration (arm (a) inherit-at-anchor: gate → budget → dispatch → structured
+  response → disposition) this run — while the **four auto/escalation hooks are test-proven prose,
+  live-if-they-occur but UNEXERCISED**; arm (b) (sub-fable ⇒ Fable dispatch) and the standard-mode
+  carve-out are test-proven, not live-proven; labels travel with every claim. Additive feature (supersedes nothing);
   re-titles the deferred kata-reason concept to "Reason (the decider)".
