@@ -166,19 +166,44 @@ def _safe_result_path(result_path: str, cwd: str) -> Path:
     return rp
 
 
+_STDERR_TAIL_CHARS = 4000
+_STDERR_TRUNCATION_MARKER = f"[stderr truncated to last {_STDERR_TAIL_CHARS} chars]\n"
+
+
+def _stderr_tail(stderr) -> str:
+    """Deterministic tail cap for worker stderr carried into RESULT envelopes.
+
+    The ONE dispatch-side choke point (injected runners cannot bypass it): keeps the LAST
+    ``_STDERR_TAIL_CHARS`` chars — provider error text (rate-limit/quota/auth) arrives at the
+    END of stderr — prepending a literal marker only when clipped. Accepts ``bytes``
+    (``TimeoutExpired.stderr`` is bytes on some platforms) and decodes tolerantly.
+    Pure function of its input (Determinism Doctrine).
+    """
+    if stderr is None:
+        return ""
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
+    if len(stderr) > _STDERR_TAIL_CHARS:
+        return _STDERR_TRUNCATION_MARKER + stderr[-_STDERR_TAIL_CHARS:]
+    return stderr
+
+
 def _subprocess_runner(cmd: list[str], cwd: str, result_path: str, timeout: int):
     """Default real runner: shell out, then read the worker's result file. Gated on the CLI existing."""
     rp = _safe_result_path(result_path, cwd)
     proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL)  # noqa: S603
     result_text = rp.read_text(encoding="utf-8") if rp.exists() else ""
-    return proc.returncode, proc.stdout, result_text
+    return proc.returncode, proc.stdout, proc.stderr, result_text
 
 
 def dispatch(brief: dict, worktree: str, runner=None, timeout: int = 600) -> dict:
     """Dispatch a worker for ``brief`` in ``worktree``; return a normalized RESULT envelope (N2→N3).
 
-    ``runner(cmd, cwd, result_path, timeout) -> (exit_code, stdout, result_text)`` is injectable
-    (a stub in tests; the real subprocess runner by default).
+    ``runner(cmd, cwd, result_path, timeout) -> (exit_code, stdout, stderr, result_text)`` is
+    injectable (a stub in tests; the real subprocess runner by default). The worker's stderr is
+    carried — tail-capped via ``_stderr_tail`` — into the payload of every FAILURE envelope
+    (exit≠0 / timeout / unparseable result) so the provider error signal survives dispatch;
+    the ``completed`` envelope is byte-unchanged and ``raw`` keeps stdout-only semantics.
     """
     platform = brief["platform"]
     builder = _COMMAND_BUILDERS.get(platform)
@@ -193,21 +218,33 @@ def dispatch(brief: dict, worktree: str, runner=None, timeout: int = 600) -> dic
     runner = runner or _subprocess_runner
 
     try:
-        exit_code, stdout, result_text = runner(cmd, worktree, brief["resultPath"], timeout)
-    except subprocess.TimeoutExpired:
-        return build_result(brief["taskId"], brief["role"], platform, brief["model"], "timeout", {}, raw="")
+        exit_code, stdout, stderr, result_text = runner(cmd, worktree, brief["resultPath"], timeout)
+    except subprocess.TimeoutExpired as exc:
+        # Captured-so-far stderr rides the timeout envelope — a quota-hung worker's last words.
+        payload: dict = {}
+        tail = _stderr_tail(getattr(exc, "stderr", None))
+        if tail:
+            payload["stderr"] = tail
+        return build_result(brief["taskId"], brief["role"], platform, brief["model"], "timeout", payload, raw="")
 
+    stderr_tail = _stderr_tail(stderr)
     if exit_code != 0:
+        payload = {"error": f"worker exited {exit_code}"}
+        if stderr_tail:
+            payload["stderr"] = stderr_tail
         return build_result(
             brief["taskId"], brief["role"], platform, brief["model"], "failed",
-            {"error": f"worker exited {exit_code}"}, raw=stdout,
+            payload, raw=stdout,
         )
     try:
         payload = normalize(brief["role"], result_text)
     except (ValueError, TypeError, AttributeError, json.JSONDecodeError) as e:
+        payload = {"error": f"unparseable result: {e}"}
+        if stderr_tail:
+            payload["stderr"] = stderr_tail
         return build_result(
             brief["taskId"], brief["role"], platform, brief["model"], "failed",
-            {"error": f"unparseable result: {e}"}, raw=result_text,
+            payload, raw=result_text,
         )
     return build_result(brief["taskId"], brief["role"], platform, brief["model"], "completed", payload, raw=stdout)
 
