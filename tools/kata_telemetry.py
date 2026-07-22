@@ -1115,6 +1115,44 @@ def _validate_failure_kinds(raw: Any) -> list[dict]:
     return out
 
 
+def _validate_degraded(raw: Any) -> list[dict]:
+    """Validate the ``degraded`` list ``[{scope, reason}]`` (producer-side, fail-closed).
+
+    Previously an unvalidated passthrough — the one v2 list beside the fail-closed
+    siblings :func:`_validate_failure_kinds` / :func:`_validate_verdict_by_tier`
+    (quota-resilience G-10 brought it into the family). Each entry must be a dict with
+    exactly the keys ``scope`` and ``reason``, both non-empty strings. ``scope`` stays
+    an OPEN string (no enum — BC with existing ``"premium"`` / task-scoped producers;
+    this run adds scope ``"provider"`` with reasons ``quota-exhausted`` /
+    ``rate-limited`` / ``auth``). An absent / empty list ⇒ ``[]``.
+
+    Raises:
+        TelemetryError: On a non-object entry, extra/missing keys, or a non-string /
+            empty ``scope``/``reason`` (a malformed degraded record at build time is a
+            producer bug — the ``_validate_failure_kinds`` posture).
+    """
+    out: list[dict] = []
+    for entry in raw or []:
+        if not isinstance(entry, dict):
+            raise TelemetryError(
+                f"build_ledger_row: degraded entry must be a JSON object (got {entry!r}). Escalate."
+            )
+        if set(entry) != {"scope", "reason"}:
+            raise TelemetryError(
+                "build_ledger_row: degraded entry must carry exactly {scope, reason} "
+                f"(got keys {sorted(entry)}). Escalate."
+            )
+        scope, reason = entry["scope"], entry["reason"]
+        for name, value in (("scope", scope), ("reason", reason)):
+            if not isinstance(value, str) or not value.strip():
+                raise TelemetryError(
+                    f"build_ledger_row: degraded {name} must be a non-empty string "
+                    f"(got {value!r}). Escalate."
+                )
+        out.append({"scope": scope, "reason": reason})
+    return out
+
+
 def _normalize_parent_tokens(raw: Any) -> dict:
     """Normalize the v3 ``parentTokens`` per-phase map to ``{"<phase>": int|None}``.
 
@@ -1402,7 +1440,7 @@ def build_ledger_row(run_summary: dict) -> str:
         row[key] = run_summary.get(key, default)
     row["perTask"] = _normalize_per_task(run_summary.get("perTask"))
     row["failureKinds"] = _validate_failure_kinds(run_summary.get("failureKinds"))
-    row["degraded"] = list(run_summary.get("degraded", []))
+    row["degraded"] = _validate_degraded(run_summary.get("degraded"))
     row["parentTokens"] = _normalize_parent_tokens(run_summary.get("parentTokens"))
     # AT-L20 additive keys: PRESENCE-discriminated (absent ⇒ omitted, never null);
     # present ⇒ fail-closed validation (a present None is malformed, not absent).
