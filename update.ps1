@@ -84,12 +84,36 @@ if (-not (Test-Path (Join-Path $_home 'tools\kata_install.py'))) {
     throw "kata-update: tools/kata_install.py not found in $_home"
 }
 # --------------------------------------------------------------------------
-# Helpers. No redirection of native git stderr (PS 5.1 wraps it in ErrorRecords
-# under Stop preference); gate on LASTEXITCODE and use --quiet probes instead.
+# Helpers. PS 5.1 wraps native stderr in ErrorRecords whenever an ENCLOSING
+# pipeline merges streams (`update.ps1 ... 2>&1`, CI/automation hosts) — and
+# under Stop preference the FIRST such record becomes a TERMINATING error even
+# on exit 0. Observed live (2026-07-21): `--check` aborted at `git fetch
+# origin` precisely when an update was available (fetch prints its summary to
+# stderr on success). Rule: git calls that can write stderr on SUCCESS (fetch,
+# ls-remote server notices) or whose failure must NOT abort (probes, fallback
+# legs) go through Invoke-KataGit below; quiet-on-success value captures
+# (rev-parse --verify --quiet) stay direct and gate on $LASTEXITCODE.
 # --------------------------------------------------------------------------
+
+# Run ONE git command with stderr made non-terminating regardless of the
+# caller's stream context: EAP drops to 'Continue' for the single native call,
+# stderr merges into the pipeline, and every line returns as a plain string.
+# $LASTEXITCODE is left untouched for the existing Assert-GitOk gates.
+function Invoke-KataGit {
+    $_prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & git @args 2>&1 | ForEach-Object { "$_" }
+    } finally {
+        $ErrorActionPreference = $_prevEAP
+    }
+}
+
 function Test-GitClone {
     if (-not (Test-Path '.git' -PathType Container)) { return $false }
-    git remote get-url origin | Out-Null
+    # Probe through Invoke-KataGit: a missing origin writes to stderr, which must
+    # return $false here — never abort the script before the caller's branch.
+    $null = Invoke-KataGit remote get-url origin
     return ($LASTEXITCODE -eq 0)
 }
 
@@ -114,15 +138,16 @@ function Get-ResetTarget {
 }
 
 # 3-leg checkout fallback (mirror update.sh): branch <ref>, else detached
-# origin/<ref>, else detached <ref>. Failed legs may print git errors to
-# stderr (not redirected — see helper comment above); only all three legs
-# failing throws.
+# origin/<ref>, else detached <ref>. Interim failed legs are captured and
+# discarded (their stderr must not abort the fallback chain — see Invoke-KataGit);
+# only all three legs failing throws, printing the final leg's git error text.
 function Invoke-GitCheckout {
-    git checkout --quiet $_KataRef
+    $null = Invoke-KataGit checkout --quiet $_KataRef
     if ($LASTEXITCODE -eq 0) { return }
-    git checkout --quiet --detach "origin/$_KataRef"
+    $null = Invoke-KataGit checkout --quiet --detach "origin/$_KataRef"
     if ($LASTEXITCODE -eq 0) { return }
-    git checkout --quiet --detach $_KataRef
+    $_out = @(Invoke-KataGit checkout --quiet --detach $_KataRef)
+    if ($LASTEXITCODE -ne 0) { $_out | ForEach-Object { Write-Host $_ } }
     Assert-GitOk "checkout '$_KataRef'"
 }
 
@@ -199,7 +224,10 @@ function Assert-RemoteTruth {
     if ($LASTEXITCODE -ne 0 -or -not $_localTargetSha) {
         throw "kata-update: ABORT - could not resolve local target '$Target' after fetch."
     }
-    $_lsOut = @(git ls-remote origin $_lsRef)
+    # Through Invoke-KataGit: ls-remote can emit server notices/redirect warnings on
+    # stderr even on success; the parser below skips any line without the exact
+    # tab-separated ref match, so merged noise lines are structurally inert.
+    $_lsOut = @(Invoke-KataGit ls-remote origin $_lsRef)
     if ($LASTEXITCODE -ne 0) {
         throw 'kata-update: ABORT - git ls-remote origin failed immediately after a successful fetch; that is suspicious (the network was just reachable) - refusing to proceed.'
     }
@@ -221,14 +249,27 @@ function Assert-RemoteTruth {
 
 function Invoke-Engine {
     param([string[]]$EngineArgs)
-    if (Get-Command uv -ErrorAction SilentlyContinue) {
-        & uv run python tools/kata_install.py @EngineArgs
-    } elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
-        & python3 tools/kata_install.py @EngineArgs
-    } elseif (Get-Command python -ErrorAction SilentlyContinue) {
-        & python tools/kata_install.py @EngineArgs
-    } else {
-        throw 'kata-update: Python not found. Install uv (https://docs.astral.sh/uv/) or Python 3.12+.'
+    # The engine + uv write informational stderr on SUCCESS (the engine's
+    # vault-recommendation note prints to stderr by design — kata_install.py
+    # keeps the --json stdout contract clean; uv prints sync progress) — the
+    # same merged-stream termination hazard as the git calls (see
+    # Invoke-KataGit). EAP drops for the one invocation; the $LASTEXITCODE
+    # gate below still owns failure — critical here because an engine-leg
+    # abort on the update path would land AFTER `git reset --hard`.
+    $_prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        if (Get-Command uv -ErrorAction SilentlyContinue) {
+            & uv run python tools/kata_install.py @EngineArgs 2>&1 | ForEach-Object { "$_" }
+        } elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
+            & python3 tools/kata_install.py @EngineArgs 2>&1 | ForEach-Object { "$_" }
+        } elseif (Get-Command python -ErrorAction SilentlyContinue) {
+            & python tools/kata_install.py @EngineArgs 2>&1 | ForEach-Object { "$_" }
+        } else {
+            throw 'kata-update: Python not found. Install uv (https://docs.astral.sh/uv/) or Python 3.12+.'
+        }
+    } finally {
+        $ErrorActionPreference = $_prevEAP
     }
     # Propagate the engine's exit code WITHOUT 'exit' — under `irm | iex` this script
     # runs in the caller's session, so a bare 'exit' (even 'exit 0') closes the host
@@ -272,7 +313,7 @@ if ($_factoryReset) {
         if (Test-GitClone) {
             Assert-NoStaleGitLocks
             Write-Host "kata-update: fetching and resetting to $_KataRef ..."
-            git fetch origin
+            Invoke-KataGit fetch --quiet origin | ForEach-Object { Write-Host $_ }
             Assert-GitOk 'fetch'
             Invoke-GitCheckout
             $_target = Get-ResetTarget
@@ -298,7 +339,10 @@ if (-not (Test-GitClone)) {
 # D157: stale-lock guard runs BEFORE the fetch
 Assert-NoStaleGitLocks
 Write-Host 'kata-update: fetching origin ...'
-git fetch origin
+# --quiet: fetch prints progress AND its ref-update summary to stderr on
+# SUCCESS — the exact line that terminated the script under merged streams.
+# The script's own D157c advancement message below reports the outcome.
+Invoke-KataGit fetch --quiet origin | ForEach-Object { Write-Host $_ }
 Assert-GitOk 'fetch'
 $_localSha = (git rev-parse HEAD)
 Assert-GitOk 'rev-parse HEAD'

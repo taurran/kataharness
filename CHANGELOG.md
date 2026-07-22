@@ -58,6 +58,35 @@ the adversarial freeze-gate then returned SHIP-WITH-FIXES (7 folds). Spec:
   dispatch) and the standard-mode carve-out are **test-proven, not live-proven** this run. Labels travel with
   every claim (PD-2).
 
+### Fixed
+- **Windows bootstrap scripts abort on native git stderr under merged streams (observed live
+  2026-07-21).** PS 5.1 wraps a native command's stderr in ErrorRecords whenever an enclosing pipeline
+  merges streams (`update.ps1 ... 2>&1`, CI/automation hosts); under the scripts'
+  `$ErrorActionPreference='Stop'` the FIRST record becomes a TERMINATING error even on exit 0.
+  `update.ps1 --check` aborted at `git fetch origin` **precisely when an update was available** (fetch
+  prints its ref summary to stderr on success) — and the mid-fetch abort left a stale
+  `origin/master.lock` behind (the exact D157 silent-stale-install precursor; the D157 guard caught it
+  on re-run). Same class in `install.ps1`: `git clone` always writes "Cloning into ..." to stderr, so a
+  merged-stream install aborted a SUCCESSFUL clone (A/B-proven). The ENGINE leg carried the same
+  class (adval catch): `kata_install.py` prints its vault-recommendation note to stderr BY DESIGN on
+  a successful fresh install, and `uv` prints sync progress to stderr — so a merged-stream run could
+  still terminate at the engine, on the update path AFTER `git reset --hard`. Fix: new
+  `Invoke-KataGit` helper in `update.ps1` (EAP drops to 'Continue' for the one native call, stderr
+  merges into the pipeline as plain strings, `$LASTEXITCODE` untouched for the existing
+  `Assert-GitOk` gates) routed through both fetch sites, the `Test-GitClone` origin probe, the 3-leg
+  checkout fallback (interim-leg stderr no longer kills legs 2-3), and the `Assert-RemoteTruth`
+  ls-remote; the `install.ps1` clone and BOTH scripts' engine invocations get the inline equivalent.
+  Fetch/clone gain `--quiet` (success stderr suppressed; the script's own D157c advancement message
+  reports the outcome). Bash mirrors (`update.sh`/`install.sh`) are exit-code-gated and unaffected —
+  gating parity preserved (ps1 fetch/clone are now `--quiet`; the sh mirrors are not — cosmetic
+  divergence only). Proven live: the exact failing invocation now passes both `--check` branches
+  (update-available + already-current, exit 0); the clone A/B shows old-pattern ABORT vs new-pattern
+  success on the same successful clone; a fresh-context adval empirically re-derived the PS 5.1
+  semantics in a live child host (EAP/exit-code/splat behavior all confirmed). **Honesty (PD-2): the
+  full-update path (checkout fallback legs, reset, ls-remote truth check), the factory-reset fetch,
+  and the wrapped engine legs are code-proven + pin-tested only, NOT live-run this session** — they
+  exercise the same wrapped primitive and get their live n=1 at the operator's next real update.
+
 ## [0.3.0] — 2026-07-05 — Adaptive tiering: evidence-driven model routing (D150)
 
 **Model selection stops being a static table and starts learning from the run.** Three layers: **L0**

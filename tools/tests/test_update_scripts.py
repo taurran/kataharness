@@ -149,10 +149,13 @@ def test_sh_update_path_order():
 
 
 def test_ps1_update_path_order():
+    # 2026-07-21: the ps1 fetch runs through the Invoke-KataGit wrapper (native git
+    # stderr made non-terminating under merged-stream callers); the D157 order
+    # invariant is unchanged — the pin tracks the wrapped call shape.
     pos = _ordered(
         PS1_UPDATE,
         "Assert-NoStaleGitLocks",
-        "git fetch origin",
+        "Invoke-KataGit fetch --quiet origin",
         "Assert-RemoteTruth",
         "git reset --hard",
         "did not land on the verified sha",
@@ -170,7 +173,7 @@ def test_sh_factory_reset_fetch_is_lock_guarded():
 
 
 def test_ps1_factory_reset_fetch_is_lock_guarded():
-    fetch = PS1_FACTORY.find("git fetch origin")
+    fetch = PS1_FACTORY.find("Invoke-KataGit fetch --quiet origin")
     guard = PS1_FACTORY.find("Assert-NoStaleGitLocks")
     assert fetch != -1, "factory-reset fetch missing"
     assert guard != -1, "factory-reset path must scan stale locks before its fetch"
@@ -185,7 +188,18 @@ def test_ps1_factory_reset_fetch_is_lock_guarded():
 def test_both_scripts_still_have_single_update_fetch():
     """Exactly one fetch in each update-path segment (the guarded one)."""
     assert SH_UPDATE.count("git fetch origin") == 1
-    assert PS1_UPDATE.count("git fetch origin") == 1
+    assert PS1_UPDATE.count("Invoke-KataGit fetch --quiet origin") == 1
+
+
+def test_ps1_fetches_go_through_invoke_katagit():
+    """2026-07-21: bare `git fetch` writes its ref summary to stderr on SUCCESS; under
+    a stream-merging caller (`update.ps1 ... 2>&1`, CI/automation hosts) PS 5.1 wraps
+    that in ErrorRecords and Stop preference turns the FIRST one into a TERMINATING
+    abort mid-fetch — which is exactly how stale ref locks get created (the D157
+    class this file exists for; observed live 2026-07-21). Both ps1 fetch sites must
+    stay on the Invoke-KataGit wrapper; a bare fetch is a regression of that fix."""
+    assert PS1.count("Invoke-KataGit fetch --quiet origin") == 2
+    assert "git fetch origin" not in PS1
 
 
 def test_sh_documents_clear_stale_locks_in_usage():

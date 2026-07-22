@@ -64,7 +64,21 @@ if ($env:KATA_SRC) {
     # Clone to the default home.  The .git inside is legitimate repo metadata.
     $_KataHome = $_KataDefaultHome
     Write-Host "kata-install: cloning KataHarness (ref=$_KataRef) to $_KataHome ..."
-    & git clone --branch "$_KataRef" --depth 1 "$_KataRepoUrl" "$_KataHome"
+    # git clone ALWAYS writes "Cloning into ..." + progress to stderr, even on
+    # success. PS 5.1 wraps native stderr in ErrorRecords when a caller merges
+    # streams (`install.ps1 ... 2>&1`, CI/automation hosts), and Stop preference
+    # turns the FIRST record into a TERMINATING error — aborting a successful
+    # clone. Drop to 'Continue' for the one native call and print the merged
+    # output; the $LASTEXITCODE gate below still owns failure (same class as
+    # the update.ps1 fetch fix, 2026-07-21).
+    $_prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & git clone --quiet --branch "$_KataRef" --depth 1 "$_KataRepoUrl" "$_KataHome" 2>&1 |
+            ForEach-Object { Write-Host "$_" }
+    } finally {
+        $ErrorActionPreference = $_prevEAP
+    }
     # PS 5.1 Stop preference does NOT trip on native nonzero exits; gate on
     # $LASTEXITCODE so a failed clone cannot fall through to false success.
     if ($LASTEXITCODE -ne 0) {
@@ -98,14 +112,25 @@ if ($args -notcontains '--platform') {
 $_OrigLocation = Get-Location
 Set-Location "$_KataHome"
 try {
-    if (Get-Command uv -ErrorAction SilentlyContinue) {
-        & uv run python tools/kata_install.py @_PassArgs
-    } elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
-        & python3 tools/kata_install.py @_PassArgs
-    } elseif (Get-Command python -ErrorAction SilentlyContinue) {
-        & python tools/kata_install.py @_PassArgs
-    } else {
-        throw 'kata-install: Python not found. Install uv (https://docs.astral.sh/uv/) or Python 3.12+.'
+    # The engine + uv write informational stderr on SUCCESS (the engine's
+    # vault-recommendation note prints to stderr by design on a fresh install;
+    # uv prints sync progress) — the same merged-stream termination hazard as
+    # the clone above. EAP drops for the one invocation; the exit-code gate
+    # below still owns failure.
+    $_prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        if (Get-Command uv -ErrorAction SilentlyContinue) {
+            & uv run python tools/kata_install.py @_PassArgs 2>&1 | ForEach-Object { "$_" }
+        } elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
+            & python3 tools/kata_install.py @_PassArgs 2>&1 | ForEach-Object { "$_" }
+        } elseif (Get-Command python -ErrorAction SilentlyContinue) {
+            & python tools/kata_install.py @_PassArgs 2>&1 | ForEach-Object { "$_" }
+        } else {
+            throw 'kata-install: Python not found. Install uv (https://docs.astral.sh/uv/) or Python 3.12+.'
+        }
+    } finally {
+        $ErrorActionPreference = $_prevEAP
     }
     $_ExitCode = $LASTEXITCODE
 } finally {
