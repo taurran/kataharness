@@ -1,11 +1,52 @@
 ---
 milestone: M2-freeze-float
-milestone_name: "Advisor-executor SHIPPED (D167, PR #39, master 0d3abc6); NEXT = quota-resilience (brief at .planning/specs/quota-resilience/REQUIREMENT.md)"
+milestone_name: "Triple-fix session SHIPPED (PRs #42/#43/#44, master 71e25df); NEXT = quota-resilience Tier 1+2, operator grill required (brief at .planning/specs/quota-resilience/REQUIREMENT.md)"
 status: in-progress
-last_updated: "2026-07-20T05:10:00.000Z"
+last_updated: "2026-07-21T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-21 — THE TRIPLE-FIX SESSION: PRs #41→#44 MERGED, master `71e25df`; items
+> A/B/D of the accepted execution plan complete, each through the full installed harness with
+> its own INTENT freeze, gates, and fresh-context adval):**
+> **(0) PR #41 merged at session start** (bootstrap stderr fix, carried from the prior session).
+> **(1) Item A — dispatch stderr fix (PR #42, light grill D1–D4 LOCKED at
+> `.planning/specs/dispatch-stderr-fix/`):** the runner contract is a hard 4-tuple carrying
+> worker stderr; a deterministic dispatch-side tail cap (`_stderr_tail`, 4000 chars) rides all
+> three FAILURE envelopes (exit≠0 / timeout via `TimeoutExpired.stderr` decode-if-bytes /
+> unparseable); `completed` envelope byte-unchanged. THE quota-resilience prerequisite. Adval
+> SHIP-WITH-FIXES (stale preflight cross-refs → name-based, folded). +8 tests.
+> **(2) Item B — advisor deferral pins + smoke promotion (PR #43, grill skipped — decisions
+> pre-frozen in the advisor spec + the live consult sketch):** `TestAdvisorDeferralCompat`
+> realizes the archived pinning-test sketch (observe≠consume · exactly-one +1 after the advised
+> failure · mid-deferral recount mark-free), and the 6-seam deterministic advisor smoke
+> (previously scratchpad-only) now lives at `tools/tests/test_advisor_smoke.py` with constructed
+> artifacts + in-process double-run byte-equality (PD-2: historical digest recipe not preserved —
+> pinned on recorded VALUES). The regression net is IN PLACE before quota-resilience touches the
+> deferral seam. Adval SHIP (zero transcription errors). +5 tests, engines byte-untouched.
+> **(3) Item D — THE D1 PHANTOM-CORRUPTION FIX (PR #44, light grill D1–D5 LOCKED + adval
+> addendum at `.planning/specs/mutation-sandbox/`):** mutation proving is now SANDBOXED — the
+> project root is copied to a temp tree, the test_cmd is path-redirected (right-boundary +
+> true-`.venv`-component pattern, Windows case-insensitive residual live-root guard that
+> RAISES), baseline AND mutated run inside the copy, **the live tree is never written** (pinned
+> by a mid-run observer). The whole proof fleet (~60 real call sites / 14 modules) routes
+> through the sandbox green; kata-tdd SKILL updated off the superseded design (0.4.1). Adval
+> SHIP-WITH-FIXES, all five findings folded + pinned. **The D1 interim discipline (never
+> read/diff/commit during a mutation pass) is CLOSED — no longer needed.**
+> Gauntlet at close: **pytest 4012/3 pre-existing skip · integration 2/2 · ruff clean ·
+> validator 49/0/0 · Snyk code med+ 0.** Records: grill ledgers emitted to the second brain
+> (4+5 decision pages); `.planning/DEFERRED.md` NEW (DEF-1: preflight runner stderr widening →
+> owed to quota-resilience). ELEVATE (mirror-by-docstring defect-duplication insight) was
+> offered and recorded DECLINED (re-offerable).
+> **★ NEXT: item C — QUOTA-RESILIENCE Tier 1+2 (ONE version-up), OPERATOR REQUIRED:** feed
+> `.planning/specs/quota-resilience/REQUIREMENT.md` as the brief (research already grounded —
+> do NOT redo it); 7 open grill questions in brief §4 (incl. Q6: fallback-to-cheaper arguably
+> WRONG for empty non-Anthropic ladders); Tier 3 excluded (own future grill). Item A removed
+> its headline blocker. Smaller residuals: optional v0.4.0 tag (the [Unreleased] block now
+> carries advisor + 3 fixes); F-9/R6 live smokes keep riding repo-cwd sessions; E-queue
+> (E1/E2); kata-home clone self-heals at the operator's next default update.
+> *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-19/20 — ADVISOR-EXECUTOR SHIPPED: D167, PR #39 MERGED, master `0d3abc6`):**
 > The **Fable-tier Advisor consult** (`kata-advise`, the **49th** skill) — the advisor-executor
