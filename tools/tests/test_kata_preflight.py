@@ -7,7 +7,7 @@ no real machine mutation.
 Citations (verify-before-reuse):
   - runner pattern:    tools/kata_dispatch.py:168 (_subprocess_runner)
   - _safe_abs guard:   tools/kata_settings.py:39-44
-  - mutation prove:    tools/mutation_run.py:63 (prove_non_vacuous)
+  - mutation prove:    mutation_run.prove_non_vacuous (name-based ref)
   - N3 schema:         .planning/specs/kata-preflight/DESIGN.md §4
 """
 
@@ -1141,7 +1141,7 @@ class TestSnykFailClosed:
 def test_mutation_prove_non_vacuous():
     """Prove the H1 leading-dash guard in ``_validate_package`` bites.
 
-    Uses mutation_run.prove_non_vacuous (tools/mutation_run.py:63).
+    Uses mutation_run.prove_non_vacuous (sandboxed — the live tree is never written).
     Line mutated: the ``if package.startswith("-"):`` guard in ``_validate_package``.
     Without this guard, ``--editable`` passes the pip name-grammar regex
     (``-`` is in ``[A-Za-z0-9._-]``) and no ValueError is raised.
