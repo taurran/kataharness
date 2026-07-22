@@ -1422,7 +1422,8 @@ class TestMutationProof:
         in _compute_arm_q. Removing it → NameError on next line →
         test_floor_fail_missing_failed_key goes red.
 
-    mutation_run.prove_non_vacuous always restores the source file (try/finally).
+    mutation_run.prove_non_vacuous runs SANDBOXED — the live source is never
+    written (the D1 phantom-corruption fix); the proof mutates a temp-tree copy.
     """
 
     def _src(self) -> str:

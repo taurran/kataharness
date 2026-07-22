@@ -59,6 +59,20 @@ the adversarial freeze-gate then returned SHIP-WITH-FIXES (7 folds). Spec:
   every claim (PD-2).
 
 ### Fixed
+- **Mutation proving corrupted the live tree (D1 phantom-corruption, root-caused 2026-07-14).**
+  `mutation_run.prove_non_vacuous` wrote mutated bytes to the REAL source file and restored in
+  `finally` — concurrent readers saw corruption inside the write→restore window, and a hard kill
+  persisted the mutation on disk (the recurring IndentationError hauntings). The vector fired on
+  EVERY gauntlet: seven real mutation proofs run inside pytest-unit. Now the proof runs
+  **SANDBOXED**: the project root (marker-derived from `pyproject.toml`/`.git`, fail-closed; or
+  explicit `project_root=`) is copied to a temp tree (`.git`/`.venv`/`.kata`/caches excluded),
+  the `test_cmd` is path-redirected into the sandbox (live-root substitution with a `.venv`
+  interpreter lookahead + a Windows case-insensitive residual live-root guard that RAISES),
+  baseline AND mutated both run inside the copy (Doctrine law 8: the comparison differs only by
+  the mutation), and the live file is **never written** — pinned by a runner that reads the live
+  file mid-run. Runner contract widened to `(cmd, cwd)`. All seven real proofs green through the
+  sandbox (~4s for five; overhead negligible at ~3.5 MB/copy). Grill record:
+  `.planning/specs/mutation-sandbox/GRILL-LEDGER.md` (D1–D5 LOCKED).
 - **Worker dispatch discarded the provider error signal (`tools/kata_dispatch.py`).**
   `_subprocess_runner` ran `capture_output=True` but returned only `proc.stdout`, and `dispatch()`
   built every failure envelope as bare `worker exited {code}` — the codex/kiro CLIs' stderr

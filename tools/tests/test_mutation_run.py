@@ -1,22 +1,29 @@
-"""Tests for tools/mutation_run.py — TDD first (red → green).
+"""Tests for tools/mutation_run.py — the SANDBOXED mutation-proof runner.
 
 Strategy
 --------
-All tests inject a ``runner`` callable so no real subprocess or pytest process
-is spawned.  Real filesystem writes/restores use ``tmp_path``.
+All tests inject a ``runner(cmd, cwd)`` callable so no real subprocess or pytest
+process is spawned.  Real filesystem writes use ``tmp_path``; every constructed
+project carries a ``pyproject.toml`` marker (the grill-D1 root-derivation
+contract) unless the test targets derivation failure itself.
 
 Coverage:
-- non-vacuous:  runner True then False → nonVacuous True
-- vacuous:      runner True then True  → nonVacuous False
-- restore:      file bytes identical after a normal run
-- restore on raise: file bytes identical even when runner raises mid-way
-- ValueError propagation: apply_line_removal of a missing line surfaces cleanly,
-  no mutation left behind
-- path-traversal guard: '..' in source_path → ValueError
+- non-vacuous / vacuous verdicts through the sandbox
+- THE D1 PIN: the live source file is byte-untouched THROUGHOUT the run —
+  observed by the runner DURING the mutated pass, not just after return
+- the sandbox copy IS mutated (observed via the runner's cwd)
+- redirect mechanics: live-root substitution, .venv interpreter preservation,
+  the residual live-root guard (Windows case-insensitive) raising
+- sandbox lifecycle: excludes applied; removed after normal AND raising runs
+- project-root derivation fail-closed + explicit override + not-under-root
+- ValueError propagation (missing line raises BEFORE any run — nothing copied)
+- path-traversal guard; Q-4 timeout; DET-09 env sanitization; shell contract
 """
 
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -25,8 +32,9 @@ import pytest
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _write_source(tmp_path: Path, content: str) -> Path:
-    """Write a tiny source file and return its absolute path."""
+def _write_project(tmp_path: Path, content: str) -> Path:
+    """Write a tiny marker-carrying project (grill D1) and return the source path."""
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='sample'\n", encoding="utf-8")
     p = tmp_path / "sample.py"
     p.write_text(content, encoding="utf-8")
     return p
@@ -37,19 +45,19 @@ _ASSERTED_LINE = "    return a + b"
 
 
 # ---------------------------------------------------------------------------
-# TDD tests — these are RED until mutation_run.py is implemented
+# Verdict plumbing through the sandbox
 # ---------------------------------------------------------------------------
 
 def test_non_vacuous_runner_true_then_false(tmp_path):
     """Baseline passes, mutated fails → nonVacuous True, testWentRed True."""
     import mutation_run
 
-    src_path = _write_source(tmp_path, _SOURCE)
+    src_path = _write_project(tmp_path, _SOURCE)
     calls = []
 
-    def fake_runner(cmd):
-        calls.append(cmd)
-        # 1st call: pristine → passes; 2nd call: mutated → fails
+    def fake_runner(cmd, cwd):
+        calls.append((cmd, cwd))
+        # 1st call: pristine sandbox → passes; 2nd call: mutated sandbox → fails
         return len(calls) == 1
 
     result = mutation_run.prove_non_vacuous(
@@ -59,50 +67,82 @@ def test_non_vacuous_runner_true_then_false(tmp_path):
     assert result["nonVacuous"] is True
     assert result["testWentRed"] is True
     assert len(calls) == 2
+    # grill D3: BOTH runs execute in the SAME sandbox cwd
+    assert calls[0][1] == calls[1][1]
+    assert calls[0][1] != str(tmp_path), "runs must target the sandbox, not the live tree"
 
 
 def test_vacuous_runner_true_both(tmp_path):
     """Baseline passes, mutated also passes → nonVacuous False."""
     import mutation_run
 
-    src_path = _write_source(tmp_path, _SOURCE)
-
-    def always_pass(_cmd):
-        return True
+    src_path = _write_project(tmp_path, _SOURCE)
 
     result = mutation_run.prove_non_vacuous(
-        str(src_path), _ASSERTED_LINE, "dummy-cmd", runner=always_pass
+        str(src_path), _ASSERTED_LINE, "dummy-cmd", runner=lambda cmd, cwd: True
     )
 
     assert result["nonVacuous"] is False
     assert result["testWentRed"] is False
 
 
-def test_restore_after_normal_run(tmp_path):
-    """After prove_non_vacuous completes, source file bytes are identical to original."""
+# ---------------------------------------------------------------------------
+# THE D1 PIN — the live tree is never written (the phantom-corruption fix)
+# ---------------------------------------------------------------------------
+
+def test_live_file_untouched_throughout_the_run(tmp_path):
+    """The live source is byte-identical DURING the mutated pass — observed by the
+    runner mid-run, not merely restored afterwards (the old design was 'restored
+    afterwards'; the corruption window lived between write and restore)."""
     import mutation_run
 
-    src_path = _write_source(tmp_path, _SOURCE)
+    src_path = _write_project(tmp_path, _SOURCE)
     original_bytes = src_path.read_bytes()
+    observed: list[bytes] = []
+
+    def observing_runner(cmd, cwd):
+        observed.append(src_path.read_bytes())   # read the LIVE file on every pass
+        return len(observed) == 1
+
+    result = mutation_run.prove_non_vacuous(
+        str(src_path), _ASSERTED_LINE, "dummy-cmd", runner=observing_runner
+    )
+
+    assert result["nonVacuous"] is True
+    assert observed == [original_bytes, original_bytes], (
+        "the LIVE file changed during the run — the D1 corruption window is back"
+    )
+    assert src_path.read_bytes() == original_bytes
+
+
+def test_sandbox_copy_is_mutated_not_the_original(tmp_path):
+    """The mutation lands in the sandbox copy (visible via the runner's cwd)."""
+    import mutation_run
+
+    src_path = _write_project(tmp_path, _SOURCE)
+    seen: list[str] = []
+
+    def sandbox_reader(cmd, cwd):
+        seen.append((Path(cwd) / "sample.py").read_text(encoding="utf-8"))
+        return True
 
     mutation_run.prove_non_vacuous(
-        str(src_path), _ASSERTED_LINE, "dummy-cmd", runner=lambda _: True
+        str(src_path), _ASSERTED_LINE, "dummy-cmd", runner=sandbox_reader
     )
 
-    assert src_path.read_bytes() == original_bytes, (
-        "File was not restored after a normal run"
-    )
+    assert seen[0] == _SOURCE, "baseline must run on the PRISTINE copy"
+    assert _ASSERTED_LINE not in seen[1], "mutated pass must see the line removed"
 
 
-def test_restore_when_runner_raises(tmp_path):
-    """Even when the runner raises on the 2nd call, the file MUST be restored."""
+def test_live_file_untouched_when_runner_raises(tmp_path):
+    """A runner exception propagates; the live file was never written anyway."""
     import mutation_run
 
-    src_path = _write_source(tmp_path, _SOURCE)
+    src_path = _write_project(tmp_path, _SOURCE)
     original_bytes = src_path.read_bytes()
     call_count = [0]
 
-    def raising_runner(_cmd):
+    def raising_runner(cmd, cwd):
         call_count[0] += 1
         if call_count[0] == 1:
             return True          # baseline passes
@@ -113,21 +153,204 @@ def test_restore_when_runner_raises(tmp_path):
             str(src_path), _ASSERTED_LINE, "dummy-cmd", runner=raising_runner
         )
 
-    # The file MUST be byte-identical despite the exception
-    assert src_path.read_bytes() == original_bytes, (
-        "File was NOT restored when the runner raised mid-way"
+    assert src_path.read_bytes() == original_bytes
+
+
+# ---------------------------------------------------------------------------
+# Sandbox lifecycle (grill D1/D3)
+# ---------------------------------------------------------------------------
+
+def test_sandbox_removed_after_normal_and_raising_runs(tmp_path):
+    """The temp sandbox is removed in finally — normal path and raising path."""
+    import mutation_run
+
+    src_path = _write_project(tmp_path, _SOURCE)
+    sandboxes: list[str] = []
+
+    def capture_runner(cmd, cwd):
+        sandboxes.append(cwd)
+        return True
+
+    mutation_run.prove_non_vacuous(str(src_path), _ASSERTED_LINE, "x", runner=capture_runner)
+
+    def raising_runner(cmd, cwd):
+        sandboxes.append(cwd)
+        raise RuntimeError("boom")
+
+    with pytest.raises(RuntimeError):
+        mutation_run.prove_non_vacuous(str(src_path), _ASSERTED_LINE, "x", runner=raising_runner)
+
+    assert sandboxes, "runner never saw a sandbox"
+    for sb in sandboxes:
+        assert not Path(sb).exists(), f"sandbox {sb} leaked past the finally cleanup"
+
+
+def test_sandbox_excludes_hygiene_dirs(tmp_path):
+    """.git/.venv/.kata/__pycache__ never enter the sandbox (grill D1)."""
+    import mutation_run
+
+    src_path = _write_project(tmp_path, _SOURCE)
+    for d in (".git", ".venv", ".kata", "__pycache__"):
+        (tmp_path / d).mkdir()
+        (tmp_path / d / "marker.txt").write_text("x", encoding="utf-8")
+    (tmp_path / "kept.txt").write_text("keep me", encoding="utf-8")
+    seen: dict = {}
+
+    def inspecting_runner(cmd, cwd):
+        seen["entries"] = sorted(p.name for p in Path(cwd).iterdir())
+        return True
+
+    mutation_run.prove_non_vacuous(str(src_path), _ASSERTED_LINE, "x", runner=inspecting_runner)
+
+    assert "kept.txt" in seen["entries"] and "sample.py" in seen["entries"]
+    for excluded in (".git", ".venv", ".kata", "__pycache__"):
+        assert excluded not in seen["entries"], f"{excluded} must not be copied"
+
+
+# ---------------------------------------------------------------------------
+# Redirect mechanics (grill D4/D5)
+# ---------------------------------------------------------------------------
+
+def test_redirect_substitutes_live_root_but_preserves_venv(tmp_path):
+    """Absolute live-root references are redirected; <root>/.venv interpreter
+    references survive un-rewritten (the live venv is read-only and excluded
+    from the copy)."""
+    import mutation_run
+
+    src_path = _write_project(tmp_path, _SOURCE)
+    root = str(tmp_path.resolve())
+    venv_py = str(tmp_path.resolve() / ".venv" / "Scripts" / "python.exe")
+    cmd = f'cd /d "{root}" && "{venv_py}" -m pytest tests -q'
+    seen: dict = {}
+
+    def capture_runner(rcmd, cwd):
+        seen["cmd"], seen["cwd"] = rcmd, cwd
+        return True
+
+    mutation_run.prove_non_vacuous(str(src_path), _ASSERTED_LINE, cmd, runner=capture_runner)
+
+    assert seen["cmd"].startswith(f'cd /d "{seen["cwd"]}"'), (
+        "the cd target must be redirected into the sandbox"
+    )
+    assert venv_py in seen["cmd"], (
+        "the .venv interpreter reference must survive redirection un-rewritten"
     )
 
 
-def test_missing_line_raises_and_file_unchanged(tmp_path):
-    """apply_line_removal of a line not in source → ValueError; file still original."""
+@pytest.mark.skipif(os.name != "nt", reason="case-insensitive residual guard is Windows-only")
+def test_residual_live_root_guard_raises_on_case_mismatch(tmp_path):
+    """A case-twisted live-root spelling survives exact-case substitution — the
+    residual guard must RAISE rather than let the mutation run target the live
+    tree (grill D5)."""
     import mutation_run
 
-    src_path = _write_source(tmp_path, _SOURCE)
+    src_path = _write_project(tmp_path, _SOURCE)
+    twisted = str(tmp_path.resolve()).swapcase()
+    cmd = f'cd /d "{twisted}" && py -m pytest'
+
+    with pytest.raises(ValueError, match="LIVE project root"):
+        mutation_run.prove_non_vacuous(
+            str(src_path), _ASSERTED_LINE, cmd, runner=lambda c, w: True
+        )
+
+
+def test_relative_cmd_gets_sandbox_cwd(tmp_path):
+    """A relative test_cmd carries no root reference — the sandbox cwd IS the
+    redirect (grill D2)."""
+    import mutation_run
+
+    src_path = _write_project(tmp_path, _SOURCE)
+    seen: list = []
+
+    def capture_runner(cmd, cwd):
+        seen.append((cmd, cwd))
+        return True
+
+    mutation_run.prove_non_vacuous(
+        str(src_path), _ASSERTED_LINE, "pytest tests -q", runner=capture_runner
+    )
+
+    assert seen[0][0] == "pytest tests -q"          # untouched — nothing to substitute
+    assert Path(seen[0][1]).name == "tree"          # ...but it runs in the sandbox
+    assert (Path(seen[0][1]) / "sample.py").name    # containing the copied project
+
+
+# ---------------------------------------------------------------------------
+# Project-root derivation (grill D1 — fail-closed)
+# ---------------------------------------------------------------------------
+
+def test_no_marker_anywhere_raises(tmp_path, monkeypatch):
+    """No pyproject.toml/.git in any ancestor ⇒ ValueError (never guess the scope).
+
+    The tmp tree is markerless AND the test monkeypatches _find_project_root's
+    walk ceiling by pointing the source at a markerless subtree of tmp_path —
+    if some ancestor of the pytest tmp dir carries a marker on a given machine,
+    the explicit-project_root path still proves the fail-closed message."""
+    import mutation_run
+
+    sub = tmp_path / "bare"
+    sub.mkdir()
+    p = sub / "sample.py"
+    p.write_text(_SOURCE, encoding="utf-8")
+
+    ancestors_have_marker = any(
+        (a / "pyproject.toml").exists() or (a / ".git").exists() for a in p.parents
+    )
+    if ancestors_have_marker:
+        pytest.skip("an ancestor of tmp_path carries a marker on this machine")
+    with pytest.raises(ValueError, match="no project root"):
+        mutation_run.prove_non_vacuous(str(p), _ASSERTED_LINE, "x", runner=lambda c, w: True)
+
+
+def test_explicit_project_root_override(tmp_path):
+    """project_root= overrides derivation; the sandbox is that tree."""
+    import mutation_run
+
+    sub = tmp_path / "bare"
+    sub.mkdir()
+    p = sub / "sample.py"
+    p.write_text(_SOURCE, encoding="utf-8")
+    seen: dict = {}
+
+    def capture_runner(cmd, cwd):
+        seen["entries"] = sorted(x.name for x in Path(cwd).iterdir())
+        return True
+
+    mutation_run.prove_non_vacuous(
+        str(p), _ASSERTED_LINE, "x", runner=capture_runner, project_root=str(sub)
+    )
+    assert seen["entries"] == ["sample.py"]
+
+
+def test_source_not_under_project_root_raises(tmp_path):
+    """An explicit root that does not contain the source ⇒ ValueError (D136)."""
+    import mutation_run
+
+    src_path = _write_project(tmp_path, _SOURCE)
+    other = tmp_path / "elsewhere"
+    other.mkdir()
+
+    with pytest.raises(ValueError, match="not under the project root"):
+        mutation_run.prove_non_vacuous(
+            str(src_path), _ASSERTED_LINE, "x",
+            runner=lambda c, w: True, project_root=str(other),
+        )
+
+
+# ---------------------------------------------------------------------------
+# Error propagation + guards
+# ---------------------------------------------------------------------------
+
+def test_missing_line_raises_before_any_run(tmp_path):
+    """apply_line_removal of a missing line → ValueError BEFORE any sandbox copy
+    or runner call (an invalid spec costs nothing); live file untouched."""
+    import mutation_run
+
+    src_path = _write_project(tmp_path, _SOURCE)
     original_bytes = src_path.read_bytes()
     call_count = [0]
 
-    def counting_runner(_cmd):
+    def counting_runner(cmd, cwd):
         call_count[0] += 1
         return True
 
@@ -139,10 +362,8 @@ def test_missing_line_raises_and_file_unchanged(tmp_path):
             runner=counting_runner,
         )
 
-    # File must be unchanged
-    assert src_path.read_bytes() == original_bytes, (
-        "File was modified despite apply_line_removal raising"
-    )
+    assert call_count[0] == 0, "an invalid spec must not spend a single test run"
+    assert src_path.read_bytes() == original_bytes
 
 
 def test_path_traversal_guard_raises(tmp_path):
@@ -153,41 +374,32 @@ def test_path_traversal_guard_raises(tmp_path):
 
     with pytest.raises(ValueError):
         mutation_run.prove_non_vacuous(
-            traversal, "anything", "dummy-cmd", runner=lambda _: True
+            traversal, "anything", "dummy-cmd", runner=lambda c, w: True
         )
 
 
-def test_prove_many_collects_verdicts(tmp_path):
-    """prove_many returns a list of verdict dicts, one per spec."""
+def test_prove_many_collects_verdicts_and_passes_project_root(tmp_path):
+    """prove_many returns one verdict per spec and forwards spec project_root."""
     import mutation_run
 
-    src_path = _write_source(tmp_path, _SOURCE)
+    src_path = _write_project(tmp_path, _SOURCE)
     call_count = [0]
 
-    def alternating_runner(_cmd):
-        # Calls: 1=baseline True, 2=mutated False → nonVacuous True
-        # Then for the 2nd spec (same file): 3=baseline True, 4=mutated False → nonVacuous True
+    def alternating_runner(cmd, cwd):
+        # Calls: 1=baseline True, 2=mutated False → nonVacuous True (per spec)
         call_count[0] += 1
         return call_count[0] % 2 == 1  # odd calls pass, even calls fail
 
     specs = [
-        {
-            "source_path": str(src_path),
-            "asserted_line": _ASSERTED_LINE,
-            "test_cmd": "dummy-cmd",
-        },
-        {
-            "source_path": str(src_path),
-            "asserted_line": _ASSERTED_LINE,
-            "test_cmd": "dummy-cmd",
-        },
+        {"source_path": str(src_path), "asserted_line": _ASSERTED_LINE, "test_cmd": "x"},
+        {"source_path": str(src_path), "asserted_line": _ASSERTED_LINE, "test_cmd": "x",
+         "project_root": str(tmp_path)},
     ]
 
     results = mutation_run.prove_many(specs, runner=alternating_runner)
     assert len(results) == 2
     for r in results:
-        assert "nonVacuous" in r
-        assert "testWentRed" in r
+        assert r["nonVacuous"] is True and r["testWentRed"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -212,8 +424,8 @@ def test_default_runner_timeout_returns_false(monkeypatch, capsys):
     assert "[kata] gate runner timeout" in captured.err
 
 
-def test_default_runner_forwards_default_timeout_600(monkeypatch):
-    """The default 600s timeout is forwarded to subprocess.run (bounded, overridable)."""
+def test_default_runner_forwards_default_timeout_600_and_cwd(monkeypatch):
+    """The default 600s timeout AND the cwd (grill D2) are forwarded to subprocess.run."""
     import mutation_run
 
     seen: dict = {}
@@ -227,9 +439,12 @@ def test_default_runner_forwards_default_timeout_600(monkeypatch):
 
     monkeypatch.setattr(mutation_run.subprocess, "run", spy_run)
 
-    assert mutation_run._default_runner("echo ok") is True
+    assert mutation_run._default_runner("echo ok", "/some/sandbox") is True
     assert seen.get("timeout") == 600.0, (
         "Q-4: _default_runner must bound the subprocess with a 600s default timeout"
+    )
+    assert seen.get("cwd") == "/some/sandbox", (
+        "grill D2: the sandbox cwd must reach subprocess.run"
     )
 
 
@@ -286,3 +501,7 @@ def test_default_runner_preserves_shell_contract(monkeypatch):
     assert seen["shell"] is True, "shell=True is the test_cmd contract; must be preserved"
     assert isinstance(seen["cmd"], str), "shell command stays a string"
     assert "PYTEST_ADDOPTS" not in (seen["env"] or {}), "env still sanitized under shell"
+
+
+# needed by the skipif marker above
+_ = sys
