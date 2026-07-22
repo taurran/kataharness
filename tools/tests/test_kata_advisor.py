@@ -396,3 +396,119 @@ def test_kata_advisor_is_stdlib_only():
     src = Path(ka.__file__).read_text(encoding="utf-8")
     for banned in ("import kata_models", "import kata_board", "import kata_telemetry", "import footprint"):
         assert banned not in src
+
+
+# ---------------------------------------------------------------------------
+# 10. The advise-first DEFERRAL seam — executable owner of the orchestrator
+#     protocol (kata-orchestrate SKILL.md § advise-first / bump-second).
+#
+# These pins realize the pinning-test sketch from the advisor's own live consult
+# (.kata/advice/live-exercise-1-1.json, archived verbatim; grant: operator
+# in-session DECISION, live-exercise-1). They simulate the CONDUCTOR's deferral
+# protocol as code against the REAL engines — kata_adaptive is imported here
+# deliberately (this is the seam-owner test, NOT the pure kata_advisor engine;
+# the S-11b byte-untouched guard above still holds for kata_advisor itself).
+#
+# The protocol under pin (S-11b — orchestrator-side deferral, engine untouched):
+#   failure → failure → bump_pending OBSERVED True → advisor consult fires FIRST
+#   (advisor-fail-threshold) → redispatch at the SAME rung with advice folded in
+#   (modulate_step NOT called — the deferral) → the advised attempt fails →
+#   normal path: modulate_step consumes the bump (+1) exactly once.
+# ---------------------------------------------------------------------------
+
+
+class TestAdvisorDeferralCompat:
+    """The three consult-sketch pins: observe≠consume · single consume · recount-invisible."""
+
+    @staticmethod
+    def _cfg():
+        import kata_adaptive
+
+        return kata_adaptive.resolve_adaptive_config({})  # enabled, failBumpAt=2 default
+
+    def test_repeated_observation_never_consumes(self):
+        """Pin 1 (observe≠consume): the deferral window observes bump_pending —
+        repeatedly, alongside the full advisor-side consult bookkeeping — and NONE
+        of it consumes the bump or touches the adaptive counters."""
+        import kata_adaptive as kad
+
+        state, cfg = kad.new_state(), self._cfg()
+        kad.record_gate_result(state, "T1", "impl", accepted=False, first_pass=False, downshifted=False)
+        kad.record_gate_result(state, "T1", "impl", accepted=False, first_pass=False, downshifted=False)
+
+        # The conductor's deferral-window activity: observe the pending bump (many
+        # times — status renders, board notes, re-checks) and run the WHOLE advisor
+        # consult on the advisor engine. The adaptive engine must be inert throughout.
+        advisor_state = ka.new_advisor_state()
+        for _ in range(5):
+            assert kad.bump_pending(state, cfg, "T1") is True  # pure read, idempotent
+        ka.record_advisor_spend(advisor_state, "advisor-fail-threshold")
+        ka.record_outcome(advisor_state, "T1-1", None)  # consult dispatched, outcome pending
+
+        assert state["bumped"] == {}                      # never consumed by observation
+        assert state["bumpCounters"]["T1"] == 2           # untouched by the consult
+        assert kad.bump_pending(state, cfg, "T1") is True  # still pending after it all
+
+    def test_deferral_window_then_single_consume(self):
+        """Pin 2 (exactly-one +1): after the advised same-rung attempt fails, the
+        normal path consumes the bump ONCE; double-bump is structurally impossible
+        (delta domain {-1,0,+1}; the bumped mark blocks re-arm forever)."""
+        import kata_adaptive as kad
+
+        state, cfg = kad.new_state(), self._cfg()
+        kad.record_gate_result(state, "T1", "impl", accepted=False, first_pass=False, downshifted=False)
+        kad.record_gate_result(state, "T1", "impl", accepted=False, first_pass=False, downshifted=False)
+        assert kad.bump_pending(state, cfg, "T1") is True
+
+        # DEFERRAL: the advised redispatch runs at the PRIOR rung — the conductor
+        # does NOT call modulate_step for that one dispatch. The advised attempt
+        # then FAILS and is recorded normally (S-15e: no special-casing).
+        kad.record_gate_result(state, "T1", "impl", accepted=False, first_pass=False, downshifted=False)
+        assert state["bumped"] == {}                      # still unconsumed after the advised failure
+        assert state["bumpCounters"]["T1"] == 3           # 2→3; the >= boundary tolerates it
+
+        # NEXT dispatch: the normal path consumes — exactly one +1.
+        delta = kad.modulate_step(cfg, state, task_id="T1", task_class="impl", work_class="coding")
+        assert delta == 1
+        assert state["bumped"]["T1"] is True
+
+        # EV-1 closes on the advisor side; the adaptive engine saw nothing special.
+        advisor_state = ka.new_advisor_state()
+        ka.record_advisor_spend(advisor_state, "advisor-fail-threshold")
+        ka.record_outcome(advisor_state, "T1-1", "advised-fail-bumped")
+
+        # Structural no-double-bump: the mark blocks re-arm; later attempts stay at
+        # +1 (the SAME consumed bump riding out, never a second one) even after
+        # further rejections.
+        assert kad.bump_pending(state, cfg, "T1") is False
+        kad.record_gate_result(state, "T1", "impl", accepted=False, first_pass=False, downshifted=False)
+        assert kad.bump_pending(state, cfg, "T1") is False
+        assert kad.modulate_step(cfg, state, task_id="T1", task_class="impl", work_class="coding") == 1
+
+    def test_deferral_invisible_to_recount(self):
+        """Pin 3 (mid-deferral recount carries no mark): the DECISION trail during
+        the deferral window holds the advisor SPEND line but NO tier failbump line —
+        a restart mid-deferral rebuilds counters WITHOUT the bump mark (the accepted
+        under-adapt loss, S-11b corollary) while the advisor spend recounts fully.
+        The failbump line is emitted ONLY at actual consume."""
+        import kata_adaptive as kad
+
+        # Mid-deferral trail: the consult's spend DECISION exists; no failbump line
+        # (the loop NEVER emits it at earn/deferral time — consult risk 3).
+        mid_deferral_trail = [
+            ka.render_advisor_decision("T1-1", "advisor-fail-threshold"),
+        ]
+        adaptive_recount = kad.recount_from_decisions(mid_deferral_trail, "fable")
+        assert adaptive_recount["bumped"] == {}           # no mark — bump re-earned post-restart
+        advisor_recount = ka.recount_from_advisor_decisions(mid_deferral_trail)
+        assert advisor_recount["used"] == 1               # the spend trail IS durable
+        assert advisor_recount["byEvent"] == {"advisor-fail-threshold": 1}
+
+        # Post-consume trail: the conductor emitted the failbump line at consume —
+        # NOW the recount carries the once-per-task mark.
+        post_consume_trail = mid_deferral_trail + [
+            kad.render_tier_decision("T1", "sonnet", "opus", "failbump"),
+        ]
+        adaptive_recount = kad.recount_from_decisions(post_consume_trail, "fable")
+        assert adaptive_recount["bumped"] == {"T1": True}
+        assert adaptive_recount["budgetSpent"] == 0       # failbump is not a premium spend
