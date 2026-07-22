@@ -8,7 +8,16 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
-## [Unreleased] — Quota-resilience Tier 1+2: park-and-tell on provider exhaustion
+## [0.4.0] — 2026-07-22 — The advisor + quota-resilience release
+
+Everything between v0.3.0 and this line ships as **v0.4.0**: the Fable-tier **advisor-executor**
+(D167, PR #39) · **quota-resilience Tier 1+2** (PR #46) · the reliability quartet — bootstrap
+merged-stream stderr fix (PR #41) · dispatch stderr-envelope fix (PR #42) · advisor deferral-seam
+pins + the promoted 6-seam smoke (PR #43) · the **D1 phantom-corruption fix** (sandboxed mutation
+proving, PR #44). The two initiative sections below (kept under their original titles, the 0.2.0-era
+convention) plus their Fixed entries are the release contents.
+
+### Quota-resilience Tier 1+2: park-and-tell on provider exhaustion
 
 **Running out of tokens stops being invisible.** A provider rate-limit / quota / auth failure is now
 detected from dispatch results, lapses the failing lane run-wide, and — when the primary path is hit —
@@ -59,7 +68,7 @@ intent + precedent).
 
 ---
 
-## [Unreleased] — Advisor consult (kata-advise): the Fable-tier advisor-executor pattern (D167)
+### Advisor consult (kata-advise): the Fable-tier advisor-executor pattern (D167)
 
 **Hard tasks stop burning blind retries.** A scoped, anchor-relative **Fable-tier advisor** the loop can
 consult — execution/coding workers ask a narrow question on an intensive issue, and the evaluation

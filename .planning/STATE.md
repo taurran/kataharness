@@ -1,11 +1,50 @@
 ---
 milestone: M2-freeze-float
-milestone_name: "Triple-fix session SHIPPED (PRs #42/#43/#44, master 71e25df); NEXT = quota-resilience Tier 1+2, operator grill required (brief at .planning/specs/quota-resilience/REQUIREMENT.md)"
+milestone_name: "v0.4.0 TAGGED (advisor + quota-resilience + reliability quartet; PRs #41-#46); execution plan A/B/C/D COMPLETE; operator morning review owed"
 status: in-progress
-last_updated: "2026-07-21T00:00:00.000Z"
+last_updated: "2026-07-22T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-21/22 — THE OVERNIGHT-DELEGATED RUN: item C SHIPPED (PR #46) + v0.4.0
+> TAGGED; the whole A/B/C/D execution plan is COMPLETE):** The operator delegated the remaining
+> work before sleeping (verbatim, in-conversation: "Asses to see if any of them require grills
+> or anything. If we are clear to go-ahead, run it using full kataharness. If not, pause when
+> you need input.") — recorded as the dual-control grant. The §4 assessment (surfaced to the
+> operator pre-sleep with resolutions shown) found every open branch resolvable from RECORDED
+> operator intent + precedent, so the run proceeded.
+> **Item C — quota-resilience Tier 1+2 (PR #46, standard grill G-1..G-12 LOCKED + adval
+> addendum at `.planning/specs/quota-resilience/`):** NEW pure engine `tools/kata_quota.py`
+> (deterministic clean-error classifier over dispatch RESULT envelopes · G-2 hybrid lapse:
+> FIRST classified signal / 2-consecutive-generic · `KATA_OFF advisor|provider[:name]`
+> kill-switch over the EXISTING steering grammar · `park_message`, plain words, NO URLs) ·
+> kata-orchestrate 0.15.0 (boundary kill-switch parse + classify→lapse→route-by-criticality:
+> optional subsystems lapse-and-continue per LD7, primary path PARKS per G-4 — escalation +
+> breakthrough alert + handoff `trigger: quota` + boundary stop, NEVER poll/retry/downgrade) ·
+> `kata_telemetry._validate_degraded` joins the fail-closed family · protocol/steering.md +
+> handoff.md additive rows. **BC floor G-12: kata_dispatch/kata_models/kata_steer/kata_adaptive
+> all byte-untouched, diff-verified.** Adval SHIP-WITH-FIXES: 2 confirmed MAJORs folded
+> (traceback line-numbers + test-identifier auth words classified as provider signals —
+> lookbehind + word boundaries, 12 pins) + kill-switch grammar tightened + 2 honesty limits
+> RECORDED (host-session quota has no envelope to classify — manual playbook still owns it;
+> dogfood-vocabulary false positives possible — loud + recoverable, structural fix = an
+> operator-ordered G-8 amendment). Governance check PASSED (every provenance citation verified;
+> the delegation quote itself lives in the conversation — **operator morning confirmation
+> owed**). Engine legs test-proven (59+9 pins); orchestrate wiring = prose, live-if-it-occurs,
+> UNFIRED (honestly labeled).
+> **v0.4.0 TAGGED** — advisor-executor (D167) + quota-resilience T1+2 + the reliability quartet
+> (PRs #41 bootstrap stderr · #42 dispatch stderr · #43 advisor pins+smoke · #44 D1 mutation
+> sandbox). Gauntlet at tag: **pytest 4072/3 pre-existing skip · integration 2/2 · ruff clean ·
+> validator 49/0/0 · Snyk code med+ 0.**
+> **★ OWED TO THE OPERATOR (morning review):** confirm the overnight delegation record ·
+> two in-absentia ELEVATE offers (mirror-by-docstring defect-duplication; same-word
+> budget-vs-quota namespace hazard — both default DECLINED) · the F3 precision-limit design
+> call (structural classifier fix, optional) · v0.4.0 tag veto window (delete-and-retag if
+> unwanted). Residuals: Tier 3 (registry · silent-hang watchdog · preflight headroom) = its own
+> grill · E-queue (E1/E2) · F-9/R6 keep riding · kata-home clone self-heals at next default
+> update (now brings v0.4.0).
+> *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-21 — THE TRIPLE-FIX SESSION: PRs #41→#44 MERGED, master `71e25df`; items
 > A/B/D of the accepted execution plan complete, each through the full installed harness with
