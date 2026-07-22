@@ -137,9 +137,11 @@ def _build_results(advice_dir: Path) -> dict:
     results["seam4_telemetry"] = {"fragment": ka.ledger_fragment(st, 5)}
 
     # --- seam 5: the artifact contract (constructed advice dir) ------------------
-    # Conventions under pin (kata-orchestrate § Advisor consult): standing advice for
-    # a task = any <taskId>-<n>.json artifact (the once-guard); the next artifact
-    # ordinal = max(n)+1; run-start spend seeding = count of grill-*.json artifacts.
+    # Conventions under pin (kata-orchestrate § Advisor consult): the artifact-glob
+    # LEG of the once-guard — any <taskId>-<n>.json artifact arms it. (The guard's
+    # OTHER disjunct — a per-task lapse — is not modeled here; the SKILL notes the
+    # glob alone is insufficient for the full guard.) Next artifact ordinal =
+    # max(n)+1; run-start spend seeding = count of grill-*.json artifacts.
     task_files = sorted(advice_dir.glob("live-exercise-1-*.json"))
     ordinals = [int(m.group(1)) for f in task_files
                 if (m := re.fullmatch(r"live-exercise-1-(\d+)\.json", f.name))]
