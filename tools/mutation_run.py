@@ -99,10 +99,29 @@ def _find_project_root(source: Path) -> Path:
 
 def _root_pattern(project_root: Path, *, ignorecase: bool) -> re.Pattern:
     """A slash-agnostic regex matching the literal *project_root*, excluding
-    occurrences that continue into ``.venv`` (grill D4/D5)."""
+    occurrences that continue into ``.venv`` (grill D4/D5; adval folds F1/F2).
+
+    Two boundary guards (adval-caught):
+    - a RIGHT boundary ``(?![A-Za-z0-9._~-])`` so a root that is a PREFIX of a
+      sibling path (``C:\\proj`` vs ``C:\\proj2``, ``<root>-backup``) is never
+      rewritten and never trips the residual guard;
+    - the ``.venv`` preservation matches only a TRUE ``.venv`` component
+      (``[\\/]+\\.venv`` followed by a non-name char) — ``<root>\\.venv-old`` is
+      substituted like any other subpath (loud sandbox miss, never a silent
+      live reference), and a doubled separator before ``.venv`` still preserves.
+
+    Guard limits (stated, not solved): alternate SPELLINGS of the root — 8.3
+    short names (``C:\\DEVPRO~1``), symlinked roots, UNC/admin-share forms — are
+    invisible to a literal pattern.  Accepted at the test_cmd trust level:
+    commands are machine-built from ``Path.resolve()``/``sys.executable``.
+    """
     parts = project_root.parts  # ('C:\\', 'Dev', ...) — first part carries the sep
     escaped = [re.escape(parts[0].rstrip("\\/"))] + [re.escape(p) for p in parts[1:]]
-    pattern = r"[\\/]+".join(escaped) + r"(?![\\/]\.venv)"
+    pattern = (
+        r"[\\/]+".join(escaped)
+        + r"(?![A-Za-z0-9._~-])"                      # F1: right boundary
+        + r"(?![\\/]+\.venv(?![A-Za-z0-9._-]))"        # F2: true .venv component only
+    )
     return re.compile(pattern, re.IGNORECASE if ignorecase else 0)
 
 

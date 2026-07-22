@@ -237,6 +237,53 @@ def test_redirect_substitutes_live_root_but_preserves_venv(tmp_path):
     )
 
 
+def test_redirect_leaves_prefix_sibling_paths_untouched(tmp_path):
+    """Adval F1: a root that is a PREFIX of a sibling path must not rewrite the
+    sibling (C:\\proj vs C:\\proj2 / <root>-backup) nor trip the residual guard."""
+    import mutation_run
+
+    src_path = _write_project(tmp_path, _SOURCE)
+    root = str(tmp_path.resolve())
+    sibling = root + "2"
+    backup = root + "-backup"
+    cmd = f'cd /d "{root}" && copy "{sibling}\\data.txt" "{backup}\\x"'
+    seen: dict = {}
+
+    def capture_runner(rcmd, cwd):
+        seen["cmd"], seen["cwd"] = rcmd, cwd
+        return True
+
+    mutation_run.prove_non_vacuous(str(src_path), _ASSERTED_LINE, cmd, runner=capture_runner)
+
+    assert f'"{sibling}\\data.txt"' in seen["cmd"], "prefix sibling must survive untouched"
+    assert f'"{backup}\\x"' in seen["cmd"], "root-backup sibling must survive untouched"
+    assert seen["cmd"].startswith(f'cd /d "{seen["cwd"]}"'), "the true root still redirects"
+
+
+def test_venv_lookahead_true_component_only(tmp_path):
+    """Adval F2: only a TRUE .venv component is preserved — <root>/.venv-old is
+    substituted like any subpath (loud, never a silent live reference), and a
+    doubled separator before .venv still preserves the interpreter path."""
+    import mutation_run
+
+    src_path = _write_project(tmp_path, _SOURCE)
+    root = str(tmp_path.resolve())
+    cmd = f'"{root}\\.venv-old\\py.exe" && "{root}\\\\.venv\\Scripts\\python.exe" -m pytest'
+    seen: dict = {}
+
+    def capture_runner(rcmd, cwd):
+        seen["cmd"], seen["cwd"] = rcmd, cwd
+        return True
+
+    mutation_run.prove_non_vacuous(str(src_path), _ASSERTED_LINE, cmd, runner=capture_runner)
+
+    assert f"{root}\\.venv-old" not in seen["cmd"], ".venv-old must be substituted (not preserved)"
+    assert f'"{seen["cwd"]}\\.venv-old\\py.exe"' in seen["cmd"]
+    assert f"{root}\\\\.venv\\Scripts\\python.exe" in seen["cmd"], (
+        "a doubled-separator TRUE .venv reference must be preserved"
+    )
+
+
 @pytest.mark.skipif(os.name != "nt", reason="case-insensitive residual guard is Windows-only")
 def test_residual_live_root_guard_raises_on_case_mismatch(tmp_path):
     """A case-twisted live-root spelling survives exact-case substitution — the

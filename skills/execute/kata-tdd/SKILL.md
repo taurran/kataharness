@@ -6,7 +6,7 @@ description: >-
   acceptance criteria — red→green→refactor, behavior over implementation, escalate unknowns instead of
   improvising.
 license: Apache-2.0
-version: 0.4.0
+version: 0.4.1
 category: execute
 status: beta
 agnostic: true
@@ -46,8 +46,9 @@ Then, for each behavior in the acceptance criteria:
 RED:    write ONE test for the next behavior → it fails
 GREEN:  minimal code to pass → it passes
 PROVE:  non-vacuity — run tools/mutation_run.py prove_non_vacuous(...) to automate
-        the PROVE step: it reads the pristine source, runs the test (baseline), removes
-        the asserted line, runs the test again (mutated), and ALWAYS restores the file.
+        the PROVE step: it copies the project tree to a temp SANDBOX, runs the test
+        there (baseline), removes the asserted line IN THE SANDBOX COPY, runs again
+        (mutated) — the LIVE tree is never written (the D1 phantom-corruption fix).
         A test that stays green after its asserted line is removed is vacuous and does
         not count. Do not advance to the next behavior until the current test bites.
 ```
@@ -68,30 +69,42 @@ OUTPUTS), and a **designed, documented fail-safe fallback is exempt** — do not
 ### Running the PROVE step with mutation_run
 
 Use `tools/mutation_run.prove_non_vacuous(source_path, asserted_line, test_cmd)` as the **runnable**
-mechanism for the PROVE step — not a manual hand-edit.  It automates the full loop:
-(1) runs `test_cmd` on pristine source → `baseline_passed`; (2) applies
-`mutation_check.apply_line_removal`, writes the mutated file; (3) runs `test_cmd` again →
-`mutated_passed`; (4) **always restores** the original bytes in a `try/finally`; (5) returns the
-`mutation_check.mutation_verdict` dict `{testWentRed, nonVacuous}`.
+mechanism for the PROVE step — not a manual hand-edit.  It automates the full loop, **SANDBOXED**
+(the D1 phantom-corruption fix — the live tree is never written): (1) copies the project root
+(marker-derived from `pyproject.toml`/`.git`, or explicit `project_root=`) to a temp tree and
+path-redirects `test_cmd` into it; (2) runs the redirected command on the pristine copy →
+`baseline_passed`; (3) applies `mutation_check.apply_line_removal` and writes the mutated text to
+the SANDBOX copy; (4) runs again → `mutated_passed`; (5) removes the sandbox in `finally`;
+(6) returns the `mutation_check.mutation_verdict` dict `{testWentRed, nonVacuous}`.
+
+**test_cmd cost note:** the sandbox excludes `.venv` — a `test_cmd` invoking the venv's python
+directly (`sys.executable`-style absolute path; it survives redirection by design) reuses the live
+interpreter, while a bare `uv run pytest …` re-syncs a fresh env inside the sandbox on every proof.
+Prefer the interpreter-path form for proof commands.
 
 Example (Python, called from within the task's verify/report step):
 ```python
 from mutation_run import prove_non_vacuous, prove_many
 from gate_emit import emit_gate_artifacts
 
+# Proof commands: prefer the live interpreter path (survives sandbox redirection;
+# avoids a per-proof uv re-sync inside the .venv-less sandbox copy).
+import sys
+CMD = f"{sys.executable} -m pytest tests/test_my_task.py -q"
+
 # Option A — one behavior at a time:
 records = []
 verdict = prove_non_vacuous(
     source_path="tools/my_task.py",
     asserted_line="    return computed_value",
-    test_cmd="uv run pytest tests/test_my_task.py -q",
+    test_cmd=CMD,
 )
 records.append(verdict)
 
 # Option B — collect all behaviors at once:
 specs = [
     {"source_path": "tools/my_task.py", "asserted_line": "    return computed_value",
-     "test_cmd": "uv run pytest tests/test_my_task.py -q"},
+     "test_cmd": CMD},
 ]
 records = prove_many(specs)
 

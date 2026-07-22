@@ -72,6 +72,25 @@
 - **Edges:** platform-conditional strictness is environmental honesty, documented in the
   docstring — the guard's OUTPUT is still deterministic per platform.
 
+### ADDENDUM — adval folds (2026-07-21, fresh-context review SHIP-WITH-FIXES; supersede-don't-edit)
+- **F1 (MEDIUM, confirmed) → folded:** D4's substitution pattern lacked a RIGHT boundary — a
+  root that PREFIXES a sibling path (`C:\proj` vs `C:\proj2`, `<root>-backup`) was rewritten,
+  and a case-mismatched sibling false-positived the D5 guard. The realized pattern now ends at
+  `(?![A-Za-z0-9._~-])`. D4/D5 decisions STAND; this tightens their realization. Pinned.
+- **F2 (LOW, confirmed) → folded:** the `.venv` lookahead now matches only a TRUE `.venv`
+  component (`[\\/]+\.venv` + name-boundary): `<root>\.venv-old` substitutes loudly (it was the
+  one silent live-reference escape), doubled separators still preserve. Pinned.
+- **F3 (worker-facing doc drift) → folded:** `kata-tdd` SKILL taught the superseded mutate-live/
+  restore design; prose + example updated to the sandbox contract with the interpreter-path
+  cost note (0.4.0→0.4.1).
+- **F4 (PD-2 count) → folded:** the preamble's "five/seven" understated blast radius — the whole
+  fleet is ~60 real `prove_non_vacuous` call sites across 14 test modules, all sandbox-routed,
+  all green. The error was in the safe direction; corrected in the CHANGELOG.
+- **F5 (guard limits, theoretical) → documented:** alternate root SPELLINGS (8.3 short names,
+  symlinks, UNC forms) are invisible to a literal pattern; accepted at test_cmd operator trust
+  (commands are machine-built from resolved paths). Stated in `_root_pattern`'s docstring; D5's
+  "any remaining occurrence" reads as any remaining LITERAL occurrence.
+
 ### Convergence pass · PASS
 D1–D5 cohere: one sandbox per proof (D1) is what D3's both-runs-inside and D2's cwd landing
 target; D4's lookahead is what makes D1's `.venv` exclusion viable; D5 closes the only silent

@@ -70,9 +70,15 @@ the adversarial freeze-gate then returned SHIP-WITH-FIXES (7 folds). Spec:
   interpreter lookahead + a Windows case-insensitive residual live-root guard that RAISES),
   baseline AND mutated both run inside the copy (Doctrine law 8: the comparison differs only by
   the mutation), and the live file is **never written** — pinned by a runner that reads the live
-  file mid-run. Runner contract widened to `(cmd, cwd)`. All seven real proofs green through the
-  sandbox (~4s for five; overhead negligible at ~3.5 MB/copy). Grill record:
-  `.planning/specs/mutation-sandbox/GRILL-LEDGER.md` (D1–D5 LOCKED).
+  file mid-run. Runner contract widened to `(cmd, cwd)`. Blast radius (adval-corrected count):
+  the seven proofs NAMED in the INTENT plus the whole fleet — **~60 real `prove_non_vacuous`
+  call sites across 14 test modules** — all route through the sandbox, all green (~0.8s/proof;
+  ~3.5 MB/copy). Adval folds: `_root_pattern` right boundary (a root that PREFIXES a sibling
+  path — `C:\proj` vs `C:\proj2`, `<root>-backup` — is never rewritten and never trips the
+  guard) + true-`.venv`-component-only preservation (`.venv-old` substitutes loudly; doubled
+  separators still preserve); kata-tdd SKILL prose updated off the superseded mutate-live
+  design (0.4.0→0.4.1). Grill record: `.planning/specs/mutation-sandbox/GRILL-LEDGER.md`
+  (D1–D5 LOCKED + adval addendum).
 - **Worker dispatch discarded the provider error signal (`tools/kata_dispatch.py`).**
   `_subprocess_runner` ran `capture_output=True` but returned only `proc.stdout`, and `dispatch()`
   built every failure envelope as bare `worker exited {code}` — the codex/kiro CLIs' stderr
