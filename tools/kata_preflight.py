@@ -45,7 +45,7 @@ Security model
   (LD2/LD3).  Only structured fields (``manager``, ``package``, ``version``) are used
   to build argv.
 - ``shell=True`` is **never** used anywhere in this module (mirrors
-  ``tools/kata_dispatch.py:171``).
+  ``kata_dispatch._subprocess_runner`` — name-based ref, line numbers drift).
 - **H1 (flag-injection):** ``_validate_field_value`` rejects any field value starting
   with ``-``; ``_build_argv`` inserts ``--`` before positional package args.
 - **H2 (approval-hash):** ``run_preflight`` computes the SHA-256 of
@@ -56,8 +56,8 @@ Security model
 
 Reuse citations (verify-before-reuse — ``protocol/reuse-claims.md``)
 ----------------------------------------------------------------------
-- ``_COMMAND_BUILDERS``-style fixed table:  tools/kata_dispatch.py:150
-- injectable runner pattern:               tools/kata_dispatch.py:168-173
+- ``_COMMAND_BUILDERS``-style fixed table:  kata_dispatch._COMMAND_BUILDERS (name-based ref)
+- injectable runner pattern:               kata_dispatch._subprocess_runner (name-based ref)
 - ``_safe_abs`` ``..``-guard:              tools/kata_settings.py:39-44
 - gate artifact emit path:                 tools/gate_emit.py:94-150
 - ``preflight`` config block:              protocol/config.md:29-36
