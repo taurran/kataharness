@@ -391,13 +391,16 @@ def _load_approved_hash(approved_hash_path: Path) -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Default subprocess runner (no shell=True) — mirrors kata_dispatch.py:168-173
+# Default subprocess runner (no shell=True) — mirrors kata_dispatch._subprocess_runner
 # ---------------------------------------------------------------------------
 
 def _default_runner(argv: list[str]) -> tuple[int, str]:
     """Default real runner: ``subprocess.run(argv)`` with ``shell=False``.
 
-    Mirrors ``_subprocess_runner`` at ``tools/kata_dispatch.py:168-173``.
+    Mirrors ``kata_dispatch._subprocess_runner`` (name-based ref — line numbers drift).
+    NOTE: the dispatch runner now returns a 4-tuple carrying stderr; THIS runner still
+    discards stderr — widening it is deferred to the quota-resilience run
+    (``.planning/DEFERRED.md`` DEF-1).
     ``shell=True`` is **never** used — this is the structural guard that kills
     the ``curl|bash`` / untrusted-index injection class (LD2/LD3).
     """

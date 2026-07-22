@@ -85,18 +85,21 @@ def test_subprocess_runner_closes_stdin(tmp_path, monkeypatch):
     class _Proc:
         returncode = 0
         stdout = "ok"
+        stderr = "warn: something"
 
     def fake_run(cmd, **kwargs):
         captured.update(kwargs)
         return _Proc()
 
     monkeypatch.setattr(kd.subprocess, "run", fake_run)
-    kd._subprocess_runner(["codex", "exec"], str(tmp_path), "RESULT.json", 600)
+    code, stdout, stderr, result_text = kd._subprocess_runner(["codex", "exec"], str(tmp_path), "RESULT.json", 600)
     assert captured.get("stdin") is subprocess.DEVNULL
     # existing behaviour preserved
     assert captured.get("capture_output") is True
     assert captured.get("text") is True
     assert captured.get("timeout") == 600
+    # the 4-tuple contract: stderr is CARRIED, not discarded (dispatch-stderr-fix D1)
+    assert (code, stdout, stderr, result_text) == (0, "ok", "warn: something", "")
 
 
 # ----- N3 normalize / build_result -----
@@ -121,10 +124,10 @@ def test_build_result_rejects_bad_status():
 
 
 # ----- N2 dispatch with a STUB runner -----
-def _stub_runner(result_obj, exit_code=0, stdout="ok"):
+def _stub_runner(result_obj, exit_code=0, stdout="ok", stderr=""):
     """A runner that simulates a worker writing `result_obj` as its result file."""
     def run(cmd, cwd, result_path, timeout):
-        return exit_code, stdout, json.dumps(result_obj)
+        return exit_code, stdout, stderr, json.dumps(result_obj)
     return run
 
 
@@ -143,7 +146,7 @@ def test_dispatch_nonzero_exit_is_failed():
 
 def test_dispatch_unparseable_result_is_failed():
     def bad_runner(cmd, cwd, result_path, timeout):
-        return 0, "ok", "not json{{"
+        return 0, "ok", "", "not json{{"
     b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
     res = kd.dispatch(b, "/wt", runner=bad_runner)
     assert res["status"] == "failed"
@@ -162,7 +165,7 @@ def test_dispatch_timeout():
 def test_dispatch_non_object_result_is_failed_not_crash():
     # valid JSON but a top-level ARRAY must fail gracefully, not raise (D98 MAJOR-1 fix)
     def array_runner(cmd, cwd, result_path, timeout):
-        return 0, "ok", "[1, 2, 3]"
+        return 0, "ok", "", "[1, 2, 3]"
     b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
     res = kd.dispatch(b, "/wt", runner=array_runner)
     assert res["status"] == "failed"
@@ -197,7 +200,7 @@ def test_dispatch_unroutable_platform_fails_gracefully():
 def test_dispatch_empty_result_researcher_is_failed():
     # empty result must default-FAIL for researcher (red-team F1), not report a None-filled "completed"
     def empty_runner(cmd, cwd, result_path, timeout):
-        return 0, "ok", ""
+        return 0, "ok", "", ""
     b = kd.build_brief("t1", "researcher", "codex", model="m", objective="o", result_path="R")
     res = kd.dispatch(b, "/wt", runner=empty_runner)
     assert res["status"] == "failed"
@@ -205,7 +208,7 @@ def test_dispatch_empty_result_researcher_is_failed():
 
 def test_dispatch_empty_result_coder_is_failed():
     def empty_runner(cmd, cwd, result_path, timeout):
-        return 0, "ok", "{}"
+        return 0, "ok", "", "{}"
     b = kd.build_brief("t1", "coder", "codex", model="m", objective="o", result_path="R", sandbox="write")
     res = kd.dispatch(b, "/wt", runner=empty_runner)
     assert res["status"] == "failed"
@@ -320,6 +323,102 @@ def test_dispatch_researcher_on_kiro_returns_completed_envelope(tmp_path):
     assert result["payload"]["source"] == "https://example.com"
     assert result["payload"]["confidence"] == 0.9
     assert result["payload"]["groundsToPlan"] == "Use approach X."
+
+
+# ----- dispatch-stderr-fix: the provider error signal survives failure (GRILL-LEDGER D1-D3) -----
+
+def test_dispatch_failed_carries_stderr():
+    """exit != 0: the provider error text on stderr rides the failure payload (D3)."""
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    res = kd.dispatch(b, "/wt", runner=_stub_runner({}, exit_code=1, stderr="429 Too Many Requests: rate limit"))
+    assert res["status"] == "failed"
+    assert res["payload"]["error"] == "worker exited 1"
+    assert res["payload"]["stderr"] == "429 Too Many Requests: rate limit"
+    assert res["raw"] == "ok"  # raw keeps stdout-only semantics
+
+
+def test_dispatch_failed_empty_stderr_adds_no_key():
+    """Empty stderr => no key added; the failure payload stays minimal (D2 edge)."""
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    res = kd.dispatch(b, "/wt", runner=_stub_runner({}, exit_code=2))
+    assert res["status"] == "failed"
+    assert "stderr" not in res["payload"]
+
+
+def test_dispatch_success_envelope_has_no_stderr_key():
+    """completed envelope is byte-unchanged: stderr never rides success (D3 / AC#4)."""
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    res = kd.dispatch(b, "/wt", runner=_stub_runner({"verdict": "ship", "findings": []},
+                                                    stderr="warning: noise on stderr"))
+    assert res["status"] == "completed"
+    assert "stderr" not in res["payload"]
+    assert res["payload"] == {"verdict": "ship", "findings": []}
+
+
+def test_dispatch_unparseable_result_carries_stderr():
+    """exit 0 but garbage result file: stderr may explain why — it rides the payload (D3)."""
+    def bad_runner(cmd, cwd, result_path, timeout):
+        return 0, "ok", "worker crashed mid-write", "not json{{"
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    res = kd.dispatch(b, "/wt", runner=bad_runner)
+    assert res["status"] == "failed"
+    assert "unparseable result" in res["payload"]["error"]
+    assert res["payload"]["stderr"] == "worker crashed mid-write"
+
+
+def test_dispatch_timeout_carries_captured_stderr_str_and_bytes():
+    """TimeoutExpired's captured-so-far stderr rides the timeout envelope; bytes decoded (D3)."""
+    import subprocess
+
+    for stderr_val, expected in [
+        ("quota exhausted; upgrade at https://x", "quota exhausted; upgrade at https://x"),
+        (b"quota exhausted (bytes form)", "quota exhausted (bytes form)"),
+    ]:
+        def timeout_runner(cmd, cwd, result_path, timeout, _s=stderr_val):
+            exc = subprocess.TimeoutExpired(cmd, timeout)
+            exc.stderr = _s
+            raise exc
+        b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+        res = kd.dispatch(b, "/wt", runner=timeout_runner)
+        assert res["status"] == "timeout"
+        assert res["payload"]["stderr"] == expected
+
+
+def test_dispatch_timeout_without_stderr_stays_minimal():
+    """A TimeoutExpired with no captured stderr => empty payload, exactly as before (D3 edge)."""
+    import subprocess
+
+    def timeout_runner(cmd, cwd, result_path, timeout):
+        raise subprocess.TimeoutExpired(cmd, timeout)
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    res = kd.dispatch(b, "/wt", runner=timeout_runner)
+    assert res["status"] == "timeout"
+    assert res["payload"] == {}
+
+
+def test_stderr_tail_cap_boundary():
+    """Deterministic tail cap: exactly-cap => untouched, no marker; over-cap => marker + LAST chars (D2)."""
+    exact = "x" * kd._STDERR_TAIL_CHARS
+    assert kd._stderr_tail(exact) == exact  # no marker at exactly the cap
+    over = "HEAD-" + ("y" * kd._STDERR_TAIL_CHARS) + "-TAIL"
+    capped = kd._stderr_tail(over)
+    assert capped.startswith(kd._STDERR_TRUNCATION_MARKER)
+    assert capped.endswith("-TAIL")                      # the END survives (provider text lives there)
+    assert "HEAD-" not in capped                          # the head is what gets dropped
+    assert len(capped) == len(kd._STDERR_TRUNCATION_MARKER) + kd._STDERR_TAIL_CHARS
+    assert kd._stderr_tail(None) == ""                    # None-safe
+    assert kd._stderr_tail(b"\xff\xfebytes") != ""        # undecodable bytes never raise (errors=replace)
+
+
+def test_dispatch_failed_oversized_stderr_is_tail_capped():
+    """The cap is applied AT DISPATCH — a runner returning megabytes cannot bloat the envelope (D2)."""
+    huge = ("z" * 10_000) + "\nFINAL: 429 rate limited"
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    res = kd.dispatch(b, "/wt", runner=_stub_runner({}, exit_code=1, stderr=huge))
+    got = res["payload"]["stderr"]
+    assert got.startswith(kd._STDERR_TRUNCATION_MARKER)
+    assert got.endswith("FINAL: 429 rate limited")
+    assert len(got) == len(kd._STDERR_TRUNCATION_MARKER) + kd._STDERR_TAIL_CHARS
 
 
 # ----- THE END-TO-END PROOF: roles -> brief -> dispatch(stub) -> normalized verdict -----

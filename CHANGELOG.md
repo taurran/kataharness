@@ -59,6 +59,18 @@ the adversarial freeze-gate then returned SHIP-WITH-FIXES (7 folds). Spec:
   every claim (PD-2).
 
 ### Fixed
+- **Worker dispatch discarded the provider error signal (`tools/kata_dispatch.py`).**
+  `_subprocess_runner` ran `capture_output=True` but returned only `proc.stdout`, and `dispatch()`
+  built every failure envelope as bare `worker exited {code}` — the codex/kiro CLIs' stderr
+  (rate-limit / quota / auth text) was captured and thrown away. The injectable runner contract is
+  now a hard 4-tuple `(exit_code, stdout, stderr, result_text)`; a deterministic dispatch-side tail
+  cap (`_stderr_tail`, last 4000 chars, literal marker when clipped) carries stderr into the payload
+  of all three FAILURE envelopes — exit≠0, timeout (captured-so-far `TimeoutExpired.stderr`,
+  decode-if-bytes), and unparseable-result. The `completed` envelope is **byte-unchanged** and `raw`
+  keeps stdout-only semantics; blast radius is codex/kiro dispatch only (Claude workers use the
+  in-process path). Prerequisite for the quota-resilience classifier. The `kata_preflight.py`
+  sibling runner still discards stderr — deliberately deferred (`.planning/DEFERRED.md` DEF-1).
+  Grill record: `.planning/specs/dispatch-stderr-fix/GRILL-LEDGER.md` (D1–D4 LOCKED).
 - **Windows bootstrap scripts abort on native git stderr under merged streams (observed live
   2026-07-21).** PS 5.1 wraps a native command's stderr in ErrorRecords whenever an enclosing pipeline
   merges streams (`update.ps1 ... 2>&1`, CI/automation hosts); under the scripts'
