@@ -90,6 +90,33 @@ class TestClassify:
         got = kq.classify_dispatch_result(res)
         assert got["classified"] is True and got["reason"] == "rate-limited"
 
+    @pytest.mark.parametrize("noise", [
+        # adval F1: traceback frames at status-number lines must NOT classify
+        'Traceback:\n  File "worker.py", line 429, in run_task\nKeyError',
+        '  File "app.py", line 403, in main',
+        '  File "b.py", line 402, in f',
+        '  File "c.py", line 401, in auth_helper',
+        # adval F2: test identifiers / prose containing auth words must NOT classify
+        "FAILED tests/test_forbidden_route.py - assertion error",
+        "FAILED test_unauthorized_error_test - assert x == y",
+        "PermissionError: permission denied: /var/data/api/cache",
+    ])
+    def test_false_positive_noise_stays_generic(self, noise):
+        got = kq.classify_dispatch_result(_envelope(stderr=noise))
+        assert got["classified"] is False, f"noise misclassified as {got['reason']}: {noise!r}"
+
+    @pytest.mark.parametrize("real,expected", [
+        # the F1/F2 tightenings must NOT break the real shapes
+        ("HTTP 429 Too Many Requests", "rate-limited"),
+        ("error 402: insufficient credit", "quota-exhausted"),
+        ("401 Unauthorized: bad key", "auth"),
+        ("403 Forbidden", "auth"),
+        ("permission denied: invalid api key", "auth"),
+    ])
+    def test_real_shapes_survive_the_tightening(self, real, expected):
+        got = kq.classify_dispatch_result(_envelope(stderr=real))
+        assert got["classified"] is True and got["reason"] == expected
+
     @pytest.mark.parametrize("bad", [None, [], "failed", 42])
     def test_malformed_envelope_raises(self, bad):
         with pytest.raises(kq.QuotaError):
@@ -163,6 +190,23 @@ class TestKillSwitch:
     def test_dedupe_first_wins(self):
         got = kq.parse_kill_switch(["KATA_OFF advisor", "- KATA_OFF advisor"])
         assert got["off"] == ["advisor"]
+
+    def test_plus_bullet_recognized(self):
+        # adval F4: + is a valid markdown bullet marker too
+        got = kq.parse_kill_switch(["+ KATA_OFF advisor"])
+        assert got == {"off": ["advisor"], "unknown": []}
+
+    def test_mangled_kill_switch_never_vanishes(self):
+        # adval F4: a line CONTAINING the verb that fails to parse surfaces in unknown
+        got = kq.parse_kill_switch(["-KATA_OFF advisor", "see KATA_OFF docs"])
+        assert got["off"] == []
+        assert len(got["unknown"]) == 2
+
+    @pytest.mark.parametrize("bad", ["provider:CODEX", "provider:name:extra", "provider:a b"])
+    def test_scoped_name_grammar_tightened(self, bad):
+        # adval F4: lowercase single-segment provider names only
+        got = kq.parse_kill_switch([f"KATA_OFF {bad}"])
+        assert got["off"] == [] and len(got["unknown"]) == 1
 
     def test_non_list_raises(self):
         with pytest.raises(kq.QuotaError):

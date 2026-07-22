@@ -144,6 +144,34 @@ byte-clean BC floor (G-12). No branch contradicts another; the operator's two ve
 audit (standing): four engines byte-untouched; one new pure module + one validator + prose;
 the registry/watchdog temptations are fenced out (G-5, Tier 3).
 
+### ADDENDUM — adval folds (2026-07-21 overnight, fresh-context review SHIP-WITH-FIXES)
+- **F1 (MAJOR, confirmed) → folded:** traceback frames at status-number lines
+  (`File "x.py", line 429, in f`) classified as provider signals — `(?<!line )` lookbehind
+  added to every bare status number (401/402/403/429). Pinned (7 noise shapes + 5
+  real-shape survivals).
+- **F2 (MAJOR, confirmed) → folded:** bare-substring auth words matched test identifiers
+  (`test_unauthorized_error_test`) and file-path prose (`permission denied: /var/data/api/`) —
+  `\bunauthorized\b`/`\bforbidden\b` word-bounded; permission-denied binds to `api key`. Pinned.
+- **F3 (MODERATE, confirmed) → RECORDED as a known precision limit, design call for the
+  operator:** kata's own vocabulary (dogfood runs testing THIS feature — assertion output
+  containing "quota-exhausted"/"usage limit") can still classify a failing worker's stderr.
+  The F1/F2 folds remove the worst vectors; a structural fix (HTTP-ish anchor requirement, or
+  two-field corroboration) is a G-8 amendment the operator may order. Consequence of a false
+  positive: premature lane lapse + a false `degraded` ledger row — loud, recoverable, never a
+  silent wrong answer; the park leg additionally requires no-fallback (F5).
+- **F4 (MINOR, confirmed) → folded:** `+ ` bullet recognized; a MANGLED kill-switch line
+  (verb present, parse failed — `-KATA_OFF advisor`) now surfaces in `unknown` instead of
+  vanishing; scoped-name grammar tightened to `provider:[a-z0-9_-]+`. Pinned.
+- **F5 (MINOR, plausible) → RECORDED honesty limit:** the park leg triggers only on
+  ROUTED-lane envelopes — **host-session quota exhaustion produces no RESULT envelope to
+  classify and remains uncovered by this trigger** (the manual playbook + restore path still
+  owns it; a host-surfaced quota signal would be the gauge-side branch G-7 explicitly left
+  closed until a host reports one). Stated in the CHANGELOG honesty section.
+- **F6 (governance) → PASSED:** every G-entry provenance citation verified against its cited
+  file:lines; no resolution exceeds recorded operator intent/precedent. The overnight-
+  delegation quote itself lives in the conversation, not the repo — flagged for the
+  operator's morning confirmation.
+
 ### ELEVATE — offered IN ABSENTIA (operator asleep; pending their morning review)
 Candidate: **"Same-word hazard: `budget-exhausted` (kata's internal spend budget) vs provider
 quota exhaustion — the brief had to carry an explicit do-NOT-conflate warning (§2d). Durable

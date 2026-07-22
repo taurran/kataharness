@@ -46,9 +46,16 @@ intent + precedent).
   classifies when present, but the no-signal hang needs the watchdog).
 
 ### Honesty
-- Engine legs are test-proven (42 quota + 9 telemetry pins); the orchestrate wiring is **prose,
+- Engine legs are test-proven (59 quota + 9 telemetry pins); the orchestrate wiring is **prose,
   live-if-it-occurs, UNFIRED** — no real quota event has exercised the park sequence end-to-end. Labels
   travel with the claim (PD-2).
+- **The park trigger covers ROUTED-lane dispatches only**: host-session quota exhaustion produces no
+  RESULT envelope to classify and remains uncovered (the manual playbook + restore path still owns it) —
+  a host that ever surfaces plan quota re-opens the gauge-side branch (G-7).
+- **Known precision limit (adval F3, recorded):** dogfood runs testing this feature's own vocabulary can
+  still false-positive the classifier from a failing worker's stderr; consequence is a loud premature
+  lapse + a false `degraded` row, never a silent wrong answer. A structural fix (anchor requirement /
+  two-field corroboration) is an operator-ordered G-8 amendment if wanted.
 
 ---
 

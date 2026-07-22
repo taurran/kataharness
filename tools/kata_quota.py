@@ -65,21 +65,28 @@ _KILL_VERB = "KATA_OFF"
 # Ordered most-specific-first (G-8). Each row: (reason, compiled pattern).
 # Sources: HTTP status idioms + provider CLI phrasings recorded in docs/platforms/*.md
 # (codex hang-on-402 quota class; plan/credit phrasing) + Anthropic/OpenAI 429 shapes.
+# Adval folds (F1/F2): bare status numbers carry a `(?<!line )` lookbehind so Python
+# traceback frames (`File "x.py", line 429, in f`) never classify; auth words are
+# word-bounded so test identifiers (`test_unauthorized_error_test`) never classify;
+# permission-denied binds to `api key`, not any later "api" substring (file paths).
 _PATTERNS: tuple[tuple[str, re.Pattern], ...] = (
     # -- quota / plan exhaustion (the "you're out" class) ---------------------------
     ("quota-exhausted", re.compile(
-        r"(?i)\b402\b|insufficient[ _-]?(credit|quota|funds)|quota[ _-]?(exceeded|exhausted)|"
+        r"(?i)(?<!line )\b402\b|insufficient[ _-]?(credit|quota|funds)|"
+        r"quota[ _-]?(exceeded|exhausted)|"
         r"out of (tokens|credits|quota)|plan limit|(reached|exceeded).{0,20}usage limit|"
         r"usage limit (reached|exceeded)|"
         r"billing (hard )?limit|credit balance is too low")),
     # -- rate limiting (the "slow down / try later" class) --------------------------
     ("rate-limited", re.compile(
-        r"(?i)\b429\b|rate[ _-]?limit(ed|s)?\b|too many requests|retry[ _-]?after|"
+        r"(?i)(?<!line )\b429\b|rate[ _-]?limit(ed|s)?\b|too many requests|retry[ _-]?after|"
         r"overloaded_error|server[ _-]?overloaded")),
     # -- auth (the "your key is bad" class) ------------------------------------------
     ("auth", re.compile(
-        r"(?i)\b401\b|\b403\b|unauthorized|forbidden|invalid (api[ _-]?key|x-api-key)|"
-        r"authentication[ _-]?error|permission[ _-]?denied.*api|api key.*(invalid|expired)")),
+        r"(?i)(?<!line )\b401\b|(?<!line )\b403\b|\bunauthorized\b|\bforbidden\b|"
+        r"invalid (api[ _-]?key|x-api-key)|"
+        r"authentication[ _-]?error|permission[ _-]?denied.*api[ _-]?key|"
+        r"api key.*(invalid|expired)")),
 )
 
 #: Envelope text fields scanned, in FIXED order (payload first — stderr is the richest
@@ -207,18 +214,23 @@ def parse_kill_switch(directives: list) -> dict:
     unknown: list[str] = []
     for raw in directives:
         stripped = raw.strip()
-        if stripped[:2] in ("- ", "* "):
+        if stripped[:2] in ("- ", "* ", "+ "):  # all three markdown bullet markers (adval F4)
             stripped = stripped[2:].strip()
         tokens = stripped.split()
         if not tokens or tokens[0] != _KILL_VERB:
-            continue  # not a kill-switch directive — other directives are none of our business
+            # Not a well-formed kill-switch line — but a MANGLED kill-switch use
+            # (the verb present anywhere, e.g. "-KATA_OFF advisor") must SURFACE,
+            # never vanish (adval F4; the module's own never-vanish posture).
+            if _KILL_VERB in stripped:
+                unknown.append(raw)
+            continue
         if len(tokens) != 2:
             unknown.append(raw)
             continue
         subsystem = tokens[1]
-        base = subsystem.split(":", 1)[0]
-        if base not in KILL_SWITCH_SUBSYSTEMS or (":" in subsystem and base != "provider") \
-                or subsystem.endswith(":"):
+        # Grammar (G-3, tightened per adval F4): `advisor`, `provider`, or
+        # `provider:<name>` with a lowercase single-segment name.
+        if not re.fullmatch(r"advisor|provider(:[a-z0-9_-]+)?", subsystem):
             unknown.append(raw)
             continue
         if subsystem not in off:
