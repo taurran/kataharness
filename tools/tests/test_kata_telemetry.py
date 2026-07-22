@@ -861,6 +861,37 @@ def test_ledger_v2_round_trip(tmp_path):
     assert row["degraded"] == [{"scope": "run", "reason": "x"}]
 
 
+class TestValidateDegraded:
+    """quota-resilience G-10: degraded joins the fail-closed _validate_* family."""
+
+    def test_valid_entries_pass_and_normalize(self):
+        row = json.loads(kt.build_ledger_row({"runId": "r", "degraded": [
+            {"scope": "provider", "reason": "quota-exhausted"},
+            {"scope": "premium", "reason": "auth-40x"},
+        ]}))
+        assert row["degraded"] == [
+            {"scope": "provider", "reason": "quota-exhausted"},
+            {"scope": "premium", "reason": "auth-40x"},
+        ]
+
+    def test_absent_and_empty_are_empty_list(self):
+        assert json.loads(kt.build_ledger_row({"runId": "r"}))["degraded"] == []
+        assert json.loads(kt.build_ledger_row({"runId": "r", "degraded": []}))["degraded"] == []
+
+    @pytest.mark.parametrize("bad", [
+        ["not-a-dict"],
+        [{"scope": "provider"}],                                 # missing reason
+        [{"reason": "quota-exhausted"}],                         # missing scope
+        [{"scope": "provider", "reason": "x", "extra": 1}],      # extra key
+        [{"scope": "", "reason": "x"}],                          # empty scope
+        [{"scope": "provider", "reason": "  "}],                 # blank reason
+        [{"scope": 1, "reason": "x"}],                           # non-string scope
+    ])
+    def test_malformed_entry_raises(self, bad):
+        with pytest.raises(kt.TelemetryError):
+            kt.build_ledger_row({"runId": "r", "degraded": bad})
+
+
 def test_read_ledger_v1_committed_row_tolerance(tmp_path):
     """v1 tolerance: the EXACT committed row 1 still parses via read_ledger (P0.1 U1)."""
     ledger = tmp_path / "ledger.md"

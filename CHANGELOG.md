@@ -8,6 +8,50 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [Unreleased] — Quota-resilience Tier 1+2: park-and-tell on provider exhaustion
+
+**Running out of tokens stops being invisible.** A provider rate-limit / quota / auth failure is now
+detected from dispatch results, lapses the failing lane run-wide, and — when the primary path is hit —
+**PARKS the run**: plain operator message (provider named, evidence quoted, NO stale upgrade URLs),
+`human-required` escalation + breakthrough alert, automatic handoff write (`trigger: quota`, kind
+unchanged), graceful boundary stop, `/kata-resume` re-entry. Never a retry loop, never a silent model
+downgrade. Grill: `.planning/specs/quota-resilience/GRILL-LEDGER.md` (G-1..G-12 LOCKED; run authorized
+under the operator's recorded overnight delegation, all §4 branches resolved from recorded operator
+intent + precedent).
+
+### Added
+- **`tools/kata_quota.py`** (NEW, pure stdlib) — `classify_dispatch_result` (deterministic clean-error
+  classifier over RESULT envelopes: 429/rate-limit ⇒ `rate-limited`, 402/credit/plan-limit ⇒
+  `quota-exhausted`, 401/403/key ⇒ `auth`; malformed envelope RAISES, D136) · `lapse_decision` (G-2
+  hybrid: FIRST classified signal, or 2 consecutive generic failures ⇒ `provider-unavailable`) ·
+  `parse_kill_switch` (`KATA_OFF advisor|provider[:name]` over the EXISTING steering directive grammar;
+  malformed uses surfaced loudly, never dropped) · `park_message` (plain words, no URLs — Tier 3 owns
+  the registry). +42 tests incl. real-world provider error shapes exercised through real dispatch
+  envelopes.
+- **kata-orchestrate 0.15.0** — boundary kill-switch parse (operator-directed lapse) + the
+  quota-resilience dispatch-failure step (classify → lapse → route by path criticality: optional
+  subsystems lapse-and-continue per LD7; the primary path parks per G-4). `protocol/steering.md` gains
+  the `KATA_OFF` verb; `protocol/handoff.md` gains the additive `trigger:` frontmatter field.
+- **`kata_telemetry._validate_degraded`** — the `degraded [{scope, reason}]` passthrough joins the
+  fail-closed `_validate_*` family (exactly `{scope, reason}`, non-empty strings, violation RAISES;
+  scope stays an open string — BC with existing producers). New records this feature:
+  `{scope: "provider", reason: "quota-exhausted"|"rate-limited"|"auth"}`.
+
+### Backward compatibility
+- No failure signals + no `KATA_OFF` directive ⇒ byte-identical behavior. `kata_dispatch.py`,
+  `kata_models.py`, `kata_steer.py`, `kata_adaptive.py` **byte-untouched** (diff-verified). Non-Anthropic
+  ladders stay empty by decision (G-6): quota NEVER triggers a model downgrade — park, don't degrade.
+- Tier 3 (per-provider upgrade registry · silent-hang watchdog · preflight quota headroom) is EXCLUDED —
+  its own future grill (the codex hang-on-402 class still lands as `timeout`; its captured stderr now
+  classifies when present, but the no-signal hang needs the watchdog).
+
+### Honesty
+- Engine legs are test-proven (42 quota + 9 telemetry pins); the orchestrate wiring is **prose,
+  live-if-it-occurs, UNFIRED** — no real quota event has exercised the park sequence end-to-end. Labels
+  travel with the claim (PD-2).
+
+---
+
 ## [Unreleased] — Advisor consult (kata-advise): the Fable-tier advisor-executor pattern (D167)
 
 **Hard tasks stop burning blind retries.** A scoped, anchor-relative **Fable-tier advisor** the loop can

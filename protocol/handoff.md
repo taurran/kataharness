@@ -16,7 +16,10 @@ tags) — it is meant to be read by a human or a fresh agent ([[STANDARDS]] §5)
   7. **Redaction** — confirm no secrets/keys/PII.
 - **Frontmatter:** `date`, `branch`, `commit`, `green` (the gate numbers), `tags`, and additive
   `kind: manual|self|boundary` (provenance, CA-L21). A **pre-existing HANDOFF.md without `kind:`**
-  reads as **unknown kind; never gates** (§4 row 11) — the field is purely additive.
+  reads as **unknown kind; never gates** (§4 row 11) — the field is purely additive. A second
+  additive field, **`trigger:`**, names WHAT forced the write when it was not routine (quota-resilience
+  G-1: `trigger: quota` for a provider quota/rate-limit park — the kind stays `self`, no enum
+  expansion, the L6 no-enum-change precedent). Absent `trigger:` ⇒ unknown trigger; never gates.
 - **Self-handoff** (write→compact→resume at a context threshold) uses this same schema; prefer a
   **task-boundary** trigger. The self-handoff *automation* is [[kata-selfhandoff]]; the artifact
   shape is this file either way.

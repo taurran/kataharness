@@ -23,6 +23,13 @@ Directives, `protocol/prime-directives.md`, exist to prevent.)
    that would **change the plan** is not silently obeyed — it routes through the normal
    escalation/re-plan path (spine #1: the plan does not drift), and the operator's directive is the
    deliberate re-plan trigger.
+3. **`KATA_OFF <subsystem>` — subsystem kill-switch (quota-resilience G-3).** A directive line in
+   the SAME Active-directives grammar (verbs are shouted, like `AGENT_STOP`): `KATA_OFF advisor`
+   lapses the advisor for the run's remainder (reason `operator-directed`, reported at closeout);
+   `KATA_OFF provider` / `KATA_OFF provider:<name>` lapses a dispatch lane run-wide (subsequent
+   dispatches revert to the host path). Parsed by `kata_quota.parse_kill_switch` over the
+   `read_active_directives` output — `kata_steer` itself is unchanged. A malformed `KATA_OFF` use
+   is surfaced as a loud board `NOTE` (never silently ignored, never run-fatal).
 
 ## Cadence + who writes
 

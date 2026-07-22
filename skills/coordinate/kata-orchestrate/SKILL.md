@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.14.2
+version: 0.15.0
 category: coordinate
 status: beta
 agnostic: true
@@ -608,6 +608,15 @@ self-handoff checks below — **never mid-task**), consult the operator→agent 
   is the deliberate re-plan trigger). After acting, move the directive to `STEERING.md`'s `## Consumed / delivered`
   section (a prose edit the conductor owns; `kata_steer` is read-only). An absent/malformed `STEERING.md` yields no
   directives — steering is additive, never run-fatal.
+- **Kill-switch verbs (quota-resilience G-3; ADDITIVE — no `KATA_OFF` directive ⇒ inert).** Before the generic
+  directive handling above, pass the returned directives through `kata_quota.parse_kill_switch(directives)`
+  (`tools/kata_quota.py`). For each recognized `off` subsystem: `advisor` ⇒ lapse the advisor for the run's
+  remainder, reason `operator-directed` (the same lapse machinery as budget exhaustion — loud board `DECISION`,
+  reported in the after-action rollup + closeout); `provider` / `provider:<name>` ⇒ lapse that dispatch lane
+  run-wide (subsequent dispatches for the lane revert to the host path, the LD7 posture, reason
+  `operator-directed`). Every `unknown` entry (a malformed `KATA_OFF` use) is surfaced as a **loud board `NOTE`
+  naming the rejected line** — never silently ignored, never run-fatal (a typo must not kill a run and must not
+  vanish). Consumed kill-switch directives move to `## Consumed / delivered` like any other directive.
 
 **Context-autonomy — gauge-driven self-handoff at each boundary (ADDITIVE — CA-P1; BC: rotation-inactive ⇒ inert,
 byte-for-byte unchanged).** When context-autonomy rotation is active for this run — **one-shot shapes
@@ -1222,6 +1231,34 @@ This section is **additive** — the host/`Agent`-tool path (step 2 of the loop 
 **LD6 — Concurrency:** Off-host dispatches run as **concurrent background subprocesses** reconciled with the rolling frontier and `.kata/concurrency.json`. Disjoint file-ownership ensures no races; the same frontier invariants (dispatchable iff `depends_on` drained + owned files disjoint from in-flight tasks + `builds_against` edges satisfied at freeze, never waiting on provider integration) apply equally to cross-model tasks.
 
 **LD7 — Host fallback:** When the RESULT envelope carries `status ∈ {failed, timeout, fallback}`, **fall back to the host's `Agent`-tool path** (the existing subagent dispatch), **log the failure** (a board `ESCALATE` or `BLOCK` event), and **surface it** in the conversation. A routed platform failing repeatedly within a run is **flagged unconfirmed for that run** — all subsequent dispatch sites for that platform revert to the host path, and the incident is recorded in the drift ledger. The next run's preflight re-evaluates `confirmedPlatforms`.
+
+**Provider quota-resilience (quota-resilience Tier 1+2, G-2/G-4/G-9; ADDITIVE — no failure signals ⇒ inert,
+byte-identical).** BEFORE the LD7 fallback handling, every `failed`/`timeout` RESULT envelope passes through
+`kata_quota.classify_dispatch_result(result)` (`tools/kata_quota.py` — deterministic clean-error classifier over
+the envelope's stderr/error/raw text; malformed envelope RAISES, D136). Track a run-scoped **consecutive
+unclassified-failure count per dispatch lane** (reset on any success) and feed
+`kata_quota.lapse_decision(count, classified_reason)`:
+
+- **Lapse (`lapse: true`)** fires on the **FIRST classified provider signal** (`rate-limited` /
+  `quota-exhausted` / `auth` — the premium fires-on-first precedent) or at **2 consecutive generic failures**
+  (`provider-unavailable`). Record a loud board `DECISION` naming lane + reason (the durable trail), append
+  `degraded {scope: "provider", reason: <reason>}` to the run summary (validated fail-closed by
+  `kata_telemetry._validate_degraded`), and route by **path criticality (G-9)**:
+  - **Optional subsystem** (advisor consults, or a routed lane with an LD7 host fallback available) ⇒
+    **lapse-and-continue**: stop using the lane for the run's remainder, fall back per LD7, report in the
+    after-action rollup + closeout. The run finishes.
+  - **Primary dispatch path** (no fallback exists — the host itself, or every lane lapsed) ⇒ **PARK the run
+    (G-4)**: write the `human-required` escalation (enum UNCHANGED — the quota distinction travels in
+    `decisionNeeded`/`rationale` with `kata_quota.park_message(reason, evidence, platform)` — plain words, the
+    provider named when known, **no upgrade URLs**, G-5/Tier-3), deliver the **breakthrough alert**
+    (`protocol/narration.md` §3 — immediately and unmissably), write the handoff (`kata-handoff`, `kind: self` +
+    additive `trigger: quota` frontmatter, G-1), park in-flight tasks via the normal restore path, and **stop at
+    this boundary. NEVER poll, NEVER retry-after, NEVER downgrade the model** (the R2 anti-retry rule +
+    G-6 — quota resets take wall-clock hours; `/kata-resume` is the re-entry).
+- **No lapse** ⇒ the existing LD7 handling proceeds unchanged.
+
+⚠ `kata_adaptive`'s `budget-exhausted` is kata's OWN premium/advisor spend budget — a different thing; never
+route it through this classifier (the brief §2d do-NOT-conflate warning).
 
 **Honest scope (v1):** The **read-only roles** (validator→codex, researcher→kiro) are **wired and stub-test-proven** this build — the cross-model chain is exercised end-to-end against an injectable stub runner; the **live per-platform CLI flags are point-in-time and pinned/verified at build, with the confirm-probe as the standing guard** (a real multi-model run is gated on install + confirm). Coder-routing (write sandbox) is architecturally described and supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`) but is **not** proven by this build. Evaluator injection-point thresholds are deferred (DESIGN §8 *Deferred / fast-follow*, MM-1). Orchestrator-host reassignment is deferred (LD11).
 
