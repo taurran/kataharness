@@ -104,8 +104,22 @@ Promote to ROADMAP milestones when ready.
 >    config-gated per SB-L6c). Follow-up decision: fall back to `kata_settings.default_learn_feed_dir`
 >    when no kata.config exists, so G3's cross-project recall works from the first grill.
 
-> **★ 2026-07-12 HEALTH-REVIEW FOLLOW-UPS (Fable 5 full review — `.planning/REVIEW-FABLE5-2026-07-12.md`
-> is the findings ledger; fixed-this-session items are marked there; these are the NAMED deferrals):**
+> **★ 2026-07-12 HEALTH-REVIEW FOLLOW-UPS — ⚠ MOSTLY BUILT; THIS BLOCK WAS STALE (corrected 2026-07-25).**
+> The review's **Round 3** ("wire these up and fix ALL of these disconnects") built **every named
+> health-review deferral** — see `.planning/REVIEW-FABLE5-2026-07-12.md` §Round 3. A 2026-07-25 audit
+> re-verified each against code. **Items 1–6, 6c (F4/F5), 6d, and 8 are DONE.**
+> **STILL OPEN — only these three:**
+> - **6b (partial) — gauntlet gaps:** ruff LANDED (`gauntlet.py:74`); **no type checker · no coverage
+>   floor** (CI runs `--cov` with no `--cov-fail-under`) · **no SCA path** (uv export → pip-audit; the
+>   Snyk resolver can't read the uv manifest).
+> - **6c (partial):** precompact `custom_instructions` output-key assumption (F6 — verify the host
+>   actually reads it, or drop to the ref-commit-only guarantee); kata_trail error-path tests (T-3);
+>   kata_dispatch injection-only seam (T-4, accepted/documented).
+> - **7 — `_safe_path` consolidation (Q-12):** only PARTIALLY addressed — `test_path_guard_family.py`
+>   pins all 29 `..`-guards as a drift-guard, but the 16 hand-copies were never consolidated.
+>
+> *(Original list preserved below for the record — do NOT plan work off it without checking the
+> status above.)*
 > 1. **STEERING channel real wiring** (F-3 follow-up): a boundary-cadence STEERING.md check in
 >    kata-orchestrate + a real AGENT_STOP kill-switch. STEERING.md header now states honestly that
 >    today it is a manual convention.
@@ -221,10 +235,12 @@ operator-approved.
   `kata-review`→human-merge) and T3 (auto-authoring the guard itself, C-arc-gated). *Safe to defer —
   the detect→draft→human-merge loop is live; promote-gating + auto-authoring are enhancements, not
   missing safety.*
-- **#11 — β redaction filter:** add an automated redaction filter + pytest seam to the LEARN-feed emit
-  path (C3 structural enforcement). *Safe to defer: the β LEARN feed is emit-only with no CONSULT; the
-  current guarantee rests on agent obedience — the same risk class as all Write-capable skills. Risk
-  rises only when a real second-brain backend is bound.*
+- **#11 — β redaction filter — ✅ DONE (verified 2026-07-25; this entry was stale).** Built during the
+  second-brain work: `tools/learn_feed.py` carries `redact` — the SB-L4 deterministic scrub with fixed
+  apply order, bounded patterns (linear scan, no backtracking), `[REDACTED:<class>]` substitution, and
+  per-page counts surfaced in frontmatter (`redactions: N`, emitted only when N>0).
+  *(Original deferral rationale: the β LEARN feed was emit-only with no CONSULT; risk rose only when a
+  real second-brain backend was bound — which then happened, and the filter landed with it.)*
 - **#12 — Validator deeper checks (A1 REVIEW backlog):** structural checks for
   `check_protocol_schemas`/`check_taxonomy_present` (substring → structural) + `kata/...` prefix
   allowlist for `check_tags_namespace`. *Safe to defer: current checks catch the common cases; the
