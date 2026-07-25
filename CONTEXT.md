@@ -786,3 +786,38 @@ bump are ordered consequences of one counter. _Avoid_: bump-first; both-at-once 
 The advisor's fail posture: consult dispatch failure or budget exhaustion ⇒ surfaced board NOTE + the loop
 proceeds WITHOUT advice — advisory machinery never blocks and never gates (CA-L30-style loud lapse).
 _Avoid_: retry ladders for a failed consult; silent lapse.
+
+## Quota-resilience (v0.4.0 Tier 1+2)
+**Park-and-tell**:
+The quota-exhaustion response on the primary dispatch path: on a classified provider signal, write the
+`human-required` escalation + breakthrough alert + an automatic handoff (`kind: self`, `trigger: quota`),
+stop cleanly at the boundary, and let `/kata-resume` pick up. NEVER poll, retry-after, or downgrade the
+model (quota resets take wall-clock hours; the R2 anti-retry rule). _Avoid_: retry loop; auto-resume;
+fallback-to-cheaper on quota.
+
+**Provider signal (classified)**:
+A clean dispatch-result error the `kata_quota` classifier recognizes — reason ∈ `rate-limited` /
+`quota-exhausted` / `auth`, read from the RESULT envelope's stderr/error/raw text (dispatch-result
+classification is the ONLY signal source; no host surfaces plan quota). Distinct from a generic failure.
+_Avoid_: conflating with `budget-exhausted` (that is kata's OWN premium/advisor spend budget, a different
+thing — the same-word hazard).
+
+**Lapse (run-wide)**:
+Stop using a dispatch lane/subsystem for the run's remainder. Fires on the FIRST classified provider
+signal, or 2 consecutive generic dispatch failures (`provider-unavailable`), or an operator `KATA_OFF`
+directive (`operator-directed`). Optional subsystems lapse-and-continue (fall back per LD7); the primary
+path parks. _Avoid_: per-task-only lapse for a run-wide condition; silent lapse.
+
+**KATA_OFF**:
+The operator kill-switch verb — a directive line (`KATA_OFF advisor` / `KATA_OFF provider[:name]`) in the
+EXISTING STEERING Active-directives grammar, parsed by `kata_quota.parse_kill_switch` over the
+`kata_steer` reader output (`kata_steer` unchanged). A malformed use surfaces loudly, never vanishes.
+_Avoid_: per-subsystem bare verbs (`ADVISOR_OFF`); a new steering file.
+
+## Clean-room import (D30)
+**Clean-room scrub gate**:
+The mandatory work-linkage/AWS-IP scrub every MindBridge→KataHarness feature import passes before merge —
+no AWS-internal identifiers, no AWS IP, a fresh-context work-linkage adversarial pass (HOLD on any leak),
+and fresh in-repo commits (no grafted fork history). KataHarness stays the independent, public, non-AWS
+version. _Avoid_: porting the AWS implementation verbatim; grafting MindBridge branch history; pushing any
+private migration branch.

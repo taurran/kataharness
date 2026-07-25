@@ -44,6 +44,15 @@ last_updated: "2026-07-22T00:00:00.000Z"
 > unwanted). Residuals: Tier 3 (registry · silent-hang watchdog · preflight headroom) = its own
 > grill · E-queue (E1/E2) · F-9/R6 keep riding · kata-home clone self-heals at next default
 > update (now brings v0.4.0).
+> **★ NEXT INITIATIVE (operator-directed 2026-07-25): MINDBRIDGE FEATURE IMPORT.** Bring a set of
+> tasks/features from the MindBridge fork (a branch off THIS repo) and apply them here — translates
+> well structurally (same spine/conventions). **DIRECTION HAZARD (D30 clean-room):** this is the
+> REVERSE of the sanctioned KataHarness→MindBridge flow, landing AWS-side work into a PUBLIC repo, so
+> every import passes the **clean-room scrub gate** (no AWS IP / work-linkage, a fresh-context
+> work-linkage adval that HOLDs on any leak, fresh in-repo commits — the Kiban-publish discipline).
+> Full protocol: `.planning/HANDOFF-NEXT-SESSION.md` §6. Await the incoming task list; grill each
+> feature on its merits. **A fresh Opus 5 session picks this up** — start at
+> `.planning/HANDOFF-NEXT-SESSION.md`.
 > *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-21 — THE TRIPLE-FIX SESSION: PRs #41→#44 MERGED, master `71e25df`; items

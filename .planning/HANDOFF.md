@@ -1,17 +1,18 @@
 ---
-date: 2026-07-04 (M1 MERGED; M4 inline-eval DIRECTED — DESIGN drafted, detailed brief written; next session executes M4 to v0.2.0)
-branch: master (clean; freeze-float/m1-contract-edges deleted local+remote after merge)
-green: pytest 2306 passed / 3 skip (-m "not integration") · validator 47/0/0 · Snyk medium+ 0 · 21 mutation-proven guards
-tags: freeze-float · M1-complete · the-float · D139-adval · D140 · PR5 · test-path · M4-next · handoff
-authored-for: a fresh coding-agent window (next session; sections map to the kata-orient tiers)
-★ NEXT-SESSION START HERE (SUPERSEDES the test-path opener — the operator DIRECTED M4 on 2026-07-04):
-  read **`.planning/HANDOFF-M4-INLINE-EVAL.md`** (the detailed brief: full derivation, DeepSeek DSpark
-  provenance, ingest list, cross-model+ACP requirements, the execution recipe to FINAL STATE v0.2.0, and
-  the anti-surprise standing orders) + **`.planning/specs/inline-eval-m4/DESIGN.md`** (draft M4-L1..L10,
-  pending grill + freeze-gate). Freeze/Float M1 is DONE and MERGED (D137–D140, PR #5). M4 = the inline
-  evaluator/reroll: checkpoint-chunked, signal-triggered, reroll-from-last-good-commit, telemetry-first,
-  zero happy-path overhead; success = the OUTER loop runs fewer times. The float + M4 live proofs can
-  share one run (a new-project one-shot with a real builds_against edge) — planned inside the M4 recipe.
+date: 2026-07-25 (v0.4.0 TAGGED; A/B/C/D execution plan COMPLETE; next = MindBridge feature import + quota Tier 3)
+branch: master `8e6096f` (clean; tag v0.4.0; all session branches deleted local+remote after merge)
+green: pytest 4072 passed / 3 skip (-m "not integration") · integration 2/2 · ruff clean · validator 49/0/0 · Snyk medium+ 0
+tags: v0.4.0 · advisor-executor · quota-resilience · D1-fix · reliability-quartet · mindbridge-import-next · handoff
+authored-for: a fresh Opus 5 session (operator updating Claude Code; sections map to the kata-orient tiers)
+★ NEXT-SESSION START HERE — read **`.planning/HANDOFF-NEXT-SESSION.md`** (the detailed re-entry brief:
+  ground truth + the Opus-5/Windows update gotcha, what shipped this session PRs #41–#47, item C
+  quota-resilience in full, the prioritized backlog, the STANDING ORDERS, and — §6 — the **MindBridge
+  feature-import clean-room scrub protocol** the operator directed 2026-07-25). Then `.planning/STATE.md`
+  CURRENT block. v0.4.0 = advisor-executor (D167) + quota-resilience Tier 1+2 + the reliability quartet
+  (bootstrap/dispatch stderr fixes, advisor deferral pins, the D1 phantom-corruption sandbox fix). The
+  whole A/B/C/D plan is DONE; nothing is mid-flight; tree clean; stash empty.
+
+*(Historical M4-era pointer below is superseded; kept as history — the M1/M4 work shipped as v0.2.0.)*
 
 
 > **★ 2026-07-02e (Fable 5 session — M1 COMPLETE + MERGED):** Executed the full ADVAL→P2 plan end-to-end.
