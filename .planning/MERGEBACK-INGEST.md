@@ -266,6 +266,39 @@ Scanned every file in the package myself:
 
 **Verdict: PASSES on content.** The record is incomplete pending **DF-06** (T-00).
 
+### E1 — ⚠ BINDING CONSTRAINT ON EVERY WORK-LINKAGE ADVAL: our IaC surface is FIRST-PARTY
+
+**The scrub above scanned ONLY the inbound package** (`~/Downloads/kataharness-mergeback-v0.2.1/`).
+Our repo was never in scope, so our IaC specialists could not have been false-flagged. But the §6
+work-linkage adval **does** scan our tree, and it will grep for exactly the AWS vocabulary our own
+shipped product legitimately contains.
+
+**These are first-party KataHarness product features (public, Apache-2.0) — NOT work-linkage:**
+
+| surface | AWS-vocabulary hits | what it is |
+|---|---|---|
+| `skills/execute/kata-iac-cloudformation/SKILL.md` | many | shipped IaC specialist skill |
+| `skills/execute/kata-iac-terraform/SKILL.md` | many | shipped IaC specialist skill |
+| `tools/iac_apply.py` | 15 | CFN/TF argv builders; `run_apply` is the deferred `NotImplementedError` seam |
+| `protocol/iac-safety.md` | 8 | the IaC safety contract |
+| `protocol/exec-safety.md` | 0 direct; 4 `run_apply` rows | the exec-safety registry |
+| `tools/iac_detect.py`, `skills/execute/kata-lang-profile/` | some | stack detection / language profile |
+
+**Any adversarial reviewer scanning for AWS/work-linkage MUST be briefed that these are product
+features.** A reviewer who flags `kata-iac-cloudformation` as an AWS leak produces a false HOLD — and
+worse, acting on it would scrub a shipped capability. The work-linkage question is *"does this
+disclose the internal project, its shape, or the relationship?"* — **not** *"does the word AWS
+appear?"* Naming a public cloud vendor whose IaC we deliberately support is neither.
+
+**Inbound side, for completeness:** the package contains **exactly one** IaC reference —
+`MC-05/PROPOSAL.md:53` lists `iac.json` among the `.kata/` state files that would receive
+run-identity stamping. That is a reference to *our* artifact, read from our snapshots. **Zero AWS
+content arrived.**
+
+**Consequence for T-04 (MC-05):** it stamps run-identity across `.kata/*.json` **including
+`iac.json`** — so MC-05 touches IaC state. Confirm no interaction with the creds-wall/approval
+artifact contract at grill.
+
 ---
 
 ## OPEN DECISIONS FOR THE OPERATOR
