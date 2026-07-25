@@ -821,3 +821,14 @@ no AWS-internal identifiers, no AWS IP, a fresh-context work-linkage adversarial
 and fresh in-repo commits (no grafted fork history). KataHarness stays the independent, public, non-AWS
 version. _Avoid_: porting the AWS implementation verbatim; grafting MindBridge branch history; pushing any
 private migration branch.
+
+## Architecture principle
+**Determinism-first (script-where-deterministic)**:
+The KataHarness engineering default: anything rule-decidable — gates, scores, orderings, hashes,
+comparisons, parsers, classifiers, durable-artifact writers — lives in a **script** (`tools/*.py`, pure
+stdlib, tested, gated), with prose only wiring it in; genuine judgment (grill resolutions, verdict
+content, synthesis) stays LLM. The Determinism Doctrine's "where judgment is allowed" line as an
+engineering rule (models: `kata_quota`, `kata_advisor`, `kata_adaptive`, `contract_edges`). Contrast:
+"context-as-code", where behavior lives in model-interpreted prose. A rule-decidable mechanism ported
+as prose is a determinism regression — convert it to a script (the efficiency win) or flag it.
+_Avoid_: re-deriving a deterministic decision in prose each run; prose that gates/scores/hashes.

@@ -44,15 +44,23 @@ last_updated: "2026-07-22T00:00:00.000Z"
 > unwanted). Residuals: Tier 3 (registry · silent-hang watchdog · preflight headroom) = its own
 > grill · E-queue (E1/E2) · F-9/R6 keep riding · kata-home clone self-heals at next default
 > update (now brings v0.4.0).
-> **★ NEXT INITIATIVE (operator-directed 2026-07-25): MINDBRIDGE FEATURE IMPORT.** Bring a set of
-> tasks/features from the MindBridge fork (a branch off THIS repo) and apply them here — translates
-> well structurally (same spine/conventions). **DIRECTION HAZARD (D30 clean-room):** this is the
-> REVERSE of the sanctioned KataHarness→MindBridge flow, landing AWS-side work into a PUBLIC repo, so
-> every import passes the **clean-room scrub gate** (no AWS IP / work-linkage, a fresh-context
-> work-linkage adval that HOLDs on any leak, fresh in-repo commits — the Kiban-publish discipline).
-> Full protocol: `.planning/HANDOFF-NEXT-SESSION.md` §6. Await the incoming task list; grill each
-> feature on its merits. **A fresh Opus 5 session picks this up** — start at
-> `.planning/HANDOFF-NEXT-SESSION.md`.
+> **★ NEXT INITIATIVE (operator-directed 2026-07-25): MINDBRIDGE FEATURE IMPORT — round-trip IN
+> FLIGHT.** Bring the more-advanced doctrine/rubric/prime-directive-enforcement + real-builds from the
+> MindBridge fork (a branch off THIS repo) and merge them here. **Workflow:** the fork session reads
+> THIS public repo + a prepared **alignment package** (built + handed to the operator 2026-07-25; lives
+> in the operator's LOCAL Downloads, deliberately kept OUT of this repo — the fork relationship is not
+> published to public git history) → returns a **merge-back zip** (per the package's return-spec:
+> `INDEX.md` + per-item `merge-candidates/MC-NN/` with `PROPOSAL.md`+`files/`+`tests/` + `divergence-
+> flags/`) → a KataHarness session grills each item. **DIRECTION HAZARD (D30 clean-room):** REVERSE of
+> the sanctioned flow (AWS-side → PUBLIC repo) ⇒ every returned item passes the **clean-room scrub gate**
+> + a fresh-context **work-linkage adval** (HOLD on any leak), fresh in-repo commits (the Kiban-publish
+> discipline). **Three named targets** (fork ahead → merge back respecting our seams): Determinism
+> Doctrine · skill-assessment rubric (kata-evaluate + kata-review RUBRIC + STANDARDS + validate_skills) ·
+> Prime Directives (bring the *enforcement*, PD text is advanced-grill). **Script-vs-context axis:** the
+> fork is context-as-code; here, rule-decidable mechanisms become `tools/*.py` scripts (the efficiency
+> win) — convert or flag a verbatim prose port, never merge it as a determinism regression. Full
+> protocol + round-trip status: `.planning/HANDOFF-NEXT-SESSION.md` §6/§6a/§6b. **A fresh Opus 5 session
+> picks this up** — start at `.planning/HANDOFF-NEXT-SESSION.md`.
 > *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-21 — THE TRIPLE-FIX SESSION: PRs #41→#44 MERGED, master `71e25df`; items

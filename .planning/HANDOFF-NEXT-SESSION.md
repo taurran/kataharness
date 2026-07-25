@@ -204,7 +204,59 @@ as a worked example of the two-way translation mapping, read-only.
 
 **Process per imported feature:** treat each as a normal version-up — INTENT freeze → grill (the
 scrub gate is an extra freeze-gate criterion) → build → gauntlet → correctness adval **+** work-linkage
-adval → PR → merge. Await the operator's incoming task list before starting; grill each on its merits.
+adval → PR → merge. Grill each on its merits.
+
+### 6a. ROUND-TRIP STATUS — the outbound alignment package IS SENT (2026-07-25)
+
+The operator's plan: the MindBridge Loop session reads THIS public repo + a prepared **alignment
+package**, and returns a **merge-back deliverable** (alignment report + clean drop-in files) that a
+KataHarness session ingests and grills. Status at this handoff:
+
+- **OUTBOUND (done):** the alignment package was built and handed to the operator (it lives in the
+  operator's LOCAL Downloads as `mindbridge-alignment/` + `.zip` — **deliberately kept OUT of this repo**
+  so the fork relationship is not published into public git history). It contains: an orientation, a
+  feature/contract/**seam map** (with a deliberate-lacks inventory Z1–Z12), the three named alignment
+  targets, a **return-package spec** (the exact shape the merge-back must arrive in), and the clean-room
+  contract. It also pins frozen snapshots of our doctrine/rubric/prime-directives @ `0270f81`.
+- **INBOUND (expect this):** a **merge-back zip** structured as `kataharness-mergeback/` — an `INDEX.md`
+  manifest, a package-level clean-room attestation, an `alignment-report.md`, then per-item
+  `merge-candidates/MC-NN-*/` (each with a `PROPOSAL.md` + `files/` + `tests/`) and `divergence-flags/`.
+  Each candidate names the KataHarness target it aligns to (a `01` subsystem, a §Z lack, or a named
+  target below), states BC impact, its **disposition** (script/prose/hybrid — see 6b), and a clean-room
+  attestation.
+- **HANDLING when it arrives:** for each `merge-candidate`, run the §6 process — grill on its own
+  branch, correctness adval **+ work-linkage adval**, HOLD on any leak, merge-on-green. `divergence-flags`
+  are surfaced to the operator, never auto-applied.
+
+**The three named merge targets** (more advanced on the fork side → merge back here, respecting our
+seams): **(1) Determinism Doctrine** — we HAVE it (`docs/DETERMINISM-DOCTRINE.md`, ten laws + DET-01..14
+straggler registry); the fork's is more advanced → superset preserving the 10-law spine + the
+"where judgment is allowed" line. **(2) skill-assessment rubric** — our family is `kata-evaluate` (the
+fresh-context no-write default-FAIL gate) + `kata-review/RUBRIC.md` + `docs/STANDARDS.md` +
+`tools/validate_skills.py`; merge additively, never weakening the D33 never-tiered floor or the
+README-index-in-sync invariant. **(3) Prime Directives** — we HAVE `protocol/prime-directives.md`
+(PD-1/PD-2, fully wired: REQUIRED_PROTOCOL + orientation stable tier); the fork built stronger
+*enforcement* (it actually built things prose merely claimed) → bring the enforcement machinery mapped
+to our D33/D136/kata-evaluate hooks; a change to PD *text* is advanced-grill, high-stakes.
+
+### 6b. THE SCRIPT-vs-CONTEXT TRANSLATION AXIS (load-bearing for every merge-back)
+
+MindBridge is **mostly context-as-code** (behavior in prose the model interprets); KataHarness pushes
+anything deterministic into **scripts** (`tools/*.py`, pure stdlib, tested, gated) and keeps prose only
+for genuine judgment — the Determinism Doctrine's "where judgment is allowed" line as an engineering
+default (`kata_quota.py`, `kata_advisor.py`, `kata_adaptive.py`, `contract_edges.py` are all
+deterministic-engine + thin-prose-wiring). **So a merge-back is often a prose→script conversion, and
+that is frequently where the significant efficiency lives** (determinism · gate-ability · testability ·
+no LLM round-trip · token savings). Heuristic when grilling each incoming item: **rule-decidable**
+(gate/score/order/hash/parse/classify/durable-write) ⇒ land it as a `tools/*.py` script + tests with
+thin skill wiring, NOT as re-derived prose; **genuine judgment** ⇒ stays prose; **hybrid** (script
+computes the signal, prose decides the residual) is common and correct. A verbatim prose port of a
+script-able mechanism is a **determinism regression** here — convert it or flag it, don't merge it as-is.
+
+**Reference material that already exists:** `C:\Dev\_mindbridge-handoff\ADVISOR-EXECUTOR-INTEGRATION-
+GUIDE.md` is a PRIVATE front-to-back guide for the REVERSE port (KataHarness advisor → MindBridge). It
+is PRIVATE (C:\Dev is not a git repo) and **must NEVER be moved into the public repos.** It is useful
+as a worked example of the two-way translation mapping, read-only.
 
 ---
 
