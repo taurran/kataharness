@@ -213,7 +213,8 @@ package**, and returns a **merge-back deliverable** (alignment report + clean dr
 KataHarness session ingests and grills. Status at this handoff:
 
 - **OUTBOUND (done):** the alignment package was built and handed to the operator (it lives in the
-  operator's LOCAL Downloads as `mindbridge-alignment/` + `.zip` — **deliberately kept OUT of this repo**
+  operator's LOCAL Downloads as `mindbridge-alignment/` + **`mindbridge-alignment-rev2.zip`** (rev1
+  superseded + deleted 2026-07-25 — it carried the stale DET registry; see §6c) — **deliberately kept OUT of this repo**
   so the fork relationship is not published into public git history). It contains: an orientation, a
   feature/contract/**seam map** (with a deliberate-lacks inventory Z1–Z12), the three named alignment
   targets, a **return-package spec** (the exact shape the merge-back must arrive in), and the clean-room
@@ -238,6 +239,29 @@ README-index-in-sync invariant. **(3) Prime Directives** — we HAVE `protocol/p
 (PD-1/PD-2, fully wired: REQUIRED_PROTOCOL + orientation stable tier); the fork built stronger
 *enforcement* (it actually built things prose merely claimed) → bring the enforcement machinery mapped
 to our D33/D136/kata-evaluate hooks; a change to PD *text* is advanced-grill, high-stakes.
+
+### 6c. PACKAGE REVISION 2 — the stale-record correction (2026-07-25)
+
+A post-handoff audit found KataHarness's own deferral records were **stale in one direction: they
+understated what is built.** Nothing was claimed-built-but-absent — the reverse. Corrected in
+`docs/det-registry-reconcile` (PR #50) and re-cut into the outbound package:
+
+- **DET-01..14 are ALL RESOLVED** and re-verified against code (Round 3 of the 2026-07-12 health review
+  built every named deferral). The doctrine had named 8 of them as live stragglers; `01` §Z11 listed
+  them as a lack; `02` Target 1 told the fork to reconcile against that registry. **All three wrong.**
+- **§Z11 WITHDRAWN**; the real Target-1 gap named instead: **skill-level enforcement is NOT built** —
+  no tool checks the ten laws, it is human/agent review at the gate.
+- **Snapshots re-cut @ `c3d29f6`**, including the `CONTEXT-glossary.md` that now carries the
+  **Determinism-first (script-where-deterministic)** term — the vocabulary for the §6b axis.
+- **rev1 zip deleted**; `mindbridge-alignment-rev2.zip` is the only outbound artifact. The README
+  carries a REVISION 2 errata block so the fork discards any earlier copy.
+- **Standing instruction added to the package:** *cite the code, not the record* — a merge candidate
+  justified by "KataHarness lacks X" must show the lack in our tree at `c3d29f6`, not in a doc.
+
+**The lesson generalizes (worth folding into LESSONS-LEARNED at closeout):** a records-vs-code audit is
+NOT covered by the gate. The gauntlet was green throughout; every doc was internally consistent; the
+drift was only visible by re-verifying each claim against source. Records drift in the flattering
+direction, and PD-2 discipline has to run over the *records* too, not just over build claims.
 
 ### 6b. THE SCRIPT-vs-CONTEXT TRANSLATION AXIS (load-bearing for every merge-back)
 
