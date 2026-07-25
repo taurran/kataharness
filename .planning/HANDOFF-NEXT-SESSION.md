@@ -1,136 +1,225 @@
-# HANDOFF — next session (written 2026-07-20, end of the advisor-executor session)
+# HANDOFF — next session (written 2026-07-25, end of the overnight-delegated run + v0.4.0)
 
-> **Supersedes the 2026-07-12c handoff** (its return-checklist items were all executed same-day;
-> that history is preserved in `.planning/STATE.md` CURRENT blocks — nothing is lost).
-> **Ground truth at write time:** master **`0d3abc6`** (PR #39 merged, branch deleted local+remote,
-> tree clean, `git stash list` EMPTY). Gauntlet at merge: **pytest 3981 pass / 3 pre-existing skip ·
-> integration 2/2 · ruff clean · validator 49/0/0 · Snyk med+ 0 · mutation non-vacuous.**
-> ⚠ IGNORE `C:\Dev\CLAUDE.md` (unrelated Mise project).
+> **Supersedes the 2026-07-20 advisor-executor handoff** (its next-item — quota-resilience —
+> is now SHIPPED; that history is preserved in `.planning/STATE.md` CURRENT blocks — nothing
+> is lost). This doc is the **detailed re-entry brief**; `.planning/HANDOFF.md` points here.
+> **Written for a fresh Opus 5 session** (operator is updating Claude Code + starting clean).
+> ⚠ IGNORE `C:\Dev\CLAUDE.md` (that is the unrelated **Mise** meal-planning project, not this repo).
 
-## 1. WHAT SHIPPED THIS SESSION — D167 advisor-executor (PR #39)
+---
 
-The **Fable-tier Advisor consult** (`kata-advise`, the 49th skill) — the advisor-executor pattern
-wired across the loop. Built by running the **full Kata Loop on the harness itself** at a Fable
-anchor: initiate → 7-question grill (28 LOCKED entries, **5 fresh-context convergence passes**,
-HOLD 8/3/3/2 → SHIP) → ELEVATE EV-1 accepted → freeze-gate SHIP-WITH-FIXES (7 folds) → 6 workers /
-2 waves → evaluate **PASS** (8/8 ACs) + adval **SHIP** → operator-ordered pre-merge smoke → merge.
+## 0. GROUND TRUTH AT WRITE TIME (cite-before-claim — verify all of this FIRST)
 
-**The contract (all LOCKED, compiled in `.planning/specs/advisor-executor/DESIGN.md`):**
-- `advisor.approved` is the **SOLE** legality record — fully decoupled; **`models.premium`,
-  `ADAPTIVE_EVENTS`, and `kata_adaptive.py` are BYTE-UNTOUCHED** (diff-proven at the gate).
-- **Fable-target rung** (`advisor_rung_of`): opus/sonnet/haiku anchors elevate to **fable**;
-  fable/mythos inherit at anchor (arm a); never one-rung arithmetic, never mythos by default.
-- **Advise-first, bump-second:** at the D150 fail threshold the conductor consults FIRST at the
-  same worker rung (orchestrator-side bump deferral — engine untouched); the bump consumes
-  normally on the next failure, advice riding along.
-- **Two-moment grants:** advanced consents at **bootstrap** composition (so planning consults are
-  legal); standard opts in **once per RUN** at **preflight** (post-freeze, pre-execution);
-  **essential excluded**; headless ⇒ OFF + surfaced note, never blocks.
-- **Own budget pool** (standard 5/1 reserved · advanced 10/2), FCFS + reserve floor, loud lapses.
-- **The gate NEVER consults** (judge independence); closeout never consults.
-- **EV-1 advice-effectiveness pairing** (`advised-pass` / `advised-fail-bumped` /
-  `advised-fail-ceiling`) in the telemetry ledger + after-action rollup.
-- BC: absent `advisor` block ⇒ byte-identical behavior.
+- **CWD:** start **inside the repo** — `cd C:\Dev\Projects\KataHarness` (the statusline/gauge scope
+  and the F-9/R6 live smokes walk UP from cwd; a repo-cwd session collects them passively).
+- **Master:** `8e6096f` (PR #47 merged). **Tag:** `v0.4.0` on `8e6096f`.
+- **Tree:** clean. **`git stash list`:** EMPTY (the closeout tripwire — if it is not empty, STOP and
+  investigate before any work; the D1 stash-corruption lesson).
+- **Open PRs:** none.
+- **Gauntlet at v0.4.0** (the "confirm green" first action — re-run `cd tools && uv run python
+  scripts/gauntlet.py` and expect): **pytest 4072 pass / 3 pre-existing skip · integration 2/2 ·
+  ruff clean · validator 49/0/0**. Snyk code med+ **0** (run `snyk_code_scan` over `tools/` if a
+  scanner is configured; otherwise record a one-line deferred-security note and proceed).
+- **Installed harness note:** the flat-linked skills at `~/.claude/skills` are the STABLE released
+  version. The `~/.kata-home` git clone lags master (cosmetic; self-heals at the operator's next
+  default `update.ps1` run — which now brings v0.4.0). The SKILLS surface is what matters and is
+  current. `kata-advise` (49th skill) present = the advisor-era install is live.
 
-**Honesty labels (PD-2 — these travel with every claim):** the **dispatch mechanics** are
-live-exercised **n=1** (operator-granted consult: gate → budget → dispatch → structured response →
-disposition, full artifact trail at `.kata/advice/live-exercise-1-1.json`). The **four hooks are
-test- and smoke-proven prose — live-if-they-occur, UNFIRED** (no real task hit threshold-2 this
-run). Arm (b) (sub-fable anchor elevation) and the standard carve-out are test-proven, not
-live-proven.
+### FIRST: the Opus 5 update itself (Windows gotcha — do BEFORE relying on the new model)
+`claude update` **silently rolls back if any `claude.exe` is running** (Windows locks the exe).
+Close ALL Claude Code sessions/windows, then from **PowerShell** run `Update-Claude` (or
+`claude-update`) — NOT `claude update` from inside a session. Verify the new version, then start the
+fresh session and `/model` to Opus 5. (Memory: `reference_claude_windows_update`.)
 
-**Pre-merge proof battery (operator-ordered):** 6-seam deterministic smoke, zero LLM calls,
-**double-run byte-equal** (digest `ac81085c83748ae1`, artifact `.kata/smoke-advisor.json`) — gate
-matrix across mode×anchor×event, all NO-FIRE reasons, 7/7 poison configs raising (D136), rung
-table, reserve-floor boundary, render→recount round-trip, telemetry presence-discrimination, and
-the composed advise-first loop walked dry end-to-end. A fresh-context Opus auditor attacked the
-battery itself for vacuity/coverage/determinism-theater: verdict **SOUND**.
+---
 
-## 2. ★★ START HERE NEXT SESSION — the quota-resilience initiative
+## 1. WHAT SHIPPED — the 2026-07-21/22 session (PRs #41→#47, v0.4.0)
 
-**The operator's next build, briefed and ready to grill:**
-**`.planning/specs/quota-resilience/REQUIREMENT.md`** — a complete, file:line-cited intake brief
-(pre-grill, not frozen). Read it FIRST; it contains the whole research pass so you do not repeat it.
+Two things you cannot re-derive from git alone: this was a **single operator-present-then-delegated
+session** that cleared the entire A/B/C/D execution plan, and the run TARGET was the **INSTALLED**
+harness (operator's target-toggle choice), against the KataHarness repo itself (version-up on self).
 
-**One-paragraph version.** Detect per-provider rate-limit / token-quota exhaustion
-(Anthropic/OpenAI/Cursor/Gemini), tell the operator plainly they are out, **park the run via the
-existing handoff machinery so `/kata-resume` resumes exactly where it stopped**, and emit that
-provider's upgrade command or URL. Plus the advisor-specific kill-switch: skip remaining consults
-for the session and report the reason at closeout.
+| Item | PR | Master | Substance |
+|---|---|---|---|
+| Bootstrap stderr fix | #41 | `d765e93` | (carried from prior session) PS 5.1 merged-stream native-git stderr no longer aborts ps1 scripts |
+| **A** — dispatch stderr | #42 | `f73f66c` | `_subprocess_runner` 4-tuple; `_stderr_tail` cap; stderr rides all 3 failure envelopes; completed envelope byte-unchanged. **THE quota prerequisite.** |
+| **B** — advisor deferral pins + smoke | #43 | `924f494` | `TestAdvisorDeferralCompat` (3 pins from the live consult sketch) + 6-seam smoke promoted to `tools/tests/test_advisor_smoke.py`. Test-only. |
+| **D** — D1 phantom-corruption fix | #44 | `71e25df` | Mutation proving SANDBOXED — live tree NEVER written; ~60 real proofs route through the sandbox; kata-tdd 0.4.1. **The D1 interim discipline is CLOSED.** |
+| STATE record (triple-fix) | #45 | — | — |
+| **C** — quota-resilience Tier 1+2 | #46 | `7223ad8` | see §2 |
+| v0.4.0 release closeout | #47 | `8e6096f` | CHANGELOG cut + this-session STATE block |
 
-**The three findings that shape it:**
-1. **The save/resume half is BUILT+WIRED** — but every trigger is context-utilization,
-   operator-stop, or crash. **Quota is a trigger nowhere.**
-2. **The detection half is effectively GREENFIELD.** `429` appears nowhere in the repo; the
-   401/403 rules are SKILL prose with **no executable owner** (`kata_models.py` never sees an
-   error).
-3. **★ BLOCKER + standalone defect: `tools/kata_dispatch.py:172-174` discards `proc.stderr`.**
-   The provider's rate-limit message is destroyed before any classifier could see it. This
-   degrades ALL error reporting today. **~10 lines + tests. Highest value-per-token item in the
-   entire backlog — worth doing even if nothing else gets built.**
+Each item ran the full loop: INTENT freeze (`intent_scaffold.write_intent`) → grill (ledgers under
+`.planning/specs/<name>/GRILL-LEDGER.md`) → build → gauntlet (default-FAIL) → **fresh-context adval**
+→ own branch → PR → merge-on-green. Grill ledgers emitted to the second brain (learn feed).
 
-**Agreed scope:** Tier 1 (consecutive-failure run-wide lapse + a `kata_steer` kill-switch verb) +
-Tier 2 (stderr fix · classifier · `human-required` escalation + breakthrough alert + auto-handoff ·
-`degraded {scope:"provider"}`) in **ONE version-up**; Tier 3 (per-provider upgrade registry ·
-silent-hang watchdog · preflight quota-headroom) is a **follow-on needing its own grill** — its two
-legs each carry a policy decision that does not belong in the same freeze. Seven open grill
-questions are enumerated in the brief §4.
+**Adval earned its keep every time** (see `feedback_adversarial_review_discipline`): stale cross-refs
+(A), a seam5 overclaim (B), a confirmed MEDIUM regex prefix-mangle in my own sandbox fix (D), and
+**two confirmed MAJORs in the quota classifier** (C — traceback line-numbers + test-identifier auth
+words classifying as provider signals). All folded + pinned before merge.
 
-**To start:**
-```
-cd C:\Dev\Projects\KataHarness      # start cwd INSIDE the repo (statusline/gauge scope)
-/kata-start                          # → kata-initiate; hand it the REQUIREMENT.md as the brief
-```
-Framing for the mirror: `kind: version-up` · `target: self` · mode `standard` · grill `standard`.
+---
 
-## 3. SMALLER OUTSTANDING ITEMS (cheap, independent)
+## 2. ITEM C IN DETAIL — quota-resilience Tier 1+2 (the last thing built; know it well)
 
-1. **Relink the installed kata-home to `0d3abc6`** — it is still on the pre-advisor SHA, so the
-   49th skill is NOT installed yet. `& "$env:USERPROFILE\.kata-home\update.ps1"` from PowerShell
-   with all other Claude sessions closed (see the Windows-update memory: `claude update` silently
-   rolls back if any `claude.exe` holds the exe).
-2. **Optional `v0.4.0` tag** — CHANGELOG sits at `[Unreleased] — Advisor consult (kata-advise)`.
-   Operator's call; the advisor is a minor-version feature by semver.
-3. **Fold the advisor's own recommended pinning tests** — `TestAdvisorDeferralCompat` (three pins:
-   observe≠consume, exactly-one +1 after the advised failure, mid-deferral recount carries no
-   mark). The sketch is archived verbatim in `.kata/advice/live-exercise-1-1.json` — it was the
-   live consult's own output, deliberately NOT auto-applied (S-2).
-4. **E-queue (unchanged):** E1 calibration proper · E2 adaptive live A/B (both now have real rows
-   from D165/D167) · E6 health-review LOW/INFO residuals.
-5. **F-9 / R6 remain honestly UNOBSERVED** — context never crossed 0.70 and no auto-compaction
-   fired. Not broken; still queued. No false fire across two long sessions is itself
-   correct-behavior evidence.
+**What it does:** a provider rate-limit / token-quota / auth failure is now detected from dispatch
+RESULT envelopes, lapses the failing lane run-wide, and — on the primary path — **parks the run**
+(plain operator message, `human-required` escalation + breakthrough alert, automatic handoff write,
+`/kata-resume` re-entry). NEVER a retry loop, NEVER a silent model downgrade.
 
-## 4. STANDING ORDERS (all prior orders hold)
+**The engine — `tools/kata_quota.py`** (pure stdlib, deterministic, fail-closed D136):
+- `classify_dispatch_result(result)` — ordered pattern table over the envelope's stderr/error/raw
+  text; reasons `rate-limited` / `quota-exhausted` / `auth`; only `failed`/`timeout` envelopes are
+  classifiable; malformed envelope RAISES. Post-adval: bare status numbers carry `(?<!line )` so
+  tracebacks don't classify; auth words are word-bounded.
+- `lapse_decision(consecutive_generic, classified_reason)` — G-2 hybrid: FIRST classified signal, or
+  2 consecutive generic failures ⇒ `provider-unavailable`.
+- `parse_kill_switch(directives)` — `KATA_OFF advisor|provider[:name]` over the EXISTING
+  `kata_steer.read_active_directives` output (`kata_steer.py` byte-untouched); malformed uses surface
+  in `unknown`, never vanish.
+- `park_message(reason, evidence, platform)` — plain words, provider named when known, **NO URLs**
+  (the registry is Tier 3's grill; a stale URL is worse than none, PD-2).
 
-cite-before-claim · done = gates + record + SHA · fresh-context adval before merge · D136
-fail-closed · bump-on-modify + validator `--write` · branch → PR → merge · PD-1/PD-2 ·
-**the conductor is the SOLE main-tree git writer** (subagents build no-git or in their own
-worktrees) · closeout tripwire: `git stash list` empty + `git status` reviewed · gate runs go
-through `tools/scripts/gauntlet.py`, never `pytest | tail && commit`.
+**The wiring — kata-orchestrate 0.15.0:** boundary kill-switch parse (operator-directed lapse) +
+the dispatch-failure quota step (classify → `lapse_decision` → route by path criticality G-9:
+optional subsystems lapse-and-continue per LD7; the primary path PARKS per G-4). Plus
+`kata_telemetry._validate_degraded` (the passthrough joined the fail-closed `_validate_*` family),
+`protocol/steering.md` (`KATA_OFF` verb) and `protocol/handoff.md` (additive `trigger:` field).
 
-**New this session (proven techniques, recorded in `.planning/LESSONS-LEARNED.md` and the transfer
-doc):** supersede-don't-edit for grill findings (it is what made 5 convergence passes converge
-instead of thrash) · the conductor re-verifies byte-untouched claims by `git diff` itself rather
-than trusting worker reports · workers report ownership-boundary blockers instead of crossing lanes
-(the conductor owns cross-task reconciliation) · aim the live n=1 exercise at the run's OWN riskiest
-seam so proof-of-life doubles as verification input · under token pressure, verify with a
-deterministic in-process battery (free) plus ONE cheap-model adversarial auditor **of the battery
-itself**.
+**BC floor (G-12, diff-verified):** `kata_dispatch` · `kata_models` · `kata_steer` · `kata_adaptive`
+all **byte-untouched**. Absent signals ⇒ byte-identical behavior.
 
-## 5. TRANSFER DOC (for the sibling loop project)
+**HONESTY (PD-2) — read before trusting this in the field:**
+- Engine legs are **test-proven** (59 quota + 9 telemetry pins). The orchestrate park sequence is
+  **prose, live-if-it-occurs, UNFIRED** — no real quota event has exercised it end-to-end.
+- **The park trigger covers ROUTED-lane dispatches only.** Host-session quota exhaustion produces no
+  RESULT envelope to classify and remains uncovered — the manual playbook + restore path still owns
+  it. (This is the exact scenario in the three prior real incidents; G-7 left the host/gauge branch
+  closed until a host reports plan quota.)
+- **Known precision limit (adval F3, recorded, NOT fixed):** a dogfood run testing quota code itself
+  can false-positive the classifier from a failing worker's stderr. Consequence is a loud premature
+  lapse + a false `degraded` row — recoverable, never a silent wrong answer. The structural fix
+  (require an HTTP-ish anchor near the match, or two-field corroboration) is an **operator-ordered
+  G-8 amendment** if wanted.
 
-**`.planning/HANDOFF-ADVISOR-EXECUTOR.md`** — the complete, neutral-named, reproduction-grade
-record of how this feature was designed and built end-to-end through the Kata Loop: the pattern
-source, the grounding assessment, a phase-by-phase process log, the convergence journey with its
-headline catches, and a running "transferable technique notes" section. Written for hand-off to
-another loop project; carries **no work-linkage** on any surface. Complete as of merge.
+Full grill: `.planning/specs/quota-resilience/GRILL-LEDGER.md` (G-1..G-12 LOCKED + adval addendum).
+Original brief (still accurate for Tier 3): `.planning/specs/quota-resilience/REQUIREMENT.md`.
 
-## 6. GATE REPRODUCTION
+---
 
-From `tools/`: `uv run python scripts/gauntlet.py` (all four gates, honest exit).
-Advisor smoke: `uv run python <scratchpad>/smoke_advisor.py` — the battery is session-scratchpad
-only and was NOT committed (it asserts against `.kata/` run artifacts). **If you want it as a
-permanent regression, promote it into `tools/tests/` with the fixture dependency replaced by a
-constructed artifact** — a good small next-session task, and it is the natural home for the
-`TestAdvisorDeferralCompat` pins from item 3 above.
+## 3. READ-IN ORDER (rebuild context, then act)
+
+1. `protocol/prime-directives.md` — PD-1 (never silently defer/stub/skip designed work) / PD-2
+   (absolute truthfulness). Binds the conductor from its first action.
+2. This file, then `.planning/STATE.md` **CURRENT block** (top).
+3. `AGENTS.md` (spine + conventions) · `docs/DETERMINISM-DOCTRINE.md` (ten laws — LOAD-BEARING on any
+   new engine code).
+4. For quota follow-on: `.planning/specs/quota-resilience/GRILL-LEDGER.md` +
+   `.../REQUIREMENT.md` §3 (Tier 3 scope) + `tools/kata_quota.py`.
+5. For a MindBridge import: **§6 of this file FIRST** (the clean-room gate), then the incoming task list.
+
+---
+
+## 4. NEXT STEP — in order (the backlog, prioritized)
+
+**A. Owed to the operator (quick decisions, no code — clear these first):**
+1. **Confirm the overnight-delegation record.** The quota grill ledger cites the operator's
+   authorization from conversation, not the repo (the adval's F6 flagged that the quote lives in the
+   session transcript). One line of operator confirmation closes it.
+2. **Two in-absentia ELEVATE offers** (both default DECLINED — declines are signal, D153): ①
+   mirror-by-docstring = a defect-duplication pattern (prefer a shared helper / executable pin over a
+   docstring pointer when two sites must stay aligned); ② `budget-exhausted` (kata's own spend) vs
+   provider quota exhaustion = a same-word namespace hazard → name the namespace in the enum value.
+3. **F3 precision-limit design call** — do you want the structural classifier fix (a G-8 amendment)?
+4. **v0.4.0 tag veto window** — delete-and-retag if the release framing isn't what you want.
+
+**B. The MindBridge feature import (operator-initiated 2026-07-25) — see §6 for the protocol.**
+This is the operator's stated next initiative: bring a set of tasks/features from the MindBridge fork
+(a branch off THIS repo) and apply them here. Translates well structurally; **must pass the clean-room
+scrub gate (§6) before any merge.** Await the incoming task list, then grill each feature normally.
+
+**C. Real engineering work (grill-gated):**
+- **Quota Tier 3** (its own grill — two policy calls): per-provider upgrade **registry** (URL/slash
+  freshness ownership) · **silent-hang watchdog** for the codex-402 class (false-positive policy:
+  killing a legitimately slow worker is worse than a late detection) · **preflight quota-headroom**
+  (shaped like `stranding_verdict`). Brief material: `REQUIREMENT.md` §3 Tier 3.
+- **E-queue:** E1 calibration proper · E2 adaptive A/B (both now have ≥1 real ledger row).
+
+**D. Housekeeping (do at natural moments, don't force):**
+- `~/.kata-home` default `update.ps1` run — brings the clone + bootstrap to v0.4.0.
+- **F-9 / R6 live smokes** — a repo-cwd session collects them passively; flip
+  `GROUNDING-CLAUDE` G1b + the adapter README GROUNDED-BY-PATTERN → CONFIRMED **only if actually
+  observed** (context crossing 0.70 / a host auto-compaction). Honestly UNOBSERVED to date.
+- Long tail (not scheduled, not cancelled): the 2026-07-12 health-review deferrals (STEERING wiring
+  residuals, DET-06/10/12/13/14).
+
+---
+
+## 5. STANDING ORDERS (all hold — the operating discipline)
+
+cite-before-claim · done = gates + record + SHA · **fresh-context adval before every merge** (it
+catches what author tests miss — ~confirmed 3× this session) · D136 fail-closed on decision-code
+INPUT · bump-on-modify + validator `--write` when a skill changes · branch → PR → merge · PD-1/PD-2 ·
+**conductor = SOLE main-tree git writer** (workers no-git or own worktrees) · **closeout tripwire:
+stash empty + status reviewed** · gates via `tools/scripts/gauntlet.py`, never `pytest | tail &&
+commit` · supersede-don't-edit for grill-ledger findings · conductor diff-verifies byte-untouched
+claims itself · aim any live n=1 exercise at the run's own riskiest seam · new projects/specs follow
+the `.planning/specs/<name>/` convention · emit grill ledgers to the second-brain learn feed
+(`tools/learn_feed.py`, feed dir `~/Kiban/Vault/second-brain/wiki/pages/synthesis`, log
+`.../wiki/log.md`).
+
+---
+
+## 6. MINDBRIDGE FEATURE IMPORT — the protocol (READ BEFORE IMPORTING ANYTHING)
+
+**Context:** MindBridge is the operator's AWS-internal harness/product — a **fork/branch of
+KataHarness**. Features developed there are being ported BACK into this public, clean-room repo.
+Structurally this translates well (same spine, same file conventions). **But the direction matters:**
+the sanctioned cross-pollination flow is KataHarness → MindBridge (public → AWS ingest, D30). Porting
+MindBridge → KataHarness is the **reverse** direction and lands AWS-side work into a **public repo**,
+so it carries a hard gate.
+
+**THE CLEAN-ROOM SCRUB GATE (D30 — non-negotiable, PD-1/PD-2 class):**
+Every incoming feature must be scrubbed of **AWS-internal IP and work-linkage** before it touches
+master. This is exactly the discipline the Kiban publish used (memory `project_framework`: a pre-push
+adversarial-validation pass scrubbed all MindBridge/work-linkage and rebuilt history so no sensitive
+blob was ever published). Concretely, for each imported feature:
+1. **No AWS-internal identifiers** — service names, internal URLs/endpoints, account IDs, ticket refs,
+   team/system names, internal doc links, employee handles. (Memory: 38 pre-existing "MindBridge"
+   string hits already sit in old `.planning` specs from the E3 ingest queue — those are a separate
+   older scrub item, NOT introduced by this import; don't add more.)
+2. **No AWS IP** — proprietary designs, internal architecture, work-confidential logic. Port the
+   *general* capability, re-expressed in KataHarness's clean-room terms — not the AWS implementation.
+3. **A fresh-context adversarial-validation pass scoped to work-linkage** runs BEFORE the PR merges
+   (in addition to the normal correctness adval) — the reviewer's explicit job is to find any
+   AWS/work leak. HOLD on any finding.
+4. **History hygiene** — land imported work as fresh commits authored in THIS repo; do not graft
+   MindBridge branch history (it may carry sensitive blobs). If a private migration branch is needed,
+   keep it local and NEVER push (the `private/migration-history` precedent).
+
+**Reference material that already exists:** `C:\Dev\_mindbridge-handoff\ADVISOR-EXECUTOR-INTEGRATION-
+GUIDE.md` is a PRIVATE front-to-back guide for the REVERSE port (KataHarness advisor → MindBridge). It
+is PRIVATE (C:\Dev is not a git repo) and **must NEVER be moved into the public repos.** It is useful
+as a worked example of the two-way translation mapping, read-only.
+
+**Process per imported feature:** treat each as a normal version-up — INTENT freeze → grill (the
+scrub gate is an extra freeze-gate criterion) → build → gauntlet → correctness adval **+** work-linkage
+adval → PR → merge. Await the operator's incoming task list before starting; grill each on its merits.
+
+---
+
+## 7. SUGGESTED NEXT SKILLS (what the resumer will likely invoke)
+
+- `/kata-start` (→ `kata-initiate`) — for the MindBridge import features and quota Tier 3, each as a
+  fresh version-up with its own INTENT + grill.
+- `kata-grill-standard` — the default grill; `kata-grill-advanced` for Tier 3's watchdog (high
+  false-positive stakes) and any security-sensitive MindBridge feature.
+- `kata-evaluate` (fresh-context no-write gate) + a fresh-context adval subagent before each merge.
+- `kata-context` — pin any new ubiquitous-language terms as they appear.
+
+---
+
+## 8. REDACTION
+
+No secrets, keys, or PII in this handoff or the artifacts it references. The MindBridge import protocol
+(§6) exists specifically to keep it that way — the clean-room scrub gate is the standing guarantee.
