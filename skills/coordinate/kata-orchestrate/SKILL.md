@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.15.0
+version: 0.16.0
 category: coordinate
 status: beta
 agnostic: true
@@ -89,6 +89,21 @@ does not drift.**
      guard above). An **ABSENT** block ⇒ the advisor is OFF for the whole run, every advisor leg inert, behavior
      byte-identical to today (S-4). **Never infer the grant from `mode`** — an absent block is OFF even in
      advanced (G-9). This load-guard gates the wiring in **§ Advisor consult (config-gated spine)** below.
+   - **`models.anchor` currency load-guard (T-11 — ADDITIVE; BC: only a vendor-shaped
+     unknown-tier anchor is affected).** When `kata.config.models.anchor` is **present**, validate it via
+     `kata_models.validate_anchor(anchor)` (`tools/kata_models.py`). A raise ⇒ **STOP + escalate**
+     (D136 fail-closed). This closes a **silent** failure: an anchor naming a tier the ladder does not
+     model resolves to `None` everywhere, so economy tier-down AND the advisor rung both inherit at the
+     anchor with **nothing surfaced** — no tiering, no Fable consult, no error. Staleness in the id table
+     is inevitable; the silence is what this removes.
+     **The guard is deliberately narrow** — it raises ONLY on `claude-<word>-<digit…>` naming no known
+     rung (a vendor rename or an unmodelled tier). A ladder short-name, a vendor id containing a known
+     rung **in any hyphen position** (`claude-3-5-sonnet-20241022` → `sonnet`), the `"session"` sentinel,
+     a foreign-family id, and Anthropic **product** names (`claude-code`, `claude-agent-sdk` — no numeric
+     tail) all pass. An **ABSENT** `models` block or `anchor` key ⇒ no check, behavior byte-identical
+     (BC1). `resolve()`'s inherit-on-doubt contract is **unchanged** — this guard is the loud path, and
+     it lives at load, never inside the resolver.
+
 1. **PRE-FLIGHT gate** — conditional, fail-closed, BC-preserving (N5/D29). Call
    `kata_preflight.preflight_required(repo_root)`:
    - **`False`** (no `kata.dependencies.json` manifest): PRE-FLIGHT is not required — proceed

@@ -121,22 +121,49 @@ ID_MAP: dict[str, str] = {
 # so the tier token is extractable, and a future `claude-opus-6` resolves with no
 # edit here at all.  The ladder — not the id table — becomes the source of truth
 # for what a rung IS, which is what makes this survive a vendor renaming tiers.
-_VENDOR_ID_RE = re.compile(r"^claude-([a-z0-9]+)(?:-.*)?$")
+# The Anthropic rung set. Recognition is deliberately scoped to THIS ladder, not the
+# all-family union: the `claude-` prefix is Anthropic's, so matching a token against
+# every family's rungs would route a Claude id onto a foreign ladder the moment a
+# placeholder ladder is populated (adval D4 — e.g. a gemini ladder containing "pro"
+# would make `claude-pro-1` resolve as family=gemini and use the generic step table).
+_ANTHROPIC_RUNGS: frozenset[str] = frozenset(_ANTHROPIC_LADDER)
+
+# A vendor id whose tier is unknown AND which carries a version-shaped tail:
+# `claude-<word>-<digit...>`. This is the narrow "a tier we do not model" signal —
+# see validate_anchor. `claude-code` / `claude-agent-sdk` do NOT match (no numeric
+# tail), so product names are never mistaken for models (adval D1).
+_UNKNOWN_TIER_RE = re.compile(r"^claude-[a-z]+-[0-9]")
 
 
 def tier_token_of(anchor: str) -> str | None:
-    """Return the tier token of a vendor-shaped model id, or ``None``.
+    """Return the Anthropic tier token of a vendor-shaped model id, or ``None``.
 
-    ``"claude-opus-5"`` → ``"opus"``; ``"claude-haiku-4-5-20251001"`` → ``"haiku"``.
-    Returns ``None`` for anything that is not vendor-shaped — short-names
-    (``"opus"``), the ``"session"`` sentinel, foreign-family ids, and arbitrary
-    strings all yield ``None`` so their handling is unchanged.
+    **The tier is NOT always hyphen-field 2** — that assumption was adval finding D1.
+    Real ids put it in different positions across generations::
 
-    Pure and deterministic: a regex over the argument, no I/O, no clock, no
-    ambient state (DETERMINISM-DOCTRINE law 7).
+        claude-opus-5               → "opus"    (field 2)
+        claude-3-5-sonnet-20241022  → "sonnet"  (field 4)
+        claude-3-opus-20240229      → "opus"    (field 3)
+        claude-haiku-4-5-20251001   → "haiku"   (field 2)
+
+    So every hyphen field is scanned for a known rung, and the FIRST match wins.
+    Scanning left-to-right over a fixed split is deterministic and order-stable
+    (law 10 — the total order is the id's own field order, not a set iteration).
+
+    Returns ``None`` for anything with no recognizable rung: short-names
+    (``"opus"``), the ``"session"`` sentinel, foreign ids, product names
+    (``"claude-code"``, ``"claude-agent-sdk"``), and arbitrary strings — so their
+    handling stays exactly as before.
+
+    Pure and deterministic: string ops over the argument only. No I/O, no clock,
+    no ambient state (law 7).
     """
-    match = _VENDOR_ID_RE.match(anchor)
-    return match.group(1) if match else None
+    if not anchor.startswith("claude-"):
+        return None
+    for field in anchor.split("-")[1:]:
+        if field in _ANTHROPIC_RUNGS:
+            return field
+    return None
 
 
 def validate_anchor(anchor: str) -> None:
@@ -144,35 +171,42 @@ def validate_anchor(anchor: str) -> None:
 
     The three cases, deliberately distinguished:
 
-    1. **Resolvable** — a ladder short-name, or a vendor id whose tier token is a
-       ladder rung. Returns ``None`` (no raise).
-    2. **Vendor-shaped, unknown tier** — e.g. ``"claude-quartet-2"``. This is a
-       vendor RENAME or a new tier we do not model, and it is the one case where
-       silence is dangerous: the anchor is explicitly written, obviously
-       intentional, and would otherwise inherit with nothing surfaced. **RAISES.**
-    3. **Not vendor-shaped** — ``"session"``, ``"gpt-5"``, arbitrary strings.
-       Returns ``None``. These have always inherited and must keep inheriting;
-       narrowing the raise to case 2 is what preserves that BC.
+    1. **Resolvable** — a ladder short-name, or a vendor id containing a known rung
+       (in any hyphen position). Returns ``None`` (no raise).
+    2. **Vendor-shaped, unknown tier, version-shaped tail** — e.g.
+       ``"claude-quartet-2"``. A vendor RENAME or a tier the ladder does not model,
+       and the one case where silence is dangerous: the anchor is explicitly
+       written, obviously intentional, and would otherwise inherit with nothing
+       surfaced. **RAISES.**
+    3. **Everything else** — ``"session"``, ``"gpt-5"``, arbitrary strings, and
+       Anthropic PRODUCT names that are not models (``"claude-code"``,
+       ``"claude-agent-sdk"`` — no numeric tail). Returns ``None``. These have
+       always inherited and must keep inheriting; narrowing the raise is what
+       preserves that BC.
+
+    The case-2 test is deliberately narrow (``claude-<word>-<digit…>`` with no
+    recognizable rung). A broader "any `claude-` string" rule would false-raise on
+    product names and on legacy shapes — adval finding D1, which mattered because
+    this guard is wired into the config load-guard and a false raise BRICKS a run.
 
     Staleness in the id table is inevitable; the SILENCE is what this removes.
-    Called by the config load-guard, never by :func:`resolve` — ``resolve``'s
-    inherit-on-doubt contract stays byte-for-byte intact.
 
     Raises:
-        ValueError: on case 2, naming the token and the known rungs.
+        ValueError: on case 2, naming the id and the known Anthropic rungs.
     """
     if _normalize_anchor(anchor) in _ALL_LADDER_RUNGS:
         return
-    token = tier_token_of(anchor)
-    if token is not None and token not in _ALL_LADDER_RUNGS:
-        known = ", ".join(sorted(_ALL_LADDER_RUNGS))
+    if tier_token_of(anchor) is not None:
+        return
+    if _UNKNOWN_TIER_RE.match(anchor):
+        known = ", ".join(sorted(_ANTHROPIC_RUNGS))
         raise ValueError(
-            f"validate_anchor: {anchor!r} is a vendor-shaped model id naming an "
-            f"unknown tier {token!r}. This is a vendor rename or a new tier the "
-            f"ladder does not model — resolving it would silently inherit at the "
-            f"anchor (no tier-down, no advisor rung). Known rungs: {known}. "
-            f"Add the rung to its FAMILY_LADDERS entry, or write a ladder "
-            f"short-name / the 'session' sentinel instead."
+            f"validate_anchor: {anchor!r} looks like an Anthropic model id but "
+            f"names no tier this ladder models. This is a vendor rename or a new "
+            f"tier — resolving it would silently inherit at the anchor (no "
+            f"tier-down, no advisor rung). Known rungs: {known}. Add the rung to "
+            f"FAMILY_LADDERS, or write a ladder short-name / the 'session' "
+            f"sentinel instead."
         )
 
 # Reverse map: full model ID → ladder short-name.
@@ -213,9 +247,26 @@ def _normalize_anchor(anchor: str) -> str:
     if exact is not None:
         return exact
     token = tier_token_of(anchor)
-    if token is not None and token in _ALL_LADDER_RUNGS:
+    if token is not None:
         return token
     return anchor
+
+
+def _exact_short_of(model_id: str) -> str:
+    """Exact-table normalization ONLY — no semantic tier recognition (adval M1).
+
+    This is :func:`_normalize_anchor`'s **pre-T-11 behavior**, preserved verbatim for
+    the one caller that must not be widened: ``models.premium.offer``.
+
+    The premium gate is a SPEND gate whose contract is an *explicit* offer id
+    ("EXPLICIT offer id — never inherit, never a ladder walk"). Routing the offer
+    through semantic recognition silently widened it — a config with
+    ``offer: "claude-opus-5"`` that previously NO-FIREd cost-free (``unknown-offer``)
+    would begin firing and spending. Operator-approved resolution (2026-07-25):
+    keep semantic recognition for the ANCHOR, require an exact table id for the OFFER.
+    Non-spend-increasing by construction.
+    """
+    return _ID_TO_SHORT.get(model_id, model_id)
 
 # ---------------------------------------------------------------------------
 # Work-class registry  (R5: full 47-skill coverage — W3-B build task)
@@ -774,7 +825,7 @@ def premium_status(
     if anchor_norm not in ladder:
         return {"fires": False, "reason": "unknown-anchor"}
 
-    offer_norm = _normalize_anchor(premium["offer"])
+    offer_norm = _exact_short_of(premium["offer"])
     if offer_norm not in ladder:
         return {"fires": False, "reason": "unknown-offer"}
 
@@ -1101,11 +1152,11 @@ def resolve(
                 work_class_e: str = SKILL_WORK_CLASS.get(skill, "critical")
                 if work_class_e in ("critical", "coding"):
                     # EXPLICIT offer id — never inherit, never a ladder walk (§3.2).
-                    return ID_MAP.get(_normalize_anchor(premium["offer"]))
+                    return ID_MAP.get(_exact_short_of(premium["offer"]))
             work_class_p: str = SKILL_WORK_CLASS.get(skill, "critical")
             if work_class_p in ("critical", "coding") and work_class_p in premium["scope"]:
                 # EXPLICIT offer id — never inherit, never a ladder walk (§3.2).
-                return ID_MAP.get(_normalize_anchor(premium["offer"]))
+                return ID_MAP.get(_exact_short_of(premium["offer"]))
         # NO-FIRE (or out-of-scope) ⇒ fall through to the frozen path unchanged.
 
     # FIX-1: derive family from anchor when explicitly "auto"
@@ -1182,10 +1233,18 @@ def fallback_chain(id: str, family: str) -> list[str | None]:
     if not ladder:
         return [None]
 
-    # Reverse-lookup: full model ID → ladder index
+    # Normalize FIRST (adval M2). This was the only entry point that never called
+    # _normalize_anchor, so it reverse-scanned raw ID_MAP values — which meant the
+    # emit-side bump silently broke it: once ID_MAP["opus"] moved to the current
+    # generation, `fallback_chain("claude-opus-4-8")` no longer matched any rung and
+    # returned [None] (the "skip + degrade" route per kata-orchestrate SKILL.md:794)
+    # instead of stepping down through sonnet → haiku. A resumed run's handoff value
+    # or an operator-written roles.<x>.model carrying a prior generation would have
+    # degraded immediately and silently.
+    short_name = _normalize_anchor(id)
     start_idx: int | None = None
     for i, short in enumerate(ladder):
-        if ID_MAP.get(short) == id:
+        if short == short_name:
             start_idx = i
             break
 

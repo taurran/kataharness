@@ -1294,7 +1294,7 @@ class TestT11SemanticTierRecognition:
 
     def test_validate_anchor_RAISES_on_a_vendor_shaped_unknown_tier(self):
         """A rename is the dangerous case — explicit, intentional, silently wrong."""
-        with pytest.raises(ValueError, match="unknown tier"):
+        with pytest.raises(ValueError, match="names no tier"):
             km.validate_anchor("claude-quartet-2")
 
     def test_validate_anchor_error_names_the_token_and_the_known_rungs(self):
@@ -1331,3 +1331,133 @@ class TestT11SemanticTierRecognition:
         assert km._normalize_anchor("claude-opus-4-8") == "opus"
         assert km.family_of("claude-opus-4-8") == "anthropic"
         assert km.advisor_rung_of("auto", "claude-opus-4-8") == "fable"
+
+
+class TestT11AdvalFolds:
+    """Regression pins for the fresh-context adval findings on the T-11 fix.
+
+    Every test here exists because a real defect shipped in `8dd648b` and the
+    original 14 tests did not catch it.
+    """
+
+    # -- M1: the premium SPEND gate must not be widened -----------------------
+    def test_M1_premium_offer_requires_an_EXACT_table_id(self):
+        """A semantically-recognized offer must NOT fire a spend gate.
+
+        `_normalize_anchor` was applied to `premium.offer`, so an offer naming a
+        non-table id began firing where it previously reported `unknown-offer` —
+        a SPEND-INCREASING change against the ":1107" explicit-offer contract.
+        """
+        for offer in ("claude-opus-4-8", "claude-opus-6"):
+            premium = {"offer": offer, "approved": True, "scope": ["critical"]}
+            status = km.premium_status(
+                premium, "sonnet", family="anthropic", mode="advanced")
+            assert status["fires"] is False, offer
+            assert status["reason"] == "unknown-offer", offer
+            assert km.resolve(
+                "kata-evaluate", "advanced", "sonnet",
+                family="anthropic", coder_floor="sonnet", premium=premium,
+            ) is None, offer
+
+    def test_M1_an_exact_table_offer_still_fires(self):
+        """The other direction — the fold must not break legitimate premium use."""
+        premium = {"offer": km.ID_MAP["opus"], "approved": True, "scope": ["critical"]}
+        status = km.premium_status(
+            premium, "sonnet", family="anthropic", mode="advanced")
+        assert status["fires"] is True
+        assert km.resolve(
+            "kata-evaluate", "advanced", "sonnet",
+            family="anthropic", coder_floor="sonnet", premium=premium,
+        ) == km.ID_MAP["opus"]
+
+    # -- M2: fallback_chain survives an emit-side bump ------------------------
+    def test_M2_fallback_chain_handles_a_PRE_bump_generation(self):
+        """The emit-side bump dropped the previous id from the 1:1 reverse map.
+
+        fallback_chain was the ONLY entry point that never normalized, so it
+        returned [None] — the "skip + degrade" route — instead of stepping down.
+        """
+        assert km.fallback_chain("claude-opus-4-8", "anthropic") == [
+            km.ID_MAP["sonnet"], km.ID_MAP["haiku"], None,
+        ]
+
+    def test_M2_fallback_chain_handles_the_current_generation(self):
+        assert km.fallback_chain("claude-opus-5", "anthropic") == [
+            km.ID_MAP["sonnet"], km.ID_MAP["haiku"], None,
+        ]
+
+    def test_M2_fallback_chain_accepts_a_short_name(self):
+        assert km.fallback_chain("opus", "anthropic") == [
+            km.ID_MAP["sonnet"], km.ID_MAP["haiku"], None,
+        ]
+
+    def test_M2_fallback_chain_floor_still_terminates(self):
+        assert km.fallback_chain(km.ID_MAP["haiku"], "anthropic") == [None]
+
+    # -- D1: the tier is not always hyphen-field 2 ---------------------------
+    def test_D1_tier_token_scans_every_hyphen_field(self):
+        assert km.tier_token_of("claude-3-5-sonnet-20241022") == "sonnet"
+        assert km.tier_token_of("claude-3-opus-20240229") == "opus"
+        assert km.tier_token_of("claude-opus-5") == "opus"
+        assert km.tier_token_of("claude-haiku-4-5-20251001") == "haiku"
+
+    def test_D1_legacy_dated_ids_do_NOT_false_raise(self):
+        """These would have bricked config load once the guard was wired."""
+        for anchor in ("claude-3-5-sonnet-20241022", "claude-3-opus-20240229"):
+            km.validate_anchor(anchor)
+
+    def test_D1_product_names_are_not_mistaken_for_models(self):
+        for name in ("claude-code", "claude-agent-sdk"):
+            assert km.tier_token_of(name) is None, name
+            km.validate_anchor(name)  # must not raise
+
+    def test_D1_a_rename_with_a_version_tail_still_raises(self):
+        with pytest.raises(ValueError, match="names no tier"):
+            km.validate_anchor("claude-quartet-2")
+
+    # -- D4: recognition is scoped to the Anthropic ladder -------------------
+    def test_D4_claude_prefix_matches_only_the_anthropic_ladder(self, monkeypatch):
+        """A populated foreign ladder must never capture a `claude-` id.
+
+        NON-VACUOUS BY CONSTRUCTION. The naive form of this test — asserting
+        `tier_token_of("claude-pro-1") is None` against the shipped module — passes
+        whether the implementation reads `_ANTHROPIC_RUNGS` or `_ALL_LADDER_RUNGS`,
+        because every foreign ladder is an empty placeholder today, so the two sets
+        are IDENTICAL and the check has a zero denominator. A sandboxed
+        deliberate-break probe confirmed the naive form did not catch the mutation.
+
+        So the foreign ladder is populated here. If the implementation ever reads
+        the all-family union, `claude-pro-1` captures "pro" and this fails.
+        """
+        monkeypatch.setattr(km, "_ALL_LADDER_RUNGS",
+                            frozenset(km._ANTHROPIC_RUNGS | {"pro", "flash", "ultra"}))
+        assert "pro" not in km._ANTHROPIC_RUNGS
+        assert "pro" in km._ALL_LADDER_RUNGS          # the union IS populated now
+        assert km.tier_token_of("claude-pro-1") is None
+        assert km.family_of("claude-pro-1") is None
+
+    # -- D5: pin what the original tests left unpinned -----------------------
+    def test_D5_error_message_rung_order_is_deterministic(self):
+        """Law 3/10: deleting sorted() left all 14 original tests green."""
+        messages = []
+        for _ in range(3):
+            try:
+                km.validate_anchor("claude-quartet-2")
+            except ValueError as exc:
+                messages.append(str(exc))
+        assert len(set(messages)) == 1
+        expected = ", ".join(sorted(km._ANTHROPIC_RUNGS))
+        assert expected in messages[0]
+
+    def test_D5_emit_side_still_requires_a_table_edit(self):
+        """Corrects the original test's overclaiming name.
+
+        Semantic recognition fixes RECOGNITION. Emission still reads the pinned
+        ID_MAP, so a genuinely new generation is emitted only after a table edit.
+        """
+        assert km.family_of("claude-opus-6") == "anthropic"      # recognized
+        assert km.ID_MAP["opus"] == "claude-opus-5"              # but emits the pinned id
+        assert km.resolve(
+            "kata-report", "advanced", "claude-opus-6",
+            family="auto", coder_floor="sonnet",
+        ) == km.ID_MAP["sonnet"]
