@@ -182,11 +182,17 @@ Each task = one version-up. Gates: `tools/scripts/gauntlet.py` green + correctne
 
 ### T-11 — ✅ **BUILT 2026-07-25** · `ID_MAP` stale: Opus 5 unmapped, silently defeating advisor + economy tiering
 
-> **Status: built + gated, PR pending.** `tools/kata_models.py` — semantic tier recognition
-> (`tier_token_of`, `_normalize_anchor` fallback), the currency guard (`validate_anchor`), and the
-> emit-side bump `ID_MAP["opus"] → claude-opus-5`. **+14 tests** (`TestT11SemanticTierRecognition`).
-> Suite 4086 / 3 pre-existing skip. **Load-guard wiring of `validate_anchor` is NOT done — see the
-> honesty note at the end of this task.**
+> **Status: BUILT · WIRED · GATED · two advals folded. PR open, unmerged.**
+> `tools/kata_models.py` — semantic tier recognition (`tier_token_of`, `_normalize_anchor` fallback),
+> the currency guard (`validate_anchor`, **WIRED** into `kata-orchestrate` 0.16.0's precondition
+> load-guard), the emit-side bump `ID_MAP["opus"] → claude-opus-5`, and Bedrock/Vertex/case/whitespace
+> carrier normalization. **+34 tests across 3 classes** (`TestT11SemanticTierRecognition` 14 ·
+> `TestT11AdvalFolds` 13 · `TestT11SecondAdvalFolds` 7). Suite **4106 / 3 pre-existing skip**
+> (verified by running each class; the first commit's "+18 tests" claim was **wrong — it was 13**,
+> adval MED-5).
+> Two fresh-context advals: first returned SHIP-WITH-FIXES (2 MAJOR + 5 MED), second returned
+> **SHIP-WITH-FIXES with MAJOR empty** (5 MED + 9 LOW). All folded. Every fold carries an executed
+> sandboxed break-probe.
 
 **Found 2026-07-25 while composing the advanced advisor grant.** `tools/kata_models.py:89-95`:
 

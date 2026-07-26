@@ -1428,13 +1428,21 @@ class TestT11AdvalFolds:
 
         So the foreign ladder is populated here. If the implementation ever reads
         the all-family union, `claude-pro-1` captures "pro" and this fails.
+
+        Second-pass adval (LOW-2) found the first rewrite still half-vacuous: it
+        monkeypatched only the DERIVED `_ALL_LADDER_RUNGS`, so no ladder actually
+        contained "pro" and the `family_of` leg passed under the mutation too. The
+        real ladder is patched here, which makes the stated consequence — a Claude
+        id routed onto the gemini family and the generic step table — load-bearing.
         """
-        monkeypatch.setattr(km, "_ALL_LADDER_RUNGS",
-                            frozenset(km._ANTHROPIC_RUNGS | {"pro", "flash", "ultra"}))
+        monkeypatch.setitem(km.FAMILY_LADDERS, "gemini", ["flash", "pro", "ultra"])
+        monkeypatch.setattr(km, "_ALL_LADDER_RUNGS", frozenset(
+            rung for ladder in km.FAMILY_LADDERS.values() for rung in ladder))
         assert "pro" not in km._ANTHROPIC_RUNGS
-        assert "pro" in km._ALL_LADDER_RUNGS          # the union IS populated now
+        assert "pro" in km._ALL_LADDER_RUNGS
+        assert "pro" in km.FAMILY_LADDERS["gemini"]   # a REAL ladder contains it now
         assert km.tier_token_of("claude-pro-1") is None
-        assert km.family_of("claude-pro-1") is None
+        assert km.family_of("claude-pro-1") is None   # now load-bearing
 
     # -- D5: pin what the original tests left unpinned -----------------------
     def test_D5_error_message_rung_order_is_deterministic(self):
@@ -1461,3 +1469,46 @@ class TestT11AdvalFolds:
             "kata-report", "advanced", "claude-opus-6",
             family="auto", coder_floor="sonnet",
         ) == km.ID_MAP["sonnet"]
+
+
+class TestT11SecondAdvalFolds:
+    """Pins for the SECOND fresh-context adval on the folded T-11 (MAJOR: empty)."""
+
+    # -- MED-2: type guard, matching validate_advisor_block's house pattern ---
+    def test_MED2_non_string_anchor_raises_ValueError_not_AttributeError(self):
+        for bad in (None, 123, ["opus"], {"a": 1}):
+            with pytest.raises(ValueError, match="must be a string"):
+                km.validate_anchor(bad)
+
+    # -- LOW-3: the documented FIRST-match-wins total order (law 10) ----------
+    def test_LOW3_first_matching_field_wins(self):
+        """A last-match-wins mutation was caught by zero tests before this."""
+        assert km.tier_token_of("claude-opus-sonnet-1") == "opus"
+        assert km.tier_token_of("claude-sonnet-opus-1") == "sonnet"
+
+    # -- LOW-5: platform-prefixed / cased / spaced carriers of the SAME id ----
+    def test_LOW5_bedrock_prefixed_ids_resolve(self):
+        a = "us.anthropic.claude-opus-4-1-20250805"
+        assert km.tier_token_of(a) == "opus"
+        assert km.family_of(a) == "anthropic"
+        assert km.advisor_rung_of("auto", a) == "fable"
+
+    def test_LOW5_vertex_at_sign_ids_resolve(self):
+        assert km.tier_token_of("claude-3-5-sonnet@20240620") == "sonnet"
+
+    def test_LOW5_case_and_whitespace_are_normalized(self):
+        for a in ("CLAUDE-OPUS-5", "  claude-opus-5  ", "Claude-Opus-5"):
+            assert km.tier_token_of(a) == "opus", a
+
+    def test_LOW5_prefix_stripping_cannot_invent_a_rung(self):
+        """Widening recognition must never resolve an id to the WRONG rung."""
+        for a in ("us.anthropic.claude-quartet-2", "anthropic.gpt-5", "us.anthropic.foo"):
+            assert km.tier_token_of(a) is None, a
+
+    # -- BC floor re-proven after the widening -------------------------------
+    def test_BC_floor_survives_the_prefix_widening(self):
+        for a in ("session", "", "gpt-5", "llama-3", "whatever"):
+            km.validate_anchor(a)
+            assert km.tier_token_of(a) is None, a
+        assert km._normalize_anchor("session") == "session"
+        assert km.family_of("session") is None

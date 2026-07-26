@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.16.0
+version: 0.16.1
 category: coordinate
 status: beta
 agnostic: true
@@ -98,11 +98,18 @@ does not drift.**
      is inevitable; the silence is what this removes.
      **The guard is deliberately narrow** — it raises ONLY on `claude-<word>-<digit…>` naming no known
      rung (a vendor rename or an unmodelled tier). A ladder short-name, a vendor id containing a known
-     rung **in any hyphen position** (`claude-3-5-sonnet-20241022` → `sonnet`), the `"session"` sentinel,
-     a foreign-family id, and Anthropic **product** names (`claude-code`, `claude-agent-sdk` — no numeric
-     tail) all pass. An **ABSENT** `models` block or `anchor` key ⇒ no check, behavior byte-identical
+     rung **in any hyphen position** (`claude-3-5-sonnet-20241022` → `sonnet`), a Bedrock/Vertex carrier
+     of the same id (`us.anthropic.claude-opus-4-1-20250805`, `claude-3-5-sonnet@20240620`), case and
+     whitespace variants, the `"session"` sentinel, a foreign-family id, and Anthropic **product** names
+     (`claude-code`, `claude-agent-sdk` — no numeric tail) all pass. A non-string anchor raises a typed
+     `ValueError`. An **ABSENT** `models` block or `anchor` key ⇒ no check, behavior byte-identical
      (BC1). `resolve()`'s inherit-on-doubt contract is **unchanged** — this guard is the loud path, and
      it lives at load, never inside the resolver.
+     **SCOPE LIMIT (honest, adval LOW-5/LOW-7):** recognition is **Anthropic-shaped only**. A
+     non-Anthropic foreign id still resolves to `None` everywhere — no tier-down, no advisor rung, and
+     **no error** — because the other three family ladders are empty placeholders (§Z1); there is
+     nothing to recognize yet. The guard also covers **`models.anchor` only**; `roles.<x>.model` is a
+     second live model-id carrier (`protocol/config.md`) and is **not** routed through it.
 
 1. **PRE-FLIGHT gate** — conditional, fail-closed, BC-preserving (N5/D29). Call
    `kata_preflight.preflight_required(repo_root)`:

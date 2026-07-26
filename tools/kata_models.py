@@ -134,6 +134,20 @@ _ANTHROPIC_RUNGS: frozenset[str] = frozenset(_ANTHROPIC_LADDER)
 # tail), so product names are never mistaken for models (adval D1).
 _UNKNOWN_TIER_RE = re.compile(r"^claude-[a-z]+-[0-9]")
 
+# Platform-prefixed carriers of the SAME Anthropic id (adval LOW-5). Bedrock ships
+# `us.anthropic.claude-opus-4-1-20250805`, Vertex `claude-3-5-sonnet@20240620`. Before
+# this, every such anchor fell straight into the silent-inherit bucket — no tier-down,
+# no Fable advisor rung, no error: verbatim the T-11 defect, for a shape this
+# environment demonstrably uses. Stripping the carrier prefix is a RECOGNITION widening
+# only; it can never make an unrecognized id recognized as the WRONG rung, because the
+# rung still has to appear as a literal field.
+_PLATFORM_PREFIX_RE = re.compile(r"^(?:[a-z]{2,4}\.)?anthropic\.")
+
+
+def _strip_platform_prefix(anchor: str) -> str:
+    """Normalize case/whitespace and strip a Bedrock/Vertex carrier prefix."""
+    return _PLATFORM_PREFIX_RE.sub("", anchor.strip().lower())
+
 
 def tier_token_of(anchor: str) -> str | None:
     """Return the Anthropic tier token of a vendor-shaped model id, or ``None``.
@@ -158,9 +172,13 @@ def tier_token_of(anchor: str) -> str | None:
     Pure and deterministic: string ops over the argument only. No I/O, no clock,
     no ambient state (law 7).
     """
-    if not anchor.startswith("claude-"):
+    if not isinstance(anchor, str):
         return None
-    for field in anchor.split("-")[1:]:
+    candidate = _strip_platform_prefix(anchor)
+    if not candidate.startswith("claude-"):
+        return None
+    # Split on '-' AND '@': Vertex uses `claude-3-5-sonnet@20240620` (adval LOW-5).
+    for field in re.split(r"[-@]", candidate)[1:]:
         if field in _ANTHROPIC_RUNGS:
             return field
     return None
@@ -194,11 +212,19 @@ def validate_anchor(anchor: str) -> None:
     Raises:
         ValueError: on case 2, naming the id and the known Anthropic rungs.
     """
+    if not isinstance(anchor, str):
+        raise ValueError(
+            f"validate_anchor: models.anchor must be a string, got "
+            f"{type(anchor).__name__}. A hand-edited null/number/list anchor is a "
+            f"config error (mirrors validate_advisor_block's type guard)."
+        )
+    # NOTE (adval LOW-1): a `tier_token_of(anchor) is not None` early-return used to sit
+    # here and was proven unreachable — _normalize_anchor already returns a ladder rung
+    # in exactly that case, so the check above has returned. Removed rather than kept as
+    # dead machinery inside a wired guard.
     if _normalize_anchor(anchor) in _ALL_LADDER_RUNGS:
         return
-    if tier_token_of(anchor) is not None:
-        return
-    if _UNKNOWN_TIER_RE.match(anchor):
+    if _UNKNOWN_TIER_RE.match(_strip_platform_prefix(anchor)):
         known = ", ".join(sorted(_ANTHROPIC_RUNGS))
         raise ValueError(
             f"validate_anchor: {anchor!r} looks like an Anthropic model id but "
@@ -264,7 +290,18 @@ def _exact_short_of(model_id: str) -> str:
     ``offer: "claude-opus-5"`` that previously NO-FIREd cost-free (``unknown-offer``)
     would begin firing and spending. Operator-approved resolution (2026-07-25):
     keep semantic recognition for the ANCHOR, require an exact table id for the OFFER.
-    Non-spend-increasing by construction.
+
+    **SCOPE OF THE NON-SPEND-INCREASING CLAIM — read this precisely (adval MED-1).**
+    This function makes the **OFFER leg** non-spend-increasing. It does **NOT** make the
+    whole premium gate so. ``premium_status`` still normalizes the **ANCHOR** through
+    :func:`_normalize_anchor` (semantic), which means a semantically-recognized anchor
+    that previously reported ``unknown-anchor`` — e.g. ``claude-opus-6``,
+    ``claude-3-5-sonnet-20241022`` — now satisfies the anchor conjunct and the gate can
+    FIRE where it previously could not. That widening is **deliberate and
+    operator-approved** (semantic recognition for the anchor IS the T-11 fix), but it is
+    a real spend-surface change and an earlier version of this docstring claimed
+    otherwise without qualification. A premium NO-FIRE is surfaced as a board NOTE; a
+    FIRE is not, so the operator sees no signal when this widening is what enabled it.
     """
     return _ID_TO_SHORT.get(model_id, model_id)
 
