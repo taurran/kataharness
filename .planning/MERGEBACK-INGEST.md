@@ -180,6 +180,38 @@ Each task = one version-up. Gates: `tools/scripts/gauntlet.py` green + correctne
 - Matters because "reverse-direction merge from a fork" and "ingest from an independently-diverged
   port with no merge base" are different risk models.
 
+### T-11 — ⚠ `ID_MAP` is stale: Opus 5 is unmapped, silently defeating advisor + economy tiering · **FIX, own grill**
+
+**Found 2026-07-25 while composing the advanced advisor grant.** `tools/kata_models.py:89-95`:
+
+```python
+"opus": "claude-opus-4-8",   # ← the PREVIOUS generation
+```
+
+There is **no entry for `claude-opus-5`** (the current model). Measured consequences when an anchor
+is written as the current full id:
+
+| anchor | `family_of` | economy tier-down | advisor rung |
+|---|---|---|---|
+| `opus` (short) | anthropic | `claude-sonnet-5` | **fable** ✅ |
+| `claude-opus-4-8` | anthropic | `claude-sonnet-5` | **fable** ✅ |
+| **`claude-opus-5`** | **None** | **None (inherit)** | **None (inherit)** ❌ |
+
+**Both failures are SILENT INHERITS, not errors** — the exact silent-permissive-default class D136/D33
+exist to prevent. An operator on Opus 5 whose config names the concrete id gets **no economy tiering
+and no Fable advisor**, with nothing surfaced.
+
+- **Why we are not bitten right now:** this run's anchor is written as the `"session"` sentinel, which
+  is substituted at dispatch to the ladder **short-name** (`opus`), which resolves correctly. The
+  previously-recorded `claude-opus-4-8` also worked — by the accident of being an older *mapped* id.
+- **Scope:** `ID_MAP` currency generally (`sonnet`→`claude-sonnet-5` and `haiku` are current;
+  `opus` is a generation behind), plus the question of whether an **unrecognized anchor should
+  fail-loud rather than silently inherit.** The docstring says "unknown anchor → `None` → inherit —
+  never a crash, never a forced model", so the inherit is *by design*; the defect is that a **current,
+  legitimate model id** falls into the unknown bucket.
+- **Grill question:** is inherit-on-unknown right for an anchor the operator explicitly wrote? An
+  explicitly-named-but-unrecognized anchor is a different case from an absent one.
+
 ### T-10 — Ingest-direction defect-carry risk · **backlog-or-task, operator call**
 - Their §3 proves defects travel **backwards** through an ingest: 5 of our closed DET defects live in
   their port because they forked one week before adoption.
