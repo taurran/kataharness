@@ -823,12 +823,25 @@ version. _Avoid_: porting the AWS implementation verbatim; grafting MindBridge b
 private migration branch.
 
 ## Architecture principle
-**Determinism-first (script-where-deterministic)**:
-The KataHarness engineering default: anything rule-decidable — gates, scores, orderings, hashes,
-comparisons, parsers, classifiers, durable-artifact writers — lives in a **script** (`tools/*.py`, pure
-stdlib, tested, gated), with prose only wiring it in; genuine judgment (grill resolutions, verdict
-content, synthesis) stays LLM. The Determinism Doctrine's "where judgment is allowed" line as an
-engineering rule (models: `kata_quota`, `kata_advisor`, `kata_adaptive`, `contract_edges`). Contrast:
-"context-as-code", where behavior lives in model-interpreted prose. A rule-decidable mechanism ported
-as prose is a determinism regression — convert it to a script (the efficiency win) or flag it.
-_Avoid_: re-deriving a deterministic decision in prose each run; prose that gates/scores/hashes.
+**Prose-first, scripts-when-optimal**:
+The KataHarness engineering default (operator-set, 2026-07-26 — **supersedes the earlier
+"script-where-deterministic" wording, which overstated the default**). Behavior lives in **prose** the
+model interprets; a mechanism is converted to a **script** (`tools/*.py`, pure stdlib, tested, gated)
+when a script is demonstrably *optimal* for it — not merely because the mechanism happens to be
+rule-decidable. Prose is the medium; a script is an optimization with a burden of justification.
+
+**What makes a script optimal** (the test, not a vibe — see `KH-T05`): the mechanism **gates, scores,
+orders, hashes, or writes a durable artifact** AND at least one of — it must produce the same bytes
+twice to be auditable · it must be able to FAIL a gate rather than advise · it must be verifiable by a
+test rather than by re-reading · it runs often enough that the LLM round-trip is a real cost.
+
+**The counter-evidence that keeps this honest** (2026-07-25 verification sweep): every subsystem here
+with a real code owner came back working; every invariant that lived only in a `SKILL.md` sentence came
+back unverifiable or quietly broken. Prose-first is the default, **not** a licence to leave an
+enforcement obligation in prose. Where a rule must be *enforced*, that is a strong signal a script is
+optimal.
+
+_Avoid_: assuming a script is required merely because a decision is deterministic; leaving a
+gate/score/hash/enforcement obligation as prose because prose is the default.
+_See also_: "context-as-code" (behavior in model-interpreted prose — the fork's architecture, adopted
+there under host constraint rather than by choice).

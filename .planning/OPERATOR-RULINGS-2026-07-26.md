@@ -98,7 +98,7 @@ rather than widen where human judgment is allowed. That claim is unverified and 
 > If we need code, we make the assessment of its criticality and enhance our function here."*
 
 This is the policy question behind every finding this week. MindBridge is prose-first **because their
-host forced it**; we are scripts-first by choice. Their doctrine is a way to make prose *safe*. Ours
+host forced it**; we are prose-first by CHOICE, which is a different thing. Their doctrine is a way to make prose *safe*. Ours
 can simply require code where code is warranted.
 
 **Deliverable:** a written rule for when a mechanism MUST be code here rather than prose — and the
