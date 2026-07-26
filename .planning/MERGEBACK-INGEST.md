@@ -180,7 +180,13 @@ Each task = one version-up. Gates: `tools/scripts/gauntlet.py` green + correctne
 - Matters because "reverse-direction merge from a fork" and "ingest from an independently-diverged
   port with no merge base" are different risk models.
 
-### T-11 — ⚠ `ID_MAP` is stale: Opus 5 is unmapped, silently defeating advisor + economy tiering · **FIX, own grill**
+### T-11 — ✅ **BUILT 2026-07-25** · `ID_MAP` stale: Opus 5 unmapped, silently defeating advisor + economy tiering
+
+> **Status: built + gated, PR pending.** `tools/kata_models.py` — semantic tier recognition
+> (`tier_token_of`, `_normalize_anchor` fallback), the currency guard (`validate_anchor`), and the
+> emit-side bump `ID_MAP["opus"] → claude-opus-5`. **+14 tests** (`TestT11SemanticTierRecognition`).
+> Suite 4086 / 3 pre-existing skip. **Load-guard wiring of `validate_anchor` is NOT done — see the
+> honesty note at the end of this task.**
 
 **Found 2026-07-25 while composing the advanced advisor grant.** `tools/kata_models.py:89-95`:
 
@@ -253,6 +259,48 @@ reached layer 3; the operator's directive adds layers 1–2.
 
 **Note:** T-11 is now a genuinely hard design question with a reversibility cost — a good first target
 for the newly-granted advisor's `advisor-planning-consult`.
+
+#### T-11 as built (2026-07-25)
+
+**A correction to the design framing above:** layer 3 (config-edge normalization) was **already built
+here** — `_normalize_anchor` existed at `kata_models.py:103`, applied at the top of
+`family_of`/`step_down`/`resolve`, with `_ID_TO_SHORT` auto-derived from `ID_MAP`. DF-05 §2 is
+**already-aligned, not an offer we needed**. The earlier note overstated it.
+
+The real defect was narrower: **`ID_MAP` is 1:1 short→id, but a rung owns MANY ids over its lifetime.**
+Recognition by table lookup therefore recognizes only the single pinned generation.
+
+Built:
+1. **`tier_token_of(anchor)`** — extracts the tier token from a vendor-shaped id
+   (`claude-<tier>-<rest>`); `None` for short-names, `session`, foreign ids, arbitrary strings.
+2. **`_normalize_anchor` semantic fallback** — on exact-lookup miss, accept the tier token **iff it is
+   a known ladder rung**. `claude-opus-5` and a future `claude-opus-6` resolve with **no table edit**.
+   The ladder, not the id table, becomes the source of truth for what a rung IS.
+3. **`validate_anchor(anchor)`** — the currency guard. RAISES **only** on case 2 (vendor-shaped,
+   unknown tier = a rename). Cases 1 and 3 return cleanly, so `session`/foreign/arbitrary anchors keep
+   inheriting exactly as before.
+4. **`ID_MAP["opus"] → "claude-opus-5"`** (emit side).
+
+**An unplanned property that fell out, now pinned:** bumping `ID_MAP["opus"]` drops the *previous* id
+from the 1:1 reverse map. Under table-only lookup that would have silently broken every config still
+naming `claude-opus-4-8`. Semantic recognition keeps it resolving — the tier token, not the pinned id,
+identifies the rung. **This is what makes future emit-side bumps safe**, and it is why the six test
+files carrying hard-coded `claude-opus-4-8` literals all still pass untouched.
+
+**⚠ HONESTY (PD-2) — what is NOT done:**
+- **`validate_anchor` is BUILT + TESTED but NOT WIRED.** Nothing calls it yet. The intended caller is
+  the `kata.config` load-guard (the `validate_advisor_block` / `validate_inline_eval` house pattern,
+  GB12). Until that wiring lands, **a vendor-shaped unknown-tier anchor still silently inherits in a
+  real run** — the loud path exists but is unreachable. Wiring it is a follow-up task and must not be
+  reported as complete before then (PD-1: present-but-unwired is NOT built).
+- The `resolve()` inherit-on-doubt contract is deliberately **unchanged** — BC preserved byte-for-byte.
+- Semantic recognition is **Anthropic-shaped only** (`^claude-<tier>-`). The other three ladders are
+  still empty placeholders (§Z1), so there is nothing to recognize for them yet; a non-Anthropic family
+  will need its own id shape when those adapters land.
+- The layer-1 idea above (**an internal vendor-independent rung vocabulary**) is **NOT built.** Our
+  rungs are still the vendor's tier names. This fix makes a *version* bump survivable; a genuine
+  **tier rename** would now fail loud rather than silently inherit — which is the improvement — but
+  the ladder would still need a human edit. Full vocabulary decoupling remains open.
 
 ### T-10 — Ingest-direction defect-carry risk · **backlog-or-task, operator call**
 - Their §3 proves defects travel **backwards** through an ingest: 5 of our closed DET defects live in

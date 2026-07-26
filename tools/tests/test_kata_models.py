@@ -1242,3 +1242,92 @@ class TestAdvisorWorkClassEntry:
 
     def test_kata_advise_is_critical(self) -> None:
         assert km.SKILL_WORK_CLASS["kata-advise"] == "critical"
+
+
+# ---------------------------------------------------------------------------
+# T-11 — semantic tier recognition + the currency guard
+# ---------------------------------------------------------------------------
+class TestT11SemanticTierRecognition:
+    """ID_MAP is 1:1 short→current-id, but a rung owns MANY ids over its life.
+
+    The defect: `claude-opus-4-8` normalized while `claude-opus-5` did not, so a
+    current legitimate anchor fell into the unknown bucket and SILENTLY inherited
+    — no economy tier-down, no advisor rung, nothing surfaced.
+    """
+
+    def test_current_opus_id_is_pinned_to_the_current_generation(self):
+        assert km.ID_MAP["opus"] == "claude-opus-5"
+
+    def test_the_regression_a_current_full_id_resolves_its_family(self):
+        """The exact T-11 failure: this returned None before the fix."""
+        assert km.family_of("claude-opus-5") == "anthropic"
+
+    def test_the_regression_a_current_full_id_yields_the_fable_advisor_rung(self):
+        assert km.advisor_rung_of("auto", "claude-opus-5") == "fable"
+
+    def test_the_regression_a_current_full_id_tiers_economy_down(self):
+        result = km.resolve(
+            "kata-report", "advanced", "claude-opus-5",
+            family="auto", coder_floor="sonnet",
+        )
+        assert result == km.ID_MAP["sonnet"]
+
+    def test_a_future_generation_resolves_with_no_id_map_edit(self):
+        """The whole point of semantic recognition — no table edit required."""
+        assert km.family_of("claude-opus-6") == "anthropic"
+        assert km.advisor_rung_of("auto", "claude-opus-6") == "fable"
+
+    def test_tier_token_extraction(self):
+        assert km.tier_token_of("claude-opus-5") == "opus"
+        assert km.tier_token_of("claude-haiku-4-5-20251001") == "haiku"
+        assert km.tier_token_of("claude-sonnet-5") == "sonnet"
+
+    def test_tier_token_is_none_for_non_vendor_shapes(self):
+        """Short-names, the sentinel, and foreign ids must not be misread as ids."""
+        for anchor in ("opus", "session", "gpt-5", "", "claude", "gemini-2-pro"):
+            assert km.tier_token_of(anchor) is None, anchor
+
+    # -- the currency guard -------------------------------------------------
+    def test_validate_anchor_accepts_short_names_and_known_ids(self):
+        for anchor in ("opus", "sonnet", "claude-opus-5", "claude-fable-5"):
+            km.validate_anchor(anchor)  # must not raise
+
+    def test_validate_anchor_RAISES_on_a_vendor_shaped_unknown_tier(self):
+        """A rename is the dangerous case — explicit, intentional, silently wrong."""
+        with pytest.raises(ValueError, match="unknown tier"):
+            km.validate_anchor("claude-quartet-2")
+
+    def test_validate_anchor_error_names_the_token_and_the_known_rungs(self):
+        with pytest.raises(ValueError) as exc:
+            km.validate_anchor("claude-quartet-2")
+        msg = str(exc.value)
+        assert "quartet" in msg
+        assert "opus" in msg and "fable" in msg
+
+    def test_validate_anchor_does_NOT_raise_on_non_vendor_shapes_BC(self):
+        """BC floor: these have always inherited and must keep inheriting."""
+        for anchor in ("session", "gpt-5", "llama-3", "", "whatever"):
+            km.validate_anchor(anchor)  # must not raise
+
+    def test_resolve_still_inherits_on_doubt_BC(self):
+        """validate_anchor is the loud path; resolve's contract is unchanged."""
+        assert km.resolve(
+            "kata-report", "advanced", "claude-quartet-2",
+            family="auto", coder_floor="sonnet",
+        ) is None
+
+    def test_session_sentinel_is_untouched_BC(self):
+        assert km._normalize_anchor("session") == "session"
+        assert km.family_of("session") is None
+
+    def test_historical_ids_keep_resolving_after_an_ID_MAP_bump(self):
+        """The property that makes the emit-side bump safe.
+
+        Bumping ID_MAP["opus"] to the current generation drops the PREVIOUS id out
+        of the 1:1 reverse map. Under table-only lookup that would silently break
+        every config still naming it. Semantic recognition keeps it resolving,
+        because the tier token — not the pinned id — is what identifies the rung.
+        """
+        assert km._normalize_anchor("claude-opus-4-8") == "opus"
+        assert km.family_of("claude-opus-4-8") == "anthropic"
+        assert km.advisor_rung_of("auto", "claude-opus-4-8") == "fable"

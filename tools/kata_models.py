@@ -62,6 +62,8 @@ Budget SHAPE is validated at load; budget SPEND is enforced by the conductor
 """
 from __future__ import annotations
 
+import re
+
 # ---------------------------------------------------------------------------
 # Family-ladder registry
 # ---------------------------------------------------------------------------
@@ -83,16 +85,95 @@ FAMILY_LADDERS: dict[str, list[str]] = {
     "generic":   _GENERIC_LADDER,
 }
 
+# Every rung across every family — the source of truth for "is this a tier we model?"
+# (T-11). Derived from FAMILY_LADDERS so adding a rung to a ladder is the ONLY edit
+# needed; `sorted()` keeps any derived output order deterministic (law 3).
+_ALL_LADDER_RUNGS: frozenset[str] = frozenset(
+    rung for ladder in FAMILY_LADDERS.values() for rung in ladder
+)
+
 # Verified short→full-ID map (Anthropic only; other families re-grounded per-adapter).
 # Do NOT change these strings without a corresponding registry bump — tests reference
 # these constants directly so a bump is caught automatically.
 ID_MAP: dict[str, str] = {
     "haiku":  "claude-haiku-4-5-20251001",
     "sonnet": "claude-sonnet-5",
-    "opus":   "claude-opus-4-8",
+    "opus":   "claude-opus-5",
     "fable":  "claude-fable-5",
     "mythos": "claude-mythos-5",  # gated — deliberate fallback-test anchor
 }
+
+# ---------------------------------------------------------------------------
+# Semantic tier recognition (T-11)
+# ---------------------------------------------------------------------------
+# ID_MAP is the EMIT side: exactly ONE current id per rung, and the rung's id
+# changes every time the vendor ships a generation.  Recognition is a DIFFERENT
+# problem: a rung owns MANY ids over its lifetime (opus 4, 4.8, 5, ...), so a 1:1
+# reverse map recognizes only the single generation that happens to be pinned.
+#
+# That gap is T-11: `claude-opus-4-8` normalized while `claude-opus-5` did not, so
+# a current, legitimate anchor fell into the "unknown" bucket and SILENTLY inherited
+# — no economy tier-down, no Fable advisor rung, nothing surfaced.
+#
+# The durable fix is to recognize the rung SEMANTICALLY from the id's tier token
+# rather than by table lookup.  Every Anthropic id is `claude-<tier>-<rest>`:
+#   claude-haiku-4-5-20251001 · claude-sonnet-5 · claude-opus-5 · claude-fable-5
+# so the tier token is extractable, and a future `claude-opus-6` resolves with no
+# edit here at all.  The ladder — not the id table — becomes the source of truth
+# for what a rung IS, which is what makes this survive a vendor renaming tiers.
+_VENDOR_ID_RE = re.compile(r"^claude-([a-z0-9]+)(?:-.*)?$")
+
+
+def tier_token_of(anchor: str) -> str | None:
+    """Return the tier token of a vendor-shaped model id, or ``None``.
+
+    ``"claude-opus-5"`` → ``"opus"``; ``"claude-haiku-4-5-20251001"`` → ``"haiku"``.
+    Returns ``None`` for anything that is not vendor-shaped — short-names
+    (``"opus"``), the ``"session"`` sentinel, foreign-family ids, and arbitrary
+    strings all yield ``None`` so their handling is unchanged.
+
+    Pure and deterministic: a regex over the argument, no I/O, no clock, no
+    ambient state (DETERMINISM-DOCTRINE law 7).
+    """
+    match = _VENDOR_ID_RE.match(anchor)
+    return match.group(1) if match else None
+
+
+def validate_anchor(anchor: str) -> None:
+    """Fail loud on a vendor-shaped anchor naming an UNKNOWN tier (T-11, D136).
+
+    The three cases, deliberately distinguished:
+
+    1. **Resolvable** — a ladder short-name, or a vendor id whose tier token is a
+       ladder rung. Returns ``None`` (no raise).
+    2. **Vendor-shaped, unknown tier** — e.g. ``"claude-quartet-2"``. This is a
+       vendor RENAME or a new tier we do not model, and it is the one case where
+       silence is dangerous: the anchor is explicitly written, obviously
+       intentional, and would otherwise inherit with nothing surfaced. **RAISES.**
+    3. **Not vendor-shaped** — ``"session"``, ``"gpt-5"``, arbitrary strings.
+       Returns ``None``. These have always inherited and must keep inheriting;
+       narrowing the raise to case 2 is what preserves that BC.
+
+    Staleness in the id table is inevitable; the SILENCE is what this removes.
+    Called by the config load-guard, never by :func:`resolve` — ``resolve``'s
+    inherit-on-doubt contract stays byte-for-byte intact.
+
+    Raises:
+        ValueError: on case 2, naming the token and the known rungs.
+    """
+    if _normalize_anchor(anchor) in _ALL_LADDER_RUNGS:
+        return
+    token = tier_token_of(anchor)
+    if token is not None and token not in _ALL_LADDER_RUNGS:
+        known = ", ".join(sorted(_ALL_LADDER_RUNGS))
+        raise ValueError(
+            f"validate_anchor: {anchor!r} is a vendor-shaped model id naming an "
+            f"unknown tier {token!r}. This is a vendor rename or a new tier the "
+            f"ladder does not model — resolving it would silently inherit at the "
+            f"anchor (no tier-down, no advisor rung). Known rungs: {known}. "
+            f"Add the rung to its FAMILY_LADDERS entry, or write a ladder "
+            f"short-name / the 'session' sentinel instead."
+        )
 
 # Reverse map: full model ID → ladder short-name.
 # Built from ID_MAP so it stays in sync automatically — no manual maintenance.
@@ -118,8 +199,23 @@ def _normalize_anchor(anchor: str) -> str:
     - Unknown full ids (e.g. ``"claude-zzz-9"``) are not in ``_ID_TO_SHORT`` → unchanged
       → ``family_of`` returns ``None`` → ``resolve`` returns ``None`` (inherit-on-doubt).
     - The ``"session"`` sentinel and any other non-ID string passes through unchanged.
+
+    T-11 semantic fallback
+    ----------------------
+    When the exact-id lookup misses, the tier token is extracted and accepted **if
+    and only if it is a known ladder rung** — so `claude-opus-5` (and a future
+    `claude-opus-6`) normalize to `"opus"` without an ``ID_MAP`` edit. A
+    vendor-shaped id naming an unknown tier still passes through unchanged here,
+    preserving inherit-on-doubt; :func:`validate_anchor` is what makes that case
+    loud at config load.
     """
-    return _ID_TO_SHORT.get(anchor, anchor)
+    exact = _ID_TO_SHORT.get(anchor)
+    if exact is not None:
+        return exact
+    token = tier_token_of(anchor)
+    if token is not None and token in _ALL_LADDER_RUNGS:
+        return token
+    return anchor
 
 # ---------------------------------------------------------------------------
 # Work-class registry  (R5: full 47-skill coverage — W3-B build task)
