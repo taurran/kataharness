@@ -55,6 +55,37 @@ rather than asserted.
 
 # NEW TASKS
 
+## ⚠️ KH-T10 finding recorded BEFORE the task starts: our agents are not ours
+
+Operator observation, 2026-07-26 — this is a **material finding about our actual state**, not a
+preference:
+
+> *"When I'm executing in Kiro I can actually see 'Forge', 'Momus' and other default agents from
+> their harness poking through. Meaning we're just a wrapper around their harness currently."*
+
+**Take this at face value; it is consistent with everything else we found.** We dispatch by writing a
+prompt and handing it to the host. We do not define agent identity, we do not pin agent behavior, and
+we have no per-role specification — so on any host with its own agent roster, **the host's agents are
+what actually run.** Our "coding agent" and "adversarial validator" are, on that host, the host's
+defaults wearing our brief.
+
+This is the same disease as everything else this week: **a capability asserted in prose with no
+executable owner.** We say we have a coder role and an evaluator role. Nothing constructs them.
+
+**Consequences for KH-T10:**
+- The task is not "improve our agent prompts." It is **"do we have agents at all, or a prompt
+  convention?"** — answer that first, per host.
+- **Cross-host divergence is now a live question:** if Kiro substitutes its roster and Claude Code
+  does not, *the same run produces different agents on different hosts* — and nothing surfaces it.
+  That is an adapter-contract gap, not a prompt-quality gap.
+- Our `HOST_ONLY_ROLES` constraint pins orchestrator+evaluator to the host — which, on a host with
+  its own roster, may mean pinning them to **someone else's agents.**
+
+**Operator's stated build path, recorded:** use exemplars from Anthropic / AWS / Hermes / Pi and the
+other harnesses we leaned on to build this — *"but we eventually want to optimize our own."* Also
+noted as a real starting asset: **our good-code / bad-code prose and agent-behavior material is
+already a meaningful start** toward optimized coding-execution and validation agents (`KH-B15`).
+
 ## KH-T10 — In-depth review and optimization of every agent we use · **operator-directed**
 > *"We're just kind of using 'standard coding agent' and 'generic adversarial validator' for our
 > agents. We really need to dive in and optimize them to make sure we are exceeding industry standard."*
