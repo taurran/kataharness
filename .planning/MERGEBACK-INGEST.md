@@ -209,8 +209,50 @@ and no Fable advisor**, with nothing surfaced.
   fail-loud rather than silently inherit.** The docstring says "unknown anchor → `None` → inherit —
   never a crash, never a forced model", so the inherit is *by design*; the defect is that a **current,
   legitimate model id** falls into the unknown bucket.
-- **Grill question:** is inherit-on-unknown right for an anchor the operator explicitly wrote? An
+- **Grill question 1:** is inherit-on-unknown right for an anchor the operator explicitly wrote? An
   explicitly-named-but-unrecognized anchor is a different case from an absent one.
+
+#### T-11 design direction (operator, 2026-07-25) — semantic tiers, not pinned names
+
+**The fix is NOT "bump `claude-opus-4-8` → `claude-opus-5`."** That fixes the instance and leaves the
+class. Operator directive, verbatim in intent:
+
+> *Pin to the current version of the correct **tier** — Fable / Opus / Sonnet for Anthropic. This may
+> need to change in future, so it may be assessing the general tiers and assigning them
+> **semantically** — eventually they may rename tiers again.*
+
+Two distinct fragilities, and today's design only guards one:
+
+| fragility | today | consequence |
+|---|---|---|
+| **Full model ids go stale** | `ID_MAP` binds short-name → full id, hand-maintained | T-11: `claude-opus-5` unmapped ⇒ silent inherit |
+| **Tier NAMES are vendor vocabulary** | our rung names *are* the vendor's tier names (`haiku/sonnet/opus/fable/mythos`) | a vendor rename or re-definition silently invalidates the ladder's meaning, not just its values |
+
+The positional arithmetic is **already rename-safe** — `step_down` works on ladder *index*, so the
+ordered list is the durable part. What is not safe is that our rung vocabulary is borrowed from the
+vendor, and the id binding is a hand-maintained table with no currency check.
+
+**Shape to grill (three layers, decoupling what we control from what we do not):**
+1. **Semantic rung roles we own** — an internal, vendor-independent vocabulary for *position and
+   purpose* (e.g. economy / balanced / frontier / research-frontier). Tier arithmetic operates
+   here and never sees a vendor name. A vendor rename becomes a binding edit, not a doctrine change.
+2. **A binding table** mapping our roles → the current vendor tier name + concrete id, per family.
+   Refreshable, and the ONLY place vendor vocabulary appears.
+3. **Normalization at the config-parsing edge** (`DF-05 §2`'s `_normalize_anchor`): a full vendor id
+   written in config resolves back to a rung before any arithmetic — *"the config-parsing edge, not
+   the ladder table."*
+
+**Plus a currency guard**, which neither we nor the fork have: an unrecognized-but-explicitly-named
+anchor should **fail loud**, not silently inherit. That is the T-11 defect's actual root — the silence,
+not the staleness. Staleness is inevitable; silence is a choice.
+
+**Cross-reference correction:** `DF-05 §2` was filed as informational under **BL-M09**. It is
+**load-bearing input to T-11** — the fork offers the normalization mechanism and explicitly says
+*"take the shape, not our values"* because their ladder is "stale the moment a vendor ships." They
+reached layer 3; the operator's directive adds layers 1–2.
+
+**Note:** T-11 is now a genuinely hard design question with a reversibility cost — a good first target
+for the newly-granted advisor's `advisor-planning-consult`.
 
 ### T-10 — Ingest-direction defect-carry risk · **backlog-or-task, operator call**
 - Their §3 proves defects travel **backwards** through an ingest: 5 of our closed DET defects live in
@@ -232,7 +274,7 @@ and no Fable advisor**, with nothing surfaced.
 | **BL-M06** | Code-graph oracle layer beyond the parser floor (`call` edges, communities, blast-radius) | their BL-020 |
 | **BL-M07** | `kata-understand` → first-class whole-repo comprehension | their BL-021 |
 | **BL-M08** | Agent-roster deep review + explicit evaluator rubrics/scoring | their BL-018 |
-| **BL-M09** | **Measure `kata-orchestrate`'s reference surface.** They measured theirs at **102,750 tokens = 51.4% of a 200k window before doing any work**; one-reference-per-phase cut it 54%. Take the *measurement method*, not the feature | DF-05 §3a |
+| **BL-M09** | **Measure `kata-orchestrate`'s reference surface.** They measured theirs at **102,750 tokens = 51.4% of a 200k window before doing any work**; one-reference-per-phase cut it 54%. Take the *measurement method*, not the feature. ⚠ **Scope narrowed 2026-07-25:** DF-05 **§2** (anchor normalization) is NOT part of this item — it is load-bearing input to **T-11**. Only §3a's measurement stays here | DF-05 §3a |
 | **BL-M10** | Durable "the model resolver actually ran" artifact per dispatch | their BL-002 |
 | **BL-M11** | Good-code/bad-code ride-along context + a maintainability verifier | their BL-011 |
 | **BL-M12** | Record DF-01: our scripts-first architecture is externally validated; do not adopt Context-as-Code | DF-01 |
