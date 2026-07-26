@@ -287,13 +287,18 @@ naming `claude-opus-4-8`. Semantic recognition keeps it resolving — the tier t
 identifies the rung. **This is what makes future emit-side bumps safe**, and it is why the six test
 files carrying hard-coded `claude-opus-4-8` literals all still pass untouched.
 
-**⚠ HONESTY (PD-2) — what is NOT done:**
-- **`validate_anchor` is BUILT + TESTED but NOT WIRED.** Nothing calls it yet. The intended caller is
-  the `kata.config` load-guard (the `validate_advisor_block` / `validate_inline_eval` house pattern,
-  GB12). Until that wiring lands, **a vendor-shaped unknown-tier anchor still silently inherits in a
-  real run** — the loud path exists but is unreachable. Wiring it is a follow-up task and must not be
-  reported as complete before then (PD-1: present-but-unwired is NOT built).
+**STATUS UPDATE (2026-07-25, commit `600eb4c`) — the adval fold + the wiring:**
+- **`validate_anchor` is now WIRED** into `kata-orchestrate`'s precondition load-guard (0.15.0 →
+  0.16.0), following the `validate_advisor_block` house pattern. The earlier "BUILT but NOT WIRED"
+  state is **closed**; DEF-2 was never opened because the wiring landed in the same run.
+- **Two MAJORs from the first adval are folded** — see the commit. Both were operator-verified by
+  reproduction before acceptance.
+
+**⚠ HONESTY (PD-2) — what remains NOT done:**
 - The `resolve()` inherit-on-doubt contract is deliberately **unchanged** — BC preserved byte-for-byte.
+  **Correction to the original claim:** the first commit said "BC preserved byte-for-byte" *without*
+  qualification, and that was **false** — `premium.offer` and `fallback_chain` both changed behavior.
+  It is true only now, after the fold, and only for `resolve()` proper.
 - Semantic recognition is **Anthropic-shaped only** (`^claude-<tier>-`). The other three ladders are
   still empty placeholders (§Z1), so there is nothing to recognize for them yet; a non-Anthropic family
   will need its own id shape when those adapters land.
