@@ -35,8 +35,6 @@ _RULE = "━"
 #: makes a large orientation redundant. Its jobs are to name the authoritative artifact,
 #: give the verification commands WITH their expected values, and forbid acting on a mismatch.
 _REENTRY_TEMPLATE = """\
-cd {repo}
-
 Read {handoff} in full — it is the authoritative state.
 
 Verify before acting. STOP and report on any mismatch:
@@ -64,10 +62,15 @@ def _bullet(label: str, value: str) -> str:
     return f"  {label:<10}{value}"
 
 
-def render_reentry(*, handoff_path: str, repo: str, branch: str, master: str) -> str:
-    """Return the copy/paste block for the successor session — this IS the orientation."""
+def render_reentry(*, handoff_path: str, branch: str, master: str) -> str:
+    """Return the AGENT PROMPT for the successor session — this IS the orientation.
+
+    Deliberately contains **no shell command**. The `cd` is a terminal action taken before
+    the agent exists; mixing it in makes the block unpasteable anywhere — half belongs in a
+    shell, half in a chat box. ``render_break`` presents them as two numbered steps.
+    """
     return _REENTRY_TEMPLATE.format(
-        handoff=handoff_path, repo=repo, branch=branch, master=master)
+        handoff=handoff_path, branch=branch, master=master)
 
 
 def render_break(
@@ -99,11 +102,17 @@ def render_break(
     out.append("                 this handoff already replaces.")
     out.append("")
     out.append(rule)
-    out.append("  PASTE INTO THE NEW SESSION")
+    out.append("  ①  SHELL — only when launching a NEW terminal.")
+    out.append("     Staying in this window and running /clear? Skip to ②.")
     out.append(rule)
     out.append("")
-    out.append(render_reentry(
-        handoff_path=handoff_path, repo=repo, branch=branch, master=master))
+    out.append(f"  cd {repo}")
+    out.append("")
+    out.append(rule)
+    out.append("  ②  AGENT PROMPT — paste INTO the session, after /clear")
+    out.append(rule)
+    out.append("")
+    out.append(render_reentry(handoff_path=handoff_path, branch=branch, master=master))
     out.append("")
 
     if owed:

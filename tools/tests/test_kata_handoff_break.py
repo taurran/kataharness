@@ -1,8 +1,6 @@
 """Tests for kata_handoff_break - the SESSION BREAK notice."""
 from __future__ import annotations
 
-import pytest
-
 import kata_handoff_break as khb
 
 _ARGS = dict(
@@ -10,6 +8,7 @@ _ARGS = dict(
     branch="docs/x", head="abc1234", master="fcb0338",
     gates="pytest 4122/3 skip - ruff clean",
 )
+_RE = dict(handoff_path="H.md", branch="b", master="m")
 
 
 class TestDeterminism:
@@ -18,15 +17,16 @@ class TestDeterminism:
 
     def test_no_ambient_time_is_read(self):
         """Law 7: a stamp appears ONLY when the caller passes one."""
-        assert not [l for l in khb.render_break(**_ARGS).splitlines()
-                    if l.strip().startswith("written")]
-        assert "2026-07-26T00:00:00Z" in khb.render_break(**_ARGS, stamp="2026-07-26T00:00:00Z")
+        assert not [x for x in khb.render_break(**_ARGS).splitlines()
+                    if x.strip().startswith("written")]
+        assert "2026-07-26T00:00:00Z" in khb.render_break(
+            **_ARGS, stamp="2026-07-26T00:00:00Z")
 
     def test_owed_order_is_caller_order(self):
         """Law 3: no set/dict drives output order."""
-        lines = [l for l in khb.render_break(**_ARGS, owed=("zebra", "alpha")).splitlines()
-                 if l.startswith("  · ")]
-        assert lines == ["  · zebra", "  · alpha"]
+        lines = [x for x in khb.render_break(**_ARGS, owed=("zebra", "alpha")).splitlines()
+                 if x.startswith("  \u00b7 ")]
+        assert lines == ["  \u00b7 zebra", "  \u00b7 alpha"]
 
 
 class TestPrescriptiveness:
@@ -40,14 +40,37 @@ class TestPrescriptiveness:
             assert x in out, x
 
     def test_is_concise(self):
-        """The whole notice stays scannable; wordiness was the operator's complaint."""
-        assert len(khb.render_break(**_ARGS).splitlines()) <= 40
+        """Wordiness was the operator's complaint; this guards the regression."""
+        assert len(khb.render_break(**_ARGS).splitlines()) <= 45
+
+
+class TestShellVsAgentSeparation:
+    """The cd is a terminal action; the prompt goes in a chat box. Never one block."""
+
+    def test_agent_prompt_contains_NO_shell_command(self):
+        b = khb.render_reentry(**_RE)
+        assert not b.lstrip().startswith("cd ")
+        assert "cd C:" not in b
+
+    def test_break_presents_them_as_two_numbered_steps(self):
+        out = khb.render_break(**_ARGS)
+        assert "\u2460" in out and "SHELL" in out
+        assert "\u2461" in out and "AGENT PROMPT" in out
+        assert out.index("\u2460") < out.index("\u2461")
+
+    def test_shell_step_carries_the_repo_path(self):
+        assert "cd C:/Dev/Projects/KataHarness" in khb.render_break(**_ARGS)
+
+    def test_shell_step_says_when_to_skip_it(self):
+        """Running /clear in place needs no cd - say so, or it reads as mandatory."""
+        out = khb.render_break(**_ARGS)
+        assert "Skip to" in out and "/clear" in out
 
 
 class TestReentryBlock:
     def test_carries_concrete_commands_with_expected_values(self):
         """DEFINED, not generic: every check names its expected result."""
-        b = khb.render_reentry(handoff_path="H.md", repo="C:/r", branch="br", master="fcb0338")
+        b = khb.render_reentry(handoff_path="H.md", branch="br", master="fcb0338")
         for cmd in ("git status --porcelain", "git stash list",
                     "git rev-parse --short origin/master",
                     "git rev-parse --abbrev-ref HEAD",
@@ -55,27 +78,19 @@ class TestReentryBlock:
             assert cmd in b, cmd
         assert "-> fcb0338" in b and "-> br" in b and "4/4 PASS" in b
 
-    def test_cds_to_the_repo_first(self):
-        assert khb.render_reentry(handoff_path="H.md", repo="C:/r", branch="b",
-                                  master="m").startswith("cd C:/r")
-
     def test_warns_off_the_venv_python_false_red(self):
-        assert "false-red" in khb.render_reentry(
-            handoff_path="H.md", repo="C:/r", branch="b", master="m")
+        assert "false-red" in khb.render_reentry(**_RE)
 
     def test_forbids_acting_on_mismatch(self):
-        assert "STOP and report" in khb.render_reentry(
-            handoff_path="H.md", repo="C:/r", branch="b", master="m")
+        assert "STOP and report" in khb.render_reentry(**_RE)
 
     def test_is_short(self):
-        b = khb.render_reentry(handoff_path="H.md", repo="C:/r", branch="b", master="m")
-        assert len(b.splitlines()) <= 16
+        assert len(khb.render_reentry(**_RE).splitlines()) <= 14
 
     def test_embedded_copy_is_identical(self):
         """One source of truth for the orientation text."""
         b = khb.render_reentry(handoff_path=".planning/HANDOFF.md",
-                               repo="C:/Dev/Projects/KataHarness", branch="docs/x",
-                               master="fcb0338")
+                               branch="docs/x", master="fcb0338")
         assert b in khb.render_break(**_ARGS)
 
 
@@ -85,7 +100,7 @@ class TestRendering:
         assert khb.BRAND == kata_banner.BRAND
 
     def test_cjk_width_is_measured(self):
-        assert khb._dwidth("改善型") == 6
+        assert khb._dwidth("\u6539\u5584\u578b") == 6
         assert khb._dwidth("abc") == 3
 
     def test_optional_sections_omitted_when_empty(self):
