@@ -2,8 +2,8 @@
 date: 2026-07-26
 kind: manual
 trigger: operator-requested session refresh ("handoff to a new session")
-branch: docs/mergeback-ingest-itemization @ pushed · master UNTOUCHED at fcb0338
-green: pytest 4106 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 · Snyk 0 med+
+branch: docs/mergeback-ingest-itemization @ 0c434bf (pushed) · master UNTOUCHED at fcb0338
+green: pytest 4122 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 · Snyk 0 med+
 authored-by: the outgoing session, by hand
 ---
 
@@ -45,6 +45,11 @@ code**.
 
 **Shipped:** T-11 model-tier currency fix (semantic tier recognition, currency guard **wired**,
 Bedrock/Vertex normalization, +34 tests, **two fresh-context advals folded**).
+
+**Also shipped, late:** `tools/kata_handoff_break.py` (+16 tests) — the SESSION BREAK
+notice. First concrete piece of `KH-T01`: it gives the *operator-facing* half of the
+session boundary a deterministic owner. It does NOT close KH-T01 — the write half
+(PreCompact actually writing a handoff rather than nudging) is still open.
 
 **Everything else is decisions, itemized and unbuilt.**
 
