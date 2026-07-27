@@ -1,8 +1,9 @@
 """Tests for kata_handoff_break — the SESSION BREAK notice."""
 from __future__ import annotations
 
-import kata_handoff_break as khb
 import pytest
+
+import kata_handoff_break as khb
 
 _ARGS = dict(
     handoff_path=".planning/HANDOFF.md",
