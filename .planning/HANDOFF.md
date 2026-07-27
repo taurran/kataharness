@@ -1,4 +1,155 @@
 ---
+date: 2026-07-26
+kind: manual
+trigger: operator-requested session refresh ("handoff to a new session")
+branch: docs/mergeback-ingest-itemization @ pushed · master UNTOUCHED at fcb0338
+green: pytest 4106 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 · Snyk 0 med+
+authored-by: the outgoing session, by hand
+---
+
+> ## ⚠️ THIS IS A MANUAL HANDOFF — the automated machinery did NOT fire
+>
+> **Do not read this as evidence that self-handoff works.** It does not. This session *proved* it
+> doesn't: the 0.70 trigger has **never fired** in any real session (peak observed across 22 recorded
+> sessions: **69%**), `boundary`-supersedes-`self` is prose with **zero code**, the staleness
+> comparator **does not exist**, and **no real handoff has ever carried its `kind:`/`trigger:` fields**
+> (this one carries them because I typed them).
+>
+> Fixing that is **`KH-T01`**, and it is the highest-value item in the queue.
+
+---
+
+# HANDOFF — 2026-07-26
+
+## 0. GROUND TRUTH — verify before trusting anything below
+
+```
+cd C:\Dev\Projects\KataHarness
+git status                 # expect: clean
+git stash list             # expect: EMPTY  ← D1 tripwire; if not, STOP
+git rev-parse --short origin/master        # expect: fcb0338  (UNTOUCHED)
+git rev-parse --abbrev-ref HEAD            # expect: docs/mergeback-ingest-itemization
+cd tools && uv run python scripts/gauntlet.py    # expect 4/4 PASS
+```
+
+- **PR #51 is OPEN and unmerged.** Nothing from this work is on master.
+- ⚠️ **Run the gauntlet via `uv run`, never `.venv/Scripts/python.exe -m pytest` directly** — the
+  latter fails 2 integration tests in an offline sandbox and produces a **false red**. Cost me a
+  false alarm this session.
+
+## 1. WHAT THIS SESSION DID
+
+Ingested the MindBridge merge-back, verified our own tree against its claims, fixed one live defect,
+and — in the last third — made a set of **architecture decisions that are more valuable than the
+code**.
+
+**Shipped:** T-11 model-tier currency fix (semantic tier recognition, currency guard **wired**,
+Bedrock/Vertex normalization, +34 tests, **two fresh-context advals folded**).
+
+**Everything else is decisions, itemized and unbuilt.**
+
+## 2. 🔴 READ THESE FIVE FINDINGS FIRST — they reorder everything
+
+1. **A stale `RESULT.json` is fully creditable by the gate.** Ours names a SHA **37 commits** behind
+   HEAD and would be accepted today as proof the build passed. Confirms MC-05; raises `T-04`.
+2. **The Prime Directives can be inverted and still pass.** The check is 7 substrings. A reviewer
+   rewrote both directives to say the *opposite* — *"stub it and move on, present-but-dead counts as
+   built"* — kept the words, **and the validator passed green.** → `KH-T02`, operator-flagged top of queue.
+3. **Crash recovery would `git branch -D` six live `task/*` branches.** `kata_restore` defaults to an
+   `integration` branch that doesn't exist here. Never run for real, so never noticed. → `BL-M21`.
+4. **Our second brain is one bucket of five, never read back.** 269 pages in
+   `synthesis/decision-patterns`; `concepts`/`entities`/`references`/`sources` = **0 each**. → `KH-T14`.
+5. **We are, on some hosts, a wrapper around the host's agents.** Operator sees Kiro's `Forge`/`Momus`
+   during our runs. We don't construct agents — we write prompts. → `KH-T10`, `KH-B43`.
+
+**The unifying pattern, and the thesis of the whole session:**
+> **The rule is written in a document for the AI to follow. Nothing in code enforces it.** Every
+> subsystem with a real code owner came back working. Every invariant living only in a `SKILL.md`
+> sentence came back unverifiable or quietly broken.
+
+## 3. DECISIONS MADE — these are settled, do not re-litigate
+
+| decision | detail |
+|---|---|
+| **Prose-first, scripts-when-optimal** | ⚠️ **CORRECTION.** We are **NOT** "scripts-first" — the old `CONTEXT.md` term was wrong and **went outbound to MindBridge.** Corrected. Prose is the default; a script is an optimization with a burden of justification |
+| **Prose-first is NOT disproven** | Our prose broke because it was **ungoverned**, not because prose fails. All **ten** confirmed breaks map onto their proposed laws 11–16. That *raises* MC-02's value — but confirming the disease ≠ confirming the cure |
+| **Thin orchestrator** | *"A well-behaved orchestrator does not do the work itself."* Adopted. Three teams reached it independently |
+| **Orchestrator stays in the ROOT session** | Near-unanimous industry practice; Claude Code enforces it structurally. `LD11` is **not** a compromise to outgrow. `KH-T06` resolved |
+| **Our single-writer discipline exceeds the field** | Nobody else arbitrates writes mechanically. Keep it |
+| **Grill stays in-session; design + plan get dispatched** | `D70`: a grill with no human to interrogate isn't a grill. Design/plan authoring has no human channel → dispatch them |
+| **Wrong model ⇒ BLOCK at readiness, tell them to `/model`** | Operator's own answer. Don't over-engineer it |
+| **Project wiki, NOT saved chats** | Handoff = ephemeral/transactional. Wiki = long-lived decisions on tap |
+| **Tiebreaker** | *"Strength is validation and determinism, not fast and loose execution."* Where the choice is more capability vs. proving what we claim — **take the proof** |
+
+## 4. WHERE EVERYTHING IS
+
+**Start here, in this order:**
+1. **`.planning/TASKS-ARCHITECTURE-2026-07-26.md`** — every architecture decision, itemized with costs
+   and open questions. **The most important file.**
+2. **`.planning/INGEST-PLAIN-ENGLISH.md`** — the whole queue in plain language.
+3. **`.planning/BACKLOG-FROM-MINDBRIDGE.md`** — all 26 of their items as ours (`KH-B01`–`KH-B26`) plus
+   our own findings (`KH-B27`–`KH-B43`).
+4. **`.planning/OPERATOR-RULINGS-2026-07-26.md`** — operator decisions, recorded in-repo deliberately
+   so no grill has to cite a transcript.
+
+**Supporting (read when the relevant task comes up):** `INGEST-EXECUTION-ORDER.md` (ordered queue +
+a coverage audit that found four gaps in my own plan) · `D2-VERIFICATION-RESULTS.md` (18 probes with
+evidence) · `MERGEBACK-INGEST.md` (coverage matrix, clean-room verdict) ·
+`ORCHESTRATOR-PLACEMENT-RESEARCH.md` (cited survey) · `PROSE-FIRST-REASSESSMENT.md` ·
+`THIN-ORCHESTRATOR-DOCTRINE.md` · `SESSION-LIFECYCLE-AND-SYNTHESIS.md` ·
+`PHASE1-DISPATCH-ASSESSMENT.md` · `ARCHITECTURE-CORRECTION-2026-07-26.md`.
+
+⚠️ **This session produced 13 planning documents.** That is itself the `KH-B41` problem (six surfaces,
+no single view) made worse. Recorded honestly rather than hidden.
+
+## 5. NEXT STEP
+
+**The operator's stated next move: open the grill on the session lifecycle** — handoff-ready-always
+(`KH-T01`), the project wiki as long-term memory (`KH-T14`), and read-back as what makes either real.
+Kanban (`KH-B41`) is an explicit input.
+
+**Then, in order:** `KH-T02` (harden the Prime Directives — operator called it top of queue) ·
+`BL-M21` (the destructive restore default) · `T-04` (stale-evidence gate) · `KH-T13` (dispatch
+design/plan).
+
+## 6. OWED TO THE OPERATOR
+
+1. **🔴 Rotate the GitHub PAT** — plaintext in `~/.claude/settings.json`, mode 666, injected into every
+   spawned process. **Not** git-tracked, so nothing leaked. I did not rotate it; that is their account.
+2. **PR #51** — review and merge decision.
+3. **DF-06** — the fork named a withheld partial-scrub-risk item and never sent the note. Chase or accept.
+4. **`T-10`** — task or backlog?
+5. Carried from before this ingest: overnight-delegation confirmation · **two in-absentia ELEVATEs
+   (both default DECLINED)** · F3 quota classifier-precision call · v0.4.0 tag veto window.
+
+## 7. THINGS I GOT WRONG THIS SESSION — so you don't inherit them as truth
+
+- Claimed **"BC preserved byte-for-byte"** and **"future emit-side bumps are safe."** Both **false** —
+  I had silently widened a spend gate and broken `fallback_chain` with my own bump. Caught by adval.
+- Claimed **"+18 tests."** It was 13.
+- Wrote a **vacuous test** that couldn't fail; the break-probe caught it; my first *rewrite* was
+  **still** half-vacuous and the second adval caught that too.
+- Called our architecture **"scripts-first"** and **shipped it outbound to MindBridge.**
+- Filed **14 of their 26 backlog items as "intelligence only"** — a dodge the operator called out.
+- Framed *"prose-only invariants are broken"* as *"prose-first is broken."* Materially different.
+
+**Every one was caught by adversarial review, a break-probe, or the operator — not by me.** That is
+the argument for the discipline, and the reason to keep running it.
+
+## 8. REDACTION
+
+No secrets, keys, or PII in this handoff. The GitHub PAT is **referenced by location only** — never
+its value.
+
+---
+
+# ↓ PRIOR HANDOFF BLOCKS — history, preserved per repo convention
+
+*(The 2026-07-25 pointer block and the 2026-07-01/07-02 handoff below are superseded by the sections
+above, but retained: this file's convention is prepend-and-keep, never replace. The v0.4.0-era detail
+lives in `.planning/HANDOFF-NEXT-SESSION.md`, which remains accurate for the MindBridge import
+protocol §6/§6a/§6b.)*
+
 date: 2026-07-25 (v0.4.0 TAGGED; A/B/C/D execution plan COMPLETE; next = MindBridge feature import + quota Tier 3)
 branch: master `8e6096f` (clean; tag v0.4.0; all session branches deleted local+remote after merge)
 green: pytest 4072 passed / 3 skip (-m "not integration") · integration 2/2 · ruff clean · validator 49/0/0 · Snyk medium+ 0
