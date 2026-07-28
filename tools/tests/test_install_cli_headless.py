@@ -276,11 +276,41 @@ def test_json_flag_stdout_has_no_note_lines(fake_home, tmp_path, capsys):
 # ---------------------------------------------------------------------------
 
 
-def test_exit_code_not_confirmed_stays_one(fake_home, tmp_path):
-    """confirm-probe not confirmed -> exit 1 (preserved from today's :357)."""
-    # codex not in PATH in CI - the probe will fail -> rc == 1
+def test_exit_code_not_confirmed_stays_one(fake_home, monkeypatch):
+    """confirm-probe not confirmed -> exit 1 (preserved from today's :357).
+
+    The probe runner is STUBBED rather than left to find (or not find) a real CLI
+    on PATH. The previous form asserted rc == 1 on the strength of a comment --
+    "codex not in PATH in CI" -- which made the outcome depend on what happened to
+    be installed on the host running the suite. That is a Determinism Doctrine
+    violation (same inputs must give the same result on any machine), and it broke
+    silently the day codex WAS installed: the probe then legitimately returned
+    "probe ok" and rc 0, failing a test whose subject had never regressed.
+
+    ``confirm_platform`` resolves ``runner or _real_probe_runner`` at call time, so
+    patching the module attribute reaches the CLI path, which -- unlike the engine
+    tests in test_kata_install.py -- has no runner injection point of its own.
+    """
+    def absent_runner(cmd):
+        raise FileNotFoundError(cmd[0])  # CLI absent: what the probe sees when a platform is uninstalled
+
+    monkeypatch.setattr(ki, "_real_probe_runner", absent_runner)
     rc = ki.main(["--platform", "codex", "--home", str(fake_home), "--confirm"])
     assert rc == 1
+
+
+def test_exit_code_confirmed_is_zero(fake_home, monkeypatch):
+    """The other direction: a probe that returns the token -> exit 0.
+
+    Pins the branch the old host-coupled test silently started taking once codex
+    was installed, so the pair now covers both outcomes deterministically.
+    """
+    def good_runner(cmd):
+        return 0, ki._PROBE_TOKEN
+
+    monkeypatch.setattr(ki, "_real_probe_runner", good_runner)
+    rc = ki.main(["--platform", "codex", "--home", str(fake_home), "--confirm"])
+    assert rc == 0
 
 
 def test_exit_code_malformed_answers_json(fake_home, tmp_path):
