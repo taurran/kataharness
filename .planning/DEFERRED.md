@@ -24,3 +24,28 @@
 - **Size when picked up:** 4 call sites, all already discarding the second element as `_`
   (`kata_preflight.py:1214,1299,1317,1356`), plus the `RunnerType` protocol and the test stub at
   `tools/tests/test_kata_preflight.py:36`. Mechanical, but a contract change — own branch + gauntlet + adval.
+
+## DEF-2 — learn_feed drops entry bodies for the indented-sub-bullet ledger style · OPEN (2026-07-27)
+- **What:** `tools/learn_feed.py:511-518` renders `body` **only** when no recognized field is
+  non-empty (`present = [k for k in _SECTION_ORDER …]; if present: … elif body_text:`). The house
+  ledger style — `- **Decision:**` followed by indented sub-bullets — parses to an **empty**
+  `decision` and orphans the content into `body`, which is then never rendered.
+- **Measured:** running the shipped parser over
+  `.planning/specs/session-lifecycle/GRILL-LEDGER.md` drops body content from **20 of 29** entries
+  then measured — **19,153 characters**. Six repair entries parse with `decision=''`; the SL-19
+  page renders with **no Decision section at all**.
+- **Blast radius — NOT limited to one grill:** D151/G1 fires the emit at **every** grill close, and
+  the same style is used across `.planning/specs/` (19 ledgers). Any of them emitting today
+  publishes decision-less synthesis pages to the vault — a PD-2 violation written to a durable
+  store.
+- **Why deferred:** discovered by convergence pass 2 of the session-lifecycle grill (2026-07-27),
+  which was itself HELD. The fix is a real design choice that belongs to its own grill, not to a
+  repair pass: **either** extend `_FIELD_PREFIXES`/`render_page` to handle indented sub-bullets,
+  **or** flatten ledger entries to single-paragraph fields (which changes the authoring convention
+  for every future grill).
+- **Interim posture:** the session-lifecycle grill-close emit is **NOT run**. Whether the block
+  extends repo-wide to all 19 ledgers is **an open question this entry does not decide** — it is the
+  first thing the owning run must settle.
+- **Owed to:** unassigned. Candidate owner is the run that next touches `tools/learn_feed.py`.
+- **Evidence:** `.planning/specs/session-lifecycle/CONVERGENCE-HOLD-2.md` (NEW-7) and
+  `CONVERGENCE-HOLD-3.md`.
