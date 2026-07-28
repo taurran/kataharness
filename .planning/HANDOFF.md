@@ -1,11 +1,158 @@
 ---
-date: 2026-07-26
+date: 2026-07-28
 kind: manual
-trigger: operator-requested session refresh ("handoff to a new session")
-branch: docs/mergeback-ingest-itemization @ pushed · master UNTOUCHED at fcb0338
-green: pytest 4125 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 · Snyk 0 med+
+trigger: operator-directed close-out after three convergence HOLDs
+branch: grill/session-lifecycle @ 9de7bd4 · UNPUSHED · master UNTOUCHED at fcb0338
+green: pytest 4126 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 · Snyk 0 med+
 authored-by: the outgoing session, by hand
 ---
+
+# HANDOFF — 2026-07-28
+
+## 0. GROUND TRUTH — verify before trusting anything below
+
+```
+cd C:\Dev\projects\kataharness
+git status --porcelain                          -> empty
+git stash list                                  -> empty
+git rev-parse --short origin/master             -> fcb0338   (UNTOUCHED)
+git rev-parse --abbrev-ref HEAD                 -> grill/session-lifecycle
+git rev-parse --short HEAD                      -> 9de7bd4
+cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS
+```
+
+- ⚠️ **Use `uv run`, never `.venv/Scripts/python.exe -m pytest`** — the latter false-reds 2 integration
+  tests offline.
+- **Three branches now exist, none pushed, none merged:**
+  - `grill/session-lifecycle` **(you are here)** — this session's work; contains everything below.
+  - `fix/install-probe-host-coupling` — off master; the test fix, standalone and PR-ready.
+  - `docs/mergeback-ingest-itemization` @ `d0498b8` — **PR #51, still open and unmerged.**
+
+## 1. WHAT THIS SESSION DID
+
+Opened the grill §5 called for (`KH-T01` handoff-ready-always + `KH-T14` project wiki + read-back,
+with `KH-B41` as input). The operator resolved **17 branches**; the ledger reached **36 entries**.
+
+**A fresh-context convergence gate was then run three times and HELD every time: 9 → 13 → 12 HIGH.**
+
+Also fixed a genuinely red gate discovered at close-out (§7 of this file is not the only place I was
+wrong — see there).
+
+## 2. 🔴 READ THIS BEFORE TOUCHING THE LEDGER
+
+**The grill is HELD. `SL-1`…`SL-36` are NOT frozen and MUST NOT be compiled into a DESIGN.**
+Several entries are marked `· LOCKED` and are nonetheless *wrong* — the token records that a branch
+was decided, not that it survived review. `CONVERGENCE-HOLD-{1,2,3}.md` are authoritative over the
+ledger wherever they disagree.
+
+**What survives, and it is the valuable half:** every branch the operator ruled on held up under all
+three passes. The questions were right; converting them into an executable contract is what failed.
+
+**Findings that outlive the design — act on these regardless of what happens to the grill:**
+1. `tools/recall.py` is **37 KB with no CLI and no production caller** (only its own test imports it).
+   `kata-initiate` Phase 1b mandates a recall brief *"always"* and names that engine — so the mandated
+   step **has no runnable command.** That is the mechanical reason it has never run.
+2. `learn_feed` **silently drops entry bodies** — 20 of 29 entries, 19,153 characters, measured by
+   running the shipped parser. Filed as **`DEF-2`**. D151/G1 fires the emit at *every* grill close and
+   19 ledgers share the style, so the blast radius may be repo-wide. **Do not run a grill-close emit
+   until this is settled.**
+3. The **staleness comparator** is specified to same-second tie-breaking (`protocol/handoff.md:53-64`)
+   and **implemented nowhere.**
+4. `.kata/RESULT.json` is **56 commits stale** and an ancestry check does **not** catch it (verified:
+   `git merge-base --is-ancestor 159fc9b HEAD` returns true). It also names
+   `gateName: advisor-executor-integration` — **not the gauntlet** — so anything citing it as "last
+   gate run" reports `537 passed` against a ground truth of `4/4`.
+5. `.planning/STATE.md` frontmatter still reads `last_updated: 2026-07-22` — **now six days and three
+   sessions stale**, and nothing detects it.
+6. `protocol/handoff.md` **lacks the loop map `D67` mandates**, and `D67`'s never-summarized invariant
+   block (`frozen-plan ref, goals, open decisions, open escalations`) exists nowhere.
+
+## 3. DECISIONS SETTLED — do not re-litigate
+
+Everything in §3 of the **2026-07-26** block below still stands. This session adds the operator's
+rulings, all of which survived three adversarial passes:
+
+| decision | detail |
+|---|---|
+| **Handoff is the WRITER of position, not a reader** | The planning surfaces are stale; the handoff derives position from live facts + git and writes it down |
+| **Handoff must NOT depend on the wiki** | `KH-T01` couples to **`KH-B41`**, not `KH-T14`. The vault is optional, config-gated, and outside this repo |
+| **Structure = enforced FLOOR + DEPTH** | Mechanical floor, model-authored depth, both required present |
+| **Hollowness is caught by citations, never vocabulary** | A resolvable `file:line`, not a keyword — the `KH-T02` lesson applied |
+| **Temporal entries are SUBJECT pages keyed on the artifact changed** | Promoted when ≥2 *distinct initiatives* touch it. Operator's framing: *"identified when something is changed, or repeated by nature"* |
+| **Wiki scope = `synthesis/**` only** | `concepts`/`entities`/`references`/`sources` sit outside our feed dir and were never ours — the planning docs' framing was wrong |
+| **A fresh handoff replaces orientation** | `kata-orient`'s full rebuild is the fallback for absent-or-stale only |
+| **`KH-B41` stays out** | Arc comes free from `HANDOFF.md`'s git lineage (65 commits, never renamed) |
+
+## 4. WHERE EVERYTHING IS
+
+1. **`.planning/specs/session-lifecycle/CONVERGENCE-HOLD-3.md`** — start here. Most recent, and it
+   names the root cause.
+2. `CONVERGENCE-HOLD-1.md` / `CONVERGENCE-HOLD-2.md` — the earlier passes; still-live findings.
+3. `GRILL-LEDGER.md` — 36 entries. **Read only alongside the HOLDs.**
+4. `.planning/DEFERRED.md` — **`DEF-2`** is new.
+
+Prior-session material (`TASKS-ARCHITECTURE-2026-07-26.md`, `INGEST-PLAIN-ENGLISH.md`,
+`BACKLOG-FROM-MINDBRIDGE.md`, `OPERATOR-RULINGS-2026-07-26.md`) is unchanged and still accurate —
+**except** `TASKS-ARCHITECTURE` §KH-T14 and `SESSION-LIFECYCLE-AND-SYNTHESIS.md` §4, which state the
+four-empty-page-kinds claim this session disproved.
+
+## 5. NEXT STEP
+
+**Do NOT open a fourth repair pass on the existing ledger.** Three rounds each consumed the prior
+round's findings and produced a comparable number of new ones.
+
+**Re-open Phase 0 first, and read — not measure — these, before writing a single entry:**
+1. `.planning/DECISIONS.md` — **D67 · D74 · D81 · D133 · D135 · D142 · D151**. 2734 lines of binding
+   law. This session treated it as a parse target and that is the root cause of all three HOLDs.
+2. `docs/DETERMINISM-DOCTRINE.md` **law 1** — titled *"One pinned git helper"*, and it says
+   *"Never re-derive the pin set per call-site."*
+3. `protocol/board.md` — the `MUST` at `:45-46` and the *"(or truncate it)"* at `:47-48`.
+4. **The actual shape of `.planning/HANDOFF.md`** — it *accumulates* prior blocks (`:151`). Any
+   section contract must scope itself to the newest block. `kata-handoff/SKILL.md:81` says refresh
+   *"overwrites"*, which contradicts the file's own convention — **that contradiction is unresolved.**
+
+**Then, in order:** `KH-T02` (harden the Prime Directives — operator called it top of queue) ·
+`BL-M21` (destructive restore default) · `T-04` (stale-evidence gate — §2 item 4 gives you the
+measured case) · `KH-T13` (dispatch design/plan).
+
+## 6. OWED TO THE OPERATOR
+
+1. **🔴 Rotate the GitHub PAT** — plaintext in `~/.claude/settings.json`, mode 666, injected into every
+   spawned process. Not git-tracked, so nothing leaked. **Still not done; carried from 2026-07-26.**
+2. **PR #51** — review and merge decision. Still open.
+3. **Three unpushed branches** — nothing has been pushed this session.
+4. **`DEF-2`'s first question:** does the emit block extend repo-wide to all 19 ledgers?
+5. **`DF-06`** (withheld partial-scrub-risk note, never sent) · **`T-10`** (task or backlog?)
+6. Carried: overnight-delegation confirmation · **two in-absentia ELEVATEs (both default DECLINED)** ·
+   F3 quota classifier-precision call · v0.4.0 tag veto window.
+
+## 7. THINGS I GOT WRONG THIS SESSION — so you don't inherit them as truth
+
+- **Claimed a "free `T-04` fix."** An ancestry check does not detect a stale `RESULT.json`. The gate
+  disproved it by *running the command*.
+- **Mis-cited `LESSONS-LEARNED` L10 twice** as load-bearing rationale; re-anchored to L9, which does
+  not support the claim either. Citation now dropped entirely.
+- **Claimed "no real handoff has ever carried its provenance fields"** — the live one carries both. I
+  inherited that from prose while asserting I had verified it from code.
+- **Said a deferral "is parked"** when I had not written it. That is the exact PD-2 class the entry
+  was repairing. `DEF-2` now exists.
+- **Mis-measured `DECISIONS.md`** (2734 lines / 2 headings, not 2683 / 1) — my own regex excluded the
+  level-1 heading. And miscounted the ledger as 29 entries when it was 36, *inside the entry
+  correcting miscounts*.
+- **Designed against four frozen decisions I never read**, and against a `HANDOFF.md` file shape I had
+  read that morning and still ignored.
+
+**Every one was caught by the fresh-context gate, not by me** — which is the argument for keeping the
+discipline, and the reason three HOLDs is a good outcome rather than a failed session.
+
+## 8. REDACTION
+
+No secrets, keys, or PII. The GitHub PAT is referenced **by location only**, never its value. Snyk
+code scan on the modified files: **0 medium+**.
+
+---
+
+# ↓ PRIOR HANDOFF BLOCK — 2026-07-26 (superseded above; retained per convention)
 
 > ## ⚠️ THIS IS A MANUAL HANDOFF — the automated machinery did NOT fire
 >
