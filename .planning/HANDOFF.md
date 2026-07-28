@@ -2,7 +2,7 @@
 date: 2026-07-28
 kind: manual
 trigger: operator-directed close-out after three convergence HOLDs
-branch: grill/session-lifecycle @ 9de7bd4 · UNPUSHED · master UNTOUCHED at fcb0338
+branch: grill/session-lifecycle · UNPUSHED · master UNTOUCHED at fcb0338
 green: pytest 4126 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 · Snyk 0 med+
 authored-by: the outgoing session, by hand
 ---
@@ -17,9 +17,13 @@ git status --porcelain                          -> empty
 git stash list                                  -> empty
 git rev-parse --short origin/master             -> fcb0338   (UNTOUCHED)
 git rev-parse --abbrev-ref HEAD                 -> grill/session-lifecycle
-git rev-parse --short HEAD                      -> 9de7bd4
 cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS
 ```
+
+*(No HEAD SHA is pinned here, deliberately. `d0498b8` removed one from the last handoff for exactly
+this reason — committing the handoff itself moves HEAD, so a pinned SHA goes stale against its own
+file and halts the next session on a false alarm. The branch NAME is the durable fact. I re-made this
+mistake while writing this block and caught it on the commit; it is recorded in §7.)*
 
 - ⚠️ **Use `uv run`, never `.venv/Scripts/python.exe -m pytest`** — the latter false-reds 2 integration
   tests offline.
@@ -141,6 +145,9 @@ measured case) · `KH-T13` (dispatch design/plan).
   correcting miscounts*.
 - **Designed against four frozen decisions I never read**, and against a `HANDOFF.md` file shape I had
   read that morning and still ignored.
+- **Pinned a `HEAD` SHA in §0 of this very file** — which `d0498b8` had removed from the previous
+  handoff, with the reason written in its commit message, one day earlier. Committing the handoff
+  moved `HEAD` and the pin was stale before anyone read it. Caught on the commit, not before.
 
 **Every one was caught by the fresh-context gate, not by me** — which is the argument for keeping the
 discipline, and the reason three HOLDs is a good outcome rather than a failed session.
