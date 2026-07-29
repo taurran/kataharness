@@ -255,10 +255,18 @@ def test_verb_exclusion_confirm(fake_home, tmp_path, capsys, monkeypatch):
     parent = tmp_path / "projects"
     parent.mkdir()
     monkeypatch.setenv("KATA_PARENT_DIR", str(parent))
-    # codex is not on PATH in CI ⇒ probe not confirmed ⇒ exit 1, prints the probe dict.
+
+    # The probe runner is STUBBED absent rather than relying on codex being off PATH.
+    # The old comment here ("codex is not on PATH in CI") made the exit code depend on
+    # the host's installed toolchain; it broke the day codex was installed, on a test
+    # whose actual subject -- that --confirm emits no vault note -- had not regressed.
+    def absent_runner(cmd):
+        raise FileNotFoundError(cmd[0])
+
+    monkeypatch.setattr(ki, "_real_probe_runner", absent_runner)
     rc = ki.main(["--platform", "codex", "--home", str(fake_home), "--confirm"])
     out, err = capsys.readouterr()
-    assert rc == 1
+    assert rc == 1  # probe not confirmed -> prints the probe dict, not an install result
     assert "PokeVault" not in err
     assert "vault_recommendation" not in out
 
