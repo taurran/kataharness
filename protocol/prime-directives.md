@@ -46,6 +46,13 @@ misleads, and never lies.** Concretely:
   the operator-approval record) / not started. Uncertainty is stated as uncertainty.
 - **Honesty labels travel with the claim.** Modeled numbers say modeled; n=1 says n=1; unproven
   legs stay named wherever the claim appears (README, reports, closeouts).
+- **Done requires proof, not assertion.** Nothing is reported as done unless it is **built** AND
+  either **machine-confirmed** — a gate, test, or check that actually executed and passed, cited
+  with its numbers — **or explicitly approved by the operator**. An agent's own reading of its own
+  work is not confirmation, and neither is a plausible argument that the work should pass. Where no
+  machine check exists for a claim, say so and ask; do not substitute confidence for evidence.
+  (Operator directive 2026-07-28: *"We need everything to be built and confirmed or approved by the
+  user."*)
 
 ## Enforcement hooks (where these directives already have teeth)
 
@@ -61,5 +68,25 @@ evidence: verdict NEEDS_WORK, finding class `prime-directive-violation`.
 adapters (render it into the platform's instruction surface). **Consumers:** every dispatched
 agent · `kata-evaluate` / `kata-review` / `kata-slop-check` (grade against it). Registered in
 `validate_skills.py` `REQUIRED_PROTOCOL` — erasing this file, or removing any of its load-bearing
-terms (PD-1, PD-2, DRIFT, …), fails the validator. (Like every `REQUIRED_PROTOCOL` entry this is a
-term-presence check, not a semantic-completeness one — it catches deletion, not arbitrary rewording.)
+terms (PD-1, PD-2, DRIFT, …), fails the validator.
+
+**This file is protected more strongly than any other protocol schema (KH-T02).** Term presence
+alone was demonstrably forgeable: a reviewer rewrote both directives to say the *opposite* —
+*"stub it and move on, present-but-dead counts as built"* — kept all seven guarded tokens, and the
+validator passed green. Two additional layers now apply, both in `check_protocol_integrity`:
+
+1. **Pinned clauses.** The load-bearing sentences of PD-1 and PD-2 are required *verbatim*, matched
+   after whitespace/emphasis normalisation so ordinary reflow is fine. An inversion has to **delete**
+   one of them, which fails. This is a semantic floor, not a token count.
+2. **Fingerprint.** A digest of the normalised file is pinned in the validator. Any **substantive**
+   edit fails until it is deliberately re-approved via `--update-protocol-fingerprint`, so a
+   weakening sentence cannot ride in unnoticed alongside intact pinned clauses. Whitespace and
+   markdown emphasis are normalised away first, so re-wrapping or bolding costs nothing —
+   deliberately, because a check that cried wolf on every reflow would train blind re-approval and
+   protect nothing.
+
+The updater **prints** the new value; it never rewrites the pin. A tamper-check that re-blesses
+itself is not a tamper-check — a human pasting the value is what makes the step a review.
+
+Editing this file is therefore a two-step act by design: make the change, then re-approve the
+fingerprint. That friction is the point — it is the only file in the repo that gets it.

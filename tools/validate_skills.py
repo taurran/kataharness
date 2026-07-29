@@ -8,6 +8,7 @@ non-zero when any ERROR finding is present.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 from collections.abc import Callable
@@ -341,6 +342,104 @@ def check_protocol_schemas(_skills: list[Skill]) -> list[Finding]:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# Prime-directive integrity (KH-T02)
+#
+# REQUIRED_PROTOCOL above is TERM presence: it catches deletion, never rewording.
+# A reviewer demonstrated the gap by rewriting both Prime Directives to say the
+# OPPOSITE ("stub it and move on, present-but-dead counts as built") while keeping
+# all seven guarded tokens — and the validator passed green. Operator ruling: "It is
+# prime directive. It shouldn't have a workaround."
+#
+# Two layers close it, and they catch different attacks:
+#   1. PINNED CLAUSES — whole load-bearing sentences, matched after whitespace and
+#      markdown-emphasis normalisation so ordinary reflow is fine. An inversion must
+#      DELETE a clause, which fails. This is a semantic floor, not a token count.
+#   2. FINGERPRINT — a digest of the normalised file, so any OTHER edit fails until
+#      deliberately re-approved. Without it, a weakening change to the surrounding
+#      context could ride in unnoticed alongside intact pinned clauses.
+#
+# Deliberately scoped to prime-directives.md. The same defect exists for every other
+# REQUIRED_PROTOCOL entry, but widening the fingerprint to 13 files would impose the
+# re-approval step repo-wide — that is its own decision, not a side effect of this one.
+# --------------------------------------------------------------------------- #
+
+def _normalize_protocol_text(text: str) -> str:
+    """Normalise a protocol doc for phrase-matching and fingerprinting.
+
+    Line endings, markdown emphasis, and whitespace runs carry no meaning here, so
+    they are flattened: a reflowed paragraph or a bolded word must not trip the gate,
+    while a deleted or reworded clause must. Pure and deterministic — no clock, no
+    environment, no filesystem beyond the caller's read (Determinism Doctrine law 7).
+    """
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"[*`_]", "", text)          # emphasis/code markers are not meaning
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def protocol_fingerprint(path: Path) -> str:
+    """SHA-256 of the normalised protocol text. Same bytes on any machine."""
+    return hashlib.sha256(
+        _normalize_protocol_text(path.read_text(encoding="utf-8")).encode("utf-8")
+    ).hexdigest()
+
+
+#: Load-bearing sentences that must survive verbatim. Chosen so that stating the
+#: OPPOSITE of the directive is impossible while the clause is still present.
+PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
+    "prime-directives.md": [
+        # PD-1 — the prohibition itself, and what "complete" means.
+        "never defers, refuses, stubs, scaffolds, simplifies away, leaves unwired, or passes over",
+        "Complete means wired end-to-end",
+        "is NOT built, and claiming otherwise is a PD-2 violation",
+        # PD-2 — truthfulness, and the stub-is-drift equivalence.
+        "never misleads, and never lies",
+        "Never claim built what is not built",
+        "A stub, scaffold, facade, or mock reported as a completed feature IS DRIFT",
+        # PD-2 — the operator's 2026-07-28 done-requires-proof bar (KH-T02).
+        "Done requires proof, not assertion",
+        "or explicitly approved by the operator",
+    ],
+}
+
+#: Digest of the normalised file. Update ONLY via --update-protocol-fingerprint,
+#: after reviewing the diff — the whole point is that the update is a deliberate act.
+PROTOCOL_FINGERPRINTS: dict[str, str] = {
+    "prime-directives.md": "a033f94ec89ccbc6341d302e5f66f803c75b9d6c3a630fa985d795eb1563a8f0",
+}
+
+
+@check
+def check_protocol_integrity(_skills: list[Skill]) -> list[Finding]:
+    out: list[Finding] = []
+    for fname, clauses in PROTOCOL_PINNED_CLAUSES.items():
+        path = PROTOCOL_DIR / fname
+        if not path.exists():
+            out.append(Finding("ERROR", f"protocol/{fname}", "pinned protocol file missing"))
+            continue
+        normalized = _normalize_protocol_text(path.read_text(encoding="utf-8"))
+        for clause in clauses:
+            if _normalize_protocol_text(clause) not in normalized:
+                out.append(Finding(
+                    "ERROR", f"protocol/{fname}",
+                    f"load-bearing clause deleted or reworded: {clause!r}",
+                ))
+    for fname, golden in PROTOCOL_FINGERPRINTS.items():
+        path = PROTOCOL_DIR / fname
+        if not path.exists():
+            continue  # already reported above
+        actual = protocol_fingerprint(path)
+        if actual != golden:
+            out.append(Finding(
+                "ERROR", f"protocol/{fname}",
+                f"fingerprint mismatch (expected {golden[:12]}…, got {actual[:12]}…). "
+                "If this edit is intended: review the diff, then run "
+                "`python validate_skills.py --update-protocol-fingerprint` and paste the new value "
+                "into PROTOCOL_FINGERPRINTS.",
+            ))
+    return out
+
+
 TAXONOMY = REPO_ROOT / "docs" / "TAXONOMY.md"
 
 
@@ -488,7 +587,26 @@ def main(argv: list[str] | None = None) -> int:
         help="scope the per-skill checks to one skill by name (W-7; the whole-tree checks "
              "— README sync, protocol schemas — still run over the full set)",
     )
+    parser.add_argument(
+        "--update-protocol-fingerprint", action="store_true",
+        help="print the current fingerprint of each pinned protocol file so it can be pasted into "
+             "PROTOCOL_FINGERPRINTS after reviewing the diff (KH-T02). Prints only — it never "
+             "rewrites the pin, because a self-updating tamper-check protects nothing.",
+    )
     args = parser.parse_args(argv)
+
+    if args.update_protocol_fingerprint:
+        # Deliberately print-only. Auto-writing the golden would let any edit re-bless
+        # itself, which is exactly the workaround this check exists to remove.
+        for fname in sorted(PROTOCOL_FINGERPRINTS):
+            path = PROTOCOL_DIR / fname
+            if not path.exists():
+                print(f"ERROR: protocol/{fname}: missing", file=sys.stderr)
+                return 1
+            print(f'    "{fname}": "{protocol_fingerprint(path)}",')
+        print("\nReview the diff, then paste the line(s) above into PROTOCOL_FINGERPRINTS "
+              "in validate_skills.py.", file=sys.stderr)
+        return 0
 
     skills = load_skills()
     if args.only and not any(s.name == args.only for s in skills):
