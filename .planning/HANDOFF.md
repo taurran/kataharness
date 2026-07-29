@@ -2,7 +2,7 @@
 date: 2026-07-28
 kind: manual
 trigger: operator-directed close-out after three convergence HOLDs
-branch: grill/session-lifecycle · UNPUSHED · master UNTOUCHED at fcb0338
+branch: grill/session-lifecycle · pushed · PR #53 (stacked on #51) · master at a815c2b
 green: pytest 4126 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 · Snyk 0 med+
 authored-by: the outgoing session, by hand
 ---
@@ -15,7 +15,7 @@ authored-by: the outgoing session, by hand
 cd C:\Dev\projects\kataharness
 git status --porcelain                          -> empty
 git stash list                                  -> empty
-git rev-parse --short origin/master             -> fcb0338   (UNTOUCHED)
+git rev-parse --short origin/master             -> a815c2b
 git rev-parse --abbrev-ref HEAD                 -> grill/session-lifecycle
 cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS
 ```
@@ -27,10 +27,15 @@ mistake while writing this block and caught it on the commit; it is recorded in 
 
 - ⚠️ **Use `uv run`, never `.venv/Scripts/python.exe -m pytest`** — the latter false-reds 2 integration
   tests offline.
-- **Three branches now exist, none pushed, none merged:**
-  - `grill/session-lifecycle` **(you are here)** — this session's work; contains everything below.
-  - `fix/install-probe-host-coupling` — off master; the test fix, standalone and PR-ready.
-  - `docs/mergeback-ingest-itemization` @ `d0498b8` — **PR #51, still open and unmerged.**
+- **Branch / PR state (all pushed 2026-07-28):**
+  - `grill/session-lifecycle` **(you are here)** — **PR #53, OPEN.** ⚠️ **Stacked on #51**, base is
+    `docs/mergeback-ingest-itemization`, NOT master — this branch **contains all 26 of #51's commits**,
+    so merging it to master would merge #51 as a side effect. GitHub retargets #53 to master
+    automatically once #51 merges.
+  - `fix/install-probe-host-coupling` — **PR #52, MERGED** to master (`a815c2b`); branch deleted.
+    master moved off `fcb0338` for the first time in three sessions, by this one commit only.
+  - `docs/mergeback-ingest-itemization` @ `d0498b8` — **PR #51, still OPEN and unmerged.**
+    Deliberately not merged: the operator's review-and-merge decision on it is still owed.
 
 ## 1. WHAT THIS SESSION DID
 
@@ -123,8 +128,11 @@ measured case) · `KH-T13` (dispatch design/plan).
 
 1. **🔴 Rotate the GitHub PAT** — plaintext in `~/.claude/settings.json`, mode 666, injected into every
    spawned process. Not git-tracked, so nothing leaked. **Still not done; carried from 2026-07-26.**
-2. **PR #51** — review and merge decision. Still open.
-3. **Three unpushed branches** — nothing has been pushed this session.
+2. **PR #51** — review and merge decision. **Still open**, and still yours. It was deliberately not
+   merged despite blanket push/merge authorization, because `grill/session-lifecycle` contains its
+   26 commits and merging that branch would have merged #51 silently as a side effect.
+3. **PR #53** — review and merge decision on this session's grill artifacts. Merges into #51's
+   branch as stacked, so it is gated behind the #51 call above.
 4. **`DEF-2`'s first question:** does the emit block extend repo-wide to all 19 ledgers?
 5. **`DF-06`** (withheld partial-scrub-risk note, never sent) · **`T-10`** (task or backlog?)
 6. Carried: overnight-delegation confirmation · **two in-absentia ELEVATEs (both default DECLINED)** ·
