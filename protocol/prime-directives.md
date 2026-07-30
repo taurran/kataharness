@@ -70,10 +70,11 @@ agent · `kata-evaluate` / `kata-review` / `kata-slop-check` (grade against it).
 `validate_skills.py` `REQUIRED_PROTOCOL` — erasing this file, or removing any of its load-bearing
 terms (PD-1, PD-2, DRIFT, …), fails the validator.
 
-**This file is protected more strongly than any other protocol schema (KH-T02).** Term presence
-alone was demonstrably forgeable: a reviewer rewrote both directives to say the *opposite* —
-*"stub it and move on, present-but-dead counts as built"* — kept all seven guarded tokens, and the
-validator passed green. Two additional layers now apply, both in `check_protocol_integrity`:
+**Term presence alone was demonstrably forgeable (KH-T02).** A reviewer rewrote both directives to
+say the *opposite* — *"stub it and move on, present-but-dead counts as built"* — kept all seven
+guarded tokens, and the validator passed green. Two additional layers now apply, both in
+`check_protocol_integrity`, and both were widened on 2026-07-29 to **every** `REQUIRED_PROTOCOL`
+schema — this file is the origin of the fix, not a special case of it:
 
 1. **Pinned clauses.** The load-bearing sentences of PD-1 and PD-2 are required *verbatim*, matched
    after whitespace/emphasis normalisation so ordinary reflow is fine. An inversion has to **delete**
@@ -88,5 +89,16 @@ validator passed green. Two additional layers now apply, both in `check_protocol
 The updater **prints** the new value; it never rewrites the pin. A tamper-check that re-blesses
 itself is not a tamper-check — a human pasting the value is what makes the step a review.
 
-Editing this file is therefore a two-step act by design: make the change, then re-approve the
-fingerprint. That friction is the point — it is the only file in the repo that gets it.
+Editing a fingerprinted schema is therefore a two-step act by design: make the change, then
+re-approve the fingerprint. That friction is the point.
+
+**Scope, and its one deliberate exception.** Clauses are pinned for all 13 `REQUIRED_PROTOCOL`
+schemas; fingerprints cover 12. **`config.md` is exempt** — it is a key registry that changed 31
+times (against 1–11 for every other protocol file) because essentially every feature adds a config
+key. Fingerprinting a registry buys nothing, since the risk there is a *missing* key and the term
+check already covers that, while imposing ~31 re-approvals — which is exactly how blind re-approval
+gets trained. Its invariants are still clause-pinned. Separately, **eight protocol files are not in
+`REQUIRED_PROTOCOL` at all** and so are ungated by any layer (`board.md`, `exec-safety.md`,
+`observability.md`, `iac-safety.md`, `narration.md`, `validation-misses.md`, `advice.md`,
+`persona.md`); `board.md` in particular carries a literal run-isolation MUST. Registering them newly
+gates them, so that is its own change and is named here rather than left to be rediscovered.

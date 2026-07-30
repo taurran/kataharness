@@ -359,9 +359,22 @@ def check_protocol_schemas(_skills: list[Skill]) -> list[Finding]:
 #      deliberately re-approved. Without it, a weakening change to the surrounding
 #      context could ride in unnoticed alongside intact pinned clauses.
 #
-# Deliberately scoped to prime-directives.md. The same defect exists for every other
-# REQUIRED_PROTOCOL entry, but widening the fingerprint to 13 files would impose the
-# re-approval step repo-wide — that is its own decision, not a side effect of this one.
+# SCOPE (operator-directed 2026-07-29, "fix it properly in the other files"):
+#   * CLAUSES apply to ALL 13 REQUIRED_PROTOCOL files. This layer is free on ordinary
+#     edits — it is reflow-tolerant and only fires when a load-bearing sentence is
+#     deleted or reworded — so there is no reason to withhold it anywhere.
+#   * FINGERPRINTS apply to 12 of the 13. `config.md` is deliberately EXCLUDED: it is a
+#     key registry that changed 31 times (vs 1-11 for every other protocol file), because
+#     essentially every feature adds a config key. Fingerprinting a registry buys nothing
+#     — the risk there is a MISSING key, which REQUIRED_PROTOCOL already covers — while
+#     imposing ~31 re-approvals, which is precisely how blind re-approval gets trained.
+#     Its invariants are still clause-pinned.
+#
+# NOT covered, and worth naming rather than leaving to be rediscovered: eight protocol
+# files are absent from REQUIRED_PROTOCOL entirely and therefore ungated by any layer —
+# board.md, exec-safety.md, observability.md, iac-safety.md, narration.md,
+# validation-misses.md, advice.md, persona.md. board.md in particular carries a literal
+# run-isolation MUST. Registering new files newly gates them, so that is its own change.
 # --------------------------------------------------------------------------- #
 
 def _normalize_protocol_text(text: str) -> str:
@@ -387,6 +400,60 @@ def protocol_fingerprint(path: Path) -> str:
 #: Load-bearing sentences that must survive verbatim. Chosen so that stating the
 #: OPPOSITE of the directive is impossible while the clause is still present.
 PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
+    # A key registry, not a contract of prose invariants — but it still carries a few
+    # real ones, and those are pinnable even though the file is fingerprint-exempt.
+    "config.md": [
+        "the grounding gate (D33) is never bypassed at any level",
+        "the gate never names a scanner",
+        "the validator never scans it",
+    ],
+    "dependencies.md": [
+        "the PRE-FLIGHT engine NEVER reads or executes this string",
+        "build the install argv from structured data",
+    ],
+    "graph.md": [
+        "The tree-sitter floor MUST populate",
+        "exploration-only",
+    ],
+    "escalation.md": [
+        "the orchestrator makes the final routing call",
+        "no in-plan solution",
+    ],
+    "engram.md": [
+        "the agnostic core never depends on the engram",
+        "consult-if-present, no-op if absent",
+    ],
+    "orientation.md": [
+        "what it must escalate rather than improvise",
+        "budget-capped to the prime frame",
+    ],
+    "state.md": [
+        "git is authoritative; the live cache is disposable",
+        "churns; rebuilt from tier-2 on re-entry",
+    ],
+    "handoff.md": [
+        "unknown kind; never gates",
+        "demotes the handoff from sole-anchor to context-input",
+        "durable, Obsidian-native",
+    ],
+    "intent.md": [
+        "frozen by kata-initiate",
+        "Absent or empty is valid",
+    ],
+    "reuse-claims.md": [
+        "claim to verify, not an assumption",
+        "A reuse claim with no cited surface",
+        "verify-before-reuse",
+    ],
+    "recall.md": [
+        "NO embeddings / NO RAG / no vector retrieval",
+        "it never hard-filters or silently trusts",
+        "Recall surfaces material; it never decides, never writes, never gates",
+    ],
+    "steering.md": [
+        "graceful kill-switch (never a blind mid-task kill)",
+        "Active directives",
+    ],
     "prime-directives.md": [
         # PD-1 — the prohibition itself, and what "complete" means.
         "never defers, refuses, stubs, scaffolds, simplifies away, leaves unwired, or passes over",
@@ -404,8 +471,20 @@ PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
 
 #: Digest of the normalised file. Update ONLY via --update-protocol-fingerprint,
 #: after reviewing the diff — the whole point is that the update is a deliberate act.
+#: NOTE the deliberate absence of `config.md` — see the SCOPE note above.
 PROTOCOL_FINGERPRINTS: dict[str, str] = {
-    "prime-directives.md": "a033f94ec89ccbc6341d302e5f66f803c75b9d6c3a630fa985d795eb1563a8f0",
+    "dependencies.md": "652df1a8f46b93cd13f1e54ba19ec8725ec9e48c02e4b03ea5a8e27bcafe972c",
+    "engram.md": "ad01a873d4aff387c85f3798db7494ed6750aab4c1054b876e9282c9fbf2d879",
+    "escalation.md": "b155f7151a6440226c3a841f65b5a6f1fd0d2580fc6af7ae10346892a26ee15b",
+    "graph.md": "48fbd4619ac9f6feb761119d5e0569b634ae556e2bc8f38c7fe3ff49f2194778",
+    "handoff.md": "2e0e11d17f6b8101d2de705ebb01df065ac4cc6decfad53a63bd0237e0e696c9",
+    "intent.md": "aaf4632093ca7310f373f8ea49cd85373aa124f30f1adcf9d9103b640521b747",
+    "orientation.md": "b926c41b9e61945b1450c96ec8e89044c33668ef5d63414038279787c61c455e",
+    "prime-directives.md": "7be2a0d1ab682ed45120fe5d6ca976f38a68df623da2665a19b0374ec7e07959",
+    "recall.md": "6edfd018c9c4d62f27f9b94e081e6e15b4002dd13a2277aa7d214ddff4f0d405",
+    "reuse-claims.md": "4cc12760aca1c920f72f833b9f7b7a6131e21ed447cc3bcc2ef8b4d52921f732",
+    "state.md": "19e0e36c263df02170133de4271f07566fb8e7cc94e0364f843d2c012d27c767",
+    "steering.md": "df9bed6779b1e96244d9c0f087bb3a7c450187b44bad8b9857fab62f2086f5b4",
 }
 
 
