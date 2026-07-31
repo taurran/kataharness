@@ -8,8 +8,9 @@ Implements the five-step restore flow from DESIGN §2 B3:
 3. compute_redispatch_set — re-dispatch set = frozen PLAN tasks MINUS tasks with an
    integration commit (mapped via the Kata-Task: trailer in each integration commit).
    The folded board CORROBORATES in-flight ownership but NEVER gates the set.
-4. cleanup_stale_task   — git worktree prune + delete the stale task/<id> branch so
-   a fresh re-dispatch cannot collide.  Half-written artifacts are discarded.
+4. cleanup_stale_task   — git worktree prune + SALVAGE-RENAME the stale
+   task/<id> branch (never force-delete) so a fresh re-dispatch cannot collide
+   while the dead worker's commits stay recoverable under kata-salvage/<id>-<sha>.
 5. restore (top-level)  — orchestrates steps 1–4 and writes the board back to
    .kata/board.md WITHOUT rotation (no archive file).
 
@@ -19,7 +20,14 @@ Invariants (DESIGN §2 B3 / §0 C2 / §0 L1):
 - Re-dispatch set = PLAN-derived, never board-derived.
 - Board corroborates, never gates.
 - Tier-2 (integration history) is AUTHORITATIVE for DONE.
-- Cleanup discards half-written artifacts; never re-attaches.
+- Cleanup discards a dead worker's WORKTREE path (worktree prune) but NEVER
+  destroys the task branch itself — it is salvage-renamed, never re-attached.
+- A DEGRADED scan (integration history unreadable / board unreadable / etc.)
+  performs NO cleanup at all — the fail-SAFE direction for re-dispatch
+  (assume nothing is done ⇒ redispatch everything) is the fail-DANGEROUS
+  direction for cleanup, so step 4 is skipped whole-cloth whenever
+  ``degraded`` is true and the skipped task-ids are reported back via
+  ``cleanup_skipped``.
 - Resume never rotates the board.
 """
 
@@ -661,17 +669,32 @@ def compute_redispatch_set(
 
 
 def cleanup_stale_task(repo_root: str, task_id: str) -> None:
-    """Clean up a dead worker's stale worktree registration and branch.
+    """Clean up a dead worker's stale worktree registration and SALVAGE its branch.
 
     Steps (DESIGN §2 B3 step 4 / §0 C2):
     1. ``git worktree prune`` — removes stale ``.git/worktrees/<name>`` metadata
        for any worktree whose path no longer exists.
-    2. ``git branch -D -- task/<task_id>`` — force-deletes the dead worker's branch
-       so a fresh ``worktree add -b task/<task_id>`` never collides.  The ``--``
-       end-of-options guard prevents the branch name from being parsed as a flag.
+    2. Salvage-rename the dead worker's branch — ``git branch -m -- task/<task_id>
+       kata-salvage/<task_id>-<short-sha>`` — so a fresh ``worktree add -b
+       task/<task_id>`` never collides on the name, WITHOUT destroying the dead
+       worker's commits.  ``<short-sha>`` is the branch's own tip commit
+       (``git rev-parse --short``) — a pure function of repo state (never a
+       clock/random/counter, Determinism Doctrine law 7), so calling this twice on
+       identical state always produces the same salvage name.  The ``--``
+       end-of-options guard on the rename prevents either branch name from being
+       parsed as a flag.
 
-    Half-written worktree artifacts are discarded, not reused.  Both steps are
-    best-effort: failures are silently swallowed so restore can continue.
+       This NEVER force-deletes: a ``git branch -D`` here would permanently
+       destroy unmerged work the instant this function runs, which is the
+       fail-dangerous direction cleanup must never take (see ``restore()``'s
+       degraded-scan skip, which additionally refuses to even call this function
+       when the re-dispatch set is not verified-safe).
+
+    Half-written worktree artifacts are discarded from their PATH (worktree
+    prune); the task branch itself is preserved, never destroyed.  Both steps are
+    best-effort: failures are silently swallowed so restore can continue.  If the
+    ``task/<task_id>`` branch does not exist, or the salvage name already exists
+    (idempotent re-run on the same tip SHA — already salvaged), this is a no-op.
 
     Parameters
     ----------
@@ -679,7 +702,7 @@ def cleanup_stale_task(repo_root: str, task_id: str) -> None:
         Root of the git repository (the directory that contains ``.git/``).
     task_id:
         The task identifier (e.g. ``"T1"``).  The branch ``task/<task_id>``
-        is deleted if it exists.
+        is salvage-renamed if it exists.
     """
     root = Path(repo_root).resolve()
 
@@ -695,19 +718,45 @@ def cleanup_stale_task(repo_root: str, task_id: str) -> None:
     except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired):
         pass  # prune failure is non-fatal
 
-    # 2. Force-delete the dead worker's task branch.
-    # `--` end-of-options guard: prevents task/<id> from being parsed as a flag.
+    # 2. Salvage-rename the dead worker's task branch — never force-delete.
     branch = f"task/{task_id}"
     try:
+        # No `--` guard here: `git rev-parse --short -- <rev>` treats the rev as a
+        # pathspec after `--` and fails ("Needed a single revision") — verified
+        # empirically. Safe without it: `branch` always carries the `task/` prefix,
+        # so it can never be misparsed as a flag.
+        sha_result = subprocess.run(
+            ["git", "rev-parse", "--short", branch],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung rev-parse ⇒ best-effort skip (non-fatal)
+        )
+    except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired):
+        return  # branch does not exist (or is unreadable) — no-op, exactly as before
+
+    short_sha = sha_result.stdout.strip()
+    if not short_sha:
+        return  # defensive: no-op on an unexpected empty rev-parse result
+
+    salvage_branch = f"kata-salvage/{task_id}-{short_sha}"
+
+    # `--` end-of-options guard: prevents either branch name from being parsed
+    # as a flag.
+    try:
         subprocess.run(
-            ["git", "branch", "-D", "--", branch],
+            ["git", "branch", "-m", "--", branch, salvage_branch],
             cwd=str(root),
             capture_output=True,
             check=True,
-            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung branch delete ⇒ best-effort skip (non-fatal)
+            timeout=_GIT_TIMEOUT_S,  # Q-16: a hung rename ⇒ best-effort skip (non-fatal)
         )
     except (subprocess.CalledProcessError, OSError, subprocess.TimeoutExpired):
-        pass  # branch may not exist; non-fatal
+        # Covers: branch vanished between rev-parse and rename, and the idempotent
+        # re-run case where kata-salvage/<id>-<sha> already exists (same tip SHA ⇒
+        # already salvaged) — both are treated as an already-clean no-op.
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -730,7 +779,8 @@ def restore(
     3. Re-dispatch set = frozen PLAN tasks MINUS tasks with integration
        commits.  The folded board CORROBORATES, never gates.
     4. C2 cleanup for each re-dispatch task: ``git worktree prune`` +
-       delete stale ``task/<id>`` branch.
+       salvage-rename the stale ``task/<id>`` branch (never delete).  Skipped
+       ENTIRELY when the scan is degraded — see ``degraded`` below.
     5. Write the board back to ``.kata/board.md`` WITHOUT rotation
        (no ``.kata/board.<utc>.archive.md`` created).
 
@@ -760,11 +810,21 @@ def restore(
             "board_content":  str,        # raw board text from trail
             "degraded":         bool,       # true iff a degraded-scan reason fired (P0.1 U2)
             "degraded_reasons": list[str],  # aggregated reasons (empty on a clean scan)
+            "cleanup_skipped":  list[str],  # redispatch task-ids whose C2 cleanup was
+                                             # skipped because the scan was degraded
         }``
 
-    The ``degraded``/``degraded_reasons`` keys are ADDITIVE (dict-BC) and are present
-    on BOTH paths — the non-lost-run ``_empty`` early return carries
-    ``degraded=False`` + ``degraded_reasons=[]`` (LOW-5, the stable dict contract).
+    The ``degraded``/``degraded_reasons``/``cleanup_skipped`` keys are ADDITIVE
+    (dict-BC) and are present on BOTH paths — the non-lost-run ``_empty`` early
+    return carries ``degraded=False`` + ``degraded_reasons=[]`` +
+    ``cleanup_skipped=[]`` (LOW-5, the stable dict contract).
+
+    Fail-closed cleanup (this hardening pass): when ``degraded`` is true, step 4
+    is skipped WHOLE-CLOTH — no branch in the re-dispatch set is touched, even by
+    the now-non-destructive salvage rename — because a degraded scan means the
+    re-dispatch set is only a SAFE over-approximation (over-dispatch-safe), not a
+    verified set of tasks this restore may act on.  The skipped task-ids are
+    reported in ``cleanup_skipped`` and a loud NOTE is printed.
 
     Raises
     ------
@@ -782,6 +842,7 @@ def restore(
         "board_content":    "",
         "degraded":         False,
         "degraded_reasons": [],
+        "cleanup_skipped":  [],
     }
 
     # Step 1 — detect lost run
@@ -827,9 +888,26 @@ def restore(
         degraded_reasons.append("board-unreadable")
         degraded = True
 
-    # Step 4 — C2 cleanup for each task to be re-dispatched
-    for task_id in redispatch:
-        cleanup_stale_task(repo_root, task_id)
+    # Step 4 — C2 cleanup for each task to be re-dispatched.
+    # Fail closed on a degraded scan: the re-dispatch set direction is safe
+    # (over-dispatch), but it is NOT a verified set this restore may act on — a
+    # degraded scan means "assume nothing is done" for dispatch, and that same
+    # assumption must NOT be extended into "so touch every one of those branches"
+    # for cleanup.  Skip step 4 whole-cloth and report what was skipped.
+    cleanup_skipped: list[str] = []
+    if degraded:
+        cleanup_skipped = sorted(redispatch)
+        print(
+            "NOTE: kata_restore: degraded scan "
+            f"({', '.join(degraded_reasons) or 'unknown reason'}) — skipping C2 "
+            f"cleanup for {len(cleanup_skipped)} task branch(es): "
+            f"{cleanup_skipped!r}. No branch state was touched; resolve the "
+            "degraded condition manually before re-dispatching.",
+            flush=True,
+        )
+    else:
+        for task_id in redispatch:
+            cleanup_stale_task(repo_root, task_id)
 
     # Step 5 — restore board to .kata/board.md WITHOUT rotation
     # (no .kata/board.<utc>.archive.md created — see DESIGN §2 B3 step 5)
@@ -848,4 +926,5 @@ def restore(
         "board_content":    board_content,
         "degraded":         degraded,
         "degraded_reasons": degraded_reasons,
+        "cleanup_skipped":  cleanup_skipped,
     }

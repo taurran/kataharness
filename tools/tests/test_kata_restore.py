@@ -129,6 +129,31 @@ def _delete_tier3(repo: Path) -> None:
         board.unlink()
 
 
+def _branch_names(repo: Path) -> set[str]:
+    """Return the set of local branch names (strips the '* <current>' marker)."""
+    out = _git(["branch", "--list"], repo).stdout
+    names: set[str] = set()
+    for line in out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("* "):
+            line = line[2:]
+        names.add(line.strip())
+    return names
+
+
+def _make_task_branch(repo: Path, task_id: str) -> None:
+    """Create a live task/<task_id> branch with one WIP commit, off master."""
+    _git(["checkout", "master"], repo)
+    _git(["checkout", "-b", f"task/{task_id}"], repo)
+    wip = repo / f"{task_id}_wip.txt"
+    wip.write_text(f"WIP {task_id}\n", encoding="utf-8")
+    _git(["add", wip.name], repo)
+    _git(["commit", "-m", f"wip: {task_id} in progress"], repo)
+    _git(["checkout", "master"], repo)
+
+
 # ---------------------------------------------------------------------------
 # Test (a) — re-dispatch set is PLAN-minus-integration, NOT board-derived
 # ---------------------------------------------------------------------------
@@ -1333,3 +1358,174 @@ def test_restore_board_unreadable_sets_degraded(tmp_path, monkeypatch):
     # PLAN-minus-integration despite the empty frontier.
     assert "T2" in result["redispatch"] and "T1" not in result["redispatch"]
     assert result["board_content"] == ""
+
+
+# ---------------------------------------------------------------------------
+# Session-lifecycle hardening (grill/session-lifecycle) — fail-closed cleanup
+# on a degraded scan (A) + salvage-rename instead of force-delete (B).
+# ---------------------------------------------------------------------------
+
+
+def test_degraded_scan_skips_cleanup_no_branch_mutation(tmp_path):
+    """(A) Case 1: a degraded scan (missing integration branch) must perform NO
+    destructive/mutating action on any task/* branch.  Live task branches
+    survive untouched and cleanup_skipped reports exactly what was skipped.
+
+    Before the fix, `degraded` was computed but never consulted at the step-4
+    call site — cleanup_stale_task ran for every re-dispatch task regardless
+    of degraded, and (pre-fix) cleanup_stale_task force-deleted the branch via
+    `git branch -D`.  On a repo where 'integration' never exists, EVERY plan
+    task lands in the re-dispatch set (empty integrated set), so every
+    task/<id> branch used to be destroyed.
+    """
+    repo = _make_git_repo(tmp_path)
+    plan_path = _make_plan(repo, ["T1", "T2", "T3"])
+    _commit_plan(repo)
+
+    # Live task branches for T1, T2, T3 — simulate in-flight worker WIP.
+    # Deliberately no 'integration' branch is ever created — this forces the
+    # git-error / integration-history-unreadable degraded path.
+    for tid in ["T1", "T2", "T3"]:
+        _make_task_branch(repo, tid)
+
+    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    _write_board_and_snapshot(repo, board)
+    _delete_tier3(repo)
+
+    result = kata_restore.restore(
+        repo_root=str(repo),
+        plan_path=str(plan_path),
+        integration_branch="integration",  # never created ⇒ degraded scan
+    )
+
+    assert result["degraded"] is True
+    assert "integration-history-unreadable" in result["degraded_reasons"]
+
+    branches = _branch_names(repo)
+    for tid in ["T1", "T2", "T3"]:
+        assert f"task/{tid}" in branches, (
+            f"task/{tid} must survive a degraded scan untouched; branches: {branches!r}"
+        )
+    assert not any(b.startswith("kata-salvage/") for b in branches), (
+        "no salvage rename should occur either — cleanup is skipped whole-cloth "
+        "on a degraded scan, not just the destructive half of it"
+    )
+    assert set(result["cleanup_skipped"]) == {"T1", "T2", "T3"}
+
+
+def test_bl_m21_default_integration_branch_missing_survives(tmp_path):
+    """(A) Case 2 — the end-to-end BL-M21 scenario from the defect report:
+    restore() called with the DEFAULT integration_branch ('integration'),
+    which does not exist in this repo.  Live task/* branches must survive.
+    """
+    repo = _make_git_repo(tmp_path)
+    plan_path = _make_plan(repo, ["T1", "T2"])
+    _commit_plan(repo)
+
+    # No 'integration' branch created at all — this repo never had one.
+    for tid in ["T1", "T2"]:
+        _make_task_branch(repo, tid)
+
+    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    _write_board_and_snapshot(repo, board)
+    _delete_tier3(repo)
+
+    # integration_branch NOT passed — exercises the "integration" default.
+    result = kata_restore.restore(repo_root=str(repo), plan_path=str(plan_path))
+
+    assert result["lost_run"] is True
+    assert result["degraded"] is True
+
+    branches = _branch_names(repo)
+    assert "task/T1" in branches and "task/T2" in branches, (
+        f"default integration_branch='integration' missing must not force-delete "
+        f"live task branches; branches: {branches!r}"
+    )
+    assert set(result["cleanup_skipped"]) == {"T1", "T2"}
+
+
+def test_cleanup_salvage_preserves_commit(tmp_path):
+    """(B) Case 4: the original task/<id> tip commit stays reachable from the
+    salvage branch after cleanup_stale_task renames the name away.
+    """
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "task/T1"], repo)
+    (repo / "wip.txt").write_text("wip\n", encoding="utf-8")
+    _git(["add", "wip.txt"], repo)
+    _git(["commit", "-m", "wip: T1"], repo)
+    tip_sha = _git(["rev-parse", "HEAD"], repo).stdout.strip()
+    _git(["checkout", "master"], repo)
+
+    kata_restore.cleanup_stale_task(repo_root=str(repo), task_id="T1")
+
+    branches = _branch_names(repo)
+    assert "task/T1" not in branches, "task/T1 name must be freed by cleanup"
+    salvage = {b for b in branches if b.startswith("kata-salvage/T1-")}
+    assert len(salvage) == 1, f"expected exactly one salvage branch; got: {salvage!r}"
+    salvage_name = next(iter(salvage))
+
+    log_out = _git(["log", salvage_name, "--format=%H"], repo).stdout.splitlines()
+    assert tip_sha in log_out, (
+        f"original tip commit {tip_sha} must be reachable from {salvage_name} "
+        f"(commit is preserved, not destroyed); log: {log_out!r}"
+    )
+
+
+def test_cleanup_stale_task_idempotent_second_call_is_noop(tmp_path):
+    """(B) Case 5: running cleanup_stale_task twice on the same task_id is a
+    no-op the second time (branch already salvaged / gone) and never raises.
+    """
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "task/T1"], repo)
+    (repo / "wip.txt").write_text("wip\n", encoding="utf-8")
+    _git(["add", "wip.txt"], repo)
+    _git(["commit", "-m", "wip: T1"], repo)
+    _git(["checkout", "master"], repo)
+
+    kata_restore.cleanup_stale_task(repo_root=str(repo), task_id="T1")  # 1st call
+    after_first = _branch_names(repo)
+    assert "task/T1" not in after_first
+    assert len({b for b in after_first if b.startswith("kata-salvage/T1-")}) == 1
+
+    kata_restore.cleanup_stale_task(repo_root=str(repo), task_id="T1")  # 2nd call — must not raise
+    after_second = _branch_names(repo)
+    assert after_second == after_first, (
+        "a second cleanup_stale_task call on an already-salvaged task must be a "
+        f"pure no-op; branches before={after_first!r} after={after_second!r}"
+    )
+
+
+def test_cleanup_stale_task_salvage_name_is_deterministic(tmp_path):
+    """(B) Case 6: the salvage branch name is a pure function of (task_id, tip
+    SHA) — Determinism Doctrine law 7 (no clock/random/counter).  Calling
+    cleanup_stale_task twice on identical inputs (same task_id, same tip
+    commit) must compute the exact same salvage name both times.
+
+    If naming were non-deterministic (e.g. a timestamp or random suffix
+    baked into the name), recreating task/T1 at the SAME commit and salvaging
+    again would produce a SECOND, differently-named salvage branch instead of
+    deterministically colliding with the first (which is treated as
+    already-salvaged, per the idempotency contract).
+    """
+    repo = _make_git_repo(tmp_path)
+    _git(["checkout", "-b", "task/T1"], repo)
+    (repo / "wip.txt").write_text("wip\n", encoding="utf-8")
+    _git(["add", "wip.txt"], repo)
+    _git(["commit", "-m", "wip: T1"], repo)
+    tip_sha = _git(["rev-parse", "HEAD"], repo).stdout.strip()
+    _git(["checkout", "master"], repo)
+
+    kata_restore.cleanup_stale_task(repo_root=str(repo), task_id="T1")
+    first_salvage = {b for b in _branch_names(repo) if b.startswith("kata-salvage/T1-")}
+    assert len(first_salvage) == 1
+    name1 = next(iter(first_salvage))
+
+    # Recreate task/T1 at the EXACT SAME commit (identical task_id + tip sha).
+    _git(["branch", "task/T1", tip_sha], repo)
+    kata_restore.cleanup_stale_task(repo_root=str(repo), task_id="T1")  # must not raise
+
+    second_salvage = {b for b in _branch_names(repo) if b.startswith("kata-salvage/T1-")}
+    assert second_salvage == {name1}, (
+        "identical (task_id, tip sha) inputs must always compute the SAME "
+        f"salvage name; got {second_salvage!r}, expected {{{name1!r}}}"
+    )
