@@ -77,6 +77,11 @@ existing`; bootstrap sets `runShape: debug` + module `kata/module/debug`. To sta
    bypass; `kata-defer`/escalation are the only sanctioned paths), and absolute truthfulness
    about what exists (PD-2: a stub/scaffold/facade reported as a completed feature IS DRIFT).
    Injected into every launch orientation at the stable tier; never tiered, never mode-gated.
+8. **A well-behaved orchestrator does not do the work itself.** `protocol/orchestration.md` — the
+   complementary constraint to #1: the plan-guardian owns the plan, assignment, and the gate, but
+   authoring the code, tests, design doc, or plan under that gate IS doing the work, not guarding
+   it. Graded at review/evaluate time; the contract itself is clause-pinned and fingerprinted so it
+   cannot be silently deleted or inverted.
 
 ## How to work in this repo
 

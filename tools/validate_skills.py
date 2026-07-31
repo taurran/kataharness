@@ -324,6 +324,10 @@ REQUIRED_PROTOCOL = {
     # steering (2026-07-12 health review F-3): the operator->agent mid-run channel + AGENT_STOP
     # graceful kill-switch — now a real engine (tools/kata_steer.py), no longer a prose facade.
     "steering.md": ["AGENT_STOP", "Active directives", "kata_steer", "boundary", "graceful"],
+    # thin-orchestrator doctrine (KH-T12): the conductor's own contract — binding home for a
+    # principle that previously lived only in .planning/ (a described rule, not an enforced one).
+    "orchestration.md": ["well-behaved orchestrator does not do the work itself", "plan-guardian",
+                          "honest residual", "NOT mechanically provable", "clause-pinned"],
 }
 
 
@@ -454,6 +458,16 @@ PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
         "graceful kill-switch (never a blind mid-task kill)",
         "Active directives",
     ],
+    "orchestration.md": [
+        # The doctrine sentence itself — the centrepiece this whole file exists to pin.
+        "A well-behaved orchestrator does not do the work itself.",
+        # What "not doing the work" means, concretely — the line an inversion would have to erase.
+        "Writing the code, the tests, the design doc, or the plan IS doing the work",
+        # The honest residual (d) — required, must not be softened away.
+        "The conductor cannot reach zero judgment.",
+        # The not-mechanically-provable admission (f) — required, must not be softened away.
+        "it is NOT mechanically provable",
+    ],
     "prime-directives.md": [
         # PD-1 — the prohibition itself, and what "complete" means.
         "never defers, refuses, stubs, scaffolds, simplifies away, leaves unwired, or passes over",
@@ -479,6 +493,7 @@ PROTOCOL_FINGERPRINTS: dict[str, str] = {
     "graph.md": "48fbd4619ac9f6feb761119d5e0569b634ae556e2bc8f38c7fe3ff49f2194778",
     "handoff.md": "2e0e11d17f6b8101d2de705ebb01df065ac4cc6decfad53a63bd0237e0e696c9",
     "intent.md": "aaf4632093ca7310f373f8ea49cd85373aa124f30f1adcf9d9103b640521b747",
+    "orchestration.md": "bc0aee0520b48b69f94f3b9242ac427bb587866e7d45dd74d221317de02b2daf",
     "orientation.md": "b926c41b9e61945b1450c96ec8e89044c33668ef5d63414038279787c61c455e",
     "prime-directives.md": "7be2a0d1ab682ed45120fe5d6ca976f38a68df623da2665a19b0374ec7e07959",
     "recall.md": "6edfd018c9c4d62f27f9b94e081e6e15b4002dd13a2277aa7d214ddff4f0d405",

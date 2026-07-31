@@ -40,6 +40,12 @@ _Avoid_: profile, level, preset (preset = the *default* bundle of a mode, not th
 An orthogonal dial — model + reasoning effort (Claude `effort`) — set independently of the mode.
 _Avoid_: power, intensity
 
+**thin orchestrator**:
+The conductor's own contract (`protocol/orchestration.md`): a well-behaved orchestrator does not do the
+work itself — it owns the plan, task assignment, file-ownership partitioning, dispatch, and default-FAIL
+gating, but never authors the code, tests, design doc, or plan under that gate.
+_Avoid_: supervisor, manager (a thin orchestrator is not merely a supervisor — it also holds the gate).
+
 ## Quality & consistency
 **Consistency**:
 The harness's north star: the same mode yields comparable, reproducible output run-to-run. Enforced by

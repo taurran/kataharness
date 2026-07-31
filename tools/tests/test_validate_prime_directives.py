@@ -257,3 +257,65 @@ def test_operator_done_bar_is_present_in_the_real_file():
     assert "Done requires proof, not assertion" in body
     assert "machine-confirmed" in body
     assert "or explicitly approved by the operator" in body
+
+
+# --------------------------------------------------------------------------- #
+# KH-T12 -- the thin-orchestrator doctrine gets a binding home
+#
+# Before this, "a well-behaved orchestrator does not do the work itself" lived only in
+# .planning/THIN-ORCHESTRATOR-DOCTRINE.md -- a described rule with no enforced home, the
+# exact pattern this repo's whole KH-T02 effort exists to eliminate. protocol/orchestration.md
+# is that home; these tests confirm it actually landed as BINDING, not just written.
+# --------------------------------------------------------------------------- #
+
+REAL_ORCH = REAL_PROTOCOL / "orchestration.md"
+REAL_AGENTS = v.REPO_ROOT / "AGENTS.md"
+REAL_ORCHESTRATE_SKILL = v.REPO_ROOT / "skills" / "coordinate" / "kata-orchestrate" / "SKILL.md"
+
+
+def test_doctrine_sentence_present_in_orchestration_protocol():
+    """(TDD 1) The doctrine sentence, verbatim, in its new binding home."""
+    body = v._normalize_protocol_text(REAL_ORCH.read_text(encoding="utf-8"))
+    assert "A well-behaved orchestrator does not do the work itself." in body
+
+
+def test_deleting_the_doctrine_sentence_is_caught_by_the_existing_mutation_test():
+    """(TDD 2) No duplicate mutation test needed here.
+
+    ``test_deleting_any_single_pinned_clause_is_caught_and_named`` is parametrized over
+    ``ALL_CLAUSES``, which is built from ``v.PROTOCOL_PINNED_CLAUSES`` at import time. Once
+    "orchestration.md" carries the doctrine sentence as a pinned clause, that parametrised
+    test automatically grows a case that deletes it from a cloned protocol/ tree and asserts
+    the finding names both the clause and the file -- confirmed here by asserting the case
+    exists in the collected parameter set, rather than re-implementing the mutation by hand.
+    """
+    doctrine = "A well-behaved orchestrator does not do the work itself."
+    assert doctrine in v.PROTOCOL_PINNED_CLAUSES["orchestration.md"]
+    assert ("orchestration.md", doctrine) in ALL_CLAUSES
+
+
+def test_orchestration_registered_in_all_three_integrity_structures():
+    """(TDD 3) REQUIRED_PROTOCOL + PROTOCOL_PINNED_CLAUSES + PROTOCOL_FINGERPRINTS all know it."""
+    assert "orchestration.md" in v.REQUIRED_PROTOCOL
+    assert "orchestration.md" in v.PROTOCOL_PINNED_CLAUSES
+    assert "orchestration.md" in v.PROTOCOL_FINGERPRINTS
+    # And the fingerprint actually matches the shipped file (not a stale/placeholder paste).
+    assert v.protocol_fingerprint(REAL_ORCH) == v.PROTOCOL_FINGERPRINTS["orchestration.md"]
+
+
+def test_agents_md_has_spine_principle_8_referencing_orchestration_protocol():
+    """(TDD 4) Spine principle #8 exists and points at the new binding contract."""
+    text = REAL_AGENTS.read_text(encoding="utf-8")
+    assert "8. **A well-behaved orchestrator does not do the work itself.**" in text
+    assert "protocol/orchestration.md" in text
+    # Principles 1-7 must survive untouched -- #8 is additive, not a renumbering.
+    for n in range(1, 8):
+        assert f"\n{n}. **" in text
+
+
+def test_kata_orchestrate_skill_version_bumped_and_references_doctrine():
+    """(TDD 5) Bump-on-modify: 0.16.1 -> 0.17.0, plus a binding reference in the body."""
+    text = REAL_ORCHESTRATE_SKILL.read_text(encoding="utf-8")
+    assert "version: 0.17.0" in text
+    assert "protocol/orchestration.md" in text
+    assert "A well-behaved orchestrator does not do the work itself" in text
