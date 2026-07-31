@@ -5,26 +5,48 @@ Two-axis scorecard: Axis Q (outcome quality, floor-gated) × Axis C (efficiency)
 Split (per PLAN S2 + DESIGN §3):
   (A) PURE scoring engine — scorecard_schema, score_arms, emit_scorecard
       Pure: no subprocess, no eval, no exec. Only reads .kata/ JSON artifacts
-      and writes the scorecard via plain json.dumps / Path.write_text.
+      and writes the scorecard via plain json.dumps / Path.write_text. The
+      identity gate (below) resolves each arm's live HEAD via
+      run_result.resolve_head_sha — an ALREADY-registered sink in
+      run_result.py — so this module still spawns nothing of its own.
   (B) Thin dual-gate runner — run_dual_gate
       Calls mutation_check.run_named_test (existing INTERNAL sink registered at
       protocol/exec-safety.md:58; fixed shell=False argv). This module never
       introduces a new subprocess sink — the subprocess surface stays in
-      mutation_check.py only (zero-new-sink posture).
+      mutation_check.py (dual-gate) and run_result.py (identity) only.
+
+Identity gate (evidence freshness, D136)
+-----------------------------------------
+Gate evidence (RESULT.json) records the SHA it was produced against, but
+nothing previously checked that SHA against the tree actually being scored —
+a RESULT.json 56 commits stale was fully creditable as proof the *current*
+build passes. score_arms now resolves each arm's own HEAD via
+``run_result.resolve_head_sha`` (cwd=arm root; the registered sink lives in
+run_result.py, not here — see that module's docstring for the inlined law-1
+pins) and passes it to run_result.evidence_is_current (pure) alongside the
+arm's RESULT.json. A resolution failure (not a repo, git absent, timeout)
+yields expected_sha=None, which fail-closes via "unknown-expected-sha" — it is
+NEVER skipped. Identity failure floor-FAILS the arm exactly like any other
+floor-fail (q=0.0, floor_verdict="FAIL"), with the reason carried in
+detail["identity_reason"].
 
 Security posture
 ----------------
-PURE — no subprocess, no eval, no exec.  run_dual_gate (B) calls
-mutation_check.run_named_test (INTERNAL registered sink, exec-safety.md:58).
-The node-ID is DATA in the argv list; never shell-interpolated.
-emit_scorecard: CWE-23 path-traversal guard (_guard_path) rejects '..' in path.
-run_dual_gate: _guard_node_id checks '..' AND containment AND leading '-' per FIX 2.
-Zero new exec sink; protocol/exec-safety.md is unchanged.
+PURE — no subprocess, no eval, no exec.  score_arms (A) calls
+run_result.resolve_head_sha for the identity gate — an ALREADY-registered
+sink in run_result.py (exec-safety.md), not a new one introduced here.
+run_dual_gate (B) calls mutation_check.run_named_test (INTERNAL registered
+sink, exec-safety.md:58).  The node-ID is DATA in the argv list; never
+shell-interpolated.  emit_scorecard: CWE-23 path-traversal guard
+(_guard_path) rejects '..' in path.  run_dual_gate: _guard_node_id checks '..'
+AND containment AND leading '-' per FIX 2.  Zero new exec sink;
+protocol/exec-safety.md's benchmark row is unchanged (the identity sink is
+registered under run_result.resolve_head_sha, not benchmark.*).
 
 Public surfaces (cite-able by name per protocol/reuse-claims.md)
 ---------------------------------------------------------------
 scorecard_schema()                                   — JSON schema single source of truth
-score_arms(arm_map, *, profile, f2p_p2p_results)    — PURE scorer (A)
+score_arms(arm_map, *, profile, f2p_p2p_results)    — PURE scorer (A); resolves per-arm identity via run_result
 emit_scorecard(path, scorecard)                      — write scorecard (CWE-23 guarded)
 run_dual_gate(clone_root, f2p_ids, p2p_ids)         — thin runner (B)
 
@@ -36,6 +58,10 @@ FIX 3: Honesty pin + recommendations — engine-pinned 'honesty' dict and
         deterministic 'recommendations' list in every scorecard.
 FIX 5: Floor partial-RESULT fail-closed — missing 'failed' key → floor FAIL.
 FIX 6b: Absent non-nullable Axis-C field → usage_incomplete=True, not 0.
+FIX (identity): Stale-evidence fail-closed — floor requires evidence_is_current
+        (resultSha == arm's live HEAD, resolved via run_result.resolve_head_sha);
+        a stale/mismatched/absent SHA floor-FAILS exactly like exitCode!=0,
+        reason in detail["identity_reason"].
 """
 
 from __future__ import annotations
@@ -46,6 +72,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from fs_atomic import atomic_write_text
+from run_result import evidence_is_current, resolve_head_sha
 
 # ---------------------------------------------------------------------------
 # CWE-23 path-traversal guard (mirrors usage_meter._guard_path)
@@ -315,6 +342,7 @@ def _compute_arm_q(
     f2p_results: dict,
     p2p_results: dict,
     weights: dict,
+    expected_sha: str | None,
 ) -> tuple:
     """Compute Axis Q for one arm.  Returns (q: float, detail: dict).
 
@@ -332,16 +360,32 @@ def _compute_arm_q(
     floor-passing arm.  Credit requires evaluated booleans.  Mutation-proven:
     test_no_gate_empty_criteria_no_q_credit goes red if the guard is removed.
 
+    FIX (identity) — Stale-evidence fail-closed: the floor ALSO requires
+    ``run_result.evidence_is_current(result_json, expected_sha)`` to hold. A
+    stale, mismatched, missing, or unresolvable-expected-SHA identity
+    floor-FAILS the arm exactly like exitCode!=0 — q=0.0,
+    floor_verdict="FAIL", dual_gate_evaluated=False — with the reason carried
+    in ``detail["identity_reason"]`` (additive key; "" when identity holds).
+    No ancestry check is used (module docstring "Identity gate" section):
+    ancestry proves the SHA was once real, not that it is the one being
+    credited now.
+
     Args:
         result_json:   Parsed RESULT.json (or None if absent).
         mutation_json: Parsed mutation.json (or None if absent).
         f2p_results:   {test_id: bool} for FAIL_TO_PASS tests (pre-computed).
         p2p_results:   {test_id: bool} for PASS_TO_PASS tests (pre-computed).
         weights:       Profile weight dict from _PROFILES.
+        expected_sha:  The arm's live HEAD SHA (resolved by the caller via
+                       ``run_result.resolve_head_sha``), or None if resolution
+                       failed — fail-closes via "unknown-expected-sha", never
+                       skipped.
 
     Returns:
         (q, detail) where q ∈ [0,1] and detail is a diagnostic dict.
     """
+    identity_ok, identity_reason = evidence_is_current(result_json, expected_sha)
+
     # FIX 5: fail-closed floor — require 'failed' key to be present
     if result_json is None:
         exit_code = 1
@@ -352,12 +396,17 @@ def _compute_arm_q(
         failed_present = "failed" in result_json  # FIX 5: fail-closed on absent 'failed' key (load-bearing)
         failed = result_json.get("failed", None)
 
-    floor_passed = exit_code == 0 and failed_present and failed == 0
+    # NOTE: identity_ok is ORDERED LAST — exit_code/failed_present/failed must
+    # all be evaluated first so the FIX 5 mutation-proof (failed_present must be
+    # dereferenced to catch its removal via NameError) still holds; putting
+    # identity_ok first would let a False identity short-circuit past it.
+    floor_passed = exit_code == 0 and failed_present and failed == 0 and identity_ok
 
     detail: dict = {
         "floor_passed": floor_passed,
         "exit_code": exit_code,
         "failed": failed,
+        "identity_reason": identity_reason,  # additive (identity gate, D136)
     }
 
     if not floor_passed:
@@ -652,7 +701,11 @@ def score_arms(
     Pure (A): no subprocess, no eval, no exec.  Reads ``.kata/`` JSON artifacts
     from each arm's clone root.  F2P/P2P boolean results are injected via
     *f2p_p2p_results* (pre-computed by run_dual_gate or test fixtures) — the
-    pure engine never runs pytest itself.
+    pure engine never runs pytest itself.  For the identity gate it calls
+    ``run_result.resolve_head_sha`` per arm (that module's ALREADY-registered
+    sink — see module docstring "Identity gate") so that a stale RESULT.json
+    (produced against an older commit than the tree currently being scored)
+    cannot pass the floor.
 
     FIX 1: An arm with no ``f2p_p2p_results`` entry, or whose entry has both
     ``f2p`` and ``p2p`` empty, gets ``dual_gate_evaluated=False`` and Q=0.0.
@@ -713,11 +766,19 @@ def score_arms(
         mutation_json = _load_json(kata / "mutation.json")
         usage_json = _load_json(kata / "usage.json")
 
+        # Identity gate (D136): the SHA actually being credited is THIS arm's
+        # own live HEAD, resolved fresh — never the (possibly stale) resultSha
+        # sitting inside RESULT.json.  Resolution failure -> None -> fail-closed
+        # via evidence_is_current's "unknown-expected-sha" (never skipped).
+        # resolve_head_sha lives in run_result.py (an ALREADY-registered
+        # subprocess sink) — benchmark.py itself spawns nothing (exec-safety.md).
+        expected_sha = resolve_head_sha(root)
+
         arm_gate = gate.get(label)
         f2p = arm_gate.get("f2p", {}) if arm_gate is not None else {}
         p2p = arm_gate.get("p2p", {}) if arm_gate is not None else {}
 
-        q, q_detail = _compute_arm_q(result_json, mutation_json, f2p, p2p, weights)
+        q, q_detail = _compute_arm_q(result_json, mutation_json, f2p, p2p, weights, expected_sha)
 
         arm_records[label] = {
             "label": label,

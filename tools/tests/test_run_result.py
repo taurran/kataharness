@@ -255,3 +255,153 @@ def test_run_gate_forwards_default_timeout_600(monkeypatch):
     assert seen.get("timeout") == 600.0, (
         "Q-4: run_gate must bound the subprocess with a 600s default timeout"
     )
+
+
+# ---------------------------------------------------------------------------
+# evidence_is_current — pure identity gate (D136 fail-closed)
+# ---------------------------------------------------------------------------
+
+
+def test_stale_result_sha_does_not_pass_identity():
+    """The live-repo scenario: a green RESULT.json whose resultSha is stale
+    (differs from the SHA actually being credited) does NOT read as current."""
+    result = _make_result(exit_code=0, result_sha="159fc9b")
+    ok, reason = run_result.evidence_is_current(result, "aaaaaaa0000000000000000000000000000000")
+    assert ok is False
+    assert reason == "stale-evidence"
+
+
+def test_matching_sha_passes_identity():
+    """Matching SHAs (same length) with a passing suite read as current — no
+    false positive from the identity gate itself."""
+    result = _make_result(exit_code=0, result_sha="abc1234")
+    ok, reason = run_result.evidence_is_current(result, "abc1234")
+    assert ok is True
+    assert reason == ""
+
+
+def test_short_vs_long_sha_forms_of_same_commit_match():
+    """A 7-char resultSha and the SAME commit's 40-char HEAD form must match
+    (git's short/long form mismatch, tolerated case-insensitively)."""
+    result = _make_result(exit_code=0, result_sha="AbC1234")
+    long_sha = "abc1234def5678900000000000000000000000"
+    ok, reason = run_result.evidence_is_current(result, long_sha)
+    assert ok is True
+    assert reason == ""
+
+
+def test_six_char_prefix_is_not_treated_as_a_match():
+    """A 6-char (or shorter) prefix is rejected outright, never matched —
+    below git's own short-SHA floor, a 'match' would be coincidental."""
+    result = _make_result(exit_code=0, result_sha="abc123")
+    ok, reason = run_result.evidence_is_current(result, "abc123def4567890000000000000000000000000")
+    assert ok is False
+    assert reason == "evidence-missing-sha"
+
+
+def test_missing_result_sha_fails_closed():
+    """resultSha absent from RESULT.json fails closed, never treated as a pass."""
+    result = _make_result(exit_code=0)
+    del result["resultSha"]
+    ok, reason = run_result.evidence_is_current(result, "abc1234")
+    assert ok is False
+    assert reason == "evidence-missing-sha"
+
+
+def test_empty_result_sha_fails_closed():
+    """An empty-string resultSha is treated the same as missing."""
+    result = _make_result(exit_code=0, result_sha="")
+    ok, reason = run_result.evidence_is_current(result, "abc1234")
+    assert ok is False
+    assert reason == "evidence-missing-sha"
+
+
+def test_none_result_json_is_no_evidence():
+    """result_json=None (RESULT.json absent/unreadable) fails closed as no-evidence."""
+    ok, reason = run_result.evidence_is_current(None, "abc1234")
+    assert ok is False
+    assert reason == "no-evidence"
+
+
+def test_expected_sha_none_fails_closed():
+    """expected_sha=None (D136 case) must NOT silently pass — the caller could
+    not establish what SHA is being credited, so evidence can't be current."""
+    result = _make_result(exit_code=0, result_sha="abc1234")
+    ok, reason = run_result.evidence_is_current(result, None)
+    assert ok is False
+    assert reason == "unknown-expected-sha"
+
+
+def test_expected_sha_empty_string_fails_closed():
+    """expected_sha='' is treated the same as None."""
+    result = _make_result(exit_code=0, result_sha="abc1234")
+    ok, reason = run_result.evidence_is_current(result, "")
+    assert ok is False
+    assert reason == "unknown-expected-sha"
+
+
+def test_evidence_is_current_is_pure_and_repeatable():
+    """Determinism: same inputs -> same output, repeatable, no I/O/clock/subprocess."""
+    result = _make_result(exit_code=0, result_sha="abc1234")
+    results = {run_result.evidence_is_current(result, "abc1234def") for _ in range(5)}
+    assert results == {(True, "")}
+
+    stale_result = _make_result(exit_code=0, result_sha="0000000")
+    stale_results = {
+        run_result.evidence_is_current(stale_result, "abc1234def") for _ in range(5)
+    }
+    assert stale_results == {(False, "stale-evidence")}
+
+
+# ---------------------------------------------------------------------------
+# resolve_head_sha — the identity gate's subprocess sink (registered:
+# protocol/exec-safety.md). Lives here (run_result.py is ALREADY a registered
+# sink module via run_gate) rather than in benchmark.py, which must stay
+# subprocess-free (test_benchmark.py::TestExecSafety::test_no_subprocess_import,
+# a frozen invariant).
+# ---------------------------------------------------------------------------
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+def test_resolve_head_sha_resolves_via_git_rev_parse():
+    """resolve_head_sha runs `git rev-parse HEAD` against the given root and
+    returns the SAME SHA a direct `git rev-parse HEAD` reports for THIS repo —
+    proves the sink is wired to real git, not a stub."""
+    import subprocess as _subprocess
+    real = _subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=str(_REPO_ROOT), capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    assert run_result.resolve_head_sha(_REPO_ROOT) == real
+
+
+def test_resolve_head_sha_returns_none_for_non_git_directory(tmp_path):
+    """resolve_head_sha returns None (never raises) for a directory that is
+    not inside a git repository."""
+    non_repo = tmp_path / "not-a-repo"
+    non_repo.mkdir()
+    assert run_result.resolve_head_sha(non_repo) is None
+
+
+def test_resolve_head_sha_returns_none_on_timeout(monkeypatch):
+    """A hung git call fails closed (None), never hangs, never raises through."""
+    import subprocess as _subprocess
+
+    def _timeout(*args, **kwargs):
+        raise _subprocess.TimeoutExpired(cmd="git", timeout=30)
+
+    monkeypatch.setattr(run_result.subprocess, "run", _timeout)
+    assert run_result.resolve_head_sha("/some/path") is None
+
+
+def test_resolve_head_sha_returns_none_on_nonzero_exit(monkeypatch):
+    """A non-zero git exit (e.g. detached/corrupt repo) fails closed (None),
+    even when stdout carries SOMETHING non-empty (e.g. a partial/garbage
+    line) — the exit code must gate the result, not just an empty-string check."""
+    class _Proc:
+        returncode = 128
+        stdout = "fatal: not a git repository (or any of the parent directories): .git\n"
+
+    monkeypatch.setattr(run_result.subprocess, "run", lambda *a, **k: _Proc())
+    assert run_result.resolve_head_sha("/some/path") is None

@@ -5,9 +5,23 @@ everything needed to trust a KataHarness gate run without re-executing it.
 
 Public surface
 --------------
-build_result(...)  -> dict   — pure; same inputs → same output (except utc)
-write_result(...)  -> None   — writes result as indented JSON
-run_gate(command)  -> (str, int)  — thin subprocess wrapper (optional)
+build_result(...)          -> dict          — pure; same inputs → same output (except utc)
+write_result(...)          -> None          — writes result as indented JSON
+run_gate(command)          -> (str, int)    — thin subprocess wrapper (optional)
+evidence_is_current(...)   -> (bool, str)   — pure identity gate: is RESULT.json's
+                                               resultSha the SHA actually being
+                                               credited? FAIL-CLOSED (D136) on every
+                                               absent/ambiguous input.
+resolve_head_sha(repo_root) -> str | None   — thin subprocess wrapper: resolves
+                                               *repo_root*'s live HEAD via
+                                               `git rev-parse HEAD`. Registered
+                                               sink (protocol/exec-safety.md);
+                                               this module is ALREADY a
+                                               registered subprocess sink
+                                               (run_gate) — new callers (e.g.
+                                               benchmark.score_arms) call this
+                                               function rather than growing a
+                                               second spawn site of their own.
 """
 
 from __future__ import annotations
@@ -23,6 +37,14 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 _PYTEST_COUNT_RE = re.compile(r"(\d+)\s+(passed|failed|skipped)")
+
+# Minimum SHA prefix length treated as a meaningful identity — below this, a
+# "match" would be coincidental (git's own short-SHA floor). Never treat a
+# shorter prefix as a match.
+_MIN_SHA_LEN = 7
+
+# Bounded per Determinism Doctrine law 8 (gate subprocesses must not hang).
+_GIT_TIMEOUT_S = 30
 
 
 def _parse_pytest_counts(output: str) -> dict[str, int]:
@@ -93,6 +115,114 @@ def build_result(
         "resultSha": result_sha,
         "utc": utc,
     }
+
+
+def evidence_is_current(result_json: dict | None, expected_sha: str | None) -> tuple[bool, str]:
+    """Is *result_json*'s ``resultSha`` the SHA actually being credited?
+
+    Gate evidence (RESULT.json) faithfully records the SHA it was produced
+    against, but nothing previously checked that SHA against the tree being
+    credited — a RESULT.json 56 commits stale was fully creditable as proof the
+    *current* build passes. This closes that gap.
+
+    Pure: no subprocess, no clock, no I/O (Determinism Doctrine). The caller is
+    responsible for resolving *expected_sha* (e.g. ``git rev-parse HEAD`` of the
+    tree under test) — this function only compares.
+
+    FAIL-CLOSED throughout (D136 — no silent-permissive default): every absent
+    or ambiguous input is a hard NO, never treated as "assume current".
+
+    An ancestry check (``git merge-base --is-ancestor``) is deliberately NOT
+    used here — it tests *validity* (was this SHA ever real), not *freshness*
+    (is this SHA the one being credited RIGHT NOW). A 56-commits-stale SHA is a
+    perfectly valid ancestor of HEAD and would pass an ancestry check while
+    still being stale evidence.
+
+    Args:
+        result_json:  Parsed RESULT.json dict (``build_result``'s output), or
+                       None if the artifact is absent/unreadable.
+        expected_sha: The SHA of the tree actually being credited, resolved by
+                       the caller. None/empty means the caller could not
+                       establish what SHA is being credited.
+
+    Returns:
+        (True, "") when ``result_json["resultSha"]`` and *expected_sha* name the
+        SAME commit — compared case-insensitively over the shorter of the two
+        lengths (a 7-char short SHA matches its own 40-char long form), with
+        both sides required to be at least 7 characters (git's own short-SHA
+        floor; a shorter prefix is never treated as a match). Otherwise
+        (False, reason):
+          - result_json is None                      -> "no-evidence"
+          - resultSha missing/empty                   -> "evidence-missing-sha"
+          - expected_sha None/empty                   -> "unknown-expected-sha"
+          - either SHA shorter than 7 chars            -> "evidence-missing-sha"
+          - SHAs differ                                -> "stale-evidence"
+    """
+    if result_json is None:
+        return False, "no-evidence"
+
+    result_sha = result_json.get("resultSha")
+    if not result_sha:
+        return False, "evidence-missing-sha"
+
+    if not expected_sha:
+        return False, "unknown-expected-sha"
+
+    result_sha = str(result_sha)
+    expected = str(expected_sha)
+
+    if len(result_sha) < _MIN_SHA_LEN or len(expected) < _MIN_SHA_LEN:
+        return False, "evidence-missing-sha"
+
+    compare_len = min(len(result_sha), len(expected))
+    if result_sha[:compare_len].lower() != expected[:compare_len].lower():
+        return False, "stale-evidence"
+
+    return True, ""
+
+
+def resolve_head_sha(repo_root: str | Path) -> str | None:
+    """Resolve *repo_root*'s current HEAD SHA via ``git rev-parse HEAD``.
+
+    Registered sink (protocol/exec-safety.md): fixed argv, ``shell=False``, no
+    external input — *repo_root* is a harness-supplied path (e.g. an arm's own
+    clone root from ``benchmark.score_arms``' ``arm_map``), never
+    externally-controlled data reaching argv. Law-1 pins (Determinism Doctrine)
+    inlined here the way ``contract_gate.py:150`` does — there is no shared
+    pinned git helper in this repo.
+
+    This module (``run_result.py``) is ALREADY a registered subprocess sink
+    (``run_gate``) — callers needing a resolved SHA (e.g. the benchmark
+    identity gate, D136) call this function rather than growing a second,
+    unregistered spawn site of their own.
+
+    Returns None on ANY resolution failure (not a git repo, git absent, a
+    non-zero exit, an empty result, or a timeout). This function never raises;
+    the typical caller passes the None straight through to
+    :func:`evidence_is_current`, which fail-closes it as
+    "unknown-expected-sha" — resolution failure is NEVER treated as "skip the
+    check".
+    """
+    try:
+        proc = subprocess.run(
+            [
+                "git",
+                "-c", "log.follow=false",
+                "-c", "log.showSignature=false",
+                "-c", "core.quotepath=off",
+                "rev-parse", "HEAD",
+            ],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            timeout=_GIT_TIMEOUT_S,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None
+    sha = proc.stdout.strip()
+    return sha or None
 
 
 def write_result(result: dict, path: str | Path) -> None:
