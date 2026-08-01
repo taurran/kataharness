@@ -8,6 +8,38 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ---
 
+## [Unreleased]
+
+### Added — dispatch-authoring: `design-author`/`plan-author` roles + the KH-B42 gate rubric (D168)
+
+Design-doc and plan authoring can now be **dispatched** as their own roles instead of running in the
+conductor's own session — closing the gap `protocol/orchestration.md` names: a conductor cannot gate an
+artifact it authored itself. Spec: `.planning/specs/dispatch-authoring/` (`DESIGN.md` + `PLAN.md`).
+
+- **Two new dispatch roles** — `design-author` and `plan-author` — added to `tools/kata_roles.py`
+  `ROLE_GROUPS` (additive, closed-enum; neither is `HOST_ONLY_ROLES`). `kata-design-doc` dispatches as
+  `design-author` once the grill ledger converges; each `kata-plan-<tier>` dispatches as `plan-author` once
+  `DESIGN.md` is frozen.
+- **Two new `tools/kata_dispatch.py` `normalize()` branches** validating the returned payload —
+  `{designPath|planPath: str REQUIRED, verdict: "ready"|"needs-rework" REQUIRED, deviations: [str]}` — a
+  missing path or an unrecognized verdict raises (default-FAIL), mirroring the existing `validator` branch.
+- **`protocol/authored-artifact-gate.md`** (NEW) — the KH-B42 six-row rubric (SCOPE · CLAIM vs ARTIFACT ·
+  CITATIONS RESOLVE · NO UNCITED REUSE CLAIM · DEVIATIONS CONFIRMED · NO FROZEN INVARIANT RETIRED) the
+  conductor applies to any returned `DESIGN.md`/`PLAN.md` before writing it into the main tree; registered
+  in `validate_skills.py`'s `REQUIRED_PROTOCOL`/`PROTOCOL_PINNED_CLAUSES`/`PROTOCOL_FINGERPRINTS`.
+- **`protocol/escalation.md`** — the existing "planner-workers … dispatched during the freeze stage" clause
+  now names `design-author`/`plan-author` explicitly, and states the `human-required` path for a genuinely
+  unresolved ledger/DESIGN branch (no new `kind` value; the enum stays at exactly four members).
+- **Skills bumped (bump-on-modify, MINOR):** `kata-design-doc` 0.2.0→0.3.0 · `kata-plan-essential`
+  0.2.0→0.3.0 · `kata-plan-standard` 0.2.0→0.3.0 · `kata-plan-advanced` 0.2.0→0.3.0 · `kata-loop`
+  0.1.0→0.2.0.
+- **Honesty (PD-2):** proven end-to-end against the injectable `kata_dispatch.dispatch(runner=...)` stub
+  seam (`tools/tests/test_dispatch_authoring_smoke.py`) — **stub-scope only**; no live dispatch of either
+  new role has run against a real platform yet (the same posture already carried for `validator`/`researcher`
+  before their first live cross-model run).
+
+---
+
 ## [0.4.0] — 2026-07-22 — The advisor + quota-resilience release
 
 Everything between v0.3.0 and this line ships as **v0.4.0**: the Fable-tier **advisor-executor**

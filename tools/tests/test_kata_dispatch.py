@@ -421,6 +421,60 @@ def test_dispatch_failed_oversized_stderr_is_tail_capped():
     assert len(got) == len(kd._STDERR_TRUNCATION_MARKER) + kd._STDERR_TAIL_CHARS
 
 
+# ----- dispatch-authoring: design-author / plan-author normalize() branches (DESIGN §4.3, T1) -----
+
+def test_normalize_design_author():
+    payload = kd.normalize("design-author", json.dumps({"designPath": "DESIGN.md", "verdict": "ready"}))
+    assert payload == {"designPath": "DESIGN.md", "verdict": "ready", "deviations": []}
+
+
+def test_normalize_design_author_missing_designpath_raises():
+    with pytest.raises(ValueError, match="designPath"):
+        kd.normalize("design-author", json.dumps({"verdict": "ready"}))
+
+
+def test_normalize_design_author_bad_verdict_raises():
+    with pytest.raises(ValueError, match="verdict"):
+        kd.normalize("design-author", json.dumps({"designPath": "x", "verdict": "sideways"}))
+
+
+def test_normalize_design_author_preserves_deviations():
+    payload = kd.normalize(
+        "design-author",
+        json.dumps({"designPath": "DESIGN.md", "verdict": "needs-rework", "deviations": ["extrapolated X"]}),
+    )
+    assert payload["deviations"] == ["extrapolated X"]
+
+
+def test_normalize_plan_author():
+    payload = kd.normalize("plan-author", json.dumps({"planPath": "PLAN.md", "verdict": "ready"}))
+    assert payload == {"planPath": "PLAN.md", "verdict": "ready", "deviations": []}
+
+
+def test_normalize_plan_author_missing_planpath_raises():
+    with pytest.raises(ValueError, match="planPath"):
+        kd.normalize("plan-author", json.dumps({"verdict": "ready"}))
+
+
+def test_normalize_plan_author_bad_verdict_raises():
+    with pytest.raises(ValueError, match="verdict"):
+        kd.normalize("plan-author", json.dumps({"planPath": "x", "verdict": "sideways"}))
+
+
+def test_build_brief_design_author_write_sandbox():
+    b = kd.build_brief("t1", "design-author", "claude", model="m", objective="o",
+                       result_path="R", sandbox="write")
+    assert b["role"] == "design-author"
+    assert b["boundaries"]["sandbox"] == "write"
+
+
+def test_build_brief_plan_author_write_sandbox():
+    b = kd.build_brief("t1", "plan-author", "claude", model="m", objective="o",
+                       result_path="R", sandbox="write")
+    assert b["role"] == "plan-author"
+    assert b["boundaries"]["sandbox"] == "write"
+
+
 # ----- THE END-TO-END PROOF: roles -> brief -> dispatch(stub) -> normalized verdict -----
 def test_end_to_end_validator_on_codex(tmp_path):
     # 1) routing config: validator -> codex (confirmed)

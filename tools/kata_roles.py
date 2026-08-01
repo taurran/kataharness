@@ -6,6 +6,8 @@ all-roles-on-the-host (single-model, backward-compatible). A `roles` block in
 platform that has been **confirmed** on this machine (`confirmedPlatforms`).
 
 Role groups (DESIGN LD1): coder · validator · researcher · orchestrator · evaluator.
+Dispatch-authoring roles (DESIGN §4.1, dispatch-authoring spec): design-author · plan-author —
+additive to the closed enum, neither is HOST_ONLY (§4.1).
 
 Public API
 ----------
@@ -30,7 +32,10 @@ from __future__ import annotations
 
 import kata_models as _km
 
-ROLE_GROUPS = frozenset({"coder", "validator", "researcher", "orchestrator", "evaluator"})
+ROLE_GROUPS = frozenset({
+    "coder", "validator", "researcher", "orchestrator", "evaluator",
+    "design-author", "plan-author",
+})
 
 # Roles that MUST run on the orchestrator's own host in v1 (DESIGN LD11 / MM-1):
 # the orchestrator is the plan-guardian and the evaluator is the default-FAIL gate —

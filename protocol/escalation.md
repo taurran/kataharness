@@ -75,9 +75,14 @@ DAG-dependents park, and the frontier keeps draining (D51/D52). It is **not** a 
   section of the redispatch brief — workers in isolated worktrees cannot read the main tree's `.kata/`, so a
   path reference would be unreadable; the JSON is embedded. The advised redispatch is a **NEW attempt** on the
   attempt branch, counted normally. The resolver writes `status: resolved` + `resolution` as usual.
-- **Planner-workers** (in-harness plan/design authoring, dispatched during the freeze stage) raise
-  `advice-requested` through this SAME machinery — **advanced + granted only** (runtime-gated); classified as
-  the advisor's `advisor-planning-consult` event.
+- **Planner-workers** (in-harness plan/design authoring, dispatched during the freeze stage — the
+  `design-author`/`plan-author` roles, `protocol/config.md`'s `roles` schema, KH-T13 dispatch-authoring spec)
+  raise `advice-requested` through this SAME machinery — **advanced + granted only** (runtime-gated);
+  classified as the advisor's `advisor-planning-consult` event. A `design-author`/`plan-author` that instead
+  hits a **genuinely unresolved ledger/DESIGN branch** (one only a human can decide, not a scoped advisor
+  question) raises the **existing** `kind: "human-required"` — no new `kind` value — and parks per the
+  standard async contract above; the conductor, which still holds the human channel, routes it back to a
+  human decision on the worker's behalf.
 - **Cap: 2 worker-requested consults per task** (S-23a) — a surfaced NOTE beyond the cap; the advisor budget
   pool is still the outer bound. The per-task count is derived from the durable `.kata/advice/<task-id>-*.json`
   ordinals (no extra counter state). One pathological task can never drain the pool.

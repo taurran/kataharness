@@ -264,10 +264,14 @@ def normalize(role: str, raw_text: str) -> dict:
     """Map a worker's raw JSON output to the ROLE's payload shape (N3). Raises on a missing verdict.
 
     The verdict lives in the payload (distinct from the envelope ``status``):
-    - validator  -> {verdict: "ship"|"hold", findings: [...]}
-    - evaluator  -> {score: 0.0-1.0, decision: "accept"|"send-back"|"reroll", reason}
-    - researcher -> {claim, source, confidence, groundsToPlan}
-    - coder      -> {resultJson?, diffPath?}  (the gate RESULT.json is produced separately)
+    - validator      -> {verdict: "ship"|"hold", findings: [...]}
+    - evaluator      -> {score: 0.0-1.0, decision: "accept"|"send-back"|"reroll", reason}
+    - researcher     -> {claim, source, confidence, groundsToPlan}
+    - coder          -> {resultJson?, diffPath?}  (the gate RESULT.json is produced separately)
+    - design-author  -> {designPath, verdict: "ready"|"needs-rework", deviations: [...]}
+                        (DESIGN §4.3, dispatch-authoring spec — designPath/verdict REQUIRED)
+    - plan-author    -> {planPath,   verdict: "ready"|"needs-rework", deviations: [...]}
+                        (DESIGN §4.3, dispatch-authoring spec — planPath/verdict REQUIRED)
     """
     if not raw_text.strip():
         raise ValueError(f"empty worker result for role {role!r} (default-FAIL)")
@@ -307,6 +311,22 @@ def normalize(role: str, raw_text: str) -> dict:
             "claim": claim, "source": source,
             "confidence": data.get("confidence"), "groundsToPlan": data.get("groundsToPlan"),
         }
+    if role == "design-author":
+        design_path = data.get("designPath")
+        if not isinstance(design_path, str) or not design_path.strip():
+            raise ValueError(f"design-author result missing designPath (got {design_path!r})")
+        verdict = data.get("verdict")
+        if verdict not in {"ready", "needs-rework"}:
+            raise ValueError(f"design-author result missing verdict ready|needs-rework (got {verdict!r})")
+        return {"designPath": design_path, "verdict": verdict, "deviations": data.get("deviations", [])}
+    if role == "plan-author":
+        plan_path = data.get("planPath")
+        if not isinstance(plan_path, str) or not plan_path.strip():
+            raise ValueError(f"plan-author result missing planPath (got {plan_path!r})")
+        verdict = data.get("verdict")
+        if verdict not in {"ready", "needs-rework"}:
+            raise ValueError(f"plan-author result missing verdict ready|needs-rework (got {verdict!r})")
+        return {"planPath": plan_path, "verdict": verdict, "deviations": data.get("deviations", [])}
     # coder / orchestrator: pass through the worker's reported object, but reject an empty one
     if not data:
         raise ValueError(f"empty payload for role {role!r} (default-FAIL)")

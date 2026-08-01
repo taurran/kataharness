@@ -328,6 +328,11 @@ REQUIRED_PROTOCOL = {
     # principle that previously lived only in .planning/ (a described rule, not an enforced one).
     "orchestration.md": ["well-behaved orchestrator does not do the work itself", "plan-guardian",
                           "honest residual", "NOT mechanically provable", "clause-pinned"],
+    # dispatch-authoring (KH-B42): the conductor-gates-what-it-did-not-author rubric — the six
+    # named rows every returned DESIGN.md/PLAN.md is checked against before entering the main tree.
+    "authored-artifact-gate.md": ["SCOPE", "CLAIM vs ARTIFACT", "CITATIONS RESOLVE",
+                                   "NO UNCITED REUSE CLAIM", "DEVIATIONS CONFIRMED",
+                                   "NO FROZEN INVARIANT RETIRED"],
 }
 
 
@@ -481,15 +486,28 @@ PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
         "Done requires proof, not assertion",
         "or explicitly approved by the operator",
     ],
+    "authored-artifact-gate.md": [
+        # Row 2 — the conductor must read the file, never substitute the payload's self-report.
+        "never the dispatch payload's self-reported verdict as a substitute for reading it",
+        # Row 5 — a self-flagged deviation is checked, never trusted outright.
+        "never accepted at face value",
+        # Row 6 — the no-frozen-invariant-retired prohibition itself.
+        "does not silently weaken, retire, or leave ambiguous a Prime Directive",
+        # Honesty note — the same non-mechanical admission orchestration.md already makes.
+        "explicitly not mechanically provable",
+        # §PLAN application — a future reader must not invent a second rubric.
+        "No new rows are needed for PLAN.md",
+    ],
 }
 
 #: Digest of the normalised file. Update ONLY via --update-protocol-fingerprint,
 #: after reviewing the diff — the whole point is that the update is a deliberate act.
 #: NOTE the deliberate absence of `config.md` — see the SCOPE note above.
 PROTOCOL_FINGERPRINTS: dict[str, str] = {
+    "authored-artifact-gate.md": "b90eb9ded18eb324382d23772cabc7740112da964983317ed196858c486ae535",
     "dependencies.md": "652df1a8f46b93cd13f1e54ba19ec8725ec9e48c02e4b03ea5a8e27bcafe972c",
     "engram.md": "ad01a873d4aff387c85f3798db7494ed6750aab4c1054b876e9282c9fbf2d879",
-    "escalation.md": "b155f7151a6440226c3a841f65b5a6f1fd0d2580fc6af7ae10346892a26ee15b",
+    "escalation.md": "ac9724a093c7f4890fbe567efec8849465517b36cb4f048f1842b9348e116a76",
     "graph.md": "48fbd4619ac9f6feb761119d5e0569b634ae556e2bc8f38c7fe3ff49f2194778",
     "handoff.md": "2e0e11d17f6b8101d2de705ebb01df065ac4cc6decfad53a63bd0237e0e696c9",
     "intent.md": "aaf4632093ca7310f373f8ea49cd85373aa124f30f1adcf9d9103b640521b747",

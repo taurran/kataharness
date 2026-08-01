@@ -5,7 +5,7 @@ description: >-
   truth both planning and execution serve. Use after grilling, before task-planning, to turn resolved
   decisions into a specific, testable, freeze-ready DESIGN with explicit acceptance and locked decisions.
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: plan
 status: beta
 agnostic: true
@@ -24,13 +24,24 @@ tags:
 
 FREEZE turns the grill's output into the **single document execution serves**. It does not introduce new
 decisions — every decision must already be resolved in the ledger ([[kata-grill]]). If the design-doc author
-finds an unresolved branch, that is a signal the grill was incomplete: **return to grilling**, do not decide
-it here.
+finds an unresolved branch, that is a signal the grill was incomplete — it is not decided here. Dispatched as
+a `design-author` worker (see Precondition below) it has no `AskUserQuestion` channel and so cannot literally
+"return to grilling" itself; instead it raises the **existing** `human-required` escalation
+(`protocol/escalation.md`) and the task parks. The conductor — which still holds the human channel — is the
+one that returns to grilling on the worker's behalf.
 
 ## Precondition — the ledger passed its adversarial gate
 Do not freeze a ledger that hasn't passed [[kata-grill]]'s fresh-context convergence check ([[kata-review]]).
 Freezing an un-audited ledger just launders an under-specified grill into a "frozen" contract. No gate → back
 to grilling.
+
+**Dispatched as `design-author` (DESIGN §4.2, dispatch-authoring spec, KH-T13).** Once the grill ledger has
+converged, the conductor session dispatches this skill as role `design-author`
+(`kata_dispatch.build_brief`/`dispatch`, `tools/kata_dispatch.py:42`/`:199`) — `sandbox="write"`, in its own
+[[kata-worktree]] worktree — instead of running it in the conductor's own context
+(`protocol/orchestration.md`: the conductor gates, it does not author under its own gate). The conductor
+applies `protocol/authored-artifact-gate.md`'s six-row rubric (KH-B42) to the returned `DESIGN.md` before
+writing it into the main tree.
 
 ## Inputs
 The decision ledger (`resources/DECISION-LEDGER.md` shape), the glossary ([[kata-context]]), any ADRs, and
@@ -66,6 +77,16 @@ the original spec/requirements.
 ## Output
 A `DESIGN.md` (SCREAMING-KEBAB, durable). Hand to [[kata-plan]] for the task-level execution plan. Once
 written, the DESIGN is **frozen** — changes are deliberate re-freezes, not edits-in-flight ([[kata-orchestrate]]).
+
+**Two-part output contract when dispatched as `design-author`:** (1) write the `DESIGN.md` file to the
+brief's one `owned_files` path; (2) emit, as your FINAL message, the completion JSON
+`{ "designPath": <path>, "verdict": "ready"|"needs-rework", "deviations": [<str>, ...] }` — the shape
+`tools/kata_dispatch.py`'s `normalize()` validates (DESIGN §4.3). `verdict` is your own self-assessment; it
+is never a substitute for the conductor actually reading the file (`protocol/authored-artifact-gate.md` row
+2). `deviations` names any place you extrapolated beyond, or found ambiguous in, the cited ledger — every
+entry is independently checked against the ledger by the conductor, never accepted at face value (row 5).
+Once the conductor has gated and written this `DESIGN.md` into the main tree, it dispatches the appropriate
+`kata-plan-<tier>` skill as role `plan-author` the same way (DESIGN §4.2).
 
 ## Advice-request escalation (advisor-executor, S-17a — ADVANCED + granted ONLY; runtime-gated)
 When dispatched in-harness as a planner-worker, on a **genuinely hard design question** you MAY request a

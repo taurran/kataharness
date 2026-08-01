@@ -2732,3 +2732,37 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   live-if-they-occur but UNEXERCISED**; arm (b) (sub-fable ⇒ Fable dispatch) and the standard-mode
   carve-out are test-proven, not live-proven; labels travel with every claim. Additive feature (supersedes nothing);
   re-titles the deferred kata-reason concept to "Reason (the decider)".
+- **D168 — dispatch-authoring: `design-author`/`plan-author` dispatch roles (KH-T13) + the KH-B42
+  conductor-gates-what-it-did-not-author rubric.** 2026-08-01. Spec
+  `.planning/specs/dispatch-authoring/` (`DESIGN.md` + `PLAN.md`, grounded in
+  `.planning/TASKS-ARCHITECTURE-2026-07-26.md` KH-T13 lines 40-93 / KH-B42 lines 202-204 — see those
+  documents for the full reasoning, not re-derived here). *What:* closes the gap named in
+  `protocol/orchestration.md` — the conductor session that runs the grill also authors `DESIGN.md`/`PLAN.md`
+  directly in its own context, then later gates them; the moment authoring is dispatched, the same session
+  must gate an artifact it did not write, and no rubric for that existed until now. *T13:* two new closed-enum
+  roles added to `tools/kata_roles.py` `ROLE_GROUPS` (additive; neither is `HOST_ONLY_ROLES`) -
+  `design-author` (dispatched at `kata-design-doc`'s Precondition once the grill ledger converges) and
+  `plan-author` (dispatched at each `kata-plan-<tier>`'s Precondition once `DESIGN.md` is frozen), both
+  `sandbox="write"` in their own `[[kata-worktree]]` worktree; two new `tools/kata_dispatch.py`
+  `normalize()` branches validate the return payload
+  `{designPath|planPath: str REQUIRED, verdict: "ready"|"needs-rework" REQUIRED, deviations: [str] optional}`
+  - a missing path or bad verdict raises (default-FAIL), mirroring the existing `validator` branch's posture.
+  A genuinely unresolved ledger/DESIGN branch raises the **existing** `human-required` escalation kind
+  (`protocol/escalation.md`) - no new `kind` value; the conductor, which alone holds the human channel,
+  routes it back to a human decision. *B42:* new protocol file `protocol/authored-artifact-gate.md` - the
+  six-row rubric (SCOPE - CLAIM vs ARTIFACT - CITATIONS RESOLVE - NO UNCITED REUSE CLAIM - DEVIATIONS
+  CONFIRMED - NO FROZEN INVARIANT RETIRED) the conductor applies to any returned `DESIGN.md`/`PLAN.md` before
+  writing it into the main tree, each row marked mechanical or judgment (rows 2/3/5/6 are judgment, honestly
+  not claimed to be mechanically provable - the same posture `protocol/orchestration.md` already holds for
+  itself); registered in `validate_skills.py`'s `REQUIRED_PROTOCOL` + `PROTOCOL_PINNED_CLAUSES` +
+  `PROTOCOL_FINGERPRINTS` (fingerprinted, unlike the exempt `config.md`). *BC (DESIGN §6):* additive-only -
+  every existing role, `normalize()` branch, and the `escalation.md` `kind` enum (still exactly four values)
+  stay byte-unchanged; `intent_scaffold.write_intent` is untouched, neither new role writes `INTENT.md`; an
+  absent/pre-existing `roles` block resolves exactly as before. *Skills touched (bump-on-modify, MINOR):*
+  `kata-design-doc` 0.2.0->0.3.0, `kata-plan-essential`/`-standard`/`-advanced` 0.2.0->0.3.0 each, `kata-loop`
+  0.1.0->0.2.0 (one clause naming the freeze-stage dispatch, no other line changed). *Honesty (PD-2):* like
+  the `validator`/`researcher` roles before them (D-record 1032-1033, "codex NOT installed -> proven against
+  the stub"), this build proves the wiring end-to-end against the injectable `kata_dispatch.dispatch(runner=...)`
+  stub seam (`tools/tests/test_dispatch_authoring_smoke.py`) - **no live dispatch of either new role has run
+  against a real platform yet**; that is gated on install + confirm, the same honest-scope posture the
+  codebase already carries for every dispatched role.
