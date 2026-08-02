@@ -329,6 +329,116 @@ def parse_plan_tasks(plan_path: str | Path) -> set[str]:
     return task_ids
 
 
+# ---------------------------------------------------------------------------
+# BL-F01 — freeze becomes a recorded, checked state (not convention-only prose)
+# ---------------------------------------------------------------------------
+#
+# Plan frontmatter already carries a free-prose `status:` field. These two functions are
+# the ONE place that field is read and judged: `plan_status` normalizes it to a closed
+# enum, `assert_frozen` is the chokepoint callers (kata_dispatch.build_brief) use to
+# refuse to proceed against a plan that is not frozen. Deliberately independent of
+# `parse_plan_tasks` above — it has its own pinned error-message contract (tests match on
+# "refusing to under-dispatch" / "cannot determine the run's task set") that must not
+# shift as a side effect of this addition.
+
+_KNOWN_PLAN_STATUSES = frozenset({"draft", "frozen"})
+
+
+def plan_status(plan_path: str | Path) -> str:
+    """Return a PLAN.md's normalized freeze status from its frontmatter ``status:`` field.
+
+    Fail-closed semantics (D45/GB12 + D136 — no silent-permissive default):
+
+    - ``status:`` key absent, or present but empty/whitespace-only ⇒ returns ``"absent"``.
+      This is NOT frozen — an absent field is never coerced to a "frozen" default.
+    - Otherwise the value is split on whitespace and the FIRST WORD is taken, case-folded;
+      trailing prose after that word is ignored. This is the chosen parse rule (see
+      module tests) — it lets an authored value like
+      ``status: DRAFT — awaiting freeze-gate (some parenthetical note)`` parse as
+      ``"draft"`` instead of hard-failing on the trailing prose. The alternative rule
+      (the value must be EXACTLY the token) was rejected because "draft with a trailing
+      note" is a real authoring shape, not garbage, and a plan carrying it must not be
+      indistinguishable from a corrupt one.
+    - First word is ``"draft"`` or ``"frozen"`` ⇒ that lowercase token is returned.
+    - Any other first word (typo, unrelated free prose) ⇒ RAISES. Never coerced to a
+      default in either direction — an unrecognized status must not silently pass as
+      frozen NOR silently pass as draft; it is a data problem to resolve by hand.
+
+    Returns
+    -------
+    str
+        One of ``"draft"``, ``"frozen"``, or ``"absent"``.
+
+    Raises
+    ------
+    ValueError
+        Unreadable file, missing/invalid YAML frontmatter, or a ``status:`` first word
+        that is neither "draft" nor "frozen".
+    """
+    path = Path(plan_path)
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(
+            f"kata_restore: cannot read PLAN at {path!s} ({exc}) — refusing to assume a "
+            "status. Resolve manually."
+        ) from exc
+
+    fm_match = _FM_RE.match(content)
+    if not fm_match:
+        raise ValueError(
+            f"kata_restore: PLAN at {path!s} has no YAML frontmatter — cannot determine "
+            "its status. Resolve manually."
+        )
+
+    try:
+        fm = yaml.safe_load(fm_match.group(1)) or {}
+    except yaml.YAMLError as exc:
+        raise ValueError(
+            f"kata_restore: PLAN frontmatter at {path!s} is not valid YAML — {exc}. "
+            "Resolve manually."
+        ) from exc
+
+    if not isinstance(fm, dict):
+        raise ValueError(
+            f"kata_restore: PLAN frontmatter at {path!s} is not a mapping — cannot "
+            "determine its status. Resolve manually."
+        )
+
+    raw = fm.get("status")
+    if raw is None:
+        return "absent"
+    raw_str = str(raw).strip()
+    if not raw_str:
+        return "absent"
+
+    first_word = raw_str.split()[0].casefold()
+    if first_word in _KNOWN_PLAN_STATUSES:
+        return first_word
+
+    raise ValueError(
+        f"kata_restore: PLAN at {path!s} has an unrecognized status {raw_str!r} (first "
+        f"word {first_word!r} is neither 'draft' nor 'frozen') — refusing to coerce to a "
+        "default. Resolve manually."
+    )
+
+
+def assert_frozen(plan_path: str | Path) -> None:
+    """Raise unless the PLAN at ``plan_path`` is frozen (BL-F01 dispatch chokepoint).
+
+    The single call a dispatcher-facing gate makes (``kata_dispatch.build_brief``).
+    Fail-closed: an absent status, a "draft" status, and any condition :func:`plan_status`
+    itself raises on (unreadable/garbled/unrecognized) all end here as a raise — there is
+    no code path that lets a non-frozen or unparseable plan pass silently.
+    """
+    status = plan_status(plan_path)
+    if status != "frozen":
+        raise ValueError(
+            f"kata_restore: PLAN at {plan_path!s} is not frozen (status={status!r}) — "
+            "refusing to dispatch against it. Resolve manually."
+        )
+
+
 def collect_integrated_tasks(
     repo_root: str,
     integration_branch: str,

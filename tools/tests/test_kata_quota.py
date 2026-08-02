@@ -8,10 +8,16 @@ integration seam — envelope field names — is pinned, not assumed.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 import kata_dispatch as kd
 import kata_quota as kq
+
+# BL-F01: build_brief now requires a frozen plan_path (kata_restore.assert_frozen). This
+# file doesn't test the freeze gate itself; it just needs a plan that satisfies the gate.
+_FROZEN_PLAN = Path(__file__).parent / "fixtures" / "frozen_plan" / "PLAN.md"
 
 
 def _envelope(status="failed", stderr=None, error=None, raw="", platform="codex"):
@@ -82,7 +88,7 @@ class TestClassify:
 
     def test_through_real_dispatch_failure(self):
         """Integration seam: a real dispatch() failure envelope classifies (PR #42 field names)."""
-        b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+        b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
 
         def limited_runner(cmd, cwd, result_path, timeout):
             return 1, "", "429 Too Many Requests: rate limit exceeded", ""

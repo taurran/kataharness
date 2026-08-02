@@ -13,9 +13,15 @@ file-ownership collision between T1 and T4 (PLAN.md T4 action).
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import kata_dispatch as kd
 import kata_roles as kr
+
+# BL-F01: build_brief now requires a frozen plan_path (kata_restore.assert_frozen). This
+# file doesn't test the freeze gate itself (test_kata_dispatch.py does); it just needs a
+# plan that satisfies the gate so the existing round-trip proofs keep working.
+_FROZEN_PLAN = Path(__file__).parent / "fixtures" / "frozen_plan" / "PLAN.md"
 
 
 def test_design_author_round_trip_on_codex(tmp_path):
@@ -29,6 +35,7 @@ def test_design_author_round_trip_on_codex(tmp_path):
         objective="Compile the grill ledger into DESIGN.md.",
         result_path="RESULT.json", sandbox="write",
         acceptance="Return designPath + verdict.",
+        plan_path=_FROZEN_PLAN,
     )
 
     def stub_runner(cmd, cwd, result_path, timeout):
@@ -52,6 +59,7 @@ def test_plan_author_round_trip_on_codex(tmp_path):
         objective="Turn the frozen DESIGN.md into a task-level PLAN.md.",
         result_path="RESULT.json", sandbox="write",
         acceptance="Return planPath + verdict.",
+        plan_path=_FROZEN_PLAN,
     )
 
     def stub_runner(cmd, cwd, result_path, timeout):
@@ -76,6 +84,7 @@ def test_design_author_malformed_result_fails_via_existing_catch(tmp_path):
         objective="Compile the grill ledger into DESIGN.md.",
         result_path="RESULT.json", sandbox="write",
         acceptance="Return designPath + verdict.",
+        plan_path=_FROZEN_PLAN,
     )
 
     def bad_stub_runner(cmd, cwd, result_path, timeout):

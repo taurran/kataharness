@@ -1529,3 +1529,88 @@ def test_cleanup_stale_task_salvage_name_is_deterministic(tmp_path):
         "identical (task_id, tip sha) inputs must always compute the SAME "
         f"salvage name; got {second_salvage!r}, expected {{{name1!r}}}"
     )
+
+
+# ---------------------------------------------------------------------------
+# BL-F01 — plan_status / assert_frozen: freeze becomes a recorded, checked state
+# ---------------------------------------------------------------------------
+#
+# Parse rule under test (see kata_restore.plan_status docstring): the `status:` value is
+# split on whitespace and the FIRST WORD is taken, case-folded. This is what lets the real
+# `.planning/specs/dispatch-authoring/PLAN.md` value at the time BL-F01 was written —
+# `status: DRAFT — awaiting freeze-gate (...)` — parse as "draft" rather than raising. The
+# alternative rule (value must be exactly the token) was rejected because it would hard-fail
+# on that live authoring shape; see test_plan_status_live_draft_value_with_trailing_prose_parses_as_draft.
+
+
+def _write_plan_with_status(tmp_path, status_line):
+    """A minimal PLAN.md whose frontmatter contains exactly the given `status:` line(s)."""
+    plan_dir = tmp_path / "specs" / "demo"
+    plan_dir.mkdir(parents=True)
+    plan_path = plan_dir / "PLAN.md"
+    plan_path.write_text(f"---\ntitle: t\n{status_line}\n---\n\n# Plan\n", encoding="utf-8")
+    return plan_path
+
+
+def test_plan_status_absent_is_not_frozen(tmp_path):
+    """No `status:` key at all ⇒ "absent", never a silent "frozen" default (D45/GB12/D136)."""
+    plan_dir = tmp_path / "specs" / "demo"
+    plan_dir.mkdir(parents=True)
+    plan_path = plan_dir / "PLAN.md"
+    plan_path.write_text("---\ntitle: t\n---\n\n# Plan\n", encoding="utf-8")
+
+    assert kata_restore.plan_status(plan_path) == "absent"
+    with pytest.raises(ValueError, match="not frozen"):
+        kata_restore.assert_frozen(plan_path)
+
+
+def test_plan_status_unknown_value_raises(tmp_path):
+    """A garbled/unrecognized status must RAISE — never coerce to a default."""
+    plan_path = _write_plan_with_status(tmp_path, "status: banana")
+    with pytest.raises(ValueError, match="unrecognized status"):
+        kata_restore.plan_status(plan_path)
+    with pytest.raises(ValueError, match="unrecognized status"):
+        kata_restore.assert_frozen(plan_path)
+
+
+def test_plan_status_draft_is_not_frozen(tmp_path):
+    plan_path = _write_plan_with_status(tmp_path, "status: draft")
+    assert kata_restore.plan_status(plan_path) == "draft"
+    with pytest.raises(ValueError, match="not frozen"):
+        kata_restore.assert_frozen(plan_path)
+
+
+def test_plan_status_frozen_is_frozen(tmp_path):
+    plan_path = _write_plan_with_status(tmp_path, "status: frozen")
+    assert kata_restore.plan_status(plan_path) == "frozen"
+    kata_restore.assert_frozen(plan_path)  # must NOT raise
+
+
+def test_plan_status_is_case_insensitive(tmp_path):
+    frozen_upper = _write_plan_with_status(tmp_path / "a", "status: FROZEN")
+    assert kata_restore.plan_status(frozen_upper) == "frozen"
+
+    draft_mixed = _write_plan_with_status(tmp_path / "b", "status: DrAfT")
+    assert kata_restore.plan_status(draft_mixed) == "draft"
+
+
+def test_plan_status_live_draft_value_with_trailing_prose_parses_as_draft(tmp_path):
+    """Pins the chosen parse rule against the EXACT historical value carried by
+    `.planning/specs/dispatch-authoring/PLAN.md` when BL-F01 was assessed:
+
+        status: DRAFT — awaiting freeze-gate (conductor applies protocol/authored-artifact-gate.md, defined in
+          this build's own DESIGN.md, to this very PLAN before freezing it)
+
+    That file's `status:` is being set to `frozen` as part of this same change (the work it
+    describes shipped), so this test freezes the historical value as a fixture instead of
+    reading the live file — it must keep parsing as "draft", not raise, under the
+    first-word rule.
+    """
+    plan_path = _write_plan_with_status(
+        tmp_path,
+        "status: DRAFT — awaiting freeze-gate (conductor applies protocol/authored-artifact-gate.md, defined in\n"
+        "  this build's own DESIGN.md, to this very PLAN before freezing it)",
+    )
+    assert kata_restore.plan_status(plan_path) == "draft"
+    with pytest.raises(ValueError, match="not frozen"):
+        kata_restore.assert_frozen(plan_path)

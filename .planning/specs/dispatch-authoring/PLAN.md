@@ -1,7 +1,6 @@
 ---
 title: "dispatch-authoring — PLAN (KH-T13 dispatch roles + KH-B42 gate rubric)"
-status: DRAFT — awaiting freeze-gate (conductor applies protocol/authored-artifact-gate.md, defined in
-  this build's own DESIGN.md, to this very PLAN before freezing it)
+status: frozen
 spec: dispatch-authoring
 design: .planning/specs/dispatch-authoring/DESIGN.md
 ownership:

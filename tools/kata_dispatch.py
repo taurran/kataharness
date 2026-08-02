@@ -19,7 +19,7 @@ install confirm-probe is the standing guard; pin/verify at build.
 
 Public API
 ----------
-build_brief(task_id, role, platform, *, model, objective, result_path, ...) -> dict   # N1
+build_brief(task_id, role, platform, *, model, objective, result_path, plan_path, ...) -> dict  # N1
 codex_command(brief, worktree) -> list[str]                                            # N2 (codex adapter)
 dispatch(brief, worktree, runner=None, timeout=600) -> dict                            # N2 -> N3
 normalize(role, raw_text) -> dict                                                      # N3 per-role payload
@@ -32,6 +32,7 @@ import json
 import subprocess  # noqa: S404 — used only by the default real runner; tests inject a stub
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
+from kata_restore import assert_frozen
 from kata_roles import ROLE_GROUPS
 
 _SANDBOX = frozenset({"read-only", "write"})
@@ -47,13 +48,32 @@ def build_brief(
     model: str,
     objective: str,
     result_path: str,
+    plan_path: str | Path,
     inputs: list[str] | None = None,
     owned_files: list[str] | None = None,
     sandbox: str = "read-only",
     acceptance: str = "",
     output_contract: str | None = None,
 ) -> dict:
-    """Build the cross-model task-brief (N1). Pure; validates role + sandbox."""
+    """Build the cross-model task-brief (N1). Pure; validates role + sandbox.
+
+    BL-F01 chokepoint: ``plan_path`` is a REQUIRED keyword-only argument, no default.
+    Before this, nothing between a plan and a dispatched worker ever checked whether the
+    plan was actually frozen — ``build_brief`` never even received the plan path. This
+    call is now that chokepoint: it refuses (raises, via ``kata_restore.assert_frozen``)
+    to build a brief against a plan whose ``status:`` is not ``frozen``, and it refuses
+    BEFORE any other validation so no brief can be built for a caller who provides a bad
+    plan_path along with an otherwise-valid role/objective/etc.
+
+    ``plan_path`` deliberately has NO default. An optional gate that a caller can simply
+    forget to pass is a silent-permissive default (D136) — exactly the "warn" posture
+    rejected for this feature (operator: "we don't want a model making assumptions and
+    just executing because it sees warn as a soft status"). Making it required means
+    every existing caller (all of them tests today — build_brief has no non-test caller
+    yet) had to be updated to pass a real plan_path; that migration is the cost of not
+    having a bypassable gate.
+    """
+    assert_frozen(plan_path)
     if role not in ROLE_GROUPS:
         raise ValueError(f"kata_dispatch: unknown role {role!r}")
     if sandbox not in _SANDBOX:

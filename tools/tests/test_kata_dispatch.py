@@ -7,36 +7,80 @@ test seam DESIGN §7 names. The real subprocess runner is gated on the CLI being
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
 import kata_dispatch as kd
 import kata_roles as kr
 
+# BL-F01: build_brief now REQUIRES a plan_path and refuses to build against a plan that
+# is not frozen (kata_restore.assert_frozen). These two fixtures let every OTHER test in
+# this file — which is not itself testing the freeze gate — pass a plan that satisfies it
+# without each test having to write its own PLAN.md.
+_FROZEN_PLAN = Path(__file__).parent / "fixtures" / "frozen_plan" / "PLAN.md"
+_DRAFT_PLAN = Path(__file__).parent / "fixtures" / "draft_plan" / "PLAN.md"
+
 
 # ----- N1 build_brief -----
 def test_build_brief_shape():
     b = kd.build_brief("t1", "validator", "codex", model="m", objective="check it",
-                       result_path=".kata/dispatch/t1/RESULT.json", sandbox="read-only")
+                       result_path=".kata/dispatch/t1/RESULT.json", sandbox="read-only",
+                       plan_path=_FROZEN_PLAN)
     assert b["taskId"] == "t1" and b["role"] == "validator" and b["platform"] == "codex"
     assert b["boundaries"]["sandbox"] == "read-only"
     assert b["resultPath"].endswith("RESULT.json")
     assert b["outputContract"] == "validator"
 
 
+# ----- BL-F01: the freeze chokepoint -----
+def test_build_brief_refuses_non_frozen_plan():
+    """A draft (not-yet-frozen) plan must be refused — RAISE, never a degraded brief."""
+    with pytest.raises(ValueError, match="not frozen"):
+        kd.build_brief("t1", "validator", "codex", model="m", objective="o",
+                       result_path="R", plan_path=_DRAFT_PLAN)
+
+
+def test_build_brief_succeeds_on_frozen_plan():
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o",
+                       result_path="R", plan_path=_FROZEN_PLAN)
+    assert b["taskId"] == "t1"
+
+
+def test_build_brief_plan_path_is_required_kwarg():
+    """plan_path has NO default — an omitted plan silently bypassing the gate (D136) is
+    exactly the posture this chokepoint exists to prevent."""
+    with pytest.raises(TypeError, match="plan_path"):
+        kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+
+
+def test_build_brief_delegates_freeze_check_to_kata_restore_assert_frozen(monkeypatch):
+    """Proves build_brief's gate is kata_restore.assert_frozen itself (not a re-implementation
+    that could silently drift from it) — patch assert_frozen and see build_brief call it."""
+    calls = []
+
+    def fake_assert_frozen(plan_path):
+        calls.append(plan_path)
+
+    monkeypatch.setattr(kd, "assert_frozen", fake_assert_frozen)
+    kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R",
+                   plan_path="whatever/PLAN.md")
+    assert calls == ["whatever/PLAN.md"]
+
+
 def test_build_brief_rejects_bad_role_and_sandbox():
     with pytest.raises(ValueError, match="unknown role"):
-        kd.build_brief("t", "banana", "codex", model="m", objective="o", result_path="r")
+        kd.build_brief("t", "banana", "codex", model="m", objective="o", result_path="r", plan_path=_FROZEN_PLAN)
     with pytest.raises(ValueError, match="sandbox"):
-        kd.build_brief("t", "coder", "codex", model="m", objective="o", result_path="r", sandbox="rw")
+        kd.build_brief("t", "coder", "codex", model="m", objective="o", result_path="r", sandbox="rw", plan_path=_FROZEN_PLAN)
     with pytest.raises(ValueError, match="required"):
-        kd.build_brief("t", "coder", "codex", model="m", objective="", result_path="r")
+        kd.build_brief("t", "coder", "codex", model="m", objective="", result_path="r", plan_path=_FROZEN_PLAN)
 
 
 # ----- N2 codex_command -----
 def test_codex_command_readonly():
     b = kd.build_brief("t1", "validator", "codex", model="gpt-5-codex", objective="o",
-                       result_path="RESULT.json", sandbox="read-only")
+                       result_path="RESULT.json", sandbox="read-only", plan_path=_FROZEN_PLAN)
     cmd = kd.codex_command(b, "/wt")
     assert cmd[0:2] == ["codex", "exec"]
     assert "--sandbox" in cmd and cmd[cmd.index("--sandbox") + 1] == "read-only"
@@ -46,7 +90,7 @@ def test_codex_command_readonly():
 
 
 def test_codex_command_write_sandbox():
-    b = kd.build_brief("t2", "coder", "codex", model="m", objective="o", result_path="R", sandbox="write")
+    b = kd.build_brief("t2", "coder", "codex", model="m", objective="o", result_path="R", sandbox="write", plan_path=_FROZEN_PLAN)
     cmd = kd.codex_command(b, "/wt")
     assert cmd[cmd.index("--sandbox") + 1] == "workspace-write"
 
@@ -58,7 +102,7 @@ def test_codex_command_has_skip_git_repo_check():
     while keeping exec/--cd/--sandbox/--model/-o/prompt intact.
     """
     b = kd.build_brief("t1", "validator", "codex", model="gpt-5-codex", objective="o",
-                       result_path="RESULT.json", sandbox="read-only")
+                       result_path="RESULT.json", sandbox="read-only", plan_path=_FROZEN_PLAN)
     cmd = kd.codex_command(b, "/wt")
     assert "--skip-git-repo-check" in cmd
     # order: exec → skip-flag → cd
@@ -132,14 +176,14 @@ def _stub_runner(result_obj, exit_code=0, stdout="ok", stderr=""):
 
 
 def test_dispatch_success_validator():
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=_stub_runner({"verdict": "ship", "findings": []}))
     assert res["status"] == "completed"
     assert res["payload"]["verdict"] == "ship"
 
 
 def test_dispatch_nonzero_exit_is_failed():
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=_stub_runner({}, exit_code=2))
     assert res["status"] == "failed"
 
@@ -147,7 +191,7 @@ def test_dispatch_nonzero_exit_is_failed():
 def test_dispatch_unparseable_result_is_failed():
     def bad_runner(cmd, cwd, result_path, timeout):
         return 0, "ok", "", "not json{{"
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=bad_runner)
     assert res["status"] == "failed"
 
@@ -157,7 +201,7 @@ def test_dispatch_timeout():
 
     def timeout_runner(cmd, cwd, result_path, timeout):
         raise subprocess.TimeoutExpired(cmd, timeout)
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=timeout_runner)
     assert res["status"] == "timeout"
 
@@ -166,7 +210,7 @@ def test_dispatch_non_object_result_is_failed_not_crash():
     # valid JSON but a top-level ARRAY must fail gracefully, not raise (D98 MAJOR-1 fix)
     def array_runner(cmd, cwd, result_path, timeout):
         return 0, "ok", "", "[1, 2, 3]"
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=array_runner)
     assert res["status"] == "failed"
     assert "error" in res["payload"]
@@ -175,7 +219,7 @@ def test_dispatch_non_object_result_is_failed_not_crash():
 def test_build_brief_rejects_traversal_result_path():
     with pytest.raises(ValueError, match="'\\.\\.'"):
         kd.build_brief("t", "validator", "codex", model="m", objective="o",
-                       result_path="../../etc/evil.json")
+                       result_path="../../etc/evil.json", plan_path=_FROZEN_PLAN)
 
 
 def test_safe_result_path_under_cwd(tmp_path):
@@ -191,7 +235,7 @@ def test_safe_result_path_rejects_escape(tmp_path):
 def test_dispatch_unroutable_platform_fails_gracefully():
     # a confirmed-but-undispatchable platform must FAIL, not crash the loop (red-team F3)
     # "cursor" is deferred (L-MP1 / PLAN.md); "kiro" is now routable so is no longer the example
-    b = kd.build_brief("t1", "validator", "cursor", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "cursor", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=_stub_runner({}))
     assert res["status"] == "failed"
     assert "no dispatch adapter" in res["payload"]["error"]
@@ -201,7 +245,7 @@ def test_dispatch_empty_result_researcher_is_failed():
     # empty result must default-FAIL for researcher (red-team F1), not report a None-filled "completed"
     def empty_runner(cmd, cwd, result_path, timeout):
         return 0, "ok", "", ""
-    b = kd.build_brief("t1", "researcher", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "researcher", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=empty_runner)
     assert res["status"] == "failed"
 
@@ -209,7 +253,7 @@ def test_dispatch_empty_result_researcher_is_failed():
 def test_dispatch_empty_result_coder_is_failed():
     def empty_runner(cmd, cwd, result_path, timeout):
         return 0, "ok", "", "{}"
-    b = kd.build_brief("t1", "coder", "codex", model="m", objective="o", result_path="R", sandbox="write")
+    b = kd.build_brief("t1", "coder", "codex", model="m", objective="o", result_path="R", sandbox="write", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=empty_runner)
     assert res["status"] == "failed"
 
@@ -242,12 +286,12 @@ def test_normalize_evaluator_score_range():
 
 def test_build_brief_rejects_absolute_result_path():
     with pytest.raises(ValueError, match="worktree-relative"):
-        kd.build_brief("t", "validator", "codex", model="m", objective="o", result_path="/etc/evil.json")
+        kd.build_brief("t", "validator", "codex", model="m", objective="o", result_path="/etc/evil.json", plan_path=_FROZEN_PLAN)
 
 
 def test_brief_prompt_conveys_inputs_and_ownership():
     b = kd.build_brief("t", "coder", "codex", model="m", objective="do it", result_path="R",
-                       inputs=["a.py"], owned_files=["b.py"], sandbox="write")
+                       inputs=["a.py"], owned_files=["b.py"], sandbox="write", plan_path=_FROZEN_PLAN)
     prompt = kd._brief_prompt(b)
     assert "a.py" in prompt and "b.py" in prompt
     assert "do not write files" in prompt.casefold()
@@ -258,7 +302,7 @@ def test_brief_prompt_conveys_inputs_and_ownership():
 def test_brief_prompt_capture_emit_unchanged():
     """codex path (capture="emit"): unchanged wording — still says 'do not write files'."""
     b = kd.build_brief("t", "researcher", "codex", model="m", objective="research it",
-                       result_path="RESULT.json")
+                       result_path="RESULT.json", plan_path=_FROZEN_PLAN)
     prompt = kd._brief_prompt(b, capture="emit")
     assert "do not write files" in prompt.casefold()
     assert "RESULT.json" not in prompt or "Write" not in prompt  # no write-to-file instruction
@@ -270,7 +314,7 @@ def test_brief_prompt_capture_write_contains_result_path():
     MAJOR-1 regression guard: kiro has no -o capture (DESIGN §4 N2); the worker must write.
     """
     b = kd.build_brief("t", "researcher", "kiro", model="m", objective="research it",
-                       result_path="RESULT.json")
+                       result_path="RESULT.json", plan_path=_FROZEN_PLAN)
     prompt = kd._brief_prompt(b, capture="write")
     # must contain the file-write instruction …
     assert "Write" in prompt
@@ -283,7 +327,7 @@ def test_brief_prompt_capture_write_contains_result_path():
 def test_kiro_command_argv_shape():
     """kiro_command returns the documented kiro-cli headless argv (DESIGN §4 N2)."""
     b = kd.build_brief("t", "researcher", "kiro", model="m", objective="research it",
-                       result_path="RESULT.json")
+                       result_path="RESULT.json", plan_path=_FROZEN_PLAN)
     cmd = kd.kiro_command(b, "/wt")
     assert isinstance(cmd, list)
     assert cmd[0] == "kiro-cli"
@@ -308,6 +352,7 @@ def test_dispatch_researcher_on_kiro_returns_completed_envelope(tmp_path):
         objective="Research the topic.",
         result_path="RESULT.json",
         acceptance="Return claim + groundsToPlan.",
+        plan_path=_FROZEN_PLAN,
     )
     kiro_output = {
         "claim": "kiro proved it",
@@ -329,7 +374,7 @@ def test_dispatch_researcher_on_kiro_returns_completed_envelope(tmp_path):
 
 def test_dispatch_failed_carries_stderr():
     """exit != 0: the provider error text on stderr rides the failure payload (D3)."""
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=_stub_runner({}, exit_code=1, stderr="429 Too Many Requests: rate limit"))
     assert res["status"] == "failed"
     assert res["payload"]["error"] == "worker exited 1"
@@ -339,7 +384,7 @@ def test_dispatch_failed_carries_stderr():
 
 def test_dispatch_failed_empty_stderr_adds_no_key():
     """Empty stderr => no key added; the failure payload stays minimal (D2 edge)."""
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=_stub_runner({}, exit_code=2))
     assert res["status"] == "failed"
     assert "stderr" not in res["payload"]
@@ -347,7 +392,7 @@ def test_dispatch_failed_empty_stderr_adds_no_key():
 
 def test_dispatch_success_envelope_has_no_stderr_key():
     """completed envelope is byte-unchanged: stderr never rides success (D3 / AC#4)."""
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=_stub_runner({"verdict": "ship", "findings": []},
                                                     stderr="warning: noise on stderr"))
     assert res["status"] == "completed"
@@ -359,7 +404,7 @@ def test_dispatch_unparseable_result_carries_stderr():
     """exit 0 but garbage result file: stderr may explain why — it rides the payload (D3)."""
     def bad_runner(cmd, cwd, result_path, timeout):
         return 0, "ok", "worker crashed mid-write", "not json{{"
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=bad_runner)
     assert res["status"] == "failed"
     assert "unparseable result" in res["payload"]["error"]
@@ -378,7 +423,7 @@ def test_dispatch_timeout_carries_captured_stderr_str_and_bytes():
             exc = subprocess.TimeoutExpired(cmd, timeout)
             exc.stderr = _s
             raise exc
-        b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+        b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
         res = kd.dispatch(b, "/wt", runner=timeout_runner)
         assert res["status"] == "timeout"
         assert res["payload"]["stderr"] == expected
@@ -390,7 +435,7 @@ def test_dispatch_timeout_without_stderr_stays_minimal():
 
     def timeout_runner(cmd, cwd, result_path, timeout):
         raise subprocess.TimeoutExpired(cmd, timeout)
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=timeout_runner)
     assert res["status"] == "timeout"
     assert res["payload"] == {}
@@ -413,7 +458,7 @@ def test_stderr_tail_cap_boundary():
 def test_dispatch_failed_oversized_stderr_is_tail_capped():
     """The cap is applied AT DISPATCH — a runner returning megabytes cannot bloat the envelope (D2)."""
     huge = ("z" * 10_000) + "\nFINAL: 429 rate limited"
-    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R")
+    b = kd.build_brief("t1", "validator", "codex", model="m", objective="o", result_path="R", plan_path=_FROZEN_PLAN)
     res = kd.dispatch(b, "/wt", runner=_stub_runner({}, exit_code=1, stderr=huge))
     got = res["payload"]["stderr"]
     assert got.startswith(kd._STDERR_TRUNCATION_MARKER)
@@ -463,14 +508,14 @@ def test_normalize_plan_author_bad_verdict_raises():
 
 def test_build_brief_design_author_write_sandbox():
     b = kd.build_brief("t1", "design-author", "claude", model="m", objective="o",
-                       result_path="R", sandbox="write")
+                       result_path="R", sandbox="write", plan_path=_FROZEN_PLAN)
     assert b["role"] == "design-author"
     assert b["boundaries"]["sandbox"] == "write"
 
 
 def test_build_brief_plan_author_write_sandbox():
     b = kd.build_brief("t1", "plan-author", "claude", model="m", objective="o",
-                       result_path="R", sandbox="write")
+                       result_path="R", sandbox="write", plan_path=_FROZEN_PLAN)
     assert b["role"] == "plan-author"
     assert b["boundaries"]["sandbox"] == "write"
 
@@ -489,6 +534,7 @@ def test_end_to_end_validator_on_codex(tmp_path):
         objective="Adversarially validate the diff in this worktree.",
         result_path="RESULT.json", sandbox="read-only",
         acceptance="Return verdict ship|hold with findings.",
+        plan_path=_FROZEN_PLAN,
     )
 
     # 3) dispatch with a stub Codex that returns a HOLD verdict (the worker's structured output)
