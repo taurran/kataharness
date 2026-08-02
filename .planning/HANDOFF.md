@@ -1,4 +1,124 @@
 ---
+date: 2026-08-01
+kind: manual
+trigger: operator-directed handoff — context low, one assessed item queued
+branch: grill/session-lifecycle · 6 commits AHEAD of the pushed remote · master at a815c2b
+green: pytest 4291 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 · Snyk 0 med+
+authored-by: the outgoing session, by hand
+---
+
+# HANDOFF — 2026-08-01
+
+## 0. GROUND TRUTH — verify before trusting anything below
+
+```
+cd C:\Dev\projects\kataharness
+git status --porcelain                          -> empty
+git stash list                                  -> empty
+git rev-parse --short origin/master             -> a815c2b
+git rev-parse --abbrev-ref HEAD                 -> grill/session-lifecycle
+cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS
+```
+
+*(No HEAD SHA pinned — deliberately. Committing the handoff moves HEAD, so a pin goes stale against
+its own file. The branch NAME is the durable fact.)*
+
+⚠️ **6 commits are committed locally but NOT pushed** (`9619ebc..HEAD`). PR #53's remote is behind.
+
+## 1. WHAT THIS SESSION DID — six queue items, all built and gated
+
+| item | plain description | commit |
+|---|---|---|
+| `KH-T02` | Prime Directives could be inverted and still pass. Now clause-pinned + fingerprinted | `0a44bc2` |
+| `KH-T02+` | Same protection widened to all 13 protocol contracts | `4f16cbc` |
+| `BL-M21` | Crash recovery would force-delete all 6 live `task/*` branches | `2828040` |
+| `T-04` | Gate credited a `RESULT.json` 56 commits stale as current green | `bf163fd` |
+| `KH-T12` | Thin-orchestrator doctrine landed as binding (spine #8 + `protocol/orchestration.md`) | `6d02f1e` |
+| `KH-T13`+`KH-B42` | Design/plan authoring became dispatched roles + the rubric for gating unauthored artifacts | `7dee6f7` |
+
+**Method shift mid-session:** from `BL-M21` onward the work was **dispatched to builders and gated
+default-FAIL here**, not written inline. The gate rejected one build (see §7). That is the harness
+running on itself; each commit message records what was verified rather than trusted.
+
+## 2. 🔴 NEXT STEP — `BL-F01`, already assessed, do not re-derive
+
+**Full assessment is at the top of `.planning/BACKLOG.md`. Read it before designing anything.**
+
+**Freeze is not a recorded state.** A plan is "frozen" by convention; nothing records or checks it.
+**The evidence is in this repo:** `.planning/specs/dispatch-authoring/PLAN.md` still says
+`status: DRAFT — awaiting freeze-gate` — it was gated, built across five tasks, and committed while
+claiming to be a draft. Nothing noticed.
+
+**Scope is deliberately small and was verified, not guessed:**
+- **NOT a new skill.** Freeze is a fact, not a behavior; the authoring skills already do the act.
+- **"Has execution started?" needs NOTHING built** — `Kata-Task:` trailers + board CLAIM lines +
+  `detect_lost_run` already answer it durably.
+- **Two changes:** (1) constrain the `status:` field that already exists to `draft | frozen`,
+  validated in the frontmatter reader that already runs; (2) give `kata_dispatch.build_brief` the
+  plan path and refuse a brief for a non-frozen plan — **because there is no code chokepoint today**
+  (`build_brief` never sees the plan; `parse_plan_tasks` runs only in crash recovery).
+- **Operator ruling 2026-08-01: it BLOCKS, never warns.** *"We don't want a model making assumptions
+  and just executing because it sees warn as a soft status."*
+
+**Then:** push the 6 local commits · PR #51 / #53 decisions · rotate the PAT.
+
+## 3. DECISIONS SETTLED — do not re-litigate
+
+Everything in the 2026-07-28 block below still stands. Added this session:
+
+| decision | detail |
+|---|---|
+| **Protocol contracts are tamper-evident** | Clause-pinned + fingerprinted; `config.md` exempt from fingerprinting on measurement (31 commits — a registry, not a contract) |
+| **"Done requires proof, not assertion"** | New PD-2 clause: built AND (machine-confirmed with cited numbers OR operator-approved) |
+| **Degraded scan ⇒ never destroy** | Restore salvage-renames to `kata-salvage/<id>-<sha>`; it never force-deletes |
+| **Gate evidence needs identity, not ancestry** | `merge-base --is-ancestor` returns TRUE for the stale SHA — proven |
+| **Thin orchestrator is binding** | Spine #8; behaviour is *graded*, the contract is *tamper-evident* — the doc says so explicitly |
+| **KH-B42 rubric is empirical** | Six rows, each one a check that caught a real defect while gating on this branch |
+| **MindBridge is out of scope** | Operator-directed. `KH-T09` (return handoff) and `DF-06` dropped |
+
+## 4. WHERE EVERYTHING IS
+
+1. **`.planning/BACKLOG.md`** — top block is `BL-F01`, the assessed next item.
+2. `protocol/orchestration.md` · `protocol/authored-artifact-gate.md` — the two new binding contracts.
+3. `.planning/specs/dispatch-authoring/{DESIGN,PLAN}.md` — the frozen spec for what shipped.
+4. `.planning/specs/session-lifecycle/` — the HELD grill + 3 convergence reviews. **Still HELD; `SL-1`…`SL-36` must NOT be compiled into a DESIGN.**
+
+## 5. OWED TO THE OPERATOR
+
+1. **🔴 Rotate the GitHub PAT.** Plaintext at `settings.json → env → GITHUB_PERSONAL_ACCESS_TOKEN`, so
+   it is exported into **every process Claude Code spawns**. *(Correction: earlier handoffs called
+   this "mode 666 / world-readable". That was wrong on Windows — the NTFS ACL grants only you,
+   Administrators and SYSTEM. The env-injection is the real exposure.)*
+2. **6 unpushed commits.**
+3. **PR #51** (MindBridge ingest, 26 commits) and **PR #53** (stacked on it) — both still yours.
+4. `DEF-1` · `DEF-2` (learn_feed drops ledger bodies — does the emit block extend to all 19 ledgers?)
+5. `T-10` — I still do not know what this is; no description exists in anything I read.
+
+## 6. WHAT I GOT WRONG THIS SESSION
+
+- **My brief broke a frozen invariant.** I told a builder to make `benchmark.py` shell out, forcing it
+  to delete a test reading *"zero new exec sink is a frozen invariant."* The gate caught it; the
+  resolver moved to `run_result.py`, which already spawns. **The fault was the brief, not the worker.**
+- **Left `benchmark.py` mutated** during my own mutation check by mixing up the working directory.
+  Caught on the next command, restored byte-identical, re-ran the full gate rather than assuming.
+- **Repeated "mode 666" three times** from a prior handoff without ever checking it. It was wrong.
+- **Pinned a HEAD SHA** in the last handoff that `d0498b8` had removed one day earlier for exactly
+  that reason.
+- **Under-stated the freeze finding** as "no skill owns the freeze stage" when the truth is the state
+  does not exist at all.
+
+**The dispatched-build gate caught the invariant breach; the operator caught the MindBridge bleed and
+the over-complication risk on `BL-F01`. Neither was self-caught.**
+
+## 7. REDACTION
+
+No secrets, keys, or PII. The PAT is referenced by location only. Snyk code scan: **0 medium+**.
+
+---
+
+# ↓ PRIOR HANDOFF BLOCK — 2026-07-28 (superseded above; retained per convention)
+
+---
 date: 2026-07-28
 kind: manual
 trigger: operator-directed close-out after three convergence HOLDs

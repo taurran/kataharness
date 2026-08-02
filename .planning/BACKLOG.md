@@ -2,6 +2,48 @@
 
 Promote to ROADMAP milestones when ready.
 
+> ## ★ NEXT UP — **BL-F01 · Freeze is not a recorded state** (assessed 2026-08-01, operator-directed: BLOCK)
+>
+> **In plain terms:** a plan is called "frozen" by convention and nothing records or checks it. If a
+> session drops, you cannot tell a frozen plan from a draft someone is still editing.
+>
+> **The evidence is this repo, one commit ago.** `.planning/specs/dispatch-authoring/PLAN.md` carries
+> `status: DRAFT — awaiting freeze-gate` **to this day**. It was gated, dispatched, built across five
+> tasks, and committed while still claiming to be a draft. Nothing anywhere noticed.
+>
+> **Assessed scope — deliberately small. This is NOT a new skill.** Freeze is a *fact*, not a
+> behavior; `kata-design-doc` and `kata-plan-*` already perform the authoring act. A `kata-freeze`
+> skill would be ceremony. Verified before proposing anything:
+>
+> | question | answer |
+> |---|---|
+> | Is there a status field already? | **Yes** — `status:` exists in PLAN frontmatter today, as unvalidated free prose |
+> | "Has execution started?" | **Already solved, build nothing.** `Kata-Task:` trailers on integration commits (git-durable, survives clone, strict regex `kata_restore.py:206`, parsed by `collect_integrated_tasks`) plus `.kata/board.md` CLAIM lines and `kata_restore.detect_lost_run` |
+> | Is there a code chokepoint to block at? | **No — and this is the catch.** `build_brief(...)` never receives the plan, and `parse_plan_tasks` is called ONLY from crash recovery. The orchestrator is prose: it reads the plan and dispatches, with nothing in Python in between |
+>
+> **So it is two changes, not one** — and the second is what makes it real rather than another
+> described rule:
+> 1. **State.** Constrain the existing `status:` to a closed enum (`draft | frozen`); validate it in
+>    the frontmatter reader that already runs. Fail closed on an unknown value (D45/GB12 posture).
+> 2. **Chokepoint.** Give `kata_dispatch.build_brief` the plan path (additive kwarg) and refuse to
+>    build a brief for a non-frozen plan. No worker can be dispatched without a brief, so this is a
+>    real gate rather than an instruction.
+>
+> **Operator ruling (2026-08-01): it BLOCKS, it does not warn.** Verbatim: *"we don't want a model
+> making assumptions and just executing because it sees warn as a soft status."* A warning would have
+> scrolled past exactly as the DRAFT above did.
+>
+> **Why it matters:** `kata-orchestrate`'s entire no-drift guarantee is built on "the plan is frozen."
+> Today that rests on an assumption no code makes — nothing prevents executing against a plan still
+> being edited, or detects one silently re-frozen mid-run.
+>
+> **Same disease class as three other findings on this branch** — phase is derived and never stored;
+> the handoff staleness rule is fully specified and implemented nowhere; gate evidence recorded its
+> own identity and no consumer read it. A load-bearing state that exists only as prose.
+>
+> Discovered while building KH-T13: the rubric checks a returned artifact's quality, and then nothing
+> locks it.
+
 > **★★ 2026-07-25 — MERGE-BACK INGEST ITEMIZED: see `.planning/MERGEBACK-INGEST.md`.**
 > The MindBridge-fork merge-back (`kataharness-mergeback-v0.2.1`, producer @ `75108b7`) has landed and
 > is fully itemized: **8 merge candidates → tasks T-01..T-08**, plus T-00 (clean-room blocker), T-09
