@@ -1,11 +1,53 @@
 ---
 milestone: M2-freeze-float
-milestone_name: "v0.4.0 TAGGED (advisor + quota-resilience + reliability quartet; PRs #41-#46); execution plan A/B/C/D COMPLETE; operator morning review owed"
+milestone_name: "enforcement sweep on grill/session-lifecycle — 7 items shipped (KH-T02, BL-M21, T-04, KH-T12, KH-T13+KH-B42, BL-F01); 8 commits unpushed; PR #51/#53 open"
 status: in-progress
-last_updated: "2026-07-22T00:00:00.000Z"
+last_updated: "2026-08-02T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-07-27 → 2026-08-02 — THE ENFORCEMENT SWEEP, branch `grill/session-lifecycle`):**
+> One theme ran through every item: **rules that existed only as prose, with nothing enforcing them.**
+> Seven shipped, each dispatched to a builder and gated default-FAIL here (the gate rejected one build).
+>
+> **Shipped:** `KH-T02` — the Prime Directives could be *inverted* and still pass a seven-substring
+> check; now clause-pinned + fingerprinted, widened to all 13 protocol schemas (`0a44bc2`, `4f16cbc`),
+> plus a new PD-2 clause *"Done requires proof, not assertion."* · `BL-M21` — crash recovery would
+> `git branch -D` all six live `task/*` branches; now fails closed on a degraded scan and
+> salvage-renames instead of deleting (`2828040`) · `T-04` — a `RESULT.json` 56 commits stale was
+> creditable as green; identity check added, **ancestry proven insufficient** (`bf163fd`) · `KH-T12` —
+> the thin-orchestrator doctrine landed as binding: spine #8 + `protocol/orchestration.md` (`6d02f1e`) ·
+> `KH-T13`+`KH-B42` — design/plan authoring became dispatched roles, with an **empirical** six-row
+> rubric for gating artifacts the conductor did not author (`7dee6f7`) · `BL-F01` — "frozen" became a
+> recorded state that **blocks** dispatch (`6b4e8db`, D169).
+>
+> **The grill on this branch is HELD and must stay held.** `.planning/specs/session-lifecycle/` carries
+> a 36-entry ledger and **three** convergence reviews, all HOLD (9 → 13 → 12 HIGH). `SL-1`…`SL-36` must
+> NOT be compiled into a DESIGN — several are marked `· LOCKED` and are still wrong; the `CONVERGENCE-
+> HOLD-*.md` files are authoritative wherever they disagree. Root cause, recorded: Phase 0 measured
+> `.planning/DECISIONS.md` instead of reading it, and designed against four frozen decisions it never
+> opened. Its *questions* and the operator's rulings on them survive; the attempt to convert them into
+> an executable contract did not.
+>
+> **Method note:** from `BL-M21` onward the conductor stopped writing code and dispatched builders,
+> gating each default-FAIL. That is `protocol/orchestration.md` running on itself. It caught a
+> frozen-invariant breach that originated in the conductor's own brief.
+>
+> **Green:** pytest **4301** / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 ·
+> Snyk 0 medium+. **master `a815c2b`** (PR #52 merged — the only thing that has reached master).
+> **8 commits committed locally and NOT pushed.** PR #51 (MindBridge ingest, 26 commits) and PR #53
+> (stacked on it) both still await the operator. **MindBridge is out of scope by operator direction** —
+> `KH-T09` and `DF-06` dropped.
+>
+> **★ OWED:** rotate the GitHub PAT (plaintext at `settings.json → env → GITHUB_PERSONAL_ACCESS_TOKEN`,
+> exported into every spawned process — the earlier "mode 666 / world-readable" framing was **wrong** on
+> Windows) · push the 8 commits · PR #51/#53 decisions · `DEF-1` · `DEF-2` (learn_feed drops ledger
+> bodies — does the emit block extend to all 19 ledgers?) · `T-10` (still undescribed anywhere).
+
+---
+
+### ↓ PRIOR CURRENT blocks — history, preserved per repo convention (superseded above)
 
 > **CURRENT (2026-07-21/22 — THE OVERNIGHT-DELEGATED RUN: item C SHIPPED (PR #46) + v0.4.0
 > TAGGED; the whole A/B/C/D execution plan is COMPLETE):** The operator delegated the remaining

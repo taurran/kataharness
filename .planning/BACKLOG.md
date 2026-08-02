@@ -2,7 +2,22 @@
 
 Promote to ROADMAP milestones when ready.
 
-> ## ★ NEXT UP — **BL-F01 · Freeze is not a recorded state** (assessed 2026-08-01, operator-directed: BLOCK)
+> ## ✅ **BL-F01 · Freeze is not a recorded state — BUILT 2026-08-02** (`6b4e8db`)
+>
+> **Shipped as assessed, both halves.** `status:` is a closed `draft | frozen` enum read by
+> `kata_restore.plan_status()` / `assert_frozen()` (fail-closed: absent ⇒ NOT frozen; unknown ⇒ raises;
+> first-word rule so `DRAFT — awaiting …` parses as draft rather than erroring). `build_brief` gained a
+> **required** `plan_path` and refuses a brief for a non-frozen plan — the chokepoint that makes BLOCK
+> real, since nothing in code previously sat between a plan and a dispatched worker. `build_brief` had
+> ZERO production callers, so "required" cost test churn only. 10 new tests, mutation-proven; 33 legacy
+> call sites migrated with **zero assertions removed** (116→120, 12→12, 41→41).
+> **Not built, because already durable:** "has execution started?" — `Kata-Task:` trailers + board CLAIM
+> + `detect_lost_run`. **Not a skill:** freeze is a fact, not a behavior.
+> *The assessment that produced this scope is preserved below, because the reasoning is the reusable part.*
+>
+> ---
+>
+> ### The original assessment (2026-08-01) — kept for the reasoning
 >
 > **In plain terms:** a plan is called "frozen" by convention and nothing records or checks it. If a
 > session drops, you cannot tell a frozen plan from a draft someone is still editing.

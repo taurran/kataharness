@@ -10,6 +10,59 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ## [Unreleased]
 
+### Changed — freeze is a recorded state that BLOCKS dispatch (BL-F01, D169)
+
+A plan was "frozen" by convention; nothing recorded or checked it, so after a session drop a frozen
+plan was indistinguishable from a draft. The repo's own `dispatch-authoring/PLAN.md` read
+`status: DRAFT` while it was gated, built across five tasks, and committed.
+
+- **`status:` is now a closed `draft | frozen` enum** on the frontmatter field that already existed,
+  read by new pure helpers `kata_restore.plan_status()` / `assert_frozen()`. Fail-closed: absent ⇒ NOT
+  frozen (never defaults to frozen); unknown value ⇒ **raises**, never coerced (D45/GB12, D136).
+  First-word rule, so `DRAFT — awaiting freeze-gate (…)` parses as `draft` rather than erroring.
+- **`kata_dispatch.build_brief` gained a REQUIRED `plan_path`** and refuses a brief for a non-frozen
+  plan. This is the chokepoint: nothing in code previously sat between a plan and a dispatched worker.
+  Optional was rejected as a silent-permissive default. `build_brief` had zero production callers, so
+  the cost was test churn only — 33 call sites migrated with **zero assertions removed**.
+- **Deliberately not built:** "has execution started?" is already durable (`Kata-Task:` trailers, board
+  `CLAIM` lines, `detect_lost_run`), and freeze is a fact rather than a behavior — no `kata-freeze` skill.
+
+### Security / integrity — protocol contracts are tamper-evident (KH-T02)
+
+- **`protocol/prime-directives.md` could be inverted and still pass.** The check was seven substrings; a
+  document reading *"stub freely / claim things are built when they are not"* kept all seven and passed
+  green. Now **clause-pinned** (load-bearing sentences required verbatim after normalisation) **and
+  fingerprinted**, via `validate_skills.check_protocol_integrity`. Widened to **all 13**
+  `REQUIRED_PROTOCOL` schemas; `config.md` is fingerprint-exempt on measurement (31 commits — a key
+  registry, where the risk is a *missing* key that the term check already covers).
+- **New PD-2 clause — "Done requires proof, not assertion":** nothing is reported done unless it is
+  built AND either machine-confirmed with cited numbers or explicitly operator-approved.
+- `--update-protocol-fingerprint` **prints only** and never writes — a tamper-check that re-blesses
+  itself is not a tamper-check.
+
+### Fixed — crash recovery no longer destroys live branches (BL-M21)
+
+`restore()` defaulted to an `integration` branch that does not exist here; the scan failed, every task
+looked un-integrated, and step 4 ran `git branch -D` on each — six live `task/*` branches. `degraded`
+was computed four lines above the destructive loop and never consulted. Now fails closed on a degraded
+scan (additive `cleanup_skipped`), and `cleanup_stale_task` **salvage-renames** to
+`kata-salvage/<id>-<short-sha>` instead of force-deleting — the branch name is freed, the work survives.
+
+### Fixed — stale gate evidence can no longer be credited as green (T-04)
+
+`build_result` recorded `baselineSha`/`resultSha`/`utc`; no consumer read them. A `RESULT.json` **56
+commits stale**, from a 537-test partial run, would have been credited against a 4300-test gate. Adds
+pure `run_result.evidence_is_current()`, wired into the benchmark floor and `debug_report`'s rollup.
+**Not an ancestry check** — `merge-base --is-ancestor` returns TRUE for the stale SHA; ancestry tests
+validity, not freshness.
+
+### Added — the thin-orchestrator doctrine is binding (KH-T12)
+
+*"A well-behaved orchestrator does not do the work itself."* New `protocol/orchestration.md`, spine
+principle **#8** in `AGENTS.md`, glossary term, and a binding reference in `kata-orchestrate` (0.17.0).
+Clause-pinned and fingerprinted so it cannot be deleted or inverted — including the honesty clause
+itself, which states plainly that the *behaviour* is graded, not mechanically enforced.
+
 ### Added — dispatch-authoring: `design-author`/`plan-author` roles + the KH-B42 gate rubric (D168)
 
 Design-doc and plan authoring can now be **dispatched** as their own roles instead of running in the

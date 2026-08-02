@@ -2766,3 +2766,17 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   stub seam (`tools/tests/test_dispatch_authoring_smoke.py`) - **no live dispatch of either new role has run
   against a real platform yet**; that is gated on install + confirm, the same honest-scope posture the
   codebase already carries for every dispatched role.
+- **D169 — Freeze is a RECORDED state and a non-frozen plan BLOCKS dispatch (operator-directed 2026-08-02).**
+  BL-F01. A plan was "frozen" by convention only; nothing recorded or checked it, so after a session
+  drop a frozen plan was indistinguishable from a draft. Evidence was the repo's own
+  `.planning/specs/dispatch-authoring/PLAN.md`, which read `status: DRAFT` while it was gated,
+  dispatched, built across five tasks and committed. **Ruling: it BLOCKS, it does not warn** —
+  operator verbatim: *"we don't want a model making assumptions and just executing because it sees warn
+  as a soft status."* Landed as (a) a closed `draft | frozen` enum on the EXISTING frontmatter field,
+  read by `kata_restore.plan_status`/`assert_frozen`, fail-closed (absent ⇒ not frozen; unknown ⇒
+  raises), and (b) a REQUIRED `plan_path` on `kata_dispatch.build_brief` that refuses a brief for a
+  non-frozen plan — the chokepoint, because nothing in code previously sat between a plan and a
+  dispatched worker (`build_brief` never saw the plan; `parse_plan_tasks` runs only in crash recovery).
+  Optional-kwarg was rejected as itself a silent-permissive default (D136). Deliberately NOT built:
+  "has execution started?" (already durable via `Kata-Task:` trailers + board CLAIM + `detect_lost_run`)
+  and a `kata-freeze` skill (freeze is a fact, not a behavior). Built `6b4e8db`.
