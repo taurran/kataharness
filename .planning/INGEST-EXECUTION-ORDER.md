@@ -34,10 +34,10 @@ D2 findings re-ordered this queue; it is **not** the original MC numbering.
 
 | # | id | item | why here |
 |---|---|---|---|
-| 1 | **T-00** | **Request `DF-06`** from the fork + report back 2 citation errors | Clean-room record is incomplete: DF-06 is named at `CLEAN-ROOM-ATTESTATION.md:116` as a **partial-scrub-risk** item and never arrived. Blocks the *record*, not the code |
-| 2 | **BL-M27** | 🔴 **Rotate the GitHub PAT** out of `~/.claude/settings.json` | Operator action. Plaintext, mode 666, injected into every spawned process |
-| 3 | **T-09** | Correct the "fork/branch" premise (it is a **conversion port**, no merge base) in README/STATE/HANDOFF §6 + memory | Wrong risk model in our own records |
-| 4 | **T-10** | Decide: ingest-direction defect-carry — task or backlog? | **Still unanswered by operator** |
+| 1 | ~~**T-00**~~ | ~~Request `DF-06` from the fork~~ **CLOSED unbuilt 2026-08-02 (D170)** | MindBridge out of scope; no code was ever received for it, so nothing is unbuilt as a result |
+| 2 | **BL-M27** | 🔴 **Rotate the GitHub PAT** out of `~/.claude/settings.json` | Operator action. **STILL OPEN — deferred by operator 2026-08-02, explicitly not dropped.** Plaintext, injected into every spawned process. *(The old "mode 666 / world-readable" framing was **wrong** on Windows — the NTFS ACL grants only the user, Administrators, SYSTEM. Env-injection is the real exposure.)* |
+| 3 | ~~**T-09**~~ | ~~Correct the "fork/branch" premise in README/STATE/HANDOFF~~ **MOOT 2026-08-02** | Verified: no "fork of"/"conversion port" claim remains in README, STATE or HANDOFF. Nothing to correct |
+| 4 | ~~**T-10**~~ | ~~Decide: ingest-direction defect-carry~~ **CLOSED unbuilt 2026-08-02 (D170)** | No transfer channel exists in either direction now that MindBridge is out of scope. The reusable lesson — *hand-copied code silently loses the fixes made after the copy* — is recorded in D170 and re-opens on any future vendor/port/hand-copy, not on this item |
 
 ### Wave 1 — evidence-driven, promoted by the D2 sweep
 
@@ -131,9 +131,9 @@ cross-cutting finding (*every gap is an invariant with no executable owner*). I 
 
 ## 5. Still owed by the operator
 
-1. **DF-06** — chase the fork, or accept it as withdrawn (T-00)
-2. **T-10** — task or backlog?
-3. **MC-02 scope** — all six laws, or the 13+15 subset (T-03)
-4. **PR #51** — review and merge decision
-5. **PAT rotation** (BL-M27)
+1. ~~**DF-06** — chase the fork, or accept it as withdrawn (T-00)~~ → **CLOSED 2026-08-02 (D170)**, accepted as withdrawn under the MindBridge out-of-scope ruling.
+2. ~~**T-10** — task or backlog?~~ → **CLOSED unbuilt 2026-08-02 (D170)**. Neither: the seam it guarded no longer exists.
+3. **MC-02 scope** — all six laws, or the 13+15 subset (T-03) — **STILL OPEN**
+4. ~~**PR #51** — review and merge decision~~ → **MERGED to master 2026-08-03** (`74efe98`). PR #53 retargeted to master and merged (`cf2ee50`); gauntlet 4/4 on the merged tree.
+5. **PAT rotation** (BL-M27) — **STILL OPEN**, deferred by operator 2026-08-02 (deferred, not dropped)
 6. Four items carried from before this ingest: the overnight-delegation confirmation, **two in-absentia ELEVATEs (both default DECLINED)**, the F3 quota classifier-precision call, and the v0.4.0 tag veto window

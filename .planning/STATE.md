@@ -1,8 +1,8 @@
 ---
 milestone: M2-freeze-float
-milestone_name: "enforcement sweep on grill/session-lifecycle — 7 items shipped (KH-T02, BL-M21, T-04, KH-T12, KH-T13+KH-B42, BL-F01); 8 commits unpushed; PR #51/#53 open"
+milestone_name: "enforcement sweep MERGED to master (cf2ee50) — 7 items shipped (KH-T02, BL-M21, T-04, KH-T12, KH-T13+KH-B42, BL-F01); PR #51 + #53 both merged; T-00/T-09/T-10 closed (D170)"
 status: in-progress
-last_updated: "2026-08-02T00:00:00.000Z"
+last_updated: "2026-08-03T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
@@ -35,15 +35,35 @@ last_updated: "2026-08-02T00:00:00.000Z"
 > frozen-invariant breach that originated in the conductor's own brief.
 >
 > **Green:** pytest **4301** / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0 ·
-> Snyk 0 medium+. **master `a815c2b`** (PR #52 merged — the only thing that has reached master).
-> **8 commits committed locally and NOT pushed.** PR #51 (MindBridge ingest, 26 commits) and PR #53
-> (stacked on it) both still await the operator. **MindBridge is out of scope by operator direction** —
-> `KH-T09` and `DF-06` dropped.
+> Snyk 0 medium+.
 >
-> **★ OWED:** rotate the GitHub PAT (plaintext at `settings.json → env → GITHUB_PERSONAL_ACCESS_TOKEN`,
-> exported into every spawned process — the earlier "mode 666 / world-readable" framing was **wrong** on
-> Windows) · push the 8 commits · PR #51/#53 decisions · `DEF-1` · `DEF-2` (learn_feed drops ledger
-> bodies — does the emit block extend to all 19 ledgers?) · `T-10` (still undescribed anywhere).
+> **★ 2026-08-03 — IT IS ALL ON MASTER NOW.** `master` = **`cf2ee50`**. The branch was pushed
+> (`9619ebc..dde0c46`), then **PR #51 merged** (MindBridge ingest, 26 commits → `74efe98`), **PR #53
+> retargeted** from the stacked base to `master` and **merged** (→ `cf2ee50`). GitHub did not
+> auto-retarget — the old base branch still existed, so `#53` was repointed explicitly rather than left
+> to a side effect. **Verified before trusting it:** the merged `master` tree is **byte-identical** to
+> the tree gated at `dde0c46` (`rev-parse HEAD^{tree}` equality), and the gauntlet was re-run on the
+> merged mainline anyway — **4/4 PASS**. Ten branches are now fully contained in `master` and safe to
+> delete (6 × `task/m4p*`, `docs/m4-gap-audit`, `docs/post-m4-handoff`, `docs/readme-box-plainer`,
+> `m4/inline-eval`) — verified by `merge-base --is-ancestor`, **not** deleted yet.
+>
+> **MindBridge is out of scope by operator direction** — `KH-T09` and `DF-06` dropped. ⚠️ **That means
+> the MindBridge *chores* are dropped, NOT the ingest documents.** `INGEST-EXECUTION-ORDER.md`,
+> `INGEST-PLAIN-ENGLISH.md` and `BACKLOG-FROM-MINDBRIDGE.md` hold **our live work queue** and merging
+> `#51` is what kept them on the mainline. Do not read "out of scope" as "queue discarded."
+>
+> **Closed 2026-08-02/03 (D170):** `T-10` (ingest-direction defect-carry) closed **unbuilt** — no
+> transfer channel exists in either direction any more; the reusable half (*hand-copied code silently
+> loses the fixes made after the copy*) is recorded and re-opens on any future vendor/port, not on this
+> item. `T-00` (chase `DF-06`) closed by the same ruling. `T-09` verified **moot** — no "fork of" claim
+> remains in README/STATE/HANDOFF.
+>
+> **★ OWED:** 🔴 rotate the GitHub PAT — **deferred by operator 2026-08-02, explicitly NOT dropped**
+> (plaintext at `settings.json → env → GITHUB_PERSONAL_ACCESS_TOKEN`, exported into every spawned
+> process; the earlier "mode 666 / world-readable" framing was **wrong** on Windows) · `DEF-1` ·
+> `DEF-2` (learn_feed drops ledger bodies — **does the emit block extend to all 19 ledgers?** still the
+> one blocking question, and its one-line sibling `BL-M24` should be fixed in the same run) ·
+> `T-03` scope call (all six determinism laws, or the 13+15 subset).
 
 ---
 

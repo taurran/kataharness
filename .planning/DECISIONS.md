@@ -2780,3 +2780,26 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   Optional-kwarg was rejected as itself a silent-permissive default (D136). Deliberately NOT built:
   "has execution started?" (already durable via `Kata-Task:` trailers + board CLAIM + `detect_lost_run`)
   and a `kata-freeze` skill (freeze is a fact, not a behavior). Built `6b4e8db`.
+- **D170 — `T-10` (ingest-direction defect-carry) is CLOSED, not built (operator-directed 2026-08-02).**
+  **What it was, in plain terms** — carried unexplained through three sessions as a bare code, which is
+  itself the defect this entry closes. KataHarness and MindBridge share **no git history**: MindBridge
+  is a hand-rebuilt conversion port, not a fork or a branch. Code therefore only ever moved between the
+  two projects by **copying files**, never by merging. A copy captures whatever version existed on the
+  day it was taken, so **fixes made afterwards do not follow** — there is no merge to carry them. That
+  is the mechanism by which MindBridge ended up running **five defects this repo had already fixed**.
+  `T-10` asked whether to build a guard that checks, whenever code crosses between the two projects in
+  **either** direction, that known-fixed defects are not riding along.
+  **Ruling: closed unbuilt.** MindBridge is out of scope by operator direction (see the `KH-T09`/`DF-06`
+  drops), so **no transfer channel exists in either direction**. A guard against a transfer that can no
+  longer occur protects nothing, and building it would be speculative work on a dead seam.
+  **What is deliberately kept, because it outlives MindBridge:** *hand-copied code silently loses the
+  fixes made after the copy.* The risk is a property of **copying without a merge base**, not of
+  MindBridge — so it returns intact the first time this repo vendors, ports, or hand-copies code from
+  any source. Re-open under that trigger, not under this one.
+  **Also recorded:** `T-10` survived three sessions with no description anywhere in the repo, so no
+  session could evaluate it and each simply forwarded the code. Same shape as the enforcement sweep's
+  theme — an item with no owner is indistinguishable from an item with no content. Closing it *with the
+  reasoning written down* is the correction; deleting the code silently would have repeated the fault.
+  **Companion closure:** `T-00` (chase `DF-06`, MindBridge's sixth divergence flag — named in their
+  `CLEAN-ROOM-ATTESTATION.md:116` as withheld for partial-scrub risk and never sent) is closed by the
+  same scope ruling. No code was ever received for it; nothing is unbuilt as a result.

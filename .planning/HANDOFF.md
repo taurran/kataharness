@@ -92,15 +92,28 @@ binding contracts · `.planning/specs/dispatch-authoring/` — frozen DESIGN+PLA
 
 ## 6. OWED TO THE OPERATOR
 
+> **⚠️ Items 2, 3 and 5 were DISCHARGED on 2026-08-03 — see §9 below.** Kept here
+> rather than deleted so the arc stays legible; struck text is done, not pending.
+
 1. **🔴 Rotate the GitHub PAT.** Plaintext at `settings.json → env → GITHUB_PERSONAL_ACCESS_TOKEN`,
    exported into **every process Claude Code spawns**. *(Correction carried forward: earlier handoffs
    called this "mode 666 / world-readable" — **wrong**. The NTFS ACL grants only the user,
    Administrators, SYSTEM. Env-injection is the real exposure.)*
-2. **8 unpushed commits.**
-3. **PR #51** (MindBridge ingest, 26 commits) · **PR #53** (stacked on #51). Note `grill/session-
-   lifecycle` **contains** #51's commits, so merging it to master merges #51 as a side effect.
-4. `DEF-1` · `DEF-2` (+ its undecided repo-wide-block question).
-5. `T-10` — still no description anywhere in the repo.
+   **STILL OPEN — deferred by the operator 2026-08-02. Deferred is not dropped; keep surfacing it.**
+2. ~~**8 unpushed commits.**~~ ✅ **PUSHED 2026-08-03** — and the count was wrong: it was **10**, not 8.
+   The two extra were the handoff and orientation commits themselves, written *after* the count was
+   taken. Same self-referential trap this file warns about twice for pinned `HEAD` SHAs.
+3. ~~**PR #51** · **PR #53**~~ ✅ **BOTH MERGED 2026-08-03.** `#51` → `74efe98`; `#53` retargeted to
+   `master` explicitly (GitHub does **not** auto-retarget while the old base branch still exists) and
+   merged → **`cf2ee50`**. Merged tree verified byte-identical to the gated tree; gauntlet re-run on
+   the mainline: **4/4 PASS**.
+4. `DEF-1` · `DEF-2` (+ its undecided repo-wide-block question) — **STILL OPEN.** `DEF-2`'s question
+   is the one thing blocking a cheap fix: **does the emit block extend to all 19 ledgers?** Its
+   one-line sibling `BL-M24` (heading regex counts the ledger's own H1 — still `^#{1,6}`, verified
+   2026-08-02) lives in the same file and should be fixed in the same run, not separately.
+5. ~~`T-10` — still no description anywhere in the repo.~~ ✅ **CLOSED unbuilt 2026-08-02 (D170)**, with
+   the description finally written down in `INGEST-PLAIN-ENGLISH.md` §9 before closing it. `T-00` closed
+   by the same ruling; `T-09` verified moot.
 
 ## 7. WHAT I GOT WRONG
 
@@ -119,6 +132,52 @@ binding contracts · `.planning/specs/dispatch-authoring/` — frozen DESIGN+PLA
 ## 8. REDACTION
 
 No secrets, keys, or PII. The PAT is referenced by location only. Snyk code scan: **0 medium+**.
+
+## 9. ADDENDUM — 2026-08-03: everything landed on master
+
+**`master` = `cf2ee50`.** The enforcement sweep is no longer branch-local.
+
+**What was done, in order, each step verified rather than assumed:**
+1. **Pushed** `9619ebc..dde0c46`. The "8 unpushed commits" figure in §0 and §6 was **10** — recorded in
+   §6 rather than silently corrected, because the cause is instructive.
+2. **Merged `PR #51`** (MindBridge ingest, 26 commits) → `74efe98`.
+3. **Retargeted `PR #53`** from `docs/mergeback-ingest-itemization` to `master` **explicitly.** GitHub
+   auto-retargets a stacked PR only when the old base branch is *deleted*; the branch still existed, so
+   the retarget would never have fired on its own. Waiting on that side effect would have stalled.
+4. **Merged `PR #53`** → **`cf2ee50`**.
+5. **Verified the merge**: merged-`master` tree is **byte-identical** to the tree gated at `dde0c46`
+   (`git rev-parse HEAD^{tree}` equality), so the 4/4 gate transfers by *identity*, not inheritance.
+   Re-ran the gauntlet on the merged mainline regardless: **4/4 PASS** (pytest-unit, pytest-integration,
+   ruff, validate-skills).
+
+**Branch topology, measured before merging — nothing was stranded:**
+- `grill/session-lifecycle` **contained** all 26 of `#51`'s commits (`merge-base --is-ancestor`, true).
+- `master` held exactly **one** commit the branch lacked: `#52`'s merge marker `a815c2b`. The *content*
+  of `#52` (`8d477f3`) was already in the branch, so there was no content gap and no conflict.
+- **Ten branches are fully contained in `master`** and safe to delete — `task/m4p1-W{1..4}`,
+  `task/m4p2-X{1,2}`, `docs/m4-gap-audit`, `docs/post-m4-handoff`, `docs/readme-box-plainer`,
+  `m4/inline-eval`. **Verified, NOT deleted** — deletion is outward-facing and was not authorized.
+  *(The six `task/*` branches are the exact six `BL-M21`'s crash-recovery bug would have destroyed.)*
+
+**⚠️ The scope ruling that must not be misread.** "MindBridge is out of scope" drops the MindBridge
+**chores** — the return handoff (`KH-T09`), chasing `DF-06` (`T-00`). It does **not** discard the ingest
+documents: `INGEST-EXECUTION-ORDER.md`, `INGEST-PLAIN-ENGLISH.md` and `BACKLOG-FROM-MINDBRIDGE.md` carry
+**the live work queue**, and merging `#51` is what kept them on the mainline. Closing `#51` unmerged
+would have written *"intake rejected"* into the record while its commits landed anyway via `#53` — the
+queue would have looked discarded to the next session. That risk was to the **record**, never the code.
+
+**Closed this session (`D170`):** `T-10` (ingest-direction defect-carry) **unbuilt** — the two projects
+share no git history, so code only ever crossed by hand-copy, and a copy never carries fixes made after
+it was taken; with no transfer channel left in either direction the guard protects nothing. **Kept**:
+*hand-copied code silently loses the fixes made after the copy* — a property of copying without a merge
+base, so it re-opens on any future vendor/port, not on this item. `T-00` closed by the same ruling.
+`T-09` verified **moot** (no "fork of" claim survives in README/STATE/HANDOFF).
+
+**Recorded honestly:** `T-10` was carried by three sessions as a bare code with no description anywhere
+in the repo, so no session could evaluate it and each forwarded it. The description was written *before*
+closing it. Deleting it quietly would have repeated the fault it represents.
+
+**Still owed, unchanged:** 🔴 the **PAT rotation** — deferred by the operator 2026-08-02, **not dropped**.
 
 ---
 
