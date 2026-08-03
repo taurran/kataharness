@@ -333,7 +333,98 @@ REQUIRED_PROTOCOL = {
     "authored-artifact-gate.md": ["SCOPE", "CLAIM vs ARTIFACT", "CITATIONS RESOLVE",
                                    "NO UNCITED REUSE CLAIM", "DEVIATIONS CONFIRMED",
                                    "NO FROZEN INVARIANT RETIRED"],
+    # ungated-protocol-files (UPF-2/UPF-10, 2026-08-03): the eight contracts that were on disk
+    # but in no guard structure at all. Each term below is a word whose deletion would remove a
+    # capability the file defines — the UPF-10 bar.
+    # board.md — the coordination-board register: the TYPE vocabulary IS the protocol, and the
+    # concurrency-evidence artifact is derived from it.
+    "board.md": ["CLAIM", "DONE", "BLOCK", "ESCALATE", "NOTE", "DECISION", "PROGRESS",
+                 "Append-only", "concurrency.json", "maxInFlight"],
+    # exec-safety.md — the RCE guard: the execution rule, the trust-domain table, the auditable
+    # sink registry, and the in-process AST allowlist.
+    "exec-safety.md": ["structured-argv-only", "shell=False", "Trust domains", "Sink registry",
+                       "AST allowlist", "claim to verify, not an assumption",
+                       "NEW execution capability"],
+    # observability.md — log-reader orientation: the artifact schemas a review/eval dispatch must
+    # read correctly, plus the gotchas that produce a silently-wrong read.
+    "observability.md": ["Kata-Checkpoint", "failureKinds", "parentTokens", "class_median",
+                         "scan_checkpoints", "refs/kata/trail", "gotchas"],
+    # iac-safety.md — the normative IaC contract: the tier boundary, the fail-closed scanner gate,
+    # the deletion-protection vocabulary, and the stateful/escalate discrimination.
+    "iac-safety.md": ["Tier 1", "snyk_iac_scan", "prevent_destroy", "DeletionPolicy",
+                      "auto-approve", "stateful", "escalate", "fail-closed"],
+    # narration.md — the conversation-channel contract: the cadence rule, the never-tiered
+    # breakthrough alert, the honesty guard, and the deterministic loop-init banner.
+    "narration.md": ["Milestone-cadence", "Breakthrough", "Honesty guard", "banner",
+                     "PROGRESS", "loop-back", "never tiered"],
+    # validation-misses.md — the miss-manifest schema (all of these are entry fields or engine
+    # entry points) plus the observe-only posture the whole T1 layer rests on.
+    "validation-misses.md": ["failure_class", "responsible_skill", "severity", "guard_ref",
+                             "run_id", "observe-only", "append_miss", "recurrence"],
+    # advice.md — the advisor consult payload: a machine schema of the same kind as escalation.md
+    # and graph.md, guarded field-for-field the same way.
+    "advice.md": ["taskId", "scopedContext", "diagnosis", "citations", "nonAuthoritative",
+                  "rungUsed", "disposition"],
+    # persona.md — the agnostic SOUL contract: the identity, the static default register, and the
+    # gated (NOT live) adaptation seam whose overclaim kata-slop-check catches.
+    "persona.md": ["calm kata-craftsperson", "改善型", "nameless", "moderate non-expert",
+                   "static default", "Register adaptation", "overclaim"],
 }
+
+#: Protocol files that are deliberately NOT guarded contracts — reference material, each with a
+#: WRITTEN reason. Ships EMPTY on purpose (UPF-2): it exists as the declared path for a genuine
+#: future non-contract file (a `README.md` dropped into `protocol/`), never as a place to park
+#: work. Its exact contents are pinned by a test (UPF-8), so adding an entry can never be a quiet
+#: one-line edit — it fails by name and must be justified in the same change.
+#:
+#: Honest residual, stated rather than designed away: this list IS an escape hatch, and
+#: `validate_skills.py` is not itself fingerprinted. A future agent facing a failing clause check
+#: could add the file here instead of fixing the contract. The test raises the cost and the
+#: visibility of that move; it does not make it impossible.
+PROTOCOL_EXEMPT: dict[str, str] = {}
+
+
+@check
+def check_protocol_folder_is_fully_registered(_skills: list[Skill]) -> list[Finding]:
+    """Every `protocol/*.md` must be a registered contract or a declared exemption — never neither.
+
+    THE ROOT DEFECT THIS CLOSES: every other use of `PROTOCOL_DIR` in the tree is
+    `PROTOCOL_DIR / fname` — a lookup of a name the code was already handed. Nothing ever LISTED
+    the directory, so a new protocol file was invisible to every guard, silently and permanently,
+    from the moment it was created. Eight files escaped that way; `orchestration.md` and
+    `authored-artifact-gate.md` escaped for a while and were caught only because someone
+    remembered to register them by hand. A rule that depends on remembering is the disease.
+
+    `sorted()` is mandatory, not cosmetic: DETERMINISM-DOCTRINE law 2 — no unsorted
+    `glob`/`iterdir`/`rglob` result may drive artifact content. Non-recursive, `*.md` only.
+    """
+    out: list[Finding] = []
+    found = sorted(p.name for p in PROTOCOL_DIR.glob("*.md"))
+    if not found:
+        # D136/D33, the same refusal main() makes for "0 skills discovered": an empty scan means
+        # the tree is missing or mis-rooted. Certifying over it would be a silent-permissive
+        # default — a vacuous pass is the one outcome this check must never produce.
+        return [Finding("ERROR", "protocol/",
+                        "0 protocol *.md files discovered — refusing to certify an empty protocol "
+                        "directory (check the PROTOCOL_DIR root).")]
+    for name in found:
+        registered = name in REQUIRED_PROTOCOL
+        exempt = name in PROTOCOL_EXEMPT
+        if registered and exempt:
+            out.append(Finding(
+                "ERROR", f"protocol/{name}",
+                "listed in BOTH REQUIRED_PROTOCOL and PROTOCOL_EXEMPT — a protocol file is a "
+                "guarded contract or a declared exemption, never both",
+            ))
+        elif not registered and not exempt:
+            out.append(Finding(
+                "ERROR", f"protocol/{name}",
+                "unregistered protocol file — add it to REQUIRED_PROTOCOL (a guarded contract: "
+                "terms + pinned clauses, and a fingerprint unless it is a registry) or to "
+                "PROTOCOL_EXEMPT with a written reason. A protocol file guarded by nothing is "
+                "the defect this check exists to prevent.",
+            ))
+    return out
 
 
 @check
@@ -369,21 +460,30 @@ def check_protocol_schemas(_skills: list[Skill]) -> list[Finding]:
 #      context could ride in unnoticed alongside intact pinned clauses.
 #
 # SCOPE (operator-directed 2026-07-29, "fix it properly in the other files"):
-#   * CLAUSES apply to ALL 13 REQUIRED_PROTOCOL files. This layer is free on ordinary
+#   * CLAUSES apply to ALL 23 REQUIRED_PROTOCOL files. This layer is free on ordinary
 #     edits — it is reflow-tolerant and only fires when a load-bearing sentence is
 #     deleted or reworded — so there is no reason to withhold it anywhere.
-#   * FINGERPRINTS apply to 12 of the 13. `config.md` is deliberately EXCLUDED: it is a
-#     key registry that changed 31 times (vs 1-11 for every other protocol file), because
-#     essentially every feature adds a config key. Fingerprinting a registry buys nothing
-#     — the risk there is a MISSING key, which REQUIRED_PROTOCOL already covers — while
-#     imposing ~31 re-approvals, which is precisely how blind re-approval gets trained.
-#     Its invariants are still clause-pinned.
+#   * FINGERPRINTS apply to 21 of the 23, with TWO declared exemptions, both earned on the
+#     same structural criterion — a REGISTRY that grows with the codebase, where the risk
+#     is a MISSING entry (which REQUIRED_PROTOCOL already covers) and fingerprinting would
+#     buy nothing while imposing a re-approval per routine addition, which is precisely how
+#     blind re-approval gets trained. Both keep their invariants clause-pinned.
+#       - `config.md`: a key registry that changed 32 times (vs 1-12 for every other
+#         protocol file), because essentially every feature adds a config key.
+#       - `exec-safety.md` (UPF-9): its "Sink registry (verify-before-add — keep in sync
+#         with the code)" requires every new execution site to be added, so fingerprinting
+#         it would make every new subprocess call site in tools/ cost a manual re-approval.
+#         Its rules — structured-argv-only, never-eval/exec — stay clause-pinned, so the
+#         safety guarantee is NOT weakened; only the whole-file digest is skipped.
 #
-# NOT covered, and worth naming rather than leaving to be rediscovered: eight protocol
-# files are absent from REQUIRED_PROTOCOL entirely and therefore ungated by any layer —
-# board.md, exec-safety.md, observability.md, iac-safety.md, narration.md,
-# validation-misses.md, advice.md, persona.md. board.md in particular carries a literal
-# run-isolation MUST. Registering new files newly gates them, so that is its own change.
+# COVERAGE OF THE FOLDER ITSELF (ungated-protocol-files, UPF-1/UPF-11, 2026-08-03): until
+# this change nothing ever ENUMERATED protocol/ — every PROTOCOL_DIR use was a lookup of a
+# name the code was already handed — so a new protocol file was ungated by every layer from
+# the moment it was created, silently and permanently. Eight files (board.md, exec-safety.md,
+# observability.md, iac-safety.md, narration.md, validation-misses.md, advice.md, persona.md)
+# had escaped that way and are now registered. `check_protocol_folder_is_fully_registered`
+# closes the mechanism, not just the instance: every protocol/*.md must appear in exactly one
+# of REQUIRED_PROTOCOL or PROTOCOL_EXEMPT, and a file in neither fails the validator BY NAME.
 # --------------------------------------------------------------------------- #
 
 def _normalize_protocol_text(text: str) -> str:
@@ -498,26 +598,119 @@ PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
         # §PLAN application — a future reader must not invent a second rubric.
         "No new rows are needed for PLAN.md",
     ],
+    # ------------------------------------------------------------------ #
+    # ungated-protocol-files (UPF-4/UPF-5, 2026-08-03) — the eight that
+    # were guarded by nothing. Same bar as everything above: stating the
+    # OPPOSITE of the directive must be impossible while the clause stands.
+    # ------------------------------------------------------------------ #
+    "board.md": [
+        # EXACTLY two clauses, and NEITHER may span the "(or truncate it)" parenthetical at
+        # board.md:46-48 (UPF-4). Clause matching is a substring test after normalisation and
+        # does NOT strip parentheticals, so the run-isolation MUST and the rotation duty are
+        # pinned as two short spans that sit on either side of it. Pinning the truncation
+        # permission would make the LOOPHOLE load-bearing — a tamper-evident contract must
+        # protect the invariant, never the escape from it. Whether "(or truncate it)" should
+        # be removed at all is a separate, still-open question (2026-07-28 handoff §5).
+        "MUST contain only the current run's events",
+        "rotates any pre-existing board at run start",
+    ],
+    "exec-safety.md": [
+        # The external-domain execution rule — the RCE guard itself.
+        "Structured argv + shell=False + validated. Never a freeform string. Never shell=True.",
+        # The registry-growth duty: a new sink cannot be added silently.
+        "must be added here with its trust domain and guard, and must satisfy the guard above",
+        # The "when the surface is not safe" ruling — the anti-soft-label line.
+        "it is a NEW execution capability, not a reuse of an existing safe sink",
+        # The in-process sibling of the same class (sandbox-escape via eval/exec).
+        "MUST NEVER be passed to eval or exec",
+    ],
+    "observability.md": [
+        # A wrong read of this file corrupts evaluation, which is the gate. Each clause below
+        # is a fail-closed reading rule whose inversion produces a silently-wrong read.
+        "A malformed row RAISES — never skip-and-average",
+        "Never treat null as 0 in an average; never fabricate a value to fill the gap.",
+        "Malformed trailer / scan failure ⇒ treat-as-triggered, never a silent pass.",
+        "Calibration rows never enter medians.",
+        "never bare at a .kata/* path",
+    ],
+    "iac-safety.md": [
+        # The tier boundary — the harness holds no creds and never applies.
+        "The harness writes and analyzes IaC. It never runs a live terraform apply or execute-change-set.",
+        "must never emit --auto-approve or its equivalent",
+        # The fail-closed scanner posture (scanner-absent is its own always-FAIL condition).
+        "The gate never passes with zero scanner coverage.",
+        # The MAJOR-3 honesty contract on static analysis.
+        "A clean static result is NOT a verified no-destroy.",
+        # The three-valued verdict must never be collapsed in either direction.
+        "escalate must not become fail (losing the human signal) and fail must not become pass (defeating the scanner)",
+    ],
+    "narration.md": [
+        "internal activity labels are never surfaced to the user",
+        # The cadence rule — trust, not spam.
+        "Narrate at meaningful boundaries; stay quiet between.",
+        # The never-tiered breakthrough alert; no mode or cadence setting may suppress it.
+        "Decisions, escalations, and critical failures surface in the conversation immediately and unmissably, regardless of routine quiet.",
+        # The honesty guard against narrating gated-off capabilities.
+        "The narrator MUST NOT imply capabilities that are not wired in the running harness.",
+    ],
+    "validation-misses.md": [
+        # The T1 observe-only boundary — the whole layer's C/B invariant.
+        "it logs, counts, and surfaces — it changes no gate behavior, never alters a gate verdict, and never mutates a skill",
+        # The read-only seam: the reviewer flags, the orchestrator appends.
+        "The reviewer does NOT write the manifest.",
+        # Secret hygiene on a durable, committed learning corpus.
+        "Never log code payloads, key material, secrets, or verbatim code fragments",
+        # The T2 boundary — draft only, never act.
+        "it may NOT (i) change any gate verdict, (ii) edit any skill/protocol/tool, or (iii) merge its own proposal",
+    ],
+    "advice.md": [
+        # S-2 — the advisory-never-authoritative posture the whole schema rests on.
+        "Advice is advisory, never authoritative",
+        "Advice serves; the executor decides.",
+        # Only the conductor dispatches; a worker requests via an escalation.
+        "Only the conductor dispatches kata-advise — a worker never does",
+        # G-4 — builder and judge never share an advisor (a D33-class no-self-cert extension).
+        "The gate and closeout NEVER consult",
+        "response.sketch is never applied verbatim",
+    ],
+    "persona.md": [
+        # The defining instinct — the translation duty that makes the voice what it is.
+        "one-shot complex work, then always translate",
+        "Never hedge a completed fact.",
+        # Internal loop vocabulary is never the user-facing account.
+        "Do not surface GRILL / FREEZE / EXECUTE / EVALUATE / HANDOFF / IMPROVE / PREFLIGHT to the user",
+        # The gated-not-live register seam, and the forbidden overclaim about it.
+        "There is no live register-setting path in v0.1.",
+        "Claiming adaptive register is live is a forbidden overclaim",
+    ],
 }
 
 #: Digest of the normalised file. Update ONLY via --update-protocol-fingerprint,
 #: after reviewing the diff — the whole point is that the update is a deliberate act.
-#: NOTE the deliberate absence of `config.md` — see the SCOPE note above.
+#: NOTE the deliberate absence of `config.md` and `exec-safety.md` — the two declared
+#: registry-shaped fingerprint exemptions; see the SCOPE note above.
 PROTOCOL_FINGERPRINTS: dict[str, str] = {
+    "advice.md": "c811801ef8701f0873a8e2dc9edd093da891d17a1c1eb250e1fd8fdca69f500a",
     "authored-artifact-gate.md": "b90eb9ded18eb324382d23772cabc7740112da964983317ed196858c486ae535",
+    "board.md": "30df4ea775519fdb3709c7d9ddd0e6982a38189f9b23ae9a47cf018035d310ba",
     "dependencies.md": "652df1a8f46b93cd13f1e54ba19ec8725ec9e48c02e4b03ea5a8e27bcafe972c",
     "engram.md": "ad01a873d4aff387c85f3798db7494ed6750aab4c1054b876e9282c9fbf2d879",
     "escalation.md": "ac9724a093c7f4890fbe567efec8849465517b36cb4f048f1842b9348e116a76",
     "graph.md": "48fbd4619ac9f6feb761119d5e0569b634ae556e2bc8f38c7fe3ff49f2194778",
     "handoff.md": "2e0e11d17f6b8101d2de705ebb01df065ac4cc6decfad53a63bd0237e0e696c9",
+    "iac-safety.md": "ae8971eaf8ec94b123129663148a4453a72f2b7fdc4c00abde15d5bca36f62d0",
     "intent.md": "aaf4632093ca7310f373f8ea49cd85373aa124f30f1adcf9d9103b640521b747",
+    "narration.md": "b91d64b7491df18691ccec4869c30f95504570e66dd75a5e8a8e825628378d94",
+    "observability.md": "d9d71aa9f8c596ff1f391158038ee5fe08954031a3f287672b544154e66ef439",
     "orchestration.md": "bc0aee0520b48b69f94f3b9242ac427bb587866e7d45dd74d221317de02b2daf",
     "orientation.md": "b926c41b9e61945b1450c96ec8e89044c33668ef5d63414038279787c61c455e",
-    "prime-directives.md": "7be2a0d1ab682ed45120fe5d6ca976f38a68df623da2665a19b0374ec7e07959",
+    "persona.md": "987ab6fd61e6688508b638e6a05118371aa061f319167f944ab16a45cf1c23ab",
+    "prime-directives.md": "3d5787e3bab577bd0ae3111bcfcad8712fd69dde43b9f61af2c54d4fd378b829",
     "recall.md": "6edfd018c9c4d62f27f9b94e081e6e15b4002dd13a2277aa7d214ddff4f0d405",
     "reuse-claims.md": "4cc12760aca1c920f72f833b9f7b7a6131e21ed447cc3bcc2ef8b4d52921f732",
     "state.md": "19e0e36c263df02170133de4271f07566fb8e7cc94e0364f843d2c012d27c767",
     "steering.md": "df9bed6779b1e96244d9c0f087bb3a7c450187b44bad8b9857fab62f2086f5b4",
+    "validation-misses.md": "e91ebdad99de2e7d38f49fbc00ab8c5a1c1a45a2d34bd544ed3fca4fd8ede461",
 }
 
 

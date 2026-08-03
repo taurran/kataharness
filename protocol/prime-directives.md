@@ -92,13 +92,28 @@ itself is not a tamper-check — a human pasting the value is what makes the ste
 Editing a fingerprinted schema is therefore a two-step act by design: make the change, then
 re-approve the fingerprint. That friction is the point.
 
-**Scope, and its one deliberate exception.** Clauses are pinned for all 13 `REQUIRED_PROTOCOL`
-schemas; fingerprints cover 12. **`config.md` is exempt** — it is a key registry that changed 31
-times (against 1–11 for every other protocol file) because essentially every feature adds a config
-key. Fingerprinting a registry buys nothing, since the risk there is a *missing* key and the term
-check already covers that, while imposing ~31 re-approvals — which is exactly how blind re-approval
-gets trained. Its invariants are still clause-pinned. Separately, **eight protocol files are not in
-`REQUIRED_PROTOCOL` at all** and so are ungated by any layer (`board.md`, `exec-safety.md`,
-`observability.md`, `iac-safety.md`, `narration.md`, `validation-misses.md`, `advice.md`,
-`persona.md`); `board.md` in particular carries a literal run-isolation MUST. Registering them newly
-gates them, so that is its own change and is named here rather than left to be rediscovered.
+**Scope, and its two deliberate exceptions.** Clauses are pinned for all 23 `REQUIRED_PROTOCOL`
+schemas; fingerprints cover 21. Both exemptions are earned on the same structural fact — the file is
+a **registry that grows with the codebase**, so the risk there is a *missing* entry (which the term
+check already covers) and fingerprinting would buy nothing while imposing a re-approval per routine
+addition, which is exactly how blind re-approval gets trained. Both keep their invariants
+clause-pinned. **`config.md`** is a key registry that changed 32 times (against 1–12 for every other
+protocol file) because essentially every feature adds a config key. **`exec-safety.md`** carries the
+*"Sink registry (verify-before-add — keep in sync with the code)"*, which requires every new
+execution site to be added, so fingerprinting it would make every new subprocess call site in
+`tools/` cost a manual re-approval; its rules — structured-argv-only, never `eval`/`exec` — stay
+clause-pinned, so the safety guarantee is untouched and only the whole-file digest is skipped.
+
+**The folder itself is now guarded, not just the files someone remembered.** Until 2026-08-03 nothing
+in the tree ever *enumerated* `protocol/` — every use of the directory was a lookup of a filename the
+code had already been handed — so a new protocol file was invisible to every layer, silently and
+permanently, from the moment it was created. Eight files had escaped that way (`board.md`,
+`exec-safety.md`, `observability.md`, `iac-safety.md`, `narration.md`, `validation-misses.md`,
+`advice.md`, `persona.md`, including `board.md`'s literal run-isolation MUST); all eight are now
+registered contracts. The rule that replaced the remembering: **every `protocol/*.md` must appear in
+exactly one of `REQUIRED_PROTOCOL` (a guarded contract) or `PROTOCOL_EXEMPT` (reference material,
+with a written reason), and a file in neither fails the validator by name.** `PROTOCOL_EXEMPT` ships
+empty and its exact contents are pinned by a test, so silencing a guard by adding a file to it is a
+loud, deliberate act rather than a quiet one-line edit. The honest residual: that test can itself be
+edited — nothing defends the validator's own source mechanically. This raises the cost and the
+visibility of switching a protection off; it does not make it impossible.
