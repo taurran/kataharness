@@ -62,6 +62,8 @@ Budget SHAPE is validated at load; budget SPEND is enforced by the conductor
 """
 from __future__ import annotations
 
+import re
+
 # ---------------------------------------------------------------------------
 # Family-ladder registry
 # ---------------------------------------------------------------------------
@@ -83,16 +85,155 @@ FAMILY_LADDERS: dict[str, list[str]] = {
     "generic":   _GENERIC_LADDER,
 }
 
+# Every rung across every family — the source of truth for "is this a tier we model?"
+# (T-11). Derived from FAMILY_LADDERS so adding a rung to a ladder is the ONLY edit
+# needed; `sorted()` keeps any derived output order deterministic (law 3).
+_ALL_LADDER_RUNGS: frozenset[str] = frozenset(
+    rung for ladder in FAMILY_LADDERS.values() for rung in ladder
+)
+
 # Verified short→full-ID map (Anthropic only; other families re-grounded per-adapter).
 # Do NOT change these strings without a corresponding registry bump — tests reference
 # these constants directly so a bump is caught automatically.
 ID_MAP: dict[str, str] = {
     "haiku":  "claude-haiku-4-5-20251001",
     "sonnet": "claude-sonnet-5",
-    "opus":   "claude-opus-4-8",
+    "opus":   "claude-opus-5",
     "fable":  "claude-fable-5",
     "mythos": "claude-mythos-5",  # gated — deliberate fallback-test anchor
 }
+
+# ---------------------------------------------------------------------------
+# Semantic tier recognition (T-11)
+# ---------------------------------------------------------------------------
+# ID_MAP is the EMIT side: exactly ONE current id per rung, and the rung's id
+# changes every time the vendor ships a generation.  Recognition is a DIFFERENT
+# problem: a rung owns MANY ids over its lifetime (opus 4, 4.8, 5, ...), so a 1:1
+# reverse map recognizes only the single generation that happens to be pinned.
+#
+# That gap is T-11: `claude-opus-4-8` normalized while `claude-opus-5` did not, so
+# a current, legitimate anchor fell into the "unknown" bucket and SILENTLY inherited
+# — no economy tier-down, no Fable advisor rung, nothing surfaced.
+#
+# The durable fix is to recognize the rung SEMANTICALLY from the id's tier token
+# rather than by table lookup.  Every Anthropic id is `claude-<tier>-<rest>`:
+#   claude-haiku-4-5-20251001 · claude-sonnet-5 · claude-opus-5 · claude-fable-5
+# so the tier token is extractable, and a future `claude-opus-6` resolves with no
+# edit here at all.  The ladder — not the id table — becomes the source of truth
+# for what a rung IS, which is what makes this survive a vendor renaming tiers.
+# The Anthropic rung set. Recognition is deliberately scoped to THIS ladder, not the
+# all-family union: the `claude-` prefix is Anthropic's, so matching a token against
+# every family's rungs would route a Claude id onto a foreign ladder the moment a
+# placeholder ladder is populated (adval D4 — e.g. a gemini ladder containing "pro"
+# would make `claude-pro-1` resolve as family=gemini and use the generic step table).
+_ANTHROPIC_RUNGS: frozenset[str] = frozenset(_ANTHROPIC_LADDER)
+
+# A vendor id whose tier is unknown AND which carries a version-shaped tail:
+# `claude-<word>-<digit...>`. This is the narrow "a tier we do not model" signal —
+# see validate_anchor. `claude-code` / `claude-agent-sdk` do NOT match (no numeric
+# tail), so product names are never mistaken for models (adval D1).
+_UNKNOWN_TIER_RE = re.compile(r"^claude-[a-z]+-[0-9]")
+
+# Platform-prefixed carriers of the SAME Anthropic id (adval LOW-5). Bedrock ships
+# `us.anthropic.claude-opus-4-1-20250805`, Vertex `claude-3-5-sonnet@20240620`. Before
+# this, every such anchor fell straight into the silent-inherit bucket — no tier-down,
+# no Fable advisor rung, no error: verbatim the T-11 defect, for a shape this
+# environment demonstrably uses. Stripping the carrier prefix is a RECOGNITION widening
+# only; it can never make an unrecognized id recognized as the WRONG rung, because the
+# rung still has to appear as a literal field.
+_PLATFORM_PREFIX_RE = re.compile(r"^(?:[a-z]{2,4}\.)?anthropic\.")
+
+
+def _strip_platform_prefix(anchor: str) -> str:
+    """Normalize case/whitespace and strip a Bedrock/Vertex carrier prefix."""
+    return _PLATFORM_PREFIX_RE.sub("", anchor.strip().lower())
+
+
+def tier_token_of(anchor: str) -> str | None:
+    """Return the Anthropic tier token of a vendor-shaped model id, or ``None``.
+
+    **The tier is NOT always hyphen-field 2** — that assumption was adval finding D1.
+    Real ids put it in different positions across generations::
+
+        claude-opus-5               → "opus"    (field 2)
+        claude-3-5-sonnet-20241022  → "sonnet"  (field 4)
+        claude-3-opus-20240229      → "opus"    (field 3)
+        claude-haiku-4-5-20251001   → "haiku"   (field 2)
+
+    So every hyphen field is scanned for a known rung, and the FIRST match wins.
+    Scanning left-to-right over a fixed split is deterministic and order-stable
+    (law 10 — the total order is the id's own field order, not a set iteration).
+
+    Returns ``None`` for anything with no recognizable rung: short-names
+    (``"opus"``), the ``"session"`` sentinel, foreign ids, product names
+    (``"claude-code"``, ``"claude-agent-sdk"``), and arbitrary strings — so their
+    handling stays exactly as before.
+
+    Pure and deterministic: string ops over the argument only. No I/O, no clock,
+    no ambient state (law 7).
+    """
+    if not isinstance(anchor, str):
+        return None
+    candidate = _strip_platform_prefix(anchor)
+    if not candidate.startswith("claude-"):
+        return None
+    # Split on '-' AND '@': Vertex uses `claude-3-5-sonnet@20240620` (adval LOW-5).
+    for field in re.split(r"[-@]", candidate)[1:]:
+        if field in _ANTHROPIC_RUNGS:
+            return field
+    return None
+
+
+def validate_anchor(anchor: str) -> None:
+    """Fail loud on a vendor-shaped anchor naming an UNKNOWN tier (T-11, D136).
+
+    The three cases, deliberately distinguished:
+
+    1. **Resolvable** — a ladder short-name, or a vendor id containing a known rung
+       (in any hyphen position). Returns ``None`` (no raise).
+    2. **Vendor-shaped, unknown tier, version-shaped tail** — e.g.
+       ``"claude-quartet-2"``. A vendor RENAME or a tier the ladder does not model,
+       and the one case where silence is dangerous: the anchor is explicitly
+       written, obviously intentional, and would otherwise inherit with nothing
+       surfaced. **RAISES.**
+    3. **Everything else** — ``"session"``, ``"gpt-5"``, arbitrary strings, and
+       Anthropic PRODUCT names that are not models (``"claude-code"``,
+       ``"claude-agent-sdk"`` — no numeric tail). Returns ``None``. These have
+       always inherited and must keep inheriting; narrowing the raise is what
+       preserves that BC.
+
+    The case-2 test is deliberately narrow (``claude-<word>-<digit…>`` with no
+    recognizable rung). A broader "any `claude-` string" rule would false-raise on
+    product names and on legacy shapes — adval finding D1, which mattered because
+    this guard is wired into the config load-guard and a false raise BRICKS a run.
+
+    Staleness in the id table is inevitable; the SILENCE is what this removes.
+
+    Raises:
+        ValueError: on case 2, naming the id and the known Anthropic rungs.
+    """
+    if not isinstance(anchor, str):
+        raise ValueError(
+            f"validate_anchor: models.anchor must be a string, got "
+            f"{type(anchor).__name__}. A hand-edited null/number/list anchor is a "
+            f"config error (mirrors validate_advisor_block's type guard)."
+        )
+    # NOTE (adval LOW-1): a `tier_token_of(anchor) is not None` early-return used to sit
+    # here and was proven unreachable — _normalize_anchor already returns a ladder rung
+    # in exactly that case, so the check above has returned. Removed rather than kept as
+    # dead machinery inside a wired guard.
+    if _normalize_anchor(anchor) in _ALL_LADDER_RUNGS:
+        return
+    if _UNKNOWN_TIER_RE.match(_strip_platform_prefix(anchor)):
+        known = ", ".join(sorted(_ANTHROPIC_RUNGS))
+        raise ValueError(
+            f"validate_anchor: {anchor!r} looks like an Anthropic model id but "
+            f"names no tier this ladder models. This is a vendor rename or a new "
+            f"tier — resolving it would silently inherit at the anchor (no "
+            f"tier-down, no advisor rung). Known rungs: {known}. Add the rung to "
+            f"FAMILY_LADDERS, or write a ladder short-name / the 'session' "
+            f"sentinel instead."
+        )
 
 # Reverse map: full model ID → ladder short-name.
 # Built from ID_MAP so it stays in sync automatically — no manual maintenance.
@@ -118,8 +259,51 @@ def _normalize_anchor(anchor: str) -> str:
     - Unknown full ids (e.g. ``"claude-zzz-9"``) are not in ``_ID_TO_SHORT`` → unchanged
       → ``family_of`` returns ``None`` → ``resolve`` returns ``None`` (inherit-on-doubt).
     - The ``"session"`` sentinel and any other non-ID string passes through unchanged.
+
+    T-11 semantic fallback
+    ----------------------
+    When the exact-id lookup misses, the tier token is extracted and accepted **if
+    and only if it is a known ladder rung** — so `claude-opus-5` (and a future
+    `claude-opus-6`) normalize to `"opus"` without an ``ID_MAP`` edit. A
+    vendor-shaped id naming an unknown tier still passes through unchanged here,
+    preserving inherit-on-doubt; :func:`validate_anchor` is what makes that case
+    loud at config load.
     """
-    return _ID_TO_SHORT.get(anchor, anchor)
+    exact = _ID_TO_SHORT.get(anchor)
+    if exact is not None:
+        return exact
+    token = tier_token_of(anchor)
+    if token is not None:
+        return token
+    return anchor
+
+
+def _exact_short_of(model_id: str) -> str:
+    """Exact-table normalization ONLY — no semantic tier recognition (adval M1).
+
+    This is :func:`_normalize_anchor`'s **pre-T-11 behavior**, preserved verbatim for
+    the one caller that must not be widened: ``models.premium.offer``.
+
+    The premium gate is a SPEND gate whose contract is an *explicit* offer id
+    ("EXPLICIT offer id — never inherit, never a ladder walk"). Routing the offer
+    through semantic recognition silently widened it — a config with
+    ``offer: "claude-opus-5"`` that previously NO-FIREd cost-free (``unknown-offer``)
+    would begin firing and spending. Operator-approved resolution (2026-07-25):
+    keep semantic recognition for the ANCHOR, require an exact table id for the OFFER.
+
+    **SCOPE OF THE NON-SPEND-INCREASING CLAIM — read this precisely (adval MED-1).**
+    This function makes the **OFFER leg** non-spend-increasing. It does **NOT** make the
+    whole premium gate so. ``premium_status`` still normalizes the **ANCHOR** through
+    :func:`_normalize_anchor` (semantic), which means a semantically-recognized anchor
+    that previously reported ``unknown-anchor`` — e.g. ``claude-opus-6``,
+    ``claude-3-5-sonnet-20241022`` — now satisfies the anchor conjunct and the gate can
+    FIRE where it previously could not. That widening is **deliberate and
+    operator-approved** (semantic recognition for the anchor IS the T-11 fix), but it is
+    a real spend-surface change and an earlier version of this docstring claimed
+    otherwise without qualification. A premium NO-FIRE is surfaced as a board NOTE; a
+    FIRE is not, so the operator sees no signal when this widening is what enabled it.
+    """
+    return _ID_TO_SHORT.get(model_id, model_id)
 
 # ---------------------------------------------------------------------------
 # Work-class registry  (R5: full 47-skill coverage — W3-B build task)
@@ -678,7 +862,7 @@ def premium_status(
     if anchor_norm not in ladder:
         return {"fires": False, "reason": "unknown-anchor"}
 
-    offer_norm = _normalize_anchor(premium["offer"])
+    offer_norm = _exact_short_of(premium["offer"])
     if offer_norm not in ladder:
         return {"fires": False, "reason": "unknown-offer"}
 
@@ -1005,11 +1189,11 @@ def resolve(
                 work_class_e: str = SKILL_WORK_CLASS.get(skill, "critical")
                 if work_class_e in ("critical", "coding"):
                     # EXPLICIT offer id — never inherit, never a ladder walk (§3.2).
-                    return ID_MAP.get(_normalize_anchor(premium["offer"]))
+                    return ID_MAP.get(_exact_short_of(premium["offer"]))
             work_class_p: str = SKILL_WORK_CLASS.get(skill, "critical")
             if work_class_p in ("critical", "coding") and work_class_p in premium["scope"]:
                 # EXPLICIT offer id — never inherit, never a ladder walk (§3.2).
-                return ID_MAP.get(_normalize_anchor(premium["offer"]))
+                return ID_MAP.get(_exact_short_of(premium["offer"]))
         # NO-FIRE (or out-of-scope) ⇒ fall through to the frozen path unchanged.
 
     # FIX-1: derive family from anchor when explicitly "auto"
@@ -1086,10 +1270,18 @@ def fallback_chain(id: str, family: str) -> list[str | None]:
     if not ladder:
         return [None]
 
-    # Reverse-lookup: full model ID → ladder index
+    # Normalize FIRST (adval M2). This was the only entry point that never called
+    # _normalize_anchor, so it reverse-scanned raw ID_MAP values — which meant the
+    # emit-side bump silently broke it: once ID_MAP["opus"] moved to the current
+    # generation, `fallback_chain("claude-opus-4-8")` no longer matched any rung and
+    # returned [None] (the "skip + degrade" route per kata-orchestrate SKILL.md:794)
+    # instead of stepping down through sonnet → haiku. A resumed run's handoff value
+    # or an operator-written roles.<x>.model carrying a prior generation would have
+    # degraded immediately and silently.
+    short_name = _normalize_anchor(id)
     start_idx: int | None = None
     for i, short in enumerate(ladder):
-        if ID_MAP.get(short) == id:
+        if short == short_name:
             start_idx = i
             break
 

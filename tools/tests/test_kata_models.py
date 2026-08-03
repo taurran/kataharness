@@ -1242,3 +1242,273 @@ class TestAdvisorWorkClassEntry:
 
     def test_kata_advise_is_critical(self) -> None:
         assert km.SKILL_WORK_CLASS["kata-advise"] == "critical"
+
+
+# ---------------------------------------------------------------------------
+# T-11 — semantic tier recognition + the currency guard
+# ---------------------------------------------------------------------------
+class TestT11SemanticTierRecognition:
+    """ID_MAP is 1:1 short→current-id, but a rung owns MANY ids over its life.
+
+    The defect: `claude-opus-4-8` normalized while `claude-opus-5` did not, so a
+    current legitimate anchor fell into the unknown bucket and SILENTLY inherited
+    — no economy tier-down, no advisor rung, nothing surfaced.
+    """
+
+    def test_current_opus_id_is_pinned_to_the_current_generation(self):
+        assert km.ID_MAP["opus"] == "claude-opus-5"
+
+    def test_the_regression_a_current_full_id_resolves_its_family(self):
+        """The exact T-11 failure: this returned None before the fix."""
+        assert km.family_of("claude-opus-5") == "anthropic"
+
+    def test_the_regression_a_current_full_id_yields_the_fable_advisor_rung(self):
+        assert km.advisor_rung_of("auto", "claude-opus-5") == "fable"
+
+    def test_the_regression_a_current_full_id_tiers_economy_down(self):
+        result = km.resolve(
+            "kata-report", "advanced", "claude-opus-5",
+            family="auto", coder_floor="sonnet",
+        )
+        assert result == km.ID_MAP["sonnet"]
+
+    def test_a_future_generation_resolves_with_no_id_map_edit(self):
+        """The whole point of semantic recognition — no table edit required."""
+        assert km.family_of("claude-opus-6") == "anthropic"
+        assert km.advisor_rung_of("auto", "claude-opus-6") == "fable"
+
+    def test_tier_token_extraction(self):
+        assert km.tier_token_of("claude-opus-5") == "opus"
+        assert km.tier_token_of("claude-haiku-4-5-20251001") == "haiku"
+        assert km.tier_token_of("claude-sonnet-5") == "sonnet"
+
+    def test_tier_token_is_none_for_non_vendor_shapes(self):
+        """Short-names, the sentinel, and foreign ids must not be misread as ids."""
+        for anchor in ("opus", "session", "gpt-5", "", "claude", "gemini-2-pro"):
+            assert km.tier_token_of(anchor) is None, anchor
+
+    # -- the currency guard -------------------------------------------------
+    def test_validate_anchor_accepts_short_names_and_known_ids(self):
+        for anchor in ("opus", "sonnet", "claude-opus-5", "claude-fable-5"):
+            km.validate_anchor(anchor)  # must not raise
+
+    def test_validate_anchor_RAISES_on_a_vendor_shaped_unknown_tier(self):
+        """A rename is the dangerous case — explicit, intentional, silently wrong."""
+        with pytest.raises(ValueError, match="names no tier"):
+            km.validate_anchor("claude-quartet-2")
+
+    def test_validate_anchor_error_names_the_token_and_the_known_rungs(self):
+        with pytest.raises(ValueError) as exc:
+            km.validate_anchor("claude-quartet-2")
+        msg = str(exc.value)
+        assert "quartet" in msg
+        assert "opus" in msg and "fable" in msg
+
+    def test_validate_anchor_does_NOT_raise_on_non_vendor_shapes_BC(self):
+        """BC floor: these have always inherited and must keep inheriting."""
+        for anchor in ("session", "gpt-5", "llama-3", "", "whatever"):
+            km.validate_anchor(anchor)  # must not raise
+
+    def test_resolve_still_inherits_on_doubt_BC(self):
+        """validate_anchor is the loud path; resolve's contract is unchanged."""
+        assert km.resolve(
+            "kata-report", "advanced", "claude-quartet-2",
+            family="auto", coder_floor="sonnet",
+        ) is None
+
+    def test_session_sentinel_is_untouched_BC(self):
+        assert km._normalize_anchor("session") == "session"
+        assert km.family_of("session") is None
+
+    def test_historical_ids_keep_resolving_after_an_ID_MAP_bump(self):
+        """The property that makes the emit-side bump safe.
+
+        Bumping ID_MAP["opus"] to the current generation drops the PREVIOUS id out
+        of the 1:1 reverse map. Under table-only lookup that would silently break
+        every config still naming it. Semantic recognition keeps it resolving,
+        because the tier token — not the pinned id — is what identifies the rung.
+        """
+        assert km._normalize_anchor("claude-opus-4-8") == "opus"
+        assert km.family_of("claude-opus-4-8") == "anthropic"
+        assert km.advisor_rung_of("auto", "claude-opus-4-8") == "fable"
+
+
+class TestT11AdvalFolds:
+    """Regression pins for the fresh-context adval findings on the T-11 fix.
+
+    Every test here exists because a real defect shipped in `8dd648b` and the
+    original 14 tests did not catch it.
+    """
+
+    # -- M1: the premium SPEND gate must not be widened -----------------------
+    def test_M1_premium_offer_requires_an_EXACT_table_id(self):
+        """A semantically-recognized offer must NOT fire a spend gate.
+
+        `_normalize_anchor` was applied to `premium.offer`, so an offer naming a
+        non-table id began firing where it previously reported `unknown-offer` —
+        a SPEND-INCREASING change against the ":1107" explicit-offer contract.
+        """
+        for offer in ("claude-opus-4-8", "claude-opus-6"):
+            premium = {"offer": offer, "approved": True, "scope": ["critical"]}
+            status = km.premium_status(
+                premium, "sonnet", family="anthropic", mode="advanced")
+            assert status["fires"] is False, offer
+            assert status["reason"] == "unknown-offer", offer
+            assert km.resolve(
+                "kata-evaluate", "advanced", "sonnet",
+                family="anthropic", coder_floor="sonnet", premium=premium,
+            ) is None, offer
+
+    def test_M1_an_exact_table_offer_still_fires(self):
+        """The other direction — the fold must not break legitimate premium use."""
+        premium = {"offer": km.ID_MAP["opus"], "approved": True, "scope": ["critical"]}
+        status = km.premium_status(
+            premium, "sonnet", family="anthropic", mode="advanced")
+        assert status["fires"] is True
+        assert km.resolve(
+            "kata-evaluate", "advanced", "sonnet",
+            family="anthropic", coder_floor="sonnet", premium=premium,
+        ) == km.ID_MAP["opus"]
+
+    # -- M2: fallback_chain survives an emit-side bump ------------------------
+    def test_M2_fallback_chain_handles_a_PRE_bump_generation(self):
+        """The emit-side bump dropped the previous id from the 1:1 reverse map.
+
+        fallback_chain was the ONLY entry point that never normalized, so it
+        returned [None] — the "skip + degrade" route — instead of stepping down.
+        """
+        assert km.fallback_chain("claude-opus-4-8", "anthropic") == [
+            km.ID_MAP["sonnet"], km.ID_MAP["haiku"], None,
+        ]
+
+    def test_M2_fallback_chain_handles_the_current_generation(self):
+        assert km.fallback_chain("claude-opus-5", "anthropic") == [
+            km.ID_MAP["sonnet"], km.ID_MAP["haiku"], None,
+        ]
+
+    def test_M2_fallback_chain_accepts_a_short_name(self):
+        assert km.fallback_chain("opus", "anthropic") == [
+            km.ID_MAP["sonnet"], km.ID_MAP["haiku"], None,
+        ]
+
+    def test_M2_fallback_chain_floor_still_terminates(self):
+        assert km.fallback_chain(km.ID_MAP["haiku"], "anthropic") == [None]
+
+    # -- D1: the tier is not always hyphen-field 2 ---------------------------
+    def test_D1_tier_token_scans_every_hyphen_field(self):
+        assert km.tier_token_of("claude-3-5-sonnet-20241022") == "sonnet"
+        assert km.tier_token_of("claude-3-opus-20240229") == "opus"
+        assert km.tier_token_of("claude-opus-5") == "opus"
+        assert km.tier_token_of("claude-haiku-4-5-20251001") == "haiku"
+
+    def test_D1_legacy_dated_ids_do_NOT_false_raise(self):
+        """These would have bricked config load once the guard was wired."""
+        for anchor in ("claude-3-5-sonnet-20241022", "claude-3-opus-20240229"):
+            km.validate_anchor(anchor)
+
+    def test_D1_product_names_are_not_mistaken_for_models(self):
+        for name in ("claude-code", "claude-agent-sdk"):
+            assert km.tier_token_of(name) is None, name
+            km.validate_anchor(name)  # must not raise
+
+    def test_D1_a_rename_with_a_version_tail_still_raises(self):
+        with pytest.raises(ValueError, match="names no tier"):
+            km.validate_anchor("claude-quartet-2")
+
+    # -- D4: recognition is scoped to the Anthropic ladder -------------------
+    def test_D4_claude_prefix_matches_only_the_anthropic_ladder(self, monkeypatch):
+        """A populated foreign ladder must never capture a `claude-` id.
+
+        NON-VACUOUS BY CONSTRUCTION. The naive form of this test — asserting
+        `tier_token_of("claude-pro-1") is None` against the shipped module — passes
+        whether the implementation reads `_ANTHROPIC_RUNGS` or `_ALL_LADDER_RUNGS`,
+        because every foreign ladder is an empty placeholder today, so the two sets
+        are IDENTICAL and the check has a zero denominator. A sandboxed
+        deliberate-break probe confirmed the naive form did not catch the mutation.
+
+        So the foreign ladder is populated here. If the implementation ever reads
+        the all-family union, `claude-pro-1` captures "pro" and this fails.
+
+        Second-pass adval (LOW-2) found the first rewrite still half-vacuous: it
+        monkeypatched only the DERIVED `_ALL_LADDER_RUNGS`, so no ladder actually
+        contained "pro" and the `family_of` leg passed under the mutation too. The
+        real ladder is patched here, which makes the stated consequence — a Claude
+        id routed onto the gemini family and the generic step table — load-bearing.
+        """
+        monkeypatch.setitem(km.FAMILY_LADDERS, "gemini", ["flash", "pro", "ultra"])
+        monkeypatch.setattr(km, "_ALL_LADDER_RUNGS", frozenset(
+            rung for ladder in km.FAMILY_LADDERS.values() for rung in ladder))
+        assert "pro" not in km._ANTHROPIC_RUNGS
+        assert "pro" in km._ALL_LADDER_RUNGS
+        assert "pro" in km.FAMILY_LADDERS["gemini"]   # a REAL ladder contains it now
+        assert km.tier_token_of("claude-pro-1") is None
+        assert km.family_of("claude-pro-1") is None   # now load-bearing
+
+    # -- D5: pin what the original tests left unpinned -----------------------
+    def test_D5_error_message_rung_order_is_deterministic(self):
+        """Law 3/10: deleting sorted() left all 14 original tests green."""
+        messages = []
+        for _ in range(3):
+            try:
+                km.validate_anchor("claude-quartet-2")
+            except ValueError as exc:
+                messages.append(str(exc))
+        assert len(set(messages)) == 1
+        expected = ", ".join(sorted(km._ANTHROPIC_RUNGS))
+        assert expected in messages[0]
+
+    def test_D5_emit_side_still_requires_a_table_edit(self):
+        """Corrects the original test's overclaiming name.
+
+        Semantic recognition fixes RECOGNITION. Emission still reads the pinned
+        ID_MAP, so a genuinely new generation is emitted only after a table edit.
+        """
+        assert km.family_of("claude-opus-6") == "anthropic"      # recognized
+        assert km.ID_MAP["opus"] == "claude-opus-5"              # but emits the pinned id
+        assert km.resolve(
+            "kata-report", "advanced", "claude-opus-6",
+            family="auto", coder_floor="sonnet",
+        ) == km.ID_MAP["sonnet"]
+
+
+class TestT11SecondAdvalFolds:
+    """Pins for the SECOND fresh-context adval on the folded T-11 (MAJOR: empty)."""
+
+    # -- MED-2: type guard, matching validate_advisor_block's house pattern ---
+    def test_MED2_non_string_anchor_raises_ValueError_not_AttributeError(self):
+        for bad in (None, 123, ["opus"], {"a": 1}):
+            with pytest.raises(ValueError, match="must be a string"):
+                km.validate_anchor(bad)
+
+    # -- LOW-3: the documented FIRST-match-wins total order (law 10) ----------
+    def test_LOW3_first_matching_field_wins(self):
+        """A last-match-wins mutation was caught by zero tests before this."""
+        assert km.tier_token_of("claude-opus-sonnet-1") == "opus"
+        assert km.tier_token_of("claude-sonnet-opus-1") == "sonnet"
+
+    # -- LOW-5: platform-prefixed / cased / spaced carriers of the SAME id ----
+    def test_LOW5_bedrock_prefixed_ids_resolve(self):
+        a = "us.anthropic.claude-opus-4-1-20250805"
+        assert km.tier_token_of(a) == "opus"
+        assert km.family_of(a) == "anthropic"
+        assert km.advisor_rung_of("auto", a) == "fable"
+
+    def test_LOW5_vertex_at_sign_ids_resolve(self):
+        assert km.tier_token_of("claude-3-5-sonnet@20240620") == "sonnet"
+
+    def test_LOW5_case_and_whitespace_are_normalized(self):
+        for a in ("CLAUDE-OPUS-5", "  claude-opus-5  ", "Claude-Opus-5"):
+            assert km.tier_token_of(a) == "opus", a
+
+    def test_LOW5_prefix_stripping_cannot_invent_a_rung(self):
+        """Widening recognition must never resolve an id to the WRONG rung."""
+        for a in ("us.anthropic.claude-quartet-2", "anthropic.gpt-5", "us.anthropic.foo"):
+            assert km.tier_token_of(a) is None, a
+
+    # -- BC floor re-proven after the widening -------------------------------
+    def test_BC_floor_survives_the_prefix_widening(self):
+        for a in ("session", "", "gpt-5", "llama-3", "whatever"):
+            km.validate_anchor(a)
+            assert km.tier_token_of(a) is None, a
+        assert km._normalize_anchor("session") == "session"
+        assert km.family_of("session") is None

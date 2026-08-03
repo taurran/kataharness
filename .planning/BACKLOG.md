@@ -2,6 +2,19 @@
 
 Promote to ROADMAP milestones when ready.
 
+> **★★ 2026-07-25 — MERGE-BACK INGEST ITEMIZED: see `.planning/MERGEBACK-INGEST.md`.**
+> The MindBridge-fork merge-back (`kataharness-mergeback-v0.2.1`, producer @ `75108b7`) has landed and
+> is fully itemized: **8 merge candidates → tasks T-01..T-08**, plus T-00 (clean-room blocker), T-09
+> (records correction), T-10 (ingest defect-carry). **16 new backlog items BL-M01..BL-M16** derived
+> from their 26-item forward backlog, the 5 divergence flags, and our own review findings.
+> That file also carries the **coverage matrix** (every arriving artifact ⇒ where it is tracked, no
+> blank rows) and the **Part D verification checklist** for the 14 subsystems their alignment report
+> calls "already aligned" — because an alignment claim is not evidence our side works.
+> **Probed already:** learning-loop emit ✅ FIRED (269 pages) · learning-loop *loop* ⚠️ unverified ·
+> advisor ✅ wired/UNFIRED · **M4 inline evaluator ❌ has NEVER fired here (0 machine-JSON verdicts in
+> all history)** · `STANDARDS.md:112` bump-on-modify guarantee ❌ FALSE in our tree.
+> **Nothing is ingested. Every MC awaits its own grill + work-linkage adval (§6).**
+
 > **★★ 2026-07-20 — NEXT INITIATIVE (operator-directed, intake brief WRITTEN, build NOT started):
 > QUOTA-RESILIENCE — per-provider rate-limit / token-exhaustion graceful stop + resume.**
 > Full grounded brief: **`.planning/specs/quota-resilience/REQUIREMENT.md`** (pre-grill; every
