@@ -5,7 +5,7 @@ description: >-
   → frozen INTENT.md) → HARNESS (kata-orchestrate + the built loop) → CLOSEOUT (kata-closeout +
   kata-understand) — and owns the context-carrying loop-back that re-enters initiation on version-up.
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: coordinate
 status: beta
 agnostic: true
@@ -70,7 +70,7 @@ Then hand the frozen `INTENT.md` + `kata.config` (written by `kata-bootstrap` du
 [[kata-orchestrate]]. The orchestrator drives the full built loop:
 
 ```
-grill → freeze → execute (distributed, plan-faithful)
+grill → freeze (design-author → plan-author dispatch, DESIGN §4.2, KH-T13) → execute (distributed, plan-faithful)
   → evaluate (default-FAIL) → handoff (two-way)
 ```
 

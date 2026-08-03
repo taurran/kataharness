@@ -102,7 +102,8 @@ TestEmitScorecard:
     test_emit_guard_rejects_traversal
 
 TestExecSafety:
-    test_no_subprocess_import
+    test_no_subprocess_import                  (frozen invariant — exec-safety.md)
+    test_no_subprocess_calls_via_ast           (AST-based companion to the above)
     test_no_eval
     test_no_exec
     test_no_shell_true
@@ -130,6 +131,7 @@ TestDurableF2PProof (@pytest.mark.integration):
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import sys
@@ -151,6 +153,16 @@ if str(_TOOLS) not in sys.path:
 
 import benchmark as bm  # noqa: E402
 
+# Captured BEFORE the autouse _default_matching_identity fixture ever patches
+# bm.resolve_head_sha — tests that exercise the REAL git sink call this
+# reference directly rather than the (per-test-patched) bm.resolve_head_sha
+# attribute. resolve_head_sha itself lives in run_result.py (an
+# ALREADY-registered subprocess sink) — benchmark.py imports it via
+# `from run_result import resolve_head_sha`, so `bm.resolve_head_sha` is the
+# name bound in benchmark's OWN namespace that score_arms actually calls;
+# patching `run_result.resolve_head_sha` after this import would NOT affect it.
+_REAL_RESOLVE_HEAD_SHA = bm.resolve_head_sha
+
 # ---------------------------------------------------------------------------
 # Test-fixture helpers
 # ---------------------------------------------------------------------------
@@ -167,10 +179,24 @@ def _write(path: Path, data: dict) -> None:
     path.write_text(json.dumps(data), encoding="utf-8")
 
 
-def _result(exit_code: int = 0, failed: int = 0, passed: int = 5) -> dict:
+# The identity gate (D136 stale-evidence closure) requires RESULT.json's
+# resultSha to match the arm's LIVE HEAD (score_arms resolves it fresh via
+# run_result.resolve_head_sha — benchmark.py itself spawns no subprocess).
+# Pure-artifact tests in this file build synthetic RESULT.json fixtures under
+# tmp_path — not real git repos — so a real git call there would legitimately
+# fail to resolve. Rather
+# than converting ~90 call sites into real git repos, _MATCH_SHA is the single
+# matching SHA that both _result()'s default resultSha AND the autouse
+# `_default_matching_identity` fixture below agree on, so every pre-existing
+# test's synthetic evidence reads as current without per-test changes. Tests
+# that specifically exercise the identity gate override the fixture locally.
+_MATCH_SHA = "cafefeed"
+
+
+def _result(exit_code: int = 0, failed: int = 0, passed: int = 5, result_sha: str = _MATCH_SHA) -> dict:
     return {"exitCode": exit_code, "failed": failed, "passed": passed,
             "gateName": "smoke", "command": "pytest", "skipped": 0,
-            "stdoutTail": "", "baselineSha": "abc", "resultSha": "def",
+            "stdoutTail": "", "baselineSha": "abc", "resultSha": result_sha,
             "utc": "2026-06-28T00:00:00+00:00"}
 
 
@@ -230,6 +256,34 @@ def _arm_by_label(scorecard: dict, label: str) -> dict:
 
 # Minimal f2p/p2p results that make gate_evaluated=True → Q > 0
 _GATE_PASS = {"f2p": {"t1": True}, "p2p": {}}
+
+
+@pytest.fixture(autouse=True)
+def _default_matching_identity(monkeypatch):
+    """Autouse: resolve every arm's "live HEAD" to _MATCH_SHA by default.
+
+    score_arms now fail-closes the floor when an arm's live HEAD (resolved via
+    ``run_result.resolve_head_sha``, imported into benchmark.py's own
+    namespace as ``bm.resolve_head_sha``) doesn't match its RESULT.json
+    ``resultSha`` — the identity gate (D136). This file's fixtures build
+    synthetic RESULT.json artifacts under tmp_path, which are NOT real git
+    repos, so an unpatched ``resolve_head_sha`` would legitimately resolve to
+    None (resolution failure) for every one of them, fail-closing every
+    pre-existing floor-pass assertion. This fixture supplies the SAME
+    ``_MATCH_SHA`` that ``_result()``'s default ``resultSha`` carries, so
+    existing tests read as current without converting every call site into a
+    real git repo. Tests that specifically exercise the identity gate
+    (mismatched SHA, unresolved HEAD) override this per-test via monkeypatch.
+
+    Patches ``bm.resolve_head_sha`` (the name bound in benchmark.py's own
+    namespace by ``from run_result import resolve_head_sha``), NOT
+    ``run_result.resolve_head_sha`` — a `from X import Y` binding is a
+    separate reference in the importing module's namespace, so patching the
+    origin module's attribute after that import would not affect what
+    ``score_arms`` actually calls.
+    """
+    import benchmark as bm_module
+    monkeypatch.setattr(bm_module, "resolve_head_sha", lambda root: _MATCH_SHA)
 
 
 # ---------------------------------------------------------------------------
@@ -380,6 +434,106 @@ class TestFloorPartialResult:
         arm = _arm_by_label(sc, "arm-a")
         assert arm["floor_passed"] is False
         assert arm["q"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# TestIdentityGate — evidence freshness wired into the benchmark floor (D136)
+# ---------------------------------------------------------------------------
+
+
+class TestIdentityGate:
+    """Stale/mismatched/unresolved evidence identity floor-FAILS the arm,
+    exactly like exitCode!=0 — wired via run_result.evidence_is_current into
+    score_arms' per-arm floor. The resolver itself (run_result.resolve_head_sha)
+    is an ALREADY-registered subprocess sink living in run_result.py;
+    benchmark.py calls it via its own `bm.resolve_head_sha` import binding
+    (see _REAL_RESOLVE_HEAD_SHA above) and spawns no subprocess itself. A
+    resolution failure fail-closes; it is never skipped."""
+
+    def test_live_scenario_stale_result_sha_fails_floor(self, tmp_path, monkeypatch):
+        """The live-repo scenario: exitCode=0, failed=0, but resultSha differs
+        from the arm's actual live HEAD → floor does NOT pass (Q=0), even
+        though the suite itself is green."""
+        root = _make_arm(
+            tmp_path, "arm-a",
+            result=_result(exit_code=0, failed=0, result_sha="159fc9b"),
+        )
+        monkeypatch.setattr(bm, "resolve_head_sha", lambda r: "a" * 40)
+        sc = bm.score_arms({"arm-a": root}, f2p_p2p_results={"arm-a": _GATE_PASS})
+        arm = _arm_by_label(sc, "arm-a")
+        assert arm["floor_passed"] is False, (
+            "stale resultSha (159fc9b) vs live HEAD (aaaa...) must floor-FAIL "
+            "even though exitCode==0 and failed==0"
+        )
+        assert arm["q"] == 0.0
+        assert arm["floor_verdict"] == "FAIL"
+        assert arm["detail"]["identity_reason"] == "stale-evidence"
+
+    def test_matching_sha_still_passes_floor_no_false_positive(self, tmp_path, monkeypatch):
+        """Matching SHAs with a passing suite still pass the floor — the
+        identity gate introduces no false positive on the happy path."""
+        root = _make_arm(
+            tmp_path, "arm-a",
+            result=_result(exit_code=0, failed=0, result_sha="abc1234"),
+        )
+        monkeypatch.setattr(bm, "resolve_head_sha", lambda r: "abc1234")
+        sc = bm.score_arms({"arm-a": root}, f2p_p2p_results={"arm-a": _GATE_PASS})
+        arm = _arm_by_label(sc, "arm-a")
+        assert arm["floor_passed"] is True
+        assert arm["floor_verdict"] == "PASS"
+        assert arm["detail"]["identity_reason"] == ""
+
+    def test_short_vs_long_sha_forms_match_in_score_arms(self, tmp_path, monkeypatch):
+        """A 7-char resultSha and the SAME commit's 40-char live HEAD match —
+        git's short/long form mismatch is tolerated end-to-end."""
+        root = _make_arm(
+            tmp_path, "arm-a",
+            result=_result(exit_code=0, failed=0, result_sha="abc1234"),
+        )
+        monkeypatch.setattr(bm, "resolve_head_sha", lambda r: "abc1234def" + "0" * 30)
+        sc = bm.score_arms({"arm-a": root}, f2p_p2p_results={"arm-a": _GATE_PASS})
+        arm = _arm_by_label(sc, "arm-a")
+        assert arm["floor_passed"] is True
+
+    def test_head_resolution_failure_fails_closed_not_skipped(self, tmp_path, monkeypatch):
+        """resolve_head_sha resolution failure (not a repo, git absent,
+        timeout) returns None → floor-FAILS via 'unknown-expected-sha'; the
+        check is NEVER skipped just because the SHA couldn't be resolved."""
+        root = _make_arm(
+            tmp_path, "arm-a",
+            result=_result(exit_code=0, failed=0, result_sha="abc1234"),
+        )
+        monkeypatch.setattr(bm, "resolve_head_sha", lambda r: None)
+        sc = bm.score_arms({"arm-a": root}, f2p_p2p_results={"arm-a": _GATE_PASS})
+        arm = _arm_by_label(sc, "arm-a")
+        assert arm["floor_passed"] is False
+        assert arm["detail"]["identity_reason"] == "unknown-expected-sha"
+
+    def test_resolve_head_sha_resolves_via_git_rev_parse(self, tmp_path):
+        """resolve_head_sha runs `git rev-parse HEAD` against the given root
+        and returns the SAME SHA `git rev-parse HEAD` reports for THIS repo
+        when pointed at it — proves the sink is wired to real git, not a stub.
+
+        Uses _REAL_RESOLVE_HEAD_SHA (captured at import time, before the
+        autouse _default_matching_identity fixture patches
+        bm.resolve_head_sha) so this test exercises the real subprocess sink
+        (which lives in run_result.py), not the test-suite's stub.
+        """
+        import subprocess as _subprocess
+        real = _subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(_TOOLS.parent), capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        resolved = _REAL_RESOLVE_HEAD_SHA(_TOOLS.parent)
+        assert resolved == real
+
+    def test_resolve_head_sha_returns_none_for_non_git_directory(self, tmp_path):
+        """resolve_head_sha returns None (never raises) for a directory that
+        is not inside a git repository. Uses _REAL_RESOLVE_HEAD_SHA (see
+        above) to bypass the autouse identity-fixture's stub."""
+        non_repo = tmp_path / "not-a-repo"
+        non_repo.mkdir()
+        assert _REAL_RESOLVE_HEAD_SHA(non_repo) is None
 
 
 # ---------------------------------------------------------------------------
@@ -1307,7 +1461,17 @@ class TestEmitScorecard:
 
 
 class TestExecSafety:
-    """benchmark.py is pure (A): zero new exec sink, no subprocess import."""
+    """benchmark.py is pure (A): zero new exec sink, no subprocess import.
+
+    This is a FROZEN invariant (see test_no_subprocess_import's own failure
+    message). benchmark.py was deliberately never made a spawn site — it
+    delegates exec to mutation_check.run_named_test (exec-safety.md:59), and
+    the identity gate (D136) resolves each arm's live HEAD via
+    run_result.resolve_head_sha — an ALREADY-registered sink in run_result.py
+    (exec-safety.md) — rather than spawning a subprocess of its own. That
+    keeps the spawn surface consolidated in audited modules instead of
+    growing a second one here.
+    """
 
     def _source(self) -> str:
         return (_TOOLS / "benchmark.py").read_text(encoding="utf-8")
@@ -1323,6 +1487,27 @@ class TestExecSafety:
         assert not hits, (
             f"subprocess import found in benchmark.py: {hits} — "
             "zero new exec sink is a frozen invariant (exec-safety.md)"
+        )
+
+    def test_no_subprocess_calls_via_ast(self):
+        """AST-based companion to test_no_subprocess_import: benchmark.py must
+        contain no ``subprocess.<sink>(...)`` call anywhere, not just no
+        top-level import — catches evasions like a deferred/aliased import
+        that the regex-based check above wouldn't."""
+        tree = ast.parse(self._source())
+        offenders = [
+            node.func.attr
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in {"run", "Popen", "call", "check_output", "check_call"}
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "subprocess"
+        ]
+        assert not offenders, (
+            f"subprocess.<sink>() call found in benchmark.py: {offenders} — "
+            "zero new exec sink is a frozen invariant (exec-safety.md); the "
+            "identity gate must call run_result.resolve_head_sha instead"
         )
 
     def test_no_eval(self):
@@ -1640,7 +1825,11 @@ class TestRunDualGateCwd:
         kata = clone / ".kata"
         kata.mkdir()
         (kata / "RESULT.json").write_text(
-            json.dumps({"exitCode": 0, "failed": 0, "passed": 2}), encoding="utf-8"
+            # resultSha=_MATCH_SHA: the identity gate (D136) requires this to match
+            # the arm's live HEAD; the autouse _default_matching_identity fixture
+            # patches that resolution to _MATCH_SHA for this synthetic (non-git) clone.
+            json.dumps({"exitCode": 0, "failed": 0, "passed": 2, "resultSha": _MATCH_SHA}),
+            encoding="utf-8",
         )
         (kata / "mutation.json").write_text(
             json.dumps({"allNonVacuous": True, "records": []}), encoding="utf-8"
@@ -2209,7 +2398,11 @@ class TestDurableF2PProof:
         kata = clone / ".kata"
         kata.mkdir()
         (kata / "RESULT.json").write_text(
-            json.dumps({"exitCode": 0, "failed": 0, "passed": 2}), encoding="utf-8"
+            # resultSha=_MATCH_SHA: the identity gate (D136) requires this to match
+            # the arm's live HEAD; the autouse _default_matching_identity fixture
+            # patches that resolution to _MATCH_SHA for this synthetic (non-git) clone.
+            json.dumps({"exitCode": 0, "failed": 0, "passed": 2, "resultSha": _MATCH_SHA}),
+            encoding="utf-8",
         )
         (kata / "mutation.json").write_text(
             json.dumps({"allNonVacuous": True, "records": []}), encoding="utf-8"

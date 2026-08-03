@@ -30,6 +30,12 @@ LD12 honesty integrity (engine-pinned, mutation-covered)
   before/after Snyk verdicts that Slice W persists to ``.kata/snyk/<id>.json``
   (RESULT.json carries no Snyk field).  A fix with no obtainable before-scan is
   rolled up ``available: false`` — never as "clean".
+* Evidence freshness (D136).  ``build_proof_rollup`` gates ``suite_green`` on
+  ``run_result.evidence_is_current`` — a RESULT.json produced against a
+  stale/different commit than the one being credited is rolled up honestly as
+  NOT green (``identity_reason`` carries why), mirroring the Snyk
+  ``available: false`` precedent exactly: never silently "clean"/"green" on
+  evidence that cannot be verified current.
 
 Security posture
 ----------------
@@ -59,6 +65,7 @@ from pathlib import Path
 
 import deviation
 from fs_atomic import atomic_write_text
+from run_result import evidence_is_current
 
 # ---------------------------------------------------------------------------
 # LD5 low_cap — single source of truth is deviation.DEFAULT_THRESHOLDS
@@ -572,21 +579,38 @@ def build_proof_rollup(
     result_json: dict,
     mutation_json: dict,
     snyk_reports: list[dict] | None,
+    expected_sha: str | None = None,
 ) -> dict:
     """Roll up the LD12 regression + security proof.
 
     Composes: drift PASS/BLOCK counts; suite-green from ``RESULT.json``
-    (exit code 0 and no failures); ``allNonVacuous`` from ``mutation.json``; and
-    the REAL Snyk before/after verdicts + ``newFindings`` from
-    ``.kata/snyk/*.json`` (NOT a RESULT.json Snyk field — RESULT.json carries
-    none).  An ``available:false`` Snyk artifact is rolled up honestly as
-    unavailable, never as "clean".  Carries the behavioral-only limitation flag.
+    (exit code 0, no failures, AND current evidence — see below);
+    ``allNonVacuous`` from ``mutation.json``; and the REAL Snyk before/after
+    verdicts + ``newFindings`` from ``.kata/snyk/*.json`` (NOT a RESULT.json
+    Snyk field — RESULT.json carries none).  An ``available:false`` Snyk
+    artifact is rolled up honestly as unavailable, never as "clean".  Carries
+    the behavioral-only limitation flag.
+
+    Evidence freshness (D136).  ``suite_green`` additionally requires
+    ``run_result.evidence_is_current(result_json, expected_sha)`` — a
+    RESULT.json produced against a stale/different commit than the one being
+    credited is rolled up honestly as NOT green, exactly like the Snyk
+    ``available:false`` path is rolled up honestly as unavailable, never as
+    "clean": this rollup never claims a suite is green on evidence it cannot
+    verify is current. The reason is carried in ``identity_reason`` (empty
+    string when identity holds). *expected_sha* is caller-supplied (this
+    engine is PURE — no subprocess, no git call of its own); omitting it
+    (None, the default) fails closed — ``suite_green`` is False with
+    ``identity_reason: "unknown-expected-sha"`` — never a silent pass.
 
     Args:
         drift_reports: ``.kata/drift/<id>.json`` dicts.
         result_json:   The parsed ``RESULT.json`` (``run_result.build_result``).
         mutation_json: The parsed ``mutation.json`` (``gate_emit`` payload).
         snyk_reports:  ``.kata/snyk/<id>.json`` dicts (Slice W; this engine's shape).
+        expected_sha:  The SHA of the tree actually being credited (resolved
+                       by the caller — this engine performs no git call of its
+                       own). None/absent fails closed (D136).
 
     Returns:
         The proof rollup dict.
@@ -602,7 +626,10 @@ def build_proof_rollup(
             drift_block += 1
 
     result = result_json or {}
-    suite_green = result.get("exitCode") == 0 and result.get("failed", 0) == 0
+    identity_ok, identity_reason = evidence_is_current(result_json, expected_sha)
+    suite_green = (
+        identity_ok and result.get("exitCode") == 0 and result.get("failed", 0) == 0
+    )
 
     mutation = mutation_json or {}
     all_non_vacuous = bool(mutation.get("allNonVacuous"))
@@ -614,6 +641,7 @@ def build_proof_rollup(
             "total": drift_pass + drift_block,
         },
         "suite_green": suite_green,
+        "identity_reason": identity_reason,  # additive (identity gate, D136); "" when current
         "allNonVacuous": all_non_vacuous,
         "snyk": _snyk_rollup(snyk_reports),
         "behavioral_only": False,

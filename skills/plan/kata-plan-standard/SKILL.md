@@ -4,7 +4,7 @@ description: >-
   Full vertical-slice plan with disjoint ownership, wave DAG, threat model, phase verification, and SUMMARY.
   The default for any non-trivial build — today's kata-plan at its original depth.
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: plan
 status: beta
 agnostic: true
@@ -28,6 +28,19 @@ decomposition, disjoint file-ownership, the wave/DAG structure, per-task shape, 
 sets ONLY the depth. When `delivery.shape == "incremental"`, run the **roadmap layer**
 ([`../kata-plan/ROADMAP.md`](../kata-plan/ROADMAP.md)) first, then apply this depth to the active sprint only.
 
+## Precondition — `DESIGN.md` is frozen
+
+**Dispatched as `plan-author` (DESIGN §4.2, dispatch-authoring spec, KH-T13).** Once `DESIGN.md` is frozen,
+the conductor session dispatches this skill as role `plan-author` (`kata_dispatch.build_brief`/`dispatch`,
+`tools/kata_dispatch.py:42`/`:199`) — `sandbox="write"`, in its own [[kata-worktree]] worktree — instead of
+running it in the conductor's own context (`protocol/orchestration.md`: the conductor gates, it does not
+author under its own gate). The conductor applies `protocol/authored-artifact-gate.md`'s six-row rubric
+(KH-B42) to the returned `PLAN.md` before writing it into the main tree. If a genuinely unresolved
+plan-level question surfaces (not a scoped advisor question — see the escalation section below), this skill
+has no `AskUserQuestion` channel and so does not decide it here: it raises the **existing** `human-required`
+escalation (`protocol/escalation.md`) and the task parks; the conductor routes it back to a human decision on
+the worker's behalf.
+
 ## Depth contract (Standard)
 
 Run the **full method** as defined in the RUBRIC:
@@ -43,6 +56,16 @@ Run the **full method** as defined in the RUBRIC:
 - Write a per-plan **SUMMARY** on completion.
 
 This is today's `kata-plan` at its original depth — the default for production-quality planning.
+
+## Output
+
+**Two-part output contract when dispatched as `plan-author`:** (1) write the `PLAN.md` file to the brief's
+one `owned_files` path; (2) emit, as your FINAL message, the completion JSON
+`{ "planPath": <path>, "verdict": "ready"|"needs-rework", "deviations": [<str>, ...] }` — the shape
+`tools/kata_dispatch.py`'s `normalize()` validates (DESIGN §4.3). `verdict` is your own self-assessment; it
+is never a substitute for the conductor actually reading the file (`protocol/authored-artifact-gate.md` row
+2). `deviations` names any place you extrapolated beyond, or found ambiguous in, the cited DESIGN — every
+entry is independently checked against the DESIGN by the conductor, never accepted at face value (row 5).
 
 ## Advice-request escalation (advisor-executor, S-17a — ADVANCED + granted ONLY; runtime-gated)
 When dispatched in-harness as a planner-worker, on a **genuinely hard planning question** you MAY request a

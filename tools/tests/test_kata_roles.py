@@ -67,6 +67,40 @@ def test_host_only_roles_allowed_on_host():
 
 
 # ---------------------------------------------------------------------------
+# dispatch-authoring: design-author / plan-author (DESIGN §4.1, T1)
+# ---------------------------------------------------------------------------
+
+def test_role_groups_includes_dispatch_authoring_roles():
+    """ROLE_GROUPS gains exactly the two new roles — additive, closed-enum (DESIGN §6)."""
+    assert kr.ROLE_GROUPS == frozenset({
+        "coder", "validator", "researcher", "orchestrator", "evaluator",
+        "design-author", "plan-author",
+    })
+
+
+def test_dispatch_authoring_roles_not_host_only():
+    """Neither new role is in HOST_ONLY_ROLES (DESIGN §4.1) — they may route off-host."""
+    assert "design-author" not in kr.HOST_ONLY_ROLES
+    assert "plan-author" not in kr.HOST_ONLY_ROLES
+
+
+def test_design_author_resolves_to_confirmed_platform():
+    resolved = kr.resolve_roles({"design-author": {"platform": "codex"}}, ["codex"])
+    assert resolved["design-author"]["platform"] == "codex"
+
+
+def test_design_author_unconfirmed_platform_rejected():
+    """Same fail-closed confirm check as every other role — no special-casing bypasses it."""
+    with pytest.raises(ValueError, match="not confirmed"):
+        kr.resolve_roles({"design-author": {"platform": "codex"}}, confirmed_platforms=[])
+
+
+def test_plan_author_resolves_to_confirmed_platform():
+    resolved = kr.resolve_roles({"plan-author": {"platform": "codex"}}, ["codex"])
+    assert resolved["plan-author"]["platform"] == "codex"
+
+
+# ---------------------------------------------------------------------------
 # PART 1: relative model tokens (DESIGN D59)
 # ---------------------------------------------------------------------------
 import kata_models as km  # noqa: E402 — imported after the existing tests for grouping clarity

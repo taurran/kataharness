@@ -40,6 +40,8 @@ build_deviation_table:
 build_proof_rollup:
     TestProofRollup::test_drift_counts
     TestProofRollup::test_suite_green
+    TestProofRollup::test_suite_green_false_when_evidence_stale       (D136 identity gate)
+    TestProofRollup::test_suite_green_false_when_expected_sha_not_supplied  (D136 fail-closed default)
     TestProofRollup::test_all_non_vacuous
     TestProofRollup::test_snyk_clean_zero_new_findings
     TestProofRollup::test_snyk_with_finding_counts
@@ -410,12 +412,18 @@ class TestDeviationTable:
 
 
 class TestProofRollup:
-    def _rollup(self, snyk_reports=None) -> dict:
+    # _result_json() (fixtures/debug_report/RESULT.json) carries resultSha
+    # "bbbb222" — the identity gate (D136) requires the caller-supplied
+    # expected_sha to match it for suite_green to be eligible True. Default to
+    # that same matching SHA so tests unrelated to the identity gate (drift
+    # counts, Snyk rollup, allNonVacuous, ...) see the "evidence is current"
+    # happy path, exactly like before this gate existed.
+    def _rollup(self, snyk_reports=None, expected_sha="bbbb222") -> dict:
         import debug_report as dr
         if snyk_reports is None:
             snyk_reports = [_snyk_clean(), _snyk_withfinding()]
         return dr.build_proof_rollup(
-            _drift_reports(), _result_json(), _mutation_json(), snyk_reports
+            _drift_reports(), _result_json(), _mutation_json(), snyk_reports, expected_sha
         )
 
     def test_drift_counts(self):
@@ -426,6 +434,32 @@ class TestProofRollup:
     def test_suite_green(self):
         rollup = self._rollup()
         assert rollup["suite_green"] is True
+        assert rollup["identity_reason"] == ""
+
+    def test_suite_green_false_when_evidence_stale(self):
+        """D136 / mirrors the Snyk available:false precedent: a RESULT.json
+        produced against a DIFFERENT commit than the one being credited rolls
+        up suite_green=False (honestly not-green), never silently green, with
+        the reason carried in identity_reason."""
+        rollup = self._rollup(expected_sha="ffffffff0000000000000000000000000000ff")
+        assert rollup["suite_green"] is False, (
+            "stale resultSha (bbbb222) vs a different expected_sha must roll up "
+            "suite_green=False, mirroring the Snyk available:false 'honestly "
+            "unavailable, never clean' precedent"
+        )
+        assert rollup["identity_reason"] == "stale-evidence"
+
+    def test_suite_green_false_when_expected_sha_not_supplied(self):
+        """D136 fail-closed default: omitting expected_sha must NOT silently
+        roll up suite_green=True — the caller could not establish what SHA is
+        being credited, so the rollup can't claim the evidence is current."""
+        import debug_report as dr
+        rollup = dr.build_proof_rollup(
+            _drift_reports(), _result_json(), _mutation_json(),
+            [_snyk_clean(), _snyk_withfinding()],
+        )
+        assert rollup["suite_green"] is False
+        assert rollup["identity_reason"] == "unknown-expected-sha"
 
     def test_all_non_vacuous(self):
         rollup = self._rollup()
