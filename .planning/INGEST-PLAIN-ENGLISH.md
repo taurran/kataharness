@@ -46,19 +46,37 @@ Your GitHub personal access token is sitting in plain text in `~/.claude/setting
 anything, and handed to every program this tool starts. It's **not** in git, so nothing leaked. But
 it should be rotated and moved somewhere protected.
 
-**7. Ask them for the note they forgot to send.** `[T-00]` — DECISION
+**7. Ask them for the note they forgot to send.** `[T-00]` — ✅ **CLOSED 2026-08-02, accepted as withdrawn**
 Their own paperwork says they held back two things as "too risky to send" and would explain both.
-Only one explanation arrived. We should ask for the other — not because we want the code, but because
-we can't see what they decided to withhold or why.
+Only one explanation arrived. We were going to ask for the other — not because we wanted the code, but
+because we couldn't see what they'd decided to withhold or why. **We're no longer working with them, so
+we're not chasing it.** No code was ever sent for it, so nothing is missing from our side. `[D170]`
 
 **8. Fix our own notes: MindBridge is not a branch of us.** `[T-09]` — FIX
 Our records call it "a fork of KataHarness." It isn't. It's a hand-rebuilt copy with **no shared
 history at all** — you cannot merge, rebase, or diff against a common ancestor. That's a genuinely
 different risk picture than a branch, and our docs describe the wrong one.
 
-**9. Decide: do we care that bugs can travel backwards?** `[T-10]` — DECISION
-When we send code *to* them, we can send bugs we've already fixed here. That's how they ended up with
-five defects we'd closed. Same risk applies in reverse. Work on it now, or park it?
+**9. Do we care that bugs can travel backwards?** `[T-10]` — ✅ **CLOSED unbuilt 2026-08-02**
+
+The two projects share no history at all — MindBridge is a hand-rebuilt copy, not a branch of us. So
+code never moved between us by merging; it moved by **someone copying files across**. A copy captures
+whatever version existed the day it was taken, which means **any fix made afterwards never follows** —
+there's no merge to carry it. That's exactly how they ended up running five bugs we'd already fixed.
+The question was whether to build something that checks, whenever code crosses between the two
+projects in either direction, that already-fixed bugs aren't riding along.
+
+**Decision: closed without building it.** We're not exchanging code with them anymore, so there's no
+longer a route for this to happen. A guard on a road nobody drives protects nothing.
+
+**What we're keeping, because it has nothing to do with MindBridge:** *copied code silently loses the
+fixes made after the copy.* That's true of **any** hand-copy without a shared history — so it comes
+back the first time we vendor or port code from anywhere. That's the trigger to re-open on, not this
+item. `[D170]`
+
+*Worth noting why this took three sessions: nobody ever wrote down what `T-10` meant, so each session
+inherited a code with no content and passed it on. Closing it with the reasoning written down is the
+fix; quietly deleting it would have repeated the mistake.*
 
 ---
 
