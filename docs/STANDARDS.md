@@ -109,7 +109,15 @@ D33). Core repo skills never carry these fields.
   **Bump-on-modify is now mandatory** for all skill modifications going forward: PATCH = fix/wording,
   MINOR = new capability, MAJOR = breaking contract change or new phase. New skills still enter at `0.1.0`.
   Every modification to an existing skill MUST increment the appropriate version component before merge.
-  The frontmatter `version` field is REQUIRED and validator-enforced. *(History: from 2026-06-08 to
+  The frontmatter `version` field is REQUIRED and validator-enforced — `tools/validate_skills.py`'s
+  `bump-on-modify` check compares each `SKILL.md` against its content at the branch's fork point from the
+  base branch (`origin/master` → `master` → `origin/HEAD`) and ERRORs when the file changed and `version`
+  did not increase. The enforced scope is exactly that, and no wider: **`SKILL.md` only** — editing a
+  companion `RUBRIC.md`, `ROADMAP.md`, or ledger obliges nobody to bump — and **committed work only**, so
+  an uncommitted edit does not trip it (this is a pre-merge gate, not a save-time linter). Any textual
+  difference counts, including whitespace; any *increase* satisfies it, and which component was the right
+  one stays human-judged at review. Where no baseline resolves (a source tarball, a shallow checkout) the
+  check emits a visible `WARN` skip — it never fails and never stays silent. *(History: from 2026-06-08 to
   2026-06-30 all skills were HELD at `0.1.0` — a pre-release hold policy where the suite version was the
   only meaningful signal and per-skill churn below a first release had no consumer. That hold is now
   lifted.)*

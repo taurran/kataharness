@@ -25,6 +25,15 @@ jobs:
         working-directory: tools
     steps:
       - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 is load-bearing, not hygiene (BOM-7). The default is a
+          # shallow depth-1 clone with no base ref, under which validate_skills.py's
+          # bump-on-modify check can never fire: on `push` the merge-base is HEAD
+          # itself (no-op), and on `pull_request` there is no origin/master to
+          # resolve (announced skip). A full fetch is what makes STANDARDS §3's
+          # "validator-enforced ... before merge" claim true in automation instead
+          # of decorative.
+          fetch-depth: 0
       - name: Install uv
         uses: astral-sh/setup-uv@v5
       - name: Lint (ruff)

@@ -4,6 +4,12 @@ Pure core functions (partition, is_within_footprint, manifest) do NOT call git.
 Thin git wrappers (changed_since, diff_stat, changed_in_task) are provided
 separately; changed_in_task and file_content_hashes are exercised by real-git /
 tmp-dir tests, while changed_since/diff_stat remain thin pass-throughs.
+
+A second, bytes-returning wrapper set (ref_exists, origin_head_ref,
+renames_in_task, blob_at_ref, all through the pinned `_pinned_git`) supplies the
+baseline reads the bump-on-modify check in validate_skills.py needs — kept here
+so the repo's git call sites stay concentrated in one pinned module rather than
+sprouting a fresh `subprocess` call in the validator.
 """
 
 from __future__ import annotations
@@ -270,6 +276,145 @@ def file_content_hashes(paths: list[str], repo_root: str = ".") -> dict[str, str
         except OSError:
             result[norm] = None
     return result
+
+
+# ---------------------------------------------------------------------------
+# Baseline reads — the git substrate for the bump-on-modify check (BOM-7/8/9)
+#
+# These return RAW BYTES on purpose.  ``subprocess.run(..., text=True)`` decodes
+# git stdout with the PROCESS LOCALE (cp1252 on a default Windows box — the
+# primary dev platform AND ``windows-latest`` in the CI matrix), so every
+# non-ASCII byte comes back mojibaked.  Every shipped ``SKILL.md`` contains
+# non-ASCII (``≤``, ``—``, ``⇒``, ``…``), so a locale-decoded baseline could
+# never equal the UTF-8 file on disk and the consumer would read as "everything
+# changed".  The caller decodes UTF-8 explicitly.
+# ---------------------------------------------------------------------------
+
+
+def _pinned_git(args: list[str]) -> subprocess.CompletedProcess[bytes]:
+    """Run one read-only git command with this module's pinned config (Doctrine law 1).
+
+    The pin set lives here once and is never re-derived per call site.
+    ``core.quotepath=off`` emits a non-ASCII path verbatim instead of
+    octal-quoted (DET-04), so a path git prints is directly comparable to a path
+    built from a filesystem walk.
+
+    ``check=False``: each caller decides its own policy for a non-zero exit
+    (a ref that does not exist, a path absent at that ref).  Nothing here falls
+    through to a permissive default — the policy lives at the call site.
+
+    Runs in the process CWD, like :func:`changed_since` / :func:`changed_in_task`.
+
+    Args:
+        args: git arguments after the pinned ``-c`` flags — never ``argv[0]``.
+
+    Returns:
+        The completed process, with ``stdout``/``stderr`` as raw ``bytes``.
+    """
+    return subprocess.run(
+        ["git", "-c", "core.quotepath=off", *args],
+        capture_output=True,
+        check=False,
+    )
+
+
+def ref_exists(ref: str) -> bool:
+    """Return True iff *ref* resolves to a commit in the repository at the CWD.
+
+    Args:
+        ref: Any git ref-ish (``origin/master``, ``refs/remotes/origin/HEAD``, a SHA).
+
+    Returns:
+        ``True`` when ``git rev-parse --verify`` resolves ``<ref>^{commit}``.
+    """
+    return _pinned_git(["rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"]).returncode == 0
+
+
+def origin_head_ref() -> str | None:
+    """Return the remote default-branch ref, or ``None`` when it is not set.
+
+    Reads ``refs/remotes/origin/HEAD`` — the symbolic ref ``git clone`` writes to
+    record the remote's default branch.  Used as the last base-ref candidate for
+    repositories whose trunk is not called ``master`` (BOM-7).
+
+    Returns:
+        e.g. ``"refs/remotes/origin/main"``, or ``None`` if unset/not a repo.
+    """
+    proc = _pinned_git(["symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"])
+    if proc.returncode != 0:
+        return None
+    return proc.stdout.decode("utf-8", "replace").strip() or None
+
+
+def renames_in_task(base_ref: str, task_ref: str = "HEAD") -> dict[str, str]:
+    """Return ``{new path: old path}`` for files RENAMED between the two refs.
+
+    :func:`changed_in_task` pins ``--no-renames`` deliberately (adval F5-1) so a
+    ``git mv`` stays visible as delete+add.  That is right for a lane check and
+    wrong for a "what did this file look like before?" lookup: a path-keyed
+    baseline read would find nothing at the new path and conclude the file is
+    NEW — letting a moved-and-rewritten file launder itself past a
+    changed-since-baseline rule (BOM-9).  This map closes that path.
+
+    ``-M`` is passed EXPLICITLY rather than inherited from the operator's
+    ``diff.renames`` config, so the map is config-independent (law 1).  The
+    three-dot form matches :func:`changed_in_task`, so both describe the same
+    fork-point comparison.
+
+    Fail-closed: a git error RAISES rather than returning an empty map — an
+    empty map is indistinguishable from "no renames" and would silently restore
+    the very bypass this function exists to close (D136).
+
+    Args:
+        base_ref: The ref the work will merge into.
+        task_ref: The branch/commit tip (default ``HEAD``).
+
+    Returns:
+        Mapping of forward-slash-normalized new path → old path.  Empty when the
+        diff genuinely contains no renames.
+
+    Raises:
+        subprocess.CalledProcessError: git exited non-zero.
+    """
+    proc = _pinned_git(["diff", "-M", "--name-status", f"{base_ref}...{task_ref}"])
+    if proc.returncode != 0:
+        raise subprocess.CalledProcessError(
+            proc.returncode,
+            ["git", "diff", "-M", "--name-status", f"{base_ref}...{task_ref}"],
+            proc.stdout,
+            proc.stderr,
+        )
+    mapping: dict[str, str] = {}
+    for line in proc.stdout.decode("utf-8", "replace").splitlines():
+        fields = line.split("\t")
+        # Rename rows are `R<similarity>\t<old>\t<new>`; every other status is 2 fields.
+        if len(fields) == 3 and fields[0].startswith("R"):
+            mapping[_normalize(fields[2])] = _normalize(fields[1])
+    return mapping
+
+
+def blob_at_ref(ref: str, path: str) -> bytes | None:
+    """Return the raw bytes of *path* as of *ref*, or ``None`` if absent there.
+
+    *path* is repo-root-relative POSIX — the form :func:`changed_in_task` emits.
+    ``<rev>:<path>`` resolves from the top of the tree (only a leading ``./``
+    makes it CWD-relative), so the read does not depend on the process CWD.
+
+    ``None`` means **absent at that ref**, which for the bump check is the one
+    exempt case: a genuinely new file with nothing to bump from (BOM-4).  It must
+    never be read as "unchanged".
+
+    Args:
+        ref: The baseline ref to read from.
+        path: Repo-root-relative POSIX path.
+
+    Returns:
+        The blob's bytes, or ``None`` when the path does not exist at *ref*.
+    """
+    proc = _pinned_git(["show", f"{ref}:{path}"])
+    if proc.returncode != 0:
+        return None
+    return proc.stdout
 
 
 def diff_stat(ref: str) -> str:

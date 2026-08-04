@@ -10,12 +10,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
+import subprocess
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
+
+import footprint
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
@@ -134,6 +137,227 @@ def check_cost_weight(skills: list[Skill]) -> list[Finding]:
         cw = s.frontmatter.get("cost-weight")
         if not isinstance(cw, int) or isinstance(cw, bool) or not (1 <= cw <= 5):
             out.append(Finding("ERROR", s.dir.name, f"cost-weight '{cw}' must be an int 1-5"))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# bump-on-modify (BOM-1 … BOM-12)
+#
+# docs/STANDARDS.md §3 says every modification to an existing skill MUST increment
+# its version before merge and that the `version` field is "validator-enforced".
+# Until this check landed, the enforcement was presence + FORMAT only (the SEMVER
+# match in check_frontmatter): a skill could be rewritten end-to-end while
+# `version: 0.1.0` stayed perfectly valid. That is the KH-T02 shape — a documented
+# invariant with nothing behind it — so the code is made true rather than the
+# sentence deleted (BOM-6).
+# ---------------------------------------------------------------------------
+
+BUMP_CHECK = "bump-on-modify"
+# BOM-7: `origin/master` FIRST — a contributor's local `master` can be months
+# stale, while `origin/master` is what the work actually merges into.
+BASE_REF_CANDIDATES = ("origin/master", "master")
+
+
+def _semver_tuple(version: str) -> tuple[int, int, int]:
+    """Parse a SEMVER-matched version string into a comparable integer tuple.
+
+    String comparison is wrong here, and quietly so: `"0.10.0" > "0.9.0"` is
+    **False** in Python, so a correct `0.9.0 → 0.10.0` MINOR bump would be
+    rejected as a decrease (BOM-8). Skills already sit at `0.2.x`/`0.4.x`, so
+    double-digit components are reachable, not hypothetical.
+
+    Args:
+        version: A version string already matched by ``SEMVER``.
+
+    Returns:
+        ``(major, minor, patch)`` as ints.
+
+    Raises:
+        ValueError: *version* is not three dot-separated integers.
+    """
+    parts = version.split(".")
+    if len(parts) != 3:
+        raise ValueError(f"not a three-part version: {version!r}")
+    major, minor, patch = (int(p) for p in parts)
+    return (major, minor, patch)
+
+
+def resolve_base_ref() -> str | None:
+    """Resolve the ref this branch will merge into, or ``None`` if there is none.
+
+    Order (BOM-7): ``origin/master`` → ``master`` → the remote default branch via
+    ``refs/remotes/origin/HEAD``.
+
+    ``None`` means no baseline is resolvable — the two real conditions being a
+    source zip/tarball with no ``.git`` at all, and a shallow CI checkout with no
+    base ref. The caller turns that into the announced WARN skip (BOM-5/BOM-10),
+    never a silent pass. ``OSError`` (git not installed) lands in the same bucket
+    for the same reason: there is no baseline to compare against.
+
+    Returns:
+        A ref name usable with ``git show <ref>:<path>``, or ``None``.
+    """
+    try:
+        for ref in BASE_REF_CANDIDATES:
+            if footprint.ref_exists(ref):
+                return ref
+        default = footprint.origin_head_ref()
+        if default and footprint.ref_exists(default):
+            return default
+    except OSError:
+        return None  # git absent from PATH ⇒ no baseline (BOM-5), not a crash
+    return None
+
+
+@check
+def check_bump_on_modify(skills: list[Skill]) -> list[Finding]:
+    """STANDARDS §3: a modified ``SKILL.md`` must ship a GREATER version (BOM-1…12).
+
+    Scope, stated exactly so it is not over-read:
+
+    * **SKILL.md only** (BOM-1). A shared ``RUBRIC.md``, a ``ROADMAP.md``, a
+      ledger, or a language note never obliges anyone to bump — the ``version``
+      field lives in ``SKILL.md`` and describes ``SKILL.md``. The known residual:
+      a RUBRIC edit really does change how its consumers behave and still needs
+      no bump.
+    * **COMMITTED work only** (BOM-7), because the comparison is a git diff —
+      identical to ``footprint.py``'s sibling lane check. An uncommitted
+      un-bumped edit passes; this is a pre-merge gate, not a save-time linter.
+      The *version* is read from the working tree (the value about to be
+      committed), so bumping fixes the finding immediately; in CI, where the
+      tree equals HEAD, the two coincide.
+    * **Against the fork point** from the base branch (BOM-2) — the three-dot
+      diff in ``footprint.changed_in_task``, so commits the base branch made
+      after this branch forked are not attributed to it. Comparing against the
+      previous commit instead would demand a bump on *every* commit, which
+      contradicts the repo's own commit-as-you-go convention.
+    * **Any textual difference counts** (BOM-12) — no "meaningful change"
+      heuristic. A whitespace-only edit does require a bump. Newline handling is
+      git's (``.gitattributes`` pins LF).
+    * **Any increase satisfies it** (BOM-3). Whether an edit deserved MAJOR vs
+      MINOR vs PATCH is a semantic judgment; a checker that guessed would emit
+      false HOLDs and train people to work around it. Review enforces that.
+
+    Returns:
+        One ``WARN`` when no baseline resolves; otherwise an ``ERROR`` per skill
+        whose ``SKILL.md`` changed without a strictly greater version.
+    """
+    base_ref = resolve_base_ref()
+    if base_ref is None:
+        # BOM-5/BOM-10: announced, never silent, never fatal. WARN prints to
+        # stderr with every other finding and does not affect the exit code
+        # (`1 if errors else 0`), so a tarball/shallow checkout stays usable
+        # while the operator can still SEE that the guard did not run.
+        return [Finding(
+            "WARN", BUMP_CHECK,
+            "no git baseline (no .git, no origin/master|master|origin/HEAD, or a shallow "
+            "checkout with no base ref) — check skipped: a modified SKILL.md will NOT be "
+            "caught in this run",
+        )]
+
+    try:
+        changed = set(footprint.changed_in_task(base_ref))
+        renamed_from = footprint.renames_in_task(base_ref)
+    except (ValueError, OSError, subprocess.CalledProcessError) as exc:
+        # Fail-closed (D136). `changed_in_task` RAISES on >1 merge-base
+        # (criss-cross topology) because the three-dot base would be ambiguous;
+        # ambiguous evidence must not drive a verdict, and must not crash the
+        # validator either — it becomes a visible ERROR.
+        return [Finding(
+            "ERROR", BUMP_CHECK,
+            f"could not read the baseline diff against {base_ref!r}: "
+            f"{exc.__class__.__name__}: {exc}",
+        )]
+
+    if not changed:
+        # Undiverged HEAD (merge-base == HEAD, e.g. sitting on master): the
+        # three-dot diff is empty, so there is nothing under review — no-op.
+        return []
+
+    out: list[Finding] = []
+    for s in skills:
+        try:
+            rel = Path(s.dir).resolve().relative_to(REPO_ROOT)
+        except ValueError:
+            # Skill root outside the repo — the fixture trees the tests
+            # monkeypatch to `tmp_path`. `relative_to` raises there; there is no
+            # baseline for a path git has never heard of, so skip it rather than
+            # crash every fixture test (BOM-11).
+            continue
+        path = (rel / "SKILL.md").as_posix()
+        if path not in changed:
+            continue
+
+        where = s.dir.name
+        renamed = renamed_from.get(path)
+        # BOM-9: `changed_in_task` pins `--no-renames`, so a `git mv` arrives as
+        # delete+add and a path-keyed lookup finds nothing at the new path —
+        # which BOM-4 would call NEW, and new is exempt. Since STANDARDS §2
+        # encodes the category in the path and §3's lifecycle mandates *moving*
+        # deprecated skills, a rename is a normal operation, so that bypass is a
+        # normal-operations-shaped hole. Two predecessor sources close it:
+        #   1. git's own rename detection (`-M`, explicit — never inherited from
+        #      the operator's `diff.renames`);
+        #   2. a same-skill-name fallback over the changed set, because `-M`'s
+        #      similarity threshold is exactly what a move-AND-rewrite defeats.
+        #      The skill's directory name is the identity the version describes
+        #      (check_frontmatter pins `name == dir`), so `.../<name>/SKILL.md`
+        #      at a different category IS the predecessor, with no similarity
+        #      judgment involved. Sorted for determinism (Doctrine law 2).
+        suffix = f"/{s.dir.name}/SKILL.md"
+        candidates = [path]
+        if renamed:
+            candidates.append(renamed)
+        candidates.extend(sorted(c for c in changed if c != path and c.endswith(suffix)))
+
+        baseline = None
+        for candidate in candidates:
+            baseline = footprint.blob_at_ref(base_ref, candidate)
+            if baseline is not None:
+                break
+        if baseline is None:
+            if renamed:
+                out.append(Finding(
+                    "ERROR", where,
+                    f"SKILL.md was renamed from '{renamed}' since {base_ref}, but that path "
+                    "could not be read at the baseline — the bump cannot be verified (D136)",
+                ))
+            # BOM-4: no predecessor anywhere ⇒ genuinely new ⇒ nothing to bump from.
+            continue
+
+        try:
+            base_fm, _ = parse_frontmatter(baseline.decode("utf-8"))
+        except (UnicodeDecodeError, yaml.YAMLError) as exc:
+            out.append(Finding(
+                "ERROR", where,
+                f"SKILL.md changed since {base_ref} but its baseline frontmatter could not be "
+                f"parsed ({exc.__class__.__name__}) — the bump cannot be verified (D136)",
+            ))
+            continue
+
+        base_version = str(base_fm.get("version", ""))
+        if not SEMVER.match(base_version):
+            shown = base_version or "(absent)"
+            out.append(Finding(
+                "ERROR", where,
+                f"SKILL.md changed since {base_ref} but the baseline version '{shown}' is not "
+                "semver — the bump cannot be verified, and an unreadable decision input is "
+                "never a permissive pass (D136)",
+            ))
+            continue
+
+        new_version = str(s.frontmatter.get("version", ""))
+        if not SEMVER.match(new_version):
+            # check_frontmatter already emits an ERROR for this skill, so the run
+            # is red either way; a second finding would only duplicate it.
+            continue
+
+        if _semver_tuple(new_version) <= _semver_tuple(base_version):
+            out.append(Finding(
+                "ERROR", where,
+                f"SKILL.md changed since {base_ref} but version did not increase "
+                f"({base_version} → {new_version}) — bump it before merge (docs/STANDARDS.md §3)",
+            ))
     return out
 
 
