@@ -484,3 +484,77 @@ def test_diff_stat_argv_pins_fixed_width(monkeypatch):
     assert "--stat-graph-width=200" in cmd
     # a bare --stat (width-varying) must NOT be present
     assert "--stat" not in cmd
+
+
+# ---------------------------------------------------------------------------
+# Baseline reads (BOM-7/8/9) — ref_exists / origin_head_ref / renames_in_task /
+# blob_at_ref.  Real git, real tmp repos: these feed a gate verdict, so a mocked
+# git would only prove the mock.
+# ---------------------------------------------------------------------------
+
+
+def _baseline_repo(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(["init"], repo)
+    _git(["symbolic-ref", "HEAD", "refs/heads/master"], repo)
+    _git(["config", "user.email", "t@t"], repo)
+    _git(["config", "user.name", "t"], repo)
+    _git(["config", "commit.gpgsign", "false"], repo)
+    (repo / "note.md").write_text("baseline — ≤ ⇒ …\n", encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "baseline"], repo)
+    return repo
+
+
+def test_ref_exists_true_for_master_false_for_absent(tmp_path, monkeypatch):
+    repo = _baseline_repo(tmp_path)
+    monkeypatch.chdir(repo)
+    assert footprint.ref_exists("master") is True
+    assert footprint.ref_exists("origin/master") is False
+    assert footprint.ref_exists("refs/heads/nope") is False
+
+
+def test_origin_head_ref_none_without_a_remote_and_resolves_when_set(tmp_path, monkeypatch):
+    repo = _baseline_repo(tmp_path)
+    monkeypatch.chdir(repo)
+    assert footprint.origin_head_ref() is None
+    # Simulate what `git clone` writes: origin/HEAD pointing at the default branch.
+    _git(["update-ref", "refs/remotes/origin/trunk", "master"], repo)
+    _git(["symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/trunk"], repo)
+    assert footprint.origin_head_ref() == "refs/remotes/origin/trunk"
+    assert footprint.ref_exists("refs/remotes/origin/trunk") is True
+
+
+def test_blob_at_ref_returns_utf8_bytes_and_none_when_absent(tmp_path, monkeypatch):
+    repo = _baseline_repo(tmp_path)
+    monkeypatch.chdir(repo)
+    blob = footprint.blob_at_ref("master", "note.md")
+    assert isinstance(blob, bytes)
+    # The bytes are UTF-8 as stored — NOT locale-decoded (the text=True mojibake trap).
+    assert blob.decode("utf-8") == "baseline — ≤ ⇒ …\n"
+    assert footprint.blob_at_ref("master", "never-existed.md") is None
+
+
+def test_renames_in_task_maps_new_path_to_old_path(tmp_path, monkeypatch):
+    repo = _baseline_repo(tmp_path)
+    _git(["checkout", "-b", "feat"], repo)
+    (repo / "sub").mkdir()
+    _git(["mv", "note.md", "sub/note.md"], repo)
+    (repo / "sub" / "note.md").write_text("baseline — ≤ ⇒ …\nplus one line\n", encoding="utf-8")
+    _git(["add", "-A"], repo)
+    _git(["commit", "-m", "move + edit"], repo)
+    monkeypatch.chdir(repo)
+
+    assert footprint.renames_in_task("master") == {"sub/note.md": "note.md"}
+    # The lane check still reports the move as delete+add (the --no-renames pin).
+    assert footprint.changed_in_task("master") == ["note.md", "sub/note.md"]
+
+
+def test_renames_in_task_raises_on_a_bad_ref(tmp_path, monkeypatch):
+    """Fail-closed: an empty map would be indistinguishable from "no renames" and
+    would silently restore the laundering bypass (D136)."""
+    repo = _baseline_repo(tmp_path)
+    monkeypatch.chdir(repo)
+    with pytest.raises(subprocess.CalledProcessError):
+        footprint.renames_in_task("no-such-ref")

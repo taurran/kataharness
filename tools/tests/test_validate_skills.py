@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 import validate_skills as v
@@ -531,3 +532,207 @@ def test_main_zero_skills_blocks_write_mode_too(tmp_path, monkeypatch, capsys):
 def test_main_real_tree_nonempty_guard_does_not_misfire():
     """Regression: the real tree discovers >0 skills, so the Q-7 guard stays silent there."""
     assert len(v.load_skills()) > 0, "real tree must discover skills (guard precondition)"
+
+
+# ── bump-on-modify (BOM-1 … BOM-12) ──────────────────────────────────────────
+#
+# On `master` the check is a permanent no-op (merge-base == HEAD), so the
+# gauntlet's `uv run python validate_skills.py` never exercises the comparison
+# logic. Without these tests the check would ship unexercised — which is the
+# exact failure this spec exists to fix, one level up (BOM-11). Each test builds
+# a REAL throwaway git repo: no mocked git, no simulated diff.
+
+_SKILL_PARTS = ("skills", "execute", "kata-demo")
+
+
+def _git(args: list[str], cwd) -> None:
+    subprocess.run(["git", *args], cwd=str(cwd), check=True, capture_output=True)
+
+
+def _skill_text(version: str, marker: str = "original", lines: int = 12) -> str:
+    """A minimal SKILL.md.
+
+    The body carries non-ASCII on purpose (`≤ ⇒ …`, as every shipped SKILL.md
+    does): a baseline read decoded with the process locale instead of UTF-8
+    could never equal the file on disk, so this text is what makes the
+    mojibake trap reachable in the test rather than only in production.
+    """
+    body = "\n".join(f"- line {i} — {marker} ≤ ⇒ …" for i in range(lines))
+    return f"---\nname: kata-demo\nversion: {version}\n---\n\n# kata-demo\n\n{body}\n"
+
+
+def _bump_repo(tmp_path, version: str = "0.1.0") -> Path:
+    """A real git repo with one skill committed on `master`."""
+    repo = tmp_path / "repo"
+    skill_dir = repo.joinpath(*_SKILL_PARTS)
+    skill_dir.mkdir(parents=True)
+    _git(["init"], repo)
+    _git(["symbolic-ref", "HEAD", "refs/heads/master"], repo)  # trunk name, any git version
+    _git(["config", "user.email", "t@t"], repo)
+    _git(["config", "user.name", "t"], repo)
+    _git(["config", "commit.gpgsign", "false"], repo)
+    (skill_dir / "SKILL.md").write_text(_skill_text(version), encoding="utf-8")
+    _git(["add", "."], repo)
+    _git(["commit", "-m", "baseline"], repo)
+    return repo
+
+
+def _run_bump_check(repo: Path, monkeypatch, extra_skills=()) -> list[v.Finding]:
+    monkeypatch.setattr(v, "REPO_ROOT", Path(repo).resolve())
+    monkeypatch.chdir(repo)  # footprint's git wrappers run in the process CWD
+    skills = v.load_skills(roots=[Path(repo) / "skills"]) + list(extra_skills)
+    return v.check_bump_on_modify(skills)
+
+
+def test_bump_changed_skill_without_a_bump_is_an_error(tmp_path, monkeypatch):
+    """(1) A committed SKILL.md edit with an unchanged version ⇒ ERROR naming the skill."""
+    repo = _bump_repo(tmp_path)
+    _git(["checkout", "-b", "feat"], repo)
+    (repo.joinpath(*_SKILL_PARTS) / "SKILL.md").write_text(
+        _skill_text("0.1.0", marker="edited"), encoding="utf-8")
+    _git(["commit", "-am", "edit, no bump"], repo)
+
+    findings = _run_bump_check(repo, monkeypatch)
+    assert [f.level for f in findings] == ["ERROR"], findings
+    assert findings[0].where == "kata-demo", "the finding must name the offending skill"
+    assert "version did not increase" in findings[0].msg
+
+
+def test_bump_changed_skill_with_a_bump_passes(tmp_path, monkeypatch):
+    """(2) The same edit with a version increase ⇒ no findings."""
+    repo = _bump_repo(tmp_path)
+    _git(["checkout", "-b", "feat"], repo)
+    (repo.joinpath(*_SKILL_PARTS) / "SKILL.md").write_text(
+        _skill_text("0.2.0", marker="edited"), encoding="utf-8")
+    _git(["commit", "-am", "edit + bump"], repo)
+
+    assert _run_bump_check(repo, monkeypatch) == []
+
+
+def test_bump_no_git_baseline_warns_and_exits_zero(monkeypatch, capsys):
+    """(3) No resolvable baseline ⇒ a VISIBLE WARN, and exit code 0 (BOM-5/BOM-10).
+
+    A skip that cannot be seen is a silent-permissive default wearing a label,
+    and a skip that fails the run makes the validator unusable from a source
+    tarball (or a shallow CI checkout). It must be neither. Run over the REAL
+    tree so the assertion on the summary line is the real steady state.
+    """
+    monkeypatch.setattr(v.footprint, "ref_exists", lambda ref: False)
+    monkeypatch.setattr(v.footprint, "origin_head_ref", lambda: None)
+
+    rc = v.main([])
+    captured = capsys.readouterr()
+    assert rc == 0, "an announced skip must never break the gate"
+    assert "WARN: bump-on-modify" in captured.err
+    assert "no git baseline" in captured.err
+    assert "0 error(s), 1 warning(s)" in captured.out
+
+
+def test_bump_undiverged_head_is_a_noop(tmp_path, monkeypatch):
+    """(4) Sitting on the base branch (merge-base == HEAD) ⇒ nothing under review."""
+    repo = _bump_repo(tmp_path)
+    assert _run_bump_check(repo, monkeypatch) == []
+
+
+def test_bump_0_9_0_to_0_10_0_passes(tmp_path, monkeypatch):
+    """(5) The string-compare trap: `"0.10.0" > "0.9.0"` is False, so a correct
+    MINOR bump would be rejected as a decrease under lexical comparison."""
+    assert not ("0.10.0" > "0.9.0"), "premise of this test: lexical comparison is wrong"
+    repo = _bump_repo(tmp_path, version="0.9.0")
+    _git(["checkout", "-b", "feat"], repo)
+    (repo.joinpath(*_SKILL_PARTS) / "SKILL.md").write_text(
+        _skill_text("0.10.0", marker="edited"), encoding="utf-8")
+    _git(["commit", "-am", "edit + minor bump across the double-digit boundary"], repo)
+
+    assert _run_bump_check(repo, monkeypatch) == []
+
+
+def test_bump_renamed_and_rewritten_skill_is_not_exempt(tmp_path, monkeypatch):
+    """(6) `git mv` + rewrite must not launder a skill into "new-and-exempt" (BOM-9).
+
+    `changed_in_task` pins `--no-renames`, so the move arrives as delete+add and a
+    path-keyed baseline read finds nothing at the new path. Rename resolution is
+    what stops that from reading as a brand-new skill.
+    """
+    repo = _bump_repo(tmp_path)
+    _git(["checkout", "-b", "feat"], repo)
+    (repo / "skills" / "evaluate").mkdir(parents=True)
+    _git(["mv", "skills/execute/kata-demo", "skills/evaluate/kata-demo"], repo)
+    moved = repo / "skills" / "evaluate" / "kata-demo" / "SKILL.md"
+    moved.write_text(_skill_text("0.1.0", marker="rewritten after the move"), encoding="utf-8")
+    _git(["add", "-A"], repo)
+    _git(["commit", "-m", "move + rewrite, version untouched"], repo)
+
+    findings = _run_bump_check(repo, monkeypatch)
+    assert [f.level for f in findings] == ["ERROR"], findings
+    assert findings[0].where == "kata-demo"
+    assert "version did not increase" in findings[0].msg
+
+
+def test_bump_renamed_skill_is_resolved_via_git_rename_detection(tmp_path, monkeypatch):
+    """(6b) The other predecessor source: a skill renamed to a NEW name, where the
+    same-skill-name fallback cannot apply and git's `-M` mapping is what resolves it."""
+    repo = _bump_repo(tmp_path)
+    _git(["checkout", "-b", "feat"], repo)
+    _git(["mv", "skills/execute/kata-demo", "skills/execute/kata-renamed"], repo)
+    text = (_skill_text("0.1.0")
+            .replace("name: kata-demo", "name: kata-renamed")
+            .replace("- line 0 — original", "- line 0 — reworded"))
+    (repo / "skills" / "execute" / "kata-renamed" / "SKILL.md").write_text(text, encoding="utf-8")
+    _git(["add", "-A"], repo)
+    _git(["commit", "-m", "rename + light rewrite, version untouched"], repo)
+
+    findings = _run_bump_check(repo, monkeypatch)
+    assert [f.level for f in findings] == ["ERROR"], findings
+    assert findings[0].where == "kata-renamed"
+    assert "version did not increase" in findings[0].msg
+
+
+def test_bump_non_semver_baseline_version_is_an_error(tmp_path, monkeypatch):
+    """(7) An unreadable baseline version is an ERROR, never a permissive pass (D136/BOM-8)."""
+    repo = _bump_repo(tmp_path, version="0.1")  # two components — not semver
+    _git(["checkout", "-b", "feat"], repo)
+    (repo.joinpath(*_SKILL_PARTS) / "SKILL.md").write_text(
+        _skill_text("0.2.0", marker="edited"), encoding="utf-8")
+    _git(["commit", "-am", "edit + bump over a malformed baseline"], repo)
+
+    findings = _run_bump_check(repo, monkeypatch)
+    assert [f.level for f in findings] == ["ERROR"], findings
+    assert findings[0].where == "kata-demo"
+    assert "not semver" in findings[0].msg
+
+
+def test_bump_skill_dir_outside_the_repo_does_not_crash(tmp_path, monkeypatch):
+    """(8) Skill roots outside the git repo (the tmp_path fixture case) must not crash.
+
+    `Path.relative_to(REPO_ROOT)` raises for such a path; the check has to skip it.
+    """
+    repo = _bump_repo(tmp_path)
+    _git(["checkout", "-b", "feat"], repo)
+    (repo.joinpath(*_SKILL_PARTS) / "SKILL.md").write_text(
+        _skill_text("0.2.0", marker="edited"), encoding="utf-8")
+    _git(["commit", "-am", "edit + bump"], repo)
+
+    outside = v.Skill(
+        name="kata-outside",
+        dir=tmp_path / "outside" / "plan" / "kata-outside",
+        frontmatter={"version": "0.1.0"},
+        body="",
+    )
+    findings = _run_bump_check(repo, monkeypatch, extra_skills=[outside])
+    assert findings == [], f"a skill outside the repo must be skipped, not crash: {findings}"
+
+
+def test_bump_check_is_clean_on_the_real_tree():
+    """The shipped tree must satisfy its own rule (and the check must not crash on it)."""
+    findings = v.check_bump_on_modify(v.load_skills())
+    assert [f for f in findings if f.level == "ERROR"] == [], (
+        f"a SKILL.md changed since the base branch without a version bump: {findings}"
+    )
+
+
+def test_semver_tuple_orders_double_digit_components_numerically():
+    """The comparison primitive itself, pinned (BOM-8)."""
+    assert v._semver_tuple("0.10.0") > v._semver_tuple("0.9.0")
+    assert v._semver_tuple("1.0.0") > v._semver_tuple("0.99.99")
+    assert not (v._semver_tuple("0.1.0") > v._semver_tuple("0.1.0"))
