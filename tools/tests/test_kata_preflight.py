@@ -26,18 +26,35 @@ import kata_preflight as pf
 # ---------------------------------------------------------------------------
 
 class _TrackingRunner:
-    """Stub runner that records every argv call and returns preset responses."""
+    """Stub runner that records every argv call and returns preset responses.
 
-    def __init__(self, responses: list[tuple[int, str]] | None = None, default=(0, "ok")):
+    ``RunnerType`` is ``(argv) -> (returncode, stdout, stderr)`` (DEF-1).  Responses
+    may be written as either a 2-tuple ``(rc, stdout)`` or a 3-tuple
+    ``(rc, stdout, stderr)``; short tuples are normalised HERE, once, so the ~39
+    existing 2-tuple literals across this file stay unchanged and readable.  A test
+    that cares about stderr writes the 3-tuple form explicitly.
+    """
+
+    def __init__(
+        self,
+        responses: list[tuple[int, str] | tuple[int, str, str]] | None = None,
+        default=(0, "ok"),
+    ):
         self.calls: list[list[str]] = []
         self._responses = list(responses or [])
         self._default = default
 
-    def __call__(self, argv: list[str]) -> tuple[int, str]:
+    @staticmethod
+    def _normalize(response) -> tuple[int, str, str]:
+        """Pad a 2-tuple response to the 3-tuple runner contract (stderr defaults to '')."""
+        rc, stdout, *rest = response
+        return rc, stdout, rest[0] if rest else ""
+
+    def __call__(self, argv: list[str]) -> tuple[int, str, str]:
         self.calls.append(list(argv))
         if self._responses:
-            return self._responses.pop(0)
-        return self._default
+            return self._normalize(self._responses.pop(0))
+        return self._normalize(self._default)
 
 
 def _write_manifest(repo_root: Path, deps: list[dict]) -> Path:
@@ -514,6 +531,180 @@ class TestDepVerifyAndInstall:
         registry = json.loads(reg_path.read_text(encoding="utf-8"))
         pkgs = [i["package"] for i in registry["installs"]]
         assert "requests" in pkgs
+
+
+# ---------------------------------------------------------------------------
+# DEF-1 — the runner carries stderr, and the failure paths SURFACE it
+# ---------------------------------------------------------------------------
+
+class TestRunnerStderrSurfaced:
+    """DEF-1: a failing install/verify/gate must tell the operator WHY, not just THAT.
+
+    The reason lives on stderr; before this it was discarded at all four call sites.
+    """
+
+    def test_failed_install_surfaces_its_stderr_reason(self, repo: Path, fake_home: Path):
+        """The canonical DEF-1 case: a failing install carries its reason to the operator."""
+        mp, ap = _setup_repo(repo, [_PIP_DEP])
+        reason = "ERROR: Could not find a version that satisfies the requirement requests==2.31.0"
+        # verify fails (absent) → install FAILS with a real-shaped resolver error on stderr
+        runner = _TrackingRunner([(1, "absent", ""), (1, "", reason)])
+        result = pf.run_preflight(
+            repo, runner=runner, approved_hash_path=ap, home_dir=fake_home,
+            snyk_check=lambda p, v: True, sandbox_check=lambda: True,
+        )
+        assert result["status"] == "blocked"
+        joined = "\n".join(result["blockers"])
+        assert reason in joined, (
+            "the install's stderr reason must reach the operator via blockers; "
+            f"got: {result['blockers']!r}"
+        )
+
+    def test_failed_re_verify_surfaces_its_stderr_reason(self, repo: Path, fake_home: Path):
+        """Install claimed success but the import check failed — that traceback is the reason."""
+        mp, ap = _setup_repo(repo, [_PIP_DEP])
+        reason = "ModuleNotFoundError: No module named 'requests'"
+        runner = _TrackingRunner([(1, "absent", ""), (0, "ok", ""), (1, "", reason)])
+        result = pf.run_preflight(
+            repo, runner=runner, approved_hash_path=ap, home_dir=fake_home,
+            snyk_check=lambda p, v: True, sandbox_check=lambda: True,
+        )
+        assert result["status"] == "blocked"
+        joined = "\n".join(result["blockers"])
+        assert "re-verify" in joined
+        assert reason in joined
+
+    def test_failed_baseline_gate_surfaces_its_stderr_reason(self, repo: Path, fake_home: Path):
+        """PF-3/LD5: the degrading gate probe names its own failure."""
+        mp, ap = _setup_repo(repo, [])
+        reason = "pytest: error: unrecognized arguments: --nope"
+        runner = _TrackingRunner(default=(2, "", reason))
+        cfg = {"preflight": {"allowed_registries": [], "scan_required": False,
+                             "sandbox_required": False},
+               "target": {"kind": "existing", "baselineGate": "pytest --nope"}}
+        result = pf.run_preflight(
+            repo, kata_config=cfg, runner=runner,
+            approved_hash_path=ap, home_dir=fake_home, sandbox_check=lambda: True,
+        )
+        assert result["status"] == "degraded"
+        assert result["targetEnv"]["runnable"] is False
+        assert reason in "\n".join(result["warnings"])
+
+    def test_presence_check_stderr_is_not_surfaced_as_a_reason(
+        self, repo: Path, fake_home: Path
+    ):
+        """Deliberate asymmetry: at the FIRST verify, non-zero means "absent", not "failed".
+
+        That is the designed control signal routing to the install path, so its stderr is
+        not reported as a failure reason. Pins the decision so it is not "fixed" by mistake.
+        """
+        mp, ap = _setup_repo(repo, [_PIP_DEP])
+        noise = "sentinel-presence-probe-noise"
+        # verify says absent (with noise on stderr) → install ok → re-verify ok → READY
+        runner = _TrackingRunner([(1, "", noise), (0, "ok", ""), (0, "ok", "")])
+        result = pf.run_preflight(
+            repo, runner=runner, approved_hash_path=ap, home_dir=fake_home,
+            snyk_check=lambda p, v: True, sandbox_check=lambda: True,
+        )
+        assert result["status"] == "ready"
+        assert noise not in "\n".join(result["blockers"] + result["warnings"])
+
+    def test_install_stderr_is_tail_capped_at_the_call_site(self, repo: Path, fake_home: Path):
+        """The cap lives at the CONSUMER call site, so an injected runner cannot bypass it.
+
+        Mirrors ``kata_dispatch``: the runner returns stderr uncapped; ``run_preflight``
+        clips it. Proves the clip takes the TAIL (where the real error text is) and
+        marks the truncation.
+        """
+        mp, ap = _setup_repo(repo, [_PIP_DEP])
+        head = "H" * 6000                     # far past the 4000-char cap
+        tail_marker_text = "FINAL-CAUSE: registry returned 403"
+        huge = head + tail_marker_text
+        runner = _TrackingRunner([(1, "absent", ""), (1, "", huge)])
+        result = pf.run_preflight(
+            repo, runner=runner, approved_hash_path=ap, home_dir=fake_home,
+            snyk_check=lambda p, v: True, sandbox_check=lambda: True,
+        )
+        joined = "\n".join(result["blockers"])
+        assert tail_marker_text in joined, "the TAIL of stderr (the actual cause) must survive"
+        assert pf._STDERR_TRUNCATION_MARKER.strip() in joined, "truncation must be declared"
+        assert head not in joined, "the 6000-char head must have been clipped away"
+        # And the surfaced stderr really is bounded, not merely marked.
+        assert joined.count("H") <= pf._STDERR_TAIL_CHARS
+
+
+class TestStderrTailHelper:
+    """Unit-level pin of ``_stderr_tail`` — copied from kata_dispatch, same semantics."""
+
+    def test_clips_from_the_end_and_prepends_the_marker(self):
+        text = "A" * 5000 + "TAIL-CAUSE"
+        out = pf._stderr_tail(text)
+        assert out.startswith(pf._STDERR_TRUNCATION_MARKER)
+        assert out.endswith("TAIL-CAUSE")
+        assert len(out) == len(pf._STDERR_TRUNCATION_MARKER) + pf._STDERR_TAIL_CHARS
+
+    def test_no_marker_when_within_the_cap(self):
+        text = "short and complete"
+        assert pf._stderr_tail(text) == text
+        assert pf._STDERR_TRUNCATION_MARKER not in pf._stderr_tail(text)
+
+    def test_exactly_at_the_cap_is_not_marked(self):
+        text = "B" * pf._STDERR_TAIL_CHARS
+        assert pf._stderr_tail(text) == text
+
+    def test_bytes_are_decoded_tolerantly(self):
+        assert pf._stderr_tail(b"boom \xff\xfe not utf-8").startswith("boom ")
+
+    def test_none_is_empty_string(self):
+        assert pf._stderr_tail(None) == ""
+
+
+class TestDefaultRunnerCarriesStderr:
+    """The real (non-injected) runner must actually produce the third element."""
+
+    def test_default_runner_returns_returncode_stdout_stderr(self):
+        import sys
+
+        rc, out, err = pf._default_runner(
+            [sys.executable, "-c",
+             "import sys; sys.stdout.write('OUT'); sys.stderr.write('ERR'); sys.exit(3)"]
+        )
+        assert rc == 3
+        assert out == "OUT"
+        assert err == "ERR", "DEF-1: _default_runner must carry stderr out of the subprocess"
+
+    def test_default_runner_returns_stderr_uncapped(self):
+        """The cap is the CALL SITE's job; the runner hands back the whole thing."""
+        import sys
+
+        size = pf._STDERR_TAIL_CHARS + 500
+        rc, _out, err = pf._default_runner(
+            [sys.executable, "-c", f"import sys; sys.stderr.write('X' * {size})"]
+        )
+        assert rc == 0
+        assert len(err) == size
+
+
+def test_kata_preflight_imports_nothing_from_kata_dispatch():
+    """AMENDMENT 7: ``_stderr_tail`` is COPIED, never imported across modules.
+
+    kata_preflight has no kata_dispatch dependency today and that must stay true —
+    a private cross-module import would couple the guarded external-input engine to
+    the dispatch layer.
+    """
+    import ast
+
+    src = (Path(pf.__file__)).read_text(encoding="utf-8")
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                assert not alias.name.startswith("kata_dispatch"), (
+                    f"kata_preflight imports {alias.name!r} from kata_dispatch"
+                )
+        elif isinstance(node, ast.ImportFrom):
+            assert not (node.module or "").startswith("kata_dispatch"), (
+                f"kata_preflight imports from {node.module!r}"
+            )
 
 
 # ---------------------------------------------------------------------------
