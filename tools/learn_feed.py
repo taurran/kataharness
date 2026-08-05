@@ -9,7 +9,9 @@ feed back and never decides anything (zero CONSULT — the structural guarantee)
 
 Grammar (SB-L1, freeze-gate F-1 — corpus-verified)
 ---------------------------------------------------
-Heading entries ``### {anchor} — {title}`` where ``{anchor}`` is any ledger token
+Heading entries ``### {anchor} — {title}`` (H2..H6 — never H1, so a ledger's own
+``# GRILL-LEDGER — <spec>`` title is not miscounted as an open entry; LFB-2/BL-M24)
+where ``{anchor}`` is any ledger token
 (``MM-1``, ``IP-A``, ``R-1``, ``GB1``, ``D7`` …) — a token carries a digit or a
 dash segment, so prose headings ("Self-resolved defaults", "DECISION TREE") and
 range headings ("R-14..R-21") are NOT entries. Status vocabulary on the heading
@@ -28,8 +30,12 @@ Frontmatter ``produced-by: loop`` · ``source:`` (raw artifact path(s)) · ``dat
 sorted namespaced ``tags:`` (``kata/synthesis/decision-pattern`` +
 ``kata/decision-pattern/<coding|research|workflow>`` from the run kind) ·
 ``redactions: N`` only when N>0. Body: Question / Options considered / Decision /
-Rationale / Edges sections (present fields only) with ``[[wikilinks]]`` to the
-raw artifact. One page = one pattern. LF line endings.
+Rationale / Edges sections (present fields only), then the entry's remaining prose
+under ``## Detail`` — the body is rendered **in addition to** the fields, never
+instead of them (LFB-1; the ``elif`` that dropped it was DEF-2). When NO field
+parses, that same body renders under ``## Decision`` (the field-less MM
+``· LOCKED`` form). ``[[wikilinks]]`` to the raw artifact. One page = one pattern.
+LF line endings.
 
 Determinism (SB-L3 — Doctrine laws 2/3/5/6/7)
 ----------------------------------------------
@@ -120,7 +126,19 @@ _FEED_SUBDIR = "decision-patterns"
 # Heading-entry grammar (SB-L1 / F-1). An anchor TOKEN carries a digit or a dash
 # segment (MM-1, IP-A, R-1, GB1, D7, D151) — prose headings and ranges
 # ("R-14..R-21": '.' fails the boundary lookahead) are not entries.
-_HEADING_LINE_RE = re.compile(r"^#{1,6}\s+(?P<rest>.+?)\s*$")
+#
+# H2..H6 ONLY (BL-M24 / LFB-2). Every ledger's own H1 title is `# GRILL-LEDGER —
+# <spec>`, and the literal `GRILL-LEDGER` matches _ANCHOR_RE, so an `^#{1,6}`
+# grammar parsed the document title itself as a status-less (⇒ open) entry — the
+# phantom `parsed_open_skipped=1` every emit has reported forever. Ledger entries
+# are `###` by house style; no real entry is ever an H1.
+_HEADING_LINE_RE = re.compile(r"^#{2,6}\s+(?P<rest>.+?)\s*$")
+# Record TERMINATOR for parse_decisions_bullets — a different job from the entry
+# grammar above, so it deliberately still matches H1..H6: a `# Heading` in a
+# DECISIONS file ends the open record rather than being vacuumed into its body.
+# (Narrowing this one too would have been a silent behavior change to an
+# unrelated parser.)
+_RECORD_END_HEADING_RE = re.compile(r"^#{1,6}\s+.+?\s*$")
 _ANCHOR_RE = re.compile(
     r"^(?P<anchor>[A-Z]+(?:-[A-Za-z0-9]+)+|[A-Z]+[0-9][A-Za-z0-9]*)(?=[\s(·—:]|$)"
 )
@@ -157,6 +175,12 @@ _SECTION_TITLES: dict[str, str] = {
     "rationale": "Rationale",
     "edges": "Edges",
 }
+# The entry BODY's section title (LFB-1). It is rendered ALONGSIDE any parsed
+# fields, never instead of them: `Detail` when fields are also present (the body
+# is the surrounding reasoning), `Decision` when none parsed (the field-less MM
+# `· LOCKED` form, where the body IS the recorded resolution).
+_BODY_TITLE_WITH_FIELDS = "Detail"
+_BODY_TITLE_ALONE = "Decision"
 
 # SB-L4 redaction classes — fixed apply order, bounded patterns (linear scan; no
 # nested/chained quantifiers — ReDoS-safe by construction).
@@ -411,7 +435,7 @@ def parse_decisions_bullets(text: str | None) -> list[dict]:
             continue
         if current_raw is None:
             continue  # content before the first bullet (frontmatter, intro prose)
-        if _HEADING_LINE_RE.match(line):  # a `#` heading ends the record
+        if _RECORD_END_HEADING_RE.match(line):  # any `#`..`######` heading ends the record
             _flush()
             pending_blank = False
             continue
@@ -479,6 +503,10 @@ def render_page(
         ``decision-patterns/<project-slug>--<source-slug>--<anchor-slug>.md``
         (SB-L3); content is the full page, LF-only, frontmatter ``redactions: N``
         present only when the SB-L4 scrub hit (redaction marks, never blocks).
+        Body sections: the present parsed fields in :data:`_SECTION_ORDER`, THEN
+        the entry body under ``## Detail`` (LFB-1 — additive, never a substitute);
+        with no fields parsed the body renders under ``## Decision`` instead, and
+        with no body neither extra section is emitted.
     """
     if kind not in _KIND_TAG:
         raise ValueError(f"learn-feed: unknown kind {kind!r} (expected one of {sorted(_KIND_TAG)})")
@@ -509,13 +537,23 @@ def render_page(
     lines: list[str] = [f"# {anchor} — {title}" if title else f"# {anchor}", ""]
     lines += ["**Source:** " + " · ".join(f"[[{s}]]" for s in sources), ""]
     present = [k for k in _SECTION_ORDER if str(fields.get(k) or "").strip()]
-    if present:
-        for k in present:
-            lines += [f"## {_SECTION_TITLES[k]}", "", str(fields[k]).strip(), ""]
-    elif body_text:
-        # Field-less ledgers (e.g. the MM `· LOCKED` form): the entry body IS the
-        # recorded resolution — rendered under the canonical Decision section.
-        lines += ["## Decision", "", body_text, ""]
+    for k in present:
+        lines += [f"## {_SECTION_TITLES[k]}", "", str(fields[k]).strip(), ""]
+    if body_text:
+        # LFB-1: the body renders IN ADDITION to the fields, never INSTEAD of them.
+        # The prior `elif` discarded the body whenever ANY field parsed, and the
+        # house style — a bold field prefix followed by indented sub-bullets and
+        # `**Rejected — …**` bullets — reliably parses *some* field while leaving
+        # the substance in the body, so the dropping branch was the one that fired
+        # (68 of 218 entries / 46,427 characters across 22 ledgers; DEF-2).
+        #
+        # Which heading the body takes depends on what it IS:
+        #   fields present ⇒ the body is the surrounding reasoning → `## Detail`.
+        #   no fields      ⇒ the body IS the recorded resolution (the field-less
+        #                    MM `· LOCKED` form) → the canonical `## Decision`.
+        #                    This path is load-bearing and unchanged.
+        lines += [f"## {_BODY_TITLE_WITH_FIELDS if present else _BODY_TITLE_ALONE}", "",
+                  body_text, ""]
     body = "\n".join(lines).rstrip("\n") + "\n"
     body, red_counts = redact(body)
     n_redactions = sum(red_counts.values())

@@ -109,12 +109,13 @@ OWED TO THE OPERATOR — surface these, do not silently carry them
   - Rotate the GitHub PAT: plaintext at settings.json -> env ->
     GITHUB_PERSONAL_ACCESS_TOKEN, exported into every spawned process.
     DEFERRED by the operator 2026-08-02. Deferred is not dropped.
-  - DEF-2's undecided question, and it BLOCKS a cheap fix: learn_feed silently drops
-    entry bodies (measured: 20 of 29 entries, 19,153 chars). The publish step fires
-    at every grill close and 19 ledgers share the style. Does the block extend to all
-    19? Until answered, NO grill-close emit runs. Its one-line sibling BL-M24 (the
-    heading regex counts the ledger's own H1, still ^#{1,6}) is in the same file and
-    should be fixed in the same run.
+  - (CLOSED 2026-08-04) DEF-2 + BL-M24 are FIXED. learn_feed rendered fields INSTEAD
+    of the body, not as well as it; measured across all 22 ledgers that was 70 entries
+    and 46k characters silently dropped, worst 25 of 37 on session-lifecycle. The body
+    now renders under "## Detail" alongside the fields, the field-less "## Decision"
+    path is unchanged, and the heading regex no longer counts each document's own H1
+    (that was the "1 item skipped" every emit has always reported). Verified by
+    rendering all 22 ledgers before and after: 70 -> 0. THE EMIT BLOCK IS LIFTED.
   - T-03 scope call: all six determinism laws, or the 13+15 subset.
 
 Section 3 DECISIONS in the handoff are settled; do not re-litigate. Start from
