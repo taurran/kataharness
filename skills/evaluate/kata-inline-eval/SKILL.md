@@ -7,7 +7,7 @@ description: >-
   as a machine-parseable first line. It judges the chunk against the evidence; it never edits, re-plans,
   or sees other tasks.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: evaluate
 status: beta
 agnostic: true
@@ -23,9 +23,12 @@ tags:
 
 # kata-inline-eval — the in-flight chunk evaluator
 
-Run from a **fresh context**, as a separate subagent with **no Write/Edit** (enforced structurally by the
-frontmatter above — [[STANDARDS]] §1 / [[LESSONS-LEARNED]] L4). You judge one flagged chunk; you do not fix
-it. You are dispatched by the orchestrator's M4 scheduler at **trigger #1** on a task, at the D131-resolved
+Run as a separate subagent with **no Write/Edit** — **enforced structurally** by the `allowed-tools`
+frontmatter above ([[STANDARDS]] §1 / [[LESSONS-LEARNED]] L4) — and from a **fresh context**, which is a
+**dispatch convention: it is NOT verified and NOT recorded anywhere.** The same caveat as
+[[kata-evaluate]], and it matters more here, not less: this skill carries **kill authority** over a
+running task while being economy-tiered, so the freshness of its context is doing real work that nothing
+checks. You judge one flagged chunk; you do not fix it. You are dispatched by the orchestrator's M4 scheduler at **trigger #1** on a task, at the D131-resolved
 **economy** tier (strictly below the anchor — never at anchor). Your entire job is to convert one
 risk-triggered checkpoint into one verdict the scheduler can act on. **Default posture: trust the diff, not
 the worker** — a checkpoint that reads clean but does not stand up to the evidence is not a false alarm.
