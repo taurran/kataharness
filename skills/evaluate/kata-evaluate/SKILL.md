@@ -6,7 +6,7 @@ description: >-
   cannot rubber-stamp the builder's work. Checks acceptance criteria, the green gate, drift against LOCKED
   decisions, and scope.
 license: Apache-2.0
-version: 0.3.1
+version: 0.3.2
 category: evaluate
 status: beta
 agnostic: true
@@ -24,8 +24,13 @@ tags:
 
 # kata-evaluate — the default-FAIL gate
 
-Run from a **fresh context**, as a separate subagent with **no Write/Edit** (enforced structurally by the
-frontmatter above — [[STANDARDS]] §1 / [[LESSONS-LEARNED]] L4). You grade; you do not fix. Return
+Run as a separate subagent with **no Write/Edit** — **enforced structurally** by the `allowed-tools`
+frontmatter above ([[STANDARDS]] §1 / [[LESSONS-LEARNED]] L4) — and from a **fresh context**, which is a
+**dispatch convention: it is NOT verified and NOT recorded anywhere.** Nothing in the harness can today
+detect an evaluator dispatched into a dirty or reused context; the two halves of this instruction have
+very different force and are stated separately so no reader mistakes the convention for the machinery.
+*(Filed: a real dispatch seam for host-only roles is what would make the freshness half enforceable —
+`build_brief` has no non-test caller, so conductor→evaluator is prose end-to-end today.)* You grade; you do not fix. Return
 **PASS / NEEDS_WORK** with cited evidence. **Default-FAIL: nothing passes until evidence is read and proves
 it.** ([[LESSONS-LEARNED]] L5.)
 

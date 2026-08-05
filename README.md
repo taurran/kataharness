@@ -334,8 +334,8 @@ is the machine source of truth for what exists and at what version.
 | `kata-tdd` | 0.4.1 | 3 | execute | beta | adapted-from mattpocock/skills engineering/tdd | Red-green-refactor on a vertical slice |
 | `kata-benchmark-report` | 0.1.0 | 1 | evaluate | beta | new (KataHarness original — kata-loop-benchmark report; mirrors the kata-report/kata-debrief two-tier {{TOKEN}} render contract; engine tools/benchmark.py) | — |
 | `kata-debrief` | 0.1.0 | 1 | evaluate | beta | new (KataHarness original, Debug Mode P3 — LD12 closeout confidence report + LD3 recommendations / offered version-up; mirrors the kata-report two-tier + {{TOKEN}} render contract) | — |
-| `kata-evaluate` | 0.3.1 | 2 | evaluate | beta | adapted-from cpp-evaluation (CryptoPortfolioPlanner) + Anthropic fresh-context evaluator pattern | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
-| `kata-inline-eval` | 0.1.0 | 1 | evaluate | beta | — | — |
+| `kata-evaluate` | 0.3.2 | 2 | evaluate | beta | adapted-from cpp-evaluation (CryptoPortfolioPlanner) + Anthropic fresh-context evaluator pattern | Fresh-context, no-write, default-FAIL PASS/NEEDS_WORK |
+| `kata-inline-eval` | 0.1.1 | 1 | evaluate | beta | — | — |
 | `kata-report` | 0.1.2 | 1 | evaluate | beta | new (KataHarness original — the D32 report, minimal v1; sprint-cadence D85/D2) | One-page report of a gated unit of work (reports the gate, never gates) |
 | `kata-review-advanced` | 0.1.2 | 3 | evaluate | beta | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |
 | `kata-review-essential` | 0.1.2 | 1 | evaluate | beta | adapted-from CryptoPortfolioPlanner cpp-adversarial-validation (primary) + mattpocock/skills review (its Standards axis lives in kata-evaluate) | — |

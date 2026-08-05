@@ -2,6 +2,37 @@
 
 Promote to ROADMAP milestones when ready.
 
+> ## 🔴 **BL-M33 · There is no code seam between the conductor and a host-only agent — FILED 2026-08-04**
+>
+> **In plain terms:** when the conductor dispatches the evaluator (or any host-only role), it does it by
+> *writing a prompt*. There is no function that does it. So there is nowhere for enforcement to live:
+> any rule about how a judge was launched is a sentence in a `SKILL.md` that the next agent may or may
+> not honour, and nothing can detect the difference.
+>
+> **Measured, not asserted (2026-08-04, `f4096e6`):**
+> - `kata_dispatch.build_brief` has **no non-test caller** — every reference is its own definition or
+>   prose inside a `SKILL.md`.
+> - `_COMMAND_BUILDERS` covers `codex` and `kiro` only; `kata_dispatch` states the Claude path *"is
+>   handled by the orchestrator, not here"*.
+> - the evaluator is `HOST_ONLY` (`kata_roles.py:46`) — i.e. exactly the path with no builder.
+> - `contract_gate.write_contract_gate` emits `contract-gate.json` and **no Python ever reads it**;
+>   `.planning/D2-VERIFICATION-RESULTS.md` records zero have ever been written in a real run. A
+>   producer-only artifact is the same shape: the enforcement half is prose.
+>
+> **Why it matters:** this is the structural reason `T-05` could not be built honestly. The attempted
+> design (a dispatch record the evaluator echoes) was **forgeable** — the evaluator has `Read`/`Bash`
+> and is explicitly pointed at `.kata/`, so it could read the token off disk. Fixing that leaves the
+> *comparator* as prose, so it would still be a rule with nothing enforcing it. See
+> `.planning/specs/evaluator-dispatch-record/GRILL-LEDGER.md` `EDR-7`.
+>
+> **What was shipped instead:** the false claim was removed. `kata-evaluate` 0.3.2 and
+> `kata-inline-eval` 0.1.1 now state plainly that `no Write/Edit` is structurally enforced while
+> `fresh context` is an unverified, unrecorded dispatch convention.
+>
+> **Not scoped here.** Building the seam changes how the orchestrator works and is its own decision —
+> it is the prerequisite for *any* mechanical guarantee about how a judge was launched, so it likely
+> unblocks more than `T-05`.
+
 > ## ✅ **BL-F01 · Freeze is not a recorded state — BUILT 2026-08-02** (`6b4e8db`)
 >
 > **Shipped as assessed, both halves.** `status:` is a closed `draft | frozen` enum read by
