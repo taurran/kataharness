@@ -46,6 +46,8 @@ import re
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fs_atomic import atomic_write_text
+
 # ---------------------------------------------------------------------------
 # §5 v1 FAST-FOLLOW SEAM — structural_drift_verdict (NOT IMPLEMENTED IN v1)
 # ---------------------------------------------------------------------------
@@ -511,7 +513,9 @@ def emit_deferrals(
 ) -> None:
     """Write deferred-fix records as JSON to *path*.
 
-    Creates parent directories if absent.  Overwrites any existing file.
+    Creates parent directories if absent.  Overwrites any existing file
+    atomically (D159, same-dir tmp + ``os.replace``) so the closeout reader never
+    observes a partial file mid-rewrite; output bytes are unchanged.
     The output file is consumed by the LD12 closeout confidence report (P3)
     and is distinct from the P3 recommendations report.
 
@@ -521,7 +525,7 @@ def emit_deferrals(
     """
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(records, indent=2), encoding="utf-8")
+    atomic_write_text(dest, json.dumps(records, indent=2), encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -654,7 +658,9 @@ def emit_drift_report(
     """Write a drift report as JSON to *path*.
 
     Creates parent directories if absent (e.g. ``.kata/drift/``).  Overwrites
-    any existing file.  The report feeds the LD12 regression proof in P3.
+    any existing file atomically (D159, same-dir tmp + ``os.replace``) so a
+    concurrent reader never observes a partial file; output bytes are unchanged.
+    The report feeds the LD12 regression proof in P3.
 
     Args:
         report: Dict produced by ``build_drift_report``.
@@ -662,4 +668,4 @@ def emit_drift_report(
     """
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    atomic_write_text(dest, json.dumps(report, indent=2), encoding="utf-8")

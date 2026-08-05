@@ -32,6 +32,8 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fs_atomic import atomic_write_text
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -228,13 +230,18 @@ def resolve_head_sha(repo_root: str | Path) -> str | None:
 def write_result(result: dict, path: str | Path) -> None:
     """Write *result* as indented JSON to *path*.
 
+    Atomic (D159, same-dir tmp + ``os.replace``): ``RESULT.json`` is read
+    concurrently by the evaluator and the benchmark scorer while a gate is still
+    emitting, and a truncate-then-write leaves a window where a reader sees a
+    partial file.  Output bytes are unchanged.
+
     Parameters
     ----------
     result: dict as returned by :func:`build_result`.
     path:   Destination file path (str or :class:`~pathlib.Path`).
             Parent directory must already exist.
     """
-    Path(path).write_text(json.dumps(result, indent=2), encoding="utf-8")
+    atomic_write_text(Path(path), json.dumps(result, indent=2), encoding="utf-8")
 
 
 def run_gate(command: str, *, timeout: float = 600.0) -> tuple[str, int]:

@@ -26,6 +26,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from fs_atomic import atomic_write_text
+
 # ---------------------------------------------------------------------------
 # Path-traversal guard (mirrors gate_emit._safe_path)
 # ---------------------------------------------------------------------------
@@ -145,6 +147,11 @@ def build_verdict(
 def write_grounding(kata_dir: str, verdicts: list[dict]) -> str:
     """Write ``<kata_dir>/grounding.json`` and return the absolute path.
 
+    Atomic (D159, same-dir tmp + ``os.replace``): the fold-authorization reader may
+    open this artifact while the gate is re-emitting it, and a truncate-then-write
+    leaves a window in which a concurrent reader sees a partial file.  Output bytes
+    are unchanged.
+
     Parameters
     ----------
     kata_dir:
@@ -174,5 +181,5 @@ def write_grounding(kata_dir: str, verdicts: list[dict]) -> str:
         payload = {"verdicts": [], "allGrounded": False, "vacuous": True}
 
     grounding_path = out / "grounding.json"
-    grounding_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    atomic_write_text(grounding_path, json.dumps(payload, indent=2), encoding="utf-8")
     return str(grounding_path)
