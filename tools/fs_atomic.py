@@ -18,10 +18,22 @@ Byte-compatibility note: the file handle is opened WITHOUT a ``newline`` overrid
 platform newline translation matches ``Path.write_text`` exactly — converting a
 ``write_text`` call site to :func:`atomic_write_text` is byte-identical output-wise.
 
-Zero repo-internal dependencies by design: the call sites (function_model,
-debug_report, benchmark, iac_apply, intent_scaffold) are themselves low-dependency
-leaf modules, and importing a heavier util module from them would invert the
-dependency direction.
+Zero repo-internal dependencies by design. **The invariant is that THIS module stays
+stdlib-only** — it is not a constraint on call sites. Importing a dependency-free leaf
+FROM a heavy module cannot invert any dependency, so a call site's own import weight is
+irrelevant. *(An earlier phrasing named five low-dependency call sites and read as though
+leaf-ness were required of callers; that reading would have excluded the gate-critical
+writers below, which are exactly the ones that most need atomicity.)*
+
+Call sites, as of the 2026-08-04 burn:
+- original five: ``function_model``, ``debug_report``, ``benchmark``, ``iac_apply``,
+  ``intent_scaffold``
+- the eight gate-critical writers (BURN-A): ``run_result`` (RESULT.json),
+  ``contract_gate`` (contract-gate.json), ``gate_emit`` (footprint.json + mutation.json),
+  ``grounding_gate`` (grounding.json), ``drift_gate`` (deferred.json + drift reports),
+  ``deviation`` (findings.json)
+
+Keep this list current — it is the only place the conversion's coverage is written down.
 """
 
 from __future__ import annotations

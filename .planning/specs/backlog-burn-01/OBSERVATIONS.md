@@ -137,6 +137,71 @@ hand-authored parts of the same file are a different matter and stay conductor-o
 | pre-flight | BURN-A | scope changed by triage | filed fix was wrong; real gap is 8 unconverted call sites |
 | pre-flight | BURN-E | framing corrected | not orphaned — 23 references; missing a user entry point |
 | pre-flight | BL-M25 | DROPPED | inert by documented deferral in 3 places; deleting it would be the PD-1 violation |
+| wave 1 | BURN-A · B · C | **dispatched concurrently, 3 isolated worktrees** | all three returned green independently |
+| wave 1 | integration | **MERGED CLEAN, 0 conflicts** | gauntlet 4/4 on the integrated tree; pytest 4411 → **4452** |
+| wave 1 | BURN-C | confinement HELD | `_module_to_path`/`_node_text` byte-identical, proven by AST extraction |
+| wave 1 | gate | **PASS** | conductor re-verified: 3-tuple wired, 3 surfacing sites, zero residual `.write_text` in all 6 writers |
+
+---
+
+## H1 — RESULT: gating is the bottleneck, and by a wide margin
+
+**Status: CONFIRMED.**
+
+Three builders ran **concurrently** — wall-clock ≈ the slowest one (~16 min), not the sum. They
+consumed ~345k subagent tokens between them, none of it from the conductor's context.
+
+Gating them was **serial and entirely conductor-context**: read three reports, check branch bases and
+diff scope, merge three branches, run one integrated gauntlet (~3 min), then independently re-verify
+each builder's central claim rather than trust it.
+
+**The asymmetry is the finding.** Builders scale out; the gate does not. A burn mode that adds
+builders without changing the gate just moves the queue. **Design implication:** the mode needs either
+parallel gating (independent gate agents per item, with the conductor adjudicating only conflicts), or
+gates cheap enough to be mechanical — and note the repo already has the machinery for the latter
+(`gauntlet.py`, the mutation pins, the residual-`write_text` style assertions the BURN-A builder wrote
+itself). **The cheapest wins are gates the BUILDER writes and the conductor merely re-runs.**
+
+---
+
+## H6 — Worktree provisioning silently used the wrong base
+
+**Status: CONFIRMED — reported independently by TWO of three builders, which is why it is credible.**
+
+BURN-B and BURN-C both found their worktree checked out at `d4650fc`, one commit behind the pinned
+base `3e10ce4`. Both noticed, both verified `d4650fc` was a direct ancestor whose only delta was two
+`.planning/` docs, and both branched from `3e10ce4` as briefed.
+
+**This time it was harmless — the source files were byte-identical. It would not always be.** A base
+differing in *code* would have produced silent build-on-stale with every worktree green.
+
+**Mode rule:** a burn must **verify each worktree's base SHA before the builder starts**, not trust the
+provisioning. Cheap: one `git rev-parse` in the brief's preamble, reported back. Add it to the standing
+rules.
+
+*(Credit where due: this was caught only because the briefs told builders to report anything that did
+not match. A builder that silently "fixed" it would have hidden a real infrastructure defect.)*
+
+---
+
+## H7 — Builders caught things the grill missed, because they were told to push back
+
+Standing rule #2 ("verify a primitive before reusing it; if it does not expose the surface, SAY SO AND
+STOP") paid for itself three times in one wave:
+
+- **BURN-A** refused to edit `fs_atomic.py:21-24` (stale docstring, out of owner set) and **flagged it
+  instead** — correct, and the conductor fixed it at integration.
+- **BURN-B** found that `protocol/exec-safety.md:53-55` records `_default_runner` *semantically*, so
+  the fingerprinted file needed no edit — turning a predicted escalation into a non-event, with
+  evidence.
+- **BURN-C** found a **pre-existing** defect as a side effect (the old fallback returned `['src']` for
+  a directory containing no Python at all) and pinned it with a test; and reported that two of its six
+  new tests **passed vacuously at RED**, volunteering that they are regression guards rather than
+  reproductions. That is PD-2 behaviour nobody asked for by name.
+
+**Mode rule:** brief builders to push back explicitly. The instruction "if the brief is wrong, say so
+and stop" is what converts a builder from a code-typist into a second reviewer — and it costs one
+sentence.
 
 ---
 

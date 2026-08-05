@@ -3,7 +3,32 @@
 > PD-1 sanctioned deferral path: every entry here is operator-visible, graded at the gate,
 > and surfaced at handoff. An entry is closed by the run that builds it (link the record).
 
-## DEF-1 — kata_preflight._default_runner stderr widening · OPEN (2026-07-21)
+## DEF-1 — kata_preflight._default_runner stderr widening · **CLOSED (2026-08-04)**
+
+> **Closed by backlog-burn-01, item BURN-B.** `RunnerType` is now
+> `Callable[[list[str]], tuple[int, str, str]]` and `_default_runner` returns
+> `(returncode, stdout, stderr)` **uncapped**. The 4000-char tail cap is applied at the **four
+> consumer call sites**, not inside the runner — deliberately mirroring
+> `kata_dispatch.py:194`'s choke-point property (*"injected runners cannot bypass it"*); putting
+> the cap in the runner would have inverted it. `_stderr_tail` was **copied**, not imported:
+> `kata_preflight` still imports nothing from `kata_dispatch`, pinned by a new AST test.
+>
+> **Wired, not merely captured** (the PD-1 risk in the brief): install failure and post-install
+> re-verify failure append the tail to their `blockers` entry; a failing `target.baselineGate`
+> probe appends to its degraded `warnings` entry. The **first** presence check deliberately does
+> NOT surface — a non-zero there is the designed "dependency is absent" control signal routing to
+> the install path, not a failure — and that asymmetry is pinned by its own test so it is not
+> "fixed" by mistake later.
+>
+> **Proof:** integrated gauntlet 4/4 PASS, pytest 4452 passed / 3 skipped. Non-vacuity checked by
+> neutralizing the install-path surfacing, which failed exactly 2 of the new tests, then reverting.
+> Conductor verified independently: `RunnerType` at `kata_preflight.py:139`, `_default_runner` at
+> `:399`, three surfacing sites at `:1354, :1385, :1433`.
+>
+> *(The original entry is preserved verbatim below — it is the record, and its "size when picked up"
+> estimate is worth comparing against what the work actually took.)*
+
+### Original entry — kata_preflight._default_runner stderr widening · OPEN (2026-07-21)
 - **What:** `tools/kata_preflight.py:397-407` `_default_runner` returns `(returncode, stdout)`
   — same stderr-discard class as the kata_dispatch defect fixed by the dispatch-stderr-fix run.
 - **Why deferred:** the quota-resilience classifier (its own grilled run,
