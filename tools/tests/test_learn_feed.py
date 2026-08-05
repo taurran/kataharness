@@ -443,6 +443,207 @@ def test_render_body_fallback_when_no_fields():
     assert "The recorded resolution text." in content
 
 
+# ---------------------------------------------------------------------------
+# DEFECT DEF-2 / LFB-1 — the body renders IN ADDITION to the fields, never instead
+# ---------------------------------------------------------------------------
+# `render_page` used `elif body_text:`, so ANY parsed field discarded the body.
+# The house ledger style — a bold `- **Decision:**` prefix followed by indented
+# sub-bullets and `- **Rejected — …**` bullets — reliably parses *some* field
+# while leaving the substance in the body, so the dropping branch was the one
+# that fired: 68 of 218 entries / 46,427 characters across 22 ledgers.
+
+# A real-shaped house-style entry (verbatim shape of
+# .planning/specs/ungated-protocol-files/GRILL-LEDGER.md UPF-4): bold field
+# prefixes whose value wraps, interleaved with `**Rejected — …**` bullets whose
+# names are NOT in _FIELD_PREFIXES and therefore land in the body.
+HOUSE_STYLE_ENTRY = """\
+### UPF-4 — Pin board.md's run-isolation MUST · LOCKED
+
+- **Decision:** the pinned clause covers the run-isolation invariant — the board must
+  contain only the current run's events.
+- **Rejected — pin the sentence verbatim including truncation:** would make a permission
+  that contradicts `D135` *harder to remove than to keep*.
+- **Rejected — delete "(or truncate it)" first:** a behavior change to a live contract
+  smuggled inside a guarding change.
+- **Rationale:** truncation destroys the prior run's board.
+- **Follow-up filed, NOT built here:** should `(or truncate it)` be removed?
+- **Provenance:** `board.md:45-50` · operator ruling 2026-08-03.
+"""
+
+
+def test_render_fields_and_body_both_rendered():
+    """LFB-1 (a): fields present AND body present ⇒ BOTH, body under `## Detail`."""
+    entry = _entry(
+        fields={"decision": "Use headings.", "rationale": "Cheapest to parse."},
+        body="- **Rejected — bullets:** ambiguous under wrapping.",
+    )
+    _, content = _render(entry)
+    # the field sections are rendered exactly as before
+    assert "## Decision\n" in content
+    assert "Use headings." in content
+    assert "## Rationale\n" in content
+    assert "Cheapest to parse." in content
+    # ...AND the body is no longer discarded
+    assert "## Detail\n" in content
+    assert "Rejected — bullets" in content
+    # fields first, body last (SB-L2 section order preserved)
+    assert content.index("## Decision") < content.index("## Detail")
+    assert content.index("## Rationale") < content.index("## Detail")
+
+
+def test_render_no_detail_section_when_body_empty():
+    """LFB-1 (b): fields only ⇒ NO empty `## Detail` section is emitted."""
+    entry = _entry(fields={"question": "Which grammar?", "decision": "Headings."}, body="")
+    _, content = _render(entry)
+    assert "## Detail" not in content
+    entry_ws = _entry(fields={"decision": "Headings."}, body="   \n\n  ")
+    _, content_ws = _render(entry_ws)
+    assert "## Detail" not in content_ws
+
+
+def test_render_body_only_still_uses_decision_heading():
+    """LFB-1 (c) REGRESSION GUARD: no fields ⇒ the body stays under `## Decision`.
+
+    The field-less MM `· LOCKED` form is load-bearing for other ledgers; it must
+    NOT be relabelled to `## Detail` by the additive-body fix.
+    """
+    _, content = _render(_entry(fields={}, body="The recorded resolution text."))
+    assert "## Decision\n" in content
+    assert "The recorded resolution text." in content
+    assert "## Detail" not in content
+
+
+def test_render_neither_fields_nor_body_emits_no_section():
+    """LFB-1 (d): neither ⇒ unchanged — no Decision, no Detail."""
+    _, content = _render(_entry(fields={}, body=""))
+    assert "## Decision" not in content
+    assert "## Detail" not in content
+    assert "# MM-1 — Five role groups" in content  # the page itself still renders
+
+
+def test_house_style_entry_round_trips_with_substance_intact():
+    """LFB-4 (e): a REAL-shaped entry keeps every rejected-alternative bullet.
+
+    Before the fix this page rendered the two parsed fields and silently dropped
+    all four body bullets — the whole "why we rejected the alternative" record.
+    """
+    (entry,) = learn_feed.parse_grill_ledger(HOUSE_STYLE_ENTRY)
+    assert entry["status"] == "resolved"
+    # the bold-prefix fields still parse exactly as before
+    assert entry["fields"]["decision"].startswith("the pinned clause")
+    assert entry["fields"]["rationale"] == "truncation destroys the prior run's board."
+    # ...and the unknown-name bullets are in the body, where the parser puts them
+    assert "Rejected — pin the sentence verbatim" in entry["body"]
+
+    # `**Provenance:**` parses to a field but is deliberately NOT a page section
+    # (_SECTION_ORDER omits it) — unchanged pre-existing behavior, asserted here so
+    # the omission stays a decision rather than becoming a second silent drop.
+    assert entry["fields"]["provenance"].startswith("`board.md:45-50`")
+    assert "provenance" not in learn_feed._SECTION_ORDER
+
+    _, content = _render(entry)
+    assert "## Decision\n" in content and "## Rationale\n" in content
+    assert "## Detail\n" in content
+    for substance in (
+        "harder to remove than to keep",
+        "smuggled inside a guarding change",
+        "should `(or truncate it)` be removed?",
+    ):
+        assert substance in content, f"lost from the rendered page: {substance!r}"
+
+
+# ---------------------------------------------------------------------------
+# BL-M24 / LFB-2 — the heading grammar no longer counts a document H1
+# ---------------------------------------------------------------------------
+
+def test_heading_grammar_ignores_document_h1():
+    """LFB-4 (d): `# GRILL-LEDGER — <spec>` is a title, not an open entry.
+
+    `GRILL-LEDGER` matches `_ANCHOR_RE`, so the old `^#{1,6}` grammar parsed every
+    ledger's own H1 as a status-less (⇒ open) entry — the phantom "1 item skipped"
+    on every emit. 11 of the 22 repo ledgers were miscounted this way.
+    """
+    text = (
+        "# GRILL-LEDGER — session-lifecycle\n"
+        "\n"
+        "Intro prose under the title.\n"
+        "\n"
+        "### SL-1 — a real entry · LOCKED\n"
+        "- **Decision:** the real one.\n"
+    )
+    entries = learn_feed.parse_grill_ledger(text)
+    assert [e["anchor"] for e in entries] == ["SL-1"]
+    assert not any(e["anchor"] == "GRILL-LEDGER" for e in entries)
+    assert sum(1 for e in entries if e["status"] != "resolved") == 0  # no phantom skip
+
+
+def test_heading_regex_requires_at_least_h2():
+    assert learn_feed._HEADING_LINE_RE.match("# GRILL-LEDGER — x") is None
+    assert learn_feed._HEADING_LINE_RE.match("## Resolved branches") is not None
+    assert learn_feed._HEADING_LINE_RE.match("###### deep") is not None
+
+
+def test_decisions_record_terminator_still_matches_h1():
+    """The DECISIONS record terminator is a SEPARATE regex and still ends on H1.
+
+    Narrowing it alongside the entry grammar would silently vacuum a mid-file
+    `# Heading` into the preceding record's body.
+    """
+    text = (
+        "- **D1 — first.** body line\n"
+        "# A new H1 section\n"
+        "- **D2 — second.** other body\n"
+    )
+    entries = {e["anchor"]: e for e in learn_feed.parse_decisions_bullets(text)}
+    assert entries["D1"]["body"] == "body line"
+    assert "A new H1 section" not in entries["D1"]["body"]
+    assert entries["D2"]["body"] == "other body"
+
+
+def test_real_ledgers_lose_no_entry_bodies():
+    """LFB-4 proof, pinned as a test: ZERO dropped bodies across every real ledger.
+
+    Mirrors `render_page`'s real condition (fields nested under `entry["fields"]`;
+    a drop is `body_text and present`). Against the pre-fix renderer this same
+    scan reported 68 dropped entries / 46,427 characters over 22 ledgers.
+    """
+    specs = _REPO_ROOT / ".planning" / "specs"
+    ledgers = sorted(specs.glob("*/GRILL-LEDGER.md"), key=lambda p: p.as_posix())
+    if not ledgers:
+        pytest.skip("no real ledgers present")
+    dropped = []
+    scanned = 0
+    for led in ledgers:
+        for e in learn_feed.parse_grill_ledger(led.read_text(encoding="utf-8")):
+            fields = e.get("fields") or {}
+            present = [k for k in learn_feed._SECTION_ORDER if str(fields.get(k) or "").strip()]
+            body = str(e.get("body") or "").strip()
+            if not (body and present):
+                continue  # not the DEF-2 shape
+            scanned += 1
+            _, content = _render(e, source_path=led.as_posix())
+            # the drop was structural: the body got no section at all
+            if "## Detail\n" not in content:
+                dropped.append(f"{led.parent.name}:{e['anchor']}")
+    assert scanned > 0, "the DEF-2 shape vanished from the corpus — probe is no longer meaningful"
+    assert dropped == [], f"{len(dropped)} entries still lose their body: {dropped[:5]}"
+
+
+def test_real_ledgers_have_no_phantom_h1_entry():
+    """BL-M24 proof: no ledger's own H1 title is parsed as an entry any more."""
+    specs = _REPO_ROOT / ".planning" / "specs"
+    ledgers = sorted(specs.glob("*/GRILL-LEDGER.md"), key=lambda p: p.as_posix())
+    if not ledgers:
+        pytest.skip("no real ledgers present")
+    phantoms = [
+        f"{led.parent.name}:{e['anchor']}"
+        for led in ledgers
+        for e in learn_feed.parse_grill_ledger(led.read_text(encoding="utf-8"))
+        if e["anchor"] == "GRILL-LEDGER"
+    ]
+    assert phantoms == []
+
+
 def test_render_wikilink_to_raw_artifact():
     _, content = _render()
     assert "[[.planning/specs/x/GRILL-LEDGER.md]]" in content
