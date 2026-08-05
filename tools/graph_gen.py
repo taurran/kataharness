@@ -260,6 +260,10 @@ def _extract_imports(
 # manufacture import edges that cannot resolve at runtime (adval F2 finding 2).
 _NON_SOURCE_ROOTS = {"tests", "test", "docs", "doc", "examples", "example"}
 
+# Directory name that denotes a source root by convention even with no
+# __init__.py (PEP-420 namespace src-layout).
+_NAMESPACE_SRC_DIR = "src"
+
 
 def _discover_source_roots(all_rel_paths: set[str]) -> list[str]:
     """Discover non-root source roots for src-layout import resolution (F2).
@@ -275,10 +279,22 @@ def _discover_source_roots(all_rel_paths: set[str]) -> list[str]:
     - Conventional non-source dirs (``tests/``, ``docs/``, …) are never promoted
       to roots — a package under them is not on sys.path, so a root there would
       manufacture false import edges.
-    - Fallback (L3 verbatim): when no ``__init__.py``-derived root exists but a
-      literal ``src/`` directory does (PEP-420 namespace src-layout), ``src`` is
-      the root — candidates only ever match existing files, so this cannot
-      create a false edge on a repo without ``src/``.
+    - PEP-420 namespace src-layout: a ``src/`` dir holding no ``__init__.py``
+      yields no package-derived root, so it is discovered by NAME instead —
+      candidates only ever match existing files, so this cannot create a false
+      edge on a repo without ``src/``.
+
+    The namespace half was doubly blind until T-08 (2026-08-04). It fired only
+    when the package-derived set was EMPTY and only for a literal TOP-LEVEL
+    ``src/``, so both of these silently resolved to *no* source root and dropped
+    **every** import edge (flat PageRank — the exact symptom F2 exists to fix):
+    ``backend/src/pkg/mod.py`` (nested, one level down), and a namespace
+    ``src/`` coexisting with any single unrelated ``__init__.py`` package. It is
+    now a UNION with the package-derived roots and matches a ``src`` segment at
+    any depth. Three guards keep it from manufacturing roots: the dir must hold
+    a ``.py`` file, its top-level component must not be a conventional
+    non-source dir, and no ancestor may be a package (``pkg/src/`` under a real
+    ``pkg`` is a SUBpackage — importable as ``pkg.src.*``, never as a prefix).
     """
     package_dirs = {
         Path(p).parent.as_posix()
@@ -295,8 +311,26 @@ def _discover_source_roots(all_rel_paths: set[str]) -> list[str]:
             and Path(parent).parts[0] not in _NON_SOURCE_ROOTS
         ):
             roots.add(parent)
-    if not roots and any(p.startswith("src/") for p in all_rel_paths):
-        return ["src"]
+    for rel in all_rel_paths:
+        if not rel.endswith(".py"):
+            continue  # a src/ dir with no Python in it is not a source root
+        segments = rel.split("/")
+        # OUTERMOST enclosing dir named "src" (never a src-inside-src double root)
+        for depth, segment in enumerate(segments[:-1]):
+            if segment != _NAMESPACE_SRC_DIR:
+                continue
+            candidate_parts = segments[: depth + 1]
+            candidate = "/".join(candidate_parts)
+            if candidate_parts[0] in _NON_SOURCE_ROOTS:
+                break  # under tests/, docs/, … ⇒ not on sys.path
+            # no ancestor (nor the dir itself) may be a package
+            if any(
+                "/".join(candidate_parts[: i + 1]) in package_dirs
+                for i in range(len(candidate_parts))
+            ):
+                break
+            roots.add(candidate)
+            break
     return sorted(roots)
 
 

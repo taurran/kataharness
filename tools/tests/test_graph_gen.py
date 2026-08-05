@@ -547,6 +547,74 @@ def test_discover_source_roots_excludes_test_dirs():
     assert roots == []
 
 
+# --- T-08 / BURN-C (2026-08-04): the src/ fallback was doubly blind ---------------
+#
+# The 2 July fallback fired ONLY when `roots` was empty AND ONLY for a literal
+# TOP-LEVEL `src/`. Both halves of that guard drop real source roots on layouts
+# that are common in the wild, and the symptom is silent: `_module_to_path` gets
+# no source root, so EVERY import edge is dropped and PageRank goes flat — the
+# exact failure F2 was built to fix, resurfacing one directory level down.
+
+def test_discover_source_roots_nested_namespace_src():
+    # Blindness 1 — NESTED PEP-420 src-layout (no __init__.py anywhere).
+    # `startswith("src/")` is False for "backend/src/..." so the fallback misses
+    # it and returns []. Note the __init__.py path ALREADY handles nesting
+    # correctly (backend/src/pkg/__init__.py yields ["backend/src"]) — only the
+    # namespace fallback is level-locked.
+    from graph_gen import _discover_source_roots
+
+    roots = _discover_source_roots(
+        {"backend/src/pkg/mod.py", "backend/src/pkg/app.py", "README.md"}
+    )
+    assert roots == ["backend/src"]
+
+
+def test_discover_source_roots_namespace_src_alongside_package():
+    # Blindness 2 — the fallback is gated on `not roots`, so a single unrelated
+    # __init__.py package ANYWHERE makes `roots` non-empty and the namespace
+    # src/ root is never even considered. Both roots are real; both are needed.
+    from graph_gen import _discover_source_roots
+
+    roots = _discover_source_roots(
+        {"src/ns/mod.py", "src/ns/app.py", "lib/pkg/__init__.py", "lib/pkg/m.py"}
+    )
+    assert roots == ["lib", "src"]
+
+
+def test_discover_source_roots_src_root_is_sorted():
+    # Determinism Doctrine law 2 — this list drives artifact content (candidate
+    # order in _module_to_path), so it is sorted regardless of set iteration.
+    from graph_gen import _discover_source_roots
+
+    roots = _discover_source_roots(
+        {"z/src/a/m.py", "a/src/b/m.py", "m/src/c/m.py", "README.md"}
+    )
+    assert roots == sorted(roots) == ["a/src", "m/src", "z/src"]
+
+
+def test_discover_source_roots_ignores_src_under_non_source_dirs():
+    # The widened fallback keeps the _NON_SOURCE_ROOTS guard: a src/ dir under
+    # tests/ is not on sys.path, so promoting it would manufacture false edges.
+    from graph_gen import _discover_source_roots
+
+    assert _discover_source_roots({"tests/src/pkg/mod.py", "app.py"}) == []
+
+
+def test_discover_source_roots_ignores_src_inside_a_package():
+    # `pkg/src/...` where pkg IS a package is a SUBPACKAGE dir, not a source
+    # root — importable as pkg.src.*, never as a top-level prefix.
+    from graph_gen import _discover_source_roots
+
+    assert _discover_source_roots({"pkg/__init__.py", "pkg/src/mod.py"}) == []
+
+
+def test_discover_source_roots_src_needs_a_python_file():
+    # No phantom root: a src/ dir holding no .py file is not a source root.
+    from graph_gen import _discover_source_roots
+
+    assert _discover_source_roots({"src/assets/logo.svg", "app.py"}) == []
+
+
 def test_namespace_src_layout_import_edge_resolves(tmp_path):
     # End-to-end: namespace src-layout now produces the import edge via the
     # src/ fallback root.
