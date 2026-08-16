@@ -154,9 +154,19 @@ ubuntu-latest.
 the shell — roughly 126 real pytest subprocesses (63 proofs × baseline + mutated) that never
 ran on Linux before.
 
-Windows leg, same SHA: **still in progress when this note was committed** — the pre-fix run 1
-Windows leg was green, and the full suite is green locally on Windows (§6), but this note does
-not claim the run-2 Windows result it has not observed. It is recorded in the task report.
+**Windows leg, same SHA: success** (job log
+`gh api repos/taurran/kataharness/actions/jobs/95241647039/logs`) — the platform the fix had
+to not regress:
+
+```
+collected 4540 items
+====================== 4540 passed in 267.90s (0:04:27) =======================
+collected 4540 items / 4538 deselected / 2 selected
+===================== 2 passed, 4538 deselected in 2.90s ======================
+```
+
+Zero failures on Windows against 1 (BL-X15) on ubuntu: the closed grammar parses the existing
+caller corpus with identical meaning on both platforms, which was the point.
 
 ## 5. Honest residual — "full gauntlet CI green" is NOT achieved on this branch
 
