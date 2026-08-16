@@ -2,6 +2,153 @@
 
 Promote to ROADMAP milestones when ready.
 
+---
+
+## ★★ 2026-08-15 PLANNING BATCH — twelve features + six found-broken fixes (operator-directed)
+
+> Source: the operator's feature prompt (typed 2026-08-15, recovered verbatim from the session
+> transcript) + two additions made live at filing time + everything found broken while finishing
+> `backlog-burn-01`. Session rulings already made: **file everything first, then deep-dive**;
+> **first deep-dive = Backlog Burn mode (BL-N12)**. Codes are `BL-N##` (new-feature batch) and
+> `BL-X##` (found-broken); per standing operator preference every code is paired with a plain-English
+> name everywhere it appears.
+
+### The twelve features
+
+> **BL-N01 · "Truth Serum" — make the never-stub/never-half-build promise mechanical.**
+> The harness must never stub, defer, or half-build anything without being explicit and getting
+> explicit approval. The *prose* contract already exists (PD-1/PD-2, clause-pinned + fingerprinted);
+> what does not exist is mechanism beyond the gate's judgment. **The recorded blocker is `BL-M33`**
+> (no code seam between conductor and host-only agents — any rule about how a judge was launched is
+> unenforceable prose), so BL-N01 is largely "build the seam, then hang enforcement off it."
+> Open questions: what is mechanically detectable (stub signatures, unwired symbols — `contract_edges.
+> surviving_stubs` already exists), and where does approval get recorded so the gate can check it?
+
+> **BL-N02 · "Human Prose" — selectable language modes for everything the harness says.**
+> Modes sketched: Simplified Technical · ELI5 · a model↔model register optimized for concise
+> machine-to-machine transfer (handoffs, orientation). More to brainstorm. Existing machinery: ONE
+> agnostic voice already exists (`protocol/persona.md`, `protocol/narration.md`) — this generalizes
+> it into a register dial. Natural config home: `kata.config` beside mode/effort. Open questions:
+> does the register apply per-surface (closeout vs. board vs. handoff) or per-run; does model↔model
+> compression conflict with the "never-summarized invariant block" handoff rule (D67)?
+
+> **BL-N03 · Ubiquitous Language — research-backed term alignment as an optional grill step.**
+> Ingest the Pocock ubiquitous-language approach fully: inventory the repo's real terminology (views,
+> reports, resources, object names), build a small machine-readable reference (yaml/json/md/sqlite —
+> format TBD) so human and machine align on language BEFORE building; research pass for marketability
+> + industry-standard terms; runnable against EXISTING codebases for alignment sweeps. Existing
+> machinery: `kata-context` (CONTEXT.md glossary) is *already* adapted from Pocock's skill — this
+> deepens it (research + machine-readable artifact + existing-repo alignment mode) rather than
+> starting from zero.
+
+> **BL-N04 · Specialist Cadre — a library of installable specialist agents.**
+> Standardized specialists (coding optimization, domain knowledge, **a GitHub specialist** — named
+> explicitly by the operator) that research/coding agents can pick up; ingested into the user's
+> designated vault; includes cloning + customizing a "KataHarness Superpowers" set that loads with
+> the harness; users can author their own specialists and the harness generates the contextual
+> references/files. Open questions (operator-flagged): do superpowers live inside the cadre or in
+> their own home; relationship to the existing agent-skills toolkit (`agentSkills.dir`,
+> `kata-promote` two-stage gate, STANDARDS §1.3 discriminators) which already governs exactly this
+> shape of thing.
+
+> **BL-N05 · Settings module — a real settings command.**
+> One command to view/set KataHarness system settings. Existing machinery: `tools/kata_settings.py`
+> + `kata.config` + the bootstrap interview already own the values; what is missing is the direct
+> user-facing surface. Small, but its UX belongs to the BL-N07 rework template.
+
+> **BL-N06 · Branded launcher + the launch experience ("the front door", operator-clarified).**
+> `kata-claude` / `kata-codex` / `kata-kiro` aliases that launch the host INTO a KataHarness
+> interface: designed ASCII title (full ASCII font, color + gradient, branded), version, help,
+> settings, new-project / run-existing commands, with all environmental skills + agentic files
+> preloaded (kata superpowers etc.). The MindBridge `mbl-kiro` launcher is the reference experience.
+> **Operator direction 2026-08-15: dial in the launch design FIRST — agree the template — because it
+> becomes the design system BL-N07 carries across everything.** Brainstorm-deep flagged.
+
+> **BL-N07 · The UX rework — carry the agreed design across every menu and phase. (NEW 2026-08-15)**
+> Once the BL-N06 launch template is agreed, apply it across ALL menus and ALL phases of the harness
+> — one visual/interaction language everywhere the human touches it (bootstrap dial, grill UX,
+> narration, closeout, status). Operator: *"something that this has really needed for a long time."*
+> Existing anchor points: persona/narration protocols, the two-tier closeout (CLI summary + branded
+> HTML report), the one-dial bootstrap. This is the umbrella; BL-N05/N06 are its first tenants.
+
+> **BL-N08 · "The Kitchen" — decouple the flat run; let tasks bake. (THE BIG ONE)**
+> Chef (conductor) / sous-chef (orchestrator subagent) / dishes (tasks). Today's run pattern is
+> flat and on-rails; the Kitchen lets execution branches parallelize and optimize *around each
+> other* — a long-running task is put on to "bake" while non-dependent tasks run; each branch
+> optimizes within itself for time and tokens; **fan out the fan-out** (branches that themselves
+> fan out). Existing machinery to build on, not replace: the rolling DAG-frontier dispatch + async
+> park/drain/hard-wait escalation (D47–D56), worktree isolation, the wave model. Evidence feeding
+> it: the burn's H1 finding — **gating is the serial bottleneck, builders are not** — so the Kitchen
+> must redesign gate placement, not just dispatch. Operator: has unspecified details; grill deep,
+> live.
+
+> **BL-N09 · Fan-out dial — a run-config knob for Kitchen capacity. (NEW 2026-08-15, depends on BL-N08)**
+> Once the Kitchen exists: a `fanOut` configuration alongside mode/economy — three positions,
+> working names **minimal / standard / maximum** (better descriptive terms welcome at grill time):
+> minimal caps parallel-branch capacity, standard is moderate *in context of the workload*, maximum
+> lets the Kitchen architecture itself determine the parallel-branch ceiling. Config-surface work +
+> the Kitchen's capacity model; strictly sequenced after BL-N08.
+
+> **BL-N10 · "Challenger" — cross-model challenge of the adversarial validator.**
+> The adversarial validator runs on a DIFFERENT model (another Claude, or a Codex model); then a
+> strong model (Opus/Fable) comes back to CHALLENGE the validator's findings — accuracy control on
+> the adval itself. Includes proving Codex models can actually execute here (today `_COMMAND_BUILDERS`
+> covers codex/kiro but the Claude path is orchestrator-prose, and non-Anthropic ladders in
+> `kata_models.py` are empty placeholders). Open question: does this need multi-agent orchestration,
+> and does it inherit BL-M33's missing dispatch seam?
+
+> **BL-N11 · Backlog management — an explicit function, not a markdown convention.**
+> Operator-recommended as its own item. Today the backlog is this file plus five sibling surfaces
+> (the recorded `KH-B41` "six surfaces, no single view" problem). A real capability: add/triage/
+> close/prioritize items, feed a burn, ingest external sources. Direct dependency of BL-N12's
+> intake step.
+
+> **BL-N12 · Backlog Burn mode — the operating mode this branch prototyped. (FIRST DEEP-DIVE)**
+> Ingest a large item set (backlog, design issues, **external tickets/issues**), triage-then-grill
+> ONCE across the whole set, burn in preplanned waves with parallel builders, throughput without
+> losing accuracy. The evidence base is real and unusually good:
+> `.planning/specs/backlog-burn-01/OBSERVATIONS.md` — headline findings: gating is the serial
+> bottleneck (H1); triage must precede the grill because a third of items were mis-filed (H2); wave
+> partitioning must be computed over the IMPORT GRAPH, not file lists (H4); the convergence gate is
+> non-optional and must attack the SHARED half of the contract (H3/H5 ×2); provisioning must pin
+> base SHAs itself (H6 ×2); builders briefed to push back catch real contract errors (H7).
+
+### The six found-broken fixes (from finishing backlog-burn-01, 2026-08-15)
+
+> **BL-X01 · `protocol/config.md:14`'s own example fails the new load-guard.** The schema example
+> names modules `design`/`bakeoff`/`improve` — no skill on disk carries their provider tag (verified
+> twice: builder + conductor's independent probe). Fix the example (or provide the tags) — the
+> schema must pass its own validator. Clause-pin aware edit.
+
+> **BL-X02 · The installer's "next steps" banner names commands that do not exist.**
+> `tools/kata_install.py` (~:1305-1320) tells users to run `/kata-initiate` and `/kata-bootstrap`;
+> neither is a command file (the real set: `/kata` `/kata-loop` `/kata-start` `/kata-onboard`
+> `/kata-resume` `/kata-status` `/kata-validate`). First-run UX lies at the exact moment of first
+> contact — also a BL-N07 tenant.
+
+> **BL-X03 · `kata-understand` documents a graph-rebuild command the tool refuses.**
+> `modules/closeout/kata-understand/SKILL.md:47` says `--root .. --out ../.kata/kata.graph.json`;
+> `graph_gen._safe_path` raises on ANY `..` path (verified live 2026-08-15). Every literal follower
+> of the doc hits a crash. Fix the doc to absolute/CWD-relative form.
+
+> **BL-X04 · `graph_gen` scans embedded worktrees — a mid-burn map rebuild is garbage.**
+> With six `.claude/worktrees/` copies present the scan returned 43,064 nodes vs. the honest 5,560
+> (~7× over-count). Add worktree/gitignored-dir exclusion. **Directly load-bearing for BL-N12**,
+> whose wave partitioning wants graph rebuilds while worktrees exist.
+
+> **BL-X05 · Sweep the exact-version-pin class.** `test_validate_prime_directives.py` pinned the
+> literal `version: 0.17.0` and redded on any legitimate bump (caught live by the BURN-D builder;
+> fixed to a semver floor at `53cecf8`). Grep the suite for the same class — exact version/count pins
+> against living files — and convert to floors or regenerable assertions.
+
+> **BL-X06 · Host auto-worktree isolation fails on this repo (path casing) and provisions wrong
+> bases.** The Claude Code worktree isolation refused `C:\dev\...` vs `C:/Dev/...` casing and left
+> orphans at a stale base — the second independent provisioner to produce a wrong base (H6 ×2).
+> Harness-side mitigation: burn/Kitchen briefs always pin + verify base SHAs (already standing);
+> track whether a host fix lands, else make manual pinned provisioning the codified rule.
+
+---
+
 > ## 🔴 **BL-M33 · There is no code seam between the conductor and a host-only agent — FILED 2026-08-04**
 >
 > **In plain terms:** when the conductor dispatches the evaluator (or any host-only role), it does it by
