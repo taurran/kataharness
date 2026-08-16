@@ -3,7 +3,7 @@ spec: trust-model
 item: "The Trust Model — one unified grill (operator-ruled 2026-08-16): the seam (BL-M33/M34) + the cursor + Truth Serum (BL-N01) + the grounding agent + gate preconditions + the plan-grounding close (feeds BL-N19) + the presentation layer"
 status: converged
 opened: 2026-08-16 (absorbs specs/dispatch-seam/GRILL-LEDGER.md, opened same day — its Phase-0 grounding and B1–B11 tree carry over as input; supersede-never-rewrite)
-converged: 2026-08-16 (pass 1 SHIP fifth run · pass 2 SHIP second run · EV-1 accepted; emit blocked by BL-X12, surfaced)
+converged: 2026-08-16 (pass 1 SHIP fifth run · pass 2 SHIP second run · EV-1 accepted; retroactive learn_feed emit RUN 2026-08-16 — written=29 open-skipped=2 redactions=0 — the "emit blocked by BL-X12" note was stale: X12 was already fixed at 2a1b1cf before the freeze)
 baseline: master `de8578c` → branch grill/dispatch-seam @ dcdd1b2 · gauntlet 4/4 (pytest 4518)
 tier: kata-grill-advanced (enforcement-critical, architecturally load-bearing; double convergence pass + dedicated security/edge-case pass)
 target: CODEBASE (dev source, operator-selected this session)

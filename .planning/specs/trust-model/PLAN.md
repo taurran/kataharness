@@ -235,7 +235,7 @@ evidence:
   fix-statusline-crash:
     - "test:tools/tests/test_statusline_chain.py::TestRunChild::test_empty_argv_fail_soft"
   fix-learn-feed-truth:
-    - "test:tools/tests/test_learn_feed.py::test_grill_ledger_open_question_never_emits_resolved"
+    - "test:tools/tests/test_learn_feed.py::test_real_ux_ledger_open_question_is_not_a_decision"
   deferral-contract:
     - "artifact:protocol/deferral.md"
   exec-safety-registration:
@@ -1035,6 +1035,16 @@ Wave 5 is a deliberate single-task anchor-model wave. Worker-brief budgets bind 
 11. **Stale-anchor scope:** the ledger says "five skills"; grep finds six non-orchestrate
     citing files (+ kata-orchestrate, fixed in its own W4 rewrite). The plan fixes all six in
     W1 — over-inclusion declared rather than guessing which five the ledger meant.
+13. **Recorded amendment G1 (conductor, 2026-08-16, post-freeze — wave-1 escalation
+    outcome):** `fix-learn-feed-truth` is **CLOSED-AS-ALREADY-SATISFIED** — BL-X12 was fixed
+    at `2a1b1cf` (2026-08-16 12:40, an ancestor of the burn base; conductor-gated CLOSED per
+    `.planning/specs/backlog-burn-02/OBSERVATIONS.md:84`), four hours BEFORE this plan froze;
+    the frozen plan scheduled work already done because the backlog's 🔴 marker was never
+    written back (the writeback-gap discovery, filed in `OBSERVATIONS.md`). The E1 fork was
+    already ruled as a shipped hybrid (route refusal + ledger-parser status vocabulary).
+    Evidence declaration amended from the planned NEW test node (never needed) to the live
+    equivalent pinning test (`test_real_ux_ledger_open_question_is_not_a_decision` — the
+    challenger's live case); conductor re-ran the full gate: 105/105 pass. No phase B built.
 12. **Freeze-gate folds (conductor-applied at the six-row gate, 2026-08-16 — recorded in
     `GATE-PLAN.md`):** four `ownership:` additions reconciling the frontmatter map with this
     plan's own Shared-file sequencing table (the body declared the touches; the authoritative
