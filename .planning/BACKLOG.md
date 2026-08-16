@@ -135,6 +135,12 @@ Promote to ROADMAP milestones when ready.
 > evidence digests) + subagent token usage already captured — this is a rollup + grammar, not a
 > from-scratch counter. **Sequencing (operator): part of this batch's burn — with the Kitchen
 > (BL-N08) or right after it.**
+> **Semantics ruling (2026-08-15):** every displayed vitals bar shows figures **cumulative for the
+> run up to that moment** (not per-phase deltas); the closeout report shows the same counters at
+> final values plus per-item breakdowns. Counters live in run STATE (`.kata/`, D81 tier-3), never
+> in `kata.config` — config is settings, counters are state. New counters needed: agent executions
+> · miniloop tally · flagged→remediated · confidence (derivation TBD); tokens/time already flow
+> from the telemetry ledger.
 
 > *(Burn-mode design rulings from this session live in
 > `.planning/specs/backlog-burn-mode/GRILL-LEDGER.md` — BBM-1..BBM-10.)*

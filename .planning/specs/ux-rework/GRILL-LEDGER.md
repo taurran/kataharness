@@ -87,6 +87,34 @@ before building.
   as likely the most limited; the app/IDE panes render markdown not ANSI, so every template needs a
   defined markdown skin). Coverage matrix required before the DESIGN freezes.
 
+## Locked components (2026-08-15, second sitting — iterated live, operator-approved)
+
+- **UX-12 · The phase-break block is LOCKED.** Structure top-to-bottom, all exactly **64 columns**
+  (64 is the system-wide measure, shared with the launch banner): (1) the **A2 rail** — seal chip ·
+  done phases with green checks joined by parchment rail · current phase as an ochre-filled chip
+  with live counts · future dim — plus an indented detail subline naming the active worker+task;
+  (2) the **vitals box** — parchment-border box, ochre "run vitals" title, three dense rows
+  (counts+conf / tokens with in-out split / flagged→remediated + gate streak), figures CUMULATIVE
+  for the run at print time (BL-N14 semantics); (3) **the sea** (UX-13) as the closing divider,
+  flush against the box. Meter-bar and big-figure stats variants were rendered and passed over.
+
+- **UX-13 · The sea — the ONE waveform, everywhere.** "Open swell": three sine components summed
+  per column — (A 2.6, sf 0.10, k −2) + (1.2, 0.145, −3) + (0.5, 0.06, +1), base 4.2, phases
+  0/1.1/2.4, clamp 0.6..8, glyphs ▁..█, height-mapped palette (crest foam → trough Prussian) —
+  rendered as **48 frames × 135 ms = 6.48 s**, every k an integer so the loop closes SEAMLESSLY.
+  Frame 0 is the canonical STATIC frame (printed transcripts, non-animated surfaces). Applied
+  retroactively to the launch banner at 64 cols (`launch-template.html`, static frame preserved in
+  a comment). Rejected on the way: crossing-seas, wind-shimmer, tidal-curl overlay, leaning
+  breakers, curl train — recorded so they are not re-proposed.
+
+- **UX-14 · Terminal animation feasibility (verified reasoning, build constraints):** the effect is
+  single-line redraw-in-place — standard ANSI. Works natively in Windows Terminal, PowerShell 5.1/7,
+  cmd, macOS/Linux terminals. Wrapper obligations: enable VT processing on legacy conhost
+  (SetConsoleMode), force UTF-8 out (chcp 65001 / Console.OutputEncoding), detect 24-bit color and
+  fall back to 256-color approximations. Animation runs only while KataHarness owns the screen
+  (launch, waits, phase breaks it prints); once the host CLI owns the TTY, the live surfaces are the
+  statusline + printed static frames.
+
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
 statusline capabilities per host (kata segment exists on Claude; codex/kiro need assessment) ·
