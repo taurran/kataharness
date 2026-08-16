@@ -181,8 +181,13 @@ _ANCHOR_RE = re.compile(
 _STATUS_RE = re.compile(r"[·—]\s*(?P<status>locked|resolved|open)\b", re.IGNORECASE)
 _DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 
-# Bullet shape for DECISIONS: `- **D1 — title.** body` (recall._BULLET_RE family).
-_BULLET_RE = re.compile(r"^- \*\*(?P<anchor>.+?)\*\*\s*(?P<body>.*)$", re.MULTILINE)
+# Record OPENER for DECISIONS: `- **D1 — title.** body` (recall._BULLET_RE family).
+# It matches the START of a top-level record and does NOT require the closing `**`
+# on the same physical line — the wrap is handled by :class:`_BoldSpan` below.
+# The `- ` literal prefix is the prior `_BULLET_RE`'s verbatim (deliberately NOT
+# the ledger opener's tolerant `-\s+`): this route's record-start contract is
+# unchanged, only its ability to see past a line break is added.
+_DECISIONS_BULLET_OPEN_RE = re.compile(r"^- \*\*(?P<rest>.*)$")
 
 # --- Bullet ENTRIES in a grill ledger (BL-X12) ------------------------------
 # A TOP-LEVEL `- **…**` bullet only (leading whitespace ⇒ a sub-bullet of the
@@ -355,6 +360,48 @@ def _field_key(name: str) -> str | None:
 # SB-L1 — parsers
 # ---------------------------------------------------------------------------
 
+class _BoldSpan:
+    """Accumulator for a ``**…**`` bold anchor span that WRAPS across lines.
+
+    Both bullet routes need it and for the same reason: the 2026-08 house style
+    wraps long anchor spans, and a regex that requires the closing ``**`` on the
+    opening physical line drops those records **silently** — no note, no count.
+    That cost the ledger route UX-28/UX-32 (BL-X12 (b), fixed) and it still cost
+    the DECISIONS route D168/D172/D173 (3 of 177) until this class was shared.
+
+    Construct with the text following the opening ``**``, then :meth:`feed` each
+    following physical line until it returns the closed ``(span, tail)`` pair or
+    :attr:`abandoned` goes True. Pure — no I/O, no clock, no module state.
+    """
+
+    __slots__ = ("lines", "abandoned")
+
+    def __init__(self, head: str) -> None:
+        self.lines: list[str] = [head]
+        self.abandoned = False
+
+    def feed(self, line: str) -> tuple[str, str] | None:
+        """Consume one physical line.
+
+        Returns ``(span, tail)`` when the closing ``**`` is found — ``span`` is
+        the re-joined bold text (each physical line stripped, joined by a single
+        space, so a wrap never fuses two words) and ``tail`` is the rest of that
+        line, i.e. the record's lead body text. Returns ``None`` while the span
+        is still open; sets :attr:`abandoned` when the
+        :data:`_MAX_BOLD_SPAN_LINES` bound is exceeded (an unterminated ``**``
+        is malformed markdown, not a record).
+        """
+        head, sep, tail = line.partition("**")
+        if sep:
+            self.lines.append(head)
+            return " ".join(s.strip() for s in self.lines), tail
+        if len(self.lines) >= _MAX_BOLD_SPAN_LINES:
+            self.abandoned = True
+            return None
+        self.lines.append(line)
+        return None
+
+
 def _parse_heading_entry(rest: str, fm_date: str | None) -> dict | None:
     """Parse one heading's text into an entry skeleton (None = not a ledger entry)."""
     a = _ANCHOR_RE.match(rest)
@@ -450,7 +497,7 @@ def _parse_ledger_bullets(
     same record shape :func:`parse_decisions_bullets` uses. Pure.
     """
     entries: list[dict] = []
-    span_lines: list[str] | None = None  # an unterminated `**…` span in progress
+    span: _BoldSpan | None = None  # an unterminated `**…` span in progress
     current: dict | None = None
     body: list[str] = []
     pending_blank = False
@@ -463,27 +510,24 @@ def _parse_ledger_bullets(
             entries.append(current)
         current, body, pending_blank = None, [], False
 
-    def _open(span: str, tail: str) -> None:
-        nonlocal current, body, pending_blank, span_lines
-        span_lines = None
-        current = _parse_bullet_entry(span, fm_date)
+    def _open(bold: str, tail: str) -> None:
+        nonlocal current, body, pending_blank, span
+        span = None
+        current = _parse_bullet_entry(bold, fm_date)
         body = [tail.strip()] if tail.strip() else []
         pending_blank = False
 
     for i, line in enumerate(lines):
         if mask[i]:  # a heading entry owns this line — it is not bullet territory
             _flush()
-            span_lines = None
+            span = None
             continue
-        if span_lines is not None:  # accumulating a wrapped bold anchor span
-            head, sep, tail = line.partition("**")
-            if sep:
-                span_lines.append(head)
-                _open(" ".join(s.strip() for s in span_lines), tail)
-            elif len(span_lines) >= _MAX_BOLD_SPAN_LINES:
-                span_lines = None  # unterminated bold ⇒ malformed, not an entry
-            else:
-                span_lines.append(line)
+        if span is not None:  # accumulating a wrapped bold anchor span
+            closed = span.feed(line)
+            if closed is not None:
+                _open(*closed)
+            elif span.abandoned:
+                span = None  # unterminated bold ⇒ malformed, not an entry
             continue
         m = _LEDGER_BULLET_OPEN_RE.match(line)
         if m:
@@ -492,7 +536,7 @@ def _parse_ledger_bullets(
             if sep:
                 _open(head, tail)
             else:
-                span_lines = [head]  # the span wraps onto the following line(s)
+                span = _BoldSpan(head)  # the span wraps onto the following line(s)
             continue
         if current is None:
             continue  # prose between entries
@@ -599,6 +643,20 @@ def parse_decisions_bullets(text: str | None) -> list[dict]:
     separator ends the record). Capturing only the first physical line
     (the prior ``_BULLET_RE.finditer``) truncated wrapped records mid-sentence.
     Redaction runs over the FULL assembled body downstream in :func:`render_page`.
+
+    The **bold anchor span itself** may also wrap (BL-X12 (b) residue, 2026-08-16):
+    the record-start regex required the closing ``**`` on the opening physical
+    line, so a record whose anchor+title runs past the wrap column was not seen as
+    a record at all — its text was silently vacuumed into the PRECEDING record's
+    body. On the real ``.planning/DECISIONS.md`` that dropped D168, D172 and D173
+    (3 of 177) with no note and no count, and the grill-close command routes that
+    exact file through this exact route. :class:`_BoldSpan` — the same accumulator
+    the ledger route already used — now spans the break here too.
+
+    Everything else about this route's contract is DELIBERATELY unchanged: the
+    ``- `` literal record-start prefix, the record terminators, and
+    ``status="resolved"`` (correct by DECISIONS.md's own contract; a grill ledger
+    reaching this parser is refused upstream by :func:`grill_ledger_marker`).
     Pure.
     """
     src = text or ""
@@ -607,6 +665,7 @@ def parse_decisions_bullets(text: str | None) -> list[dict]:
 
     entries: list[dict] = []
     current_raw: str | None = None  # the `**…**` bold span of the open record
+    span: _BoldSpan | None = None   # an unterminated `**…` span in progress
     body: list[str] = []
     pending_blank = False
 
@@ -631,13 +690,31 @@ def parse_decisions_bullets(text: str | None) -> list[dict]:
             })
         current_raw = None
 
+    def _open(bold: str, tail: str) -> None:
+        nonlocal current_raw, body, pending_blank, span
+        span = None
+        current_raw = bold
+        body = [tail]
+        pending_blank = False
+
     for line in src.splitlines():
-        m = _BULLET_RE.match(line)
-        if m:  # a new top-level `- **…**` record starts here
+        if span is not None:  # accumulating a wrapped bold anchor span
+            closed = span.feed(line)
+            if closed is not None:
+                bold, tail = closed
+                _open(bold, tail.lstrip())  # `**` … `**` then the lead body text
+            elif span.abandoned:
+                span = None  # unterminated bold ⇒ malformed, not a record
+            continue
+        m = _DECISIONS_BULLET_OPEN_RE.match(line)
+        if m:  # a new top-level `- **…` record starts here
             _flush()
-            current_raw = m.group("anchor")
-            body = [m.group("body")]
             pending_blank = False
+            head, sep, tail = m.group("rest").partition("**")
+            if sep:
+                _open(head, tail.lstrip())
+            else:
+                span = _BoldSpan(head)  # the span wraps onto the following line(s)
             continue
         if current_raw is None:
             continue  # content before the first bullet (frontmatter, intro prose)

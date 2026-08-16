@@ -356,6 +356,101 @@ def test_decisions_full_body_redacted():
 
 
 # ---------------------------------------------------------------------------
+# BL-X12 (b) RESIDUE — a wrapped bold ANCHOR SPAN on the --decisions route
+# ---------------------------------------------------------------------------
+# BL-X12's sub-defect (b) was closed on the --ledger side only. The record-start
+# regex here still required the closing `**` on the OPENING physical line, so a
+# record whose anchor+title ran past the wrap column was not seen as a record at
+# all — its text was silently vacuumed into the PRECEDING record's body. Two
+# wrongs, one cause: a record vanishes AND its neighbour is corrupted with the
+# missing text, with no note and no count anywhere in the report.
+#
+# On the real `.planning/DECISIONS.md` at fix time that was D168, D172 and D173
+# (3 of 177) — and the grill-close command routes that exact file through this
+# exact flag (`skills/plan/kata-grill/RUBRIC.md:218`). The bodies of D167 and
+# D171 shrank 7289→3877 and 4320→1581 characters when the fix excised the
+# swallowed text back into its own records.
+
+WRAPPED_ANCHOR_DECISIONS = """\
+---
+date: 2026-08-16
+---
+
+- **D167 — a record whose bold span closes on its own line.** Body of the
+  PRECEDING record, which must not absorb its neighbour.
+- **D168 — a title long enough that the bold anchor span wraps past the
+  column, closing only on the CONTINUATION line.** 2026-08-01. The real body
+  starts here and wraps too.
+- **D169 — back to a single-line span.** Short body.
+"""
+
+
+def test_decisions_wrapped_anchor_span_is_a_record():
+    """(b) residue: a record whose bold span wraps is parsed, not swallowed."""
+    entries = {e["anchor"]: e for e in
+               learn_feed.parse_decisions_bullets(WRAPPED_ANCHOR_DECISIONS)}
+    assert set(entries) == {"D167", "D168", "D169"}, (
+        "a wrapped bold anchor span is being dropped again"
+    )
+    # the span is re-joined with a single space — a wrap never fuses two words
+    # and never leaks a newline into the title
+    assert entries["D168"]["title"] == (
+        "a title long enough that the bold anchor span wraps past the "
+        "column, closing only on the CONTINUATION line"
+    )
+    # the record's own body starts after the CLOSING `**`, not before it
+    assert entries["D168"]["body"].startswith("2026-08-01.")
+    assert "starts here and wraps too" in entries["D168"]["body"]
+
+
+def test_decisions_wrapped_anchor_does_not_corrupt_the_previous_record():
+    """The other half of the same defect: the neighbour is not left holding the text."""
+    entries = {e["anchor"]: e for e in
+               learn_feed.parse_decisions_bullets(WRAPPED_ANCHOR_DECISIONS)}
+    d167 = entries["D167"]["body"]
+    assert d167.endswith("must not absorb its neighbour.")
+    assert "D168" not in d167
+    assert "CONTINUATION" not in d167
+
+
+def test_decisions_unterminated_bold_is_not_a_record():
+    """Fail-closed, mirroring the ledger route: unterminated `**` is malformed."""
+    text = "- **D1 — closes here.** body\n" + "- **D2 never closes\n" + "  x\n" * 20
+    anchors = [e["anchor"] for e in learn_feed.parse_decisions_bullets(text)]
+    assert anchors == ["D1"]
+
+
+_DECISIONS_FILE = _REPO_ROOT / ".planning" / "DECISIONS.md"
+# Recorded at fix time (2026-08-16) against the real file: 177 top-level `- **`
+# openers, of which these three wrapped their bold span and were dropped. The
+# count invariant below is FLOOR-SAFE by construction — both sides are derived
+# from the file, so a living DECISIONS.md that grows stays green; only a record
+# going MISSING between the raw scan and the parser reds it.
+_DECISIONS_WRAPPED_AT_FIX = ("D168", "D172", "D173")
+
+
+@pytest.mark.skipif(not _DECISIONS_FILE.exists(), reason="real DECISIONS.md not present")
+def test_real_decisions_file_loses_no_top_level_bullet():
+    """The real-file reproduction: every top-level `- **` bullet becomes a record.
+
+    Before the fix this was 174 parsed against 177 present — three records gone
+    with no note, on the file the grill-close command actually routes here.
+    """
+    text = _DECISIONS_FILE.read_text(encoding="utf-8")
+    openers = [ln for ln in text.splitlines() if ln.startswith("- **")]
+    entries = learn_feed.parse_decisions_bullets(text)
+    assert len(entries) == len(openers), (
+        f"parsed {len(entries)} records from {len(openers)} top-level bullets — "
+        f"{len(openers) - len(entries)} silently dropped"
+    )
+    anchors = {e["anchor"] for e in entries}
+    for anchor in _DECISIONS_WRAPPED_AT_FIX:
+        assert anchor in anchors, f"{anchor} is dropped again (wrapped bold span)"
+    # every anchor is a stable short key, never a whole wrapped title
+    assert all("\n" not in a for a in anchors)
+
+
+# ---------------------------------------------------------------------------
 # DEFECT 1 — source-namespaced filenames (no cross-source anchor collision)
 # ---------------------------------------------------------------------------
 # Every spec GRILL-LEDGER restarts anchors at D1 and DECISIONS.md uses D-anchors
