@@ -39,6 +39,15 @@ sources: BL-N20 · BL-N04 · BL-N16 (the living substrate) · BL-N10 (challenger
   PART OF THE CADRE, borrows the current superpowers' frontmatter shapes + execution patterns,
   and is **the ONLY superpowers pack loaded when the loop launches via its own command**
   (BL-N21/UX-28).
+- **AC-9 · Research agents get DEEP definition, including research SPECIALISTS (operator,
+  2026-08-16, fourth sitting).** The researcher is not one generic agent: define the research
+  role deeply AND a specialist sub-family (candidate splits for the grill: doc-grounded/field
+  research · codebase/archaeology research · academic-paper/experiment research · triage/scoping
+  research — the splits themselves are grill questions, not rulings). Inspiration sources
+  operator-named: **Karpathy's auto-research repo** (verbatim term; the research pass identifies
+  the exact repo with evidence labels rather than guessing) **and other research-agent repos**.
+  Research specialists follow the same cadre rules (AC-1..4: lightweight, living, evidence-label
+  discipline in-substrate, use mandated).
 - **AC-8 · Live data points are design input.** The 2026-08-16 validation stack's ad-hoc agents
   — five per-item judges, two final evaluators, two Opus advals, one anchor-tier challenger —
   each ran with a recorded brief, posture, tier, token cost, and outcome. The real definitions
@@ -63,7 +72,7 @@ sources: BL-N20 · BL-N04 · BL-N16 (the living substrate) · BL-N10 (challenger
 | 7 | **Advisor** | fresh-context consult at trigger points | D167 advisor-executor (live n=1 July run) | tunable hooks surfaced (BL-N18); reach extended through the seam so it fires wherever the loop runs (the burn-02 gap) |
 | 8 | **ARBITER** (new) | advisor + second-brain decision-making: consults the vault's decision history when arbitrating | the advisor pattern + Kiban vault consult (D9 seam); no external equivalent known yet (research to confirm) | vault-grounded verdicts with citation obligation; D74 redaction native; needs its own definition at grill (operator, BL-N08) |
 | 9 | **Challenger** (new) | cross-examines the ADVERSARIAL VALIDATOR's findings — refute/downgrade/upgrade; separate subagent, ideally different model | BL-N10 ruling; the 2026-08-16 live challenger run (AC-8 data point) | different-model execution as substrate default; per-finding verdict schema (CONFIRMED/REFUTED/RESCOPED); coverage attack (the held-lists) as a standing duty |
-| 10 | **Researcher** | doc-grounded external research, evidence-labeled | GSD researcher family; our RESEARCH-HERMES-PI dispatch (evidence labels held up under three later audits) | evidence-labeling (RV/DS/UA/LP) mandatory in-substrate; scope fences (never rules, only reports) |
+| 10 | **Researcher + research SPECIALISTS (AC-9, deep)** | doc-grounded external research, evidence-labeled — plus a specialist sub-family (doc/field · codebase · academic/experiment · triage-scoping; splits grilled) | GSD researcher family; our RESEARCH-HERMES-PI dispatch (labels held up under three later audits); **Karpathy's auto-research repo + other research-agent repos (operator-named, research pass identifies precisely)** | evidence-labeling (RV/DS/UA/LP) mandatory in-substrate; scope fences (never rules, only reports); specialist depth per split; auto-research pipeline patterns (hypothesis→probe→record) mined from the named repos |
 | 11 | **Design-author / Plan-author** | dispatched authoring of DESIGN/PLAN artifacts (KH-T13) | our three-revision UX design-author run (labels discipline, change-summaries) | label discipline in-substrate ([author-proposed] native); ledger-fidelity self-check before returning; erratum-pass capability |
 | 12 | **Learning agent** (new) | applies gated learning to agent substrates (BL-N16) | Hermes skills pipeline (staged writes/diff/approve); kata-promote's two-stage gate | confidence-thresholded application; recency conflict resolution; security scan on self-written learning; per-agent (never harness-wide blanket) |
 | 13 | **Context-scanner** (new, assess first) | initial intake on existing code: full-context scan before any run acts | GSD codebase-mapper; Explore; our graph runtime (kata-graph/graph_gen) | large-codebase strategy (budget exhaustion honesty, partial-map labeling); feeds the BL-N21 intake; assessment at grill decides agent-vs-function |
