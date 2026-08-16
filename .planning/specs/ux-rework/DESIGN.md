@@ -3,8 +3,8 @@ spec: ux-rework
 status: DRAFT — freeze-candidate, awaiting convergence gate
 opened: 2026-08-16
 compiled: 2026-08-16
-revision: 2 (post CONVERGE-HOLD; conductor-ruled interims labeled inline)
-sources: GRILL-LEDGER.md (UX-1..UX-32, the ruling record) · PLATFORM-MATRIX.md (UX-11; probe 1 RESOLVED §3.1) · templates/README.md + the gen_* generators and committed HTML outputs (the pixel-exact spec) · launch-template.html · doc-grammar.html · modules/closeout/resources/BRAND.md · .planning/BACKLOG.md (BL-N04/N05/N06/N07/N14/N16)
+revision: 3 (post round-2 CONVERGE-HOLD; conductor-ruled interims labeled inline)
+sources: GRILL-LEDGER.md (UX-1..UX-32, the ruling record) · PLATFORM-MATRIX.md (UX-11; probe 1 RESOLVED §3.1) · templates/README.md + the gen_* generators and committed HTML outputs (the pixel-exact spec) · launch-template.html · doc-grammar.html · modules/closeout/resources/BRAND.md · .planning/BACKLOG.md (BL-N04/N05/N06/N07/N14/N16) · .planning/specs/backlog-burn-mode/GRILL-LEDGER.md (BBM-11)
 ---
 
 # DESIGN (freeze-candidate) — the KataHarness UX system
@@ -22,12 +22,13 @@ is labeled **[author-proposed]**; interim calls the conductor made during conver
 
 - **Palette:** the Hokusai brand (`modules/closeout/resources/BRAND.md`) — Prussian deep `#163A57`
   / mid `#2E6389`, ochre `#B5894B`, rust `#A6532B`, parchment line `#CDBE9B`, foam `#F7F2E6`, on
-  the terminal's dark ground. The full role table, compiled from the approved templates' locked
-  CSS, is §2.3.
+  the terminal's dark ground. The full role table, compiled from the five generators' locked CSS
+  (with the frozen launch template's divergence disclosed), is §2.3.
 - **The seal:** 改善型 (kaizen-kata — Japanese, kanji) in a filled rust chip (`#A6532B` background,
   foam text). The one Japanese mark; kana variants noted, not adopted (UX-3).
 - **The sky:** random starfield right of the wordmark, three magnitudes (UX-3). Rendering is
-  **seeded-RNG** — fixed seed, same bytes every launch, per Determinism law 9 **[author-proposed]**.
+  **seeded-RNG** — fixed seed, same bytes every launch, per Determinism law 9
+  **[author-proposed, conductor-ruled interim — operator confirms at freeze]**.
 - **The sea (UX-13):** ONE waveform everywhere — open swell, three summed sines
   (2.6/0.10/−2 · 1.2/0.145/−3 · 0.5/0.06/+1, base 4.2, phases 0/1.1/2.4, clamp 0.6..8), 48 frames
   × 135 ms = 6.48 s seamless loop (integer cycles per component). Frame 0 is the canonical static
@@ -57,14 +58,18 @@ degradation of a color design; it IS the design. Concretely:
 - **All structure is plain UTF-8** — box-drawing frames, rails, breakers, the ▏ tick, the static
   sea — rendering clean on every monospace surface tested so far (the n=1 transcript probe plus
   the UTF-8 glyphs already live in the statusline) (UX-30, UX-27; matrix §2).
-- **Severity/status is carried by the full glyph set — ✓ ⚠ ✗ ● ○** (UX-17, UX-27, UX-30), with a
-  stated role split: **✓/⚠/✗ carry OUTCOME states · ● carries live/in-progress status · ○
-  not-started.** On glyph-only surfaces a bare colored-status ● is ambiguous, so where UX-17
-  dot-grammar surfaces render glyph-only, outcome disambiguation uses the ✓/⚠/✗ prefix beside the
-  dot. **[author-proposed, conductor-ruled interim — operator confirms at freeze]**
+- **Severity/status is carried by the full glyph set — ✓ ⚠ ✗ ● ○** (UX-17, UX-27, UX-30), under a
+  two-scope rule:
+  - **Owned surfaces (color available) — UX-17 verbatim:** wherever individual items show status,
+    **● green = done/healthy · ● yellow(ochre) = attention/partial · ● red(rust) = blocked/failed**,
+    plus dim ○ for not-started. One glyph, color carries the state (UX-17).
+  - **Glyph-only surfaces (color cannot carry state) — a NARROWING of UX-17:** outcomes move to
+    the **✓/⚠/✗** prefixes; **●** retains only live/in-progress; **○** not-started. Where a UX-17
+    dot-grammar surface renders glyph-only, the outcome prefix sits beside the dot.
+    **[author-proposed, conductor-ruled interim — operator confirms at freeze]**
 - **Breaker hierarchy (UX-15):** phase transition = the full phase-break block (UX-12) · major
-  topic = heavy breaker + title · minor = light breaker + title. The hierarchy is legible from
-  glyph weight alone; color (parchment/ochre/pale) layers on owned surfaces.
+  topic = heavy parchment breaker + ochre title · minor = **light dim breaker + pale title**. The
+  hierarchy is legible from glyph weight alone; the colors apply on owned surfaces (§2.3).
 - **Block spacing:** blocks within a composite sit FLUSH — no blank line — as the phase-break
   block's rail/box/sea and the launch screen's sea-against-boxes already lock (UX-12, UX-3); ONE
   blank line separates sibling top-level blocks. Generalized rule **[author-proposed]**.
@@ -95,10 +100,11 @@ the skin is no longer a special case, just the fenced-block carrier of the prima
 
 Color applies on exactly three surface classes: **wrapper-owned TTY screens, captured worker
 consoles, and the Claude Code statusline** (UX-30, matrix §3.1/§3.3). One table, one system — no
-per-surface improvisation (UX-8). The hexes below are **compiled from the locked CSS the operator
-approved — identical across all five generators/templates** (gen_runstart / gen_closeout5 /
-gen_remaining / gen_board / gen_errors and their committed HTML). The role naming and assignment
-as a whole remain **[author-proposed]** for the operator at the gate.
+per-surface improvisation (UX-8). The hexes below are **compiled from the five generators'
+locked CSS — identical across gen_runstart / gen_closeout5 / gen_remaining / gen_board /
+gen_errors** (and their committed HTML), with the launch template's divergence disclosed below
+the table. The recompile as a whole — role naming and assignment — is
+**[author-proposed, conductor-ruled interim — operator confirms at freeze]**.
 
 | Role | Dark-ground hex (locked template CSS) | Usage (on owned surfaces) | Glyph-first degradation |
 |---|---|---|---|
@@ -108,9 +114,9 @@ as a whole remain **[author-proposed]** for the operator at the gate.
 | `value` | `#F7F2E6` | figures, values, item identifiers | plain text — position in the grammar carries the meaning |
 | `text` | `#a9b1c3` | prose/body lines on the dark ground | plain text |
 | `header` | `#8fb3cc` pale | headers, secondary labels, minor-breaker titles | plain text |
-| `ok` | `#5fd7a7` green | pass/done lines and dots, benefit sub-lines (UX-21) | ✓ prefix (beside the ● where a dot surface goes glyph-only, §2.1) |
-| `warn` | `#e5c07b` (also the wave-gate ⏸ chip fill, UX-23) | attention/partial dots, wave-gate warn rules, tradeoff sub-lines (UX-21), caution stream lines | ⚠ prefix (same dot rule) |
-| `fail` | `#c2653a` as TEXT; `#A6532B` as chip/seal BACKGROUND only | blocked/failed dots and text, gate-rejected verdict chip, the breakthrough frame, backout — chips/fills interruption-only (UX-18) | ✗ prefix (same dot rule) |
+| `ok` | `#5fd7a7` green | pass lines, benefit sub-lines (UX-21), the done/healthy ● (UX-17 owned-surface dots, §2.1) | ✓ prefix; ● narrows to live/in-progress (§2.1 two-scope rule) |
+| `warn` | `#e5c07b` (also the wave-gate ⏸ chip fill, UX-23) | wave-gate warn rules, tradeoff sub-lines (UX-21), caution stream lines, the attention/partial ● (UX-17, §2.1) | ⚠ prefix; same §2.1 dot narrowing |
+| `fail` | `#c2653a` as TEXT; `#A6532B` as chip/seal BACKGROUND only | fail text, gate-rejected verdict chip, the breakthrough frame, backout, the blocked/failed ● (UX-17, §2.1) — chips/fills interruption-only (UX-18) | ✗ prefix; same §2.1 dot narrowing |
 | `deep` | `#163A57` / `#2E6389` | wordmark depth gradient, sea trough, the ▏ tick, statusline bands (UX-25) | the ▏ tick glyph itself |
 | `dim` | `#565f74`, plus the `#44607a` dim-blue variant | de-emphasis: metadata, mini-headers, future phases; dim-blue: ○ not-started, dim rules | ○ dot; trailing/parenthesized placement |
 
@@ -123,6 +129,13 @@ as background fill), with `#e5c07b` the yellow member of the family; light surfa
 report) keep the brand hexes **[author-proposed reconciliation, from the approved templates]**.
 (b) 24-bit → 256-color fallback per hex is a wrapper obligation (UX-14); the fallback table lives
 in the engine (§5) so every renderer shares it **[author-proposed placement]**.
+
+**Known palette divergence (disclosed, not repainted).** The FROZEN `launch-template.html`, on
+the same dark ground, uses **three hexes the table above does not**: box titles `#B5894B` (the
+brand ochre — UX-3's literal "lock A" ruling) · values `#c9d1d9` · command names `#61afef` (a
+class `gen_remaining.py` also defines, so the generators are not unanimous on that role either).
+The frozen launch screen KEEPS its locked palette; **which family wins per role is an OPERATOR
+reconciliation item at freeze** (§8.1) — this document changes no approved pixels either way.
 
 ## 3. The components (locked)
 
@@ -140,7 +153,7 @@ in the engine (§5) so every renderer shares it **[author-proposed placement]**.
 | **Help + settings** — plain-explanation-first help; numbered-loop settings; vault (Kiban) persistence stated | `templates/gen_remaining.py` | UX-22, UX-24 |
 | **Wave gate** — attention composite: paired warn rules + ⏸ chip → wave map → animated sea → double-border menu | `templates/gen_remaining.py` | UX-23, BBM-11 |
 | **Run board** — /kata-status tree: hierarchical IDs, depth rollups, lineage tags, ownership line ("all owned"); statusline depth chips | `templates/gen_board.py` | UX-25/26 |
-| **Closeout** — IN PLAIN WORDS (divider-bound prose) → truth-serum item list → git block wired to menu numbers → four plain-header stat boxes → double-border decision menu as a mini-LOOP ([n] steps repeat until [0] finish) → sea. **Stat boxes: layout locked by UX-19 prose (WHAT GOT DONE · WHO DID THE WORK · QUALITY AND COST · WHAT WE LEARNED); pixel reference LOST** — the v4 rendering lived in gitignored scratch and `gen_closeout5.py` carries only a placeholder comment; reconstruction owed, operator re-approval required (§8) | `templates/gen_closeout5.py` → `closeout-v6.html` | UX-19/20 |
+| **Closeout** — IN PLAIN WORDS (divider-bound prose) → truth-serum item list → git block wired to menu numbers → four plain-header stat boxes → double-border decision menu as a mini-LOOP ([n] steps repeat until [0] finish) → sea. **Stat boxes: layout + per-box content locked by UX-19 prose (WHAT GOT DONE · WHO DID THE WORK · QUALITY AND COST · WHAT WE LEARNED, contents enumerated in §8.2); pixel reference LOST** — the v4 rendering lived in gitignored scratch and `gen_closeout5.py` carries only a placeholder comment; reconstruction owed, operator re-approval required (§8.2) **[author-proposed, conductor-ruled interim — operator confirms at freeze]** | `templates/gen_closeout5.py` → `closeout-v6.html` | UX-19/20 |
 
 ### 3.1 The closeout decision menu — the full option set (UX-19/20)
 
@@ -189,7 +202,10 @@ reachable from every door; no door is removed (UX-28, closing the UX-5 open ques
    packs, agentic files — through the preload seam (§4.3), per host, before exec.
 4. **Exec the host**, setting a wrapper env marker our own statusline script reads
    ("kata-launched session" theming, UX-25) — the mechanism is our code on both sides and rated
-   trivially available, but is **UA (unverified assumption)** per the matrix until built.
+   trivially available, but is **UA (unverified assumption)** per the matrix until built. Jobs
+   1–4 are carried by a **thin Python entrypoint shim** — the wrapper's executable — which
+   gathers the launch data and calls the engine (§5, where its relationship to UX-29's
+   "only new Python" lock is stated and labeled).
 
 ### 4.3 The preload seam — open, config-driven, third-party-independent (UX-32)
 
@@ -218,8 +234,10 @@ surface for what the wrapper provisions belongs with BL-N05's settings screen
 ## 5. The grammar-renderer engine — one small committed module (UX-29)
 
 The only new **engine module** this spec adds; the wrappers additionally carry a thin Python
-entrypoint shim (§4.2) — that split honors UX-29's "only new Python" intent by scope: rendering
-logic lives in ONE module, everything above it is skill-prose calling it.
+entrypoint shim (§4.2 job 4) — Python beyond UX-29's literal "only new Python" lock, read here as
+honoring its intent by scope: rendering logic lives in ONE module, everything above it is
+skill-prose calling it, and the shim renders nothing itself
+**[author-proposed, conductor-ruled interim — operator confirms at freeze]**.
 
 **What the generators actually are (verified on disk):** the five `templates/gen_*.py` emit
 HTML `<span>` runs, in five divergent copies with incompatible signatures (W=64 vs 72; `box()`
@@ -253,7 +271,10 @@ conformance targets the engine's html form must reproduce, not import sites.
   approved reference where they diverge. "Repoint the output paths + regenerate the committed
   outputs" is a build-path step (§9.1) so the golden fixtures are reproducible.
 - **Erratum (not edited here):** `templates/README.md` points at "DESIGN §7" for the eventual
-  grammar renderer; after this revision the engine section is §5.
+  grammar renderer (now §5), and its lines 5 and 28-29 still frame the generators as "the real
+  spec" / "reference implementations for the eventual grammar renderer" — the import-site framing
+  this section supersedes (golden fixtures, not import sites). Updating that README is a freeze
+  punch-list item; the file is untouched by this document.
 
 ## 6. Platform constraints (PLATFORM-MATRIX.md; probe 1 RESOLVED)
 
@@ -300,12 +321,23 @@ conformance targets the engine's html form must reproduce, not import sites.
 Honestly still open — nothing else:
 
 1. **The convergence gate itself (D169)** — this document is its input, including every
-   [author-proposed] and [conductor-ruled interim] label above (§2.1 dot role-split · §5 engine
-   shape and width policy · §2.3 role table + earth-tone note · §1 seeded starfield · §2.1
-   spacing + stream-line order · §4.3 seam-config deferral · §4.4 settings routing).
-2. **The four closeout stat boxes — pixel reference LOST** (§3): layout locked by UX-19 prose;
-   the v4 rendering is gone with the gitignored scratch; reconstruction owed, **operator
-   re-approval required**.
+   [author-proposed] and [conductor-ruled interim] label above (§2.1 dot two-scope narrowing ·
+   §5 engine shape, width policy, and the wrapper-shim carve-out from UX-29's "only new Python"
+   lock · §2.3 role-table recompile + earth-tone note · **§2.3 known palette divergence — which
+   family wins per role between the frozen launch template's `#B5894B`/`#c9d1d9`/`#61afef` and
+   the five generators' CSS is an OPERATOR reconciliation item** · §1 seeded starfield · §2.1
+   spacing + stream-line order · §4.3 seam-config deferral · §4.4 settings routing · §8.2
+   stat-box ruling).
+2. **The four closeout stat boxes — pixel reference LOST** (§3): the v4 rendering is gone with
+   the gitignored scratch; reconstruction owed, **operator re-approval required**
+   **[author-proposed, conductor-ruled interim — operator confirms at freeze]**. More survives
+   than the pixels: UX-19 locks the layout AND the per-box contents, which are the
+   reconstruction input — **WHAT GOT DONE** (items, waves, commits, files, test delta,
+   found→filed) · **WHO DID THE WORK** (agents by role, escalations, miniloops by kind, rerolls,
+   push-backs) · **QUALITY AND COST** (gates first-pass, flagged→fixed+filed, confidence, drift
+   events, tokens with role split, per-wave walls, peak context) · **WHAT WE LEARNED** (decisions
+   locked, lessons, brain pages emitted + read-back, mode evidence). Metric names stay BL-N14
+   grill candidates (UX-19).
 3. **Platform probes 2–6** (matrix §4) — **non-blocking**, each with its conservative default
    already designed in: probe 2 (pane statusline/hook visibility) → markdown skin mandatory, no
    ANSI, no live region assumed (§6.4); probe 3 (Codex TUI ANSI passthrough) → glyph-first floor
