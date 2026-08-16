@@ -66,6 +66,15 @@ doc-grounded grill + convergence gate + DESIGN before any build.
   attended-vs-walk-away reality (headless must never block — the quota-park posture). This is the
   burn/wave generalization of the existing sprint-boundary checkpoint (`kata-sprint` G1–G4) — reuse
   that seam, do not invent a second one. Not a different run — the same run, configured.
+  **Refined (operator, 2026-08-16): driven by a RUN-CONFIG key with per-run-shape defaults.**
+  `waveBoundaries: autonomous | notify | approve` in `kata.config`; defaults by shape:
+  **burn ⇒ autonomous, always** (a burn never asks between waves) · **wave/sprint-cadence runs ⇒
+  approve** (prompt at every boundary — that is what the cadence is FOR) · **version-up ⇒ no
+  default, explicitly ASKED in the guided start flow**. Changeable: at bootstrap (the guided flow
+  surfaces it), and mid-run via the steering channel (candidate: a `kata_steer` verb — verify that
+  grammar exposes the seam at grill time, do not assume). The run-start report HIGHLIGHTS the
+  declaration (chip treatment, UX-16) — it is the one line that tells the user whether the run
+  will ever stop and wait for them.
 
 ## Locked from prototype evidence (not re-litigated; cite OBSERVATIONS.md)
 
