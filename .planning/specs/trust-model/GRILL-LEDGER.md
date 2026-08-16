@@ -966,6 +966,80 @@ BL-X12-blocked learn_feed emit; (6) the healthy default run declares
 `resilience: Partially verified (local)` — the run-start wording must read as honest state,
 not a defect report.
 
+## Convergence pass 2 (security layer) — HOLD (4H/9M/6L). RS-\* remediations; each AMENDS TM-H4 (and named branches). The register also absorbs the R4 compile notes here (R2-M5 seam-authored wording · R2-M3 DOWN actor · arm-registry anchor = TM-C7 element 2).
+
+**RS-H1 (amends TM-F1/R-M9/R3-H3 + TM-H4 S2) — the `evidence:` field is a NEW execution
+capability and gets the exec-safety treatment, not a freeform string.** Closed grammar, three
+forms only: `artifact:<repo-relative-path>` (NEVER executed — existence/wiring checked) ·
+`test:<pytest-node-id>` (fullmatch grammar on the node id, compiled to structured argv
+`[python, -m, pytest, <id>]`, no shell) · `probe:<registered-name>` (names an argv template
+from a committed probe registry — never a freeform command). A freeform command string is
+REFUSED at the freeze gate. The per-task verify command the mutation re-run uses gets the same
+treatment (trust domain: LLM-authored ⇒ compiles through the grammar or is refused). The field
++ grammar + argv + trust domain are registered in `protocol/exec-safety.md` BEFORE build, per
+its own new-capability law.
+**RS-H2 (amends R-M1/R3-M1 + the H4 edge list) — consumption is an ATOMIC CLAIM.** Consuming a
+record = `os.rename` of the record file into `consumed/` (atomic within the volume): two racing
+pre-hooks ⇒ one rename wins, the loser's validation fails ⇒ deny. The edge-case sentence is
+rewritten: parallel-dispatch order-independence is ACHIEVED BY the atomic claim, never assumed.
+`fs_atomic`'s replace-only primitive is explicitly NOT the consume mechanism.
+**RS-H3 (amends R3-H2/R4-H1 + TM-H4 S1) — the initiation rung gets exclusivity + its honest
+residual.** Initiation-governed minting is REFUSED once the live run records a stronger governor
+(`plan:frozen` or `ledger:converged`) or once its INITIATION phase has closed; re-opening
+INITIATION on a run with a frozen plan is a recorded DENY-class event. Stated residual: pre-
+freeze, the rung is self-serviceable by the conductor (it opens the phase it needs) — that is
+WHY it is graded Honor-system, and cursor lineage is its detection channel, not a prevention.
+**RS-H4 (amends TM-H4 S3, subsumes M9) — hook integrity is probed, never presumed.** The hook
+source carries a pinned FINGERPRINT (digest; updater prints, never rewrites — the
+protocol_fingerprint pattern, which clause-pins cannot substitute for on code). Seam init runs a
+**live deny-tripwire**: a self-test dispatch that MUST be denied; the Guardian enforcement
+declaration derives from that probe's result — file presence proves nothing (a mid-session
+install reads present-but-inactive; a neutered hook reads present-and-green). TM-D3's
+failure-capability law now explicitly covers the deny hook itself.
+
+**RS-M5 (register row added):** ONE verdict parser, strict fullmatch on line 1 of the
+tool-result ENVELOPE (never scanning the body — repo content/advice payloads/diff hunks cannot
+forge a verdict), per-judge enum table; the conductor-invoked capture leg's input is
+conductor-supplied and says so (Honor-system).
+**RS-M6 (amends TM-A2 + S5):** committing `INTENT.md`/`kata.config` into a TARGET repo is an
+outward act with a **first-run consent moment** (per-target, remembered); the harness's own repo
+consents by standing config. Redaction is not consent; both apply.
+**RS-M7 (amends S4, folds L6):** redaction is detection, stated as such — DETECTED classes fail
+closed **at the commit act** (branch close, not mint — closing the TOCTOU window); undetected
+content is a stated residual; the scrub extends `learn_feed.redact`'s class table (one scrub,
+not two).
+**RS-M8 (register row added):** trust-boundary table for the record store + cursor: writers
+enumerated per artifact; a worker CAN mint-and-launch and is caught post-hoc (stated); and the
+register now CLAIMS the strength it owns — `refs/kata/trail` snapshots give git-object
+tamper-evidence for retro-edits of the cursor: the post-hoc integrity anchor.
+**RS-M10 (amends S3):** the settings entry records the full expected command string + script
+digest at install; seam init compares (the `/adapters/claude/` substring is identification,
+never verification). `~/.claude/settings.json` itself is unguardable by kata — stated residual.
+**RS-M11 (amends S6):** the deny hook **fails CLOSED in-run** (explicitly the opposite of the
+gauge hook's never-block precedent — that difference is stated in both files); bounded runtime
++ payload cap (oversized/timeout ⇒ deny with reason, recorded).
+**RS-M12 (amends R-M1):** `mintedUtc` expiry is defense-in-depth ONLY; the atomic single-use
+claim (RS-H2) is THE replay control; wall-clock is never load-bearing (TM-C7 reaffirmed).
+**RS-M13 (amends S2 + TM-G2):** ALL cursor-derived text rendered to any surface is
+control-character/ANSI-stripped (the UX-30 glyph-first ruling applied as a security control) —
+a cursor line cannot repaint a fake receipt.
+
+**RS-L1:** crash windows completed — rotation is an atomic sequence (archive rename, then
+header write; a torn rotation is detected at seam init); mid-capture loss is backstopped by the
+close's absent-records refusal (stated).
+**RS-L2:** abandoned-arm PROCESS disposition: at parent close, arms are killed unless their
+close policy names a successor rendezvous; a closed run's arm commits are quarantined (never
+merged into graded results); write-after-close residual stated.
+**RS-L3:** per-run trail refs (`refs/kata/trail/<runId>`) eliminate fan-out snapshot contention
+(per-arm cursors get per-arm durability; the legacy ref unchanged for BC); expected skip rate
+becomes a measured cursor metric at build.
+**RS-L4:** the exec-safety mechanical scan extends to `adapters/**/hooks/*.py` (or the hook's
+row is manual WITH that limitation stated — the scan-scope fact is recorded either way).
+**RS-L5:** the deny hook's scope check reads a seam-init-written run marker (no live FS walk
+per call); marker present ⇒ kata scope ⇒ fail closed on errors; absent ⇒ allow (non-kata
+sessions untouched). The transient-error window collapses to the marker read, and the posture
+per edge is now explicit.
+
 ## Operator sequencing mandate (2026-08-16, recorded verbatim-intent — binding on the close)
 
 **"As soon as this gets frozen we will need to do a FULL DOCUMENTED handoff with agent
