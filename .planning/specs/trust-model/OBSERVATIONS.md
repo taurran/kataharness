@@ -119,6 +119,20 @@ cursor machinery yet — trail snapshots are the pre-existing board-only shape).
   Bash leg sees the full pre-expansion command literal (Partially-verified residual confirmed
   as observed fact). Interactive sessions, Kiro/Codex, nested Agent-denies-Agent: UNPROBED,
   stated in the note.
+- **D-13 · `tools/recall.py:607` carries the identical wrapped-bold-anchor blindness**
+  (its own single-line `_BULLET_RE` copy): recall over DECISIONS.md still cannot see
+  D168/D172/D173 and still returns D167/D171 with the swallowed text — the READ side of the
+  loop phase B's fix only half-closes. Out of every wave-1 ownership; **for the planning
+  window: file as a new backlog item** (pairs with the BL-X12 closure writeback, D-1).
+- **D-14 · The wave-1 judge layer earned its cost (accuracy record):** of seven items, the
+  fresh-context judges caught two real defects that builder self-gates AND conductor
+  re-runs both missed — the deferral contract's self-staled citation inside its own
+  fingerprinted commit (cured `e4c4e66`, pin re-derived and matched), and the overbroad
+  X12 closure hiding a half-fixed sub-defect with neighbor-body corruption (cured
+  `cd8723b`). Also: X14's judge found one unreproducible count in the evidence note (46 vs
+  91 `testWentRed` occurrences in run 1 — understates pre-fix badness, correction owed at
+  the note's zero-failure amend) and confirmed the E2 falsification escalation reached the
+  conductor (it did — recorded).
 - **D-7 · Minor: `statusline_chain.py` docstring's §security block claims its exec-safety
   row "lands at P2/C10 closeout" — stale: the row EXISTS (`protocol/exec-safety.md:68`).
   Docstring correction can ride any future statusline touch. X15's Snyk scan: one

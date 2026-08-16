@@ -1037,15 +1037,23 @@ Wave 5 is a deliberate single-task anchor-model wave. Worker-brief budgets bind 
     citing files (+ kata-orchestrate, fixed in its own W4 rewrite). The plan fixes all six in
     W1 — over-inclusion declared rather than guessing which five the ledger meant.
 13. **Recorded amendment G1 (conductor, 2026-08-16, post-freeze — wave-1 escalation
-    outcome):** `fix-learn-feed-truth` is **CLOSED-AS-ALREADY-SATISFIED** — BL-X12 was fixed
-    at `2a1b1cf` (2026-08-16 12:40, an ancestor of the burn base; conductor-gated CLOSED per
-    `.planning/specs/backlog-burn-02/OBSERVATIONS.md:84`), four hours BEFORE this plan froze;
-    the frozen plan scheduled work already done because the backlog's 🔴 marker was never
-    written back (the writeback-gap discovery, filed in `OBSERVATIONS.md`). The E1 fork was
-    already ruled as a shipped hybrid (route refusal + ledger-parser status vocabulary).
-    Evidence declaration amended from the planned NEW test node (never needed) to the live
-    equivalent pinning test (`test_real_ux_ledger_open_question_is_not_a_decision` — the
-    challenger's live case); conductor re-ran the full gate: 105/105 pass. No phase B built.
+    outcome; REVISED after the closure audit):** `fix-learn-feed-truth` resolves as
+    **THREE-QUARTERS PRE-EXISTING + ONE RESIDUE BUILT THIS BURN.** Sub-defects (a)/(c)/(d)
+    and the ledger-route half of (b) were already fixed at `2a1b1cf` (an ancestor of the
+    burn base, conductor-gated CLOSED per `specs/backlog-burn-02/OBSERVATIONS.md:84`, four
+    hours BEFORE this plan froze — the frozen plan scheduled them because the backlog's 🔴
+    marker was never written back; writeback-gap discovery in `OBSERVATIONS.md` D-1). The
+    E1 fork was already ruled as the shipped hybrid. An initial CLOSED-AS-ALREADY-SATISFIED
+    ruling was **refuted by the fresh-context closure audit**: the `--decisions` half of (b)
+    was still live (177→174 records on the real DECISIONS.md; D168/D172/D173 silently
+    dropped AND their text folded into neighbors' bodies). **Phase B built the residue** at
+    `cd8723b` (shared `_BoldSpan` accumulator, both parsers; 4 new tests incl. a
+    red-before-proven fixture and a real-file floor naming the three lost decisions;
+    conductor re-run 109/109). Honest boundary carried: `tools/recall.py:607` has the
+    identical single-line blindness UNFIXED (out of ownership — filed D-13); wrap depth
+    bounded; malformed-span text still silently dropped on both routes. Evidence
+    declaration amended to the live pinning test
+    (`test_real_ux_ledger_open_question_is_not_a_decision`).
 12. **Freeze-gate folds (conductor-applied at the six-row gate, 2026-08-16 — recorded in
     `GATE-PLAN.md`):** four `ownership:` additions reconciling the frontmatter map with this
     plan's own Shared-file sequencing table (the body declared the touches; the authoritative
