@@ -6,10 +6,26 @@
 > **Schema: `protocol/deferral.md`** (the sanctioned-deferral ledger contract). Entries are H2:
 > `## DEF-<n> — <title> · <STATUS> (<ISO-date>)`, STATUS ∈ `OPEN | ACCEPTED | CLOSED`, with the
 > required **What / Why / Provenance / Owed-to** fields; `accepted_by` / `accepted_at` on an
-> operator-approved park, `closing_commit` on a closure. Append-only. The entries below were
-> retrofitted to that grammar on 2026-08-16 (`tm-w1-deferral-contract`): field labels and the
-> two `closing_commit` references were added, **no entry's substance was changed** — every
-> original filing and closure record is preserved verbatim under its entry.
+> operator-approved park, `closing_commit` on a closure. Append-only.
+>
+> The entries below were retrofitted to that grammar on 2026-08-16
+> (`tm-w1-deferral-contract`). Exactly what that changed, per entry, so the claim can be checked
+> against the diff rather than taken on trust:
+> - **DEF-1** — a field block was **added** under the H2. Its `What` and `Why` values are
+>   reproduced from the original filing, which is preserved verbatim further down under its own
+>   sub-heading, as is the closure record. Its `Provenance` line, and the final clause of its
+>   `Owed-to` line ("discharged ahead of that owner by backlog-burn-01, item BURN-B"), are
+>   **newly written** — the first summarising the filing's own audit note, the second restating
+>   the closure record's "Closed by backlog-burn-01, item BURN-B".
+> - **DEF-2** — **relabelled in place**: `Why deferred` → `Why`, `Owed to` → `Owed-to`. Its
+>   `Provenance` line is **newly written**, summarising the filing's own account of where the
+>   defect was found. Every other bullet, and the closure record, are untouched.
+> - **Both** — a `closing_commit` field was added, each sha resolved against `git log` rather
+>   than asserted.
+>
+> **No entry's substance was changed:** nothing was deleted, no status or date was moved, and no
+> claim about what happened was altered. The lines named above are the only prose this retrofit
+> authored.
 
 ## DEF-1 — kata_preflight._default_runner stderr widening · **CLOSED (2026-08-04)**
 

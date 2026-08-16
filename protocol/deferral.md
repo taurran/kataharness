@@ -71,7 +71,7 @@ Canonical heading pattern (applied to the heading line after normalisation):
   `· CLOSED (2026-08-04)` are the same entry. Reflow and bolding are free; the id, status, and date are
   not.
 - **The underscore is NOT stripped**, and that is the one deliberate difference from
-  `_normalize_protocol_text` (`tools/validate_skills.py:713`), which does strip `_` as an emphasis marker
+  `_normalize_protocol_text` (`tools/validate_skills.py:720`), which does strip `_` as an emphasis marker
   for protocol prose. This grammar's field names are snake_case — `accepted_by`, `accepted_at`,
   `closing_commit` — so stripping `_` would mangle exactly the fields a gate must read, and identifiers
   like `kata_preflight` in an entry title would silently lose a character. A ledger parser that reuses the
