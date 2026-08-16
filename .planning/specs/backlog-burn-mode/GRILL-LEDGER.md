@@ -96,3 +96,16 @@ brief template + how a judge's verdict is recorded durably · does the partition
 beyond this repo's shape (prototype question 4) · burn's interaction with freeze semantics (D169
 blocks dispatch on non-frozen plans — what is "the plan" when the contract is a multi-item ledger?)
 · cap tuning evidence beyond width-3.
+
+**NEW (2026-08-16, from burn-02 live evidence — the dispatch-seam gap, third instance):** which
+loop-cognition seams bind on a burn? Burn-02 ran conductor-driven through the host dispatch path,
+and as a result: **zero telemetry rows** (BBM-6's own accuracy metric had to be hand-tallied),
+**zero UX-33 agent-type counters**, and — found by operator question — **the standing advisor
+grant never reached the run**: `kata.config` carries `advisor.approved: true` with `planning` in
+its phases, yet the burn's plan authoring and convergence rounds never offered the advisor a
+consult, because the trigger hooks (failThreshold/rerollTrigger/fixLoopCeiling) live inside
+kata-orchestrate, which a conductor-driven burn never enters. (Honest half: no mechanical trigger
+would have tripped anyway — 1 gate rejection vs threshold 2, 0 rerolls — the M4 fire-on-signal
+doctrine behaved correctly; the gap is REACH, not misfire.) The full grill must decide: do burns
+route through the loop's seams (advisor, inline evaluator, telemetry) or carry their own bindings
+at the dispatch seam (BL-M33's missing conductor↔host seam is the common root of all three).
