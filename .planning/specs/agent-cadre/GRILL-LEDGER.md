@@ -34,11 +34,13 @@ sources: BL-N20 · BL-N04 · BL-N16 (the living substrate) · BL-N10 (challenger
   the GitHub agent ecosystems for how to build our agents. Dispatched 2026-08-16; report lands
   as `RESEARCH-AGENTS.md` beside this file, evidence-labeled.
 - **AC-7 · The superpowers extraction rides this program (amends BL-N04):** our own pack —
-  operator's verbatim term "our own mindbridge superpowers" (⚠ naming to confirm at grill; prior
-  filings said "KataHarness Superpowers"; MindBridge is otherwise a hands-off boundary) — is
-  PART OF THE CADRE, borrows the current superpowers' frontmatter shapes + execution patterns,
-  and is **the ONLY superpowers pack loaded when the loop launches via its own command**
-  (BL-N21/UX-28).
+  **NAMED: "Kata Superpowers" (operator-RULED 2026-08-16, closing the ⚠).** History of the
+  naming, kept for the record: the operator's earlier verbatim "our own mindbridge superpowers"
+  and prior filings' "KataHarness Superpowers" are both superseded — Kata Superpowers keeps the
+  brand, stays clear of the MindBridge hands-off boundary, and is shorter than the full product
+  name. The pack is PART OF THE CADRE, borrows the current superpowers' frontmatter shapes +
+  execution patterns, and is **the ONLY superpowers pack loaded when the loop launches via its
+  own command** (BL-N21/UX-28).
 - **AC-9 · Research agents get DEEP definition, including research SPECIALISTS (operator,
   2026-08-16, fourth sitting).** The researcher is not one generic agent: define the research
   role deeply AND a specialist sub-family (candidate splits for the grill: doc-grounded/field
@@ -176,7 +178,7 @@ reviewer convention shipping a reviewer with Write/Edit).
 
 ## Open for the full grill
 
-Naming (the AC-7 ⚠) · BL-N08 before/after sequencing (AC-5) · agent-vs-function call on the
+~~Naming (the AC-7 ⚠)~~ **RULED 2026-08-16: "Kata Superpowers"** · BL-N08 before/after sequencing (AC-5) · agent-vs-function call on the
 context-scanner · does the Judge fold into the Evaluator as a tier or stand alone · triage/intake
 role: own agent or conductor duty · the per-role exemplar sets (AC-4) · substrate schema final
 form (BL-N16 grill owns it; this spec consumes it).

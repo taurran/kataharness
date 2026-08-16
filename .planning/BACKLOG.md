@@ -63,10 +63,10 @@ Promote to ROADMAP milestones when ready.
 > and GSD included** — third-party packs are reference/placeholder material, never load-bearing
 > harness components; the swap to kata-native must be a config change at the seam, not a rework.
 > **EXTENDED (operator, 2026-08-16, third sitting — the extraction is scoped into BL-N20's
-> program):** the superpowers EXTRACTION ships as part of the agent-cadre work — our own pack
-> (operator's term verbatim: "our own **mindbridge superpowers**"; ⚠ naming to confirm at grill —
-> earlier filings said "KataHarness Superpowers", and MindBridge is otherwise a hands-off
-> boundary; recorded, not resolved). The pack: **part of the cadre** (this ANSWERS the first
+> program):** the superpowers EXTRACTION ships as part of the agent-cadre work — our own pack,
+> **NAMED "Kata Superpowers" (operator-RULED 2026-08-16, fourth sitting — closes the AC-7 ⚠;
+> supersedes both "mindbridge superpowers" and "KataHarness Superpowers")**. The pack: **part of
+> the cadre** (this ANSWERS the first
 > open question below) · borrows the CURRENT superpowers' frontmatter shapes and execution
 > patterns · and is **the ONLY superpowers pack loaded when the loop launches via its own
 > command** (the BL-N21/UX-28 door). Remaining open question: relationship to the existing

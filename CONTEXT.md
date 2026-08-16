@@ -31,6 +31,13 @@ the BBM "the CURSOR is the interruption token" ruling).
 _Avoid_: board **as the concept name** (the cursor's log surface inherits the board file/grammar
 heritage until migration renames land); journal (D135 forbids a second one); progress tracker.
 
+**Kata Superpowers**:
+The harness's **own agent-skills pack** — the cadre-authored replacement for the third-party
+superpowers placeholder; the ONLY superpowers pack loaded when the loop launches via its own
+command (AC-7, BL-N21/UX-28). Named by operator ruling 2026-08-16 (closing the AC-7 ⚠).
+_Avoid_: "mindbridge superpowers" (superseded verbatim; MindBridge is a hands-off boundary);
+"KataHarness Superpowers" (superseded earlier filing).
+
 **Trust scale (Guardian)**:
 The five **user-facing trust states**, naming what is CHECKING rather than the code's condition
 (operator-selected from three researched models, TM-A1, 2026-08-16): **Verified** (a machine
