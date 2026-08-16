@@ -160,3 +160,21 @@ publishing quietly.
 **Not closed by this entry:** the option DEF-2 floated of extending `_FIELD_PREFIXES` to parse
 indented sub-bullets *into* fields was rejected in the grill (LFB-1) — the tool was wrong, not the
 writing, and no ledger's authoring style was changed.
+
+## DEF-3 — test_exec_safety `_SHELL_TRUE_ALLOWLIST` still permits `mutation_run.py` · OPEN (2026-08-16)
+
+- **What:** `tools/tests/test_exec_safety.py:33` `_SHELL_TRUE_ALLOWLIST` still lists
+  `mutation_run.py`, though the module's `shell=True` sink was converted to structured argv by
+  BL-X14 (`b996ee1`, merged `e484ce3`). The over-broad permit would silently re-allow a future
+  `shell=True` in that module. Removal is proven green (empirically run by the
+  `tm-w1-exec-safety-registration` follow-up: offenders `[]` with the reduced set; the doc
+  assertion for `run_result` unaffected).
+- **Why:** the test file is in no wave-1 task's ownership; editing it mid-wave would be an
+  unowned-file lane violation. Risk is contained: `test_mutation_run.py`'s AST pin already
+  fails any `shell=True` reappearing in `mutation_run.py`, so the allowlist entry is redundant
+  permissive defense-in-depth, not a live hole.
+- **Provenance:** flagged by the BL-X14 builder (out-of-scope discovery 2), removal proven by
+  the exec-safety follow-up (`15dc23b` report), parked by the conductor at wave-1 integration.
+- **Owed-to:** the next wave that owns `tools/tests/` guard files (W6 `judge-tripwire-corpora`
+  or W7 `gate-preconditions` may absorb it as a one-line ride-along, conductor to assign at
+  that wave's briefs; otherwise the burn closeout sweep).
