@@ -100,8 +100,10 @@ Promote to ROADMAP milestones when ready.
 > **BL-N11 · Backlog management — an explicit function, not a markdown convention.**
 > Operator-recommended as its own item. Today the backlog is this file plus five sibling surfaces
 > (the recorded `KH-B41` "six surfaces, no single view" problem). A real capability: add/triage/
-> close/prioritize items, feed a burn, ingest external sources. Direct dependency of BL-N12's
-> intake step.
+> close/prioritize items, feed a burn, ingest external sources. **Elevated 2026-08-15 (ruling
+> BBM-3): a designed PREREQUISITE of Burn mode's intake** — standardize/normalize the backlog as a
+> low-touch alternative to full GitHub issue tracking, with the item shape designed so GitHub
+> issues (the future primary source) maps onto it without rework.
 
 > **BL-N12 · Backlog Burn mode — the operating mode this branch prototyped. (FIRST DEEP-DIVE)**
 > Ingest a large item set (backlog, design issues, **external tickets/issues**), triage-then-grill
@@ -112,6 +114,16 @@ Promote to ROADMAP milestones when ready.
 > partitioning must be computed over the IMPORT GRAPH, not file lists (H4); the convergence gate is
 > non-optional and must attack the SHARED half of the contract (H3/H5 ×2); provisioning must pin
 > base SHAs itself (H6 ×2); builders briefed to push back catch real contract errors (H7).
+
+> **BL-N13 · Goal/system-prompt optimization — a guided step in the start flow. (NEW 2026-08-15)**
+> Named by the operator while ruling on Burn mode's entry surface (BBM-5): the guided `/kata-start`
+> interview should include an optimization pass over the user's goal / system prompt — sharpening
+> the priming prompt before anything freezes. Existing machinery it extends: the reflective goal
+> mirror (WS-3 intake) + the priming-and-grill architecture (D71: the grill enriches the priming
+> prompt into the frozen spec). Scope TBD at its own grill; filed so it survives the session.
+
+> *(Burn-mode design rulings from this session live in
+> `.planning/specs/backlog-burn-mode/GRILL-LEDGER.md` — BBM-1..BBM-10.)*
 
 ### The six found-broken fixes (from finishing backlog-burn-01, 2026-08-15)
 
