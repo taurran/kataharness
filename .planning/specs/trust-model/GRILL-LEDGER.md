@@ -1040,6 +1040,29 @@ per call); marker present ⇒ kata scope ⇒ fail closed on errors; absent ⇒ a
 sessions untouched). The transient-error window collapses to the marker read, and the posture
 per edge is now explicit.
 
+## Convergence pass 2 — SHIP (re-run, 2026-08-16). THE ADVANCED DOUBLE GATE IS SATISFIED.
+
+The security reviewer verified all four RS HIGH closures at source (11 claims checked; the
+atomic rename-to-claim row graded "the strongest") and confirmed the register's honest-residual
+discipline throughout. **Fifteen compile residuals recorded into the DESIGN brief** — the two
+high-priority ones: (1) the redaction scrub compiles as TWO named points (provenance at branch
+close; cursor/trail content at the snapshot-or-push edge); (2) the deny-tripwire's no-result
+posture is fail-closed to Dormant (never inheriting a prior declaration), with the script
+tripwire + registration digest named jointly necessary. Mediums include: the mutation sink's
+shell=True conversion/re-domaining rides RS-H1; the `test:` grammar REUSES `_guard_node_id` and
+`artifact:` gets `_guard_path` CWE-23 treatment; replay-prevention scoped to intercepting hosts;
+the marker-loss edge stated with post-hoc detection as its residual; the hook's internal timeout
+pinned strictly below the host's; glyph-mimicry answered by provenance-fields rendering, not
+stripping alone. Lows: consent lives machine-local (`.kata-settings.json`); trail
+tamper-evidence is evidential-until-pushed; retry-reads-as-replay deny message names the re-mint
+path; expiry wording; RS-H3 reads against the INITIATION/authoring phase; VERDICT no-match ⇒
+absent-records refusal, never body-scan fallback; prefer extending the exec-safety scan to
+adapters hooks. All fifteen are binding compile notes.
+
+**Grill convergence status: pass 1 SHIP (fifth run) + pass 2 SHIP (second run). Remaining
+close-out per the Advanced contract: ELEVATE (posed to the operator) → record EV → close (emit
+BLOCKED by BL-X12, surfaced not run).**
+
 ## Operator sequencing mandate (2026-08-16, recorded verbatim-intent — binding on the close)
 
 **"As soon as this gets frozen we will need to do a FULL DOCUMENTED handoff with agent

@@ -17,9 +17,12 @@ status: draft
 
 ## Objective
 Compile `.planning/specs/trust-model/GRILL-LEDGER.md` — 24 LOCKED branches (TM-A1..A3, B1..B5,
-C1..C7, D1..D5, E1..E2, F1..F2, G1..G3, H1..H4) **with ALL FOUR remediation rounds applied as
-binding amendments (R-\*, R2-\*, R3-\*, R4-\*; later rounds supersede earlier where they
-overlap)** — into `DESIGN.md`: one specific, testable, freeze-ready contract.
+C1..C7, D1..D5, E1..E2, F1..F2, G1..G3, H1..H4) **with ALL FIVE amendment blocks applied as
+binding (R-\*, R2-\*, R3-\*, R4-\*, RS-\*; later rounds supersede earlier where they overlap)**,
+plus the recorded compile residuals: the six from pass-1 SHIP, the five at R4-H1, and the
+fifteen from pass-2 SHIP — into `DESIGN.md`: one specific, testable, freeze-ready contract.
+Both convergence passes SHIPped 2026-08-16; the ELEVATE outcome (EV entry at the ledger tail)
+compiles like any other resolution.
 
 ## Inputs (read in this order)
 1. The GRILL-LEDGER in full (branches + amendments + the security register TM-H4 + both
