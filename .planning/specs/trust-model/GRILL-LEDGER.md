@@ -912,6 +912,29 @@ two-step** (the acceptanceCriteria precedent); the draft/frozen discriminator is
 `freeze=True` argument to `write_intent` at Phase 6 — named, not inferred. **R3-L3:** resolved
 inside R3-M5 (push receipt, not config flag). **R3-L4:** subsumed by R3-H2/R3-H3.
 
+## Convergence pass 1, fourth run — HOLD on ONE finding (all six tracked classes verified closed; 12 further citations sound). Round-4 remediation.
+
+**R4-H1 (amends R2-H1/R3-H2) — the `ledger` rung gets its BC case; D71 grill-skip runs mint
+authoring dispatches under `initiation`.** A run with NO grill ledger (D71 `skip`/`light` — a
+FROZEN-legal shape kata-readiness actively recommends for lean prompts — or any
+bootstrap-entered authoring run) mints its `design-author`/`plan-author` dispatches under the
+**`initiation` governor**: predicate = the run's open INITIATION/authoring phase event on the
+live cursor, record carrying the priming-prompt hash, graded **Honor-system** (declared, never
+dressed as Verified). **`ledger:converged` binds only runs that actually ran a grill.** The
+grill remains exactly what D71 froze it as — an optional enrichment dial, never a de-facto
+mandate at the seam.
+
+**Residuals accepted into the DESIGN compile (recorded, not re-decided):** (1) R3-H3's sampling
+uses a stated deterministic sort key (doctrine laws 9/10 — no randomness, explicit total
+order); (2) the re-run's honest residual stated in-contract: it proves the worker's CLAIMED
+mutation set bites — claimed-set completeness stays worker-asserted; (3) "run is closed" is a
+RECORDED terminal phase state, never convention (the D169 class one layer down); (4) one
+VERDICT-line parser, two callers (post-hook + conductor-invoked engine capture), per-judge enum
+table enumerated at the contract-rewrite wave; (5) `ledger_status` carries R3-M3's four-value
+form + BL-F01's first-word parse rule; the live free-prose corpus normalizes in TM-H1's
+migration. **TM-H4 compile notes:** the register absorbs R2-M5 (seam-authored) and R2-M3 (the
+DOWN actor); its "element 4" anchor for the arm registry corrects to element 2.
+
 ### Mid-close evidence event — CI red 12 days; the vacuity-prover vacuous on Linux (2026-08-16)
 
 Operator surfaced inbox spam of gauntlet failures mid-convergence. Conductor diagnosis (run
