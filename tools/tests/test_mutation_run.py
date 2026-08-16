@@ -552,3 +552,158 @@ def test_default_runner_preserves_shell_contract(monkeypatch):
 
 # needed by the skipif marker above
 _ = sys
+
+
+# ---------------------------------------------------------------------------
+# BL-X14 — the Linux vacuity-prover fix.  END-TO-END (real subprocess) proof
+# that the SANDBOX copy is what the re-run actually imports, on THIS platform.
+#
+# Escalation rule E2 (trust-model PLAN) made BL-X14's stated cause a HYPOTHESIS
+# to reproduce, not a fact to fix.  The two probes below are the falsification
+# instruments; `test_sandbox_import_isolation_linux` is the pinning regression
+# test named in the PLAN's `evidence:` declaration.
+# ---------------------------------------------------------------------------
+
+_MINI_PYPROJECT = """\
+[project]
+name = "x14-sample"
+version = "0.0.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+"""
+
+_MINI_MODULE = '''\
+"""Tiny module under mutation proof (BL-X14 end-to-end fixture)."""
+
+
+def classify(n):
+    if n < 0:
+        return "neg"
+    return "pos"
+'''
+
+_MINI_ASSERTED_LINE = '        return "neg"'
+
+_MINI_TEST = '''\
+import sample_mod
+
+
+def test_classify_negative():
+    assert sample_mod.classify(-1) == "neg"
+'''
+
+_MINI_NODE_ID = "tests/test_sample.py::test_classify_negative"
+
+
+def _write_runnable_project(tmp_path: Path) -> Path:
+    """Write a REAL, pytest-runnable mini project and return its source path.
+
+    Shape mirrors ``tools/`` itself: a ``pyproject.toml`` with
+    ``pythonpath = ["."]`` so the test imports the module from the *rootdir* —
+    which is precisely the property that must land on the SANDBOX copy, not the
+    live tree.
+    """
+    (tmp_path / "pyproject.toml").write_text(_MINI_PYPROJECT, encoding="utf-8")
+    src = tmp_path / "sample_mod.py"
+    src.write_text(_MINI_MODULE, encoding="utf-8")
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_sample.py").write_text(_MINI_TEST, encoding="utf-8")
+    return src
+
+
+def _live_cmd_shape(root: Path) -> str:
+    """The command shape every mutation-proof meta-test in this repo builds.
+
+    Verbatim from `test_benchmark.py::_cmd` / `test_usage_meter.py::_test_cmd`
+    (and, in its `uv run` flavour, `test_recurrence_detect` /
+    `test_validation_misses`).
+    """
+    return (
+        f'cd /d "{root}" && '
+        f'"{sys.executable}" -m pytest '
+        f'"{_MINI_NODE_ID}" -q --tb=no'
+    )
+
+
+def test_sandbox_import_isolation_linux(tmp_path):
+    """PINNING (BL-X14): a real end-to-end prove run must bite ON THIS PLATFORM.
+
+    This is the per-platform proof that *the sandbox copy is what the re-run
+    imports*.  It is a two-sided assertion, and each side falsifies a different
+    failure mode:
+
+    - ``baseline`` **True** — the redirected command actually RAN and passed on
+      the pristine sandbox copy.  A False here means the command never executed
+      as intended (the shell-dialect class: BL-X14's real mechanism on Linux).
+    - ``mutated`` **False** — after the SANDBOX copy of the source was mutated,
+      the very same command went red.  A True here with a green baseline is the
+      import-resolution class (the live/installed module answered the import,
+      so the sandbox mutation was invisible) — BL-X14's originally-hypothesised
+      mechanism.
+
+    Only ``[True, False]`` proves the prover can fail, which is the TM-D3 law
+    applied to the prover itself.  ``{'testWentRed': False}`` alone cannot tell
+    the two classes apart — that ambiguity is why ~61 meta-tests were red on
+    ubuntu for 12 days with the wrong cause on record.
+    """
+    import mutation_run
+
+    src = _write_runnable_project(tmp_path)
+    cmd = _live_cmd_shape(tmp_path.resolve())
+    outcomes: list[bool] = []
+
+    def recording_real_runner(rcmd, cwd):
+        ok = mutation_run._default_runner(rcmd, cwd)
+        outcomes.append(ok)
+        return ok
+
+    verdict = mutation_run.prove_non_vacuous(
+        str(src), _MINI_ASSERTED_LINE, cmd, runner=recording_real_runner
+    )
+
+    assert outcomes and outcomes[0] is True, (
+        "BL-X14: the BASELINE run failed on the PRISTINE sandbox copy — the "
+        "mutation proof is vacuous by construction on this platform "
+        f"(os.name={os.name!r}, outcomes={outcomes}, verdict={verdict}, "
+        f"cmd={cmd!r}). The command never ran as intended."
+    )
+    assert len(outcomes) == 2 and outcomes[1] is False, (
+        "BL-X14: the MUTATED run still PASSED — the re-run did not import the "
+        "mutated SANDBOX copy (live/installed module resolved instead) "
+        f"(os.name={os.name!r}, outcomes={outcomes}, verdict={verdict})."
+    )
+    assert verdict == {"testWentRed": True, "nonVacuous": True}, (
+        f"BL-X14: prove_non_vacuous must report a biting mutation; got {verdict}"
+    )
+
+
+def test_x14_probe_live_cmd_shape_executes_on_this_platform(tmp_path):
+    """E2 REPRO PROBE (temporary, BL-X14) — is the live `test_cmd` shape even
+    runnable by the sink's shell on this platform?
+
+    ``cd /d <dir>`` is a **cmd.exe builtin flag**.  Under ``shell=True`` on
+    POSIX the sink invokes ``/bin/sh``, where ``cd`` takes ONE operand — so the
+    whole ``&&`` chain short-circuits before pytest is ever reached and BOTH
+    runs report failure, yielding ``{'testWentRed': False}`` with no mutation
+    ever evaluated.
+
+    This probe isolates that single mechanism from the rest of the prover, so
+    the CI log carries the shell's verbatim error rather than only the verdict
+    dict.  It is deleted once the sink compiles to structured argv.
+    """
+    import subprocess
+
+    work = tmp_path / "work"
+    work.mkdir()
+    cmd = f'cd /d "{work}" && "{sys.executable}" -c "print(42)"'
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+
+    assert result.returncode == 0, (
+        "BL-X14 REPRO: the live mutation `test_cmd` shape is cmd.exe-only — it "
+        "does not execute under this platform's shell, so every mutation proof "
+        f"is vacuous here. os.name={os.name!r} rc={result.returncode} "
+        f"stdout={result.stdout!r} stderr={result.stderr!r} cmd={cmd!r}"
+    )
