@@ -122,6 +122,20 @@ Promote to ROADMAP milestones when ready.
 > mirror (WS-3 intake) + the priming-and-grill architecture (D71: the grill enriches the priming
 > prompt into the frozen spec). Scope TBD at its own grill; filed so it survives the session.
 
+> **BL-N14 · Run statistics — one metrics engine, surfaced everywhere. (NEW 2026-08-15)**
+> A per-run statistics rollup and its display grammar. **Counts:** agent/subagent executions ·
+> outer-loop cycles (the Kata Loop; naming TBD at grill) · miniloop executions (per-task TDD/fix
+> cycles, inline-eval rerolls) · issues flagged vs. remediated · overall execution time · tokens
+> total / input / output — per phase and per item. **Surfaces:** (a) mini-metric chips beside the
+> phase progress strip during the run — one ALIGNED chip grammar so every section's stats read the
+> same (order, units, separators fixed); (b) a full statistics section in the closeout report
+> window covering the entire run and every executed item. A "confidence rating" chip is wanted but
+> undefined — what it derives from (gate outcomes? adval verdicts?) is an open grill question, not
+> an invention. Existing machinery: `kata_telemetry` ledger rows (perTask cost, failureKinds,
+> evidence digests) + subagent token usage already captured — this is a rollup + grammar, not a
+> from-scratch counter. **Sequencing (operator): part of this batch's burn — with the Kitchen
+> (BL-N08) or right after it.**
+
 > *(Burn-mode design rulings from this session live in
 > `.planning/specs/backlog-burn-mode/GRILL-LEDGER.md` — BBM-1..BBM-10.)*
 

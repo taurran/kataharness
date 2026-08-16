@@ -58,6 +58,35 @@ before building.
   with BBM-5 (guided `/kata-start` is burn's primary path) and the /kata-settings future (BL-N05,
   already shown on the template as the intended state).
 
+## Design-system rulings (operator-directed 2026-08-15, second sitting)
+
+- **UX-6 · One theme, everywhere.** The locked launch template's language (Hokusai palette ·
+  parchment borders · block grammar) carries across every surface, with **specified breakers,
+  line-break rules, and section grammar** — clearly visible "blocks" throughout, never walls of
+  undifferentiated text.
+- **UX-7 · Copy/paste blocks are sacred.** Any content meant to be copied (agent orientation,
+  commands, prompts) MUST contain **no leading/trailing spaces and no decorative characters** on
+  the content lines themselves — the block visual comes from the lines AROUND the content (top/
+  bottom breakers), never from prefixes/borders on the content lines. Paste fidelity beats border
+  aesthetics wherever they conflict.
+- **UX-8 · Semantic color coding.** A defined color-role system (not per-surface improvisation) so
+  users can comb long output fast: e.g. commands/actions in link-blue · state/values in light ·
+  warnings ochre · errors rust · success green · structure/borders parchment · de-emphasis slate.
+  Exact token table to be fixed in the DESIGN.
+- **UX-9 · The phase progress strip replaces the old top "cursor" block.** The previous
+  status-bar-like block at the top (acting as bar + input field) is recorded as WRONG. Replacement:
+  a graphical strip of condensed phase titles (initiate → grill → freeze → plan → execute → gate →
+  close) with small state blocks showing done/current/pending, flowing as the run progresses —
+  polished enough that users KNOW they are in KataHarness.
+- **UX-10 · Execution output is branded.** Worker/dispatch/gate output carries the theme (breakers,
+  color roles, phase markers), not raw tool spew.
+- **UX-11 · Platform capability assessment (explicit task, feeds the DESIGN):** per major host
+  (Claude Code CLI, Claude Code app/IDE panes, Codex, Kiro): (a) statusline theming — the existing
+  kata statusline segment goes theme-specific, especially when launched via the kata command;
+  (b) whether the SUBAGENT execution view can be customized; (c) rendering constraints (Kiro noted
+  as likely the most limited; the app/IDE panes render markdown not ANSI, so every template needs a
+  defined markdown skin). Coverage matrix required before the DESIGN freezes.
+
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
 statusline capabilities per host (kata segment exists on Claude; codex/kiro need assessment) ·
