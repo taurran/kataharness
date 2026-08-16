@@ -38,6 +38,8 @@ import math
 from pathlib import Path
 from typing import Any
 
+from fs_atomic import atomic_write_text
+
 # ---------------------------------------------------------------------------
 # TUNABLE knobs — LD5 (calibratable without re-freeze; DESIGN §4)
 # ---------------------------------------------------------------------------
@@ -526,7 +528,10 @@ def findings_schema() -> dict:
 def emit_findings(findings: list[dict], path: Any) -> None:
     """Write routed findings to the findings JSON artifact.
 
-    Creates parent directories as needed (idempotent).
+    Creates parent directories as needed (idempotent).  The write is atomic
+    (D159, same-dir tmp + ``os.replace``): the findings artifact is rewritten as
+    the funnel routes, and a truncate-then-write leaves a window in which a
+    concurrent reader sees a partial file.  Output bytes are unchanged.
 
     Args:
         findings:  List of routed finding dicts (produced by run_funnel).
@@ -535,7 +540,7 @@ def emit_findings(findings: list[dict], path: Any) -> None:
     """
     dest = Path(path)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(findings, indent=2), encoding="utf-8")
+    atomic_write_text(dest, json.dumps(findings, indent=2), encoding="utf-8")
 
 
 def load_findings(path: Any) -> list[dict]:

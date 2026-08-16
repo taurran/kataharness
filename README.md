@@ -288,8 +288,8 @@ Customize any skill via a local **overlay** or a promoted **fork** — your chan
 upstream base stays pristine and is never edited or lost.
 
 ### 🗂️ Discoverable slash-commands *(Claude)*
-`/kata` prints the index; `/kata-start`, `/kata-onboard`, `/kata-resume`, `/kata-status`, and `/kata-validate`
-route straight to the right skill — no logic to drift, always in sync with the toolkit.
+`/kata` prints the index; `/kata-loop`, `/kata-start`, `/kata-onboard`, `/kata-resume`, `/kata-status`, and
+`/kata-validate` route straight to the right skill — no logic to drift, always in sync with the toolkit.
 
 ### 📚 49 versioned skills
 Across six families — `plan` · `coordinate` · `execute` · `evaluate` · `handoff` · `meta` — plus the
@@ -319,7 +319,7 @@ is the machine source of truth for what exists and at what version.
 | `kata-initiate` | 0.8.1 | 3 | coordinate | beta | new (KataHarness original, Phase 1 Kata Loop — D88/D91); composes kata-readiness, kata-grill, kata-bootstrap, kata-context | — |
 | `kata-loop` | 0.2.0 | 2 | coordinate | beta | new (KataHarness original — Phase 3 Kata Loop conductor, D87/DESIGN §1) | — |
 | `kata-onboard` | 0.2.0 | 3 | coordinate | beta | new (KataHarness original, Debug-Mode P3 / LD13 — DESIGN R6/LD13); a NEW composition of the BUILT install-portability surfaces (tools/kata_settings.py, tools/project_find.py, tools/kata_install.py, tools/intent_scaffold.py) + the initiate/bootstrap/closeout/loop spine skills. "convert-to-loop" and the ".planning/ scaffold" are NEW here (see "What is NEW", below), not a reused convert flow. | — |
-| `kata-orchestrate` | 0.17.0 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
+| `kata-orchestrate` | 0.18.0 | 5 | coordinate | beta | adapted-from cpp-orchestrator (CryptoPortfolioPlanner harness) + Anthropic effective-harnesses-for-long-running-agents + managed-agents | Plan-guardian lead: assign, partition files, gate, no-drift |
 | `kata-preflight` | 0.4.0 | 2 | coordinate | beta | new (KataHarness original, PRE-FLIGHT spine phase D29/N2); drives tools/kata_preflight.py (N1 engine); argv-builder pattern from the _COMMAND_BUILDERS registry in tools/kata_dispatch.py; injectable-runner from _subprocess_runner in tools/kata_dispatch.py | — |
 | `kata-readiness` | 0.2.2 | 1 | coordinate | beta | new (KataHarness original); pattern echoes environment "doctor" checks (e.g. brew/flutter doctor) — abstract, no external code adapted | Pre-run harness+target readiness check (bootstrap-invoked or standalone doctor) |
 | `kata-sprint` | 0.1.0 | 2 | coordinate | beta | new (KataHarness original — sprint-cadence D80; the thin boundary coordinator, GB4-C) | Own the sprint boundary (G1–G4 change-control); incremental delivery only |
@@ -458,6 +458,7 @@ Restart your agent so it loads the skills, then use a slash-command (Claude Code
 
 ```text
 /kata            show the command index
+/kata-loop       run the full improvement cycle (initiation → harness → closeout → loop-back)
 /kata-start      start a run (the front door → kata-initiate)
 /kata-onboard    guided tour / convert an existing repo
 /kata-status     show the live run board

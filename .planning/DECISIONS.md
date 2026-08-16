@@ -2803,3 +2803,22 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   **Companion closure:** `T-00` (chase `DF-06`, MindBridge's sixth divergence flag — named in their
   `CLEAN-ROOM-ATTESTATION.md:116` as withheld for partial-scrub risk and never sent) is closed by the
   same scope ruling. No code was ever received for it; nothing is unbuilt as a result.
+- **D171 — The planning-depth ruling for the 2026-08 batch (operator-directed 2026-08-16).** The
+  operator set last session's agenda as *"determine the next planning items and how far we need to
+  plan before we decide to run our coding execution"* and ruled on the three inputs presented:
+  **(1) The UX system grills FIRST** — of the three grill-ready designs (UX system UX-1..27 · Burn
+  mode BBM-1..11 · learning graph BL-N16), UX goes first because it is the furthest along (DESIGN
+  draft + pixel-exact template generators) and both Burn mode and the Kitchen render *through* its
+  surfaces — freezing it first prevents rework. Burn mode and the learning graph grill after it;
+  the Kitchen (BL-N08) waits for its live grill with the operator.
+  **(2) The go bar for coding execution = parallel small burn.** While the UX grill runs, a small
+  burn (burn-mode prototype round 2, tracked as evidence) executes the ≤1-file fixes
+  BL-X01/X02/X03/X05/X07 plus the six platform probes (PLATFORM-MATRIX §4). Probe #1
+  (ANSI-in-transcript) feeds the UX grill directly. **D169 binds the burn too**: it gets its own
+  small frozen plan before any dispatch. Building any *designed feature* (grammar renderer,
+  launcher, burn engine, learning graph) starts only after that feature's spec passes its
+  convergence gate and freezes — no build against a draft.
+  **(3) The 38 unpushed commits were pushed and PR'd** — branch `burn/backlog-burn-01` pushed to
+  origin, **PR #54** opened to `master` (2026-08-16). Merge timing stays the operator's call.
+  Still owed, surfaced not dropped: 🔴 PAT rotation (operator action, deferred 2026-08-02) · the
+  T-03 determinism-scope call.

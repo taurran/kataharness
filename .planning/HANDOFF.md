@@ -1,4 +1,128 @@
 ---
+date: 2026-08-16
+kind: manual
+trigger: operator-directed handoff — deep context, session refresh; everything recorded in depth first
+branch: burn/backlog-burn-01 · ~38 commits, NO remote branch, NOTHING pushed · master untouched at d4650fc
+green: gauntlet 4/4 at fa03958 — pytest 4485 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0
+authored-by: the outgoing session, by hand
+---
+
+# HANDOFF — 2026-08-16
+
+## 0. GROUND TRUTH — verify before trusting anything below
+
+```
+cd C:\Dev\projects\kataharness
+git status --porcelain                          -> empty
+git stash list                                  -> empty
+git rev-parse --abbrev-ref HEAD                 -> burn/backlog-burn-01
+git rev-parse --short master                    -> d4650fc   (untouched all session)
+git rev-list --count master..HEAD               -> ~38  (commits after this handoff add more)
+cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS   (use uv run — .venv python false-reds 2 integration tests offline)
+```
+
+⚠️ **The branch has NO remote.** Nothing from two sessions of work is pushed. The push/PR decision
+is the operator's and is OWED (§5).
+
+## 1. WHAT THIS SESSION DID — four deliverables, all committed, none stubbed
+
+1. **Finished backlog-burn-01 — 6/6 items closed.** Waves 2+3 built this session by dispatched
+   builders, gated default-FAIL: the config load-guard is REAL (`tools/kata_config.py`,
+   `validate_core_config` + `available_from_skills`, 33 tests / 16 proven non-vacuous,
+   kata-orchestrate 0.18.0) · `/kata-loop` exists · the code map measured **25 → 157 files seen**.
+   A builder escalated an internally-unsatisfiable brief (exact-version test pin vs mandated bump
+   vs ownership) — the pin is now a semver floor. Evidence: `specs/backlog-burn-01/OBSERVATIONS.md`
+   (H1 gating-bottleneck CONFIRMED · H5 contract-vs-gate collision ×2 · H6 wrong-base provisioning
+   ×2 · H7 push-back paid 3× · CHANGELOG has the full three-wave entry).
+2. **Filed the 2026-08-15 planning batch** — top of `BACKLOG.md`: **BL-N01..N17 + BL-X01..X07**,
+   each with what-it-is / existing-machinery map / open questions. The deep ones: the Kitchen role
+   model (conductor · thin orchestrator · advisor · evaluator · ARBITER · challenger) inside
+   BL-N08; run statistics semantics (BL-N14: cumulative, counters are run STATE never config);
+   handoff-on-demand (BL-N15); **the learning graph (BL-N16), operator-RULED**: dedicated learning
+   agent + gate, confidence-thresholded additions, recency-resolved contradictions → the NEW
+   learning-management component, Hermes-derived append-for-audit/distill-for-load + staged-diff
+   approvals + security scan, Kiban as an additional gated destination; engram→learning scrub
+   (BL-N17, BC-aliased).
+3. **Designed Burn mode on paper** — `specs/backlog-burn-mode/GRILL-LEDGER.md` **BBM-1..11**
+   (gate design, partition engine, intake, width, entry, accuracy metric, wave-boundary dial with
+   per-shape defaults: burn=autonomous · wave-cadence=approve · version-up=asked).
+4. **Designed the ENTIRE UX system** — `specs/ux-rework/`: **GRILL-LEDGER UX-1..27** (every ruling
+   with its rejected alternatives) · **DESIGN.md** (draft; §6 lists exactly what is still open) ·
+   **PLATFORM-MATRIX.md** (per-host capability, evidence-labeled, 6 cheap probes) ·
+   **templates/** (the width-asserted Python generators + approved HTML finals — **the generators
+   are the pixel-exact spec**; they lived only in session scratch until preserved this session) ·
+   `../learning-graph/RESEARCH-HERMES-PI.md` (field alignment). Two research agents were dispatched
+   and their reports committed verbatim with evidence labels.
+
+## 2. 🔴 NEXT STEP — the operator SET this agenda; do not invent a different one
+
+**"Determine the next planning items, and how far we need to plan before we decide to run our
+coding execution."** Frame it as a decision the operator makes WITH you. The honest inputs:
+
+- **Ready to grill now (design exists, needs grill→freeze):** the UX system (DESIGN.md draft +
+  UX-1..27) · Burn mode (BBM-1..11) · the learning graph (BL-N16 ruled + field-researched).
+- **Cheap unblockers before any build:** the six platform probes (PLATFORM-MATRIX §4 — minutes
+  each; probe 1, ANSI-in-transcript, decides color-vs-glyph for the whole transcript grammar) ·
+  the small fixes BL-X01/X02/X03/X05/X07 (each ≤1 file).
+- **Big items needing full grills from scratch:** the Kitchen (BL-N08 — operator has unsaid
+  details, wants a live grill) · Truth Serum (BL-N01, blocked-shaped by BL-M33's missing seam).
+- **A candidate shape for execution:** a burn (mode-prototype round 2) over the BL-X fixes +
+  probes, while the first big grill (UX or Kitchen) runs — but that is a CANDIDATE, not a
+  decision. D169 binds: nothing dispatches without a frozen plan.
+
+## 3. DECISIONS SETTLED THIS SESSION — do not re-litigate
+
+| decision | where |
+|---|---|
+| "Wave" is the official term; never "sprint" | UX-16 |
+| Internal codenames (Kitchen, engram…) never user-facing; **the vault is KIBAN** (verified on disk `~/Kiban/Vault`) | UX-24, memory |
+| Boxes = data · dividers = prose · scissors = copy; rust chips = interruptions only; double border = human decision only | UX-15/18/19/20 |
+| The ONE waveform (open swell, exact components), 64/72 measures, generator-asserted widths | UX-13, templates/ |
+| Wave-boundary dial `waveBoundaries` per-shape defaults, declared highlighted in run-start | BBM-11 |
+| Learning is PER-AGENT, gated, confidence-thresholded, recency-resolved; append-for-audit / distill-for-load | BL-N16 |
+| Run-start = truth serum (incl. explicit NOT-in-this-run); closeout = mini-loop ending in [0] fresh-session | UX-16/19/20 |
+| Loop-back onramp = initiate-with-carried-context + the D71 grill dial; no third path | UX-19 |
+
+## 4. WHERE EVERYTHING IS
+
+`BACKLOG.md` top (the batch) · `specs/ux-rework/{GRILL-LEDGER,DESIGN,PLATFORM-MATRIX,templates/}` ·
+`specs/backlog-burn-mode/GRILL-LEDGER.md` · `specs/backlog-burn-01/OBSERVATIONS.md` ·
+`specs/learning-graph/RESEARCH-HERMES-PI.md` · `CHANGELOG.md [Unreleased]` · memory: Kiban rename.
+**Prior queues (session-lifecycle HELD grill, D-register, MindBridge scope rulings) are UNCHANGED
+by this session — the 2026-08-02/03 blocks below still bind for them.**
+
+## 5. OWED TO THE OPERATOR
+
+1. **Push/PR decision** — ~38 unpushed commits, no remote branch. Backout = one branch delete.
+2. 🔴 **Rotate the GitHub PAT** — deferred by the operator 2026-08-02. **Deferred is not dropped.**
+3. **T-03 scope call** (all six determinism laws vs the 13+15 subset) — carried, still unanswered.
+4. The next-session planning-depth decision (§2) is theirs to make.
+
+## 6. WHAT I GOT WRONG THIS SESSION — so you don't inherit it as truth
+
+- **Mocked "PokeVault" repeatedly** after the vault had been renamed Kiban — operator corrected;
+  verified on disk; memory updated. Grep for PokeVault before shipping anything.
+- **Let "the Kitchen" leak into user-facing mock copy** — internal analogy only; operator caught it.
+- **Left the pixel-exact templates in session scratch** until the final wrap — they would have
+  evaporated. Preserved at `specs/ux-rework/templates/` only because the operator demanded a
+  no-stub recording pass.
+- **The heredoc escape trap** (Bash-tool heredocs eat one backslash level) burned several
+  regeneration cycles — use the Edit tool on generator files, not shell string surgery.
+- The first wave-2 dispatch attempt used the host's auto-worktrees, which failed on path casing
+  AND provisioned at a stale base (H6 again) — manual `git worktree add` at a pinned SHA is the
+  standing rule (BBM-9).
+
+## 7. REDACTION
+
+No secrets, keys, or PII in any artifact. The PAT is referenced by location only. New code this
+session: `tools/kata_config.py` (+tests) — Snyk-scanned clean by its builder; template generators
+are .planning reference material, not shipped code.
+
+---
+
+# ↓ PRIOR HANDOFF BLOCK — 2026-08-02 (superseded above; retained per convention)
+
+---
 date: 2026-08-02
 kind: manual
 trigger: operator-directed handoff — context budget, queue clear

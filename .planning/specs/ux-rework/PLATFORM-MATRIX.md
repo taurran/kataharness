@@ -1,0 +1,57 @@
+---
+spec: ux-rework
+kind: platform capability matrix (UX-11 deliverable)
+produced: 2026-08-15 by a dispatched read-only research agent; conductor-reviewed, evidence labels preserved
+labels: RV = repo-verified (file:line) · DS = doc-sourced (url) · UA = unverified assumption · UNKNOWN = honestly unresolved
+---
+
+# PLATFORM CAPABILITY MATRIX — UX-11 (hosts × controllable UX surfaces)
+
+## 1. The matrix
+
+| Surface | Claude Code CLI | Claude desktop / IDE panes | Codex CLI | Kiro |
+|---|---|---|---|---|
+| **Statusline (custom segment)** | **YES** — command-driven, JSON stdin, ANSI rendered, multi-line, event-driven + `refreshInterval` (min 1 s, 300 ms debounce) [DS+RV] | **UNKNOWN** — statusline presence in panes undocumented [DS] | **NO** — `tui.status_line` is fixed built-in item IDs only; no command-backed text, no ANSI, no custom items (open feature reqs #17827/#20140/#20244) [DS] | **NO** — no statusline hook, no machine channel; verified as an absence [RV docs/platforms/kiro.md:54-56] |
+| **Statusline themable / contextual** | **YES** — our segment already ships ANSI dim/red/yellow/green + `▰▱│` glyphs and renders ONLY in kata scopes (D160) [RV] | UNKNOWN (follows from above) | NO (n/a) | NO (n/a) |
+| **Subagent execution view** | **PARTIAL** — host owns spinner/state icons/labels; only `color` frontmatter (8 named colors) is ours; host payload carries ZERO subagent info, so our crew chips in the statusline are the workaround [DS+RV] | UNKNOWN (agent view in panes undocumented) | **YES-BY-OWNERSHIP** — dispatch is a captured headless subprocess (`codex exec -o …`); the user sees only what KataHarness prints [RV] | **YES-BY-OWNERSHIP** — same: captured `kiro-cli chat --no-interactive` [RV] |
+| **ANSI + block glyphs in transcript** | **PARTIAL** — statusline ANSI confirmed; ANSI in assistant/tool output shown to user is **UNDOCUMENTED**; UTF-8 blocks live-proven in our segment (n=1) [DS+RV] | **NO (assumed)** — panes render markdown; ANSI survival undocumented, presume stripped [DS+UA] | **PARTIAL** — TUI themes its own output (syntect); ANSI passthrough from agent output UNKNOWN; terminal under our wrapper = full ANSI [DS] | **PARTIAL** — CLI themes its own output in named ANSI colors (user-picked); IDE chat pane is markdown [DS]; injection by us: NO |
+| **Live redraw regions (ours)** | **PARTIAL** — statusline at ~1 s min cadence (too slow for the 135 ms sea) + wrapper-owned phases; hooks may emit `terminalSequence` ANSI [DS+RV] | **NO (assumed)** — no documented live region [UA] | **NO** — wrapper-owned phases only; `notify` fires only on agent-turn-complete [DS+RV] | **NO** — wrapper-owned phases only [RV] |
+| **Markdown skin needed** | For reports/PR bodies only | **YES — mandatory** (panes are markdown) [DS] | For reports/PR bodies only | **YES** for IDE pane; reports likewise |
+| **Hooks / extension points** | **YES — richest**: 30+ events; we use SessionStart/PreCompact/UserPromptSubmit; `systemMessage` + `terminalSequence` are user-visible [DS+RV] | **PARTIAL** — hook engine same, visible surfaces undocumented [DS] | **effectively NO** for display — `notify` only, no context-injection hooks [RV docs/platforms/codex-cli.md:67-69] | **PARTIAL** — PostFileSave/Create/Delete, PreToolUse, PostToolUse, SessionStart, UserPromptSubmit, Stop, PreTaskExec (CLI+IDE), but hook-enabled configs are flagged higher-risk (#5527 auto-compact hard-fail) [DS+RV kiro.md:73-78] |
+
+## 2. Per-host evidence notes
+
+**Claude Code CLI**
+- Statusline contract [DS code.claude.com/docs/en/statusline.md]: stdin JSON includes `model`, `workspace.current_dir`, `context_window.remaining_percentage/used_percentage`, `session_id`, `agent.name`, `cost`, `rate_limits`; ANSI escape codes render; multi-line output supported; `padding` option; refresh = event-driven + optional `refreshInterval` (minimum 1 s), 300 ms debounce. Matches our install [RV adapters/claude/settings.snippet.json:2-7; adapters/claude/README.md:422-432 — `refreshInterval: 1` gives ~1 s liveness while the conductor idles on subagents].
+- Our segment today [RV adapters/claude/statusline_chain.py:96-116, 256-291, 377-401]: `kata │ {dirname}{meter} │ {model-chip} │ {crew}{run}` — ANSI dim/band colors, `▰▱` 10-seg meter, `│` separators. Contextual already: the D160 kata-leg renders only when `kata_scope.find_kata_root` hits a `.kata/`/`kata.config` scope (statusline_chain.py:404-426), so "kata-launched session" theming is a solved pattern (a wrapper-set env var read by our own script is also trivially available — UA, our code both sides). Live n=1 [RV .planning/STATE.md:207].
+- Subagent view [DS code.claude.com/docs/en/agent-view.md + sub-agents.md]: host shows state icons (✽/✻/✢ etc.), agent name/description; the ONLY display-affecting frontmatter is `color` (8 named colors). "The host statusline payload carries ZERO subagent info (GRILL D3)" [RV tools/kata_crew.py:5-9] — hence our conductor-written `.kata/dispatch.json` roster + crew chips (statusline_chain.py:358-374). Branding of worker output = the report text itself (content, not chrome).
+- Hooks [DS code.claude.com/docs/en/hooks.md; RV .planning/specs/context-autonomy/GROUNDING-CLAUDE.md:49-63]: `hookSpecificOutput.additionalContext` (model-facing) CONFIRMED; `systemMessage` (user-visible transcript notice) and `terminalSequence` (raw ANSI sequences) are documented user-visible channels — an unexploited branding extension point.
+
+**Claude desktop app + IDE panes**
+- Panes render **markdown**, not a terminal [DS desktop.md / vs-code.md] — confirming the UX-11 premise. Statusline presence, hook-output visibility, and ANSI survival in panes are all UNDOCUMENTED. Treat as: markdown skin mandatory, no ANSI, no live region.
+
+**Codex CLI**
+- Native statusline: `[tui].status_line` accepts only built-in IDs (`model`, `context_usage`, `cwd`, `spinner`, …); no arbitrary text, no command-backed output, no ANSI, no extra persistent line — explicitly requested and not shipped (issues #17827, #20140, #20244) [DS github.com/openai/codex]. Repo concurs: the TUI status line is "human-facing" [RV docs/platforms/codex-cli.md:52-54].
+- No display hooks: `notify` fires only on `agent-turn-complete` [RV codex-cli.md:67-69].
+- Our dispatch path owns the view entirely: `codex exec --cd <worktree> -o <resultPath> <prompt>` as a captured subprocess [RV tools/kata_dispatch.py:127-144] — everything the operator sees comes from KataHarness's own console.
+
+**Kiro (confirmed the most limited for chrome, but NOT the weakest for hooks)**
+- No statusline, no machine-readable gauge, "no programmatic API for a supervising process" — verified absence [RV docs/platforms/kiro.md:47-56].
+- Its CLI theme wizard (named ANSI colors, safe fallbacks) themes KIRO's own output for the user — not an injection surface for us [DS kiro.dev docs].
+- Hooks DO exist (CLI+IDE): PreToolUse (blocking), PostToolUse, SessionStart, UserPromptSubmit (blocking), Stop, PreTaskExec, file events; stdin JSON in, stdout captured; user-visible display behavior undocumented [DS kiro.dev/docs/hooks/]. But the repo's frozen policy flags hook-enabled Kiro configs as higher-risk (issue #5527 auto-compact hard-fail loop) [RV kiro.md:17, 73-78].
+- Dispatch is wrapper-owned: `kiro-cli chat --no-interactive --agent <role>` captured, result written by the worker (no `-o` capture flag) [RV tools/kata_dispatch.py:147-166 — flags carry an explicit re-verify warning, line 158].
+
+## 3. Three most consequential constraints (ranked)
+
+1. **ANSI color inside the host-owned transcript is UNPROVEN everywhere** — including Claude Code CLI. Branded execution output and phase-break blocks print INTO the host transcript, and no host documents rendering (vs. escaping) ANSI in assistant/tool output. If stripped, the entire color grammar must have a glyph-only degradation (block glyphs and box-drawing are plain UTF-8 and survive). This single unknown decides whether the transcript design is color+glyph or glyph-only.
+2. **There is exactly one host-refreshed live region on one host**: the Claude Code statusline, floor-limited to ~1 s refresh — the 135 ms sea can never run there. Everywhere else, animation exists ONLY while KataHarness owns the TTY (wrapper launch, waits, phase breaks our code prints) — exactly the UX-14 boundary; the static frame-0 sea is the load-bearing artifact, the animation the garnish.
+3. **On Codex/Kiro the design system controls nothing in-session and everything around it.** Zero brandable host chrome — but as dispatch workers they are fully captured subprocesses, so 100% of the worker execution view is conductor/wrapper-rendered. The branding architecture should therefore put the theme in KataHarness-printed frames, never in host customization; every markdown surface (desktop/IDE panes, Kiro IDE, PR bodies, closeout reports) needs the colorless markdown skin, with alignment-sensitive art confined to code fences.
+
+## 4. Open unknowns + cheapest probes
+
+1. **ANSI in Claude Code transcript output** (assistant text AND Bash tool output) — probe: one live session, a raw-escape echo; observe. Minutes, zero risk.
+2. **Statusline + hook visibility in Claude desktop/VS Code panes** — probe: open the extension with the installed kata statusline, cd into a kata scope, cross the gauge threshold once.
+3. **Codex TUI ANSI passthrough from agent/tool output** — probe: one interactive `codex` session running the same echo.
+4. **Kiro hook stdout user-visibility + #5527 reproduction on current CLI** — probe on a live `kiro-cli` install before ever registering kata hooks (repo already mandates this re-verify, kiro.md:99-101).
+5. **`kiro-cli` headless flag pinning** (`--no-interactive --agent`) — the standing N5 confirm-probe [RV kata_dispatch.py:158].
+6. **Multi-line statusline behavior under `refreshInterval` on Windows Terminal** — probe alongside (1); a 2-line segment would double the strip real estate for the phase rail (UX-9).

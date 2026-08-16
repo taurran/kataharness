@@ -1,0 +1,50 @@
+<h2>Nested execution — three tiers of legibility</h2>
+<p class="subtitle">The answer to “how do I follow subagents running subagents”: the statusline shows depth at a glance, the run board shows the whole tree, and every transcript line names its lineage.</p>
+
+<style>
+  .term { background:#0e1218; color:#c9d1d9; padding:20px 22px; border-radius:8px; font-family:'Cascadia Code','Consolas',monospace; font-size:13px; line-height:1.42; overflow-x:auto; white-space:pre; }
+  .foam { color:#F7F2E6; } .pale { color:#8fb3cc; } .blu { color:#4d87ae; } .pru { color:#2E6389; }
+  .sealbg { color:#F7F2E6; background:#A6532B; font-weight:bold; }
+  .chip { color:#0e1218; background:#d9a960; font-weight:bold; }
+  .wchip { color:#0e1218; background:#e5c07b; font-weight:bold; }
+  .och { color:#d9a960; } .pb { color:#CDBE9B; } .dimb { color:#44607a; }
+  .gd { color:#5fd7a7; } .wn { color:#e5c07b; } .rs { color:#c2653a; }
+  .txt { color:#a9b1c3; } .dim { color:#565f74; } .vl { color:#F7F2E6; } .lb { color:#4d87ae; }
+</style>
+
+<div class="term">
+<span class="dim">tier 1 · THE STATUSLINE — always visible, ~1s refresh, one line:</span>
+
+<span class="sealbg">改</span><span class="dim">│</span><span class="txt">KataHarness </span><span class="gd">▓▓▓▓▓▓</span><span class="dimb">░░░░</span><span class="dim"> 61% │ </span><span class="och">fable</span><span class="dim"> │ </span><span class="wchip"> exec 3/6 </span><span class="dim"> │ crew </span><span class="vl">W1</span><span class="wn">▸2</span> <span class="vl">W2</span> <span class="vl">W3</span><span class="wn">▸1</span>
+
+<span class="dim">W1▸2 = worker W1 has 2 nested children cooking — depth at a glance</span>
+
+<span class="dim">tier 2 · THE RUN <span class="pb">┌─ </span><span class="och">run board — backlog-burn-01 · exec · wave 2 of 3</span><span class="pb"> ───────────┐</span>
+<span class="pb">│</span><span class="gd">●</span> <span class="vl">W1  config validator</span><span class="dim">           building · 12m · 41k tok</span>     <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">    ├ </span><span class="gd">●</span> <span class="vl">W1.1 test author</span><span class="dim">          red→green · 4/9 cases</span>       <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">    └ </span><span class="wn">●</span> <span class="vl">W1.2 docs sync</span><span class="dim">            waiting on W1.1</span>             <span class="pb">│</span>
+<span class="pb">│</span><span class="gd">●</span> <span class="vl">W2  /kata-loop command</span><span class="dim">         at the gate · judge running</span>  <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">    └ </span><span class="gd">●</span> <span class="vl">W2.1 judge (fresh ctx)</span><span class="dim">    verifying claims · 2m</span>       <span class="pb">│</span>
+<span class="pb">│</span><span class="dimb">○</span> <span class="vl">W3  code-map measurement</span><span class="dim">       queued · starts in wave 3</span>    <span class="pb">│</span>
+<span class="pb">│</span>                                                              <span class="pb">│</span>
+<span class="pb">│</span><span class="dim"> agents 5 · 3 direct + 2 nested · deepest branch 2 · all owned</span><span class="pb">│</span>
+<span class="pb">└──────────────────────────────────────────────────────────────┘</span> — /kata-status, the full tree on demand:</span>
+
+<span class="pb">┌─ </span><span class="och">run board — backlog-burn-01 · exec · wave 2 of 3</span><span class="pb"> ───────────┐</span>
+<span class="pb">│</span><span class="gd">●</span> <span class="vl">W1  config validator</span><span class="dim">           building · 12m · 41k tok</span>     <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">    ├ </span><span class="gd">●</span> <span class="vl">W1.1 test author</span><span class="dim">          red→green · 4/9 cases</span>       <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">    └ </span><span class="wn">●</span> <span class="vl">W1.2 docs sync</span><span class="dim">            waiting on W1.1</span>             <span class="pb">│</span>
+<span class="pb">│</span><span class="gd">●</span> <span class="vl">W2  /kata-loop command</span><span class="dim">         at the gate · judge running</span>  <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">    └ </span><span class="gd">●</span> <span class="vl">W2.1 judge (fresh ctx)</span><span class="dim">    verifying claims · 2m</span>       <span class="pb">│</span>
+<span class="pb">│</span><span class="dimb">○</span> <span class="vl">W3  code-map measurement</span><span class="dim">       queued · starts in wave 3</span>    <span class="pb">│</span>
+<span class="pb">│</span>                                                              <span class="pb">│</span>
+<span class="pb">│</span><span class="dim"> agents 5 · 3 direct + 2 nested · deepest branch 2 · all owned</span><span class="pb">│</span>
+<span class="pb">└──────────────────────────────────────────────────────────────┘</span>
+
+<span class="dim">tier 3 · IN THE TRANSCRIPT — every worker line carries its lineage:</span>
+
+<span class="pru">▏</span><span class="dim">[W1.1]</span> <span class="txt">9 cases written · 4 green · rerunning the red five</span>
+<span class="pru">▏</span><span class="dim">[W2→judge]</span> <span class="txt">claim 2 of 3 reproduced independently</span>
+</div>
+
+<p class="subtitle">Worker IDs are hierarchical (W1 → W1.1) so lineage is in the name itself; the board is depth-capped with rollup counts if a tree ever gets deeper than readable; “all owned” = every branch traces to a dispatch record — no orphan agents.</p>

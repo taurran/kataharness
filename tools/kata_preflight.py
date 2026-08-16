@@ -58,6 +58,8 @@ Reuse citations (verify-before-reuse — ``protocol/reuse-claims.md``)
 ----------------------------------------------------------------------
 - ``_COMMAND_BUILDERS``-style fixed table:  kata_dispatch._COMMAND_BUILDERS (name-based ref)
 - injectable runner pattern:               kata_dispatch._subprocess_runner (name-based ref)
+- stderr tail cap (COPIED, not imported):  kata_dispatch._stderr_tail (name-based ref) — see
+  ``_stderr_tail`` below for why this module imports nothing from ``kata_dispatch``
 - ``_safe_abs`` ``..``-guard:              tools/kata_settings.py:39-44
 - gate artifact emit path:                 tools/gate_emit.py:94-150
 - ``preflight`` config block:              protocol/config.md:29-36
@@ -134,7 +136,7 @@ _REGISTRY_VERSION = 1
 _DEFAULT_FREEZE_APPROVAL_FILENAME = "kata.freeze-approval.json"
 
 # Type aliases (Python 3.12+; kept for clarity even at 3.12 minimum)
-RunnerType = Callable[[list[str]], tuple[int, str]]
+RunnerType = Callable[[list[str]], tuple[int, str, str]]  # (returncode, stdout, stderr)
 SnykCheckType = Callable[[str, str], bool]  # (package, version) -> True=safe/False=blocked
 
 
@@ -394,20 +396,58 @@ def _load_approved_hash(approved_hash_path: Path) -> str | None:
 # Default subprocess runner (no shell=True) — mirrors kata_dispatch._subprocess_runner
 # ---------------------------------------------------------------------------
 
-def _default_runner(argv: list[str]) -> tuple[int, str]:
+def _default_runner(argv: list[str]) -> tuple[int, str, str]:
     """Default real runner: ``subprocess.run(argv)`` with ``shell=False``.
 
     Mirrors ``kata_dispatch._subprocess_runner`` (name-based ref — line numbers drift).
-    NOTE: the dispatch runner now returns a 4-tuple carrying stderr; THIS runner still
-    discards stderr — widening it is deferred to the quota-resilience run
-    (``.planning/DEFERRED.md`` DEF-1).
+    Returns ``(returncode, stdout, stderr)``: stderr is carried out **uncapped and
+    unmodified** because the tail cap belongs at the consumer call sites in
+    ``run_preflight`` (see ``_stderr_tail`` below), not here — a cap inside the runner
+    would be bypassable by any injected runner, which is exactly the property
+    ``kata_dispatch``'s choke-point placement exists to preserve (DEF-1).
     ``shell=True`` is **never** used — this is the structural guard that kills
     the ``curl|bash`` / untrusted-index injection class (LD2/LD3).
     """
     import subprocess  # noqa: PLC0415  (lazy to keep import light for pure-unit tests)
 
     result = subprocess.run(argv, capture_output=True, text=True)  # noqa: S603
-    return result.returncode, result.stdout
+    return result.returncode, result.stdout, result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Runner-stderr tail cap (DEF-1) — applied at the run_preflight CALL SITES
+# ---------------------------------------------------------------------------
+#
+# Deliberately a COPY of ``kata_dispatch._stderr_tail``'s approach, not an import:
+# ``_stderr_tail`` is a private name in another module and ``kata_preflight``
+# imports nothing from ``kata_dispatch`` (see the module header) — a cross-module
+# private import would create exactly the coupling this engine is kept free of.
+# The two paths behave identically by construction (same cap, same tail, same
+# marker discipline, same tolerant decode).
+
+_STDERR_TAIL_CHARS = 4000
+_STDERR_TRUNCATION_MARKER = f"[stderr truncated to last {_STDERR_TAIL_CHARS} chars]\n"
+
+
+def _stderr_tail(stderr) -> str:
+    """Deterministic tail cap for runner stderr surfaced to the operator.
+
+    Applied at the FOUR ``run_preflight`` consumer call sites — the ONE
+    preflight-side choke point (injected runners cannot bypass it), mirroring
+    ``kata_dispatch``'s placement of the same cap in ``dispatch()`` rather than in
+    its runner. Keeps the LAST ``_STDERR_TAIL_CHARS`` chars — package-manager error
+    text (resolver conflict, 404, auth/registry failure) arrives at the END of
+    stderr — prepending a literal marker only when clipped. Accepts ``bytes``
+    (stderr can be bytes on some platforms) and decodes tolerantly.
+    Pure function of its input (Determinism Doctrine).
+    """
+    if stderr is None:
+        return ""
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
+    if len(stderr) > _STDERR_TAIL_CHARS:
+        return _STDERR_TRUNCATION_MARKER + stderr[-_STDERR_TAIL_CHARS:]
+    return stderr
 
 
 # ---------------------------------------------------------------------------
@@ -896,9 +936,12 @@ def run_preflight(
             is a valid manager name).  The name is retained for backward-compat;
             forced per-manager registry URLs are in ``_MANAGER_REGISTRY_URLS``.
         runner:
-            Injectable ``(argv: list[str]) -> (exit_code: int, stdout: str)``.
+            Injectable ``(argv: list[str]) -> (exit_code: int, stdout: str, stderr: str)``.
             Used for both ``verify`` and ``install`` calls.  Default: real
             ``subprocess.run(argv, shell=False)`` (no ``shell=True`` — LD2).
+            Return stderr **uncapped**: this function tail-caps it at each consumer
+            call site via ``_stderr_tail``, so an injected runner cannot bypass the
+            cap (DEF-1; mirrors ``kata_dispatch.dispatch``'s choke-point placement).
         snyk_check:
             Injectable ``(package: str, version: str) -> bool`` (True = safe).
             Default: always safe (no-op seam; the skill layer wires the real call).
@@ -1211,7 +1254,11 @@ def run_preflight(
             continue
         dep_present: bool = False
         if verify_argv is not None:
-            exit_code, _ = real_runner(verify_argv)
+            # Call site 1 of 4. Non-zero here is the DESIGNED "dep is absent" control
+            # signal (it routes to the install path below), not a failure — so its
+            # stderr is deliberately not surfaced as a reason. Every path that IS a
+            # failure (install, re-verify, gate probe) surfaces its tail below.
+            exit_code, _, _ = real_runner(verify_argv)
             dep_present = exit_code == 0
 
         if dep_present:
@@ -1296,11 +1343,15 @@ def run_preflight(
             continue
 
         # ---- Run install (injectable runner, no shell=True — LD2)
-        install_exit, _ = real_runner(install_argv)
+        # Call site 2 of 4: tail-capped stderr rides the blocker so the operator sees
+        # WHY the install failed, not just THAT it failed (DEF-1).
+        install_exit, _, install_stderr = real_runner(install_argv)
         if install_exit != 0:
-            blockers.append(
-                f"dep {name!r}: install command exited {install_exit} (non-zero = failed)"
-            )
+            reason = _stderr_tail(install_stderr)
+            blocker = f"dep {name!r}: install command exited {install_exit} (non-zero = failed)"
+            if reason:
+                blocker += f"\nstderr: {reason}"
+            blockers.append(blocker)
             dep_results.append(
                 {
                     "name": name, "verify": "failed", "action": "installed",
@@ -1313,18 +1364,25 @@ def run_preflight(
 
         # ---- Re-verify after install (default-FAIL / LD7) — same STRUCTURED argv
         re_verify_ok: bool
+        rv_stderr: str = ""
         if verify_argv is not None:
-            rv_exit, _ = real_runner(verify_argv)
+            # Call site 3 of 4: here a non-zero IS a failure (the install claimed
+            # success), so its tail-capped stderr rides the blocker.
+            rv_exit, _, rv_stderr = real_runner(verify_argv)
             re_verify_ok = rv_exit == 0
         else:
             # No verifyImport supplied: accept install at face value
             re_verify_ok = True
 
         if not re_verify_ok:
-            blockers.append(
+            reason = _stderr_tail(rv_stderr)
+            blocker = (
                 f"dep {name!r}: re-verify failed after install — default-FAIL (LD7). "
                 "The package installed but its verifyImport check returned non-zero."
             )
+            if reason:
+                blocker += f"\nstderr: {reason}"
+            blockers.append(blocker)
             dep_results.append(
                 {
                     "name": name, "verify": "failed", "action": "installed",
@@ -1351,9 +1409,12 @@ def run_preflight(
     # =========================================================================
     targetEnv: dict | None = None
     if target_baseline_gate:
+        gate_stderr: str = ""
         try:
             gate_argv = shlex.split(target_baseline_gate)
-            gate_exit, _ = real_runner(gate_argv)
+            # Call site 4 of 4: a failing baseline gate degrades the run — the tail-capped
+            # stderr rides the warning so the operator sees WHY (DEF-1).
+            gate_exit, _, gate_stderr = real_runner(gate_argv)
             gate_runnable = gate_exit == 0
         except Exception:  # noqa: BLE001
             gate_runnable = False
@@ -1362,10 +1423,14 @@ def run_preflight(
         if not gate_runnable:
             if overall_status == "ready":
                 overall_status = "degraded"
-            warnings.append(
+            reason = _stderr_tail(gate_stderr)
+            warning = (
                 f"target baseline gate {target_baseline_gate!r} failed → "
                 "targetEnv.runnable=false → degraded (PF-3/LD5)"
             )
+            if reason:
+                warning += f"\nstderr: {reason}"
+            warnings.append(warning)
 
     # =========================================================================
     # LD4: sandbox-degraded path (sandbox_required:false + no sandbox)

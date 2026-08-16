@@ -29,6 +29,7 @@ from pathlib import Path
 
 import footprint as _footprint
 import run_result
+from fs_atomic import atomic_write_text
 
 # ---------------------------------------------------------------------------
 # Public function
@@ -48,6 +49,11 @@ def emit_gate_artifacts(
     utc: str | None = None,
 ) -> dict:
     """Compose run_result / footprint / mutation_check into the gate artifact set.
+
+    All three artifacts are written atomically (D159, same-dir tmp + ``os.replace``):
+    the evaluator and the benchmark scorer read this directory while a gate may still
+    be emitting into it, so a truncate-then-write would leave a window in which a
+    concurrent reader sees a partial file.  Output bytes are unchanged.
 
     Parameters
     ----------
@@ -127,7 +133,7 @@ def emit_gate_artifacts(
     man = _footprint.manifest(changed, footprint, diffstat)
 
     footprint_path = out / "footprint.json"
-    footprint_path.write_text(json.dumps(man, indent=2), encoding="utf-8")
+    atomic_write_text(footprint_path, json.dumps(man, indent=2), encoding="utf-8")
 
     # ------------------------------------------------------------------
     # 3. Write mutation.json if mutation_records were supplied
@@ -141,7 +147,9 @@ def emit_gate_artifacts(
             "allNonVacuous": all(r["nonVacuous"] for r in mutation_records),
         }
         mutation_path = out / "mutation.json"
-        mutation_path.write_text(json.dumps(mutation_payload, indent=2), encoding="utf-8")
+        atomic_write_text(
+            mutation_path, json.dumps(mutation_payload, indent=2), encoding="utf-8"
+        )
 
     # ------------------------------------------------------------------
     # 4. Return summary dict

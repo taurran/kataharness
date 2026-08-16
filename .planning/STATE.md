@@ -1,11 +1,48 @@
 ---
-milestone: M2-freeze-float
-milestone_name: "enforcement sweep MERGED to master (cf2ee50) — 7 items shipped (KH-T02, BL-M21, T-04, KH-T12, KH-T13+KH-B42, BL-F01); PR #51 + #53 both merged; T-00/T-09/T-10 closed (D170)"
+milestone: planning-batch-2026-08
+milestone_name: "backlog-burn-01 COMPLETE (6/6) · 2026-08-15 planning batch filed (17 features + 7 fixes) · burn-mode BBM-1..11 + UX system UX-1..27 designed · branch burn/backlog-burn-01, 38 commits UNPUSHED"
 status: in-progress
-last_updated: "2026-08-03T00:00:00.000Z"
+last_updated: "2026-08-16T00:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-08-15/16 — THE PLANNING MARATHON, branch `burn/backlog-burn-01`, ~38 commits,
+> ALL UNPUSHED, no remote branch, master untouched at `d4650fc`):**
+> **(1) backlog-burn-01 FINISHED — all 6 items closed.** Waves 2+3 this session: BURN-D config
+> load-guard got a real validator (`tools/kata_config.py`, 33 tests, kata-orchestrate 0.18.0; the
+> builder ESCALATED an internally-unsatisfiable brief — an exact-version test pin — conductor fixed
+> it to a semver floor) · BURN-E `/kata-loop` command · BURN-F measured the code map: **25 → 157
+> files seen** (the July + wave-1 fixes worked; found the documented rebuild command is broken +
+> graph_gen counts embedded worktrees ~7×). Integrated gauntlet 4/4 at `53cecf8`; burn evidence in
+> `.planning/specs/backlog-burn-01/OBSERVATIONS.md` (H1–H7, incl. H5×2 + H6×2 live repeats).
+> **(2) THE 2026-08-15 PLANNING BATCH filed at the top of BACKLOG.md** — **BL-N01..N17 + BL-X01..X07**,
+> recovered verbatim from the operator's feature prompt + live additions: Truth Serum · Human Prose ·
+> Ubiquitous Language · Specialist Cadre · settings · launcher+UX rework · the Kitchen (with the
+> operator's ROLE MODEL: conductor/thin-orchestrator/advisor/evaluator/NEW ARBITER/challenger) ·
+> fan-out dial · Challenger · backlog mgmt · Burn mode · goal-prompt optimization · run statistics
+> (BL-N14, cumulative semantics) · handoff-on-demand (BL-N15) · **the learning graph (BL-N16 — per-
+> agent learning substrate, fully ruled: dedicated learning agent+gate, confidence-thresholded,
+> recency conflicts, Hermes append-for-audit/distill-for-load, learning-management component, Kiban
+> as second destination)** · engram→learning scrub (BL-N17).
+> **(3) BURN MODE designed on paper** — `.planning/specs/backlog-burn-mode/GRILL-LEDGER.md`
+> BBM-1..11 (hybrid gating · dedicated burn_partition.py · normalized-backlog intake, GitHub future ·
+> partition-bound width · guided-start entry · ledger+linkback accuracy · wave-boundary dial with
+> per-shape defaults). Full grill still owed before DESIGN.
+> **(4) THE UX SYSTEM designed END-TO-END** — `.planning/specs/ux-rework/`: GRILL-LEDGER **UX-1..27**,
+> DESIGN.md (draft), PLATFORM-MATRIX.md (evidence-labeled), RESEARCH at learning-graph/, and
+> **templates/** (the width-asserted generators + approved mockups — the pixel-exact spec). Locked:
+> launch screen w/ animated sea · phase rail + break block · the ONE waveform (UX-13, exact
+> components) · boxes-data/dividers-prose/scissors-copy grammar · truth-serum run-start ·
+> interruption ladder · closeout mini-loop · interview · help/settings · wave-gate composite ·
+> nested-execution three tiers · markdown skin. **"Wave" is the official term; internal codenames
+> (Kitchen, engram) never user-facing; the vault is KIBAN** (verified on disk, memory updated).
+> **Green at tip `fa03958`: gauntlet 4/4 — pytest 4485/3 skip · integration 2/2 · ruff clean ·
+> validator 49/0/0.**
+> **★ NEXT SESSION (operator-set agenda): decide the next PLANNING items and HOW FAR to plan before
+> starting CODING EXECUTION** — see HANDOFF §2. ★ OWED: push/PR decision on the 38 commits · 🔴 PAT
+> rotation (deferred 2026-08-02, NOT dropped) · T-03 determinism-scope call.
+> *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-07-27 → 2026-08-02 — THE ENFORCEMENT SWEEP, branch `grill/session-lifecycle`):**
 > One theme ran through every item: **rules that existed only as prose, with nothing enforcing them.**

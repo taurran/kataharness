@@ -2,6 +2,288 @@
 
 Promote to ROADMAP milestones when ready.
 
+---
+
+## ★★ 2026-08-15 PLANNING BATCH — twelve features + six found-broken fixes (operator-directed)
+
+> Source: the operator's feature prompt (typed 2026-08-15, recovered verbatim from the session
+> transcript) + two additions made live at filing time + everything found broken while finishing
+> `backlog-burn-01`. Session rulings already made: **file everything first, then deep-dive**;
+> **first deep-dive = Backlog Burn mode (BL-N12)**. Codes are `BL-N##` (new-feature batch) and
+> `BL-X##` (found-broken); per standing operator preference every code is paired with a plain-English
+> name everywhere it appears.
+
+### The twelve features
+
+> **BL-N01 · "Truth Serum" — make the never-stub/never-half-build promise mechanical.**
+> The harness must never stub, defer, or half-build anything without being explicit and getting
+> explicit approval. The *prose* contract already exists (PD-1/PD-2, clause-pinned + fingerprinted);
+> what does not exist is mechanism beyond the gate's judgment. **The recorded blocker is `BL-M33`**
+> (no code seam between conductor and host-only agents — any rule about how a judge was launched is
+> unenforceable prose), so BL-N01 is largely "build the seam, then hang enforcement off it."
+> Open questions: what is mechanically detectable (stub signatures, unwired symbols — `contract_edges.
+> surviving_stubs` already exists), and where does approval get recorded so the gate can check it?
+
+> **BL-N02 · "Human Prose" — selectable language modes for everything the harness says.**
+> Modes sketched: Simplified Technical · ELI5 · a model↔model register optimized for concise
+> machine-to-machine transfer (handoffs, orientation). More to brainstorm. Existing machinery: ONE
+> agnostic voice already exists (`protocol/persona.md`, `protocol/narration.md`) — this generalizes
+> it into a register dial. Natural config home: `kata.config` beside mode/effort. Open questions:
+> does the register apply per-surface (closeout vs. board vs. handoff) or per-run; does model↔model
+> compression conflict with the "never-summarized invariant block" handoff rule (D67)?
+
+> **BL-N03 · Ubiquitous Language — research-backed term alignment as an optional grill step.**
+> Ingest the Pocock ubiquitous-language approach fully: inventory the repo's real terminology (views,
+> reports, resources, object names), build a small machine-readable reference (yaml/json/md/sqlite —
+> format TBD) so human and machine align on language BEFORE building; research pass for marketability
+> + industry-standard terms; runnable against EXISTING codebases for alignment sweeps. Existing
+> machinery: `kata-context` (CONTEXT.md glossary) is *already* adapted from Pocock's skill — this
+> deepens it (research + machine-readable artifact + existing-repo alignment mode) rather than
+> starting from zero.
+
+> **BL-N04 · Specialist Cadre — a library of installable specialist agents.**
+> Standardized specialists (coding optimization, domain knowledge, **a GitHub specialist** — named
+> explicitly by the operator) that research/coding agents can pick up; ingested into the user's
+> designated vault; includes cloning + customizing a "KataHarness Superpowers" set that loads with
+> the harness; users can author their own specialists and the harness generates the contextual
+> references/files. Open questions (operator-flagged): do superpowers live inside the cadre or in
+> their own home; relationship to the existing agent-skills toolkit (`agentSkills.dir`,
+> `kata-promote` two-stage gate, STANDARDS §1.3 discriminators) which already governs exactly this
+> shape of thing.
+
+> **BL-N05 · Settings module — a real settings command.**
+> One command to view/set KataHarness system settings. Existing machinery: `tools/kata_settings.py`
+> + `kata.config` + the bootstrap interview already own the values; what is missing is the direct
+> user-facing surface. Small, but its UX belongs to the BL-N07 rework template.
+
+> **BL-N06 · Branded launcher + the launch experience ("the front door", operator-clarified).**
+> `kata-claude` / `kata-codex` / `kata-kiro` aliases that launch the host INTO a KataHarness
+> interface: designed ASCII title (full ASCII font, color + gradient, branded), version, help,
+> settings, new-project / run-existing commands, with all environmental skills + agentic files
+> preloaded (kata superpowers etc.). The MindBridge `mbl-kiro` launcher is the reference experience.
+> **Operator direction 2026-08-15: dial in the launch design FIRST — agree the template — because it
+> becomes the design system BL-N07 carries across everything.** Brainstorm-deep flagged.
+
+> **BL-N07 · The UX rework — carry the agreed design across every menu and phase. (NEW 2026-08-15)**
+> Once the BL-N06 launch template is agreed, apply it across ALL menus and ALL phases of the harness
+> — one visual/interaction language everywhere the human touches it (bootstrap dial, grill UX,
+> narration, closeout, status). Operator: *"something that this has really needed for a long time."*
+> Existing anchor points: persona/narration protocols, the two-tier closeout (CLI summary + branded
+> HTML report), the one-dial bootstrap. This is the umbrella; BL-N05/N06 are its first tenants.
+
+> **BL-N15 · Handoff on demand — one verb, standardized execution. (NEW 2026-08-15)**
+> Saying "hand off to a new session" (or close variants) in ANY KataHarness-governed session
+> executes the full standardized handoff: context update · handoff update (frontmatter per
+> `protocol/handoff.md`) · **orientation printout in the locked UX grammar** (the hard agent-
+> orientation format, copy block labeled "paste into new session"). Predictable and repeatable —
+> same artifacts, same order, every time. Existing machinery: `kata-handoff` / `kata-selfhandoff` /
+> `kata-orient` / `kata_handoff_break.py` are real but verb-triggered standardized execution is
+> NOT; the held session-lifecycle grill's surviving findings (trigger never fired · staleness
+> comparator unimplemented · frontmatter fields never carried by real handoffs) are input evidence,
+> NOT its ledger. Ties into the UX rework (grammar) and the Kitchen (roles below). **Operator:
+> work this during the current batch's execution.**
+
+> **BL-N16 · The learning graph — a per-agent learning substrate. (NEW 2026-08-16, Kitchen-aligned)**
+> **The shift: learning applies to INDIVIDUAL AGENTS, not the harness as a whole.** Every agent
+> type in the harness gets a substrate file — YAML frontmatter + markdown (the field-standard
+> agent-definition shape; verify against current conventions at grill) — carrying: full frontmatter
+> · **learning modifications** accumulated for that agent · **temporal tracking** of when each
+> learning was applied. **Every time the agent loads, its learning modifications load with it — and
+> every application is auditable in the harness.**
+> **Learning sources:** grilling · in-loop guidance (the user replies with items explicitly flagged
+> as learning) · generated at agent close. **At run end, a learning session runs:** all learning
+> notes collected during the run are auto-applied to their agents; the closeout offers (a) apply
+> learning guidance against the run's learning-output list and (b) review/understand ALL learning
+> applied this run. *(Closeout alignment: the "WHAT WE LEARNED" box and these two menu options are
+> the same surface — UX-20 addendum.)*
+> **Specialist spin-off:** when an agent's accumulated learning is deep enough, the harness OFFERS
+> to spin off a cadre specialist (BL-N04) derived from it. Personalized/specialized cadre agents
+> live in **the vault, in official KataHarness folders** — the substrate itself is vault-stored so
+> **settings and learnings persist across uninstall/reinstall**.
+> **Existing machinery this builds on (verified, not guessed):** `kata-promote`'s two-stage
+> agent-distilled-skill promotion + STANDARDS §1.3 discriminators (the spin-off seam, human-gated)
+> · the engram/learn-feed vault emission (`learn_feed.py`, D151 — run learnings → vault pages) ·
+> `kata-improve` (today's HARNESS-wide folding — exactly what becomes per-agent) · `agentSkills.dir`
+> + `engram.learnFeed.dir` (vault-external persistence precedent) · LESSONS-LEARNED.md capture.
+> **Resilience/cursor question (operator-posed, to settle at grill):** should the run-status
+> "cursor" (the phase rail) merge with the stage/step resilience record (board · `Kata-Task:`
+> trailers · restore machinery)? Conductor's recommendation to test at grill: the rail stays a pure
+> VIEW rendered FROM the durable run record — one source of truth, no second store — with learning
+> actions logged into that same record for observability. Assessed-against-the-field: Hermes + Pi
+> alignment research dispatched 2026-08-16.
+> **RULINGS (operator, 2026-08-16 — the open questions are now settled):**
+> 1. **A dedicated LEARNING AGENT + GATE apply all learning.** Learning application is never a side
+>    effect — one agent role owns it, and a gate stands in front of every application (the
+>    grounding-gate posture, D33 never bypassed). Additions are **confidence-scored and held until
+>    the threshold is met** — below-threshold learning is never applied. *(D74 redaction still
+>    binds the vault-bound half: secrets/PII scrub is a hard pre-write gate on anything emitted to
+>    the vault — that is what redaction is for here.)* Plus the Hermes-derived security scan on
+>    self-written learning (injection-persistence vector).
+> 2. **Contradictions resolve by RECENCY** — newest learning wins mechanically — and the user is
+>    pointed at the learning-management feature for the deliberate cleanup.
+> 3. **Size control = the Hermes measure, adopted:** a capped, curated ACTIVE section (visible
+>    fill %) is what injects at agent load; the full temporal append log stays as the audit layer;
+>    condensation runs through the learning-management optimizer, never silently.
+> 4. **BC holds:** an agent with no learning file behaves byte-identically.
+>
+> **NEW component — LEARNING MANAGEMENT (skill/feature within this item):** the user-facing
+> surface for the substrate: review itemized learning PER AGENT · clean up contradictory entries ·
+> align/prune by temporal recency · optimize + condense learning items to improve future
+> performance (feeds the active-section distillation). This is where recency-resolved conflicts
+> get surfaced for human judgment.
+>
+> **Second brain = an ADDITIONAL learning destination:** beyond per-agent substrate files, learning
+> can be applied/emitted to the second brain (vault) — the learn-feed channel — so run learnings
+> land in both the agent that earned them AND the durable knowledge store, each through its gate.
+> **Field alignment (research landed 2026-08-16, `.planning/specs/learning-graph/RESEARCH-HERMES-PI.md`):**
+> format + load-time injection MATCH the field; temporal audit + specialist spin-off EXCEED it
+> (neither Hermes nor Pi has either). **Adopted design consequence: append for audit, distill for
+> load** — the temporal log audits; a capped curated “active” section (visible fill %) is what
+> injects (Hermes’ bounded-curation lesson). Also adopted: staged-write + unified-diff approval
+> queue · security scan on self-written learning (injection-persistence vector).
+
+> **BL-N17 · Scrub “engram” → “learning” across KataHarness. (NEW 2026-08-16)**
+> The internal term “engram” becomes plain **“learning”** everywhere a user or agent meets it:
+> config keys (`engram.autonomy` → `learning.autonomy`, `engram.learnFeed.dir` →
+> `learning.feed.dir`, `engram.backend` → `learning.backend`), `protocol/engram.md`, the
+> `kata-engram` cognition seam, STANDARDS/ROADMAP references, and skill prose. **BC-sensitive:**
+> config keys are a compatibility surface — the rename ships with old-key aliases + a migration
+> note, validated by the config load-guard; the protocol file rename must respect the
+> REQUIRED_PROTOCOL registry + fingerprint machinery (a deliberate two-step re-approval, not a
+> silent swap). Pairs naturally with BL-N16 — same grill, likely same run.
+
+> **BL-N08 · "The Kitchen" — decouple the flat run; let tasks bake. (THE BIG ONE)**
+> Chef (conductor) / sous-chef (orchestrator subagent) / dishes (tasks). Today's run pattern is
+> flat and on-rails; the Kitchen lets execution branches parallelize and optimize *around each
+> other* — a long-running task is put on to "bake" while non-dependent tasks run; each branch
+> optimizes within itself for time and tokens; **fan out the fan-out** (branches that themselves
+> fan out). Existing machinery to build on, not replace: the rolling DAG-frontier dispatch + async
+> park/drain/hard-wait escalation (D47–D56), worktree isolation, the wave model. Evidence feeding
+> it: the burn's H1 finding — **gating is the serial bottleneck, builders are not** — so the Kitchen
+> must redesign gate placement, not just dispatch. Operator: has unspecified details; grill deep,
+> live.
+>
+> **THE ROLE MODEL (operator-specified 2026-08-15):**
+> - **Conductor** — the PRIMARY session agent: research + brainstorming, the human's interlocutor.
+>   Highest tier the operator will run (recommend Fable, as this session runs).
+> - **Orchestrator** — a THIN dispatched agent at the run's standard coding tier, carrying most of
+>   the orchestration + subagent-execution load. Under the Kitchen it graduates to chef/sous-chef:
+>   managing multiple branches concurrently — things "cooking" while non-dependent work executes —
+>   running the working loop, and employing the judgment agents below.
+> - **Advisor** — as shipped (D167 advisor-executor, fresh-context consult).
+> - **Evaluator** — the fresh-context no-write default-FAIL gate (operator correction: evaluator,
+>   NOT "assessor").
+> - **ARBITER (NEW)** — advisor + second-brain decision-making combined: consults the vault's
+>   decision history when arbitrating. Needs its own definition at grill time.
+> - **Challenger** — cross-model challenge of the adversarial validator (BL-N10).
+>
+> **Cross-ref (2026-08-16):** the per-agent learning substrate (BL-N16, the learning graph) is
+> Kitchen-aligned — the roles above are exactly the agents whose substrate files accrue learning.
+
+> **BL-N09 · Fan-out dial — a run-config knob for Kitchen capacity. (NEW 2026-08-15, depends on BL-N08)**
+> Once the Kitchen exists: a `fanOut` configuration alongside mode/economy — three positions,
+> working names **minimal / standard / maximum** (better descriptive terms welcome at grill time):
+> minimal caps parallel-branch capacity, standard is moderate *in context of the workload*, maximum
+> lets the Kitchen architecture itself determine the parallel-branch ceiling. Config-surface work +
+> the Kitchen's capacity model; strictly sequenced after BL-N08.
+
+> **BL-N10 · "Challenger" — cross-model challenge of the adversarial validator.**
+> The adversarial validator runs on a DIFFERENT model (another Claude, or a Codex model); then a
+> strong model (Opus/Fable) comes back to CHALLENGE the validator's findings — accuracy control on
+> the adval itself. Includes proving Codex models can actually execute here (today `_COMMAND_BUILDERS`
+> covers codex/kiro but the Claude path is orchestrator-prose, and non-Anthropic ladders in
+> `kata_models.py` are empty placeholders). Open question: does this need multi-agent orchestration,
+> and does it inherit BL-M33's missing dispatch seam?
+
+> **BL-N11 · Backlog management — an explicit function, not a markdown convention.**
+> Operator-recommended as its own item. Today the backlog is this file plus five sibling surfaces
+> (the recorded `KH-B41` "six surfaces, no single view" problem). A real capability: add/triage/
+> close/prioritize items, feed a burn, ingest external sources. **Elevated 2026-08-15 (ruling
+> BBM-3): a designed PREREQUISITE of Burn mode's intake** — standardize/normalize the backlog as a
+> low-touch alternative to full GitHub issue tracking, with the item shape designed so GitHub
+> issues (the future primary source) maps onto it without rework.
+
+> **BL-N12 · Backlog Burn mode — the operating mode this branch prototyped. (FIRST DEEP-DIVE)**
+> Ingest a large item set (backlog, design issues, **external tickets/issues**), triage-then-grill
+> ONCE across the whole set, burn in preplanned waves with parallel builders, throughput without
+> losing accuracy. The evidence base is real and unusually good:
+> `.planning/specs/backlog-burn-01/OBSERVATIONS.md` — headline findings: gating is the serial
+> bottleneck (H1); triage must precede the grill because a third of items were mis-filed (H2); wave
+> partitioning must be computed over the IMPORT GRAPH, not file lists (H4); the convergence gate is
+> non-optional and must attack the SHARED half of the contract (H3/H5 ×2); provisioning must pin
+> base SHAs itself (H6 ×2); builders briefed to push back catch real contract errors (H7).
+
+> **BL-N13 · Goal/system-prompt optimization — a guided step in the start flow. (NEW 2026-08-15)**
+> Named by the operator while ruling on Burn mode's entry surface (BBM-5): the guided `/kata-start`
+> interview should include an optimization pass over the user's goal / system prompt — sharpening
+> the priming prompt before anything freezes. Existing machinery it extends: the reflective goal
+> mirror (WS-3 intake) + the priming-and-grill architecture (D71: the grill enriches the priming
+> prompt into the frozen spec). Scope TBD at its own grill; filed so it survives the session.
+
+> **BL-N14 · Run statistics — one metrics engine, surfaced everywhere. (NEW 2026-08-15)**
+> A per-run statistics rollup and its display grammar. **Counts:** agent/subagent executions ·
+> outer-loop cycles (the Kata Loop; naming TBD at grill) · miniloop executions (per-task TDD/fix
+> cycles, inline-eval rerolls) · issues flagged vs. remediated · overall execution time · tokens
+> total / input / output — per phase and per item. **Surfaces:** (a) mini-metric chips beside the
+> phase progress strip during the run — one ALIGNED chip grammar so every section's stats read the
+> same (order, units, separators fixed); (b) a full statistics section in the closeout report
+> window covering the entire run and every executed item. A "confidence rating" chip is wanted but
+> undefined — what it derives from (gate outcomes? adval verdicts?) is an open grill question, not
+> an invention. Existing machinery: `kata_telemetry` ledger rows (perTask cost, failureKinds,
+> evidence digests) + subagent token usage already captured — this is a rollup + grammar, not a
+> from-scratch counter. **Sequencing (operator): part of this batch's burn — with the Kitchen
+> (BL-N08) or right after it.**
+> **Semantics ruling (2026-08-15):** every displayed vitals bar shows figures **cumulative for the
+> run up to that moment** (not per-phase deltas); the closeout report shows the same counters at
+> final values plus per-item breakdowns. Counters live in run STATE (`.kata/`, D81 tier-3), never
+> in `kata.config` — config is settings, counters are state. New counters needed: agent executions
+> · miniloop tally · flagged→remediated · confidence (derivation TBD); tokens/time already flow
+> from the telemetry ledger.
+
+> *(Burn-mode design rulings from this session live in
+> `.planning/specs/backlog-burn-mode/GRILL-LEDGER.md` — BBM-1..BBM-10.)*
+
+### The six found-broken fixes (from finishing backlog-burn-01, 2026-08-15)
+
+> **BL-X01 · `protocol/config.md:14`'s own example fails the new load-guard.** The schema example
+> names modules `design`/`bakeoff`/`improve` — no skill on disk carries their provider tag (verified
+> twice: builder + conductor's independent probe). Fix the example (or provide the tags) — the
+> schema must pass its own validator. Clause-pin aware edit.
+
+> **BL-X02 · The installer's "next steps" banner names commands that do not exist.**
+> `tools/kata_install.py` (~:1305-1320) tells users to run `/kata-initiate` and `/kata-bootstrap`;
+> neither is a command file (the real set: `/kata` `/kata-loop` `/kata-start` `/kata-onboard`
+> `/kata-resume` `/kata-status` `/kata-validate`). First-run UX lies at the exact moment of first
+> contact — also a BL-N07 tenant.
+
+> **BL-X03 · `kata-understand` documents a graph-rebuild command the tool refuses.**
+> `modules/closeout/kata-understand/SKILL.md:47` says `--root .. --out ../.kata/kata.graph.json`;
+> `graph_gen._safe_path` raises on ANY `..` path (verified live 2026-08-15). Every literal follower
+> of the doc hits a crash. Fix the doc to absolute/CWD-relative form.
+
+> **BL-X04 · `graph_gen` scans embedded worktrees — a mid-burn map rebuild is garbage.**
+> With six `.claude/worktrees/` copies present the scan returned 43,064 nodes vs. the honest 5,560
+> (~7× over-count). Add worktree/gitignored-dir exclusion. **Directly load-bearing for BL-N12**,
+> whose wave partitioning wants graph rebuilds while worktrees exist.
+
+> **BL-X05 · Sweep the exact-version-pin class.** `test_validate_prime_directives.py` pinned the
+> literal `version: 0.17.0` and redded on any legitimate bump (caught live by the BURN-D builder;
+> fixed to a semver floor at `53cecf8`). Grep the suite for the same class — exact version/count pins
+> against living files — and convert to floors or regenerable assertions.
+
+> **BL-X07 · kata-promote's frontmatter mischaracterizes Hermes.** It calls Hermes a
+> "no-gate instant-universal model"; the 2026 docs show an opt-in staging gate
+> (`write_approval`, pending queue, unified diffs) exists. True of the DEFAULT config only —
+> tighten the wording so our own comparison stays truthful. One-line doc fix + version bump.
+
+> **BL-X06 · Host auto-worktree isolation fails on this repo (path casing) and provisions wrong
+> bases.** The Claude Code worktree isolation refused `C:\dev\...` vs `C:/Dev/...` casing and left
+> orphans at a stale base — the second independent provisioner to produce a wrong base (H6 ×2).
+> Harness-side mitigation: burn/Kitchen briefs always pin + verify base SHAs (already standing);
+> track whether a host fix lands, else make manual pinned provisioning the codified rule.
+
+---
+
 > ## 🔴 **BL-M33 · There is no code seam between the conductor and a host-only agent — FILED 2026-08-04**
 >
 > **In plain terms:** when the conductor dispatches the evaluator (or any host-only role), it does it by

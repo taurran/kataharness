@@ -17,3 +17,4 @@ tools/.venv/
 
 # per-run/per-branch machine-specific run config (personal paths) - on-disk only, never committed
 kata.config
+.superpowers/

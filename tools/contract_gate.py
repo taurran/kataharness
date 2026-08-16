@@ -30,6 +30,7 @@ import tree_sitter_python as tsp
 from tree_sitter import Language, Parser
 
 import contract_edges as ce
+from fs_atomic import atomic_write_text
 from graph_gen import _module_to_path, _node_text
 from kata_restore import (
     _KATA_INVALIDATED_PREFIX_RE,
@@ -503,11 +504,18 @@ def write_contract_gate(kata_dir: str | Path, verdict: dict) -> Path:
     ``surviving_stubs: [paths]``, and ``danglers: [dicts]`` — so the artifact proves
     ALL THREE final-gate contract checks ran (the re-derivation, the sentinel scan,
     and the dangling-import scan), not just the re-derivation.
+
+    Atomic (D159, same-dir tmp + ``os.replace``): the evaluator's independence leg
+    reads this artifact while the gate may still be re-emitting it, and a
+    truncate-then-write leaves a window in which a concurrent reader sees a partial
+    file.  Output bytes are unchanged.
     """
     kata_path = Path(kata_dir)
     kata_path.mkdir(parents=True, exist_ok=True)
     payload = dict(verdict)
     payload["utc"] = datetime.now(UTC).isoformat()
     out = kata_path / "contract-gate.json"
-    out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    atomic_write_text(
+        out, json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return out
