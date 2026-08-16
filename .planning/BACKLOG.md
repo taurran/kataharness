@@ -79,6 +79,10 @@ Promote to ROADMAP milestones when ready.
 > user-facing surface. Small, but its UX belongs to the BL-N07 rework template.
 
 > **BL-N06 · Branded launcher + the launch experience ("the front door", operator-clarified).**
+> **TRUTH STATUS (TM-A3, 2026-08-16): DESIGNED — freeze-candidate. NOT BUILT.** The DESIGN
+> (`specs/ux-rework/DESIGN.md` rev 3) is convergence-clean and awaits the operator's freeze
+> sign-off (CONVERGENCE-R1); **zero launcher code is shipped** — no wrapper commands exist on
+> disk (UX-1/UX-28 assessment is an explicit unstarted early task).
 > `kata-claude` / `kata-codex` / `kata-kiro` aliases that launch the host INTO a KataHarness
 > interface: designed ASCII title (full ASCII font, color + gradient, branded), version, help,
 > settings, new-project / run-existing commands, with all environmental skills + agentic files
@@ -87,6 +91,14 @@ Promote to ROADMAP milestones when ready.
 > becomes the design system BL-N07 carries across everything.** Brainstorm-deep flagged.
 
 > **BL-N07 · The UX rework — carry the agreed design across every menu and phase. (NEW 2026-08-15)**
+> **TRUTH STATUS (TM-A3, 2026-08-16): DESIGNED — freeze-candidate. NOT BUILT.** 33 rulings +
+> DESIGN rev 3 + pixel-exact template GENERATORS (committed as spec reference, not shipped
+> code); the UX-29 grammar renderer is NOT committed; the freeze waits on the operator
+> (CONVERGENCE-R1). **The trust-model presentation layer (TM-G1: run-start declarations ·
+> per-gate receipts with visible refusals · final-report truth metrics · the per-run trust
+> ledger) JOINS this freeze-candidate as a pre-freeze addition** — the sign-off list grows by
+> exactly that section. Per TM-A3, every backlog item now carries a truth-status mark; BUILT is
+> legal only with cited Verified evidence.
 > Once the BL-N06 launch template is agreed, apply it across ALL menus and ALL phases of the harness
 > — one visual/interaction language everywhere the human touches it (bootstrap dial, grill UX,
 > narration, closeout, status). Operator: *"something that this has really needed for a long time."*

@@ -61,6 +61,7 @@ this program mechanizes).
 |---|---|---|
 | A1 | The honesty relabel — the 5 FALSE + ~25 FACADE promise rows: relabel now (PD-2 immediately true) vs. wire-then-true vs. split | OPEN |
 | A2 | The tier-1 contradiction — `kata.config`/`INTENT.md` gitignored vs. `state.md:41` "(git)": commit them, or re-tier and fix the doc | OPEN |
+| A3 | *(opened by re-derivation at G1 — operator ruling)* Backlog items carry truth status — designed vs. built must be unmistakable | OPEN → resolved below |
 
 ### B — the authority spine (the seam; absorbs dispatch-seam B1/B2/B4/B5/B8)
 | # | branch | status |
@@ -511,6 +512,112 @@ hardening), D2 (detector set v1), D4 (gate-precondition rollout).*
 
 *Section D complete. Next: E (grounding agent + judge inputs), then F (plan-grounding close),
 G (presentation), H (cross-cutting + security pass).*
+
+### TM-E1 — Two-tier grounding: engines everywhere; the agent at the stack head + signal-triggered · LOCKED
+
+- **Decision (operator, 2026-08-16, after a requested overhead assessment):** the M4 doctrine
+  applied to grounding. (1) **Engines at every gate, always** (near-free, already locked at
+  TM-D4). (2) **The grounding AGENT stands FIRST in the validation stack** at the greater-loop
+  level (the operator's position) — ~3–5 bounded dispatches per run, economy-tiered under D131
+  (fact-orchestration, not judgment). (3) **Signal-triggered at other gates**: the agent fires
+  only when an engine flags what it cannot attest alone — a reuse-claim phrase, an unattestable
+  DONE claim, a research finding, a resolved-but-unread citation. (4) **Telemetry-informed
+  promotion**: per-gate injection expands only where run data shows it cheap — tracked in BL-N24
+  per the TM-D2 standing rule.
+- **Assessment recorded (modeled, labeled):** per-task agent dispatches ≈ +15–30 serialized
+  minutes on a mid-size run (H1: gates serialize) — the overhead class the operator flagged;
+  stack-head-only ≈ +2–5 minutes per run. Engines are milliseconds and token-free.
+- **Charter (carried from the directive + cross-doc):** the agent RUNS the engines and emits the
+  attested fact table judges consume; agent proposes, engine attests; AC-10 execute-the-tooling
+  is its standing law; scope boundary — grounding attests FACTS pre-judgment, the challenger
+  attacks JUDGMENTS post-hoc.
+- **Provenance:** operator overhead directive (verbatim in the E1 exchange); H1 (backlog-burn-01
+  OBSERVATIONS); M4 zero-LLM-happy-path doctrine; D131.
+
+### TM-E2 — Judges consume attested fact tables; residual judgment enumerated · LOCKED (conductor-resolved from locked context)
+
+- **Decision:** every judge's brief carries the attested fact table for its target (detector
+  outputs + grounding verdicts + evidence identity), and judge contracts are rewritten to
+  (a) judge ON the facts (never re-derive what an engine attested, never accept a worker claim
+  the table contradicts), (b) state residual-judgment surfaces explicitly (quality, design
+  fidelity, threat reasoning — the legitimately-judgment set per the gate inventory), and
+  (c) carry the TM-D3 tripwire. The burn-02 meta-finding travels with every description:
+  detectors narrow and attest; judges find what detectors cannot.
+- **Provenance:** gate-inventory §B; TM-D3; burn-02 OBSERVATIONS:136.
+
+### TM-F1 — Evidence declared at freeze; tracked on the cursor; truth metrics in the final report · LOCKED
+
+- **Decision (operator, 2026-08-16, accept-with-riders):** **no plan item freezes without its
+  completion-evidence declaration** (artifact path, test name, or probe command — one line per
+  item, authored by the plan-author, gated at the freeze gate). The close join becomes TOTAL:
+  every item mechanically resolves to built-and-exercised / recorded-deferral / named drift.
+- **Rider 1 (operator):** the declarations and their resolution are **tracked in the cursor
+  machinery** — item done-ness is a cursor fact, not a report-time derivation.
+- **Rider 2 (operator):** the join **feeds the final report** (the UX-designed closeout):
+  **truth metrics presented at the final report** — items resolved, evidence per item, drift
+  named, deferrals with approvals. "They should always be resolved, but it should show any
+  leftover items" — leftovers are always displayed, **with the option to execute them in another
+  run** when the shape was single-wave or an approval-requiring mode (ties closeout Decision 3 /
+  BL-N19's re-loop route).
+- **Provenance:** detectability class d; gsd observable-truths; the UX closeout report (freeze-
+  candidate); operator riders verbatim.
+
+### TM-F2 — The close is fail-closed: NEEDS_WORK routes to re-loop or recorded operator acceptance · LOCKED (conductor-resolved from locked context)
+
+- **Decision:** the plan-grounding close emits its verdict artifact (TM-C4 shape). A failing
+  verdict leaves exactly two legal paths: **another loop pass** (BL-N19's mechanical route,
+  wave-level per BBM-12) or **recorded operator acceptance** (the TM-D1 approval-record shape).
+  The seam refuses run-closure otherwise. TM-A2's provenance drift check and TM-A1's
+  false/facade⇒loop-pass rule both land here as close checks.
+- **Provenance:** TM-A1/A2 riders; TM-C4; BBM-12; D169's refuse-shape.
+
+### TM-G2 — Rendering law: facts and judgment visually distinct; provenance on every fact · LOCKED (conductor-resolved; follows from locked branches)
+
+- **Decision:** every displayed fact carries its provenance (which check, which artifact, which
+  runId/seq — the quote-verbatim-never-recompute discipline generalized); machine facts render
+  as data (boxes, per the UX grammar), judgment renders as prose (dividers); Guardian terms
+  (TM-A1) are the only user-facing trust vocabulary; **the presentation layer inherits PD-2** —
+  an opinion in fact clothing is the facade one layer up, and detector humility ("no unattested
+  fact enters a gate," never "no defect escapes") travels to every trust surface.
+- **Provenance:** TM-A1; UX-15/18 grammar; kata-report verbatim-badge discipline; DETAILED-PASS
+  component-7 law.
+
+### TM-A3 — Backlog items carry TRUTH STATUS; the UX item's status corrected · LOCKED
+
+- **The trigger (PD-2 moment, recorded honestly):** at the G1 posing the operator stated the UX
+  backlog item was "already built." Ground truth: the UX system is **DESIGNED to
+  freeze-candidate** (DESIGN rev 3, convergence-clean, awaiting the operator's standing freeze
+  sign-off per `specs/ux-rework/CONVERGENCE-R1.md`) — **zero UX code is shipped** (no wrapper
+  commands on disk; the UX-29 grammar renderer not committed; templates are committed spec
+  reference, not shipped code). The conductor corrected the record per PD-2. The operator's
+  meta-ruling stands vindicated by the very confusion: the backlog's prose lets
+  "33-rulings-deep design" read as "built."
+- **Decision (operator, verbatim intent):** "apply truth status to the backlog items… and ensure
+  they are marked complete properly in the future." Every backlog item carries a **truth-status
+  mark** — lifecycle stage + Guardian verification: `FILED · GRILLED · DESIGNED
+  (freeze-candidate) · FROZEN · BUILT—Verified (with cited evidence) · CLOSED`. "BUILT" is legal
+  ONLY with the Verified evidence citation (the TM-D2 truth-serum checks are what verify it) —
+  an uncited BUILT is the PD-2 violation class itself. Immediate correction: the UX items
+  (BL-N06/N07) marked DESIGNED—freeze-candidate; the full retrofit of existing items rides the
+  trust-model build's loop passes (TM-A1 routing) and the standing rule feeds BL-N11 (backlog
+  management) as a binding input.
+- **Provenance:** operator ruling at G1; STATE/HANDOFF freeze-candidate records; UX-29;
+  PD-2.
+
+### TM-G1+G3 — All four trust surfaces adopted; fold into the UX freeze-candidate (corrected sequencing) · LOCKED
+
+- **Decision (operator intent "execute this here", applied to corrected ground truth):** all four
+  surfaces adopted — (1) run-start box (in/NOT-in + enforcement level + resilience level);
+  (2) per-gate receipts (fact tables as data-boxes, **visible refusals with reasons**); (3) the
+  final report's **truth metrics** (per-item evidence, drift named, deferrals with approvals,
+  leftovers with the run-again option — TM-F1 riders); (4) the per-run trust ledger
+  (Guardian-termed). **Sequencing corrected by A3's ground truth:** the UX system is NOT yet
+  frozen, so there is no amendment gate to route through — the trust surfaces **join the UX
+  freeze-candidate as a pre-freeze addition**, extending the operator's standing sign-off list
+  by exactly this section (surfaced, not silent). The UX freeze sign-off then covers both; the
+  build executes under this program per BBM-12.
+- **Provenance:** operator directive at G1; TM-A3 correction; TM-B2/C3/F1 surface seeds;
+  CONVERGENCE-R1 standing gate.
 
 ## Blocked-at-close notes (standing)
 
