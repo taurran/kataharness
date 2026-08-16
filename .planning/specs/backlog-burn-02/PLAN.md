@@ -92,11 +92,17 @@ the measured ~7× BURN-F contamination class [HIGH-2].
   live tree · gauntlet 4/4.
 
 ### Item 2 · BL-X02 — the installer's "next steps" banner names commands that do not exist
-- **Owner set [MED-2]:** `tools/kata_install.py` + `tools/tests/test_install_cli_headless.py`
-  (its `expected_banner` check is tautological — it byte-compares stdout against a call to the
-  same function; touch it only if your edit breaks it) + **one NEW test file you create:**
-  `tools/tests/test_install_banner_commands.py` (named here so rule 4 and rule 6 can both hold —
-  discovery at review found NO existing test pins the banner, so the self-gate needs a home).
+- **Owner set [MED-2, AMENDED at wave-1 escalation]:** `tools/kata_install.py` +
+  `tools/tests/test_install_cli_headless.py` (its `expected_banner` check is tautological — it
+  byte-compares stdout against a call to the same function; touch it only if your edit breaks it)
+  + **one NEW test file you create:** `tools/tests/test_install_banner_commands.py` +
+  **`tools/tests/test_next_steps_banner.py` (AMENDMENT 2026-08-16, conductor-approved after a
+  rule-2 escalation):** the review's discovery claim ("NO existing test pins the banner") was
+  WRONG — that file's `:22-25` assert block pins `/kata-initiate` and `/kata-bootstrap` directly,
+  making the item unsatisfiable as first frozen. Scope of the amendment: replace the `:23-25`
+  asserts with the three real commands + refresh the `:22` comment; nothing else in that file.
+  (No concurrency hazard: no wave-1 peer owns `tools/tests/**`; X05 runs post-integration and
+  already carves out wave-1-authored assertions.)
 - **The defect:** the claude branch (`kata_install.py:1306-1313`, function `_next_steps_banner`
   [LOW-1]) tells first-run users to run `/kata-initiate` and `/kata-bootstrap`; neither exists.
   The real command set (verified at review — exactly these seven files in
