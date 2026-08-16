@@ -11,7 +11,7 @@
 | Field | Type | Meaning |
 |---|---|---|
 | `mode` | `"essential" \| "standard" \| "advanced"` | The unified tier+module axis (D24a). Default `"standard"` (D25). |
-| `modules` | `string[]` | Active à-la-carte modules beyond the mode's bundle (D20): e.g. `["quality","design","bakeoff","improve"]`. |
+| `modules` | `string[]` | Active à-la-carte modules beyond the mode's bundle (D20): e.g. `["slop","debug","benchmark"]` — every entry must name a provider-backed module from the *Optional modules* registry below (fail-closed load-guard, D45). |
 | `effort` | `{ model: string, reasoning: "medium"\|"high"\|"xhigh"\|"max" }` | Orthogonal effort overlay (D19); set independently of `mode`. A3 maps `reasoning` to the host's actual effort enum; these values are indicative, not an API contract. |
 | `tiers` | `{ "<family>": "<tier>" }` | Resolved tier per tiered family (`kata-grill` → **`skip`**\|essential\|standard\|advanced; `kata-review`/`kata-plan` → essential\|standard\|advanced; `kata-diagnose` → light\|full). Lets bootstrap override a single family (D24c cross-tier picking) without changing `mode`. Missing family ⇒ the mode's default tier. `tiers["kata-grill"] == "skip"` is the **grill-skip rung** (D71) — see *Grill-depth dial* below. |
 | `ingested` | `[{ name, slot, source }]` | External/custom skills folded in (D24c): each declares where it slots in the loop. |
