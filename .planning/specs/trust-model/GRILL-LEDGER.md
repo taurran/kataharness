@@ -779,6 +779,71 @@ per TM-A3's own uncited-claim rule. **R-L4 (amends TM-B4):** records live under 
 writes a pending-record pointer at mint; the hook correlates the `Agent` call to the pending
 record and consumes it (R-M1).
 
+## Convergence pass 1 re-run — HOLD (3H/6M/4L). Round-2 remediations; each AMENDS the named branch/amendment.
+
+The re-run confirmed the round-1 remediations (16 further citations verified; both errata
+confirmed; the UX correction verified at source) and found residual mechanism gaps. All specify
+within locked operator intent.
+
+**R2-H1 (amends R-H1) — governors get D169-class recorded states.** The `governs` vocabulary is a
+CLOSED enum with a mechanical predicate per entry, extending the `plan_status` pattern:
+`plan` (predicate: `assert_frozen` — unchanged, D169) · `ledger` (grill-ledger frontmatter
+`status:` becomes a closed enum `draft | converged | absorbed`; `converged` is written ONLY by
+the grill-close act after the final convergence SHIP; read by a new `ledger_status` engine
+predicate) · `intent` (INTENT.md frontmatter gains `status: draft | frozen`; `intent_scaffold.
+write_intent` writes `frozen` at Phase 6; read by a new `intent_status` predicate) ·
+`initiation` (pre-INTENT mints; record carries the priming-prompt hash). **Per-role minimum
+states:** plan-executing roles ⇒ `plan:frozen` · design/plan-authors ⇒ `ledger:converged` ·
+grill-phase researchers/advisor/convergence-reviewers ⇒ `ledger:present(draft)` · bootstrap/
+harness-entry ⇒ `intent:frozen`. Unknown governor or unmet state ⇒ the engine refuses to mint
+(TM-B5 applies). No convention-only freeze anywhere in the ladder.
+
+**R2-H2 (amends R-M10/TM-D2) — the mutation re-run is a per-task ENGINE act; the ambiguity was a
+category error.** `prove_non_vacuous` is deterministic engine code — milliseconds, zero tokens —
+so TM-E1's overhead ruling (which governs AGENT dispatches) does not apply. Resolution: the
+**orchestrator triggers the engine re-run at each task gate** (closing the worker-union hole at
+its source, per task); the **grounding agent at the stack head attests the record set**
+(present + current + per-task complete) as the evaluator's precondition. Actor named, cadence
+named, overhead nil, TM-E1 untouched.
+
+**R2-H3 (amends R-H3) — hookless capture degrades to conductor-invoked ENGINE capture, declared
+Honor-system; deny-the-bypass, never deny-everything.** On hosts without a post-edge, the legal
+capture path is the seam's capture FUNCTION invoked by the conductor at verdict collection — the
+run closes by doing the legal act, so TM-F2/TM-D4's refusal binds only when records are ABSENT,
+not when a hook is (S6 satisfied; same deny-forces-legal-path shape as TM-B5). Guardian grading
+of the capture edge, declared at run-start: post-hook = **Verified**; conductor-invoked engine
+capture = **Honor-system** (its in-flight half rests on conductor obedience and says so; the
+close backstop remains mechanical either way).
+
+**R2-M1 (amends TM-H1/G1):** a MINIMAL run-start declaration (plain-text enforcement + resilience
++ capture-edge Guardian line, seam-derived) ships **in the seam wave** — TM-H1's interim honesty
+has its surface from day one; the full UX-grammar box lands in the presentation wave.
+**R2-M2 (amends TM-C5/C7/F2):** a re-loop of a wave is a **sibling child**: `parent-run:` = the
+same parent (tree structure — roll-up folds walk this), `prev-run:` = the failed sibling
+(iteration chain — history walks this). Both pointers, distinct semantics, one ruling.
+**R2-M3 (amends TM-C7/R-H3):** at abandon-with-rendezvous, **the parent's seam writes the DOWN
+record** by reading the child cursor's terminal state at the next parent seam act — children
+still never write the parent's log; unrendezvoused orphans reap at seam init (H4 edge case,
+now with a named actor).
+**R2-M4 (amends TM-G2/B2/C3/R-M4/R-M7):** ONE trust vocabulary: every user-facing trust claim is
+a **Guardian term**; mode words (`intercepting`, `detection-only`, `full`, `local`, `degraded`)
+are technical qualifiers in parentheses after the Guardian term, never standalone claims —
+e.g. `enforcement: Verified (intercepting)` · `capture: Honor-system (no post-edge)` ·
+`resilience: Partially verified (local)`.
+**R2-M5 (amends TM-H4 S1):** premise wording corrected — VERDICT lines are **seam-authored**
+(per R-M2); the adversarial-conductor residual stands on the conductor-calls-the-seam fact.
+**R2-M6 (amends R-H2/TM-D4):** the green-at-fork baseline RESULT is an **input, never gate
+evidence**: recorded in the consuming run's cursor as an input reference carrying its origin
+runId; the arm/re-loop's regression gate compares against it and emits ITS OWN result under its
+own runId.
+
+**R2-L1:** the UX round-2 record lives INSIDE `CONVERGENCE-R1.md` (its "Round 2" section) — no
+separate R2 file exists; stated so the citation is locatable. **R2-L2:** the combined-artifact
+pass is named **round C1**, reviewing DESIGN **revision 4** (= rev 3 + the trust surfaces) —
+no collision with the UX rounds numbering. **R2-L3 (amends TM-H4 S3):** the hook's clause-pin
+and exec-safety registration cover BOTH edges (deny + capture). **R2-L4:** the fail-soft
+precedent anchor is `kata-gauge-check.py:34-36` (was cited :35-37).
+
 ### Mid-close evidence event — CI red 12 days; the vacuity-prover vacuous on Linux (2026-08-16)
 
 Operator surfaced inbox spam of gauntlet failures mid-convergence. Conductor diagnosis (run
