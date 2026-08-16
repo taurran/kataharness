@@ -1306,10 +1306,10 @@ def _next_steps_banner(
         step2 = [
             '  2) Start a run. In Claude Code, either just ask:',
             '        "Start a KataHarness run on <your project>"',
-            "     or invoke a skill directly:",
-            "        /kata-initiate    start a run (the front door)",
-            "        /kata-onboard     guided tour on an existing repo",
-            "        /kata-bootstrap   configure and launch a run",
+            "     or invoke a command directly:",
+            "        /kata-start     single run: plan and build once, then stop",
+            "        /kata-loop      full cycle: build -> closeout -> improve again",
+            "        /kata-onboard   guided tour on an existing repo",
         ]
     elif p in _BEST_EFFORT:  # codex / kiro
         skills_path = "<host>/.agents/skills"
