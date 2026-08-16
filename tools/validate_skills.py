@@ -593,6 +593,13 @@ REQUIRED_PROTOCOL = {
     # gated (NOT live) adaptation seam whose overclaim kata-slop-check catches.
     "persona.md": ["calm kata-craftsperson", "改善型", "nameless", "moderate non-expert",
                    "static default", "Register adaptation", "overclaim"],
+    # deferral.md (trust-model TM-D1) — the sanctioned-deferral ledger contract: the entry ids,
+    # the closed STATUS enum, the approval-record field names a gate is allowed to read, the
+    # closure field, and the two required-field labels that are unique to this schema. Deleting
+    # any one of these removes a capability the ledger grammar depends on.
+    "deferral.md": ["DEF-<n>", "ASM-<n>", "OPEN", "ACCEPTED", "CLOSED",
+                    "accepted_by", "accepted_at", "closing_commit",
+                    "Provenance", "Owed-to", "BLOCKER", "append-only"],
 }
 
 #: Protocol files that are deliberately NOT guarded contracts — reference material, each with a
@@ -684,10 +691,10 @@ def check_protocol_schemas(_skills: list[Skill]) -> list[Finding]:
 #      context could ride in unnoticed alongside intact pinned clauses.
 #
 # SCOPE (operator-directed 2026-07-29, "fix it properly in the other files"):
-#   * CLAUSES apply to ALL 23 REQUIRED_PROTOCOL files. This layer is free on ordinary
+#   * CLAUSES apply to ALL 24 REQUIRED_PROTOCOL files. This layer is free on ordinary
 #     edits — it is reflow-tolerant and only fires when a load-bearing sentence is
 #     deleted or reworded — so there is no reason to withhold it anywhere.
-#   * FINGERPRINTS apply to 21 of the 23, with TWO declared exemptions, both earned on the
+#   * FINGERPRINTS apply to 22 of the 24, with TWO declared exemptions, both earned on the
 #     same structural criterion — a REGISTRY that grows with the codebase, where the risk
 #     is a MISSING entry (which REQUIRED_PROTOCOL already covers) and fingerprinting would
 #     buy nothing while imposing a re-approval per routine addition, which is precisely how
@@ -907,6 +914,31 @@ PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
         "There is no live register-setting path in v0.1.",
         "Claiming adaptive register is live is a forbidden overclaim",
     ],
+    # ------------------------------------------------------------------ #
+    # deferral.md (trust-model TM-D1, 2026-08-16) — the ledger contract.
+    # Same bar as everything above: stating the OPPOSITE of the rule must
+    # be impossible while the clause stands. Each clause below is one an
+    # inversion would have to DELETE — "the gate may also credit approval
+    # from the commit message", "captured counts as closed", "an unparsed
+    # ledger is skipped" all require the sentence to go.
+    # ------------------------------------------------------------------ #
+    "deferral.md": [
+        # The approval record — the ONLY place a gate may read an approval from.
+        # NB: pinned against the body sentence, not the verbatim-contract blockquote. The
+        # normaliser strips emphasis but NOT the `>` blockquote marker, so a wrapped quote
+        # normalises to "... ONLY from > these fields" and can never be matched as a clause.
+        "A gate may credit an approval ONLY from these fields.",
+        # No self-approval: the D33 no-self-certification rule applied to the park.
+        "accepted_by names a human, not an agent",
+        # Closure — the captured/closed distinction the whole ledger rests on.
+        "Closure requires the closing commit reference — captured is not closed",
+        # The D3b same-line debt-marker rule.
+        "without a `DEF-*` reference on the same line is a BLOCKER",
+        # Append-only as a rule about MEANING, not bytes.
+        "an existing entry is never rewritten to say something else",
+        # The anti-vacuity posture: unreadable is a refusal, never a silent zero.
+        "a parse failure is a refusal, never a skip",
+    ],
 }
 
 #: Digest of the normalised file. Update ONLY via --update-protocol-fingerprint,
@@ -917,7 +949,8 @@ PROTOCOL_FINGERPRINTS: dict[str, str] = {
     "advice.md": "c811801ef8701f0873a8e2dc9edd093da891d17a1c1eb250e1fd8fdca69f500a",
     "authored-artifact-gate.md": "b90eb9ded18eb324382d23772cabc7740112da964983317ed196858c486ae535",
     "board.md": "30df4ea775519fdb3709c7d9ddd0e6982a38189f9b23ae9a47cf018035d310ba",
-    "dependencies.md": "652df1a8f46b93cd13f1e54ba19ec8725ec9e48c02e4b03ea5a8e27bcafe972c",
+    "deferral.md": "8f2cb0806cb172136dedd54946b747e8efbbb6fc118487ea2c34c88d9065b643",
+    "dependencies.md":"652df1a8f46b93cd13f1e54ba19ec8725ec9e48c02e4b03ea5a8e27bcafe972c",
     "engram.md": "ad01a873d4aff387c85f3798db7494ed6750aab4c1054b876e9282c9fbf2d879",
     "escalation.md": "ac9724a093c7f4890fbe567efec8849465517b36cb4f048f1842b9348e116a76",
     "graph.md": "48fbd4619ac9f6feb761119d5e0569b634ae556e2bc8f38c7fe3ff49f2194778",
