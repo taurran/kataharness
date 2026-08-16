@@ -6,15 +6,18 @@ description: >-
   loaded universally) until a human promotes it here — experimental→stable + a scope bump — into the agent-skills
   toolkit. Use at session end to review candidates; honors the engram.autonomy dial (default always-human).
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: meta
 status: beta
 agnostic: true
 cost-weight: 2
 allowed-tools: [Read, Grep, Glob, Edit, Write, AskUserQuestion]
 source: >-
-  new (KataHarness original, loop-cognition ML / LC-GB3/GB4/GB5, D60-D69) — two-stage gate vs Hermes' no-gate
-  instant-universal model (RESEARCH.md bake-off: borrow the closed loop, keep our human gate)
+  new (KataHarness original, loop-cognition ML / LC-GB3/GB4/GB5, D60-D69) — our default-on two-stage human gate vs
+  Hermes, whose DEFAULT config applies skill learning ungated and instantly-universal; an opt-in staging gate does
+  exist there (staged writes in `~/.hermes/pending/skills/`, `/skills pending`, `/skills diff <id>` unified-diff
+  review, approve/reject). RESEARCH.md bake-off: borrow the closed loop, keep our human gate; Hermes primitives per
+  `.planning/specs/learning-graph/RESEARCH-HERMES-PI.md` §1 (DOC-SOURCED)
 tags:
   - kata/meta
   - kata/module/meta
@@ -27,10 +30,15 @@ tags:
 Stage 2 of **managed learning**. The loop can *distil* a reusable pattern into a **candidate skill** mid-run
 (stage 1, via [[kata-write-skill]]), but a candidate is **sandboxed** — `status: experimental`, `scope: agent`,
 living in the agent-skills toolkit's `candidates/` area, **never loaded universally**. It persists into the
-toolkit only when a **human promotes it here**. This is the deliberate brake on Hermes' autonomous
-instant-universal model: an uncontrolled positive-feedback loop is the wrong shape for a one-shot harness
-(RESEARCH.md). The grounding gate ([[kata-evaluate]] injected-knowledge mode, D33) already cleared the
-candidate's *soundness* at distillation time; this gate decides *persistence + reach*.
+toolkit only when a **human promotes it here**. This is the deliberate brake on the shape Hermes ships **by
+default**: Hermes' DEFAULT config applies skill learning **ungated and instantly-universal**. An opt-in staging
+gate does exist there — staged writes in `~/.hermes/pending/skills/`, `/skills pending`, `/skills diff <id>`
+unified-diff review, approve/reject — but it is **off unless the user opts in** (DOC-SOURCED —
+`.planning/specs/learning-graph/RESEARCH-HERMES-PI.md` §1). Ours is the inverse: this gate is **on by default**
+(`engram.autonomy: always-human`, below — every candidate stops for a human), and no autonomy setting can ever
+replace the grounding gate. That is the design contrast: an uncontrolled positive-feedback loop is the wrong
+shape for a one-shot harness (RESEARCH.md). The grounding gate ([[kata-evaluate]] injected-knowledge mode, D33)
+already cleared the candidate's *soundness* at distillation time; this gate decides *persistence + reach*.
 
 ## Where candidates live (config, first-run)
 `agentSkills.dir` (`protocol/config.md`, first-run-configured) is the toolkit root. Candidates sit in
