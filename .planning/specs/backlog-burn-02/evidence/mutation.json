@@ -1,0 +1,12 @@
+{
+  "records": [
+    {
+      "mutation": "phantom /kata-bogus injected into the claude next-steps banner",
+      "target": "tools/kata_install.py",
+      "test": "tests/test_install_banner_commands.py::test_no_platform_branch_emits_a_phantom_command",
+      "testWentRed": true,
+      "nonVacuous": true
+    }
+  ],
+  "allNonVacuous": true
+}
