@@ -75,6 +75,15 @@ validator standing duty). Debts filed: 🔴 BL-X12 · BL-X13 · BL-X11 extension
 in-session: the weakened-test hardening (fix2 builder) + the stale July `.kata/` artifacts
 archived. Residual LOWs accepted with pointers in the challenger report (L-1..L-6 classes).
 
+## Remediation round 2 (the challenger's ranked debts)
+
+| item | outcome |
+|---|---|
+| fix2 (debts 3+4) | **BUILT + conductor-gated** — `c4b29d2` (the "— ACCEPTED" open-classification pin: pre-fix the vocabulary mutation survived 80/80, post-fix it reds 2 tests) + `b791a71` (bare-fetch guard strengthened to a regex proven a strict SUPERSET of the old check: 4 slip-variants now red, both real wrapped sites green). Builder pushed back on the brief twice, correctly (real R-5 heading shape; two-site vocabulary model) — H7 class again. Conductor re-ran: 100 tests green, one file per commit, scopes exact |
+| conductor process note | fix2 worked in the main tree while the conductor committed .planning files — the builder's disclosure ("I was not the only writer") is a fair catch of an index race the conductor created; single-writer discipline held for the BL-X12 dispatch (all conductor git ops held until it returns) |
+| 🔴 BL-X12 | **BUILT + conductor-gated CLOSED** — `2a1b1cf` (+639/−19): real UX ledger goes 31-seen/2-dropped/31-"resolved" → **33 seen / 9 decided / 24 open**; UX-5 OPEN; UX-28/32 recovered; the --decisions route REFUSES grill ledgers with the full why (conductor-probed, exit 2 with the named --ledger redirect); both neutralization probes red (7 and 9 tests); gauntlet 4/4 (unit 4485→**4518**); corpus-wide ledger coverage 218→370 entries. Builder push-backs honored: bare ACCEPTED excluded from decided vocabulary (consistent with fix2's R-5-open pin); 3 old tests that PINNED the blindness rewritten with superseded-why docstrings. Honest signal losses recorded by the builder: UX-28 parses open (fail-closed precedence over its own ruling nature — pinned deliberately); UX-6's resolution rests on a weak lead-line match. Conductor gate note: two of the conductor's probes failed by CONDUCTOR error (reversed args; relative path eaten by learn_feed's own traversal guard) — recorded because a gate that blames the artifact for its own probe bugs is the anti-pattern |
+| remediation | residue | learn_feed.py carries 7 pre-existing Snyk LOW `python/PT` false-positives (same `_guard_path` class already `.snyk`-accepted for kata_install/kata_host_settings) with NO `.snyk` entry — extend the policy at the next hygiene pass; builder correctly left it out of scope |
+
 ## Running log
 
 *(appended as the burn proceeds)*

@@ -106,6 +106,24 @@ temporal learning log, capped active section) · model-tier declaration RELATIVE
 hard model id) · report contract + PD-1/PD-2 injection standing · lightweight (AC-4) · loaded
 via the dispatch seam ONLY (BL-M33/M34).
 
+- **AC-13 · Superpowers are CADRE skill-layer, never individual agents; the vault owns the
+  substrate (operator questions + rulings, 2026-08-16, sixth sitting).** RULED: (a) the ingested
+  superpowers pack is part of the CADRE as its **shared skill layer** — each agent's definition
+  DECLARES which pack skills it loads (coder: TDD + verification-before-completion; orchestrator:
+  dispatching-parallel-agents + executing-plans; conductor: brainstorming; etc.) — individual
+  agents-per-skill rejected (a discipline is a HOW, not a WHO; AC-4 lightweight); (b) **the
+  substrate is stored IN THE VAULT so agents persist across uninstall/reinstall** (reaffirms
+  BL-N16). CONDUCTOR-PROPOSED for the grill (labeled, not ruled): the two-layer organization —
+  vault as single source of truth (`~/Kiban/Vault/KataHarness/agents/<role>/{AGENT.md,
+  LEARNING.md}` + `cadre/` incl. `superpowers-kata/`), per-agent AGENT.md (definition +
+  exemplars + declared skills) split from LEARNING.md (capped ACTIVE injection section +
+  append-only temporal audit log); hosts receive RENDERED derived artifacts only (Claude:
+  `.claude/agents/*.md` with distilled learning injected; Codex/Kiro: dispatch-time brief
+  assembly), regenerated never hand-edited, a pure function of vault state (D172); repo ships
+  template defaults installing INTO the vault on first run; upstream updates reach
+  learning-modified vault copies via the staged-diff approval queue (the adopted Hermes
+  pattern). Sidesteps the verified Claude-native-memory bug (#57507) by owning the path.
+
 ## Research landed (2026-08-16 — `RESEARCH-AGENTS.md` beside this file; evidence-labeled)
 
 Factual corrections it delivers (accepted as facts, not rulings): **Quicksilver = Hermes v0.19's
@@ -119,6 +137,29 @@ Code ships native per-agent memory with a 200-line injection cap (independently 
 BL-N16's distill-for-load) but fails on hardened tools-allowlists (#57507) — **BL-N16 must own
 its own memory path** · **gsd-verifier's 7-step artifact-level protocol is a mechanized PD-1
 detector** — direct prior art for 🔴 BL-N01's truth-serum machinery (cross-noted there).
+
+**AC-12 · The superpowers INGESTION MANIFEST (operator-directed 2026-08-16 — "mark them for
+ingestion"; SUPERSEDES the conductor's earlier dismissive framing, corrected on operator
+challenge).** The conductor relayed "no agents/ directory" as "almost nothing to import" — wrong
+by framing: the installed plugin (RV, conductor-enumerated live:
+`~/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/`) is a substantial inventory,
+ALL of it marked for ingestion into our own pack (AC-7):
+- **The 14 skills, each named, each ingested** (they surface as the `/superpowers:*` commands the
+  operator sees): brainstorming · dispatching-parallel-agents · executing-plans ·
+  finishing-a-development-branch · receiving-code-review · requesting-code-review ·
+  subagent-driven-development · systematic-debugging · test-driven-development ·
+  using-git-worktrees · using-superpowers · verification-before-completion · writing-plans ·
+  writing-skills. Ingestion = re-authored into OUR pack (kata frontmatter, kata loop seams,
+  wave/Backlog-Burn vocabulary, PD injection), not copied verbatim — the placeholder loads until
+  each swap lands (UX-32).
+- **The role prompt-templates inside the skills** (the subagent-driven-development /
+  code-review families): mined BOTH as elevations into roster rows 3/4/5/6/11 AND ingested as
+  the starting prose of the corresponding cadre definitions.
+- **hooks/** (the session-start injection pattern) — ingested as the pattern for OUR pack's
+  load-time injection at the UX-28 seam; **scripts/ + docs/ + tests/** — reviewed at extraction
+  for what our pack ports vs drops, decided per-file at the grill, never silently.
+- Narrow fact retained for accuracy: the plugin ships no `agents/` dir — so the AGENT
+  definitions remain ours to author (BL-N20); the ingestion above is skills/templates/hooks.
 
 Challenges the GRILL must answer (research-raised, NOT adopted silently): (1) the roster has no
 FALSE-POSITIVE control in validator/challenger/judge — every elevation sharpens refute-posture,
