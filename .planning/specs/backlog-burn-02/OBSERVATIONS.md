@@ -55,7 +55,7 @@ convergence review BEFORE freeze (BBM-7/8) · `waveBoundaries: autonomous` decla
 | wave 1 | x02 | **ESCALATED (rule 2) ~6 min, ~64k tokens, ZERO commits, worktree restored clean** | H5 ×3 for the mode ledger — AND a convergence-review FALSE NEGATIVE: the review's MED-2 "no test pins the banner" was wrong (`test_next_steps_banner.py:22-25` pins the phantoms); builder proved the collision with a temp-edit-then-revert, verified the whole command set + repo-wide phantom sweep, and asked a one-line ruling. **The cheap-escalation shape the mode wants, again** (H5's zero-redispatch pattern held) |
 | wave 1 | x02 | plan AMENDED (conductor): `test_next_steps_banner.py` added to the owner set, scoped to the `:22-25` block | a deliberate, recorded re-plan event (spine #2) — the frozen plan changed via escalation, never silently; builder resumed in place |
 | wave 1 | x01 | judge verdict **NEEDS_WORK** (~5.9 min, ~56k tokens) — the gate REJECTED a build: the builder's UNREQUESTED appended clause overclaimed (registry-as-authority vs the real 12-tag provider rule), contradicted by three tree surfaces; example swap itself clean | the default-FAIL loop firing in a burn, second live instance; remedy = one reword, builder resumed with a targeted fix (no re-plan). Judge also machine-verified a NEW live defect: the `batch` preset pre-fills provider-less `bakeoff` → queued as a new BL-X filing |
-| wave 1 | x01 | gate-fix returned BUILT (~4 min), commit `bcec8ed`, gauntlet 4/4; builder added a CLAUSE-TRUTH probe leg that machine-checks the clause's own claim (reds on the rejected wording) AND filed a PD-2 precision correction on the judge's filename citation | conductor SPOT-AUDIT (the BBM-1c slot, run end-to-end on the rejected item): both commits read, example + clause-truth + wording + phantom checks all PASS → **X01 CLOSED**. Mode note: the only reject in this wave came from UNREQUESTED prose beyond a pre-decided end state — pre-deciding end states works; deviation from them is where defects entered |
+| wave 1 | x01 | gate-fix returned BUILT (~4 min, ~76k tokens — figure back-filled at final eval, F6), commit `bcec8ed`, gauntlet 4/4; builder added a CLAUSE-TRUTH probe leg that machine-checks the clause's own claim (reds on the rejected wording) AND filed a PD-2 precision correction on the judge's filename citation | conductor SPOT-AUDIT (the BBM-1c slot, run end-to-end on the rejected item): both commits read, example + clause-truth + wording + phantom checks all PASS → **X01 CLOSED**. Mode note: the only reject in this wave came from UNREQUESTED prose beyond a pre-decided end state — pre-deciding end states works; deviation from them is where defects entered |
 | wave 1 | x03 | judge verdict **PASS** (~2.4 min, ~45k tokens) — reproduced the documented command verbatim (identical counts) AND re-proved the old form still crashes; two advisory LOWs, builder's leave-alone judgment upheld | judge surfaced a pre-existing backlog candidate: the skill's FALLBACK path documents a grep invocation that fails on PowerShell (same doc-vs-mechanism class) → queued for filing |
 | wave 1 | x03 | returned BUILT ~8.5 min, ~65k tokens, gauntlet 4/4 in worktree, commit `a581835` | PROOF RUN literal + sane (153 files/5,447 nodes/6,404 edges — 2-3% BELOW baseline, the direction that rules out contamination; outside-the-root worktrees did their job); the predicted H5 gate-4 README demand FIRED and the sanctioned regen route resolved it exactly as planned; conductor re-ran the proof: identical counts |
 | wave 1 | x07 | returned BUILT ~6.7 min, ~71k tokens, gauntlet 4/4 in worktree, commit `dc221d4` | four-part self-gate (offending literals ABSENT from owned surfaces · corrected text present at both sites + README row · `write_approval` absent · historical hits enumerated); conductor RE-RAN gates: all hold; diff scope exact (2 files). **Builder caught + fixed a would-be NEW falsehood in its own draft** ("not a dial" vs the autonomy tiers) — PD-2 behavior unprompted, second burn running (H7 class) |
@@ -74,14 +74,18 @@ convergence review BEFORE freeze (BBM-7/8) · `waveBoundaries: autonomous` decla
 - **Items: 5/5 built and gated** (4 wave-1 + 1 wave-2). Escalations: 1 (X02, resolved by a recorded
   plan amendment, zero re-dispatch cost). Gate rejections: 1 (X01 — an unrequested clause; fixed
   same-session). Judge verdicts: 4 PASS + 1 NEEDS_WORK→closed-after-fix.
-- **Defects SHIPPED: 0 known at close.** Every item passed builder self-gate + conductor re-run +
-  fresh judge; one item additionally spot-audited end-to-end. Linkback obligation stands: any
-  defect later found in this code links back here.
-- **Defects FOUND (net new, beyond the 5 filed):** BL-X08 (batch preset writes an illegal config —
-  judge, machine-verified) · BL-X09 (kata-understand fallback grep fails PowerShell — judge) ·
-  README:95/:202 claim-class (judge; FIXED at integration) · the wave-1 vacuous params + bare-skill
-  gap (X05 flags, unfixed, recorded). The judgment layer found ALL of these; zero came from
-  mechanical gates — BBM-1's two-layer rationale is now measured, not argued.
+- **Defects SHIPPED (corrected by the final eval, F3 — the original "0 known" overstated):**
+  0 known defects in the FIXED surfaces · **1 known test-quality defect shipped in wave-1-authored
+  code** (the 4 vacuous params in `test_install_banner_commands.py:90-94`, flagged unfixed at
+  close) — fix dispatched in the post-eval targeted-fix round. Linkback obligation stands.
+- **Defects FOUND (net new, beyond the 5 filed — attribution corrected by the final eval, F4):**
+  BL-X08 (batch preset illegal config — X01 **judge**, machine-verified) · BL-X09 (PowerShell grep
+  — X03 **judge**) · README:95/:202 claim-class (X07 **judge**; FIXED at integration) · the
+  vacuous params + bare-skill gap (X05 **builder** audit) · **🔴 BL-M34 the loop bypass itself
+  (the OPERATOR — the run's most consequential finding, previously omitted from this tally)** ·
+  plus the X02 review-false-negative, proven by a builder's mechanical temp-edit probe. Corrected
+  claim: the judgment+human layers found all of these; the automated mechanical gates found none —
+  BBM-1's rationale holds, stated precisely this time.
 - **Hybrid-gate throughput vs burn-01 (H1):** judges ran concurrently off-conductor (~270k judge
   tokens total, none in conductor context); conductor gate work per item ≈ one re-run + one log
   row. The serial-gate bottleneck did not reproduce. Builders: ~345k tokens wave-1 + ~156k wave-2.

@@ -18,9 +18,12 @@ last_updated: "2026-08-16T12:00:00.000Z"
 > X07 Hermes truthfulness (both sites + README:95/:202 claim-class fix at integration) · X05 pin
 > sweep (3 conversions, 10-mutation probe matrix, 3 pins deliberately KEPT exact). Closing
 > gauntlet **4/4 (pytest 4493)**. Evidence: `specs/backlog-burn-02/OBSERVATIONS.md` incl. the
-> BBM-6 accuracy record — 0 known defects shipped, 4 net-new defects FOUND by the judgment layer
-> (BL-X08 batch-preset illegal config · BL-X09 PowerShell grep · README claim-class · vacuous
-> params), zero by mechanical gates.
+> BBM-6 accuracy record (corrected per final eval: net-new defects found by judges ×3, builder
+> audit ×1, and the OPERATOR — 🔴 BL-M34 the loop bypass; 1 known test-quality defect shipped,
+> fix dispatched). **⚠ BBM-12 ruled (operator, angry, right): burns run the ENTIRE loop — this
+> burn's conductor-driven shape is recorded DRIFT; the retroactive FINAL EVAL returned
+> NEEDS_WORK at the run level (missing machine evidence F1 · record overstatements F3/F4
+> corrected · branch mixing F5 pending operator ruling); targeted-fix round executing.**
 > **(3) UX DESIGN at FREEZE-CANDIDATE** — compiled by a dispatched author, three convergence
 > rounds (R1 7H → R2 3H → R3 conductor-verified clean); every overnight conductor ruling labeled
 > "[author-proposed, conductor-ruled interim — operator confirms at freeze]" and indexed in §8.1.

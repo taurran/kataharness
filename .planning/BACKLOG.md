@@ -317,6 +317,21 @@ Promote to ROADMAP milestones when ready.
 > literal follower on this project's stated primary shell fails there. Same doc-vs-mechanism class
 > BL-X03 just fixed in the same file's primary path; pre-existing, out of that item's scope.
 
+> **BL-X10 · kata-graph's canonical CLI doc still teaches the refused invocation. (FILED
+> 2026-08-16, found by the burn-02 FINAL EVAL, F7 — a between-items residual no per-item gate
+> could see.)** `skills/plan/kata-graph/SKILL.md:82` documents `--root <repo-root> --out
+> kata.graph.json` — a placeholder readers naturally fill with `..` (which `_safe_path` provably
+> refuses) and a relative `--out` that silently writes into `tools/`. Same doc-vs-mechanism
+> family as BL-X03 (fixed) and BL-X09; align with X03's parameterized-absolute form.
+
+> **BL-X11 · kata-evaluate's machine-input step doesn't route through the T-04 identity check.
+> (FILED 2026-08-16, from the burn-02 final eval's F1 second-order finding, conductor-corrected.)**
+> The contract prose tells the evaluator to read `.kata/RESULT.json` but never points it at
+> `run_result.py:123`'s resultSha-vs-credited-SHA identity check (the T-04 fix, `bf163fd`) — so a
+> literal evaluator meets a stale artifact raw; the burn-02 final eval read a JULY run's 537-green
+> RESULT.json and had to catch the staleness by eye. Doc-seam fix: the skill's machine-input step
+> cites and requires the identity check; NO new mechanism (the guard already exists in code).
+
 > **BL-X06 · Host auto-worktree isolation fails on this repo (path casing) and provisions wrong
 > bases.** The Claude Code worktree isolation refused `C:\dev\...` vs `C:/Dev/...` casing and left
 > orphans at a stale base — the second independent provisioner to produce a wrong base (H6 ×2).

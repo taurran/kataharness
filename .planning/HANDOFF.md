@@ -26,10 +26,16 @@ cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS (pytest 4493)
 2. **backlog-burn-02 COMPLETE (5/5, two waves)** — the first burn run UNDER the BBM rules, all
    items dispatched to Opus-5 builders in pinned outside-the-root worktrees, hybrid-gated
    (self-gate re-run + fresh judge per item + one spot-audit + integrated gauntlets). Full
-   evidence + the BBM-6 accuracy record: `specs/backlog-burn-02/OBSERVATIONS.md`. Headline: 0
-   known defects shipped · 4 net-new defects FOUND (all by judges, none by mechanical gates) ·
-   1 escalation (recorded plan amendment) · 1 gate rejection (fixed) · H1's serial-gate
-   bottleneck did NOT reproduce · H6 wrong-base did NOT recur.
+   evidence + the BBM-6 accuracy record: `specs/backlog-burn-02/OBSERVATIONS.md`. Headline
+   (corrected per the final eval F3/F4): item content verified sound · 1 known test-quality
+   defect shipped in wave-1 test code (vacuous params; fix dispatched) · net-new defects found
+   by judges (3), a builder audit (1), and the OPERATOR (🔴 BL-M34, the loop bypass — the
+   biggest) · 1 escalation (recorded plan amendment) · 1 gate rejection (fixed) · H1's
+   serial-gate bottleneck did NOT reproduce · H6 wrong-base did NOT recur.
+   **⚠ FINAL EVAL (run retroactively under BBM-12): NEEDS_WORK at the RUN level** — item content
+   passed independent re-derivation; the run failed on missing machine gate evidence (F1),
+   record overstatements (F3/F4, corrected), and branch mixing (F5, operator ruling pending).
+   The targeted-fix round against the same plan is executing; re-eval follows.
 3. **The UX system grilled + compiled + convergence-gated to FREEZE-CANDIDATE.** Rulings UX-28..32
    recorded live with the operator before sleep (wrapper-preferred entry + env provisioning ·
    committed grammar engine · glyph-first transcript from the probe-1 result · all-three
