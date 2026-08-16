@@ -254,6 +254,13 @@ Promote to ROADMAP milestones when ready.
 > survived here after the operator withdrew that extension — caught by AV-2 H1 and scrubbed
 > 2026-08-16; the challenger challenges adversarial validation ONLY, per BL-N10.)*
 
+> **BL-N23 · Naming sweep: "Backlog Burn" in all documentation. (NEW 2026-08-16,
+> operator-directed — BBM-13)** Documentation calls the mode **"Backlog Burn"** (or "backlog
+> burndown"); bare "burn"/"burns" is informal speech only. Sweep the existing planning docs'
+> prose (ledgers, OBSERVATIONS, STATE/HANDOFF, DESIGN references); slugs and git refs stay
+> (`backlog-burn-*` already carries the full name). Same rename-sweep shape as BL-N17/BL-N22 —
+> likely the same run.
+
 > **BL-N22 · Rename "economy" → "express" across KataHarness. (NEW 2026-08-16, operator-directed
 > — "we need to rename this economy")** The economy mode/tier naming becomes "express" everywhere
 > a user or agent meets it (config values, D59/CLAUDE.md routing prose, guided-start copy,

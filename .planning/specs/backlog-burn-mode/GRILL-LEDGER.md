@@ -76,6 +76,13 @@ doc-grounded grill + convergence gate + DESIGN before any build.
   declaration (chip treatment, UX-16) — it is the one line that tells the user whether the run
   will ever stop and wait for them.
 
+- **BBM-13 · Naming: the mode is "Backlog Burn" in ALL documentation (operator, 2026-08-16).**
+  Documentation says **"Backlog Burn"** (or "backlog burndown") — never bare "burn"/"burns",
+  which is INFORMAL SPEECH ONLY. Same discipline family as UX-16's wave-never-sprint and UX-24's
+  naming rules. Existing slugs stay (branch `burn/backlog-burn-*`, spec dirs `backlog-burn-*` —
+  already carry the full name); the retroactive prose sweep is filed as BL-N23; the rule binds
+  every document written from this ruling forward.
+
 ## Locked from prototype evidence (not re-litigated; cite OBSERVATIONS.md)
 
 - **BBM-7 · Triage precedes the grill, mandatorily** (H2: 2 of 6 items changed materially under
