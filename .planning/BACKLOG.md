@@ -428,6 +428,29 @@ Promote to ROADMAP milestones when ready.
 > literal follower on this project's stated primary shell fails there. Same doc-vs-mechanism class
 > BL-X03 just fixed in the same file's primary path; pre-existing, out of that item's scope.
 
+> ## 🔴 **BL-X12 · learn_feed emits a grill ledger's OPEN QUESTIONS into the vault as RESOLVED decisions. (FILED 2026-08-16, found by the validation-stack CHALLENGER — the stack's only live wrong-output defect; MUST close before the emitter runs against any grill ledger)**
+> Four sub-defects, all challenger-reproduced against the real UX GRILL-LEDGER: (a) the
+> `--ledger` route (`parse_grill_ledger`) returns ZERO entries for bullet-form ledgers — the
+> file literally named GRILL-LEDGER.md is invisible to it; (b) the `--decisions` route silently
+> DROPS entries whose bold anchor span wraps across a physical line (UX-28 and UX-32, 2 of 33);
+> (c) **the live defect**: `parse_decisions_bullets` hardcodes `status="resolved"` for every
+> bullet (sound for DECISIONS.md, false for grill ledgers) — the entry titled verbatim "UX-5 ·
+> OPEN QUESTION" emits as a resolved decision; (d) anchors partition on em-dash while this
+> ledger separates with `·`, yielding whole-title unstable page keys. Fix design has a real
+> fork (status vocabulary in the bullets parser vs refusing the DECISIONS route on
+> grill-ledger-marked files) — triage before building, do not guess. Note the compounding
+> three-way the challenger proved: the ledger says OPEN, the entry that CLOSED it (UX-28) is
+> one of the two the parser drops, and the parser calls it resolved anyway.
+
+> **BL-X13 · RESULT.json's parsed counts are a cross-gate chimera on multi-gate commands.
+> (FILED 2026-08-16, AV-1 H-2 as rescoped by the challenger)** `run_result._parse_pytest_counts`
+> keeps last-match-per-label across the whole stdout tail, so a 4-gate gauntlet run yields
+> `passed:2/skipped:3` — a tuple NO single gate produced — under `parsedCounts: true`. The
+> artifact self-corrects via its required `stdoutTail` field (challenger refuted "prose-only
+> correction"), so this is MED not HIGH — but a wrong scalar under a trust flag is still wrong.
+> Fix direction: per-gate `gates[]` counts or a multi-block-detected honesty flag. Burn-02's
+> evidence carries the precise label in OBSERVATIONS meanwhile.
+
 > **BL-X10 · kata-graph's canonical CLI doc still teaches the refused invocation. (FILED
 > 2026-08-16, found by the burn-02 FINAL EVAL, F7 — a between-items residual no per-item gate
 > could see.)** `skills/plan/kata-graph/SKILL.md:82` documents `--root <repo-root> --out
@@ -442,6 +465,11 @@ Promote to ROADMAP milestones when ready.
 > literal evaluator meets a stale artifact raw; the burn-02 final eval read a JULY run's 537-green
 > RESULT.json and had to catch the staleness by eye. Doc-seam fix: the skill's machine-input step
 > cites and requires the identity check; NO new mechanism (the guard already exists in code).
+> **EXTENDED (challenger, 2026-08-16):** the trap bit the session's own evidence the same day —
+> `evidence_is_current(RESULT, HEAD)` correctly returns stale for docs-only follow-on commits,
+> and nothing in the evidence set states the green transfers. The fix should also define how an
+> evaluator DISCOVERS which `--out` a run used, and the burn-02 conductor archived the stale
+> July `.kata/` artifacts locally (untracked) to defuse the default-path trap meanwhile.
 
 > **BL-X06 · Host auto-worktree isolation fails on this repo (path casing) and provisions wrong
 > bases.** The Claude Code worktree isolation refused `C:\dev\...` vs `C:/Dev/...` casing and left

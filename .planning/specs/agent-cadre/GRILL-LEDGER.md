@@ -48,6 +48,17 @@ sources: BL-N20 · BL-N04 · BL-N16 (the living substrate) · BL-N10 (challenger
   the exact repo with evidence labels rather than guessing) **and other research-agent repos**.
   Research specialists follow the same cadre rules (AC-1..4: lightweight, living, evidence-label
   discipline in-substrate, use mandated).
+- **AC-10 · Validators EXECUTE the tooling against the artifacts; challengers attack coverage.
+  (Process lesson from the 2026-08-16 stack, elevated to a design rule.)** Two independent
+  Opus-5 validators plus two convergence rounds all audited artifacts AS PROSE — and the stack's
+  only live wrong-output defect (BL-X12: open questions emitted as resolved decisions) surfaced
+  only when the challenger EXECUTED the session's own tooling against the session's own
+  artifacts. Substrate consequences: the VALIDATOR definition carries "run the consumers of what
+  you audit" as a standing duty; the CHALLENGER definition carries the coverage attack
+  (including confessed-thin-points and held-list softness probes) as a standing duty. Second
+  lesson from the same run: the challenger REFUTED two of AV-1's three HIGH framings at source
+  while confirming every underlying fact — validators over-grade; a challenger that re-derives
+  from source is not optional accuracy garnish, it is the severity calibrator.
 - **AC-8 · Live data points are design input.** The 2026-08-16 validation stack's ad-hoc agents
   — five per-item judges, two final evaluators, two Opus advals, one anchor-tier challenger —
   each ran with a recorded brief, posture, tier, token cost, and outcome. The real definitions

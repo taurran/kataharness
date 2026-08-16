@@ -61,6 +61,20 @@ stale-evidence (the BL-X11 seam, demonstrated live). PASS explicitly does NOT me
 🔴 BL-M34 (loop bypass still structurally possible) · BL-X08/X09/X10/X11 · BL-N18 all remain
 FILED and live; this run's shape remains recorded DRIFT under BBM-12.
 
+## Validation stack (operator-directed distrust audit, 2026-08-16 — post-PASS)
+
+Two Opus-5 adversarial validators (code + records lenses) + one anchor-tier CHALLENGER (first
+live run of the BL-N10 shape). Outcome: **TRUSTWORTHY-WITH-LISTED-DEBTS** (challenger verdict,
+conditional on the 🔴 BL-X12 fix landing before the vault emitter runs against any grill ledger).
+The layers, scored honestly: AV-2 found 15 record defects (all valid, all remediated, all 15
+remediations survived the challenger's attack) · AV-1 found real facts everywhere but over-graded
+— all three HIGHs rescoped to MED, two load-bearing framings refuted at source · the CHALLENGER
+found the stack's ONLY live wrong-output defect (BL-X12) by executing the session's tooling
+against the session's artifacts — the check every prose-auditing layer missed (now AC-10, a
+validator standing duty). Debts filed: 🔴 BL-X12 · BL-X13 · BL-X11 extension; debts fixed
+in-session: the weakened-test hardening (fix2 builder) + the stale July `.kata/` artifacts
+archived. Residual LOWs accepted with pointers in the challenger report (L-1..L-6 classes).
+
 ## Running log
 
 *(appended as the burn proceeds)*

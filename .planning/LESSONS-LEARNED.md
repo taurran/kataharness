@@ -246,3 +246,13 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
 - **Write lessons-learned and doctrine entries AS PART OF the dev process, not at wrap** —
   operator directive: the doctrine lives only if the process feeds it; fencing/seam decisions
   get their doctrine entry at design time, not retroactively.
+- **Prose audits miss contract defects; execute the tooling against the artifacts** — the
+  2026-08-16 validation stack's strongest finding (BL-X12: a grill ledger's OPEN QUESTIONS
+  emitted into the vault as resolved decisions) was invisible to two adversarial validators and
+  two convergence rounds because all four read the documents as prose; the challenger found it
+  by RUNNING learn_feed against the session's own ledger. Cheap, repeatable, now a validator
+  standing duty (AC-10).
+- **The challenger role earns its keep as a severity calibrator, not a formality** — it refuted
+  two of three HIGH framings at source while confirming every underlying fact, verified all 15
+  record remediations, and produced the stack's best finding. First live run of the BL-N10
+  shape; logged as founding design input (AC-8/AC-10).
