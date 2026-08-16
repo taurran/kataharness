@@ -1,11 +1,40 @@
 ---
 milestone: planning-batch-2026-08
-milestone_name: "backlog-burn-01 COMPLETE (6/6) · 2026-08-15 planning batch filed (17 features + 7 fixes) · burn-mode BBM-1..11 + UX system UX-1..27 designed · branch burn/backlog-burn-01, 38 commits UNPUSHED"
+milestone_name: "D171 ruled · backlog-burn-02 COMPLETE (5/5, hybrid-gated) · UX DESIGN at freeze-candidate (convergence-clean, operator items pending) · PR #54 open · branches PUSHED"
 status: in-progress
-last_updated: "2026-08-16T00:00:00.000Z"
+last_updated: "2026-08-16T12:00:00.000Z"
 ---
 
 # STATE — KataHarness
+
+> **CURRENT (2026-08-16 — THE OVERNIGHT EXECUTION, branch `burn/backlog-burn-02` stacked on
+> `burn/backlog-burn-01`, both PUSHED, PR #54 open to master):**
+> **(1) D171 RULED (operator):** UX grill first · go bar = parallel small burn over the BL-X fixes
+> + probes · push+PR now. All three executed.
+> **(2) backlog-burn-02 COMPLETE — 5/5 items, two waves, hybrid-gated (the BBM-1..11 rules run
+> live for the first time).** X01 config.md example (gate REJECTED an overclaiming clause, fixed) ·
+> X02 installer banner (rule-2 ESCALATION → recorded plan amendment → built, +8-test structural
+> guard) · X03 kata-understand command (proof-run literal, README-regen H5 fired as predicted) ·
+> X07 Hermes truthfulness (both sites + README:95/:202 claim-class fix at integration) · X05 pin
+> sweep (3 conversions, 10-mutation probe matrix, 3 pins deliberately KEPT exact). Closing
+> gauntlet **4/4 (pytest 4493)**. Evidence: `specs/backlog-burn-02/OBSERVATIONS.md` incl. the
+> BBM-6 accuracy record — 0 known defects shipped, 4 net-new defects FOUND by the judgment layer
+> (BL-X08 batch-preset illegal config · BL-X09 PowerShell grep · README claim-class · vacuous
+> params), zero by mechanical gates.
+> **(3) UX DESIGN at FREEZE-CANDIDATE** — compiled by a dispatched author, three convergence
+> rounds (R1 7H → R2 3H → R3 conductor-verified clean); every overnight conductor ruling labeled
+> "[author-proposed, conductor-ruled interim — operator confirms at freeze]" and indexed in §8.1.
+> **The freeze itself WAITS for the operator** — the morning list is in
+> `specs/ux-rework/CONVERGENCE-R1.md` (incl. the launch-template palette reconciliation). UX-28..32
+> ruled live (wrapper = preferred door + env provisioner · small committed engine · glyph-first
+> transcript, probe 1 RESOLVED: ANSI stripped, glyphs clean · all three wrappers one pass · open
+> preload seam + THIRD-PARTY INDEPENDENCE doctrine: divest from superpowers AND GSD, packs are
+> placeholders).
+> **★ OWED THE OPERATOR (morning):** UX freeze sign-off (the CONVERGENCE-R1 list) · PR #54 merge
+> timing + whether burn-02 gets its own PR (stacked) · 🔴 PAT rotation (deferred 2026-08-02, NOT
+> dropped) · T-03 determinism-scope call · probes 2–6 (minutes each, non-blocking) · BL-X08 triage
+> (the batch preset writes a config the load-guard STOPS — live defect).
+> *(Prior CURRENT blocks below are history.)*
 
 > **CURRENT (2026-08-15/16 — THE PLANNING MARATHON, branch `burn/backlog-burn-01`, ~38 commits,
 > ALL UNPUSHED, no remote branch, master untouched at `d4650fc`):**

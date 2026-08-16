@@ -60,7 +60,31 @@ convergence review BEFORE freeze (BBM-7/8) · `waveBoundaries: autonomous` decla
 | wave 1 | x03 | returned BUILT ~8.5 min, ~65k tokens, gauntlet 4/4 in worktree, commit `a581835` | PROOF RUN literal + sane (153 files/5,447 nodes/6,404 edges — 2-3% BELOW baseline, the direction that rules out contamination; outside-the-root worktrees did their job); the predicted H5 gate-4 README demand FIRED and the sanctioned regen route resolved it exactly as planned; conductor re-ran the proof: identical counts |
 | wave 1 | x07 | returned BUILT ~6.7 min, ~71k tokens, gauntlet 4/4 in worktree, commit `dc221d4` | four-part self-gate (offending literals ABSENT from owned surfaces · corrected text present at both sites + README row · `write_approval` absent · historical hits enumerated); conductor RE-RAN gates: all hold; diff scope exact (2 files). **Builder caught + fixed a would-be NEW falsehood in its own draft** ("not a dial" vs the autonomy tiers) — PD-2 behavior unprompted, second burn running (H7 class) |
 | wave 1 | x02 | judge verdict **PASS** (~3.1 min, ~49k tokens) — rendered every platform branch itself, proved redness by in-memory mutation, verified the copy's TRUTH against the real command files + the install flat-link path | judge minor notes routed to X05's sweep (4 vacuous params in the new test's parametrization; bare skill names unguarded in codex/generic branches) |
-| wave 1 | integration | **MERGED CLEAN ×4, 0 conflicts** — the plan's "README conflict is CERTAIN" prediction was WRONG in the good direction (the regenerated rows didn't collide) | LOW-4's regeneration contingency existed and was not needed; recorded honestly |
-| wave 2 | x05 | returned BUILT ~13 min, ~156k tokens, gauntlet 4/4 (4493), commits `adf1f46`+`354c923` | 13 files audited with per-site verdicts; 3 real conversions in 2 files, ALL proven red-on-wrong AND green-on-legitimate-growth; **deliberately LEFT 3 exact pins where exactness IS the protection** (the judgment the scope pre-decision was designed to force); flagged the wave-1 vacuous params + bare-skill-name gap + a pre-existing synthetic-fixture Snyk Low; conductor re-ran both test files (100 passed) + scope exact |
-| wave 1 | integration | conductor fixes applied: README:95/:202 Hermes truth repair (X07 judge MED-1) · BL-X08 + BL-X09 filed in BACKLOG (the two judge-found defects) | integrated gauntlet **4/4 PASS** — wave 1 CLOSED, 4/4 items |
 | wave 1 | x07 | judge verdict **PASS** (~3.2 min, ~50k tokens) — every claim reproduced independently; the builder's self-authored hedge verified as the precisely-correct formulation | judge MED-1: README:95/:202 carry the same claim CLASS in different words — a miss no literal-phrase grep could see, queued for conductor fix at integration. Report-contract note: the builder did not flag those two lines (its sweep was literal-phrase-scoped) — recorded honestly, minor |
+| wave 1 | integration | **MERGED CLEAN ×4, 0 conflicts** — the plan's "README conflict is CERTAIN" prediction was WRONG in the good direction (the regenerated rows didn't collide) | LOW-4's regeneration contingency existed and was not needed; recorded honestly |
+| wave 1 | integration | conductor fixes applied: README:95/:202 Hermes truth repair (X07 judge MED-1) · BL-X08 + BL-X09 filed in BACKLOG (the two judge-found defects) | integrated gauntlet **4/4 PASS** — wave 1 CLOSED, 4/4 items |
+| wave 2 | x05 | returned BUILT ~13 min, ~156k tokens, gauntlet 4/4 (4493), commits `adf1f46`+`354c923` | 13 files audited with per-site verdicts; 3 real conversions in 2 files, ALL proven red-on-wrong AND green-on-legitimate-growth; **deliberately LEFT 3 exact pins where exactness IS the protection** (the judgment the scope pre-decision was designed to force); flagged the wave-1 vacuous params + bare-skill-name gap + a pre-existing synthetic-fixture Snyk Low; conductor re-ran both test files (100 passed) + scope exact |
+| wave 2 | x05 | judge verdict **PASS** (~8.3 min, ~70k tokens) — independent 10-mutation probe matrix: all 6 regression classes still RED under the new floors, all 4 growth/progress classes GREEN where the old pins rotted; 3-of-4 audit spot-checks confirmed correct | judge MED: the builder's RECORDED rationale for keeping `test_fs_atomic.py:286` exact was wrong ("test-local" — it is a live-source count). **Conductor ruling: the pin STAYS (the coupled `:277` registry pin makes per-site counts a frozen contract — the same class as `test_update_scripts.py:190-191`), and THIS row is the corrected rationale of record.** Judge LOW: the new `:1020` MM-prefix constraint is near-redundant fresh exactness — accepted, noted as a candidate trim if it ever rots |
+| wave 2 | integration | merged clean, closing integrated gauntlet **4/4 PASS** — **BURN CLOSED 5/5** | |
+
+## Burn-level accuracy record (BBM-6 — the honest numbers)
+
+- **Items: 5/5 built and gated** (4 wave-1 + 1 wave-2). Escalations: 1 (X02, resolved by a recorded
+  plan amendment, zero re-dispatch cost). Gate rejections: 1 (X01 — an unrequested clause; fixed
+  same-session). Judge verdicts: 4 PASS + 1 NEEDS_WORK→closed-after-fix.
+- **Defects SHIPPED: 0 known at close.** Every item passed builder self-gate + conductor re-run +
+  fresh judge; one item additionally spot-audited end-to-end. Linkback obligation stands: any
+  defect later found in this code links back here.
+- **Defects FOUND (net new, beyond the 5 filed):** BL-X08 (batch preset writes an illegal config —
+  judge, machine-verified) · BL-X09 (kata-understand fallback grep fails PowerShell — judge) ·
+  README:95/:202 claim-class (judge; FIXED at integration) · the wave-1 vacuous params + bare-skill
+  gap (X05 flags, unfixed, recorded). The judgment layer found ALL of these; zero came from
+  mechanical gates — BBM-1's two-layer rationale is now measured, not argued.
+- **Hybrid-gate throughput vs burn-01 (H1):** judges ran concurrently off-conductor (~270k judge
+  tokens total, none in conductor context); conductor gate work per item ≈ one re-run + one log
+  row. The serial-gate bottleneck did not reproduce. Builders: ~345k tokens wave-1 + ~156k wave-2.
+- **Base-SHA discipline (BBM-9):** 5/5 worktrees verified at pin by builders, zero wrong-base
+  events (H6 did NOT recur under manual outside-the-root provisioning).
+- **Convergence-before-freeze (BBM-8):** R1 caught 13 plan findings incl. 2 unsatisfiable pairs
+  and a false triage claim; one review false-negative (X02's pinning test) surfaced via builder
+  push-back (BBM-10) — the layers check each other in both directions.
