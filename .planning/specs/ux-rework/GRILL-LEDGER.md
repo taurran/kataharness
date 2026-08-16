@@ -140,6 +140,17 @@ before building.
   **Run personas** (register per audience — maps onto Human Prose BL-N02) noted for their own
   backlog item; every page layout stays persona-neutral skeleton + swappable prose.
 
+- **UX-17 · Item-status dots (operator, 2026-08-16).** Wherever individual items show status:
+  **● green = done/healthy · ● yellow(ochre) = attention/partial · ● red(rust) = blocked/failed**,
+  plus dim ○ for not-started. One glyph, color carries the state — consistent with the env-ready
+  dot already in use and the rust-only-means-interruption discipline. Applies to wave tables,
+  item lists, closeout, and the run board.
+- **UX-18 · Interruption surfaces LOCKED (specimen approved 2026-08-16):** escalation (ochre box,
+  lettered options, recommended marked) → gate-rejected (rust verdict chip, because/evidence/next,
+  "the plan does not change because a build failed") → breakthrough (full rust heavy frame, the
+  ONLY full-frame rust anywhere; what/held/needed/respond). Rust background chips appear ONLY on
+  interruption surfaces, system-wide.
+
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
 statusline capabilities per host (kata segment exists on Claude; codex/kiro need assessment) ·
