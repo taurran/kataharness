@@ -619,6 +619,79 @@ G (presentation), H (cross-cutting + security pass).*
 - **Provenance:** operator directive at G1; TM-A3 correction; TM-B2/C3/F1 surface seeds;
   CONVERGENCE-R1 standing gate.
 
+### TM-H1 — Migration order: engine → cursor → skills → hook LAST; Guardian honesty covers the interim · LOCKED (conductor-resolved)
+
+- **Decision:** build lands in dependency order — engine + cursor first, the ~52 launch sites and
+  dispatched-skill inbound contracts rewrite to route through the seam in waves (each wave a loop
+  pass per BBM-12), and **the fail-closed hook is the LAST switch flipped**, activated only after
+  every sanctioned path is migrated — because a hook activated early would deny un-migrated
+  legitimate prose sites, and a soft interim mode is the rejected warn-shape. Until activation,
+  the run-start declaration honestly reports enforcement **Dormant** (Guardian terms make the
+  interim truthful instead of soft). Naming migration (board→cursor heritage) rides the same
+  waves; stale `kata_dispatch` line anchors across five skills fix in wave 1 (they are already
+  Broken rows).
+- **Provenance:** TM-B2/B5; TM-A1 Guardian; promise-audit T18.
+
+### TM-H2 — Degradation honesty completes: every degraded state is declared, scoped, and non-viral · LOCKED (conductor-resolved)
+
+- **Decision:** the TM-B2 loud-degrade law generalizes: hook absent/uninstalled ⇒ detection-only,
+  DECLARED at run-start (the hook's presence is live-probed at seam init — an uninstalled hook
+  can never be reported Verified); engine unavailable ⇒ the run cannot mint, which is a
+  no-legal-path park (TM-B5), never a silent prose fallback; settings drift detected at seam
+  init (config-vs-settings consistency check). `kata_scope` guards everything — non-kata
+  sessions are untouched by the hook. The honest residual (EDR-5 style) is stated in the
+  contract: the seam's guarantees are scoped to runs that enter it; the validator's-own-source
+  meta-layer remains undefended and says so.
+- **Provenance:** TM-B2/B5; kata_scope (live machinery); KH-T02 residual clause.
+
+### TM-H3 — Backlog mapping: what this DESIGN closes vs. feeds · LOCKED (conductor-resolved)
+
+- **CLOSES when built+Verified:** 🔴 BL-M33 (the seam) · 🔴 BL-M34 (the guard = TM-B5+hook) ·
+  🔴 BL-N01 (Truth Serum v1 per TM-D2; v2 = BL-N24) · BL-N19's missing mechanical route (TM-C4/
+  F2) · BL-X11 + BL-X13 (TM-D5) · the T6–T11 facade rows as wiring lands (TM-A1 loop-routed).
+- **FEEDS (binding input, does not close):** BL-N16 (cursor substrate + roll-up + scope
+  taxonomy) · BL-N20/cadre (grounding agent, phase-aware definitions, agentDef slot) · BL-N08
+  Kitchen (tree-of-runs, close policies) · BL-N14 (projections) · BL-N21 (wrapper = outermost
+  layer) · BL-N11 (truth-status rule, TM-A3) · the UX freeze (G surfaces joined pre-freeze).
+- **Provenance:** the cross-doc pass (committed d785370) + this ledger's locks.
+
+### TM-H4 — The security register (Advanced security/edge-case layer; gated by convergence pass 2)
+
+- **S1 Forgery.** Dispatch-record fabrication: detected via cursor-lineage mismatch (TM-B4);
+  verdict forgery: VERDICT lines are orchestrator-only and seam-appended — but the conductor IS
+  the orchestrator, so the **adversarial-conductor residual stands and is stated** (detection at
+  post-hoc verification, not prevention). Worker-line forgery: dispatch-lineage stamps mean a
+  forged line must name a live parent (TM-C6).
+- **S2 Injection.** (a) Brief injection — advice/learning/facts are INLINED VERBATIM into briefs
+  by ruling; **all inlined content is delimited as DATA** (the kata-validate payload-as-data
+  discipline generalized to every brief assembly). (b) Cursor-line injection — folds and any
+  agent reading the cursor treat line content as data, never instructions; renderers escape.
+  (c) Hook input parsing — structured, exec-safety-registered, never string-eval; the hook is a
+  new sink and joins the exec-safety registry per its keep-in-sync rule. (d) Learning-substrate
+  injection-persistence — already a BL-N16 ruling (security scan on self-written learning);
+  cross-bound here.
+- **S3 Hook trust.** The hook lives in user settings and can be absent/removed: seam init
+  live-probes it and the declaration downgrades honestly (TM-H2) — absence can never
+  impersonate enforcement. The hook's own source is validator-guarded like protocol contracts
+  (clause-pin its deny rule); the meta-residual (guards guarding guards) is stated, not hidden.
+- **S4 Redaction.** Committed run provenance (TM-A2) and cursor payloads pass a redaction check
+  at mint — no secrets/keys/PII in committed artifacts (the PAT lesson is the standing example);
+  fail-closed on detection.
+- **S5 Consent.** Outward-facing acts stay human-gated: trail push opt-in only (TM-C3); the hook
+  never blocks non-kata work (kata_scope); no auto-push anywhere.
+- **S6 Availability.** Fail-closed must not become deny-everything: engine failure parks with a
+  loud reason (TM-B5); degraded modes are per-capability, never viral; a wedged hook is
+  detectable at seam init and reported.
+- **Edge cases:** crash mid-mint ⇒ orphan record without dispatch, detected and cleaned at
+  resume (registry enumeration, TM-C7 element 4) · rotation during live children ⇒
+  abandon-with-rendezvous (TM-C7) · same-second ordering ⇒ seq (TM-C6) · parallel-dispatch hook
+  races ⇒ per-record validation is order-independent · fold purity ⇒ side effects only after
+  fold completes (TM-C6).
+
+*Tree fully resolved (A1–A3, B1–B5, C1–C7, D1–D5, E1–E2, F1–F2, G1–G3, H1–H4). Re-derivation
+after the final resolutions opened no new branches. Advanced close-out: convergence pass 1 (main
+tree) → pass 2 (security layer) → ELEVATE → close. Grill-close emit remains BLOCKED by BL-X12.*
+
 ## Blocked-at-close notes (standing)
 
 Grill-close `learn_feed.py` emit **BLOCKED by 🔴 BL-X12** (the emitter mislabels grill-ledger OPEN
