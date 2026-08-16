@@ -506,6 +506,16 @@ Promote to ROADMAP milestones when ready.
 > (statusline must never crash) is violated on the Linux path for an empty delegate argv; passes
 > on Windows. Small, real, platform-conditional; fix with BL-X14's run.
 
+> **BL-N25 · Kiro probes + the PATH ghost. (FILED 2026-08-16, operator-deferred: "put off the
+> kiro probes until a future BL.")** Probe 4 (hook stdout visibility + #5527 re-verify — REQUIRED
+> before any kata hook ever registers in Kiro) + the login step, deferred together. Machine facts
+> at filing: kiro-cli 2.18.1 works by full path (`%LOCALAPPDATA%\Kiro-Cli\kiro-cli.exe`); the
+> registry user-PATH entry is present and deduped; a WM_SETTINGCHANGE broadcast was sent — yet
+> fresh terminals still don't resolve `kiro-cli` (unresolved; a sign-out/reboot is the untried
+> fix). Until this closes, the trust-model's per-host table carries Kiro at its honest floor:
+> **interception capability UNPROBED ⇒ plan as detection-only (Honor-system declared) until
+> proven** — the probe can only upgrade it. Probe 5 already closed (flags confirmed, LP 2.18.1).
+
 > **BL-N24 · Truth Serum v2 — promote the deferred detectors. (FILED 2026-08-16 from the
 > trust-model grill TM-D2 rider; operator-directed sequencing: EXECUTES AT THE END of everything
 > currently on the backlog, and this item is UPDATED ALONG THE WAY so it is executable when its

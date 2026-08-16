@@ -58,19 +58,28 @@ you SEE the color, or raw codes like `[31m`?
 
 ---
 
-## ☐ 4. Probe 4 — Kiro hooks check (2 minutes now, 5 with the session later)
+## ☒ 4. Probe 4 — DEFERRED to BL-N25 (operator, 2026-08-16) — skip this section
 
-**What this checks:** whether Kiro can safely run our hooks (there's a known Kiro issue, #5527,
-we must re-verify before EVER registering kata hooks there).
-**Why we care more now:** this decides whether Kiro gets real dispatch enforcement or a declared
-weaker mode — it feeds the trust-model's per-host table directly.
+**Deferred with the PATH issue unresolved (reboot untried). Kiro plans as detection-only until
+the probe runs. Nothing for you to do here now.** Original steps kept below for when BL-N25
+executes.
 
-1. Open a terminal.
-2. Run: `kiro-cli --version`
-3. That's it for now — do NOT install any kata hooks in Kiro.
+## (deferred) Probe 4 — Kiro hooks check (2 minutes you, then 5 together)
 
-**Tell the session:** "probe 4: kiro version X.Y.Z" — it will prepare a tiny harmless test hook
-and walk the rest with you live (5 minutes, together).
+**Status 2026-08-16:** kiro-cli 2.18.1 confirmed working and now on your PATH (the session fixed
+the installer's PATH gap). Only login remains before the probe.
+**What this checks:** whether Kiro can safely run our hooks (known Kiro issue #5527 must be
+re-verified before EVER registering kata hooks there).
+**Why we care more now:** the result decides whether Kiro gets real dispatch enforcement or a
+declared detection-only mode in the trust model's per-host table.
+
+1. Open a **new** terminal (fresh PATH).
+2. Run: `kiro-cli login` and finish the sign-in it shows you.
+3. Tell the session: **"kiro login done"** — it prepares a tiny harmless test hook (prints one
+   line, touches nothing), you run one chat turn together, it checks hook-stdout visibility +
+   #5527, removes the test hook, and records both answers.
+
+Do NOT install any kata hooks in Kiro yourself — the probe must come first.
 
 ---
 
