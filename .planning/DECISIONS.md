@@ -2839,3 +2839,16 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   (mechanical truth serum) · BL-N19 (mechanical re-loop) · BL-N20 (required own agents). The
   doctrine document's scope statement gains loop-execution language when the enforcement program
   builds (a deliberate two-step fingerprint re-approval, not a silent edit).
+- **D173 — T-03 RESOLVED: doctrine laws 13+15 adopted in scope, riding the trust-model build's
+  doctrine amendment (operator-directed 2026-08-16).** The MC-02 ingest's six proposed laws
+  resolve as the source's own recommendation: **law 13 (recompute, don't shape-check)** and
+  **law 15 (scope honesty)** enter the Determinism Doctrine — both independently ruled in
+  substance by the trust-model grill the same day (TM-G2's quote-verbatim/re-derive discipline;
+  the EDR-5 honest-residual house style) — via ONE advanced grill and ONE fingerprint
+  re-approval, combined with the loop-execution amendment D172 already commits the doctrine to.
+  **Laws 11/12/14/16 + the two judgment-boundary clauses are DECLINED with the reason recorded:**
+  batch-reviewed not adversarially grilled, single-corpus, from a foreign (Context-as-Code)
+  harness, no live-run evidence; law 11 likely describes a hole our script-based detectors do
+  not have. Re-openable if our own runs surface those holes. The D2-16 probe remains the hard
+  prerequisite for the amendment grill. Preserved constraints: core rule verbatim; laws 1–10
+  never renumbered or dropped; the judgment boundary never blurred.
