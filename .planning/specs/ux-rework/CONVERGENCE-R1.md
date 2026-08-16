@@ -38,8 +38,27 @@ templates' actual locked CSS, incl. a factually false "no hex was ever locked" c
    UX-21 platform honesty, UX-26 vitals split, UX-6 line-break rule, probe-4 conflation fix, UA
    label restored, §8 completeness, citation repairs).
 
+## Round 2 (same night, fresh reviewer)
+
+**Verdict: CONVERGE-HOLD — 3 HIGH / 3 MED / 3 LOW, all document-local.** Five of the seven R1
+HIGHs verified genuinely closed (code-verified against the generators). Remaining: (R2-H1) the
+recompiled color table matches the five generators but CONTRADICTS the frozen launch template on
+three roles — title `#B5894B` (the literal "lock A") vs `#d9a960`, value `#c9d1d9` vs `#F7F2E6`,
+command `#61afef` vs `#4d87ae` — resolved overnight by DISCLOSURE, not repainting; the per-role
+reconciliation is an operator item. (R2-H2) rev 2 dropped UX-17's dot mapping and left ●
+meaning two things — resolved by scoping: UX-17 verbatim on owned surfaces, an explicit labeled
+NARROWING on glyph-only surfaces. (R2-H3) the wrapper's Python entrypoint shim is a carve-out of
+UX-29's "only new Python" lock and was unlabeled — labeled + indexed. Author dispatched for
+revision 3; the conductor verifies the three fixes line-by-line (no full round 3 — the
+substantive calls sit on the operator list regardless).
+
 ## Owed to the operator at freeze (the morning list)
 
-Confirm/overrule rulings 1–6 above · eyeball the recompiled color table · approve the stat-box
-reconstruction plan · the [author-proposed] items the reviewer triaged as operator-class (preload
-seam config shape — cheap to rule now, drift vector if deferred).
+Confirm/overrule rulings 1–6 above · eyeball the recompiled color table **and reconcile the
+launch-template palette divergence (which hex family wins per role: the frozen launch screen's
+`#B5894B`/`#c9d1d9`/`#61afef` or the five later generators')** · confirm the UX-17 glyph-only
+narrowing (dots keep color-carries-state on owned surfaces; outcomes move to ✓/⚠/✗ where color
+is stripped) · confirm the wrapper Python-shim carve-out of UX-29 · approve the stat-box
+reconstruction plan (UX-19's full per-box content list survives as the input) · the
+[author-proposed] items the reviewer triaged as operator-class (preload seam config shape —
+cheap to rule now, drift vector if deferred).
