@@ -20,10 +20,11 @@ last_updated: "2026-08-16T12:00:00.000Z"
 > gauntlet **4/4 (pytest 4493)**. Evidence: `specs/backlog-burn-02/OBSERVATIONS.md` incl. the
 > BBM-6 accuracy record (corrected per final eval: net-new defects found by judges ×3, builder
 > audit ×1, and the OPERATOR — 🔴 BL-M34 the loop bypass; 1 known test-quality defect shipped,
-> fix dispatched). **⚠ BBM-12 ruled (operator, angry, right): burns run the ENTIRE loop — this
-> burn's conductor-driven shape is recorded DRIFT; the retroactive FINAL EVAL returned
-> NEEDS_WORK at the run level (missing machine evidence F1 · record overstatements F3/F4
-> corrected · branch mixing F5 pending operator ruling); targeted-fix round executing.**
+> fix MERGED `d3f55fd`, round-2-probed). **BBM-12 ruled (operator, angry, right): burns run the
+> ENTIRE loop — this burn's shape is recorded DRIFT. The retroactive FINAL EVAL ran the full
+> cycle: round 1 NEEDS_WORK → targeted fixes + durable gate evidence (`evidence/`, live mutation
+> probe) + F5 ride-along RULED → round 2 PASS. Wave-per-loop RULED for all future burns; 🔴
+> BL-M34 (bypass enforcement) + BL-X08/09/10/11 + BL-N18 filed and open.**
 > **(3) UX DESIGN at FREEZE-CANDIDATE** — compiled by a dispatched author, three convergence
 > rounds (R1 7H → R2 3H → R3 conductor-verified clean); every overnight conductor ruling labeled
 > "[author-proposed, conductor-ruled interim — operator confirms at freeze]" and indexed in §8.1.

@@ -32,10 +32,12 @@ cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS (pytest 4493)
    by judges (3), a builder audit (1), and the OPERATOR (🔴 BL-M34, the loop bypass — the
    biggest) · 1 escalation (recorded plan amendment) · 1 gate rejection (fixed) · H1's
    serial-gate bottleneck did NOT reproduce · H6 wrong-base did NOT recur.
-   **⚠ FINAL EVAL (run retroactively under BBM-12): NEEDS_WORK at the RUN level** — item content
-   passed independent re-derivation; the run failed on missing machine gate evidence (F1),
-   record overstatements (F3/F4, corrected), and branch mixing (F5, operator ruling pending).
-   The targeted-fix round against the same plan is executing; re-eval follows.
+   **FINAL EVAL: round 1 NEEDS_WORK → targeted-fix round → round 2 PASS (2026-08-16).** The
+   wave cleared its loop the normal way. Durable gate evidence emitted (`specs/backlog-burn-02/
+   evidence/` — RESULT/footprint/mutation, live non-vacuity probe, two evaluators re-derived it).
+   F5 RULED (ride-along, one-time) · the vacuous-params fix MERGED and eval-probed · records
+   corrected. PASS ≠ nothing left: 🔴 BL-M34 loop-bypass enforcement, BL-X08/09/10/11, BL-N18
+   all filed and live; the run's shape stays recorded DRIFT under BBM-12 (wave-per-loop RULED).
 3. **The UX system grilled + compiled + convergence-gated to FREEZE-CANDIDATE.** Rulings UX-28..32
    recorded live with the operator before sleep (wrapper-preferred entry + env provisioning ·
    committed grammar engine · glyph-first transcript from the probe-1 result · all-three

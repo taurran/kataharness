@@ -42,6 +42,18 @@ convergence review BEFORE freeze (BBM-7/8) · `waveBoundaries: autonomous` decla
    **Mode evidence:** the hybrid gate's judgment half caught what the mechanical half cannot —
    the first live proof of BBM-1's two-layer rationale.
 
+## FINAL VERDICT — round 2: **PASS** (2026-08-16)
+
+The wave cleared its loop the normal way: NEEDS_WORK → targeted fix against the same plan →
+re-evaluation → PASS. The round-2 evaluator (fresh context, anchor tier) re-derived every
+remediation itself: reproduced the mutation probe · byte-verified the footprint · re-ran the
+gauntlet (4/4, 4493) · proved the fixed test's four previously-dead params bite (its own
+real-command injection redded all four) · verified every filing truthful against the live tree ·
+ran `evidence_is_current` and showed it correctly flags the evidence commit's own tail as
+stale-evidence (the BL-X11 seam, demonstrated live). PASS explicitly does NOT mean nothing left:
+🔴 BL-M34 (loop bypass still structurally possible) · BL-X08/X09/X10/X11 · BL-N18 all remain
+FILED and live; this run's shape remains recorded DRIFT under BBM-12.
+
 ## Running log
 
 *(appended as the burn proceeds)*
@@ -71,7 +83,7 @@ convergence review BEFORE freeze (BBM-7/8) · `waveBoundaries: autonomous` decla
 | post-close | final eval | **VERDICT: NEEDS_WORK (run level; item content PASSED independent re-derivation).** F1 no machine evidence + a stale JULY `.kata/RESULT.json` on disk · F2 the drift entered the record only under operator challenge, mid-eval (independently confirming the operator's dishonesty call) · F3/F4 record overstatements · F5 branch mixing · F6/F7 lows | remediation round opened: records corrected · BL-X10/X11 filed · fix builder dispatched · evidence emission queued |
 | remediation | fix1 | targeted fix BUILT + merged (`d3f55fd`): the 4 vacuous params now BITE — per-branch contract map; probe (b) proved the previously-dead leg catches even a REAL command name in a skills branch (the old subset check structurally could not) | gauntlet 4/4 (4493) in worktree; one honest cost stated: a host legitimately gaining slash commands reds the test by design, forcing a deliberate reclassification |
 | remediation | rulings | operator ruled live: **BBM-12 fork = WAVE-PER-LOOP** (a wave re-loops if its final eval fails) · cursor = the interruption token (BL-N16-aligned) · BL-N18 tunable advisor+evaluator thresholds filed · challenger scope CORRECTED to adversarial validation only, separate subagent/different model · F5 resolved by explicit ride-along ruling (one-time) | |
-| remediation | evidence | **F1 CLOSED: durable gate artifacts emitted** at `evidence/` — RESULT.json (`baselineSha c2be115`, `resultSha 32725a5`, exit 0, the 4-gate PASS summary in stdoutTail) · footprint.json (withinFootprint TRUE) · mutation.json (**allNonVacuous TRUE — live probe**: baseline green → phantom-injected mutant RED → restored). Honesty labels: RESULT's `parsedCounts` (2/0/3) parse the FINAL pytest block (integration) — unit 4493 is attested by that same run's gauntlet summary + the evaluator's independent rerun; the with-mutation emit REPLAYED the 17:22Z gauntlet stdout (the gauntlet executed ONCE at tree `32725a5`); the mutation restore hit a newline-translation slip, caught by `git status`, restored via git checkout — recorded because a silent CRLF flip is exactly the artifact-corruption class the gates exist for | |
+| remediation | evidence | **F1 CLOSED: durable gate artifacts emitted** at `evidence/` — RESULT.json (`baselineSha c2be115`, `resultSha 32725a5`, exit 0, the 4-gate PASS summary in stdoutTail) · footprint.json (withinFootprint TRUE) · mutation.json (**allNonVacuous TRUE — live probe**: baseline green → phantom-injected mutant RED → restored). Honesty labels: RESULT's `parsedCounts` (2/0/3) are last-match-PER-LABEL across the tail (round-2 eval LOW-1 precision fix: `passed 2` is the integration block, `skipped 3` is the UNIT block's) — never read 2 as the run's pass count; unit 4493 is attested by that run's gauntlet summary + two evaluators' independent reruns; the with-mutation emit REPLAYED the 17:22Z gauntlet stdout (the gauntlet executed ONCE at tree `32725a5`); the mutation restore hit a newline-translation slip, caught by `git status`, restored via git checkout — recorded because a silent CRLF flip is exactly the artifact-corruption class the gates exist for | |
 
 ## Burn-level accuracy record (BBM-6 — the honest numbers)
 
@@ -81,7 +93,8 @@ convergence review BEFORE freeze (BBM-7/8) · `waveBoundaries: autonomous` decla
 - **Defects SHIPPED (corrected by the final eval, F3 — the original "0 known" overstated):**
   0 known defects in the FIXED surfaces · **1 known test-quality defect shipped in wave-1-authored
   code** (the 4 vacuous params in `test_install_banner_commands.py:90-94`, flagged unfixed at
-  close) — fix dispatched in the post-eval targeted-fix round. Linkback obligation stands.
+  close) — FIXED in the post-eval targeted-fix round (`d3f55fd`, merged, round-2-eval-probed).
+  Linkback obligation stands.
 - **Defects FOUND (net new, beyond the 5 filed — attribution corrected by the final eval, F4):**
   BL-X08 (batch preset illegal config — X01 **judge**, machine-verified) · BL-X09 (PowerShell grep
   — X03 **judge**) · README:95/:202 claim-class (X07 **judge**; FIXED at integration) · the
