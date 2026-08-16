@@ -128,6 +128,18 @@ before building.
   Reference specimen: `doc-grammar.html` beside this ledger. Per-run litigation of section
   CONTENT happens at each item's grill; the FORMAT is settled.
 
+- **UX-16 · Run-start report requirements (operator-directed):** the page's job is **truth-serum
+  clarity on what will be FINISHED in this run**. Order: (1) *WHEN THIS RUN ENDS — what will be
+  TRUE* — plain-English outcome per item, INCLUDING an explicit "NOT in this run" list so nothing
+  is implied; (2) *THE WAVES — what finishes when* (per-wave scope + wave-end state); (3) *WHAT
+  WILL STOP THIS RUN* — every stop-causing gate named with its trigger → reason → consequence,
+  fail-closed posture visible up front; (4) configuration; (5) zeroed vitals → the animated sea →
+  the rail at init. All blocks the uniform 64-column measure; the sea is ANIMATED wherever a wave
+  line appears (frame-0 static where animation is unavailable). **"Wave" is the official term**
+  (never "sprint") — theme-consistent, applies across all surfaces and docs going forward.
+  **Run personas** (register per audience — maps onto Human Prose BL-N02) noted for their own
+  backlog item; every page layout stays persona-neutral skeleton + swappable prose.
+
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
 statusline capabilities per host (kata segment exists on Claude; codex/kiro need assessment) ·
