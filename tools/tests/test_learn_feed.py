@@ -12,9 +12,15 @@ SB-L1 parse:   heading grammar (anchor vocab MM-1/IP-A/R-1/GB1/D7); status vocab
                `· LOCKED` / `· RESOLVED` / `— RESOLVED` case-insensitive, TOLERANT of
                trailing text; the vocabulary is CLOSED — other status-shaped tails the
                real ledgers use (`— NO OPERATOR ACTION`, `— ACCEPTED`, `— RECORDED …`)
-               ⇒ open; `· open`/no-status ⇒ open, NOT emitted; bullet-only
-               ledgers ⇒ zero entries; bold-field bullets tolerant (any subset);
-               parse_decisions_bullets (recall _BULLET_RE family).
+               ⇒ open; `· open`/no-status ⇒ open, NOT emitted; bold-field bullets
+               tolerant (any subset); parse_decisions_bullets (recall _BULLET_RE family).
+BL-X12:        bullet-form ledger entries — multi-line bold anchor spans (the UX-28/
+               UX-32 silent drop), ` · `/` — ` anchor partition ⇒ stable short keys,
+               FAIL-CLOSED status (decided markers only; `OPEN QUESTION` wins; bare
+               `ACCEPTED` stays open); heading entries provably undisturbed; the
+               `--decisions` ROUTE GUARD refusing grill-ledger-marked files (D136);
+               and the challenger's live reproduction against the real ux-rework
+               ledger pinned as a regression.
 SB-L2 render:  relpath `decision-patterns/<project-slug>--<source-slug>--<anchor-slug>.md`;
                frontmatter produced-by/source/date/scope/sorted tags (+redactions
                only when >0); kind→tag map; body sections present-fields-only with
@@ -208,9 +214,18 @@ def test_parse_non_anchor_headings_ignored():
     assert learn_feed.parse_grill_ledger(text) == []
 
 
-def test_parse_bullet_only_ledger_zero_entries():
-    """Bullet-form ledgers (no ### entries) parse to ZERO entries — honest scope."""
-    assert learn_feed.parse_grill_ledger(BULLET_ONLY) == []
+def test_parse_bullet_only_ledger_parses_fail_closed():
+    """BL-X12 (a): bullet-form ledgers parse — and classify fail-closed to open.
+
+    SUPERSEDES the pre-BL-X12 pin `== []` ("honest scope"). Zero entries was the
+    defect, not the contract: the file literally named GRILL-LEDGER.md was
+    invisible to the `--ledger` route. These two bullets carry no decided marker,
+    so they parse OPEN and still emit nothing — the honesty is now in the STATUS,
+    not in the blindness.
+    """
+    entries = learn_feed.parse_grill_ledger(BULLET_ONLY)
+    assert [e["anchor"] for e in entries] == ["D1", "D2"]
+    assert {e["status"] for e in entries} == {"open"}
 
 
 def test_parse_empty_and_none():
@@ -684,6 +699,344 @@ def test_render_no_redactions_key_when_zero():
 
 
 # ---------------------------------------------------------------------------
+# BL-X12 — bullet-form grill ledgers: an OPEN QUESTION never emits as a decision
+# ---------------------------------------------------------------------------
+# The stack's only live wrong-output defect, four sub-defects, all reproduced by
+# the challenger against `.planning/specs/ux-rework/GRILL-LEDGER.md`:
+#   (a) the --ledger route returned ZERO entries for bullet-form ledgers;
+#   (b) entries whose bold anchor span WRAPS were silently dropped (UX-28/UX-32);
+#   (c) the --decisions route hardcodes resolved ⇒ `UX-5 · OPEN QUESTION` emitted
+#       into the vault as a decided decision pattern;
+#   (d) anchors partitioned on em-dash only ⇒ `UX-1 · Launcher mechanism` as the
+#       page key instead of the stable `UX-1`.
+# The fixture below mirrors the REAL ledger's shapes: `·`-separated anchor spans,
+# spans that wrap across a physical line, a verbatim OPEN QUESTION entry, and the
+# `(locked …)` / `Ruling: …` decided forms the real ux-rework · backlog-burn-mode
+# · agent-cadre ledgers use.
+
+UX_BULLET_LEDGER = """\
+---
+spec: ux-rework
+status: draft
+opened: 2026-08-15
+---
+
+# GRILL LEDGER — launcher + UX rework (BL-N06 / BL-N07)
+
+**What this is:** operator rulings from the 2026-08-15 visual design session.
+
+## Operator rulings (2026-08-15)
+
+- **UX-4 · Command copy that survived a real confusion:** `/kata-loop` = *"full cycle: build →
+  closeout → improve again"*; `/kata-start` = *"single run: plan and build once, then stop."*
+
+- **UX-5 · OPEN QUESTION (feed to the full grill):** should the LOOP be the only door — "single
+  run" becoming a choice inside the guided flow — so users never face two entry commands?
+
+- **UX-12 · The phase-break block is LOCKED.** Structure top-to-bottom, all exactly **64
+  columns** (64 is the system-wide measure, shared with the launch banner).
+
+## Full-grill rulings (2026-08-16, the freeze grill)
+
+- **UX-28 · Entry hierarchy — the wrapper commands are the PREFERRED door (operator, 2026-08-16;
+  closes the UX-5 open question).** Ruling: keep BOTH in-session commands (`/kata-loop` +
+  `/kata-start`, UX-4 copy) — but the preferred manner of execution is the **wrapper shell
+  commands**.
+
+- **UX-31 · Wrapper build scope — ALL THREE hosts in one pass (operator, 2026-08-16;
+  supersedes the Claude-first sequencing).** RULED: assessed and built together.
+
+- **UX-32 · The launch preload is an OPEN SEAM; third-party packs are placeholders (operator,
+  2026-08-16).** The wrapper's environment provisioning is designed as a **pluggable ingestion
+  seam** — which packs load is configuration, never hard-wired.
+"""
+
+
+def _ux_bullet_entries() -> dict[str, dict]:
+    return {e["anchor"]: e for e in learn_feed.parse_grill_ledger(UX_BULLET_LEDGER)}
+
+
+def test_bullet_ledger_parses_every_entry():
+    """(a)+(b): the bullet-form ledger is no longer invisible, and nothing is dropped."""
+    entries = _ux_bullet_entries()
+    assert set(entries) == {"UX-4", "UX-5", "UX-12", "UX-28", "UX-31", "UX-32"}
+
+
+def test_bullet_wrapped_anchor_span_not_dropped():
+    """(b): UX-28/UX-31/UX-32 wrap their bold span across a physical line.
+
+    The single-line `_BULLET_RE` never matched these, so they vanished from the
+    feed with no note, no count, no error — the silent-drop half of BL-X12.
+    """
+    entries = _ux_bullet_entries()
+    for anchor in ("UX-28", "UX-31", "UX-32"):
+        assert anchor in entries, f"{anchor}'s wrapped bold span was dropped again"
+    # the wrap is re-joined into ONE title, not truncated at the line break
+    assert "closes the UX-5 open question" in entries["UX-28"]["title"]
+    assert entries["UX-32"]["title"].endswith("(operator, 2026-08-16)")
+
+
+def test_bullet_anchor_is_the_stable_short_key():
+    """(d): anchors partition on ` · ` as well as ` — ` ⇒ `UX-4`, never `UX-4 · Command copy`."""
+    entries = _ux_bullet_entries()
+    assert all("·" not in a and " " not in a for a in entries)
+    assert entries["UX-4"]["title"].startswith("Command copy that survived")
+    # the em-dash form still partitions (UX-28's title keeps its own em-dash text)
+    assert entries["UX-28"]["title"].startswith("Entry hierarchy — the wrapper commands")
+
+
+def test_bullet_open_question_parses_open():
+    """(c) THE LIVE DEFECT: a verbatim `OPEN QUESTION` entry is OPEN, never resolved."""
+    assert _ux_bullet_entries()["UX-5"]["status"] == "open"
+
+
+def test_bullet_decided_markers_resolve():
+    """Provable decided markers — and ONLY those — resolve (LOCKED / RULED / RULING)."""
+    entries = _ux_bullet_entries()
+    assert entries["UX-12"]["status"] == "resolved"   # `is LOCKED.` in the title
+    assert entries["UX-31"]["status"] == "resolved"   # `RULED:` in the LEAD, wrapped span
+
+
+def test_bullet_unclassifiable_fails_closed_to_open():
+    """FAIL-CLOSED: no marker ⇒ open. Emitting an undecided entry as decided is the harm."""
+    entries = _ux_bullet_entries()
+    assert entries["UX-4"]["status"] == "open"    # plain ruling prose, no marker
+    assert entries["UX-32"]["status"] == "open"   # `OPEN SEAM`, no decided marker
+
+
+def test_bullet_mentioning_an_open_question_stays_open():
+    """The accepted, DOCUMENTED cost of open-marker precedence, pinned so it is not a surprise.
+
+    UX-28 IS a ruling (`Ruling: keep BOTH …` in its lead) — but its own title says
+    it *"closes the UX-5 open question"*, so the open marker fires and it parses
+    OPEN. That direction is the safe one: a decided entry held open loses signal
+    the ledger still holds; an undecided entry emitted as decided writes a lie
+    into the second brain. When in doubt, open (BL-X12).
+    """
+    entries = _ux_bullet_entries()
+    assert "open question" in entries["UX-28"]["title"]
+    assert entries["UX-28"]["status"] == "open"
+
+
+def test_bullet_open_marker_beats_a_decided_marker():
+    """Precedence pin: an explicit open marker WINS, whatever else the entry says."""
+    text = (
+        "- **ZZ-1 · OPEN QUESTION — the ruling is LOCKED for everything else.** "
+        "RESOLVED elsewhere; this branch is not.\n"
+    )
+    (entry,) = learn_feed.parse_grill_ledger(text)
+    assert entry["status"] == "open"
+
+
+def test_bullet_status_vocabulary_is_closed():
+    """`ACCEPTED` is NOT decided vocabulary — it means *assessment accepted, work owed*.
+
+    Pinned deliberately: the real context-autonomy `R-5 … — ACCEPTED` is already
+    held OPEN by the heading grammar (`_CA_OPEN_AT_FREEZE`), and a bullet grammar
+    that swallowed the word would promote an unresolved branch into the vault.
+    """
+    for tail in ("— ACCEPTED.", "· PENDING VETO.", "— RECORDED, still argued.", "· NOTED."):
+        (entry,) = learn_feed.parse_grill_ledger(f"- **ZZ-9 {tail}** body prose.\n")
+        assert entry["status"] == "open", f"{tail!r} must not read as decided"
+
+
+def test_bullet_entries_never_disturb_heading_entries():
+    """The SB-L1 heading grammar is untouched: a heading entry keeps its own bullets.
+
+    A heading entry's `- **Decision:** …` field bullets must stay fields — they may
+    never ALSO be harvested as bullet entries (that would double-count and re-key
+    the page).
+    """
+    entries = learn_feed.parse_grill_ledger(CANONICAL_ENTRY)
+    assert [e["anchor"] for e in entries] == ["D7"]
+    assert entries[0]["fields"]["decision"].startswith("30 minutes")
+
+
+def test_bullet_entries_harvested_after_a_non_entry_heading():
+    """Mixed file: prose headings own nothing, so their bullets ARE entries."""
+    text = (
+        "### MM-1 — a locked branch · LOCKED\n"
+        "- **Decision:** stay the course.\n"
+        "\n"
+        "## Operator rulings (a prose heading — owns nothing)\n"
+        "\n"
+        "- **BBM-13 · Naming is LOCKED.** Documentation says \"Backlog Burn\".\n"
+    )
+    entries = {e["anchor"]: e for e in learn_feed.parse_grill_ledger(text)}
+    assert set(entries) == {"MM-1", "BBM-13"}
+    assert entries["MM-1"]["fields"] == {"decision": "stay the course."}
+    assert entries["BBM-13"]["status"] == "resolved"
+
+
+def test_bullet_bold_lead_in_is_not_an_entry():
+    """A bold lead-in with no anchor token is prose, not an entry (no phantom pages)."""
+    text = (
+        "- **Refined (operator, 2026-08-16):** section headers speak PLAIN language.\n"
+        "- **What this is:** operator rulings, LOCKED.\n"
+    )
+    assert learn_feed.parse_grill_ledger(text) == []
+
+
+def test_bullet_unterminated_bold_span_is_not_an_entry():
+    """Fail-closed on malformed markdown: an unclosed `**` never becomes an entry."""
+    text = "- **UX-77 · a span that never closes\n" + "  more prose\n" * 12
+    assert learn_feed.parse_grill_ledger(text) == []
+
+
+def test_bullet_entry_date_from_title_else_frontmatter():
+    """Determinism: entry date is mined from the title, else frontmatter — never a clock."""
+    entries = _ux_bullet_entries()
+    assert entries["UX-28"]["date"] == "2026-08-16"
+    assert entries["UX-4"]["date"] is None  # no date in title, no `date:` frontmatter
+
+
+def test_bullet_ledger_is_deterministic():
+    """Doctrine law 2/3: same bytes in ⇒ same entries out, every time."""
+    assert learn_feed.parse_grill_ledger(UX_BULLET_LEDGER) == learn_feed.parse_grill_ledger(
+        UX_BULLET_LEDGER
+    )
+
+
+# ---------------------------------------------------------------------------
+# BL-X12 — the route guard (D136 fail-closed; the parser stays unchanged)
+# ---------------------------------------------------------------------------
+
+def test_decisions_parser_semantics_unchanged():
+    """PIN: `parse_decisions_bullets` still hardcodes resolved — correct for DECISIONS.md.
+
+    The fix is a ROUTE guard, not a status vocabulary in this parser: by
+    DECISIONS.md's own contract every bullet in it IS a decided decision. This
+    test exists so a future "fix" that adds a status vocabulary here reds.
+    """
+    entries = learn_feed.parse_decisions_bullets(
+        "- **D1 — an open question we never resolved.** still argued.\n"
+    )
+    assert [e["status"] for e in entries] == ["resolved"]
+
+
+def test_grill_ledger_marker_detects_spec_frontmatter():
+    reason = learn_feed.grill_ledger_marker("notes/rulings.md", UX_BULLET_LEDGER)
+    assert reason and "spec" in reason
+
+
+def test_grill_ledger_marker_detects_filename():
+    reason = learn_feed.grill_ledger_marker(
+        ".planning/specs/x/GRILL-LEDGER.md", "- **D1 — no frontmatter.** body.\n"
+    )
+    assert reason and "grill ledger" in reason
+
+
+def test_grill_ledger_marker_passes_a_real_decisions_file():
+    """DECISIONS.md — no `spec:` key, no ledger filename — is NOT refused."""
+    assert learn_feed.grill_ledger_marker("C:\\repo\\.planning\\DECISIONS.md", BULLET_ONLY) is None
+
+
+def test_cli_decisions_route_refuses_a_grill_ledger(tmp_path, capsys):
+    """(c) at the route layer: the misclassification is REFUSED, never silent (D136)."""
+    spec_dir = tmp_path / "ux-rework"
+    spec_dir.mkdir()
+    ledger = spec_dir / "GRILL-LEDGER.md"
+    ledger.write_text(UX_BULLET_LEDGER, encoding="utf-8")
+    feed = tmp_path / "feed"
+    rc = learn_feed.main([
+        "--decisions", str(ledger), "--feed-dir", str(feed),
+        "--log-path", str(tmp_path / "log.md"), "--project", "demo", "--kind", "project",
+    ])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "--ledger" in err          # the message NAMES the correct route
+    assert "OPEN QUESTIONS" in err    # ...and why this matters
+    assert not feed.exists()          # all-or-nothing: nothing was emitted
+
+
+def test_cli_decisions_route_refuses_spec_frontmatter_under_any_name(tmp_path, capsys):
+    """The frontmatter mark stands alone — a renamed ledger is refused just the same."""
+    target = tmp_path / "rulings.md"
+    target.write_text(UX_BULLET_LEDGER, encoding="utf-8")
+    rc = learn_feed.main([
+        "--decisions", str(target), "--feed-dir", str(tmp_path / "feed"),
+        "--log-path", str(tmp_path / "log.md"), "--project", "demo", "--kind", "project",
+    ])
+    assert rc == 2
+    assert "--ledger" in capsys.readouterr().err
+
+
+def test_cli_ledger_route_emits_only_the_decided_entries(tmp_path, capsys):
+    """End-to-end: the same ledger through --ledger emits decided entries ONLY."""
+    ledger, feed, logp = _cli_args(tmp_path, ledger_text=UX_BULLET_LEDGER)
+    rc = learn_feed.main([
+        "--ledger", str(ledger), "--feed-dir", str(feed), "--log-path", str(logp),
+        "--project", "demo", "--kind", "project", "--json",
+    ])
+    assert rc == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["written"] == 2              # UX-12 · UX-31
+    assert report["parsed_open_skipped"] == 4  # UX-4 · UX-5 · UX-28 · UX-32
+    pages = sorted(p.name for p in (feed / "decision-patterns").iterdir())
+    assert pages == ["demo--demo-spec--ux-12.md", "demo--demo-spec--ux-31.md"]
+    # (d): the page key is the stable short anchor, not a whole title
+    assert not (feed / "decision-patterns" / "demo--demo-spec--ux-5.md").exists()
+
+
+# ---------------------------------------------------------------------------
+# BL-X12 — the challenger's LIVE reproduction, pinned as a regression
+# ---------------------------------------------------------------------------
+
+_UX_LEDGER = _REPO_ROOT / ".planning" / "specs" / "ux-rework" / "GRILL-LEDGER.md"
+# Recorded at fix time (2026-08-16) against the real file: 33 bullet entries, of
+# which 9 carry a provable decided marker. FLOORS, not pins — the ledger is a
+# LIVING file and a later grill may add entries or resolve open ones.
+_UX_ANCHORS_AT_FIX = {f"UX-{n}" for n in range(1, 34)}
+_UX_OPEN_AT_FIX = {"UX-5", "UX-32"}
+
+
+@pytest.mark.skipif(not _UX_LEDGER.exists(), reason="real ux-rework ledger not present")
+def test_real_ux_ledger_open_question_is_not_a_decision():
+    """The challenger's reproduction, verbatim: run the emitter's parser at the real file.
+
+    Before the fix: `--ledger` returned 0 entries, and `--decisions` returned 31
+    of 33 (UX-28 + UX-32 silently dropped) with ALL 31 marked resolved — including
+    the entry titled `UX-5 · OPEN QUESTION (feed to the full grill)`.
+    """
+    entries = learn_feed.parse_grill_ledger(_UX_LEDGER.read_text(encoding="utf-8"))
+    by_anchor = {e["anchor"]: e for e in entries}
+    # (a) the ledger is visible at all; (b) nothing is dropped
+    assert set(by_anchor) >= _UX_ANCHORS_AT_FIX, (
+        f"lost anchors: {sorted(_UX_ANCHORS_AT_FIX - set(by_anchor))}"
+    )
+    for anchor in ("UX-28", "UX-32"):
+        assert anchor in by_anchor, f"{anchor} is dropped again (wrapped bold span)"
+    # (c) the live defect: the OPEN QUESTION is open, and NOTHING titled
+    # "OPEN QUESTION" is anywhere in the resolved set
+    assert by_anchor["UX-5"]["status"] == "open"
+    resolved = [e for e in entries if e["status"] == "resolved"]
+    assert not [e for e in resolved if "OPEN QUESTION" in e["title"].upper()], (
+        "an OPEN QUESTION is being emitted as a decision pattern again"
+    )
+    # open-side floor (one-directional floors above cannot catch a promotion)
+    still_open = {e["anchor"] for e in entries if e["status"] == "open"}
+    assert still_open >= _UX_OPEN_AT_FIX, (
+        f"promoted un-decided entries: {sorted(_UX_OPEN_AT_FIX - still_open)}"
+    )
+    # (d) every page key is the stable short anchor
+    assert all(" " not in a and "·" not in a for a in by_anchor)
+    # and the honest split is real on both sides — not vacuously all-open
+    assert resolved, "no entry resolves at all — the marker set has stopped matching"
+
+
+@pytest.mark.skipif(not _UX_LEDGER.exists(), reason="real ux-rework ledger not present")
+def test_real_ux_ledger_is_refused_by_the_decisions_route(tmp_path, capsys):
+    """The route the challenger actually ran is now closed at the door."""
+    rc = learn_feed.main([
+        "--decisions", _UX_LEDGER.as_posix(), "--feed-dir", str(tmp_path / "feed"),
+        "--log-path", str(tmp_path / "log.md"), "--project", "KataHarness",
+        "--kind", "project",
+    ])
+    assert rc == 2
+    assert "--ledger" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
 # SB-L4 — redaction (deterministic scrub; never blocks)
 # ---------------------------------------------------------------------------
 
@@ -996,7 +1349,13 @@ def test_cli_dotdot_path_is_error_exit(tmp_path, capsys):
     assert "learn-feed:" in capsys.readouterr().err
 
 
-def test_cli_bullet_only_ledger_reported(tmp_path, capsys):
+def test_cli_bullet_only_ledger_parsed_but_not_emitted(tmp_path, capsys):
+    """BL-X12 (a): the bullets are SEEN (counted open) and still emit nothing.
+
+    Pre-BL-X12 this asserted the `0 heading entries` note — the CLI's honest
+    report of a blindness that is now fixed. The entries parse; neither carries a
+    decided marker; both land in `parsed_open_skipped`.
+    """
     ledger, feed, logp = _cli_args(tmp_path, ledger_text=BULLET_ONLY)
     rc = learn_feed.main([
         "--ledger", str(ledger), "--feed-dir", str(feed), "--log-path", str(logp),
@@ -1004,8 +1363,21 @@ def test_cli_bullet_only_ledger_reported(tmp_path, capsys):
     ])
     assert rc == 0
     out, err = capsys.readouterr()
-    assert json.loads(out)["written"] == 0
-    assert "0 heading entries" in err  # honest-scope note
+    report = json.loads(out)
+    assert report["written"] == 0
+    assert report["parsed_open_skipped"] == 2
+    assert "0 entries" not in err  # the blind-scope note no longer applies
+
+
+def test_cli_truly_empty_ledger_still_noted(tmp_path, capsys):
+    """The honest-scope note survives for a ledger with NO parseable entry at all."""
+    ledger, feed, logp = _cli_args(tmp_path, ledger_text="# Notes\n\nprose only.\n")
+    rc = learn_feed.main([
+        "--ledger", str(ledger), "--feed-dir", str(feed), "--log-path", str(logp),
+        "--project", "demo", "--kind", "project", "--json",
+    ])
+    assert rc == 0
+    assert "0 entries" in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------
@@ -1038,8 +1410,12 @@ def test_real_mm_ledger_locked_entries_stay_resolved():
     assert resolved >= _MM_LOCKED_AT_FREEZE, (
         f"MM ledger lost locked entries: {sorted(_MM_LOCKED_AT_FREEZE - resolved)}"
     )
-    # Parser sanity, regenerable: every parsed entry carries the MM-n anchor grammar.
-    assert entries and all(e["anchor"].startswith("MM-") for e in entries)
+    # Parser sanity, regenerable: every parsed anchor is a real anchor TOKEN. (Pre
+    # BL-X12 this pinned `startswith("MM-")`; the ledger's `- **N1 · …**` build-slice
+    # bullets now parse too — as OPEN — so the token grammar is the honest invariant.
+    # The resolved floor above is what protects the MM-n branches.)
+    assert entries and all(learn_feed._ANCHOR_RE.match(e["anchor"]) for e in entries)
+    assert resolved <= {e["anchor"] for e in entries if e["anchor"].startswith("MM-")}
 
 
 @pytest.mark.skipif(not _CA_LEDGER.exists(), reason="real context-autonomy ledger not present")
