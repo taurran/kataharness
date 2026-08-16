@@ -55,6 +55,18 @@ doc-grounded grill + convergence gate + DESIGN before any build.
   burn item**, so each burn accrues an honest defects-shipped count over time. The linkback
   discipline is the only new obligation.
 
+- **BBM-11 · Wave-boundary dial (operator question 2026-08-16: "do humans pause between waves?").**
+  Three positions, set at bootstrap, DECLARED in the run-start report (truth serum — the user knows
+  before anything runs whether they will be pinged, paused, or left alone):
+  **autonomous** (waves flow; each boundary prints the phase-break block + a wave-end notice) ·
+  **notify** (same flow + a real notification per wave end via the breakthrough-alert channel;
+  intervene-able, never waits) · **approve** (hard human gate; the run WAITS at every wave end).
+  Rationale for the gate existing at all: wave N can change the ground under wave N+1 (the
+  prototype lived this — convergence findings amended the wave-2 contract), spend checkpoints, and
+  attended-vs-walk-away reality (headless must never block — the quota-park posture). This is the
+  burn/wave generalization of the existing sprint-boundary checkpoint (`kata-sprint` G1–G4) — reuse
+  that seam, do not invent a second one. Not a different run — the same run, configured.
+
 ## Locked from prototype evidence (not re-litigated; cite OBSERVATIONS.md)
 
 - **BBM-7 · Triage precedes the grill, mandatorily** (H2: 2 of 6 items changed materially under
