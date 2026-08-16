@@ -205,13 +205,14 @@ Promote to ROADMAP milestones when ready.
 > lets the Kitchen architecture itself determine the parallel-branch ceiling. Config-surface work +
 > the Kitchen's capacity model; strictly sequenced after BL-N08.
 
-> **BL-N10 · "Challenger" — cross-model challenge of the adversarial validator AND the evals.**
+> **BL-N10 · "Challenger" — cross-model challenge of the adversarial validator ONLY.**
 > The adversarial validator runs on a DIFFERENT model (another Claude, or a Codex model); then a
 > strong model (Opus/Fable) comes back to CHALLENGE the validator's findings — accuracy control on
-> the adval itself. **EXTENDED (operator, 2026-08-16): the challenger also challenges
-> EVALUATIONS — final default-FAIL evals get cross-examined, not just the validator** (ruled
-> during the burn-02 final-eval exchange; a wave's eval verdict should survive a challenger
-> before it kicks a wave back through the loop or clears it). Includes proving Codex models can actually execute here (today `_COMMAND_BUILDERS`
+> the adval itself. **SCOPE CLARIFIED (operator, 2026-08-16, correcting a momentary extension):
+> the challenger challenges ADVERSARIAL VALIDATION only — never the final default-FAIL evals —
+> and MUST execute as a separate subagent or, better, a DIFFERENT MODEL** (independence is the
+> point; a same-context challenge is theater). A brief same-day "challenge the evals too" reading
+> was withdrawn by the operator within the hour — recorded so it is not resurrected. Includes proving Codex models can actually execute here (today `_COMMAND_BUILDERS`
 > covers codex/kiro but the Claude path is orchestrator-prose, and non-Anthropic ladders in
 > `kata_models.py` are empty placeholders). Open question: does this need multi-agent orchestration,
 > and does it inherit BL-M33's missing dispatch seam?

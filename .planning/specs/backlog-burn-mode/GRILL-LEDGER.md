@@ -117,8 +117,10 @@ recorded here so it is not re-proposed as new.)*
   via wave-per-loop + the cursor).
 - **Advisor AND evaluator thresholds must be TUNABLE** (the advisor's hooks partially are —
   `kata.config advisor.hooks`; the evaluator's strictness has no dial at all) → filed BL-N18.
-- **A CHALLENGER agent challenges the EVALS** — extends BL-N10 beyond challenging the adversarial
-  validator: final evaluations get cross-examined too.
+- **Challenger scope (corrected by the operator within the hour):** the challenger challenges
+  **adversarial validation ONLY** — not the final evals — and runs as a separate subagent or,
+  better, a DIFFERENT MODEL (BL-N10, scope-clarified). The earlier evals-too phrasing in this
+  ledger's first draft is superseded.
 
 Consequences, binding on every future burn: the loop's seams (advisor, inline evaluator,
 telemetry, board, orientation) apply BECAUSE the burn is inside the loop — the "which seams bind"
