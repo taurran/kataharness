@@ -28,6 +28,23 @@ Enforcement this wave: **Dormant** (hook lands LAST, W8). Capture: Honor-system
 (engine-by-conductor does not exist yet — prose collection). Resilience: Honor-system (no
 cursor machinery yet — trail snapshots are the pre-existing board-only shape).
 
+## Wave-1 integration record (2026-08-16)
+
+- Seven task branches merged no-ff with `Kata-Task:` trailers into `burn/trust-model-01`
+  (e484ce3 · 75e215a · 1657f50 · 10e169d · 36907d4 · 806aa79 · bd21107) + the exec-safety
+  row-retirement follow-up merge + G2 README regeneration (`be2e006`) + DEF-3 (`3f29947`).
+- **Local integration gauntlet 4/4** on the merged tree (pytest-unit, pytest-integration,
+  ruff, validate-skills — all exit 0; validator 49/0/0 with README in sync).
+- **CI GREEN — the 12-day red streak is OVER (the X14 acceptance):** run 31979757460
+  (workflow_dispatch, SHA `3f29947` = the integrated tip), gauntlet (ubuntu-latest) SUCCESS +
+  gauntlet (windows-latest) SUCCESS.
+  https://github.com/taurran/kataharness/actions/runs/31979757460
+  **Guardian: the CI gauntlet moves Broken → Verified with exactly this citation** (§6.6).
+- Judge verdicts: 5× PASS first-round (X15, exec-safety, stale-anchors, hook-probe, X14);
+  2× NEEDS_WORK cured and conductor-verified (deferral B1 → `e4c4e66`; X12 closure residue
+  → phase B `cd8723b`). Spot-audit (conductor): deferral clause-pin + fingerprint mutation
+  probe — both fired, restored byte-clean.
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
