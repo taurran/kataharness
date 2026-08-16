@@ -1,0 +1,73 @@
+<h2>Boundary highlight + the interruption surfaces</h2>
+<p class="subtitle">Top: the WAVES box with the boundary declaration as a highlighted chip (burn shown — autonomous). Below: the three moments the harness interrupts a human, in escalating weight — escalation (ochre, one worker paused) → gate rejection (rust verdict, one item stopped) → breakthrough (full rust frame, the run holds).</p>
+
+<style>
+  .term { background:#0e1218; color:#c9d1d9; padding:22px 24px; border-radius:8px; font-family:'Cascadia Code','Consolas',monospace; font-size:13px; line-height:1.40; overflow-x:auto; white-space:pre; }
+  .foam { color:#F7F2E6; } .pale { color:#8fb3cc; } .blu { color:#4d87ae; } .pru { color:#2E6389; }
+  .sealbg { color:#F7F2E6; background:#A6532B; font-weight:bold; }
+  .chip { color:#0e1218; background:#d9a960; font-weight:bold; }
+  .wchip { color:#0e1218; background:#e5c07b; font-weight:bold; }
+  .rschip { color:#F7F2E6; background:#A6532B; font-weight:bold; }
+  .och { color:#d9a960; } .pb { color:#CDBE9B; } .dimb { color:#44607a; }
+  .gd { color:#5fd7a7; } .wn { color:#e5c07b; } .rs { color:#c2653a; }
+  .txt { color:#a9b1c3; } .dim { color:#565f74; } .vl { color:#F7F2E6; } .lb { color:#4d87ae; }
+</style>
+
+<div class="term">
+<span class="dim">╬╬ the updated WAVES box — boundary as a chip ╬╬╬╬╬╬╬╬╬╬╬╬╬</span>
+
+<span class="pb">┌─ </span><span class="och">THE WAVES — what finishes when</span><span class="pb"> ─────────────────────────────┐</span>
+<span class="pb">│</span><span class="lb">wave 1</span>  <span class="vl">atomic writes · stderr fix · nested roots</span><span class="dim"> · 3 builders</span><span class="pb">│</span>
+<span class="pb">│</span><span class="dim">        at wave end: all merged, integrated gauntlet green</span>    <span class="pb">│</span>
+<span class="pb">│</span><span class="lb">wave 2</span>  <span class="vl">config validator · /kata-loop command</span><span class="dim"> · 2 builders</span>    <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">        at wave end: guard real, command routes, docs aligned</span> <span class="pb">│</span>
+<span class="pb">│</span><span class="lb">wave 3</span>  <span class="vl">code-map rebuild — a measurement, not a build</span>         <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">        at wave end: before/after numbers on the record</span>       <span class="pb">│</span>
+<span class="pb">│</span>                                                              <span class="pb">│</span>
+<span class="pb">│</span><span class="lb">boundaries</span>  <span class="wchip"> AUTONOMOUS — a burn never asks between waves </span>    <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">            set by run shape · change at start or by steering</span> <span class="pb">│</span>
+<span class="pb">└──────────────────────────────────────────────────────────────┘</span>
+
+<span class="dim">╬╬ 1 · ESCALATION — lightest: one worker paused ╬╬╬╬╬╬╬╬╬╬</span>
+
+<span class="pb">┌─ </span><span class="och">ESCALATION — W3 «atomic writes» stopped and is waiting</span><span class="pb"> ─────┐</span>
+<span class="pb">│</span><span class="lb">question</span> <span class="vl">“fs_atomic.py:21 docstring is stale, but that file is</span><span class="pb">│</span>
+<span class="pb">│</span><span class="vl">          outside my owner set — fix it or flag it?”</span>          <span class="pb">│</span>
+<span class="pb">│</span>                                                              <span class="pb">│</span>
+<span class="pb">│</span><span class="wn">a</span> <span class="vl">conductor fixes it at integration</span><span class="dim"> (recommended — wave-1</span>     <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">   precedent)</span>                                                 <span class="pb">│</span>
+<span class="pb">│</span><span class="wn">b</span> <span class="vl">extend W3's owner set to include it</span>                         <span class="pb">│</span>
+<span class="pb">│</span><span class="wn">c</span> <span class="vl">leave it · record as an item</span>                                <span class="pb">│</span>
+<span class="pb">│</span>                                                              <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">the worker stays paused until you (or the conductor) choose</span>   <span class="pb">│</span>
+<span class="pb">└──────────────────────────────────────────────────────────────┘</span>
+
+<span class="dim">╬╬ 2 · GATE REJECTED — one item stopped, run continues ╬╬╬╬</span>
+
+<span class="pb">┌─ </span><span class="och">GATE — item «config validator»</span><span class="pb"> ─────────────────────────────┐</span>
+<span class="pb">│</span><span class="lb">verdict </span> <span class="rschip"> REJECTED </span>  <span class="dim">fresh-context judge · default-FAIL</span>       <span class="pb">│</span>
+<span class="pb">│</span><span class="lb">because </span> <span class="vl">12 test assertions removed while claiming green</span>      <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">          finding class: test-weakening · PD-2</span>                <span class="pb">│</span>
+<span class="pb">│</span><span class="lb">evidence</span> <span class="vl">tools/tests/test_kata_config.py:41-88 · 33→21 asserts</span><span class="pb">│</span>
+<span class="pb">│</span><span class="lb">next    </span> <span class="vl">targeted fix against the SAME plan → re-gate</span>         <span class="pb">│</span>
+<span class="pb">│</span><span class="dim">          the plan does not change because a build failed</span>     <span class="pb">│</span>
+<span class="pb">└──────────────────────────────────────────────────────────────┘</span>
+
+<span class="dim">╬╬ 3 · BREAKTHROUGH — heaviest: the run holds for you ╬╬╬╬╬</span>
+
+<span class="rs">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+<span class="rschip"> ⚠ BREAKTHROUGH </span> <span class="foam">you are needed — the run is HOLDING</span>
+<span class="rs">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+
+<span class="lb">what   </span> <span class="vl">worker W2 hit a conflict with the frozen contract</span>
+<span class="dim">         the brief requires editing graph_gen's private symbol —</span>
+<span class="dim">         Amendment 1 forbids exactly that</span>
+<span class="lb">held   </span> <span class="vl">nothing merges while you decide</span><span class="dim"> · other branches keep</span>
+<span class="dim">         cooking — only this item is stopped</span>
+<span class="lb">needed </span> <span class="vl">one decision: keep the contract, or accept the deviation</span>
+<span class="lb">respond</span> <span class="vl">answer here</span><span class="dim"> · /kata-status shows the full board</span>
+
+<span class="rs">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+</div>
+
+<p class="subtitle">Weight discipline: rust background chips appear ONLY on interruption surfaces — nowhere else in the system — so their meaning stays unmistakable. React to any of the three.</p>
