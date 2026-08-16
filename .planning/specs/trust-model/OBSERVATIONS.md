@@ -83,6 +83,27 @@ cursor machinery yet — trail snapshots are the pre-existing board-only shape).
   wave-gate validator). Task gates for skill-touching tasks are green-except-README.
   Without this, W4's three concurrent skill tasks would have raced on the same generated
   block.
+- **D-8 · deferral-contract landed with conductor-verified initial fingerprint pin:**
+  the builder self-pasted the initial `deferral.md` pin (the updater cannot print a pin for
+  a NEWLY registered file — it iterates the existing pin table, `validate_skills.py:1159`;
+  no on-ramp exists). Conductor independently re-derived the digest via
+  `--update-protocol-fingerprint`: exact match (`8f2cb080…`). Precedent `9af7c5e`.
+  **Surfaced to the operator at the wave report** (an initial pin is a weaker act than a
+  re-approval; the on-ramp gap is a small fix candidate for a later wave — recorded, not
+  silently absorbed).
+- **D-9 · Stale pin-count prose owed a human two-step:** `protocol/prime-directives.md:95-96`
+  says 23 clause-pinned / 21 fingerprinted; with deferral.md the real numbers are 24 / 22
+  (also echoed in `tools/tests/test_validate_prime_directives.py`). Correcting
+  prime-directives.md requires its own fingerprint re-approval — **operator human moment,
+  queued for the wave report**; leaving the numbers stale is recorded here so it is a known
+  falsehood-in-waiting, not a silent one.
+- **D-10 · `.planning/ASSUMPTIONS.md` never existed** despite four surfaces naming it
+  canonical — created by deferral-contract with that provenance stated in-file; seeded with
+  ASM-1 (the fingerprint-pin reasoning, ungrilled).
+- **D-11 · kata-defer/kata-evaluate SKILL wiring to protocol/deferral.md deliberately NOT
+  done in W1** (outside ownership) — owed to W4 `authoring-skills-migration` (kata-defer
+  alignment is already in its task text) and W5 (kata-evaluate). Flagged so it is never
+  assumed done.
 - **D-7 · Minor: `statusline_chain.py` docstring's §security block claims its exec-safety
   row "lands at P2/C10 closeout" — stale: the row EXISTS (`protocol/exec-safety.md:68`).
   Docstring correction can ride any future statusline touch. X15's Snyk scan: one
