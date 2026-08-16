@@ -221,6 +221,47 @@ class TestRunChild:
     def test_empty_argv_fail_soft(self) -> None:
         assert mod.run_child([], b"") == b""
 
+    def test_empty_argv_never_reaches_the_exec_layer(self, monkeypatch) -> None:
+        # MUTATION PROOF (BL-X15 — the LINUX-only crash, pinned platform-independently).
+        # CPython's POSIX ``Popen._execute_child`` reads ``executable = args[0]`` off the raw
+        # list, so ``subprocess.run([])`` raises **IndexError** on Linux; on Windows the same
+        # call reaches ``CreateProcess`` and raises ``OSError [WinError 87]``, which the
+        # ``(OSError, ValueError)`` handler caught — which is exactly why
+        # ``test_empty_argv_fail_soft`` above passed on Windows while failing on ubuntu.
+        # Standing in the exec layer's place with the EXACT POSIX exception reproduces the
+        # Linux behaviour on ANY host: RED against the pre-fix code everywhere. Post-fix the
+        # empty case is decided BEFORE the exec layer, so ``subprocess.run`` is never called.
+        # The call-recording assertion is what keeps this test independent of the broad handler
+        # below: deleting the ``if not argv`` guard makes it RED even though the handler would
+        # swallow the IndexError.
+        calls: list = []
+
+        def _posix_empty_argv(*a, **k):  # noqa: ANN002, ANN003, ANN202
+            calls.append(a)
+            raise IndexError("list index out of range")
+
+        monkeypatch.setattr(mod.subprocess, "run", _posix_empty_argv)
+        assert mod.run_child([], b"") == b""
+        assert calls == []  # the exec layer was never reached at all
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            IndexError("list index out of range"),  # the POSIX empty-argv crash (BL-X15)
+            RuntimeError("exec layer blew up"),  # any other unexpected launch failure
+        ],
+    )
+    def test_unexpected_launch_error_fails_soft(self, monkeypatch, exc) -> None:
+        # MUTATION PROOF (the fail-soft contract itself): statusline code NEVER raises to the
+        # host, whatever the exec layer throws. Narrowing the handler back to
+        # ``(OSError, ValueError)`` makes both cases RED. argv is NON-empty here so the
+        # empty-argv guard cannot mask the handler under test.
+        def _boom(*a, **k):  # noqa: ANN002, ANN003, ANN202
+            raise exc
+
+        monkeypatch.setattr(mod.subprocess, "run", _boom)
+        assert mod.run_child(["python", "x.py"], b"") == b""
+
 
 # --------------------------------------------------------------------------- #
 # _main end-to-end (subprocess) — CHAIN + SKIP legs, bridge, untouched user file
