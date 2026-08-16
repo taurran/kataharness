@@ -13,6 +13,7 @@ ownership:
   fix-mutation-prover:
     - tools/mutation_run.py
     - tools/tests/test_mutation_run.py
+    - ".planning/specs/trust-model/evidence/x14-ci-green.md (the task's own declared evidence note — freeze-gate fold f, recorded amendment)"
   fix-statusline-crash:
     - adapters/claude/statusline_chain.py
     - tools/tests/test_statusline_chain.py

@@ -35,6 +35,11 @@ body-determined; no task, wave, dependency, or evidence content changed):
 `ev1-badge-registry` + `tools/validate_skills.py` · `doctrine-amendment` + conditional
 `tools/validate_skills.py` (fingerprint pin, verify-at-task-start).
 
+**F1f (recorded post-freeze amendment, same fold class, applied before any dispatch):**
+`fix-mutation-prover` + `.planning/specs/trust-model/evidence/x14-ci-green.md` — the task's own
+declared `evidence:` artifact was outside its ownership map (every other evidence artifact is
+owned by its declaring task). Caught at dispatch prep; no content change.
+
 ## Conductor rulings recorded at this gate
 
 1. **Deviation 4 ACCEPTED:** `exec-safety-registration` runs as a wave-1 task rather than
