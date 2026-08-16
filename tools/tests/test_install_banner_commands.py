@@ -87,8 +87,51 @@ def test_the_specific_phantoms_stay_gone():
     assert "/kata-bootstrap" not in out
 
 
-@pytest.mark.parametrize("platform", ["claude", "codex", "kiro", "other", ""])
+# Per-branch contract for the no-phantom guard. `_next_steps_banner` has two
+# branch classes and they advertise kata differently:
+#   "commands" -> the branch tells the user to type slash commands (claude).
+#                 Its tokens must be NON-EMPTY and every one of them real.
+#   "skills"   -> the branch names SKILLS instead (codex/kiro say "the
+#                 kata-initiate / kata-onboard skill"; the generic fallback says
+#                 "the kata-initiate skill"), with no leading slash, because
+#                 those hosts do not expose kata as slash commands. Emitting
+#                 ZERO slash tokens IS that branch's contract, so that is what
+#                 the param asserts.
+_BRANCH_CONTRACT = {
+    "claude": "commands",
+    "codex": "skills",
+    "kiro": "skills",
+    "other": "skills",
+    "": "skills",
+}
+
+
+@pytest.mark.parametrize("platform", sorted(_BRANCH_CONTRACT))
 def test_no_platform_branch_emits_a_phantom_command(platform):
-    """The guard holds for every branch, not just the one that regressed."""
-    phantom = _banner_command_tokens(platform) - _real_command_names()
-    assert not phantom, f"{platform!r} banner names phantom command(s): {sorted(phantom)}"
+    """The guard holds for every branch, each against its OWN contract.
+
+    Non-vacuity, per param. This test used to assert only ``tokens - real ==
+    set()`` for all five params. The four non-claude branches emit no slash
+    tokens at all, so for them the extracted set was empty and the subtraction
+    was empty for free: the assertion could not tell "no phantoms because none
+    are possible" from "no phantoms because we checked". Each param now carries
+    the expectation that actually binds its branch, so every param can red.
+    """
+    tokens = _banner_command_tokens(platform)
+    real = _real_command_names()
+    if _BRANCH_CONTRACT[platform] == "commands":
+        assert tokens, f"{platform!r} banner advertised no /kata command at all"
+        phantom = tokens - real
+        assert not phantom, (
+            f"{platform!r} banner names phantom command(s): {sorted(phantom)}; "
+            f"real commands are {sorted(real)}"
+        )
+    else:
+        assert tokens == set(), (
+            f"{platform!r} banner emitted slash-command token(s) "
+            f"{sorted(tokens)}; this branch's contract is to name SKILLS "
+            "without a leading slash, because its host does not expose kata as "
+            "slash commands. If that contract genuinely changed, move the "
+            "platform into the 'commands' class of _BRANCH_CONTRACT so its "
+            "tokens get checked against the real command set."
+        )
