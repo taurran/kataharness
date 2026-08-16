@@ -111,16 +111,46 @@ Promote to ROADMAP milestones when ready.
 > VIEW rendered FROM the durable run record — one source of truth, no second store — with learning
 > actions logged into that same record for observability. Assessed-against-the-field: Hermes + Pi
 > alignment research dispatched 2026-08-16.
-> **Open questions the grill must settle:** gating of auto-applied learning (the grounding gate /
-> `engram.autonomy` dial — D33 never bypassed; auto-apply vs human-gated per learning class) ·
-> conflict resolution between contradictory learnings · context-size control as learning accrues ·
-> redaction before vault write (D74) · BC: an agent with no learning file behaves byte-identically.
+> **RULINGS (operator, 2026-08-16 — the open questions are now settled):**
+> 1. **A dedicated LEARNING AGENT + GATE apply all learning.** Learning application is never a side
+>    effect — one agent role owns it, and a gate stands in front of every application (the
+>    grounding-gate posture, D33 never bypassed). Additions are **confidence-scored and held until
+>    the threshold is met** — below-threshold learning is never applied. *(D74 redaction still
+>    binds the vault-bound half: secrets/PII scrub is a hard pre-write gate on anything emitted to
+>    the vault — that is what redaction is for here.)* Plus the Hermes-derived security scan on
+>    self-written learning (injection-persistence vector).
+> 2. **Contradictions resolve by RECENCY** — newest learning wins mechanically — and the user is
+>    pointed at the learning-management feature for the deliberate cleanup.
+> 3. **Size control = the Hermes measure, adopted:** a capped, curated ACTIVE section (visible
+>    fill %) is what injects at agent load; the full temporal append log stays as the audit layer;
+>    condensation runs through the learning-management optimizer, never silently.
+> 4. **BC holds:** an agent with no learning file behaves byte-identically.
+>
+> **NEW component — LEARNING MANAGEMENT (skill/feature within this item):** the user-facing
+> surface for the substrate: review itemized learning PER AGENT · clean up contradictory entries ·
+> align/prune by temporal recency · optimize + condense learning items to improve future
+> performance (feeds the active-section distillation). This is where recency-resolved conflicts
+> get surfaced for human judgment.
+>
+> **Second brain = an ADDITIONAL learning destination:** beyond per-agent substrate files, learning
+> can be applied/emitted to the second brain (vault) — the learn-feed channel — so run learnings
+> land in both the agent that earned them AND the durable knowledge store, each through its gate.
 > **Field alignment (research landed 2026-08-16, `.planning/specs/learning-graph/RESEARCH-HERMES-PI.md`):**
 > format + load-time injection MATCH the field; temporal audit + specialist spin-off EXCEED it
 > (neither Hermes nor Pi has either). **Adopted design consequence: append for audit, distill for
 > load** — the temporal log audits; a capped curated “active” section (visible fill %) is what
 > injects (Hermes’ bounded-curation lesson). Also adopted: staged-write + unified-diff approval
 > queue · security scan on self-written learning (injection-persistence vector).
+
+> **BL-N17 · Scrub “engram” → “learning” across KataHarness. (NEW 2026-08-16)**
+> The internal term “engram” becomes plain **“learning”** everywhere a user or agent meets it:
+> config keys (`engram.autonomy` → `learning.autonomy`, `engram.learnFeed.dir` →
+> `learning.feed.dir`, `engram.backend` → `learning.backend`), `protocol/engram.md`, the
+> `kata-engram` cognition seam, STANDARDS/ROADMAP references, and skill prose. **BC-sensitive:**
+> config keys are a compatibility surface — the rename ships with old-key aliases + a migration
+> note, validated by the config load-guard; the protocol file rename must respect the
+> REQUIRED_PROTOCOL registry + fingerprint machinery (a deliberate two-step re-approval, not a
+> silent swap). Pairs naturally with BL-N16 — same grill, likely same run.
 
 > **BL-N08 · "The Kitchen" — decouple the flat run; let tasks bake. (THE BIG ONE)**
 > Chef (conductor) / sous-chef (orchestrator subagent) / dishes (tasks). Today's run pattern is
