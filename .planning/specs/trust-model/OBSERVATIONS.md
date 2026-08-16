@@ -104,6 +104,21 @@ cursor machinery yet — trail snapshots are the pre-existing board-only shape).
   done in W1** (outside ownership) — owed to W4 `authoring-skills-migration` (kata-defer
   alignment is already in its task text) and W5 (kata-evaluate). Flagged so it is never
   assumed done.
+- **D-12 · Hook probe (evidence/hook-probe.md, commit 95dae4c) — three findings wave 8 MUST
+  absorb, all OBSERVED not assumed:** (1) **fail-open is the governing limit** — a PreToolUse
+  hook that times out or crashes lets the call through; only a clean exit-2/deny-JSON blocks.
+  The W8 hook must deny on internal error, and post-hoc verification is MANDATORY, not
+  belt-and-braces (a broken hook is indistinguishable from an absent one in-session; the
+  degrade table's no-result⇒Dormant clause is load-bearing in practice). (2) **Matcher
+  naming trap:** the hook payload always carries tool_name "Agent" while result envelopes
+  report "Task" — a hook asserting "Task" silently no-ops on every call. (3) **Capture needs
+  BOTH edges:** PostToolUse sees the full return envelope on the sync path ONLY (background
+  dispatch gets a handle ~4ms after launch); SubagentStop carries the verdict text on both
+  paths but lacks the tool_use_id binding — R-H3 as written captures nothing on background
+  dispatches without the second edge. Deny survives permission-skip flags (good for BBM-11);
+  Bash leg sees the full pre-expansion command literal (Partially-verified residual confirmed
+  as observed fact). Interactive sessions, Kiro/Codex, nested Agent-denies-Agent: UNPROBED,
+  stated in the note.
 - **D-7 · Minor: `statusline_chain.py` docstring's §security block claims its exec-safety
   row "lands at P2/C10 closeout" — stale: the row EXISTS (`protocol/exec-safety.md:68`).
   Docstring correction can ride any future statusline touch. X15's Snyk scan: one
