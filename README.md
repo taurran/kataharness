@@ -288,8 +288,8 @@ Customize any skill via a local **overlay** or a promoted **fork** — your chan
 upstream base stays pristine and is never edited or lost.
 
 ### 🗂️ Discoverable slash-commands *(Claude)*
-`/kata` prints the index; `/kata-start`, `/kata-onboard`, `/kata-resume`, `/kata-status`, and `/kata-validate`
-route straight to the right skill — no logic to drift, always in sync with the toolkit.
+`/kata` prints the index; `/kata-loop`, `/kata-start`, `/kata-onboard`, `/kata-resume`, `/kata-status`, and
+`/kata-validate` route straight to the right skill — no logic to drift, always in sync with the toolkit.
 
 ### 📚 49 versioned skills
 Across six families — `plan` · `coordinate` · `execute` · `evaluate` · `handoff` · `meta` — plus the
@@ -458,6 +458,7 @@ Restart your agent so it loads the skills, then use a slash-command (Claude Code
 
 ```text
 /kata            show the command index
+/kata-loop       run the full improvement cycle (initiation → harness → closeout → loop-back)
 /kata-start      start a run (the front door → kata-initiate)
 /kata-onboard    guided tour / convert an existing repo
 /kata-status     show the live run board

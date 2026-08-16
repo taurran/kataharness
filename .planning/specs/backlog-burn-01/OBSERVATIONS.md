@@ -141,6 +141,13 @@ hand-authored parts of the same file are a different matter and stay conductor-o
 | wave 1 | integration | **MERGED CLEAN, 0 conflicts** | gauntlet 4/4 on the integrated tree; pytest 4411 → **4452** |
 | wave 1 | BURN-C | confinement HELD | `_module_to_path`/`_node_text` byte-identical, proven by AST extraction |
 | wave 1 | gate | **PASS** | conductor re-verified: 3-tuple wired, 3 surfacing sites, zero residual `.write_text` in all 6 writers |
+| wave 2 | baseline | gauntlet 4/4 PASS re-run at `d3fb968` before dispatch | pytest 4452/3 skip · integration 2/2 · ruff clean · validator 49/0/0 |
+| wave 2 | provisioning | host auto-worktree FAILED (case collision) + left 2 orphans at the WRONG base | see H6-repeat section; conductor provisioned manually at the pinned SHA |
+| wave 2 | BURN-D · E | **dispatched concurrently, 2 manually-pinned worktrees** (2026-08-15) | briefs carry step-0 base verification + push-back instruction |
+| wave 2 | BURN-E | returned green ~4.5 min, 56k subagent tokens, gauntlet 4/4 in worktree | gate: diff = exactly the owner set (2 files, +7); glob claim + no-count-pins re-verified by conductor's own probes |
+| wave 2 | BURN-D | returned ~11 min, 134k subagent tokens, gauntlet **3/4** + ESCALATION | the red was the escalated pin, not the build; 33 new tests, non-vacuity 16/33 fail under neutralization |
+| wave 2 | BURN-D | **signature delta, reported not substituted** | brief's 2-arg shape cannot support the modules check (no name convention module→provider); builder added `provided_modules` derived from `kata/module/*` tags + a bridge `available_from_skills` |
+| wave 2 | integration | merged clean ×2, 0 conflicts; conductor fixed the escalated pin (floor ≥0.17.0, not exact) + README/AGENTS command rows | validator probed independently: 5 fresh cases incl. reproducing the config.md:14 doc-delta |
 
 ---
 
@@ -202,6 +209,53 @@ STOP") paid for itself three times in one wave:
 **Mode rule:** brief builders to push back explicitly. The instruction "if the brief is wrong, say so
 and stop" is what converts a builder from a code-typist into a second reviewer — and it costs one
 sentence.
+
+---
+
+## H5 — SECOND INSTANCE, wave 2: the brief mandated three things that cannot all hold
+
+`test_validate_prime_directives.py:479` hard-pinned the literal `version: 0.17.0` against the real
+kata-orchestrate SKILL.md (a KH-T12 TDD leftover). The BURN-D brief simultaneously required (a) the
+0.18.0 bump, (b) a 4/4 gauntlet, and (c) never touching another test file. **All three could not
+hold.** The builder chose correctly — kept the bump (also enforced by `check_bump_on_modify`, so
+skipping it just reds a different gate), kept ownership discipline, and STOPPED on the gauntlet with
+a precise escalation naming the one-line conductor-owned fix.
+
+Two mode lessons, one new:
+1. (H5 restated) every "green gate" demand must be checked against what the gate actually requires —
+   this time the collision was **latent in the test suite**, not in the standing rules, so no contract
+   review of the *brief* could have caught it; only building finds it.
+2. **NEW: an exact-version pin against a living file is a time bomb.** The right assertion for
+   "the doctrine landed at 0.17.0" is a FLOOR (`>= (0,17,0)`) plus the doctrine text — an exact string
+   reds on every legitimate future bump and trains people to edit tests under pressure. Fixed at
+   integration (floor + semver parse); grep for the same class before the next burn.
+
+**Escalation cost, measured (H1 data):** the escalation round-trip cost zero builder re-dispatch —
+the builder shipped everything it owned and handed the conductor a one-line fix with file:line and
+two candidate shapes. That is the cheap-escalation shape the mode wants: STOP at the exact collision
+point, not at the start of the item.
+
+---
+
+## H6 — REPEATED in wave 2, by a different provisioner (2026-08-15)
+
+Wave 2 dispatch (a fresh session, eleven days later) hit the same class twice in one minute:
+
+1. **The host's auto-worktree isolation refused to provision at all** on this repo — a Windows
+   path-casing collision (`C:\dev\projects\KataHarness` cwd vs. git's canonical
+   `C:/Dev/Projects/KataHarness`) that the isolation checker reads as a working-tree redirect.
+   Fallback: the conductor provisioned worktrees manually via `git worktree add <path> -b <branch>
+   <pinned-SHA>` and dispatched builders at explicit paths.
+2. **The two half-created worktrees the failed attempts left behind sat at `d4650fc` — one commit
+   behind the pinned base `3e10ce4`-lineage tip `d3fb968` — the exact H6 wrong-base failure, again,
+   from different machinery.** Wave 1's provisioning and wave 2's host provisioning failed the same
+   way independently.
+
+**Mode rule, upgraded from H6:** wrong-base provisioning is not a one-off — two independent
+provisioners produced it. The base-SHA verification MUST be structural (step 0 of every brief,
+builder-verified and reported), and the conductor pinning the SHA into `git worktree add` itself is
+strictly better than trusting any auto-provisioner. Manual provisioning at a pinned SHA costs one
+command and removes the class.
 
 ---
 

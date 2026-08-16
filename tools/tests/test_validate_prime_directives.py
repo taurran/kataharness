@@ -31,6 +31,7 @@ validator's own source mechanically. This raises cost and visibility, not imposs
 """
 from __future__ import annotations
 
+import re
 import shutil
 from pathlib import Path
 
@@ -474,8 +475,15 @@ def test_agents_md_has_spine_principle_8_referencing_orchestration_protocol():
 
 
 def test_kata_orchestrate_skill_version_bumped_and_references_doctrine():
-    """(TDD 5) Bump-on-modify: 0.16.1 -> 0.17.0, plus a binding reference in the body."""
+    """(TDD 5) The KH-T12 doctrine landed at 0.17.0; assert a version FLOOR, not an exact pin.
+
+    The original exact-string pin (`version: 0.17.0`) redded on every legitimate later bump
+    (caught live by the BURN-D builder, 2026-08-15). The binding facts are (a) the version is
+    at or above the doctrine-landing release and (b) the doctrine reference survives in the body.
+    """
     text = REAL_ORCHESTRATE_SKILL.read_text(encoding="utf-8")
-    assert "version: 0.17.0" in text
+    match = re.search(r"^version:\s*(\d+)\.(\d+)\.(\d+)\s*$", text, flags=re.MULTILINE)
+    assert match, "kata-orchestrate SKILL.md must carry a semver version: field"
+    assert tuple(int(g) for g in match.groups()) >= (0, 17, 0)
     assert "protocol/orchestration.md" in text
     assert "A well-behaved orchestrator does not do the work itself" in text

@@ -42,8 +42,10 @@ lessons, and prior `INTENT.md` — so the next cycle starts informed. A platform
 
 ## Commands & run-shapes (Claude adapter)
 
-`/kata` prints the index. `/kata-start` → `kata-initiate` (the front door); `/kata-onboard` onboards an
-existing repo (and is the on-ramp for **Debug Mode**); `/kata-resume`, `/kata-status`, `/kata-validate`.
+`/kata` prints the index. `/kata-loop` → `kata-loop` (the full-cycle conductor: initiation → harness →
+closeout → context-carrying loop-back); `/kata-start` → `kata-initiate` (the front door); `/kata-onboard`
+onboards an existing repo (and is the on-ramp for **Debug Mode**); `/kata-resume`, `/kata-status`,
+`/kata-validate`.
 
 A run's **run-shape** is chosen at bootstrap (it pre-fills `mode`+`modules`+`target`): `individual` · `batch`
 (best-of-N) · `version-up` (improve a repo that already ran the loop) · **`debug`** (systematically debug an
