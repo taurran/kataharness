@@ -188,6 +188,11 @@ before building.
     which directs the user to recycle the session for a new run or exit.
   - **Git actions are menu items** (push / open PR / merge-after-PR), so shipping is part of the
     same loop, not a side quest. Feeds the kata-closeout skill's grill.
+  - **Learning options align with BL-N16 (operator, 2026-08-16):** the closeout's WHAT WE LEARNED
+    box and the learning-session options are one surface — the menu gains: *apply learning guidance
+    to this run's learning list* and *review all learning applied this run* (per-agent, temporal,
+    auditable — the learning-graph substrate). Auto-apply executes at run end; the review option is
+    the audit view.
   - **Prose is never boxed (operator, 2026-08-16):** plain-language narrative sections sit between
     DIVIDERS (heavy titled breaker above, light rule below) at full page width — no side borders,
     no padding rows. The grammar's complete rule: **boxes are for data; dividers are for prose;

@@ -83,6 +83,39 @@ Promote to ROADMAP milestones when ready.
 > NOT its ledger. Ties into the UX rework (grammar) and the Kitchen (roles below). **Operator:
 > work this during the current batch's execution.**
 
+> **BL-N16 · The learning graph — a per-agent learning substrate. (NEW 2026-08-16, Kitchen-aligned)**
+> **The shift: learning applies to INDIVIDUAL AGENTS, not the harness as a whole.** Every agent
+> type in the harness gets a substrate file — YAML frontmatter + markdown (the field-standard
+> agent-definition shape; verify against current conventions at grill) — carrying: full frontmatter
+> · **learning modifications** accumulated for that agent · **temporal tracking** of when each
+> learning was applied. **Every time the agent loads, its learning modifications load with it — and
+> every application is auditable in the harness.**
+> **Learning sources:** grilling · in-loop guidance (the user replies with items explicitly flagged
+> as learning) · generated at agent close. **At run end, a learning session runs:** all learning
+> notes collected during the run are auto-applied to their agents; the closeout offers (a) apply
+> learning guidance against the run's learning-output list and (b) review/understand ALL learning
+> applied this run. *(Closeout alignment: the "WHAT WE LEARNED" box and these two menu options are
+> the same surface — UX-20 addendum.)*
+> **Specialist spin-off:** when an agent's accumulated learning is deep enough, the harness OFFERS
+> to spin off a cadre specialist (BL-N04) derived from it. Personalized/specialized cadre agents
+> live in **the vault, in official KataHarness folders** — the substrate itself is vault-stored so
+> **settings and learnings persist across uninstall/reinstall**.
+> **Existing machinery this builds on (verified, not guessed):** `kata-promote`'s two-stage
+> agent-distilled-skill promotion + STANDARDS §1.3 discriminators (the spin-off seam, human-gated)
+> · the engram/learn-feed vault emission (`learn_feed.py`, D151 — run learnings → vault pages) ·
+> `kata-improve` (today's HARNESS-wide folding — exactly what becomes per-agent) · `agentSkills.dir`
+> + `engram.learnFeed.dir` (vault-external persistence precedent) · LESSONS-LEARNED.md capture.
+> **Resilience/cursor question (operator-posed, to settle at grill):** should the run-status
+> "cursor" (the phase rail) merge with the stage/step resilience record (board · `Kata-Task:`
+> trailers · restore machinery)? Conductor's recommendation to test at grill: the rail stays a pure
+> VIEW rendered FROM the durable run record — one source of truth, no second store — with learning
+> actions logged into that same record for observability. Assessed-against-the-field: Hermes + Pi
+> alignment research dispatched 2026-08-16.
+> **Open questions the grill must settle:** gating of auto-applied learning (the grounding gate /
+> `engram.autonomy` dial — D33 never bypassed; auto-apply vs human-gated per learning class) ·
+> conflict resolution between contradictory learnings · context-size control as learning accrues ·
+> redaction before vault write (D74) · BC: an agent with no learning file behaves byte-identically.
+
 > **BL-N08 · "The Kitchen" — decouple the flat run; let tasks bake. (THE BIG ONE)**
 > Chef (conductor) / sous-chef (orchestrator subagent) / dishes (tasks). Today's run pattern is
 > flat and on-rails; the Kitchen lets execution branches parallelize and optimize *around each
@@ -107,6 +140,9 @@ Promote to ROADMAP milestones when ready.
 > - **ARBITER (NEW)** — advisor + second-brain decision-making combined: consults the vault's
 >   decision history when arbitrating. Needs its own definition at grill time.
 > - **Challenger** — cross-model challenge of the adversarial validator (BL-N10).
+>
+> **Cross-ref (2026-08-16):** the per-agent learning substrate (BL-N16, the learning graph) is
+> Kitchen-aligned — the roles above are exactly the agents whose substrate files accrue learning.
 
 > **BL-N09 · Fan-out dial — a run-config knob for Kitchen capacity. (NEW 2026-08-15, depends on BL-N08)**
 > Once the Kitchen exists: a `fanOut` configuration alongside mode/economy — three positions,
