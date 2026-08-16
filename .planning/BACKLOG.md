@@ -57,10 +57,17 @@ Promote to ROADMAP milestones when ready.
 > as a **placeholder only**; the kata-native superpowers set built under this item REPLACES it.
 > Standing direction: **KataHarness divests from ALL third-party module components — superpowers
 > and GSD included** — third-party packs are reference/placeholder material, never load-bearing
-> harness components; the swap to kata-native must be a config change at the seam, not a rework. Open questions (operator-flagged): do superpowers live inside the cadre or in
-> their own home; relationship to the existing agent-skills toolkit (`agentSkills.dir`,
-> `kata-promote` two-stage gate, STANDARDS §1.3 discriminators) which already governs exactly this
-> shape of thing.
+> harness components; the swap to kata-native must be a config change at the seam, not a rework.
+> **EXTENDED (operator, 2026-08-16, third sitting — the extraction is scoped into BL-N20's
+> program):** the superpowers EXTRACTION ships as part of the agent-cadre work — our own pack
+> (operator's term verbatim: "our own **mindbridge superpowers**"; ⚠ naming to confirm at grill —
+> earlier filings said "KataHarness Superpowers", and MindBridge is otherwise a hands-off
+> boundary; recorded, not resolved). The pack: **part of the cadre** (this ANSWERS the first
+> open question below) · borrows the CURRENT superpowers' frontmatter shapes and execution
+> patterns · and is **the ONLY superpowers pack loaded when the loop launches via its own
+> command** (the BL-N21/UX-28 door). Remaining open question: relationship to the existing
+> agent-skills toolkit (`agentSkills.dir`, `kata-promote` two-stage gate, STANDARDS §1.3
+> discriminators) which already governs exactly this shape of thing.
 
 > **BL-N05 · Settings module — a real settings command.**
 > One command to view/set KataHarness system settings. Existing machinery: `tools/kata_settings.py`
@@ -192,6 +199,20 @@ Promote to ROADMAP milestones when ready.
 > grill decides the per-role set).
 > Composes: BL-N16 (the substrate IS the agent file) · BL-M33/M34 (the dispatch seam is where
 > "must be our agent" gets enforced) · UX-32 independence doctrine (same principle, agent-level).
+> **EXPANDED (operator, 2026-08-16, third sitting — the mandate hardens):** this item covers
+> **authoring ALL agent types — our own optimized agents for EVERYTHING we execute**, coding
+> agents especially, use MANDATED at dispatch. The agents are **LIVING**: they evolve through
+> (a) our own optimization updates AND (b) the BL-N16 learning substrate — per-agent learning
+> accrues to the definition itself. Deliverable structure ruled: **a roster** listing every agent
+> we must build (including the NEW roles: ARBITER, CHALLENGER, learning agent, context-scanner),
+> and PER AGENT: the existing agents we pull from as inspiration + the required optimizations
+> that elevate their execution patterns beyond those examples. **Research task ruled:** survey
+> other harnesses (Hermes, Quicksilver, Pi, GSD, BMAD) and GitHub's agent ecosystems to determine
+> how we build ours. **Sequencing ruled: aligned around BL-N08 (before or after — grill decides
+> which executes optimally).** **Live data point recorded:** the 2026-08-16 validation stack ran
+> an ad-hoc challenger (anchor tier, fresh context, refute-posture over two Opus advals) — its
+> brief, behavior, and outcome are design input for the real CHALLENGER agent. Spec home:
+> `.planning/specs/agent-cadre/`.
 
 > **BL-N21 · Always-loop: the personal global config makes EVERY coding task a full KataHarness
 > loop run. (NEW 2026-08-16, operator-directed — provenance: the operator's verbatim ask "can we
