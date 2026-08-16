@@ -62,9 +62,32 @@ dispatch to happen at all, so the rules become physics instead of requests.
 the re-derived tree is empty. Security surface (forgery, injection via briefs, hook trust) gets its
 own dedicated pass per the Advanced depth contract.*
 
+## Operator directive — 2026-08-16, mid-grill, after reading the surface map (verbatim intent; proto-rulings, NOT locked until grilled)
+
+The operator, on seeing the map: *the harness is a facade wherever engine and prose are untied.*
+Directed, as one program ("this all ties together in a manner of control"):
+1. **Tie the engine and the prose together** — the wiring program deserves a more detailed pass.
+2. **Wire in Truth Serum** (BL-N01) as part of it.
+3. **Track everything at the CURSOR** — true temporal updates, resilience against interrupted runs
+   ("which we were supposed to have already" — confirmed: T10 in the trust ledger is FACADE),
+   done "in a modernized graph manner" (aligns with the BBM cursor ruling + BL-N16 substrate).
+4. **Specific blocks against stubs, deferrals, omissions** (the PD-1 detector bank).
+5. **Ground truth inside the grounding/validation/eval stack** — including a **grounding AGENT**
+   (operator noted its absence from the cadre roster; conductor verified: correct — zero mentions
+   of grounding in the roster; `grounding_gate.py` engine exists, orphaned).
+6. **No completion gate passes without a truth-serum check** (gate precondition, refuse-not-warn).
+7. **An end-of-run prompting mechanism that grounds everything against the plan** — anti-drift,
+   anti-spiraling.
+Goal, verbatim: **"TRUST in every mechanism within the harness/loop, but also trust in the output
+itself. This is a core trust model… actually back trust with fact/truth."**
+
+Assessment delivered: `.planning/specs/trust-model/ASSESSMENT.md` (the trust ledger T1–T18, the
+six-component control loop, verified seeds, honest limits, program-shape recommendation).
+
 ## Resolved branches
 
-*(none yet — grilling begins after the operator confirms the ground-truth map)*
+*(none yet — grilling begins after the operator confirms the ground-truth map and rules on the
+trust-model program shape)*
 
 ## Blocked-at-close notes (standing)
 
