@@ -844,6 +844,74 @@ no collision with the UX rounds numbering. **R2-L3 (amends TM-H4 S3):** the hook
 and exec-safety registration cover BOTH edges (deny + capture). **R2-L4:** the fail-soft
 precedent anchor is `kata-gauge-check.py:34-36` (was cited :35-37).
 
+## Convergence pass 1, third run — HOLD (3H/6M/4L). Round-3 remediations; each AMENDS the named branch/amendment.
+
+The third fresh reviewer verified all prior errata at source and reported closure on two of five
+tracked classes. Its H3 caught a **false premise of the conductor's** (R2-H2's "milliseconds"),
+corrected below per PD-2 — the reviewer recomputed where the conductor shape-checked, which is
+doctrine law 13 exercising itself on this grill.
+
+**R3-H1 (amends TM-C2/C1) — crash-resume ADOPTS the runId; rotation happens only at run START.**
+Run identity lives in the cursor header. Seam init distinguishes two cases mechanically:
+**new run** (no live cursor, or the live cursor's run is closed) ⇒ rotate + mint; **resume**
+(live cursor with an unclosed run) ⇒ ADOPT the header's runId, reap orphan records (R2-M3), and
+continue — pre-crash gate artifacts remain evidence (exact-runId rule satisfied), which is what
+makes TM-C3's mid-gate-resume claim true. A resumed session never re-mints; a re-loop (R2-M2)
+and a loop-back (TM-C5) always do.
+
+**R3-H2 (amends R2-H1) — the governor ladder honors BC; the entry rung is shape-dependent; the
+initiation predicate is the open-phase check.** The `governs` enum selects WHICH artifact governs
+a dispatch — it is not a mandatory pipeline: a **direct one-shot harness run** (no initiation —
+the BC case `protocol/intent.md:11` PINS) governs under `plan` exactly as today; `intent:frozen`
+binds only runs that ENTERED via initiation/kata-loop. The `initiation` governor's predicate is
+**an open INITIATION phase event on the live cursor** (checkable; the record additionally carries
+the priming-prompt hash as provenance) — and initiation-phase mints are graded **Honor-system**
+in Guardian terms (the weakest rung, declared as such, never dressed as Verified). Deny-legal-
+runs eliminated; no convention-only rung remains unlabeled.
+
+**R3-H3 (amends R2-H2/TM-D2) — the cost premise corrected; scope + ordering ruled.** CORRECTION
+(PD-2): `prove_non_vacuous` is NOT milliseconds — it copies the project tree to a sandbox and
+runs the test command twice per asserted line (`mutation_run.py:218-315`). Resolution within the
+operator's overhead ruling: (1) **per-task re-runs use the TASK'S OWN verify command** (narrow by
+construction), re-running the worker's claimed mutation set with a declared cap (all lines ≤ N,
+default N=5; beyond that the orchestrator samples N and records the sampling on the cursor —
+no silent truncation); (2) **the final gate's stack-head grounding pass re-runs a sampled subset
+against the gate command** and attests the whole set's records; (3) **ordering rule:** the
+blocking mutation precondition ACTIVATES per platform only after 🔴 BL-X14 closes (the prover
+proven able to fail on that platform — the TM-D3 law applied to the prover itself); until then
+the precondition is declared **Honor-system** on that platform (the TM-H1 activation-order
+pattern). No Linux task gate fail-closes on a Broken prover.
+
+**R3-M1 (amends R-M1/R-H3):** consumption = **mark-consumed-and-retain** (records persist for
+lineage; a consumed record fails PRE-hook re-validation only). The `mintedUtc` expiry bounds the
+MINT→LAUNCH window only; return correlation is by the host's native tool-call pairing plus the
+record id stored at validation — a judge may legally return hours later.
+**R3-M2 (amends TM-E2):** every judge contract gains a **pinned machine-parseable first line**
+(the kata-inline-eval pattern generalized): `VERDICT: <enum>` per judge type — the thing the
+post-hook parses. Part of the judge-contract rewrite wave.
+**R3-M3 (amends R2-H1/TM-H1):** `ledger_status` enum = `draft | converged | frozen | absorbed`
+(`frozen` is a legitimate terminal state in live use); normalizing the live free-prose statuses
+(`GRILL COMPLETE…`, `GRILL DONE…`) is added to TM-H1's migration scope EXPLICITLY.
+**R3-M4 (amends R-H1):** the governor argument inherits BL-F01's rule verbatim: **required,
+keyword-only, no default** — an omittable governor is the D136 silent-permissive class.
+**R3-M5 (amends R2-M4):** the complete Guardian↔mode table (no builder invention):
+enforcement — Verified (intercepting) · Partially verified (bash-leg) · Dormant
+(pre-activation) · Honor-system (detection-only host); capture — Verified (post-edge) ·
+Honor-system (engine-by-conductor); resilience — Verified (full: **push receipt recorded on the
+cursor**, never the config flag — this also resolves L3) · Partially verified (local) ·
+Honor-system (degraded/skips detected).
+**R3-M6 (amends TM-D4/F2/C1):** D134 reconciliation, stated: tier-2 integration trailers remain
+**AUTHORITATIVE for DONE**; the cursor gates ONLY fact classes for which it is the system of
+record (verdicts, phases, denials, spawns) — for DONE it corroborates, exactly as D134 rules.
+The close's refusals bind per fact class to that class's system of record.
+
+**R3-L1:** a root-level re-loop has no parent by definition: `prev-run:` chain only (the new
+root points at the failed root) — TM-C5's existing shape, stated. **R3-L2:** the INTENT `status`
+field addition is an explicit **additive amendment to the pinned intent schema with its own
+two-step** (the acceptanceCriteria precedent); the draft/frozen discriminator is a new explicit
+`freeze=True` argument to `write_intent` at Phase 6 — named, not inferred. **R3-L3:** resolved
+inside R3-M5 (push receipt, not config flag). **R3-L4:** subsumed by R3-H2/R3-H3.
+
 ### Mid-close evidence event — CI red 12 days; the vacuity-prover vacuous on Linux (2026-08-16)
 
 Operator surfaced inbox spam of gauntlet failures mid-convergence. Conductor diagnosis (run
