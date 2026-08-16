@@ -7,6 +7,28 @@ last_updated: "2026-08-16T12:00:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-08-16 evening — MERGED, INSTALLED, TURNED OVER):**
+> **Everything is on master (`de8578c`)** — PR #54 (Backlog Burn 01 + the planning marathon) and
+> PR #56 (Backlog Burn 02 + the loop-bypass reckoning; replaced #55, which GitHub closed instead
+> of retargeting when its stacked base merged — the 2026-08-03 class, repeat). Tree identity
+> verified byte-exact; **gauntlet 4/4 on merged master (pytest 4518)**. **The install is
+> UPDATED cross-platform**: claude 49 skills + 7 commands (kata-orchestrate 0.14.2 → 0.18.0,
+> `/kata-loop` installed for the first time; 4 informational base-skill drift notes, overlay
+> handles them) · codex + kiro best-effort (in-host discovery verification is operator-side).
+> **The next agent's charter (operator-set): keep grilling + designing the remaining backlog
+> items AND code + implement them FULLY, in full faith of the loop** — BBM-12 binds (burns/runs
+> use the ENTIRE loop, wave-per-loop, re-loop on failed final eval), D169 binds (nothing builds
+> from a draft), D172 binds (enforcement seams are deterministic code). The execution core is
+> the enforcement program: **🔴 BL-M33 (the seam) → 🔴 BL-M34 (the bypass guard) → 🔴 BL-N01
+> (mechanical truth serum; gsd-verifier prior art noted in the item) → BL-N19 (mechanical
+> re-loop) → BL-N20/agent-cadre (our own agents)** — grill first (agent-cadre AC-1..13 + roster
+> + research are ready; Backlog Burn mode BBM-1..13 ready; the UX system waits ONLY on the
+> operator's freeze sign-off per `specs/ux-rework/CONVERGENCE-R1.md`).
+> **★ OPERATOR GATES (none closeable by an agent):** UX freeze sign-off · AC-7 pack naming
+> ("mindbridge superpowers" vs "KataHarness Superpowers") · 🔴 PAT rotation (deferred
+> 2026-08-02, NOT dropped) · T-03 scope call · platform probes 2–6 (minutes each).
+> *(The overnight block below is this same day's history.)*
+
 > **CURRENT (2026-08-16 — THE OVERNIGHT EXECUTION, branch `burn/backlog-burn-02` stacked on
 > `burn/backlog-burn-01`, both PUSHED, PR #54 open to master):**
 > **(1) D171 RULED (operator):** UX grill first · go bar = parallel small burn over the BL-X fixes
