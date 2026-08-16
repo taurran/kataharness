@@ -288,6 +288,21 @@ Promote to ROADMAP milestones when ready.
 > (`write_approval`, pending queue, unified diffs) exists. True of the DEFAULT config only —
 > tighten the wording so our own comparison stays truthful. One-line doc fix + version bump.
 
+> ## 🔴 **BL-M34 · The loop can be silently bypassed — and the harness's own burns just did it twice. (FILED 2026-08-16, operator-directed, angry and right)**
+> Nothing structural stops a conductor from dispatching designed work straight through the host
+> (Agent tool) with no initiation, no board CLAIM/DONE, no kata-orchestrate, no kata-evaluate
+> contract, no final eval, no improve fold, no telemetry — the entire loop reduced to the
+> conductor's self-discipline, which is exactly the "rule that exists only as prose" class the
+> 2026-08 enforcement sweep existed to kill. Proven live: backlog-burn-01 AND backlog-burn-02
+> both ran conductor-driven; the bypass surfaced only because the operator asked why zero advisor
+> consults ran against a standing approved grant. **Ruling context: BBM-12 — burns use the ENTIRE
+> loop; the bypass is drift, not a mode.** Fix direction (grill decides the mechanism, not the
+> obligation): a structural guard at the dispatch seam — designed work (an item with a frozen
+> plan) dispatched without live loop context (board run-id, CLAIM line) fails closed or escalates;
+> composes with 🔴 BL-M33 (the missing conductor↔host code seam is where the guard must live —
+> without M33's seam there is no chokepoint to guard). Related evidence: the UX-33/BL-N14
+> telemetry gap and the advisor-reach gap are the same bypass seen from two other angles.
+
 > **BL-X08 · The `batch` run-shape preset writes a config the load-guard STOPS. (FILED 2026-08-16,
 > found by the burn-02 X01 gate judge, machine-verified.)** `skills/coordinate/kata-bootstrap/
 > resources/run-shapes.md:6` pre-fills `modules: [bakeoff]`, and `bakeoff` has NO provider skill

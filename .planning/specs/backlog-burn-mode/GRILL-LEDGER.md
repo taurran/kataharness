@@ -89,6 +89,32 @@ doc-grounded grill + convergence gate + DESIGN before any build.
 - **BBM-10 · Builders are briefed to push back** (H7: "if the brief is wrong, say so and STOP" —
   three real catches in one wave; it converts builders into second reviewers for one sentence).
 
+## BBM-12 · 🔴 BURNS RUN THE ENTIRE LOOP — operator ruling 2026-08-16, verbatim intent, BINDING NOW
+
+**A backlog burn USES THE ENTIRE LOOP** — initiation → grill → freeze → execute → evaluate →
+handoff → improve — **iterating the loop as it was intended to function.** The conductor-driven
+bypass that ran burn-01 and burn-02 (host-dispatch, no board, no kata-orchestrate, no
+kata-evaluate contract, no final whole-run eval, no improve fold) **is DRIFT, not a mode** — the
+operator's words: taking that shortcut means something is seriously wrong with the harness, and
+"prototype" stopped being an excuse the day the loop machinery shipped.
+
+Two sanctioned shapes, the fork to be ruled at the full grill (both keep the WHOLE loop):
+- **(a) burn = ONE greater-loop run** — one broad triage+grill across the set (BBM-7/8), one
+  freeze, waves as the execute phase's internal structure, ONE final default-FAIL evaluation of
+  the integrated outcome; **if the final eval fails, the greater loop runs AGAIN — like normal.**
+- **(b) wave = one greater loop each** — every wave is a full loop iteration with its own eval;
+  the burn is the loop-back chain.
+
+Consequences, binding on every future burn: the loop's seams (advisor, inline evaluator,
+telemetry, board, orientation) apply BECAUSE the burn is inside the loop — the "which seams bind"
+question below collapses to "all of them, via the loop." The prior entry's framing (seam gap as
+an open design question) UNDERSOLD the defect and is superseded by this ruling: the gap is not
+that seams lack reach into conductor-driven burns; it is that conductor-driven burns should not
+exist. Enforcement is filed as 🔴 BL-M34 (a prose rule with nothing stopping the bypass is the
+enforcement-sweep class all over again). Burn-02's missing final evaluation is being run
+retroactively (2026-08-16) under the kata-evaluate contract; its verdict decides whether the
+greater loop re-runs over that scope.
+
 ## Still open for the full grill (deliberately undecided today)
 
 external-source adapter contract shape (what a GitHub issue must carry to be grillable) · gate-agent
