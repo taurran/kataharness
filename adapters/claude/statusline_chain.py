@@ -184,9 +184,23 @@ def run_child(argv: List[str], stdin_bytes: bytes, timeout: int = _CHILD_TIMEOUT
 
     stdin is passed through **unmodified**.  The return value is the child's stdout **bytes**
     (byte-identical passthrough).  Fail-soft: a nonzero exit still returns the captured
-    stdout; a timeout returns whatever partial stdout was buffered; a missing program /
-    invalid argv returns ``b""``.  NEVER raises, NEVER hangs (bounded by *timeout*).
+    stdout; a timeout returns whatever partial stdout was buffered; an empty argv, a missing
+    program, or ANY other launch failure returns ``b""``.  NEVER raises, NEVER hangs (bounded
+    by *timeout*).
+
+    **BL-X15 — the empty-argv platform divergence, decided here rather than at the exec layer.**
+    CPython's POSIX ``Popen._execute_child`` takes ``executable = args[0]`` off the raw list, so
+    ``subprocess.run([])`` raises **IndexError** on Linux; on Windows the same call reaches
+    ``CreateProcess`` and raises ``OSError [WinError 87]``.  The old handler caught
+    ``(OSError, ValueError)`` only — so the fail-soft leg held on Windows purely by accident of
+    which exception that OS layer happens to throw, and CRASHED on ubuntu.  The empty case is
+    now short-circuited **before** any exec call (platform-independent by construction), and the
+    residual handler is broad because the contract here is absolute: statusline code never
+    raises to the host, whatever the launch layer throws.
     """
+    if not argv:
+        # SKIP: nothing to run. Never hand an empty list to the platform exec layer.
+        return b""
     try:
         result = subprocess.run(  # noqa: S603 — list-argv, shell=False, validated child
             argv,
@@ -200,8 +214,10 @@ def run_child(argv: List[str], stdin_bytes: bytes, timeout: int = _CHILD_TIMEOUT
     except subprocess.TimeoutExpired as exc:
         # emit any partial stdout the child produced before the deadline; never hang.
         return exc.stdout or b""
-    except (OSError, ValueError):
-        # missing program, empty argv, etc. — SKIP silently (fail-soft).
+    except Exception:  # noqa: BLE001 — fail-soft floor: missing program, a platform-specific
+        # launch error of ANY exception type (the BL-X15 POSIX IndexError included), anything
+        # else — SKIP silently.  Narrowing this back to (OSError, ValueError) re-opens the
+        # host-crash class this fix closed.
         return b""
 
 
