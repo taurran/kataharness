@@ -45,6 +45,46 @@ cursor machinery yet — trail snapshots are the pre-existing board-only shape).
   → phase B `cd8723b`). Spot-audit (conductor): deferral clause-pin + fingerprint mutation
   probe — both fired, restored byte-clean.
 
+## Wave-1 FINAL EVAL — PASS (2026-08-16, fresh-context default-FAIL judge)
+
+Verdict PASS at HEAD `df7d073`. The judge re-derived: all 9 trailered merges + 2 conductor
+acts; every one of the 23 changed paths traced to frozen ownership / recorded amendment /
+conductor record (zero drift); validator + 245 targeted tests green under its own execution;
+all three declared `evidence:` nodes pass standalone; CI run 31979757460 success on both
+jobs at `3f29947` (ancestor; the 4 later commits are docs-only); the paper trail's claims
+re-derived (emit 29+2=31 exact; 177/177 decisions parse with D168/D172/D173 recovered; the
+exec-safety truth restoration; DEF/ASM grammar conformance); escalation discipline held.
+Residual table carried in the verdict (DEF-3 · D-9 pin-count falsehood-in-waiting · D-1/D-15
+planning-window writebacks · D-13 recall blindness · D-11 W4/W5 wiring · D-3 argv
+reconciliation · D-8 on-ramp gap · D-7 · the declared 0e9ada9 converged-line edit · a
+cosmetic deviation-list ordering). **Wave 2 is unlocked.**
+
+## Conductor rulings G3/G4 (recorded before any wave-2 dispatch)
+
+- **G3 — protocol fingerprint re-approvals are conductor INTEGRATION acts.** W2 has two
+  tasks whose contracts require a fingerprint two-step (`protocol/board.md` rewrite;
+  `protocol/intent.md` schema amendment), and the pin table lives in `tools/validate_skills.py`
+  — un-owned by either task (the F1 class again) and a within-wave collision if granted to
+  both. Ruling: builders edit their contract file, run the updater (prints, never rewrites),
+  and REPORT the printed digest; the conductor — at integration, one writer — independently
+  re-derives each digest, reviews the contract diff against the gated DESIGN clause it
+  implements, pastes the pin, and commits each re-approval distinctly. **The human-review
+  intent of the two-step is preserved as an operator veto line**: every re-approval is
+  enumerated at the wave report + handoff, revertible one commit each. (Session context: the
+  operator launched this window autonomously; parking waves 2–9 on each paste would
+  dead-stop the chartered burn. Precedent: the charter's own conductor-performed freeze with
+  veto standing; D-8's conductor-verified initial pin.)
+- **G4 — ledger-status-normalization is FENCE-CONSTRAINED.** The frozen task owns
+  `.planning/specs/*/GRILL-LEDGER.md` (status: line only), but every spec dir except
+  `trust-model` is the planning window's per the two-window fence — including
+  `backlog-burn-mode` (actively being written by that window right now). Ruling: the task
+  normalizes ONLY fence-safe ledgers (trust-model — already `converged`, conformant),
+  grep-enumerates the full live set, and FILES the fence-blocked remainder (file → current
+  status → required enum value, incl. `dispatch-seam` → `absorbed`) in OBSERVATIONS for the
+  planning window to fold. The W3 `ledger_status` predicate is fail-closed on unrecognized
+  statuses, and the only governor ledger this burn mints against is trust-model's — the
+  partial normalization is safe and DECLARED, not silent.
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
