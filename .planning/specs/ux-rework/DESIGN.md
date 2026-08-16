@@ -58,6 +58,10 @@ gate, and the open sections at the bottom.
 | **Document grammar + agent orientation** — MISSION → GUARDRAILS → CONTEXT → REPORT CONTRACT → YOUR BRIEF (✂ last) | `doc-grammar.html` | UX-15 |
 | **Run-start report** — truth-serum: WHAT WILL BE TRUE (incl. explicit NOT-in-this-run) → waves w/ boundary chip → WHAT WILL STOP THIS RUN → config → zeroed vitals → sea → rail | mockups | UX-16, BBM-11 |
 | **Interruption surfaces** — escalation (ochre) → gate-rejected (rust verdict) → breakthrough (only full rust frame) | mockups | UX-18 |
+| **Guided-start interview** — progress rail · one-question context boxes · auto-skip · one +/− trade line per option | mockups | UX-21 |
+| **Help + settings** — plain-explanation-first help; numbered-loop settings; vault persistence stated | mockups | UX-22 |
+| **Wave gate** — attention composite: paired warn rules + ⏸ chip → wave map → animated sea → double-border menu | mockups | UX-23, BBM-11 |
+| **Run board** — /kata-status tree: hierarchical IDs, depth rollups, lineage tags; statusline depth chips | mockups | UX-25/26 |
 | **Closeout** — IN PLAIN WORDS (divider-bound prose) → truth-serum item list → git block wired to menu numbers → four plain-header stat boxes → double-border decision menu as a mini-LOOP ([n] steps repeat until [0] finish) → sea | mockups | UX-19/20 |
 
 ## 4. Platform constraints (from PLATFORM-MATRIX.md)
@@ -79,13 +83,11 @@ gate, and the open sections at the bottom.
 - Run personas (register per audience) are a future item; all layouts stay persona-neutral
   skeletons (UX-16). Closeout learning options align with the learning graph (BL-N16).
 
-## 6. OPEN — designed nowhere yet (owed before freeze)
+## 6. OPEN — owed before freeze
 
-launcher secondary screens (help · settings · new-project/run-existing flows) · the guided-start
-interview rendering (run-shape, economy, multi-model, fan-out, brain/vault, grill-with-docs,
-goal/system-prompt optimization — BBM-5) · per-phase menus · statusline integration spec (the A1
-rail string; kata-launched theme variant; 2-line option probe) · the markdown skins · the six
-platform probes (matrix §4) · Human Prose / persona integration (BL-N02).
+The six platform probes (PLATFORM-MATRIX §4) · run personas / Human Prose integration (BL-N02) ·
+the full grill + convergence gate (D169). All SURFACES are designed as of 2026-08-16; naming
+discipline UX-24 (no internal codenames user-facing; the vault is Kiban) binds every one.
 
 ## 7. Build path (indicative, for the eventual PLAN)
 

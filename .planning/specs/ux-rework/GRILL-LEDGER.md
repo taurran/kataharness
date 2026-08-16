@@ -198,10 +198,44 @@ before building.
     no padding rows. The grammar's complete rule: **boxes are for data; dividers are for prose;
     scissors are for copy** — three framings, three meanings, no overlap.
 
+- **UX-21 · The guided-start interview (locked 2026-08-16).** Its own progress rail (seal → shape
+  → careful → fan-out → models → brain → vault → docs → goal); ONE question per step inside a
+  context box that explains why the question matters in plain words; `[n]` choices with the
+  recommendation marked; short ✓ confirmation line; config-answered steps AUTO-SKIP (shown ✓);
+  `[b]` back at every step. **Where a real trade exists, an option carries exactly ONE +/−
+  sub-line** — benefit green, tradeoff ochre, honest claims only (fan-out option 3 ends "the gates
+  watch"). Platform honesty: on Claude the host question UI renders the choices; our frame is the
+  context around it.
+- **UX-22 · Help + settings screens (locked).** Help LEADS with a plain five-minute explanation of
+  what a run is (plan deeply → freeze → waves → gates → receipts), then the command list.
+  Settings = the numbered-loop pattern (platforms / vault / brain / defaults / models / update with
+  the ▲ echo), with the persistence promise on-screen: settings persist in the vault.
+- **UX-23 · The wave-gate attention composite (locked; supersedes the plain menu).** Paired heavy
+  WARN rules framing seal + a filled `⏸ WAVE GATE — YOUR CALL` chip (the ONLY surface with paired
+  warn rules) → "the run so far" map (per-wave status dots, the waiting wave in warn with "⟵
+  waits on you") → the ANIMATED sea (the run waits at the water) → the double-border `[n]` menu.
+- **UX-24 · Naming discipline (operator, 2026-08-16).** Internal codenames NEVER appear on user
+  surfaces — "the Kitchen", "engram", et al. render as "KataHarness"/"the harness"/plain terms.
+  **The vault is KIBAN** (verified on disk: `~/Kiban/Vault`); PokeVault references are history.
+- **UX-25 · Statusline integration spec.** The existing kata segment (live n=1, kata-scope-gated)
+  is LOAD-BEARING — the only host-refreshed live region on any platform. Work: theme it (seal
+  lead chip · Prussian/ochre bands) · embed the A1 rail string (current-phase chip + counts) ·
+  kata-launched sessions may carry a wrapper-set env marker our own script reads · crew chips gain
+  DEPTH (`W1▸2` = 2 nested children) · the 2-line-statusline option rides matrix probe 6.
+- **UX-26 · Nested-execution legibility (three tiers, locked as design).** (1) statusline depth
+  chips; (2) **the run board** (`/kata-status`): full box-drawing TREE, hierarchical worker IDs
+  (`W1 → W1.1` — lineage in the name), per-branch state + dots, depth-capped with rollup counts,
+  and the ownership line ("all owned" — every branch traces to a dispatch record, no orphan
+  agents); (3) transcript lineage tags on every worker line (`▏[W1.1] …`). Vitals split
+  direct + nested. Claude's own subagent chrome is host-owned (matrix) — we own these three
+  surfaces instead.
+- **UX-27 · The markdown skin (textual spec).** For markdown-only surfaces (desktop/IDE panes,
+  PR bodies, reports): structure survives verbatim inside fenced code blocks (box-drawing, glyphs,
+  the static sea frame); COLOR degrades to semantic glyph prefixes (✓ ⚠ ✗ ● ○) and chips to
+  **bold** tokens; one skin, defined once, per-component mappings enumerated at build time.
+
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
-statusline capabilities per host (kata segment exists on Claude; codex/kiro need assessment) ·
-per-phase menu items · cursor/progress tracking components · run start/end reporting ·
-copy/paste block formatting (agent orientation + command blocks as a first-class grammar) ·
-CLI vs Claude Code app rendering (the app pane renders markdown, not ANSI — every template needs a
-markdown skin).
+**All designed as of 2026-08-16.** Still open (not design work): the six platform PROBES
+(PLATFORM-MATRIX §4) · run personas / Human Prose integration (BL-N02) · the full grill +
+convergence gate before this spec freezes (D169).
