@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.17.0
+version: 0.18.0
 category: coordinate
 status: beta
 agnostic: true
@@ -36,11 +36,18 @@ fingerprinted so it cannot be silently deleted or inverted.
 
 ## Preconditions (verify before any dispatch)
 0. **Load `kata.config`** (`protocol/config.md`). **Absent ⇒ assume Standard** (D25) and proceed. Present ⇒
-   **fail closed (GB12):** if it is malformed JSON, or names a non-existent `mode`/`effort`, a `tiers[family]`
-   that has no `kata-<family>-<tier>` skill, or a `module` with no provider — **STOP and escalate** (do not
-   guess a default over a *present-but-broken* config; that is the drift the harness exists to prevent). This
-   is the load-guard — bootstrap writes the config by construction, so the real risk is a stale / hand-edited /
-   older-version config on a re-entrant run, which only this consumer-side check catches.
+   **fail closed (GB12):** malformed JSON at the read step ⇒ **STOP and escalate**; a parsed config is then
+   validated mechanically via `kata_config.validate_core_config(config, available_skills, provided_modules)`
+   (`tools/kata_config.py`; derive both input sets from `validate_skills.load_skills()` output via
+   `kata_config.available_from_skills`). It RAISES on: a `mode` outside `essential|standard|advanced`; a
+   `tiers[family]` that names no `kata-<family>-<tier>` skill — with the one legal carve-out
+   `tiers["kata-grill"] == "skip"` (D71/D73); or a `modules[]` entry with no provider skill (no skill tagged
+   `kata/module/<module>`). Any raise ⇒ **STOP and escalate** (do not guess a default over a
+   *present-but-broken* config; that is the drift the harness exists to prevent). Absent keys pass — the
+   documented defaults apply (D25). (`effort` is deliberately NOT strictly validated: `protocol/config.md`
+   disclaims its own `reasoning` enum as "indicative, not an API contract".) This is the load-guard —
+   bootstrap writes the config by construction, so the real risk is a stale / hand-edited / older-version
+   config on a re-entrant run, which only this consumer-side check catches.
    - **Resolve tiers (D26):** for each bare family reference `[[kata-grill]]` / `[[kata-review]]` /
      `[[kata-plan]]` / `[[kata-diagnose]]`, dispatch the concrete `tiers[family]` skill (e.g.
      `kata-grill-standard`); a family absent from `tiers` ⇒ the mode's default tier.
@@ -63,14 +70,14 @@ fingerprinted so it cannot be silently deleted or inverted.
      future fast-follow swaps only this binding. A `ValueError` from `resolve_roles` (unknown role name, a
      platform ∉ `confirmedPlatforms`, **or a host-only role [orchestrator/evaluator] routed off-host —
      `kata_roles.HOST_ONLY_ROLES`, LD11**) ⇒ **STOP + escalate at preflight** (same fail-closed posture as the
-     mode/effort/tiers/modules guard above). **BC1:** `roles` absent ⇒ `resolve_roles` returns every role
+     mode/tiers/modules guard above). **BC1:** `roles` absent ⇒ `resolve_roles` returns every role
      assigned to the host ⇒ today's single-host loop byte-for-byte (DESIGN R5/LD3).
    - **`inlineEval` load-guard (M4-L8/M4-L10 — ADDITIVE; BC: absent ⇒ `off`, byte-for-byte unchanged):** add
      `kata.config.inlineEval` to the strict-validation list — **(string form; the object form is the NEXT
      bullet's leg)** validate it mechanically via
      `kata_telemetry.validate_inline_eval(inlineEval)`: `None`/absent ⇒ `"off"` (the BC fail-safe); exactly
      `"off"`/`"telemetry"`/`"on"` ⇒ itself; **anything else** (case-variant, wrong type, unknown string) raises ⇒
-     **STOP + escalate** (the same fail-closed posture as the mode/effort/tiers/modules guard above — a
+     **STOP + escalate** (the same fail-closed posture as the mode/tiers/modules guard above — a
      present-but-malformed value is never silently coerced to `"off"`, D45/GB12). The resolved value is the run's
      **base** `inlineEval` mode; a task's **effective** mode may degrade below it at dispatch (see the checkpoint
      mandate in § The loop step 2).
@@ -90,7 +97,7 @@ fingerprinted so it cannot be silently deleted or inverted.
      When `kata.config.advisor` is **present**, validate it via `kata_models.validate_advisor_block(advisor)`
      (the shared fail-closed validator, `tools/kata_models.py` — the SAME validator the § Advisor consult gate
      uses, layers-must-agree). A raise ⇒ **STOP + escalate** (D136 fail-closed — a present-but-malformed
-     `advisor` block is **never** silently coerced to OFF; the same posture as the mode/effort/tiers/modules
+     `advisor` block is **never** silently coerced to OFF; the same posture as the mode/tiers/modules
      guard above). An **ABSENT** block ⇒ the advisor is OFF for the whole run, every advisor leg inert, behavior
      byte-identical to today (S-4). **Never infer the grant from `mode`** — an absent block is OFF even in
      advanced (G-9). This load-guard gates the wiring in **§ Advisor consult (config-gated spine)** below.
