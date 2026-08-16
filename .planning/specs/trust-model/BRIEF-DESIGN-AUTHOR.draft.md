@@ -17,8 +17,9 @@ status: draft
 
 ## Objective
 Compile `.planning/specs/trust-model/GRILL-LEDGER.md` — 24 LOCKED branches (TM-A1..A3, B1..B5,
-C1..C7, D1..D5, E1..E2, F1..F2, G1..G3, H1..H4) **with the 18 R-\* amendments applied as
-binding** — into `DESIGN.md`: one specific, testable, freeze-ready contract.
+C1..C7, D1..D5, E1..E2, F1..F2, G1..G3, H1..H4) **with ALL FOUR remediation rounds applied as
+binding amendments (R-\*, R2-\*, R3-\*, R4-\*; later rounds supersede earlier where they
+overlap)** — into `DESIGN.md`: one specific, testable, freeze-ready contract.
 
 ## Inputs (read in this order)
 1. The GRILL-LEDGER in full (branches + amendments + the security register TM-H4 + both
@@ -54,9 +55,20 @@ binding** — into `DESIGN.md`: one specific, testable, freeze-ready contract.
 - Migration + activation order (TM-H1 incl. R-M9's plan-schema scope), degradation honesty
   (TM-H2), the security register as design constraints (TM-H4), backlog mapping with v1-scope
   statement (TM-H3, R-L3).
+- **Round 3–4 additions (do not miss):** the full governor ladder incl. the D71 skip-shape BC
+  rung (R4-H1) and crash-resume runId adoption (R3-H1) · the mutation re-run's corrected cost
+  basis, task-verify scoping, cap+deterministic sampling (doctrine laws 9/10 sort key stated),
+  and the BL-X14 per-platform activation ordering (R3-H3) · mark-consumed-and-retain records
+  (R3-M1) · pinned per-judge `VERDICT:` first lines, ONE parser two callers (R3-M2 + residual 4)
+  · `ledger_status` four-value enum + live-corpus normalization in migration (R3-M3, residual 5)
+  · the complete Guardian↔mode table with push receipts (R3-M5) · D134 reconciliation (R3-M6) ·
+  "run is closed" as a RECORDED terminal state (residual 3) · the INTENT status field as an
+  explicit pinned-schema additive amendment with `freeze=True` named (R3-L2).
 - **Honest-residual section** (EDR-5 house style): adversarial-conductor detection-not-
   prevention, entry residual, validator-source meta-layer, Bash-leg partial verification,
-  detector humility (burn-02 meta-finding verbatim).
+  detector humility (burn-02 meta-finding verbatim), **and the claimed-mutation-set
+  completeness residual (round-4 residual 2 — the re-run proves claimed lines bite; set
+  completeness stays worker-asserted).**
 
 ## Output contract
 Two-part (kata_dispatch normalize shape): write `DESIGN.md` at the brief's owned path; final
