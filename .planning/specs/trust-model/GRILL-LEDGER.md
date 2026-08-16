@@ -948,6 +948,24 @@ one statusline empty-argv crash. Filed 🔴 BL-X14 + BL-X15; fixes route through
 for TM-G1 (receipts must land where the operator looks) and for TM-D3's tripwire law applying to
 the provers themselves, cross-platform. Guardian status of CI-gauntlet today: **Broken.**
 
+## Convergence pass 1 — SHIP (fifth run, 2026-08-16). Six compile residuals recorded.
+
+The fifth fresh-context reviewer returned SHIP: governor ladder verified rung-by-rung against
+live skill text (every legal run shape lands on a checkable rung; no de-facto grill mandate);
+12 citations verified at source; sections A–H walked with all four amendment rounds; no
+builder-divergence remains. **DESIGN-compile residuals (contract, carried into the brief):**
+(1) the phase vocabulary MUST name the open INITIATION/authoring phase (the weakest rung's
+predicate reads it) and the recorded terminal `closed` state (R3-H1's branch reads it);
+(2) the per-role "minimum state" ordering over the four-value `ledger_status` enum is stated,
+and `absorbed` ROUTES the mint to the absorbing ledger rather than satisfying it; (3) R4-H1
+compiles as **ledger-presence-predicated, never tier-predicated** (a `light` grill DOES produce
+a ledger — the parenthetical must not become the test); (4) the never-a-de-facto-mandate law
+carries into TM-D4's per-gate fact-sets (no gate requires a grill artifact of a run that
+legally has none); (5) the grill-close `converged` status write is INDEPENDENT of the
+BL-X12-blocked learn_feed emit; (6) the healthy default run declares
+`resilience: Partially verified (local)` — the run-start wording must read as honest state,
+not a defect report.
+
 ## Operator sequencing mandate (2026-08-16, recorded verbatim-intent — binding on the close)
 
 **"As soon as this gets frozen we will need to do a FULL DOCUMENTED handoff with agent
