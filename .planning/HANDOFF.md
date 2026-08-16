@@ -1,4 +1,68 @@
 ---
+date: 2026-08-16-turnover
+kind: manual
+trigger: operator-directed turnover — merged, installed, green; next agent continues grill+design AND full implementation
+branch: master @ de8578c (everything merged; burn branches deleted) · install UPDATED (claude 0.18.0-suite, codex/kiro best-effort)
+green: gauntlet 4/4 on merged master — pytest 4518 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0
+authored-by: the turnover session, by hand
+---
+
+# HANDOFF — 2026-08-16 TURNOVER
+
+## 0. GROUND TRUTH — verify before trusting anything below
+
+```
+cd C:\Dev\projects\kataharness
+git status --porcelain                          -> empty
+git rev-parse --abbrev-ref HEAD                 -> master
+git rev-parse --short origin/master             -> de8578c (or later doc-only)
+cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS (pytest 4518)
+grep "^version:" ~/.claude/skills/kata-orchestrate/SKILL.md  -> 0.18.0 (the install is current)
+```
+
+## 1. THE CHARTER (operator-set, verbatim intent)
+
+Continue working through **grilling and designing the additional backlog items AND coding and
+implementing them FULLY, in full faith of the spirit of this project.** Full faith means: PD-1/
+PD-2 · **BBM-12 — every run uses the ENTIRE loop** (wave-per-loop; re-loop on failed final eval;
+the conductor-driven bypass is recorded DRIFT, never repeat it) · D169 (grill → converge →
+freeze before ANY build) · D172 (enforcement seams are deterministic code; lessons + doctrine
+written AS you work) · dispatched authoring, hybrid gating, challengers per AC-10/11.
+
+## 2. THE EXECUTION CORE (grill-ready, in dependency order)
+
+🔴 BL-M33 (conductor↔host code seam) → 🔴 BL-M34 (loop-bypass guard at that seam) → 🔴 BL-N01
+(mechanical truth serum — mine gsd-verifier's artifact-level protocol, noted in the item) →
+BL-N19 (mechanical run-level re-loop) → BL-N20 + the agent cadre (`specs/agent-cadre/` —
+AC-1..13 rulings, the 14-agent roster, evidence-labeled RESEARCH-AGENTS.md, six recorded grill
+challenges). Sibling grills ready: Backlog Burn mode (BBM-1..13) · the UX system (freeze-
+candidate — BLOCKED ONLY on the operator's sign-off, `specs/ux-rework/CONVERGENCE-R1.md`).
+Rename sweeps ride along: BL-N17 engram→learning · BL-N22 economy→express · BL-N23 Backlog Burn
+naming.
+
+## 3. OPERATOR GATES — surface these, never close them yourself
+
+UX freeze sign-off (the CONVERGENCE-R1 list: 6 interim rulings · palette reconciliation ·
+stat-box reconstruction) · AC-7 pack naming ⚠ · 🔴 GitHub PAT rotation (deferred 2026-08-02 —
+deferred is NOT dropped) · T-03 determinism-scope call · platform probes 2–6.
+
+## 4. WHERE EVERYTHING IS
+
+`specs/agent-cadre/` (the new spec) · `specs/backlog-burn-02/` (plan, OBSERVATIONS incl. the
+BBM-6 accuracy record + validation stack, evidence/) · `specs/backlog-burn-mode/GRILL-LEDGER.md`
+(BBM-1..13) · `specs/ux-rework/` (DESIGN rev 3+errata, CONVERGENCE-R1, templates/) ·
+`DECISIONS.md` D171/D172 · `BACKLOG.md` (BL-M34 · X08..X13 · N18..N23 + amended N01/N04/N10/
+N16/N20/N21) · `LESSONS-LEARNED.md` 2026-08-16 block · CHANGELOG [Unreleased].
+
+## 5. REDACTION
+
+No secrets/keys/PII in any artifact; the PAT referenced by location only.
+
+---
+
+# ↓ PRIOR HANDOFF BLOCK — 2026-08-16 overnight (superseded above; retained per convention)
+
+---
 date: 2026-08-16-overnight
 kind: manual
 trigger: overnight autonomous execution complete — operator asleep; morning re-anchor

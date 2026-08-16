@@ -10,6 +10,37 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ## [Unreleased]
 
+### Added/Fixed — Backlog Burn 02 + the loop-bypass reckoning (2026-08-16, merged as PR #54/#56)
+
+Five ≤1-file fixes run as the second Backlog Burn — the first under the BBM-1..11 rules (hybrid
+gating: builder self-gates + fresh-context judge per item + conductor spot-audit + integrated
+gauntlets; manually pinned outside-the-root worktrees; triage + convergence review before freeze).
+Evidence + the BBM-6 accuracy record: `.planning/specs/backlog-burn-02/`.
+
+- **Fixed:** `protocol/config.md:14`'s example now passes its own load-guard (BL-X01) · the
+  installer's next-steps banner names only real commands, with a structural guard test (BL-X02) ·
+  `kata-understand`'s graph-rebuild command is executable as documented, parameterized-absolute
+  (BL-X03; 0.1.1) · `kata-promote`'s Hermes characterization is accurate, plus the two README
+  claim-class lines (BL-X07; 0.1.1) · three real exact-pin conversions to floors, three pins
+  deliberately kept where exactness is the protection (BL-X05) · the vacuous banner-guard params
+  now bite per-branch · the "— ACCEPTED" open-classification pinned + the bare-fetch guard
+  strengthened to a proven-superset regex · **`learn_feed` no longer emits a grill ledger's OPEN
+  QUESTIONS into the vault as resolved decisions** (🔴 BL-X12: bullet-form grill-ledger parsing
+  fail-closed-to-open, multi-line anchor spans, stable `·`-split keys, and a fail-closed route
+  guard; real UX ledger: 31-misread → 33 seen / 9 decided / 24 open; unit tests 4485 → 4518).
+- **Process, recorded not hidden:** both Backlog Burns ran conductor-driven OUTSIDE the loop —
+  operator-judged DRIFT (BBM-12: burns use the ENTIRE loop, wave-per-loop; 🔴 BL-M34 files the
+  missing structural enforcement). The retroactive final evaluation ran the full cycle (round 1
+  NEEDS_WORK → targeted fixes + durable gate evidence at `specs/backlog-burn-02/evidence/` →
+  round 2 PASS), then an operator-directed validation stack (two cross-model adversarial
+  validators + the first live anchor-tier challenger) returned TRUSTWORTHY-WITH-LISTED-DEBTS and
+  every listed debt was fixed or filed (BL-X08..X13).
+- **Recorded for the next execution round:** D171/D172 · UX-28..33 (launcher = preferred door +
+  env provisioner; committed grammar engine; glyph-first transcript; independence doctrine) · the
+  UX DESIGN at freeze-candidate after three convergence rounds · the agent-cadre spec
+  (`.planning/specs/agent-cadre/` — AC-1..13, the 14-agent roster, evidence-labeled research) ·
+  BL-N18..N23 filed.
+
 ### Added/Fixed — backlog-burn-01: six items, three waves, parallel builders (2026-08-04 → 08-15)
 
 The first "backlog burn" — one frozen contract over six backlog items
