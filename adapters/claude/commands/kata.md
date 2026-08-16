@@ -4,6 +4,7 @@ description: KataHarness command index
 
 KataHarness slash-command index. Available commands:
 
+- `/kata-loop` — launch the full Kata Loop cycle (initiation → harness → closeout → context-carrying loop-back)
 - `/kata-start` — begin a new Kata run (initialise config, evaluate readiness, launch the loop)
 - `/kata-onboard` — onboard an existing repo into the Kata loop; the on-ramp for **Debug Mode** (systematically debug a repo in confidence) on a fresh repo
 - `/kata-resume` — resume a Kata run after a break or a lost session
