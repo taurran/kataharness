@@ -10,7 +10,9 @@ Coverage map
 ------------
 SB-L1 parse:   heading grammar (anchor vocab MM-1/IP-A/R-1/GB1/D7); status vocab
                `· LOCKED` / `· RESOLVED` / `— RESOLVED` case-insensitive, TOLERANT of
-               trailing text; `· open`/no-status ⇒ open, NOT emitted; bullet-only
+               trailing text; the vocabulary is CLOSED — other status-shaped tails the
+               real ledgers use (`— NO OPERATOR ACTION`, `— ACCEPTED`, `— RECORDED …`)
+               ⇒ open; `· open`/no-status ⇒ open, NOT emitted; bullet-only
                ledgers ⇒ zero entries; bold-field bullets tolerant (any subset);
                parse_decisions_bullets (recall _BULLET_RE family).
 SB-L2 render:  relpath `decision-patterns/<project-slug>--<source-slug>--<anchor-slug>.md`;
@@ -68,6 +70,12 @@ MM_EXCERPT = """\
 
 # .planning/specs/context-autonomy/GRILL-LEDGER.md heading forms (freeze-gate
 # re-gate LOW obligation: status token TOLERANT of trailing text).
+#
+# R-5 is VERBATIM from the real ledger (`:138`) and carries the `— ACCEPTED`
+# status-shaped tail. It is the classification obligation the real-ledger floor
+# pins CANNOT carry (a floor over `resolved` can only red on a resolved entry
+# going open, never on an open one being promoted), so it lives here, on a
+# fixture, where a vocabulary change that swallows `accepted` reds immediately.
 CA_EXCERPT = """\
 ### R-1 (CA-1c) Threshold policy — RESOLVED 2026-07-04
 Operator: 70% default, "fine no matter how much it really is," surfaced as a configurable
@@ -78,6 +86,9 @@ Option A confirmed (decline => pin anchor opus + hard-stop advising /model switc
 
 ### R-4 (statusline discovery) — NO OPERATOR ACTION; design mandate stands
 Operator's own statusline works and stays untouched.
+
+### R-5 (CA-11) Installer fix — ACCEPTED
+Fix shared-base-dir install gap; enumerate + freeze the "5 frozen engine fns" list in DESIGN first.
 
 ### R-6 (NEW — handoff taxonomy) Operator-requested assessment: "clean handoff management for
 manual, self, and agent handoffs — assess what needs clarifying." Assessment below.
@@ -146,14 +157,20 @@ def test_parse_context_autonomy_real_forms():
     """The pinned freeze-gate obligation: real context-autonomy heading forms.
 
     `— RESOLVED 2026-07-04` and `— RESOLVED core + …` (trailing text after the
-    status token) ⇒ resolved; `— NO OPERATOR ACTION` / `— RECORDED PENDING VETO` /
-    no status ⇒ open.
+    status token) ⇒ resolved; `— NO OPERATOR ACTION` / `— ACCEPTED` /
+    `— RECORDED PENDING VETO` / no status ⇒ open.
+
+    The negative half is the load-bearing half: the status vocabulary is
+    CLOSED (`locked`/`resolved`/`open`). Every other `— <WORD>` tail the real
+    ledgers use is an editorial note, NOT a resolution, and must classify open
+    — otherwise `learn_feed` emits an unresolved branch as a decision pattern.
     """
     entries = {e["anchor"]: e for e in learn_feed.parse_grill_ledger(CA_EXCERPT)}
     assert entries["R-1"]["status"] == "resolved"
     assert entries["R-1"]["date"] == "2026-07-04"  # trailing entry date captured
     assert entries["R-3"]["status"] == "resolved"  # trailing text after RESOLVED
     assert entries["R-4"]["status"] == "open"
+    assert entries["R-5"]["status"] == "open"      # ACCEPTED is NOT in the vocabulary
     assert entries["R-6"]["status"] == "open"      # no status token at all
     assert entries["R-12"]["status"] == "open"     # RECORDED is NOT in the vocabulary
 
@@ -1004,7 +1021,11 @@ def test_cli_bullet_only_ledger_reported(tmp_path, capsys):
 # two statuses, or a status outside the parser's two-value vocabulary.
 _MM_LOCKED_AT_FREEZE = {f"MM-{n}" for n in range(1, 12)}
 _CA_RESOLVED_AT_FREEZE = {"R-1", "R-2", "R-3", "R-7", "R-8", "R-9", "R-10", "R-11", "R-13"}
-_CA_KNOWN_AT_FREEZE = _CA_RESOLVED_AT_FREEZE | {"R-4", "R-5", "R-6", "R-12", "R-43"}
+# The status-shaped-but-NOT-resolved headings: `R-5 (CA-11) Installer fix — ACCEPTED`
+# and `R-43 — Delta-gate v6 fold (grill CLOSED after this entry)`. Neither word is in
+# the parser's vocabulary, and neither may drift into it.
+_CA_OPEN_AT_FREEZE = {"R-5", "R-43"}
+_CA_KNOWN_AT_FREEZE = _CA_RESOLVED_AT_FREEZE | _CA_OPEN_AT_FREEZE | {"R-4", "R-6", "R-12"}
 _STATUS_VOCABULARY = {"resolved", "open"}
 
 
@@ -1038,6 +1059,15 @@ def test_real_context_autonomy_ledger_statuses():
     # (`· open` ⇒ open classification itself is pinned on fixtures above.)
     assert (resolved | still_open) >= _CA_KNOWN_AT_FREEZE, (
         f"CA ledger lost anchors: {sorted(_CA_KNOWN_AT_FREEZE - (resolved | still_open))}"
+    )
+    # ...but the floor above is one-directional by construction, so it cannot catch
+    # a parser change that promotes an OPEN entry. These two are the ledger's
+    # unresolved-but-status-shaped headings (`R-5 … — ACCEPTED`, `R-43 — … (grill
+    # CLOSED after this entry)`); a vocabulary widening that swallows either word
+    # would emit an unresolved branch as a decision pattern. Pinned as an
+    # open-side floor — new open anchors are growth and must not red this.
+    assert still_open >= _CA_OPEN_AT_FREEZE, (
+        f"CA ledger promoted un-resolved entries: {sorted(_CA_OPEN_AT_FREEZE - still_open)}"
     )
     assert not (resolved & still_open), "an anchor cannot be both resolved and open"
     dates = {e["anchor"]: e["date"] for e in entries}
