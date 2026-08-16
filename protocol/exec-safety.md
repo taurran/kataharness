@@ -38,8 +38,8 @@ This is a **structural invariant** in the sense of D33 (never tiered) and an ins
 
 | Domain | Definition | Execution rule |
 |---|---|---|
-| **external** | A value from a dependency manifest, a downstream/contributed artifact, or a worker payload. Partially-trusted even when hash-approved at freeze (it may be AI-generated or contributed and only skimmed). | **Structured argv + `shell=False` + validated.** Never a freeform string. Never `shell=True`. |
-| **operator** | A command the operator authored in `kata.config` or the frozen plan (test command, `baselineGate`, mutation/gate command). | May use `shell=False` (preferred) or `shell=True` (same trust as a test runner). Must be registered below. |
+| **external** | A value from a dependency manifest, a downstream/contributed artifact, a worker payload, **or an LLM-authored field of a frozen PLAN** (the per-task `evidence:` declaration and the per-task verify command — RS-H1). Partially-trusted even when hash-approved at freeze (it may be AI-generated or contributed and only skimmed). | **Structured argv + `shell=False` + validated.** Never a freeform string. Never `shell=True`. |
+| **operator** | A command the **operator** authored in `kata.config` or the frozen plan (test command, `baselineGate`, mutation/gate command). **Carve-out:** "in the frozen plan" means *operator-authored*, not *anything the plan file contains* — a field an LLM plan-author wrote into the plan is **external**, whatever its neighbours' domain. A frozen PLAN is therefore a MIXED-domain artifact, and freeze approval is not a promotion to operator trust. | May use `shell=False` (preferred) or `shell=True` (same trust as a test runner). Must be registered below. |
 | **internal** | A fixed argv the harness constructs from its own constants (e.g. `["git","diff",ref]`). | Fixed argv + `shell=False`. The variable part (a ref/path) is data, not the program. |
 
 ## Sink registry (verify-before-add — keep in sync with the code)
@@ -74,8 +74,50 @@ Every place the harness spawns a subprocess. **A new sink — or a new external 
 | `iac_apply.run_apply` — **TF apply** flow (`iac_apply.build_tf_apply_argv`) | saved plan-file path / chdir | **operator + approval-artifact gate** | Structured argv built by `build_tf_apply_argv` (`["terraform",…,"apply","-input=false","-lock=true","--",<plan_file>]`); `shell=False`; the approved saved plan file IS the authorization (Atlantis discipline) — **never `-auto-approve`**, never a freeform target; `--` end-of-options before the positional DATA; `plan_file` grammar-validated + `..`-guarded. Gated as above. **Execution DEFERRED — `run_apply` raises `NotImplementedError` (n=0-live); not shipped runnable.** |
 | `iac_apply.run_apply` — **CFN create-change-set** flow (`iac_apply.build_cfn_create_changeset_argv`) | stack name / change-set name / template path | **operator + approval-artifact gate** | Structured argv built by `build_cfn_create_changeset_argv`; `shell=False`; stack/change-set names validated against the strict CFN name grammar, `template_path` `..`-guarded then `file://`-prefixed; identifiers are DATA, never the program. Gated as above. **Execution DEFERRED — `run_apply` raises `NotImplementedError` (n=0-live); not shipped runnable.** |
 | `iac_apply.run_apply` — **CFN execute-change-set** flow (`iac_apply.build_cfn_execute_changeset_argv`) | stack name / change-set id (ARN) | **operator + approval-artifact gate** | Structured argv built by `build_cfn_execute_changeset_argv`; `shell=False`; the immutable `change_set_id` is DATA validated by its OWN dedicated `fullmatch` ARN grammar (permits `:`/`/`; rejects whitespace/`;`/`|`/`..`/`://`/leading `-`), distinct from + stricter than the stack-name grammar. Gated as above. **Execution DEFERRED — `run_apply` raises `NotImplementedError` (n=0-live); not shipped runnable.** |
+| `evidence_grammar` — **`artifact:` form** (RS-H1; **registered before active** — the engine is a wave-2 deliverable, see below) | per-task `evidence:` declaration in the frozen PLAN | **external** (LLM-authored plan field) | **Spawns no subprocess, by contract — an `artifact:` value is NEVER executed.** It is a repo-relative path, existence/wiring-checked only, guarded by the `_guard_path` pattern (CWE-23: rejects any `..` component, does not resolve — live precedents `tools/benchmark_def.py:85`, `tools/benchmark.py:82`). Registered here despite spawning nothing because the three forms are ONE closed grammar: pinning the non-executing form as non-executing makes a later "just run the artifact" reading a registry violation rather than an oversight. |
+| `evidence_grammar` — **`test:` form** → pytest (RS-H1; **registered before active**) | per-task `evidence:` declaration in the frozen PLAN | **external** (LLM-authored plan field) | `fullmatch`-anchored node-ID grammar **REUSING the `_guard_node_id` grammar** (`tools/benchmark_def.py:805`, `tools/benchmark.py:106`): non-empty, no leading `-` path segment (pytest-flag injection), no `..` component (CWE-23, via `_guard_path`), `path::name` shape, and resolved-containment under the repo root. Compiled to the fixed structured argv `["python", "-m", "pytest", <node-id>]`; `shell=False`; **no shell, ever**. The node-ID is a positional DATA operand, never the program (`argv[0]`). A node-ID that fails the grammar is REFUSED — never passed through, never "sanitized" into something runnable. |
+| `evidence_grammar` — **`probe:` form** → registered probe argv template (RS-H1; **registered before active**) | per-task `evidence:` declaration in the frozen PLAN | **external** (LLM-authored plan field) resolving to an **internal** argv template | The value is a **NAME, never a command**: it is resolved against the committed registry `tools/probe_registry.json` (a wave-2 deliverable), whose argv templates are repo-committed and reviewed like code — so the executed argv is internal-trust and the external field only *selects* among fixed entries. `shell=False`; list-argv only. **An unregistered name is REFUSED (fail closed, D136)** — never fall back to executing the name, never auto-register on first use. |
+| `mutation_run` default runner — **per-task verify command** (RS-H1; **registered before active**, not yet routed) | the per-task verify command the mutation re-run uses, from the frozen PLAN | **external** (LLM-authored plan field) | Identical treatment to `evidence:` — it **compiles through the closed grammar or is refused**, and it is NOT operator-trust merely because it lives in the frozen plan (see the operator-domain carve-out above). **Blocking precondition, stated:** this row cannot activate while the sink executes via `shell=True`; the existing operator-domain `mutation_run` row must first convert to structured argv + `shell=False` (the watch-list's own stated trigger; DESIGN pass-2 medium 3). Until that conversion lands, **no per-task verify command reaches this sink** — the field is declared and grammar-checked, not executed. |
 
 **The deferred `iac_apply` rows are `shell=False`** (the four `build_*_argv` are pure functions returning a `list[str]`; the plan/change-set identifier is positional/flag-valued DATA, never `argv[0]`, never shell-interpolated). They are therefore **NOT** added to `_SHELL_TRUE_ALLOWLIST` and `tools/tests/test_exec_safety.py` stays green unchanged. They are the **highest-stakes sink class in the repo** — a live cloud apply destroys real, non-git-reversible infra — and they are **NOT runnable in this build**: `iac_apply.run_apply` is the single cloud-mutating seam and raises `NotImplementedError` before any `subprocess` import, reachable only behind a present+matching approval artifact AND a present capability grant AND present creds, and not runnable even then (the creds wall). **Zero-uncontrolled-sink posture for the slice:** `tools/iac_apply.py` spawns no subprocess and calls no `eval`/`exec`; the builders are pure structured-argv (assertable by source scan, mirroring `drift_gate.TestExecSafety`).
+
+### The per-task `evidence:` field — a NEW execution capability, registered before it exists (RS-H1)
+
+**The field.** Every task in a frozen PLAN declares its completion evidence in a per-task
+`evidence:` frontmatter field, and the mutation re-run uses a per-task verify command. Both are
+authored by an **LLM plan-author**, and both can reach execution — so by the rule below
+(*"When the surface is not safe"*) they are a **NEW execution capability**, not a reuse of an
+existing safe sink, and they are scoped here **before** the machinery that consumes them.
+
+**The grammar is CLOSED — three forms, and nothing else:**
+
+| Form | Semantics | Compiles to |
+|---|---|---|
+| `artifact:<repo-relative-path>` | **Never executed** — existence/wiring checked | a `_guard_path`-guarded path (CWE-23), no argv |
+| `test:<pytest-node-id>` | run one pytest node | `["python", "-m", "pytest", <node-id>]`, `shell=False`, node-ID `fullmatch`-validated by the `_guard_node_id` grammar |
+| `probe:<registered-name>` | run one registry-committed probe | the named argv template from `tools/probe_registry.json`; unknown name ⇒ refuse |
+
+**A freeform command string is REFUSED at the freeze gate.** Not warned about, not
+documentation-only-but-tolerated, not "probably fine because a human approved the freeze":
+a value that does not `fullmatch` one of the three forms fails the freeze check, and the plan does
+not freeze. This is the `dep["install"]` / `dep["verify"]` lesson applied at the moment of
+authoring rather than at the moment of execution — the D111 whack-a-mole ended precisely because a
+new field now has a standing rule to satisfy.
+
+**Trust domain: external.** An LLM-authored field of a frozen PLAN is external-trust (see the
+Trust-domains carve-out above). Freeze approval is a review of *intent*, not a promotion to
+operator trust: the plan is a mixed-domain artifact, and the `evidence:` and verify fields are the
+external part of it.
+
+**Registered before active — stated plainly, so the registry is not misread.** The consuming engine
+`tools/evidence_grammar.py` and the committed `tools/probe_registry.json` **do not exist yet**;
+they are wave-2 deliverables, and the freeze-gate wiring lands later still. The four rows above are
+therefore a **declaration of the guard a not-yet-written surface must satisfy**, not a description
+of running code — the deliberate inversion of the whack-a-mole order this contract exists to end.
+Nothing in this repo currently compiles or executes an `evidence:` value. When the engine lands,
+its rows are verified against the code like every other row (the keep-in-sync rule); if it lands
+with a different shape than declared here, the divergence is a contract violation to resolve, not a
+row to quietly rewrite.
 
 ## When the surface is not safe
 
@@ -121,3 +163,8 @@ Every place the harness evaluates an external expression in-process (not via sub
 while** their input stays operator/internal. If a future change ever routes an external (manifest/worker) value
 into either, that is an immediate RCE — convert it to `shell=False` + structured argv first and move its row to
 the **external** domain.
+
+**That change is now scheduled, not hypothetical:** the RS-H1 per-task verify command routes an LLM-authored
+(external) plan field into `mutation_run`. Its registry row above is therefore blocked on the conversion — the
+`shell=True` leg must become structured argv under the closed `evidence:` grammar **before** any per-task verify
+command reaches this sink, not after.
