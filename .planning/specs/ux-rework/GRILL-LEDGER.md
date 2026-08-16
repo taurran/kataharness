@@ -167,6 +167,13 @@ before building.
     fixed+filed, confidence, drift events, tokens with role split, per-wave walls, peak context) ·
     *what the run learned* (decisions locked, lessons, brain pages emitted + read-back, mode
     evidence). All metric names are BL-N14 grill candidates, not frozen.
+  - **Refined (operator, 2026-08-16):** section headers speak PLAIN language — **WHAT GOT DONE ·
+    WHO DID THE WORK · QUALITY AND COST · WHAT WE LEARNED** (abstract "vitals · the crew"-style
+    titles rejected). Decision options are **numbered filled chips the user types into the reply**
+    (" 1 ".." 8 "), grouped under dim mini-headers **LOOK DEEPER / GO AGAIN / WRAP UP**, with the
+    instruction in the title ("reply with a number to choose"). **Width measure:** dense report
+    pages may use a **72-column** measure — uniform WITHIN a page always; the launch banner keeps
+    64. Widths stay generator-asserted, never eyeballed.
 
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
