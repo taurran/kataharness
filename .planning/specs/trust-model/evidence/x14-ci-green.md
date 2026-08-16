@@ -6,7 +6,14 @@ date: 2026-08-16
 provenance: builder-authored during the task, from `gh run view` / `gh api .../jobs/<id>/logs`
   output on the pushed task branch. Every number below is a verbatim CI line, not a
   reconstruction. Dispatch recorded Honor-system (pre-seam), per BURN-CHARTER.
-branch: task/tm-w1-fix-mutation-prover
+amended: 2026-08-16 by the same builder, on conductor direction, after wave-1 integration —
+  (a) §5 rewritten to record the zero-failure run `31979757460` @ `3f29947` that discharges
+  the residual, (b) §4's run-1 `testWentRed` count CORRECTED 46 -> 91 (a too-narrow grep that
+  understated pre-fix badness; flagged by the fresh-context judge, re-derived here from the
+  raw job-log API). Every fact re-verified with `gh` by the amending builder rather than
+  copied from the direction. Amendment leaves §§1-3 unchanged.
+branch: task/tm-w1-fix-mutation-prover (amendment authored on task/tm-w1-x14-note-amend off
+  burn/trust-model-01 @ 3f29947)
 declared-by: PLAN.md `evidence:` -> `artifact:.planning/specs/trust-model/evidence/x14-ci-green.md`
   (PLAN deviation 8: a CI run has no form in the closed evidence grammar, so it is captured
   as a committed evidence-note artifact — declared, not smuggled.)
@@ -15,11 +22,16 @@ declared-by: PLAN.md `evidence:` -> `artifact:.planning/specs/trust-model/eviden
 # BL-X14 — CI record: red before, green after
 
 **Bottom line.** On `ubuntu-latest` the gauntlet went from **64 failed / 4460 passed** to
-**1 failed / 4538 passed**. All 63 mutation-proof failures are closed. The single remaining
-failure is **BL-X15** (`test_statusline_chain.py::TestRunChild::test_empty_argv_fail_soft`),
-which belongs to the `fix-statusline-crash` task and is outside this task's ownership — see
-§5. **This note therefore records the X14 acceptance as met and the composite
-"full gauntlet green" as blocked on X15, not achieved.**
+**1 failed / 4538 passed** on the task branch. All 63 mutation-proof failures are closed. The
+one remaining failure was **BL-X15**
+(`test_statusline_chain.py::TestRunChild::test_empty_argv_fail_soft`), owned by the
+`fix-statusline-crash` task and outside this task's ownership.
+
+**Both fixes are now integrated, and the gauntlet is green on both legs** — run
+[`31979757460`](https://github.com/taurran/kataharness/actions/runs/31979757460) @
+`3f29947`, ubuntu **success** + windows **success**, zero failures. **The X14 acceptance and
+the composite "full gauntlet green" are both MET; the Guardian CI-gauntlet row may move
+Broken → Verified citing that run (§5).**
 
 ## 1. The stated hypothesis was FALSIFIED (escalation rule E2)
 
@@ -140,8 +152,21 @@ Required test coverage of 90.0% reached. Total coverage: 92.45%
 ```
 
 **All 63 mutation-proof failures closed.** The string `testWentRed` occurs **0 times** in the
-run-2 ubuntu log (under `-q` it is printed only by a failing mutation assertion), against 46
-occurrences in run 1.
+run-2 ubuntu log (under `-q` it is printed only by a failing mutation assertion), against
+**91** occurrences in run 1.
+
+> **CORRECTION (2026-08-16, amendment commit).** This line first read *"against 46
+> occurrences in run 1"*. **46 was wrong; the correct count is 91**, re-derived by this task
+> from the raw job-log API for job `95240705342` and independently counted at 91 by the
+> fresh-context judge. The error was a too-narrow grep: `grep -c "testWentRed': False"` matches
+> only the single-quoted verdict dicts inside assertion messages. The full breakdown of the 91
+> is `46` single-quoted `testWentRed': False` + `40` `["testWentRed"]` (test source echoed by
+> pytest tracebacks) + `5` docstring prose lines — `46 + 40 + 5 = 91`.
+> **The correction runs against this note's own interest: it understated how bad the pre-fix
+> state was.** The comparison side was never affected — run 2 and the §5 green run were both
+> measured with the bare-token method (`grep -o "testWentRed" | wc -l`) and are genuinely `0`;
+> only the pre-fix magnitude was undercounted. Re-verified at amendment time: run 1 = **91**,
+> run 2 = **0**, green run = **0**, all three by the identical bare-token method.
 
 **Machine confirmation for `test_sandbox_import_isolation_linux` specifically**, since `-q`
 names only failures: collected went `4525 -> 4540` (**+15**, exactly the tests added in
@@ -168,24 +193,76 @@ collected 4540 items / 4538 deselected / 2 selected
 Zero failures on Windows against 1 (BL-X15) on ubuntu: the closed grammar parses the existing
 caller corpus with identical meaning on both platforms, which was the point.
 
-## 5. Honest residual — "full gauntlet CI green" is NOT achieved on this branch
+## 5. The zero-failure run — full gauntlet green, ACHIEVED (amended)
 
-The task acceptance reads "full gauntlet CI green on the pushed branch". It is not, and this
-task cannot make it so:
+**The residual this section recorded is now discharged.** The task-branch runs in §3–§4 left
+exactly one failure, BL-X15's `adapters/claude/statusline_chain.py` empty-argv `IndexError`,
+owned by the wave-1 task `fix-statusline-crash` and outside this task's ownership (the
+BURN-CHARTER anticipated the coupling: *"BL-X15 ... rides X14's run"*). Both fixes have since
+been integrated and the gauntlet re-dispatched on the integrated tip.
 
-- The remaining failure is `adapters/claude/statusline_chain.py`'s empty-argv `IndexError`
-  — **BL-X15**, owned by the wave-1 task `fix-statusline-crash`.
-- `.planning/specs/trust-model/PLAN.md` assigns that file to that task; touching it here would
-  be an ownership violation. The BURN-CHARTER already anticipated this coupling
-  ("BL-X15 ... rides X14's run").
+| | |
+|---|---|
+| run URL | https://github.com/taurran/kataharness/actions/runs/31979757460 |
+| SHA | `3f2994756938b221698ca63637052cb5de2da31a` |
+| branch | `burn/trust-model-01` (wave-1 integrated tip) · event `workflow_dispatch` |
+| conclusion | **success** |
+| `gauntlet (ubuntu-latest)` | **completed / success** — job `95244552908` |
+| `gauntlet (windows-latest)` | **completed / success** — job `95244552944` |
 
-**Consequence for §3.6 / §6.6.** X14's own falsifiable criteria are met on ubuntu-latest — the
-meta-tests return `{'testWentRed': True}` for biting mutations, and the prover is proven able
-to fail on Linux (TM-D3 applied to the prover). But the Guardian **Broken -> Verified**
-transition for the CI gauntlet needs a run with **zero** failures, which requires X15's fix on
-the same branch or after both merge. **Until such a run exists and is recorded here, the
-gauntlet stays Broken.** A re-dispatch of `gh workflow run gauntlet --ref <branch>` after X15
-lands closes it; this note should be amended with that run's URL + SHA at that point.
+Both fixes verified present in that SHA by ancestry, not by assertion:
+`git merge-base --is-ancestor` confirms **`e484ce3`** (*"merge(trust-model): integrate
+tm-w1-fix-mutation-prover (wave 1)"* — this task) and **`75e215a`** (*"merge(trust-model):
+integrate tm-w1-fix-statusline-crash (wave 1)"* — BL-X15) are both ancestors of
+`3f29947`.
+
+Verbatim, `ubuntu-latest` (job log `gh api repos/taurran/kataharness/actions/jobs/95244552908/logs`):
+
+```
+collected 4560 items
+================== 4559 passed, 1 skipped in 80.43s (0:01:20) ==================
+Required test coverage of 90.0% reached. Total coverage: 92.49%
+collected 4560 items / 4558 deselected / 2 selected
+====================== 2 passed, 4558 deselected in 1.93s ======================
+```
+
+Verbatim, `windows-latest` (job log `gh api repos/taurran/kataharness/actions/jobs/95244552944/logs`):
+
+```
+collected 4560 items
+====================== 4560 passed in 255.64s (0:04:15) =======================
+collected 4560 items / 4558 deselected / 2 selected
+===================== 2 passed, 4558 deselected in 3.04s ======================
+```
+
+`FAILED` occurs **0 times** in either job log. `testWentRed` occurs **0 times** in the ubuntu
+log — no mutation proof reported a non-biting mutation on Linux.
+
+**Consequence for §3.6 / §6.6 — the acceptance is now MET.** X14's own falsifiable criteria
+were already met on the task branch (meta-tests return `{'testWentRed': True}` for biting
+mutations; the prover is proven able to fail on Linux — TM-D3 applied to the prover). The
+composite criterion that was outstanding, **full gauntlet CI green**, is now satisfied by run
+`31979757460` on `3f29947`: zero failures on **both** platform legs.
+
+**The Guardian CI-gauntlet row may therefore move Broken → Verified, citing this run.** Per
+§6.6 the citation is what makes BUILT legal — the row is licensed by
+`https://github.com/taurran/kataharness/actions/runs/31979757460` @ `3f29947`, not by this
+note's say-so. A future run that reds again re-opens it; the transition is a claim about that
+SHA, not a permanent property.
+
+**Honesty labels that remain true and are NOT discharged by this run:**
+
+- The **hypothesis-falsification** record (§1) stands unchanged — BL-X14's filed cause was
+  wrong, and the BACKLOG entry still carries the falsified text.
+- The **`n=1`-per-platform** character of the proof: green on `ubuntu-latest` and
+  `windows-latest` runner images at one point in time. No other Linux distro, libc, shell, or
+  Python patch level is covered; `/bin/sh` being `dash` on the runner is what made the original
+  bug bite, and a different `/bin/sh` was never the fix's dependency but was never tested
+  either.
+- The mutation re-run's **cost basis** (§4): ~43s added to the ubuntu leg because ~126 real
+  proof subprocesses now actually execute. That is a standing cost, not a one-off.
+- §3.6's own residual is untouched by any of this: the re-run proves the **claimed** mutation
+  set bites; **claimed-set completeness stays worker-asserted**.
 
 ## 6. Local verification (builder host, Windows 11, Python 3.14.3)
 
@@ -207,7 +284,14 @@ fixtures).
 
 ## 7. Commits
 
+All verified ancestors of the green run's SHA `3f29947` via `git merge-base --is-ancestor`.
+
 | SHA | what |
 |---|---|
 | `07d1179` | the E2 falsification probes + the pinning test, **pushed pre-fix on purpose** — the RED half of the record |
 | `b996ee1` | the fix: closed-grammar compile to structured argv, `shell=False`, sandbox-containment guarantee |
+| `23583a1` | this evidence note, first version |
+| `1243aa7` | note update recording the observed run-2 Windows leg |
+| `e484ce3` | `merge(trust-model): integrate tm-w1-fix-mutation-prover (wave 1)` |
+| `75e215a` | `merge(trust-model): integrate tm-w1-fix-statusline-crash (wave 1)` — BL-X15, the other half of the green run |
+| *this commit* | the amendment: §5 zero-failure run recorded, §4 count corrected 46 → 91 |
