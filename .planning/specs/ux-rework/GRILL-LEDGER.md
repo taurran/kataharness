@@ -40,9 +40,11 @@ before building.
     faint ·˖). A stars-over-Fuji variant was rendered and passed over in favor of stars-only.
   - **Sea:** a full-width (64-col) rolling-swell line — trough Prussian, crest tips foam — sitting
     FLUSH against the boxes (no blank lines).
-  - **Deck:** two fully-enclosed box-drawing boxes on the dark ground (parchment fills tried and
-    REJECTED), dim slate borders: `status` (4 dense lines: version+update · env · resumable ·
-    brain/vault/last-run) and `commands` (8 lines, name + plain description columns).
+  - **Deck:** two fully-enclosed box-drawing boxes on the dark ground (parchment FILLS tried and
+    REJECTED), borders in the **parchment line tone** (`#CDBE9B`, the BRAND border token) with
+    **ochre box titles** (`#B5894B`) — amended from slate on 2026-08-15, operator: "lock A" —
+    `status` (4 dense lines: version+update · env · resumable · brain/vault/last-run) and
+    `commands` (8 lines, name + plain description columns).
   - Rejected along the way (do not re-propose): brush/katakana hand glyphs · full wave scene ·
     parchment page background · parchment box fills · hanko/cartouche ornaments beyond the one seal.
 
