@@ -148,6 +148,10 @@ hand-authored parts of the same file are a different matter and stay conductor-o
 | wave 2 | BURN-D | returned ~11 min, 134k subagent tokens, gauntlet **3/4** + ESCALATION | the red was the escalated pin, not the build; 33 new tests, non-vacuity 16/33 fail under neutralization |
 | wave 2 | BURN-D | **signature delta, reported not substituted** | brief's 2-arg shape cannot support the modules check (no name convention module→provider); builder added `provided_modules` derived from `kata/module/*` tags + a bridge `available_from_skills` |
 | wave 2 | integration | merged clean ×2, 0 conflicts; conductor fixed the escalated pin (floor ≥0.17.0, not exact) + README/AGENTS command rows | validator probed independently: 5 fresh cases incl. reproducing the config.md:14 doc-delta |
+| wave 2 | gate | **PASS** — integrated gauntlet 4/4 (`53cecf8`) | pytest-unit green post-pin-fix · integration 2/2 · ruff clean · validator 49/0/0 |
+| wave 3 | BURN-F | documented command IMPOSSIBLE: `--root ..` refused by `_safe_path` (kata-understand SKILL.md:47) | doc-vs-mechanism collision class again; ran with absolute paths instead |
+| wave 3 | BURN-F | first rebuild CONTAMINATED: 43,064 nodes — six embedded worktrees counted the repo ~7× | graph_gen has no worktree exclusion; a MID-BURN graph rebuild is structurally garbage (mode-relevant) |
+| wave 3 | BURN-F | **honest measurement after worktree cleanup: 25 files/450/532 → 157 files/5,560/6,629** | the July + BURN-C fixes plainly densified the map; old graph saw ~16% of the repo |
 
 ---
 

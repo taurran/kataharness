@@ -10,6 +10,34 @@ semver is tracked independently in each skill's frontmatter `version` field — 
 
 ## [Unreleased]
 
+### Added/Fixed — backlog-burn-01: six items, three waves, parallel builders (2026-08-04 → 08-15)
+
+The first "backlog burn" — one frozen contract over six backlog items
+(`.planning/specs/backlog-burn-01/GRILL-LEDGER.md`), executed in three waves by concurrent builders
+in isolated worktrees, each gated default-FAIL. Also the deliberate prototype for a future burn
+operating mode; the evidence log is `OBSERVATIONS.md` beside the ledger.
+
+- **Wave 1 (2026-08-04):** the eight gate-critical artifact writes are atomic
+  (`fs_atomic.atomic_write_text` across `run_result`/`contract_gate`/`gate_emit`/`grounding_gate`/
+  `drift_gate`/`deviation`) · `kata_preflight` no longer swallows the stderr that says WHY an
+  install/verify failed (closes DEF-1; runner is a 3-tuple, tail-capped at the four consumer sites) ·
+  `graph_gen._discover_source_roots` now finds nested and coexisting PEP-420 `src` roots (T-08).
+- **Wave 2 (2026-08-15):** the kata-orchestrate GB12 config load-guard now names a real mechanism —
+  NEW pure `tools/kata_config.py` `validate_core_config(config, available_skills, provided_modules)`
+  (+ `available_from_skills` bridge over `validate_skills.load_skills()`), fail-closed on bad `mode`,
+  unknown `tiers[family]` (grill-`skip` carve-out, D71/D73), and `modules[]` entries with no
+  provider-tagged skill; absent keys keep their documented defaults (D25). kata-orchestrate 0.18.0.
+  33 new tests (16 proven non-vacuous by neutralization). · NEW `/kata-loop` command — the full
+  improvement cycle (initiation → harness → closeout → context-carrying loop-back) finally has an
+  entry point; command rows updated in README/AGENTS. · The exact-version pin in
+  `test_validate_prime_directives.py` (a KH-T12 TDD leftover that redded on ANY future
+  kata-orchestrate bump — caught live by a builder) is now a semver floor.
+- **Wave 3 (2026-08-15, measurement):** `.kata/kata.graph.json` rebuilt after 55 days — the July
+  src-layout fix + wave 1's nested-roots fix took the map from **25 files / 450 nodes / 532 edges to
+  157 files / 5,560 nodes / 6,629 edges** (the old map saw ~16% of the repo). Found en route:
+  the documented rebuild command (`--root ..`) is refused by `graph_gen._safe_path`, and embedded
+  `.claude/worktrees/` copies contaminate a scan ~7× — both filed as follow-up items.
+
 ### Changed — freeze is a recorded state that BLOCKS dispatch (BL-F01, D169)
 
 A plan was "frozen" by convention; nothing recorded or checked it, so after a session drop a frozen
