@@ -80,6 +80,7 @@ this program mechanizes).
 | C4 | Verdict persistence — the dispatcher-as-witness records for evaluate/review/slop/inline/convergence verdicts (judges stay no-write); schema; where they live | OPEN |
 | C5 | The phase model — which loop phases become recorded states (mid-grill/mid-freeze/mid-closeout are blind today); closeout Decisions 1–4 as structured records (backout-approved-unexecuted is the highest-stakes gap) | OPEN |
 | C6 | The graph manner — the cursor's graph projection: alignment with kata.graph/BL-N16 substrate; views (rail, statistics BL-N14) as folds, never second sources | OPEN |
+| C7 | *(opened by the operator's C3 directive — re-derivation)* Parallel/branched fan-out + Kitchen async: how the cursor models concurrent arms and async processes — one cursor per run in a linked tree vs. shared multi-writer | OPEN |
 
 ### D — Truth Serum (BL-N01)
 | # | branch | status |
@@ -234,6 +235,109 @@ this program mechanizes).
 
 *Section B complete. Re-derivation: B1–B5 opened no new B-branches; C1 (cursor shape) is next in
 dependency order — C2's run-id format is consumed by B4's record, so C1/C2 resolve before D.*
+
+### TM-C1 — The CURSOR is the upgraded run log (board-shape heritage); named cursor; alignment study commissioned · LOCKED
+
+- **Decision (operator, 2026-08-16, accept-with-modification):**
+  1. **Shape accepted:** the run's one log IS the cursor — the existing append-only log upgraded:
+     a **run-header line** (runId minted by the seam; rotation + header makes cross-run detection
+     mechanical), new **orchestrator-only PHASE and VERDICT line types**, structured payloads as
+     pointed-to JSON files (the existing escalation line+payload idiom). One log — D135's letter
+     and spirit; the grammar change rides the pinned-clause deliberate two-step.
+  2. **Named CURSOR (operator's modification):** "cursor is a better name than board because it
+     marks where in the process we are sitting and where it is currently executing." Consistent
+     with the operator's prior BBM ruling ("the CURSOR is the interruption token"). Glossary
+     entry added to `CONTEXT.md` (concept renamed; file/skill heritage names migrate under H1 —
+     the rename's blast radius is a migration item, not a design fork).
+  3. **Alignment study commissioned (operator's rider):** evaluate the design against other
+     learning-loop / graph-learning / run-record models (LangGraph checkpointing, Temporal-style
+     event-sourcing replay, OTel trace chains, Hermes/Pi substrates per the existing
+     `specs/learning-graph/RESEARCH-HERMES-PI.md`, GSD state) to ensure we align with or improve
+     on them — dispatched as an in-grill research task; **its findings gate section C's close**
+     (C5/C6 stay open until it reports).
+- **Rejected — sidecar structured log:** it IS the second append-only journal D135 forbids.
+- **Rejected — git-only cursor:** phase/verdict events aren't commits; in-flight visibility loses
+  its source.
+- **Provenance:** D135/D81 verbatim (cursor dossier); escalation idiom `protocol/escalation.md:3`;
+  BBM cursor ruling `backlog-burn-mode/GRILL-LEDGER.md:117-124`.
+
+### TM-C2 — Run identity penetrates fully, down to git trailers and evidence checks · LOCKED
+
+- **Decision (operator, 2026-08-16):** the seam mints `runId` at run start (one seam act =
+  cursor rotation + header write). Format: composite `run-<utc>-<hex>` — sortable, humane;
+  randomness-mints-identity-only per the Determinism Doctrine. It stamps: the cursor header ·
+  every dispatch record (TM-B4) · every gate artifact (`RESULT.json` gains `runId`) · report
+  filenames (making `observability.md:18`'s promise TRUE — it was a FALSE row) · **a new
+  `Kata-Run: <runId>` trailer on integration commits** (run membership survives machine change
+  via git, the only (iv)-durable tier) · and **`evidence_is_current` is extended to run
+  membership**: evidence is credited ONLY if the SHA is fresh AND the runId matches the live
+  run — fail-closed on every old artifact (closes the July-artifact-read-raw class completely).
+- **Rejected — runtime-only identity:** run membership would die with `.kata/`; old artifacts
+  would still pass on freshness alone.
+- **Rejected — soft evidence check:** the D169 "warn as a soft status" rejected shape.
+- **Provenance:** cursor dossier (trailers = the only (iv) record); promise-audit FALSE row 4;
+  BL-X11; T-04.
+
+### TM-C3 — Resilience is a PRIMARY cursor benefit: snapshot-on-verdict cadence + offered trail push · LOCKED
+
+- **Operator directive (2026-08-16, verbatim intent):** "We need to offer resilience as a primary
+  benefit of the upgraded cursor… this all flows into the graph/learning graph function — align
+  everything so we can build the learning graph around this. This is the truth component, but it
+  all plays together into a single properly organized and woven spine. With the ability to handle
+  parallelization in branched fan-out runs. With async processes that the Kitchen brings. All
+  orchestrated properly, by a smart orchestrator and/or conductor which are phase aware."
+- **Decision:** (1) **trail snapshot cadence upgrades** to fire on every PHASE and VERDICT append
+  (alignment-study candidate #1) — mid-gate resume without re-running the gate, on existing
+  fail-soft machinery; (2) **trail push is OFFERED at the human push gate** (closeout Decision 2,
+  alongside commit/push/merge; config-rememberable `cursor.pushTrail`) — presented AS the
+  resilience option per the directive; default stays never-push (BC, house guard, consent is the
+  operator's); (3) resilience is a named, user-facing benefit — the presentation layer states the
+  run's resilience level (feeds G1, same pattern as the enforcement-level declaration of TM-B2).
+- **Provenance:** operator directive above; alignment study candidates #1/#6; kata_trail
+  never-push deliberate rule; closeout never-auto-push house law.
+
+### TM-C4 — Verdict persistence: dispatcher-witnessed VERDICT line + payload; durable by C3 cadence · LOCKED (conductor-resolved from locked context; no operator question spent)
+
+- **Decision:** every judge verdict (evaluate PASS/NEEDS_WORK, review SHIP/HOLD, slop, inline
+  chunk verdicts, grill convergence SHIP/HOLD — including proof the Advanced double-pass ran as
+  two distinct dispatches) is persisted by the SEAM at collection: an orchestrator-only
+  **VERDICT cursor line + pointed-to JSON payload** (verdict, evidence pointers, judge dispatch
+  seq, runId). Judges stay no-write (their independence is untouched — the dispatcher is the
+  witness, EDR-1/TM-B4). The C3 snapshot cadence makes verdicts durable at the moment they exist.
+  This closes the cursor dossier's largest hole (undurable verdicts), gives BL-N19's mechanical
+  re-loop its routing artifact, and gives BBM-12 wave gates a record.
+- **Provenance:** TM-B3 sharpening; TM-C1 VERDICT type; cursor dossier cross-cutting #2;
+  alignment study (LangGraph pending-writes analogy).
+
+### TM-C5 — The phase model covers the WHOLE loop; closeout decisions become structured records · LOCKED (conductor-resolved under the operator's phase-aware directive)
+
+- **Decision:** PHASE cursor events span the full Kata Loop — initiation · grill · freeze ·
+  execution (per wave) · final gate · closeout · loop-back — closing the blind zones (mid-grill /
+  mid-freeze / mid-closeout are invisible to restore today). The conductor and orchestrator are
+  **phase-aware by contract**: they read position from the cursor, never re-derive it from
+  context memory (feeds the BL-N20 agent definitions). **Closeout Decisions 1–4 land as
+  structured cursor records** — including backout-approved (the highest-stakes unrecorded
+  event) — and the loop-back event is recorded with the `prev-run:` chain pointer (study
+  candidate #2). Exact phase vocabulary = design-doc detail, not a grill fork.
+- **Provenance:** operator "phase aware" directive (TM-C3 block); cursor dossier §C blind spots;
+  study candidates #2.
+
+### TM-C6 — The cursor is the learning graph's substrate; projections carry provenance; hardening set adopted · LOCKED (conductor-resolved under the operator's alignment directive)
+
+- **Decision:** (1) the learning graph (BL-N16) **builds around the cursor** — the cursor is the
+  truth component; graph projections are folds over it and **every derived graph fact carries the
+  (runId, line/seq) that produced it**, so a superseding DECISION invalidates downstream facts
+  mechanically (Graphiti-derived, projection-layer only); (2) fold outputs are named
+  **projections** (glossary term to add at design compile); (3) Hermes' distill-for-load binds:
+  folds/context injections consume bounded distillations, never the raw log; (4) **adopted from
+  the study**: `prev-run:` run-chain header (#2) · monotonic per-run `seq` (#3) ·
+  dispatch-lineage stamps on worker lines (#4, bundled with #3 in the ONE grammar two-step) ·
+  fold-cache snapshots in `.kata/` as pure cache (ES discipline; D81 licenses) · the stated
+  invariant "fold is pure; side effects only after fold completes" · archives get the
+  `prev-segment` chained-segmenting header field reserved NOW, built when a real cursor gets big
+  (#5).
+- **Provenance:** operator alignment directive (TM-C3 block); alignment study §3/§5/§6 +
+  candidates #2-#5; RESEARCH-HERMES-PI.md:77-79; D81.
 
 ## Blocked-at-close notes (standing)
 

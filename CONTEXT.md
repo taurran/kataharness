@@ -21,6 +21,16 @@ The version-up **re-entry**: on a closeout "run again" decision, `kata-loop` re-
 carrying the prior run's context (baseline SHA · `.kata/understand.md` · lessons · prior `INTENT.md`). The turn of
 the Kata Loop that makes it iterate. _Avoid_: restart, re-run (those imply cold starts).
 
+**Cursor**:
+The run's **single temporal record and position marker** — the upgraded append-only run log plus
+its projections. It marks where in the process the run sits and what is currently executing; seam
+dispatch events, phase transitions, and persisted gate verdicts land on it; an interrupted run
+resumes by replaying it. One durable record — the rail, run statistics, and graph views are folds
+over it, never second sources (D135). Named by operator ruling (TM-C1, 2026-08-16; consistent with
+the BBM "the CURSOR is the interruption token" ruling).
+_Avoid_: board **as the concept name** (the cursor's log surface inherits the board file/grammar
+heritage until migration renames land); journal (D135 forbids a second one); progress tracker.
+
 **Spine**:
 The skills that run in **every** mode — the one-shot machine (grill→…→evaluate→handoff). Always present; the
 source of consistency.
