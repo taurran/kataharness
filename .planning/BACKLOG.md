@@ -281,6 +281,20 @@ Promote to ROADMAP milestones when ready.
 > (`write_approval`, pending queue, unified diffs) exists. True of the DEFAULT config only —
 > tighten the wording so our own comparison stays truthful. One-line doc fix + version bump.
 
+> **BL-X08 · The `batch` run-shape preset writes a config the load-guard STOPS. (FILED 2026-08-16,
+> found by the burn-02 X01 gate judge, machine-verified.)** `skills/coordinate/kata-bootstrap/
+> resources/run-shapes.md:6` pre-fills `modules: [bakeoff]`, and `bakeoff` has NO provider skill
+> (no `kata/module/bakeoff` tag anywhere) — so bootstrapping the batch shape produces a config
+> `validate_core_config` fail-closes on. Same family as BL-X01, but LIVE machinery, not a doc
+> example. Fix direction needs a triage call: give bakeoff a provider tag, or change the preset,
+> or both — do not guess at filing time.
+
+> **BL-X09 · kata-understand's FALLBACK path documents a grep that fails on PowerShell. (FILED
+> 2026-08-16, found by the burn-02 X03 gate judge.)** `modules/closeout/kata-understand/
+> SKILL.md:138-140` instructs `grep -n "^def \|^class " <file>` — not a PowerShell cmdlet, so a
+> literal follower on this project's stated primary shell fails there. Same doc-vs-mechanism class
+> BL-X03 just fixed in the same file's primary path; pre-existing, out of that item's scope.
+
 > **BL-X06 · Host auto-worktree isolation fails on this repo (path casing) and provisions wrong
 > bases.** The Claude Code worktree isolation refused `C:\dev\...` vs `C:/Dev/...` casing and left
 > orphans at a stale base — the second independent provisioner to produce a wrong base (H6 ×2).

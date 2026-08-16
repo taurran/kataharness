@@ -92,7 +92,8 @@ the output to be *provably* right — and the token bill to stay rational while 
   Pick Kata when the whole loop needs governing, not just the review step.
 - **vs. Hermes (Nous Research).** Hermes built its identity on the closed learning loop; we studied
   it formally and **based our approach on its applicable traits — while keeping our gates.** Hermes
-  ships no default-FAIL testing model and promotes learned behavior without a human gate; Kata's
+  ships no default-FAIL testing model and, in its default config, promotes learned behavior without
+  a human gate (its staging gate exists but is opt-in); Kata's
   learning is telemetry-grounded and passes a **two-stage human gate BEFORE anything executes with
   it**, and during execution the inline evaluator identifies where work must **hard-fork** (kill +
   fresh attempt branch) rather than drift on. Pick Kata when a wrong "learned lesson" or an
@@ -199,7 +200,8 @@ in the committed LIVE-PROOF)*.
 ### 🧠 The learning loop — Hermes-informed, human-gated
 KataHarness gets better across runs — but it never quietly rewrites itself. The cross-run learning
 design borrows the useful ideas from **Hermes** (a learning-loop agent surfaced by a formal research
-bake-off) while keeping our own gates, which Hermes doesn't have.
+bake-off) while keeping our own always-on gates — Hermes' equivalent gate exists but ships off by
+default (opt-in staging).
 
 In practice: a committed **telemetry ledger** records instrumented runs' results, costs, and failure
 types (row commits are human-gated, so a run can honestly ship without one), and tuning works from
