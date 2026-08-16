@@ -188,6 +188,10 @@ before building.
     which directs the user to recycle the session for a new run or exit.
   - **Git actions are menu items** (push / open PR / merge-after-PR), so shipping is part of the
     same loop, not a side quest. Feeds the kata-closeout skill's grill.
+  - **Prose is never boxed (operator, 2026-08-16):** plain-language narrative sections sit between
+    DIVIDERS (heavy titled breaker above, light rule below) at full page width — no side borders,
+    no padding rows. The grammar's complete rule: **boxes are for data; dividers are for prose;
+    scissors are for copy** — three framings, three meanings, no overlap.
 
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
