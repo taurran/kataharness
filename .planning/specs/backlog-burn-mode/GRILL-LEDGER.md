@@ -159,3 +159,24 @@ would have tripped anyway — 1 gate rejection vs threshold 2, 0 rerolls — the
 doctrine behaved correctly; the gap is REACH, not misfire.) The full grill must decide: do burns
 route through the loop's seams (advisor, inline evaluator, telemetry) or carry their own bindings
 at the dispatch seam (BL-M33's missing conductor↔host seam is the common root of all three).
+
+---
+
+## Trust-model cross-reference (2026-08-16 — read before the full BBM grill; rulings at `.planning/specs/trust-model/GRILL-LEDGER.md`)
+
+The trust-model grill (TM-B1..B5, TM-C1..C7) resolved several of this ledger's open questions and
+constrains others:
+- **The reach question above is ANSWERED in direction:** burns route through THE loop's seams —
+  the dispatch seam now exists by ruling (all agent launches gated, TM-B3; bare launches denied,
+  TM-B5), so "conductor-driven burns that never enter kata-orchestrate" cease to be possible
+  rather than gaining their own bindings.
+- **The cursor is designed** (TM-C1..C6): run-header + PHASE/VERDICT lines + (runId, seq) +
+  `prev-run:` chains — the "cursor is the interruption token" ruling above now has its mechanism;
+  BBM-6's zero-telemetry gap closes as cursor projections (statistics = folds).
+- **Wave-per-loop (BBM-12) = child runs in the tree-of-runs** (TM-C7): each wave-loop is a child
+  run with its own cursor; the wave rollover is the Continue-As-New-class hazard and async bakes
+  spanning it MUST be abandon-with-rendezvous via the freeze-minted arm registry.
+- **Gate-judge verdict durability** (this ledger's open "how is a judge's verdict recorded
+  durably") is RESOLVED: dispatcher-witnessed VERDICT cursor line + payload (TM-C4).
+- **Overrun tolerance** (TM-C7 rider 2): small overruns acceptable only pre-assessed/optimized by
+  the orchestrator at partition time — a BBM-2 partition-engine requirement.

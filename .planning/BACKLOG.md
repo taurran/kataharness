@@ -165,6 +165,16 @@ Promote to ROADMAP milestones when ready.
 > load** — the temporal log audits; a capped curated “active” section (visible fill %) is what
 > injects (Hermes’ bounded-curation lesson). Also adopted: staged-write + unified-diff approval
 > queue · security scan on self-written learning (injection-persistence vector).
+> **Trust-model seams (2026-08-16, `.planning/specs/trust-model/GRILL-LEDGER.md`):** the learning
+> graph **builds around the CURSOR as its substrate** (TM-C6, operator-directed: "align everything
+> so we can build the learning graph around this — this is the truth component"). Every derived
+> graph fact carries the (runId, seq) that produced it, so a superseding DECISION invalidates
+> downstream facts mechanically. **NEW at this grill (TM-C7 rider 1, operator): learning ROLLS UP
+> the run tree** — child-run learnings fold to the parent for in-loop application vs. total-loop
+> (run-end) application, and a **learning-scope taxonomy is owed**: temporary/job-scoped learnings
+> (die or archive with the run) vs. durable substrate learnings (gated per this item). Hermes
+> distill-for-load binds all folds. The grounding agent (new cadre role, section E) gates
+> learning-claim attestation the same as any claim.
 
 > **BL-N19 · The re-loop path is FIRST-CLASS in the loop architecture, for ALL run shapes. (NEW
 > 2026-08-16, operator-ruled — provenance: the operator's post-burn-02 directive "the entire
@@ -178,6 +188,14 @@ Promote to ROADMAP milestones when ready.
 > conductor-hand-driven. Composes with BBM-12 (wave-per-loop: a wave re-loops on failed eval),
 > BL-N18 (the threshold that decides "fails"), and the D71 grill dial (a re-loop's grill depth).
 > The architecture rule: NO run shape ships without its failed-final-eval re-entry path defined.
+> **Trust-model seams (2026-08-16, `.planning/specs/trust-model/GRILL-LEDGER.md`):** the missing
+> mechanical route now has its ROUTING ARTIFACT by ruling — every judge verdict is **persisted by
+> the seam at collection** (dispatcher-witnessed VERDICT cursor line + JSON payload, TM-C4;
+> judges stay no-write) and made durable at the moment it exists (snapshot-on-VERDICT cadence,
+> TM-C3). Re-loop = read the persisted verdict, route; wave-level re-loops are **child runs in
+> the tree** (TM-C7 + BBM-12), linked by `prev-run:`/`parent-run:` pointers, so the re-loop chain
+> is walkable. The plan-grounding close (section F) produces the run-level verdict this item's
+> mechanical route consumes.
 
 > **BL-N20 · KataHarness runs its OWN agents — never bare host-default agents — for every role.
 > (NEW 2026-08-16, operator-directed; current state VERIFIED)** Verified 2026-08-16: no
@@ -217,6 +235,16 @@ Promote to ROADMAP milestones when ready.
 > an ad-hoc challenger (anchor tier, fresh context, refute-posture over two Opus advals) — its
 > brief, behavior, and outcome are design input for the real CHALLENGER agent. Spec home:
 > `.planning/specs/agent-cadre/`.
+> **Trust-model seams (2026-08-16, `.planning/specs/trust-model/GRILL-LEDGER.md`):** (1) the
+> roster **gains a GROUNDING AGENT** (operator-directed — the role was verified absent): attests
+> claims against engine-run comparisons before judges credit them; `grounding_gate.py` (built,
+> orphaned) is its engine; AC-10's execute-the-tooling duty is its charter (section E). (2) Every
+> dispatch record carries an `agentDef` slot (TM-B4) — the mechanical hook for AC-1's
+> "bare host-default fails closed" once definitions exist. (3) The conductor and orchestrator
+> definitions are **phase-aware by contract** — position read from the cursor, never context
+> memory (TM-C5), extending roster row 2's "assumes the seam, never re-implements it in prose."
+> (4) Learning accrues to definitions via the BL-N16 substrate, now fed by tree roll-up
+> (TM-C7 rider 1).
 
 > **BL-N21 · Always-loop: the personal global config makes EVERY coding task a full KataHarness
 > loop run. (NEW 2026-08-16, operator-directed — provenance: the operator's verbatim ask "can we
@@ -241,6 +269,12 @@ Promote to ROADMAP milestones when ready.
 > needed for fully loading LARGE codebases. Honest current-state (verified surfaces): scanning
 > FUNCTIONS exist — `graph_gen`/kata-graph (the F2 code map, token-budgeted digest),
 > `kata-understand`, `kata-context`, `kata-onboard` (the existing-repo door), debug-mode intake —
+> **Trust-model seams (2026-08-16, `.planning/specs/trust-model/GRILL-LEDGER.md`):** the wrapper
+> is the seam's OUTERMOST layer (TM-B1 layer 4 — provisions/verifies the enforcement hook before
+> the host starts); the run-start surface **declares the enforcement level** ("intercepting /
+> detection-only", TM-B2) and the resilience level (TM-C3) — both truth-serum presentation
+> elements (G1). Bare coding requests redirected into the onramp meet deny-and-route semantics
+> (TM-B5), never silent pass-through.
 > but no scanning AGENT role exists, and the functions' large-codebase behavior (budget
 > exhaustion, partial-map honesty) is unassessed. The scanning agent, if built, joins the BL-N20
 > role set with its own substrate file.
@@ -309,6 +343,18 @@ Promote to ROADMAP milestones when ready.
 >
 > **Cross-ref (2026-08-16):** the per-agent learning substrate (BL-N16, the learning graph) is
 > Kitchen-aligned — the roles above are exactly the agents whose substrate files accrue learning.
+> **Trust-model seams (2026-08-16, `.planning/specs/trust-model/GRILL-LEDGER.md` — binding on this
+> grill):** Kitchen fan-out is the **two-tier tree-of-runs** (TM-C7): bakes mint child runs (own
+> runId/cursor/worktree, `parent-run:` pointer, freeze-minted arm registry, per-arm parent-close
+> policy cancel|park|**abandon-with-rendezvous** across BBM-12 wave rollovers — the orphan hazard
+> is guaranteed, designed against). Parents fold bounded child SUMMARIES only; fan-in =
+> merge-parents + `Kata-Arm:` trailer, fail-closed, mechanical-only commits. **Every Kitchen role
+> dispatches through the seam** (TM-B1..B5; a bare host-default dispatch is denied) and the
+> conductor/orchestrator are **phase-aware by contract** — they read position from the cursor,
+> never from context memory (TM-C5). OTP supervision trees are the ruled async-lifecycle
+> blueprint (evidence/fanout-survey.md §4). Overruns: pre-assessed/optimized by the orchestrator
+> only (TM-C7 rider 2). The ARBITER's vault reads ride the cursor's provenance-tagged projections
+> (TM-C6).
 
 > **BL-N09 · Fan-out dial — a run-config knob for Kitchen capacity. (NEW 2026-08-15, depends on BL-N08)**
 > Once the Kitchen exists: a `fanOut` configuration alongside mode/economy — three positions,
@@ -380,6 +426,14 @@ Promote to ROADMAP milestones when ready.
 > dispatches (this planning branch's burns) write NO telemetry rows today — the counter must hook
 > the dispatch seam itself, whichever path dispatches (kata_dispatch AND the conductor's direct
 > host dispatches), or the crew box undercounts exactly the runs that most need auditing.
+> **Trust-model seams (2026-08-16, `.planning/specs/trust-model/GRILL-LEDGER.md`):** the hook
+> point now EXISTS by ruling — every dispatch passes the seam (TM-B3) and mints a record
+> (TM-B4), so the per-type counters are **cursor projections/folds** (TM-C6), never independent
+> counters: run statistics = fold(cursor), identity = (runId, seq) (TM-C2/C6), multi-arm stats
+> fold across child cursors ordered by parent fold-order (TM-C7). The "confidence rating" chip's
+> open derivation question now has candidate inputs: persisted VERDICT records (TM-C4) + the
+> truth-serum fact tables (section D). Statistics surface trust: the per-run trust ledger is a
+> ruled presentation-layer artifact (component 7, G1).
 
 > *(Burn-mode design rulings from this session live in
 > `.planning/specs/backlog-burn-mode/GRILL-LEDGER.md` — BBM-1..BBM-10.)*

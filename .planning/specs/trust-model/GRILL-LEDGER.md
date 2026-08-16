@@ -339,6 +339,58 @@ dependency order — C2's run-id format is consumed by B4's record, so C1/C2 res
 - **Provenance:** operator alignment directive (TM-C3 block); alignment study §3/§5/§6 +
   candidates #2-#5; RESEARCH-HERMES-PI.md:77-79; D81.
 
+### TM-C7 — IN FLIGHT: operator-directed comparative assessment before resolution
+
+- **Operator directive (2026-08-16, verbatim intent):** do not pick from the offered options yet —
+  "do an assessment with known working patterns" from other harnesses on fan-out handling, and
+  design to these requirements: **(1)** orchestrator FULL VISIBILITY into everything processing
+  and how it aligns with dependencies flowing between individual tasks in the fan-out; **(2)**
+  fans that MERGE into aligned results at the end; **(3)** the run structure is BUILT BEFORE
+  EXECUTION — alignment with the planning agent; **(4)** protect runs from clobbering data and
+  overrunning results; **(5)** gain efficiencies in multi-threaded tracking. Conductor to "map
+  this out" at full depth after the survey returns.
+- **Standing commitment (operator, same directive): HEAVY cross-documentation** — the trust-model
+  seams and behaviors get written INTO the other backlog items (BL-N08 Kitchen · BL-N16 learning
+  graph · BL-N19 re-loop · BL-N20 cadre · BL-N14 statistics · BL-N21 always-loop · the BBM
+  ledger) so their future planning sessions execute with this work in mind. Scheduled to land
+  once C7 resolves, so the concurrency rulings ride along. **This commitment is owed — surface
+  at handoff if unmet.**
+- Survey dispatched (LangGraph Send/map-reduce · Temporal child workflows · Airflow/Dagster DAG
+  mapping · OTP supervision trees · CI matrix fan-in · git-native merge · in-repo ground truth);
+  resolution question returns to the operator with the assessment.
+- **RESOLVED below (same day) — survey delivered (`evidence/fanout-survey.md`), mapping presented,
+  operator accepted with riders.**
+
+### TM-C7 — Two-tier tree-of-runs fan-out; learning rolls up the tree; overruns pre-assessed · LOCKED
+
+- **Decision (operator, 2026-08-16, accept-with-riders):** the cursor's fan-out model is the
+  **two-tier tree-of-runs**: in-wave tasks stay lines on the parent's cursor; bakeoff arms,
+  Backlog Burn wave-loops, and Kitchen bakes mint **child runs** (own runId + cursor + worktree,
+  `parent-run:` header — D135 holds via **arm = run**, ruled explicitly). All eight design
+  elements adopted: two-tier law · freeze-minted arm registry (the tree exists in the frozen
+  PLAN before dispatch — planning-agent alignment) · dispatcher-witnessed SPAWN/DOWN-with-reason
+  on the parent cursor (children never write the parent's log) · per-arm parent-close policy
+  (cancel | park | **abandon-with-rendezvous** — mandatory across BBM-12 wave rollovers) ·
+  declared fold reducers, undeclared concurrent merge = fail-loud refusal · ordering =
+  (runId, seq) + parent fold-order, wall-clock never load-bearing · fan-in as merge-parents +
+  `Kata-Arm:` trailer, fail-closed on conflict, mechanical-only fan-in commits (no evil merges —
+  PD-2 in git history) · bakeoff selection as recorded supersede (winner + losing runIds; `-s
+  ours`-shaped, never content blending; human version-select per standing rule). All seven named
+  hazards carry their answering patterns (`evidence/fanout-survey.md`).
+- **Rider 1 — learning rolls UP the tree (operator):** session/run closeouts produce learning
+  items that propagate up the run tree — child-run learnings fold to the parent for either
+  **in-loop learning** (applied within the current loop) or **total-loop learning** (the BL-N16
+  run-end learning session). **There may be TEMPORARY, job-scoped learnings** specific to the
+  current work that never promote to the durable agent substrate — a learning-scope taxonomy
+  (job-scoped/ephemeral vs. substrate/durable) **needs assessment at the BL-N16 grill**; seeded
+  into BL-N16's cross-doc note.
+- **Rider 2 — overruns pre-assessed (operator):** small result overruns relative to other tasks
+  are acceptable **only when pre-assessed and optimized by the orchestrator** — planned, declared
+  overlap tolerance at partition/dispatch time; the fail-closed clobber protection stays for any
+  UN-assessed overlap. Lands in the partition/plan rules (BBM-2 seam).
+- **Provenance:** operator directive + riders (verbatim intent above); `evidence/fanout-survey.md`
+  (six external lenses + collision analysis); the five requirements mapped in-session.
+
 ## Blocked-at-close notes (standing)
 
 Grill-close `learn_feed.py` emit **BLOCKED by 🔴 BL-X12** (the emitter mislabels grill-ledger OPEN

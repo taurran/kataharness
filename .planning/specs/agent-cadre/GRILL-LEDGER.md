@@ -180,3 +180,23 @@ Naming (the AC-7 ⚠) · BL-N08 before/after sequencing (AC-5) · agent-vs-funct
 context-scanner · does the Judge fold into the Evaluator as a tier or stand alone · triage/intake
 role: own agent or conductor duty · the per-role exemplar sets (AC-4) · substrate schema final
 form (BL-N16 grill owns it; this spec consumes it).
+
+---
+
+## Trust-model cross-reference (2026-08-16 — binding input to the full cadre grill; rulings at `.planning/specs/trust-model/GRILL-LEDGER.md`)
+
+- **ROSTER ADDITION (operator-directed): the GROUNDING AGENT.** Verified absent from this roster
+  (zero grounding mentions); operator ruled it in during the trust-model grill. Charter: attest
+  claims against ENGINE-RUN comparisons before any judge credits them — the agent proposes, the
+  engine attests (`grounding_gate.py` is its engine: built, tested, currently orphaned); AC-10's
+  execute-the-tooling duty is its standing law. Scope boundary vs. the challenger: grounding
+  attests FACTS pre-judgment; the challenger attacks JUDGMENTS post-hoc (AC-11 unchanged).
+- **The dispatch seam AC-1 presumed now exists by ruling** (TM-B1..B5): every agent launch is
+  gated, records carry an `agentDef` slot (TM-B4) — the mechanical hook for "bare host-default
+  fails closed" the moment definitions land.
+- **Conductor + orchestrator definitions are PHASE-AWARE by contract** (TM-C5): position is read
+  from the cursor, never re-derived from context memory — extend roster row 2's "assumes the
+  seam" accordingly.
+- **Per-agent learning intake gains tree roll-up** (TM-C7 rider 1): child-run learnings fold
+  upward (in-loop vs. total-loop application), and a temporary/job-scoped vs. durable-substrate
+  taxonomy is owed at the BL-N16 grill — the substrate schema this spec consumes will carry it.
