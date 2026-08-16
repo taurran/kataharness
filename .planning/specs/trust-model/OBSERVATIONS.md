@@ -30,4 +30,49 @@ cursor machinery yet — trail snapshots are the pre-existing board-only shape).
 
 ## Discoveries (append-only)
 
-- (none yet)
+- **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
+  handoff):** BL-X12 was fixed and conductor-gated CLOSED at `2a1b1cf` (2026-08-16 12:40,
+  `specs/backlog-burn-02/OBSERVATIONS.md:84`), but `.planning/BACKLOG.md:562` still carries
+  the 🔴 open marker — the closure was never written back. Consequence: the trust-model
+  ASSESSMENT (T17 BROKEN), BURN-CHARTER item 4, both window orientations, and the frozen
+  PLAN's `fix-learn-feed-truth` task were all authored off a ledger that lied about its
+  state, and a wave-1 builder was dispatched against work already done (caught by the
+  builder's H7 pushback, verified by conductor re-run: 105/105). **Planning window: mark
+  BL-X12 closed at `2a1b1cf` in BACKLOG.md.** Stale references elsewhere (both orientations,
+  BURN-CHARTER:22, ASSESSMENT:47/134, DESIGN.md:102's parenthetical, dispatch-seam
+  ledger:112) are recorded here rather than edited — the gated/ruled artifacts stay as
+  authored; this note is the correction of record. **Trust-model finding in its own right:**
+  a closed defect whose ledger entry stays red re-schedules done work through an entire
+  grill→design→plan→freeze pipeline; §6.6 truth-status marks + EV-1 cover the label side,
+  but the WRITEBACK ACT at defect-closure has no owner — candidate binding input for BL-N11
+  (backlog management).
+- **D-2 · Retroactive trust-model grill emit RUN (2026-08-16):** written=29,
+  parsed_open_skipped=2 (correct — the two genuinely open entries), redactions=0, to the
+  Kiban vault feed (`.../wiki/pages/synthesis/decision-patterns/`, project slug
+  `kataharness`, kind version-up). Ledger `converged:` line corrected (commit `0e9ada9`).
+- **D-3 · `evidence:` `test:` argv-form reconciliation owed at W2:** DESIGN §3.5 pins
+  compile-to `[python, -m, pytest, <id>]`, but every live sink uses `uv run pytest`
+  (`mutation_check.run_named_test`, `scripts/gauntlet.py`); a bare `python -m pytest` misses
+  the uv-managed venv. Conductor intent for the W2 `evidence-grammar` brief: grammar compiles
+  per DESIGN; the EXECUTION environment may wrap the compiled argv in the uv runner as an
+  environment detail, recorded in the module contract — divergence resolved visibly at build,
+  not silently. (Exec-safety builder's finding 2.)
+- **D-4 · Mutation-sink activation is now contractually BLOCKED on the argv conversion**
+  (exec-safety builder's finding 1): the per-task verify command must never reach the
+  still-`shell=True` mutation sink; `fix-mutation-prover` (in flight, W1) performs the
+  conversion. W2/W6/W7 owners inherit the ordering constraint via the exec-safety watch-list.
+- **D-5 · Citation-provenance data point (stale-anchor task):** `kata-validate/SKILL.md:276`'s
+  `:13,151` anchor was BORN wrong (line 13 never contained the quoted sentence in any of the
+  file's 9 revisions) — not drift but authoring-time fabrication; and line 369's reuse-table
+  row had a symbol/range mismatch (anchor widened, label flagged for the W4/W5 rewrite).
+  Feeds the B5/S2 detector rationale.
+- **D-6 · Validator-evidence discrepancy (accuracy record, BBM-6 class):** the
+  `stale-anchor-fixes` builder reported validate_skills green; the conductor re-run returned
+  5 errors (STANDARDS §3 version bumps owed on all five changed skills). Fix-loop dispatched;
+  builder's explanation pending — recorded whichever way it resolves.
+- **D-7 · Minor: `statusline_chain.py` docstring's §security block claims its exec-safety
+  row "lands at P2/C10 closeout" — stale: the row EXISTS (`protocol/exec-safety.md:68`).
+  Docstring correction can ride any future statusline touch. X15's Snyk scan: one
+  pre-existing Medium (CWE-78 class) on the registered operator-domain sink, unchanged by
+  the fix (verified by revert-and-rescan); no `.snyk` entry added (outside task ownership) —
+  surfaced here for the wave gate.
