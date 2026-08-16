@@ -136,6 +136,13 @@ cursor machinery yet — trail snapshots are the pre-existing board-only shape).
   Bash leg sees the full pre-expansion command literal (Partially-verified residual confirmed
   as observed fact). Interactive sessions, Kiro/Codex, nested Agent-denies-Agent: UNPROBED,
   stated in the note.
+- **D-15 · FOR THE PLANNING WINDOW (with D-1): BL-X14's BACKLOG diagnosis text (~line 486)
+  records the FALSIFIED hypothesis** (sandbox import-path resolution). The observed mechanism
+  is the cmd.exe `cd /d` prefix dying under `/bin/sh` with `shell=True` — both runs failed
+  identically, mimicking vacuity (evidence: `evidence/x14-ci-green.md` + CI runs 31978174967
+  red / 31979757460 green). When closing BL-X14 in the backlog, replace the diagnosis with
+  the observed mechanism; also note stale `shell=True` prose at `.planning/DECISIONS.md:1211,
+  1214` + `.planning/BACKLOG.md:840` (the latter is now done work).
 - **D-13 · `tools/recall.py:607` carries the identical wrapped-bold-anchor blindness**
   (its own single-line `_BULLET_RE` copy): recall over DECISIONS.md still cannot see
   D168/D172/D173 and still returns D167/D171 with the swallowed text — the READ side of the
