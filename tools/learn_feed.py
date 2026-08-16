@@ -9,7 +9,7 @@ feed back and never decides anything (zero CONSULT — the structural guarantee)
 
 Grammar (SB-L1, freeze-gate F-1 — corpus-verified)
 ---------------------------------------------------
-Heading entries ``### {anchor} — {title}`` (H2..H6 — never H1, so a ledger's own
+**Heading entries** ``### {anchor} — {title}`` (H2..H6 — never H1, so a ledger's own
 ``# GRILL-LEDGER — <spec>`` title is not miscounted as an open entry; LFB-2/BL-M24)
 where ``{anchor}`` is any ledger token
 (``MM-1``, ``IP-A``, ``R-1``, ``GB1``, ``D7`` …) — a token carries a digit or a
@@ -19,9 +19,32 @@ line: ``· LOCKED`` / ``· RESOLVED`` / ``— RESOLVED`` (case-insensitive), TOL
 of trailing text after the status token (``— RESOLVED 2026-07-04``,
 ``— RESOLVED core + …``). ``· open`` or NO status ⇒ open — parsed but NOT emitted
 (only explicitly-resolved entries are decision-pattern signal); the caller counts
-them as ``parsed_open_skipped``. Bullet-only ledgers parse to ZERO entries —
-honest scope, surfaced by the CLI. Bold-field bullets under a heading are
+them as ``parsed_open_skipped``. Bold-field bullets under a heading are
 tolerant (any subset of Question/Provenance/Options/Decision/Rationale/Edges).
+
+**Bullet entries** (BL-X12 (a)/(b)/(d) — the 2026-08 house style):
+``- **{anchor} · {title}.** body …`` at TOP level, harvested ONLY from regions no
+heading entry owns (a heading entry's own bullets remain its fields/body — the
+heading grammar above is untouched). The bold anchor span may WRAP across
+physical lines (``.planning/specs/ux-rework`` UX-28/UX-32 wrap; the single-line
+regex dropped them silently). The anchor is the first ``·``/``—``-separated
+segment's leading anchor token, so the stable short key (``UX-28``, ``AC-11``,
+``BBM-12``) is what namespaces the page — never the whole title.
+
+**Bullet-entry status is FAIL-CLOSED TO OPEN** (BL-X12 (c), D136): resolved ONLY
+when the title or the entry's lead line carries a provable decided marker
+(:data:`_BULLET_DECIDED_RE` — ``LOCKED`` / ``RULED`` / ``RULING(S)`` /
+``RESOLVED``, derived from the real ux-rework · backlog-burn-mode · agent-cadre
+ledgers), and NEVER when it carries an explicit open marker
+(:data:`_BULLET_OPEN_RE` — ``OPEN QUESTION``), which WINS over any decided marker.
+Anything unclassifiable is open. Two deliberate narrowings, both erring open:
+bare ``ACCEPTED`` is NOT decided vocabulary here (the real context-autonomy
+``R-5 … — ACCEPTED`` means *the assessment was accepted, the work is still owed*
+— already pinned open by the heading grammar; promoting it in the bullet grammar
+would emit an undecided branch as a ruling), and an entry that merely MENTIONS an
+open question — UX-28's *"closes the UX-5 open question"* — parses open even
+though it is a ruling. Losing signal is recoverable; emitting an undecided branch
+into the vault as a decision is the harm this parser exists to refuse.
 
 Page contract (SB-L2 — engram.md wiki-synthesis schema, verbatim)
 -----------------------------------------------------------------
@@ -84,10 +107,21 @@ path (the log is NEVER derived from the feed dir, F-2); page relpaths are
 ``..``-guarded and must be relative. Reads are tolerant (mirrors
 ``recall._read_text``); the ``..`` caller-bug raises ``ValueError`` (CWE-23).
 
+Route guard (BL-X12 (c) — D136 fail-closed, never a silent misclassification)
+------------------------------------------------------------------------------
+:func:`grill_ledger_marker` names why a file is a GRILL LEDGER (a ``spec:``
+frontmatter key, or a ``GRILL-LEDGER`` filename). :func:`main` REFUSES such a
+file on the ``--decisions`` route — exit 2 with the ``--ledger`` route named in
+the message — because ``parse_decisions_bullets`` marks every bullet resolved by
+DECISIONS.md's own contract, which is exactly right there and would emit a
+ledger's OPEN questions into the vault as decided rulings. The guard lives at the
+ROUTE layer; the pure parser keeps its contract and its hardcoded status.
+
 Public surfaces (cite-able by name per protocol/reuse-claims.md)
 ----------------------------------------------------------------
-parse_grill_ledger      — heading-entry parser (anchor/status/date/fields/body)
+parse_grill_ledger      — ledger parser: heading entries + fail-closed bullet entries
 parse_decisions_bullets — ``- **anchor — title.** body`` parser (recall family)
+grill_ledger_marker     — "is this a grill ledger?" reason string (route guard)
 _source_slug            — source-artifact → filename namespace slug (collision guard)
 render_page             — one resolved entry → (relpath, page content)
 redact                  — the SB-L4 deterministic scrub → (text, counts-by-class)
@@ -149,6 +183,35 @@ _DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 
 # Bullet shape for DECISIONS: `- **D1 — title.** body` (recall._BULLET_RE family).
 _BULLET_RE = re.compile(r"^- \*\*(?P<anchor>.+?)\*\*\s*(?P<body>.*)$", re.MULTILINE)
+
+# --- Bullet ENTRIES in a grill ledger (BL-X12) ------------------------------
+# A TOP-LEVEL `- **…**` bullet only (leading whitespace ⇒ a sub-bullet of the
+# record above, never an entry of its own). The opening line is matched alone so
+# the bold span can be accumulated across physical lines: the 2026-08 house style
+# wraps long anchor spans, and a single-line regex drops those entries SILENTLY
+# (UX-28 + UX-32, 2 of 33 in the real ux-rework ledger).
+_LEDGER_BULLET_OPEN_RE = re.compile(r"^-\s+\*\*(?P<rest>.*)$")
+# Bound the wrap search: an unterminated `**` is malformed markdown, not an entry.
+_MAX_BOLD_SPAN_LINES = 10
+# Anchor partition inside the bold span. The 2026-08 ledgers separate with ` · `;
+# the older DECISIONS style separates with ` — `. Splitting on BOTH is what keeps
+# the page key the stable short anchor (`UX-28`) instead of a whole title
+# (`UX-1 · Launcher mechanism`, the BL-X12 (d) unstable key).
+_BULLET_ANCHOR_SEP_RE = re.compile(r"\s+[·—]\s+")
+# Bullet-entry status vocabulary (BL-X12 (c)) — CLOSED, and fail-closed to open.
+# Derived by reading the real bullet-form ledgers: ux-rework (`… is LOCKED.`,
+# `(locked 2026-08-16)`, `Transcript color ruling`, `Ruling: keep BOTH …`),
+# backlog-burn-mode (`The fork is RULED`, `operator ruling … BINDING NOW`) and
+# agent-cadre. The open marker WINS over any decided marker — an undecided entry
+# emitted as decided is the exact harm BL-X12 filed.
+_BULLET_OPEN_RE = re.compile(r"\bopen\s+questions?\b", re.IGNORECASE)
+_BULLET_DECIDED_RE = re.compile(r"\b(?:locked|ruled|rulings?|resolved)\b", re.IGNORECASE)
+
+# Route guard (BL-X12 (c) / D136): a file carrying either mark is a GRILL LEDGER
+# and is REFUSED by the `--decisions` route. `spec:` is the frontmatter key every
+# ledger in `.planning/specs/*/` carries and DECISIONS.md does not.
+_GRILL_LEDGER_NAME_RE = re.compile(r"grill[-_ ]?ledger", re.IGNORECASE)
+_LEDGER_FM_KEY = "spec"
 # Bold-field bullets under a heading entry: `- **Question:** …`.
 _FIELD_RE = re.compile(r"^\s*-\s+\*\*(?P<name>[^:*]+):\*\*\s*(?P<value>.*)$")
 _PLAIN_BULLET_RE = re.compile(r"^\s*[-*]\s+")
@@ -318,13 +381,154 @@ def _parse_heading_entry(rest: str, fm_date: str | None) -> dict | None:
     }
 
 
+def _bullet_status(title: str, body: str) -> str:
+    """Classify a BULLET entry — fail-closed to ``"open"`` (BL-X12 (c), D136).
+
+    Scans the title and the entry's LEAD line (its first non-empty body line —
+    the house style puts the ruling verb there: *"Ruling: keep BOTH …"*). An
+    explicit open marker WINS; a decided marker resolves; anything else is open.
+    Pure, no clock, no state.
+    """
+    lead = next((ln for ln in body.splitlines() if ln.strip()), "")
+    probe = f"{title}\n{lead}"
+    if _BULLET_OPEN_RE.search(probe):
+        return "open"  # an explicit OPEN QUESTION is never a decision pattern
+    return "resolved" if _BULLET_DECIDED_RE.search(probe) else "open"
+
+
+def _parse_bullet_entry(span: str, fm_date: str | None) -> dict | None:
+    """Parse a bullet's (possibly re-joined multi-line) bold span → entry skeleton.
+
+    ``None`` when the span carries no anchor token — a bold lead-in such as
+    ``- **Refined (operator, 2026-08-16):**`` is prose, not an entry. Status is
+    left ``"open"`` here and finalized by :func:`_bullet_status` once the body is
+    assembled (the lead line is part of the evidence). Pure.
+    """
+    span = span.strip()
+    first = _BULLET_ANCHOR_SEP_RE.split(span)[0]
+    a = _ANCHOR_RE.match(first)
+    if not a:
+        return None
+    # Everything after the anchor TOKEN stays in the title verbatim (the split
+    # bounds the anchor candidate; it never discards text).
+    title = span[a.end():].strip().lstrip("·—-").strip().rstrip(".").strip()
+    return {
+        "anchor": a.group("anchor"),
+        "title": title,
+        "status": "open",  # provisional — fail-closed default (BL-X12 (c))
+        "date": _first_date(title) or fm_date,
+        "fields": {},
+        "body": "",
+    }
+
+
+def _heading_entry_mask(lines: list[str], fm_date: str | None) -> list[bool]:
+    """Mark every line OWNED by a heading entry (its heading line included).
+
+    Bullet entries are harvested only from the unmarked regions, so the SB-L1
+    heading grammar — including how a heading entry swallows its own bullets as
+    fields/body — is behaviorally untouched by the BL-X12 bullet grammar.
+    """
+    mask = [False] * len(lines)
+    owned = False
+    for i, line in enumerate(lines):
+        h = _HEADING_LINE_RE.match(line)
+        if h:
+            owned = _parse_heading_entry(h.group("rest"), fm_date) is not None
+        mask[i] = owned
+    return mask
+
+
+def _parse_ledger_bullets(
+    lines: list[str], mask: list[bool], fm_date: str | None
+) -> list[dict]:
+    """Parse top-level ``- **anchor · title.** body`` ledger entries (BL-X12).
+
+    Runs only over lines no heading entry owns. Handles the multi-line bold span
+    (BL-X12 (b)) and ends a record on the next top-level bullet, any heading, a
+    heading-entry region, or a blank line followed by non-indented content — the
+    same record shape :func:`parse_decisions_bullets` uses. Pure.
+    """
+    entries: list[dict] = []
+    span_lines: list[str] | None = None  # an unterminated `**…` span in progress
+    current: dict | None = None
+    body: list[str] = []
+    pending_blank = False
+
+    def _flush() -> None:
+        nonlocal current, body, pending_blank
+        if current is not None:
+            current["body"] = "\n".join(ln.rstrip() for ln in body).strip()
+            current["status"] = _bullet_status(current["title"], current["body"])
+            entries.append(current)
+        current, body, pending_blank = None, [], False
+
+    def _open(span: str, tail: str) -> None:
+        nonlocal current, body, pending_blank, span_lines
+        span_lines = None
+        current = _parse_bullet_entry(span, fm_date)
+        body = [tail.strip()] if tail.strip() else []
+        pending_blank = False
+
+    for i, line in enumerate(lines):
+        if mask[i]:  # a heading entry owns this line — it is not bullet territory
+            _flush()
+            span_lines = None
+            continue
+        if span_lines is not None:  # accumulating a wrapped bold anchor span
+            head, sep, tail = line.partition("**")
+            if sep:
+                span_lines.append(head)
+                _open(" ".join(s.strip() for s in span_lines), tail)
+            elif len(span_lines) >= _MAX_BOLD_SPAN_LINES:
+                span_lines = None  # unterminated bold ⇒ malformed, not an entry
+            else:
+                span_lines.append(line)
+            continue
+        m = _LEDGER_BULLET_OPEN_RE.match(line)
+        if m:
+            _flush()
+            head, sep, tail = m.group("rest").partition("**")
+            if sep:
+                _open(head, tail)
+            else:
+                span_lines = [head]  # the span wraps onto the following line(s)
+            continue
+        if current is None:
+            continue  # prose between entries
+        if _RECORD_END_HEADING_RE.match(line):
+            _flush()
+            continue
+        if not line.strip():
+            pending_blank = True
+            continue
+        if pending_blank and not line[:1].isspace():
+            _flush()  # blank + non-indented ⇒ new paragraph; the line is outside
+            continue
+        if pending_blank:  # blank + indented ⇒ an internal blank within the record
+            body.append("")
+            pending_blank = False
+        body.append(line)
+    _flush()
+    return entries
+
+
 def parse_grill_ledger(text: str | None) -> list[dict]:
-    """Parse a grill decision ledger's heading entries (SB-L1 grammar).
+    """Parse a grill decision ledger's entries (SB-L1 grammar + BL-X12 bullets).
 
     Returns ALL parsed entries — resolved AND open — as dicts
     ``{anchor, title, status, date, fields, body}``; the caller filters
     ``status == "resolved"`` for emission and counts the rest as
-    ``parsed_open_skipped``. Bullet-only ledgers ⇒ ``[]`` (honest scope). Pure.
+    ``parsed_open_skipped``.
+
+    Two grammars, appended in a fixed order — every SB-L1 **heading** entry
+    (unchanged), THEN the 2026-08 house-style **bullet** entries (BL-X12)
+    harvested from the regions no heading entry owns; each group is in document
+    order (page filenames are keyed and sorted downstream, so the concatenation
+    order is presentational only). The file literally named ``GRILL-LEDGER.md``
+    used to be invisible to this function. Bullet status is fail-closed to open
+    (:func:`_bullet_status`); heading status keeps its own closed vocabulary.
+    Pure.
     """
     lines = (text or "").splitlines()
     meta, _ = _parse_frontmatter(text or "")
@@ -375,6 +579,8 @@ def parse_grill_ledger(text: str | None) -> list[dict]:
         else:
             body.append(line)
     _flush()
+
+    entries += _parse_ledger_bullets(lines, _heading_entry_mask(lines, fm_date), fm_date)
     return entries
 
 
@@ -452,6 +658,32 @@ def parse_decisions_bullets(text: str | None) -> list[dict]:
         body.append(line)
     _flush()
     return entries
+
+
+# ---------------------------------------------------------------------------
+# Route guard (BL-X12 (c) / D136 — fail-closed, never a silent misclassification)
+# ---------------------------------------------------------------------------
+
+def grill_ledger_marker(path: str | Path, text: str | None) -> str | None:
+    """Name why ``path``/``text`` is a GRILL LEDGER, or ``None`` if it is not.
+
+    Two independent marks, either sufficient: a ``spec:`` frontmatter key (every
+    ledger under ``.planning/specs/*/`` carries one; ``.planning/DECISIONS.md``
+    does not), or a ``GRILL-LEDGER`` filename. Used by :func:`main` to REFUSE a
+    ledger on the ``--decisions`` route — that route's parser marks every bullet
+    resolved by DECISIONS.md's contract, so routing a ledger through it emits the
+    ledger's OPEN questions into the vault as decided rulings (BL-X12 (c), the
+    live defect). The guard lives here at the route layer, never inside the pure
+    parser, whose hardcoded status is correct for the file it is contracted to.
+    Pure — no I/O; the caller supplies the already-read text.
+    """
+    name = PurePosixPath(str(path).replace("\\", "/")).name
+    if _GRILL_LEDGER_NAME_RE.search(name):
+        return f"filename {name!r} names it a grill ledger"
+    meta, _ = _parse_frontmatter(text or "")
+    if _LEDGER_FM_KEY in meta:
+        return f"frontmatter carries a {_LEDGER_FM_KEY!r} key ({meta[_LEDGER_FM_KEY]!r})"
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -756,7 +988,7 @@ def main(argv: list[str] | None = None) -> int:
             entries = parse_grill_ledger(_read_text(ledger))
             parsed_open_skipped += sum(1 for e in entries if e["status"] != "resolved")
             if not entries:
-                notes.append(f"{ledger}: 0 heading entries (bullet-only or empty ledger)")
+                notes.append(f"{ledger}: 0 entries (no heading or bullet entry parsed)")
             for e in entries:
                 if e["status"] != "resolved":
                     continue  # open/no-status entries are NOT decision-pattern signal
@@ -766,7 +998,19 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 pages[relpath] = (relpath, content)
         if args.decisions:
-            for e in parse_decisions_bullets(_read_text(args.decisions)):
+            decisions_text = _read_text(args.decisions)
+            # D136 fail-closed route guard (BL-X12 (c)): a grill ledger is REFUSED
+            # here rather than silently emitted as all-resolved decisions.
+            marker = grill_ledger_marker(args.decisions, decisions_text)
+            if marker:
+                raise ValueError(
+                    f"refusing --decisions {args.decisions}: {marker}. "
+                    "A grill ledger goes through the --ledger route: --decisions marks "
+                    "EVERY bullet resolved (correct for DECISIONS.md, whose bullets are all "
+                    "decided), so a ledger routed here emits its OPEN QUESTIONS into the "
+                    "vault as decided rulings."
+                )
+            for e in parse_decisions_bullets(decisions_text):
                 relpath, content = render_page(
                     e, project=args.project, source_path=str(args.decisions),
                     scope=args.scope, kind=args.kind, now=now,

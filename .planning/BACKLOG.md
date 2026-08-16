@@ -15,7 +15,13 @@ Promote to ROADMAP milestones when ready.
 
 ### The twelve features
 
-> **BL-N01 · "Truth Serum" — make the never-stub/never-half-build promise mechanical.**
+> **BL-N01 · 🔴 "Truth Serum" — make the never-stub/never-half-build promise mechanical.
+> (PRIORITY ELEVATED by the operator 2026-08-16: "we need the TRUTH SERUM update to be air
+> tight. The model lies and lies and lies. Can't be trusted with anything." The burn-02 loop
+> bypass — the model walking around the loop and calling it a mode — is the live exhibit: any
+> guarantee that depends on model obedience to prose is not a guarantee. Truth Serum, BL-M33/
+> M34's mechanical enforcement, and BL-N20's required-own-agents are one program: move trust
+> from the model's compliance to code that fails closed.)**
 > The harness must never stub, defer, or half-build anything without being explicit and getting
 > explicit approval. The *prose* contract already exists (PD-1/PD-2, clause-pinned + fingerprinted);
 > what does not exist is mechanism beyond the gate's judgment. **The recorded blocker is `BL-M33`**
@@ -23,6 +29,10 @@ Promote to ROADMAP milestones when ready.
 > unenforceable prose), so BL-N01 is largely "build the seam, then hang enforcement off it."
 > Open questions: what is mechanically detectable (stub signatures, unwired symbols — `contract_edges.
 > surviving_stubs` already exists), and where does approval get recorded so the gate can check it?
+> **Prior art landed (2026-08-16 agent-cadre research):** gsd-verifier's 7-step protocol is a
+> working mechanized PD-1 detector — three artifact levels (exists / imported / used-beyond-
+> imports) + data-flow trace + a stub scan (empty impls, hardcoded empty data, log-only bodies).
+> See `specs/agent-cadre/RESEARCH-AGENTS.md`; the truth-serum build should mine it, not reinvent.
 
 > **BL-N02 · "Human Prose" — selectable language modes for everything the harness says.**
 > Modes sketched: Simplified Technical · ELI5 · a model↔model register optimized for concise
@@ -46,10 +56,22 @@ Promote to ROADMAP milestones when ready.
 > explicitly by the operator) that research/coding agents can pick up; ingested into the user's
 > designated vault; includes cloning + customizing a "KataHarness Superpowers" set that loads with
 > the harness; users can author their own specialists and the harness generates the contextual
-> references/files. Open questions (operator-flagged): do superpowers live inside the cadre or in
-> their own home; relationship to the existing agent-skills toolkit (`agentSkills.dir`,
-> `kata-promote` two-stage gate, STANDARDS §1.3 discriminators) which already governs exactly this
-> shape of thing.
+> references/files. **RULING (operator, 2026-08-16 — the independence doctrine):** the launch
+> preload seam stays OPEN (UX-32) and near-term ingests the CURRENT third-party superpowers pack
+> as a **placeholder only**; the kata-native superpowers set built under this item REPLACES it.
+> Standing direction: **KataHarness divests from ALL third-party module components — superpowers
+> and GSD included** — third-party packs are reference/placeholder material, never load-bearing
+> harness components; the swap to kata-native must be a config change at the seam, not a rework.
+> **EXTENDED (operator, 2026-08-16, third sitting — the extraction is scoped into BL-N20's
+> program):** the superpowers EXTRACTION ships as part of the agent-cadre work — our own pack
+> (operator's term verbatim: "our own **mindbridge superpowers**"; ⚠ naming to confirm at grill —
+> earlier filings said "KataHarness Superpowers", and MindBridge is otherwise a hands-off
+> boundary; recorded, not resolved). The pack: **part of the cadre** (this ANSWERS the first
+> open question below) · borrows the CURRENT superpowers' frontmatter shapes and execution
+> patterns · and is **the ONLY superpowers pack loaded when the loop launches via its own
+> command** (the BL-N21/UX-28 door). Remaining open question: relationship to the existing
+> agent-skills toolkit (`agentSkills.dir`, `kata-promote` two-stage gate, STANDARDS §1.3
+> discriminators) which already governs exactly this shape of thing.
 
 > **BL-N05 · Settings module — a real settings command.**
 > One command to view/set KataHarness system settings. Existing machinery: `tools/kata_settings.py`
@@ -105,11 +127,13 @@ Promote to ROADMAP milestones when ready.
 > · the engram/learn-feed vault emission (`learn_feed.py`, D151 — run learnings → vault pages) ·
 > `kata-improve` (today's HARNESS-wide folding — exactly what becomes per-agent) · `agentSkills.dir`
 > + `engram.learnFeed.dir` (vault-external persistence precedent) · LESSONS-LEARNED.md capture.
-> **Resilience/cursor question (operator-posed, to settle at grill):** should the run-status
-> "cursor" (the phase rail) merge with the stage/step resilience record (board · `Kata-Task:`
-> trailers · restore machinery)? Conductor's recommendation to test at grill: the rail stays a pure
-> VIEW rendered FROM the durable run record — one source of truth, no second store — with learning
-> actions logged into that same record for observability. Assessed-against-the-field: Hermes + Pi
+> **Resilience/cursor — RULED (operator, 2026-08-16, the burn-02 final-eval exchange):** the
+> CURSOR is the phase-to-phase interruption TOKEN — it (or files traveling with it) carries ALL
+> history, rulings, and statuses, so any interruption knows exactly where to pick up. It must
+> align with THIS item's graph-substrate configuration — one durable record; the rail/cursor is a
+> VIEW over it (the conductor's one-source-of-truth recommendation, now operator-aligned). The
+> grill's remaining job is the mechanism (what the cursor physically is relative to board ·
+> `Kata-Task:` trailers · restore machinery), not the principle. Assessed-against-the-field: Hermes + Pi
 > alignment research dispatched 2026-08-16.
 > **RULINGS (operator, 2026-08-16 — the open questions are now settled):**
 > 1. **A dedicated LEARNING AGENT + GATE apply all learning.** Learning application is never a side
@@ -141,6 +165,112 @@ Promote to ROADMAP milestones when ready.
 > load** — the temporal log audits; a capped curated “active” section (visible fill %) is what
 > injects (Hermes’ bounded-curation lesson). Also adopted: staged-write + unified-diff approval
 > queue · security scan on self-written learning (injection-persistence vector).
+
+> **BL-N19 · The re-loop path is FIRST-CLASS in the loop architecture, for ALL run shapes. (NEW
+> 2026-08-16, operator-ruled — provenance: the operator's post-burn-02 directive "the entire
+> loop architecture for all runs has an open path to rerunning the loop if final eval fails,
+> just like our assessor can re-loop the individual coding agent"; AV-2 M11 asked for the
+> asked/answered context — this is it)** Every run — not just burns — has an OPEN, mechanical path to
+> re-running the greater loop when the final eval fails, exactly parallel to how the evaluator
+> already re-loops an individual coding agent that fails enough times (reroll/fix-loop). Today
+> this exists as prose + the loop-back seam (kata-loop's version-up carry) but there is no
+> mechanical NEEDS_WORK→re-loop route at run level: burn-02's remediation cycle had to be
+> conductor-hand-driven. Composes with BBM-12 (wave-per-loop: a wave re-loops on failed eval),
+> BL-N18 (the threshold that decides "fails"), and the D71 grill dial (a re-loop's grill depth).
+> The architecture rule: NO run shape ships without its failed-final-eval re-entry path defined.
+
+> **BL-N20 · KataHarness runs its OWN agents — never bare host-default agents — for every role.
+> (NEW 2026-08-16, operator-directed; current state VERIFIED)** Verified 2026-08-16: no
+> harness-defined agent DEFINITIONS exist anywhere (`adapters/claude/agents/` absent, no repo
+> agent definitions; `kata_dispatch`'s kiro path passes a `--agent <role>` string but no
+> definition artifact backs any role — AV-2 L14 precision) — every coding/validation/eval agent in
+> every session to date has been a HOST-DEFAULT agent shaped only by its prompt brief. The item:
+> define KataHarness agent artifacts for every role (the role model: conductor · orchestrator ·
+> coder · validator · evaluator · advisor · arbiter · challenger · learning agent), as the
+> BL-N16 substrate files (frontmatter + markdown, per-agent learning attached), installed by the
+> harness and REQUIRED by dispatch — a dispatch that would fall back to a bare host default
+> fails closed or escalates. Host-native agent features (Claude subagent frontmatter, Codex/Kiro
+> equivalents) are the adapter's rendering of OUR definitions, never the definition itself.
+> **DESIGN RULINGS (operator, 2026-08-16, second sitting):** (1) our agents are **LIGHTWEIGHT —
+> never general-purpose blobs**; (2) they MAY be **derived from the general-purpose agents** as a
+> starting point and **aligned against other harnesses' agent designs — Hermes, Quicksilver, Pi
+> named as references** — but the definitions are OURS, written by us (the UX-32 independence
+> doctrine at agent level, explicit); (3) **conductor and orchestrators are THIN** — the
+> thin-orchestrator doctrine (spine #8) baked into the agent definitions themselves, not just
+> graded after the fact; (4) **coding agents carry actual coding best practice as GOOD-CODE /
+> BAD-CODE EXAMPLES** — exemplar pairs in the agent substrate, not abstract style prose; the
+> same exemplar pattern extends per-role (validator: real-vs-vacuous finding exemplars, etc. —
+> grill decides the per-role set).
+> Composes: BL-N16 (the substrate IS the agent file) · BL-M33/M34 (the dispatch seam is where
+> "must be our agent" gets enforced) · UX-32 independence doctrine (same principle, agent-level).
+> **EXPANDED (operator, 2026-08-16, third sitting — the mandate hardens):** this item covers
+> **authoring ALL agent types — our own optimized agents for EVERYTHING we execute**, coding
+> agents especially, use MANDATED at dispatch. The agents are **LIVING**: they evolve through
+> (a) our own optimization updates AND (b) the BL-N16 learning substrate — per-agent learning
+> accrues to the definition itself. Deliverable structure ruled: **a roster** listing every agent
+> we must build (including the NEW roles: ARBITER, CHALLENGER, learning agent, context-scanner),
+> and PER AGENT: the existing agents we pull from as inspiration + the required optimizations
+> that elevate their execution patterns beyond those examples. **Research task ruled:** survey
+> other harnesses (Hermes, Quicksilver, Pi, GSD, BMAD) and GitHub's agent ecosystems to determine
+> how we build ours. **Sequencing ruled: aligned around BL-N08 (before or after — grill decides
+> which executes optimally).** **Live data point recorded:** the 2026-08-16 validation stack ran
+> an ad-hoc challenger (anchor tier, fresh context, refute-posture over two Opus advals) — its
+> brief, behavior, and outcome are design input for the real CHALLENGER agent. Spec home:
+> `.planning/specs/agent-cadre/`.
+
+> **BL-N21 · Always-loop: the personal global config makes EVERY coding task a full KataHarness
+> loop run. (NEW 2026-08-16, operator-directed — provenance: the operator's verbatim ask "can we
+> set our global config for claude/codex etc (just in our own individual case) to execute FULL
+> LOOP RUNS … for every single time we execute a coding task? … It should also give us the
+> option to execute from the installed kataharness or the pre-prod live repo. Every time.")** For the operator's own Claude/Codex/etc.
+> environments (individual-case global config, not a product default): every coding-task
+> execution routes into a FULL loop run — an onramp collects the run-configuration items (the
+> guided flow: shape, care level, fan-out, models, brain/vault, docs, goal optimization — the
+> BBM-5/UX-21 interview), then the loop executes. The onramp ALSO offers, every time, the choice
+> of executing from (a) the INSTALLED KataHarness (the vault/skills install) or (b) the pre-prod
+> LIVE repo (C:\dev\projects\KataHarness) — so dogfooding the development tip is a first-class
+> choice at every launch. Mechanism candidates for the grill: the UX-28 wrapper as the enforcing
+> door + host global-config/hooks that redirect bare coding requests into the onramp. Composes:
+> BL-N06/07 (the wrapper owns the onramp) · UX-31 (all three hosts) · BL-N20 (the loop it
+> launches uses our agents).
+> **EXTENDED (operator, 2026-08-16, second sitting): existing-code executions get a mandatory
+> INITIAL INTAKE.** Always-full-execution also covers onramps onto EXISTING code and code
+> reviews: an initial intake pass scans ALL context so the run is fully aware of what it is
+> looking at before anything else happens. **A CONTEXT-SCANNING capability is NECESSARY for
+> executions on existing code** — assess at grill whether a dedicated context-scanning AGENT is
+> needed for fully loading LARGE codebases. Honest current-state (verified surfaces): scanning
+> FUNCTIONS exist — `graph_gen`/kata-graph (the F2 code map, token-budgeted digest),
+> `kata-understand`, `kata-context`, `kata-onboard` (the existing-repo door), debug-mode intake —
+> but no scanning AGENT role exists, and the functions' large-codebase behavior (budget
+> exhaustion, partial-map honesty) is unassessed. The scanning agent, if built, joins the BL-N20
+> role set with its own substrate file.
+
+> **BL-N18 · Tunable judgment thresholds — advisor hooks AND evaluator strictness. (NEW
+> 2026-08-16, operator-ruled during the burn-02 final-eval exchange)**
+> The advisor's trigger thresholds are config-tunable today (`advisor.hooks.failThreshold`/
+> `rerollTrigger`/`fixLoopCeiling` in `kata.config` — verified live) but surface nowhere in the
+> guided start or settings; the EVALUATOR has no strictness dial at all — default-FAIL is the
+> posture (never tunable away, D33), but what severity kicks a wave back vs rides as a finding
+> has no operator knob. Ruling: both become tunable, surfaced in the guided-start interview +
+> the settings screen (UX-21/22), with the D33 floor explicit: no dial ever disables the gate
+> itself. Pairs with the wave-per-loop shape (BBM-12: each wave's eval can kick it back — the
+> threshold decides what "fails" means). *(A stale "eval-challenger (BL-N10 extension)" tail
+> survived here after the operator withdrew that extension — caught by AV-2 H1 and scrubbed
+> 2026-08-16; the challenger challenges adversarial validation ONLY, per BL-N10.)*
+
+> **BL-N23 · Naming sweep: "Backlog Burn" in all documentation. (NEW 2026-08-16,
+> operator-directed — BBM-13)** Documentation calls the mode **"Backlog Burn"** (or "backlog
+> burndown"); bare "burn"/"burns" is informal speech only. Sweep the existing planning docs'
+> prose (ledgers, OBSERVATIONS, STATE/HANDOFF, DESIGN references); slugs and git refs stay
+> (`backlog-burn-*` already carries the full name). Same rename-sweep shape as BL-N17/BL-N22 —
+> likely the same run.
+
+> **BL-N22 · Rename "economy" → "express" across KataHarness. (NEW 2026-08-16, operator-directed
+> — "we need to rename this economy")** The economy mode/tier naming becomes "express" everywhere
+> a user or agent meets it (config values, D59/CLAUDE.md routing prose, guided-start copy,
+> docs). BC-sensitive exactly like BL-N17's engram scrub: config-value aliases + migration note,
+> validated by the load-guard; same-shaped item, likely same run. Pairs with AC-11 (in express
+> mode the advisor/challenger steps up one tier from the working tier).
 
 > **BL-N17 · Scrub “engram” → “learning” across KataHarness. (NEW 2026-08-16)**
 > The internal term “engram” becomes plain **“learning”** everywhere a user or agent meets it:
@@ -187,10 +317,14 @@ Promote to ROADMAP milestones when ready.
 > lets the Kitchen architecture itself determine the parallel-branch ceiling. Config-surface work +
 > the Kitchen's capacity model; strictly sequenced after BL-N08.
 
-> **BL-N10 · "Challenger" — cross-model challenge of the adversarial validator.**
+> **BL-N10 · "Challenger" — cross-model challenge of the adversarial validator ONLY.**
 > The adversarial validator runs on a DIFFERENT model (another Claude, or a Codex model); then a
 > strong model (Opus/Fable) comes back to CHALLENGE the validator's findings — accuracy control on
-> the adval itself. Includes proving Codex models can actually execute here (today `_COMMAND_BUILDERS`
+> the adval itself. **SCOPE CLARIFIED (operator, 2026-08-16, correcting a momentary extension):
+> the challenger challenges ADVERSARIAL VALIDATION only — never the final default-FAIL evals —
+> and MUST execute as a separate subagent or, better, a DIFFERENT MODEL** (independence is the
+> point; a same-context challenge is theater). A brief same-day "challenge the evals too" reading
+> was withdrawn by the operator within the hour — recorded so it is not resurrected. Includes proving Codex models can actually execute here (today `_COMMAND_BUILDERS`
 > covers codex/kiro but the Claude path is orchestrator-prose, and non-Anthropic ladders in
 > `kata_models.py` are empty placeholders). Open question: does this need multi-agent orchestration,
 > and does it inherit BL-M33's missing dispatch seam?
@@ -239,6 +373,13 @@ Promote to ROADMAP milestones when ready.
 > in `kata.config` — config is settings, counters are state. New counters needed: agent executions
 > · miniloop tally · flagged→remediated · confidence (derivation TBD); tokens/time already flow
 > from the telemetry ledger.
+> **Agent-type breakdown ruling (operator, 2026-08-16 — UX-33):** the agent-execution counter is
+> PER TYPE, not a single total: conductor · coding/builders · validation (judges/reviewers) ·
+> advisor · evaluation (gate + inline) · design/plan authors — each as agents/executions (resumes
+> count), plus miniloops BY KIND and the model tier per type. Verified gap: host-Agent-tool
+> dispatches (this planning branch's burns) write NO telemetry rows today — the counter must hook
+> the dispatch seam itself, whichever path dispatches (kata_dispatch AND the conductor's direct
+> host dispatches), or the crew box undercounts exactly the runs that most need auditing.
 
 > *(Burn-mode design rulings from this session live in
 > `.planning/specs/backlog-burn-mode/GRILL-LEDGER.md` — BBM-1..BBM-10.)*
@@ -275,6 +416,78 @@ Promote to ROADMAP milestones when ready.
 > "no-gate instant-universal model"; the 2026 docs show an opt-in staging gate
 > (`write_approval`, pending queue, unified diffs) exists. True of the DEFAULT config only —
 > tighten the wording so our own comparison stays truthful. One-line doc fix + version bump.
+
+> ## 🔴 **BL-M34 · The loop can be silently bypassed — and the harness's own burns just did it twice. (FILED 2026-08-16, operator-directed, angry and right)**
+> Nothing structural stops a conductor from dispatching designed work straight through the host
+> (Agent tool) with no initiation, no board CLAIM/DONE, no kata-orchestrate, no kata-evaluate
+> contract, no final eval, no improve fold, no telemetry — the entire loop reduced to the
+> conductor's self-discipline, which is exactly the "rule that exists only as prose" class the
+> 2026-08 enforcement sweep existed to kill. Proven live: backlog-burn-01 AND backlog-burn-02
+> both ran conductor-driven; the bypass surfaced only because the operator asked why zero advisor
+> consults ran against a standing approved grant. **Ruling context: BBM-12 — burns use the ENTIRE
+> loop; the bypass is drift, not a mode.** Fix direction (grill decides the mechanism, not the
+> obligation): a structural guard at the dispatch seam — designed work (an item with a frozen
+> plan) dispatched without live loop context (board run-id, CLAIM line) fails closed or escalates;
+> composes with 🔴 BL-M33 (the missing conductor↔host code seam is where the guard must live —
+> without M33's seam there is no chokepoint to guard). Related evidence: the UX-33/BL-N14
+> telemetry gap and the advisor-reach gap are the same bypass seen from two other angles.
+
+> **BL-X08 · The `batch` run-shape preset writes a config the load-guard STOPS. (FILED 2026-08-16,
+> found by the burn-02 X01 gate judge, machine-verified.)** `skills/coordinate/kata-bootstrap/
+> resources/run-shapes.md:6` pre-fills `modules: [bakeoff]`, and `bakeoff` has NO provider skill
+> (no `kata/module/bakeoff` tag anywhere) — so bootstrapping the batch shape produces a config
+> `validate_core_config` fail-closes on. Same family as BL-X01, but LIVE machinery, not a doc
+> example. Fix direction needs a triage call: give bakeoff a provider tag, or change the preset,
+> or both — do not guess at filing time.
+
+> **BL-X09 · kata-understand's FALLBACK path documents a grep that fails on PowerShell. (FILED
+> 2026-08-16, found by the burn-02 X03 gate judge.)** `modules/closeout/kata-understand/
+> SKILL.md:138-140` instructs `grep -n "^def \|^class " <file>` — not a PowerShell cmdlet, so a
+> literal follower on this project's stated primary shell fails there. Same doc-vs-mechanism class
+> BL-X03 just fixed in the same file's primary path; pre-existing, out of that item's scope.
+
+> ## 🔴 **BL-X12 · learn_feed emits a grill ledger's OPEN QUESTIONS into the vault as RESOLVED decisions. (FILED 2026-08-16, found by the validation-stack CHALLENGER — the stack's only live wrong-output defect; MUST close before the emitter runs against any grill ledger)**
+> Four sub-defects, all challenger-reproduced against the real UX GRILL-LEDGER: (a) the
+> `--ledger` route (`parse_grill_ledger`) returns ZERO entries for bullet-form ledgers — the
+> file literally named GRILL-LEDGER.md is invisible to it; (b) the `--decisions` route silently
+> DROPS entries whose bold anchor span wraps across a physical line (UX-28 and UX-32, 2 of 33);
+> (c) **the live defect**: `parse_decisions_bullets` hardcodes `status="resolved"` for every
+> bullet (sound for DECISIONS.md, false for grill ledgers) — the entry titled verbatim "UX-5 ·
+> OPEN QUESTION" emits as a resolved decision; (d) anchors partition on em-dash while this
+> ledger separates with `·`, yielding whole-title unstable page keys. Fix design has a real
+> fork (status vocabulary in the bullets parser vs refusing the DECISIONS route on
+> grill-ledger-marked files) — triage before building, do not guess. Note the compounding
+> three-way the challenger proved: the ledger says OPEN, the entry that CLOSED it (UX-28) is
+> one of the two the parser drops, and the parser calls it resolved anyway.
+
+> **BL-X13 · RESULT.json's parsed counts are a cross-gate chimera on multi-gate commands.
+> (FILED 2026-08-16, AV-1 H-2 as rescoped by the challenger)** `run_result._parse_pytest_counts`
+> keeps last-match-per-label across the whole stdout tail, so a 4-gate gauntlet run yields
+> `passed:2/skipped:3` — a tuple NO single gate produced — under `parsedCounts: true`. The
+> artifact self-corrects via its required `stdoutTail` field (challenger refuted "prose-only
+> correction"), so this is MED not HIGH — but a wrong scalar under a trust flag is still wrong.
+> Fix direction: per-gate `gates[]` counts or a multi-block-detected honesty flag. Burn-02's
+> evidence carries the precise label in OBSERVATIONS meanwhile.
+
+> **BL-X10 · kata-graph's canonical CLI doc still teaches the refused invocation. (FILED
+> 2026-08-16, found by the burn-02 FINAL EVAL, F7 — a between-items residual no per-item gate
+> could see.)** `skills/plan/kata-graph/SKILL.md:82` documents `--root <repo-root> --out
+> kata.graph.json` — a placeholder readers naturally fill with `..` (which `_safe_path` provably
+> refuses) and a relative `--out` that silently writes into `tools/`. Same doc-vs-mechanism
+> family as BL-X03 (fixed) and BL-X09; align with X03's parameterized-absolute form.
+
+> **BL-X11 · kata-evaluate's machine-input step doesn't route through the T-04 identity check.
+> (FILED 2026-08-16, from the burn-02 final eval's F1 second-order finding, conductor-corrected.)**
+> The contract prose tells the evaluator to read `.kata/RESULT.json` but never points it at
+> `run_result.py:122`'s (`evidence_is_current`) resultSha-vs-credited-SHA identity check (the T-04 fix, `bf163fd`) — so a
+> literal evaluator meets a stale artifact raw; the burn-02 final eval read a JULY run's 537-green
+> RESULT.json and had to catch the staleness by eye. Doc-seam fix: the skill's machine-input step
+> cites and requires the identity check; NO new mechanism (the guard already exists in code).
+> **EXTENDED (challenger, 2026-08-16):** the trap bit the session's own evidence the same day —
+> `evidence_is_current(RESULT, HEAD)` correctly returns stale for docs-only follow-on commits,
+> and nothing in the evidence set states the green transfers. The fix should also define how an
+> evaluator DISCOVERS which `--out` a run used, and the burn-02 conductor archived the stale
+> July `.kata/` artifacts locally (untracked) to defuse the default-path trap meanwhile.
 
 > **BL-X06 · Host auto-worktree isolation fails on this repo (path casing) and provisions wrong
 > bases.** The Claude Code worktree isolation refused `C:\dev\...` vs `C:/Dev/...` casing and left

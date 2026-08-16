@@ -92,7 +92,8 @@ the output to be *provably* right — and the token bill to stay rational while 
   Pick Kata when the whole loop needs governing, not just the review step.
 - **vs. Hermes (Nous Research).** Hermes built its identity on the closed learning loop; we studied
   it formally and **based our approach on its applicable traits — while keeping our gates.** Hermes
-  ships no default-FAIL testing model and promotes learned behavior without a human gate; Kata's
+  ships no default-FAIL testing model and, in its default config, promotes learned behavior without
+  a human gate (its staging gate exists but is opt-in); Kata's
   learning is telemetry-grounded and passes a **two-stage human gate BEFORE anything executes with
   it**, and during execution the inline evaluator identifies where work must **hard-fork** (kill +
   fresh attempt branch) rather than drift on. Pick Kata when a wrong "learned lesson" or an
@@ -199,7 +200,8 @@ in the committed LIVE-PROOF)*.
 ### 🧠 The learning loop — Hermes-informed, human-gated
 KataHarness gets better across runs — but it never quietly rewrites itself. The cross-run learning
 design borrows the useful ideas from **Hermes** (a learning-loop agent surfaced by a formal research
-bake-off) while keeping our own gates, which Hermes doesn't have.
+bake-off) while keeping our own always-on gates — Hermes' equivalent gate exists but ships off by
+default (opt-in staging).
 
 In practice: a committed **telemetry ledger** records instrumented runs' results, costs, and failure
 types (row commits are human-gated, so a run can honestly ship without one), and tuning works from
@@ -347,9 +349,9 @@ is the machine source of truth for what exists and at what version.
 | `kata-handoff` | 0.2.0 | 1 | handoff | beta | adapted-from mattpocock/skills {handoff} + Anthropic reset-with-handoff / compaction guidance | Two-way durable handoff (session/agent/tool) |
 | `kata-orient` | 0.4.0 | 2 | handoff | beta | new (KataHarness original, loop-cognition AO-GB1/2/3 + D76) — receiving half of the two-way handoff (spine #5); three-tier assembly echoes Hermes prompt_builder (stable/context/volatile); nested-AGENTS.md rollup standard | Assemble a subagent's launch orientation: three-tier, task-type-tailored, derived pointers+callouts, routed questions — the read half of handoff |
 | `kata-selfhandoff` | 0.2.1 | 1 | handoff | beta | adapted-from Anthropic compaction guidance + mattpocock caveman compression | Configurable context-threshold self-handoff (delegates artifact to kata-handoff) |
-| `kata-understand` | 0.1.0 | 2 | handoff | beta | new (KataHarness original, Phase 2 GL-R2c / DESIGN §3 / PLAN-phase2 Task C1) — comprehension-map half of the closeout back-half; backed by the F2 graph runtime (tools/graph_gen.py → kata.graph.json) | — |
+| `kata-understand` | 0.1.1 | 2 | handoff | beta | new (KataHarness original, Phase 2 GL-R2c / DESIGN §3 / PLAN-phase2 Task C1) — comprehension-map half of the closeout back-half; backed by the F2 graph runtime (tools/graph_gen.py → kata.graph.json) | — |
 | `kata-improve` | 0.3.0 | 1 | meta | beta | adapted-from the Improvement Kata (Toyota Kata) + mattpocock/skills engineering/improve-codebase-architecture | Fold cross-run lessons back into the skills/ tree; calls kata-write-skill |
-| `kata-promote` | 0.1.0 | 2 | meta | beta | new (KataHarness original, loop-cognition ML / LC-GB3/GB4/GB5, D60-D69) — two-stage gate vs Hermes' no-gate instant-universal model (RESEARCH.md bake-off: borrow the closed loop, keep our human gate) | Stage-2 human gate: promote a grounded agent-distilled candidate skill (experimental→stable + scope bump) into the toolkit; honors engram.autonomy |
+| `kata-promote` | 0.1.1 | 2 | meta | beta | new (KataHarness original, loop-cognition ML / LC-GB3/GB4/GB5, D60-D69) — our default-on two-stage human gate vs Hermes, whose DEFAULT config applies skill learning ungated and instantly-universal; an opt-in staging gate does exist there (staged writes in `~/.hermes/pending/skills/`, `/skills pending`, `/skills diff <id>` unified-diff review, approve/reject). RESEARCH.md bake-off: borrow the closed loop, keep our human gate; Hermes primitives per `.planning/specs/learning-graph/RESEARCH-HERMES-PI.md` §1 (DOC-SOURCED) | Stage-2 human gate: promote a grounded agent-distilled candidate skill (experimental→stable + scope bump) into the toolkit; honors engram.autonomy |
 | `kata-write-skill` | 0.1.0 | 1 | meta | beta | adapted-from mattpocock/skills productivity/write-a-skill | Author new skills to STANDARDS (points, not restates); kata-improve calls it |
 <!-- SKILL-INDEX:END -->
 

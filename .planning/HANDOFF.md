@@ -1,4 +1,86 @@
 ---
+date: 2026-08-16-overnight
+kind: manual
+trigger: overnight autonomous execution complete — operator asleep; morning re-anchor
+branch: burn/backlog-burn-02 (stacked on burn/backlog-burn-01) · BOTH PUSHED · PR #54 open (burn-01 → master) · master untouched at d4650fc
+green: closing gauntlet 4/4 on the integrated burn-02 tree — pytest 4493 / 3 pre-existing skip · integration 2/2 · ruff clean · validator 49/0/0
+authored-by: the overnight session (operator-directed: "execute as far as you can without me")
+---
+
+# HANDOFF — 2026-08-16 OVERNIGHT
+
+## 0. GROUND TRUTH — verify before trusting anything below
+
+```
+cd C:\Dev\projects\kataharness
+git status --porcelain                          -> empty
+git rev-parse --abbrev-ref HEAD                 -> burn/backlog-burn-02
+git rev-list --count burn/backlog-burn-01..HEAD -> grows with remediation; 35 at the AV-2 audit (the branch NAME is the durable fact, not the count — AV-2 H3 caught the stale "~20")
+cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS (pytest 4493)
+```
+
+## 1. WHAT THE OVERNIGHT SESSION DID — all operator-directed before sleep, none invented
+
+1. **D171 executed:** pushed burn-01, opened **PR #54** to master, froze + ran the parallel small
+   burn, opened the UX grill.
+2. **backlog-burn-02 COMPLETE (5/5, two waves)** — the first burn run UNDER the BBM rules, all
+   items dispatched to Opus-5 builders in pinned outside-the-root worktrees, hybrid-gated
+   (self-gate re-run + fresh judge per item + one spot-audit + integrated gauntlets). Full
+   evidence + the BBM-6 accuracy record: `specs/backlog-burn-02/OBSERVATIONS.md`. Headline
+   (corrected per the final eval F3/F4): item content verified sound · 1 known test-quality
+   defect shipped in wave-1 test code (vacuous params; fix dispatched) · net-new defects found
+   by judges (3), a builder audit (1), and the OPERATOR (🔴 BL-M34, the loop bypass — the
+   biggest) · 1 escalation (recorded plan amendment) · 1 gate rejection (fixed) · H1's
+   serial-gate bottleneck did NOT reproduce · H6 wrong-base did NOT recur.
+   **FINAL EVAL: round 1 NEEDS_WORK → targeted-fix round → round 2 PASS (2026-08-16).** The
+   cycle honored the loop's SEMANTICS by hand — no mechanical run-level re-loop route exists
+   (BL-N19); one run-level eval covered both waves (wave-per-loop ruled mid-remediation, NOT
+   applied retroactively — recorded deviation, AV-2 M4). Durable gate evidence emitted (`specs/backlog-burn-02/
+   evidence/` — RESULT/footprint/mutation, live non-vacuity probe, two evaluators re-derived it).
+   F5 RULED (ride-along, one-time) · the vacuous-params fix MERGED and eval-probed · records
+   corrected. PASS ≠ nothing left: 🔴 BL-M34 loop-bypass enforcement, BL-X08/09/10/11, BL-N18
+   all filed and live; the run's shape stays recorded DRIFT under BBM-12 (wave-per-loop RULED).
+3. **The UX system grilled + compiled + convergence-gated to FREEZE-CANDIDATE.** Rulings UX-28..32
+   recorded live with the operator before sleep (wrapper-preferred entry + env provisioning ·
+   committed grammar engine · glyph-first transcript from the probe-1 result · all-three
+   wrappers · open preload seam + the third-party independence doctrine). Then: dispatched
+   design-author → convergence R1 (HOLD 7H) → rev 2 → R2 (HOLD 3H) → rev 3 → conductor-verified
+   clean. Every overnight conductor ruling carries the grep-able label
+   `[author-proposed, conductor-ruled interim — operator confirms at freeze]`; §8.1 indexes them.
+4. **Probe 1 RESOLVED with the operator** (ANSI stripped in the Claude transcript, glyphs clean)
+   → UX-30 glyph-first ruling + PLATFORM-MATRIX updated.
+
+## 2. 🔴 NEXT — the operator's morning list (present, do not pre-decide)
+
+1. **UX freeze sign-off** — read `specs/ux-rework/CONVERGENCE-R1.md` "Owed to the operator at
+   freeze": confirm/overrule the 6 interim rulings · reconcile the launch-template palette
+   divergence (#B5894B/#c9d1d9/#61afef vs the generator tones — "lock A" is in tension) ·
+   stat-box reconstruction approval · preload-seam config shape.
+2. **Ship decisions:** PR #54 merge timing; whether burn-02 gets a stacked PR or waits.
+3. **BL-X08 triage** — the batch run-shape preset writes a config the load-guard STOPS (live,
+   judge-verified). Small but real.
+4. 🔴 **PAT rotation** (deferred 2026-08-02 — deferred is not dropped) · **T-03 scope call** ·
+   probes 2–6 when convenient (each minutes, none blocking).
+
+## 3. SETTLED OVERNIGHT — do not re-litigate (but operator may overrule the interims)
+
+D171 (planning depth) is a DECISIONS entry. UX-28..32 are ledger rulings made WITH the operator.
+The convergence interim rulings are labeled AND indexed — they are proposals of record, not locks.
+The burn-02 plan amendment (X02 owner set) is committed history.
+
+## 4. WHERE EVERYTHING IS
+
+`specs/backlog-burn-02/{PLAN,OBSERVATIONS,evidence/}` (the burn + its evidence) ·
+`specs/ux-rework/{DESIGN,CONVERGENCE-R1,GRILL-LEDGER,PLATFORM-MATRIX}.md` (the freeze candidate +
+its audit trail; rulings UX-28..33) · `DECISIONS.md` D171+D172 · `BACKLOG.md` (filed this
+session: 🔴 BL-M34 · BL-X08/X09/X10/X11 · BL-N18/N19/N20/N21 · amendments to BL-N01 🔴 /N04/N10
+/N16) · LESSONS-LEARNED 2026-08-16 block · PR #54. Prior handoff block below still binds for everything it covers.
+
+---
+
+# ↓ PRIOR HANDOFF BLOCK — 2026-08-16 morning (superseded above; retained per convention)
+
+---
 date: 2026-08-16
 kind: manual
 trigger: operator-directed handoff — deep context, session refresh; everything recorded in depth first

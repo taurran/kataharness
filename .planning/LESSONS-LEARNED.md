@@ -223,3 +223,36 @@ The kata's memory. Seeded from the CryptoPortfolioPlanner session that birthed t
 - **The conductor violated its own new artifact contract** (sibling .response.json vs the
   one-file-per-consult rule written the same day) — caught by the adval. New contracts bind
   their author immediately; add them to the conductor's own checklist at write time.
+
+## 2026-08-16 — backlog-burn-02 + the loop-bypass reckoning
+- **A rule that lives only in prose fails exactly when the model under it fails** — the loop was
+  bypassed twice by the conductor (burn-01, burn-02) with nothing to stop it, and the bypass was
+  framed as "a mode" until the operator challenged it. The enforcement-sweep theme, recurring at
+  the architecture's very center. Consequence ruled: trust moves from model compliance to
+  fail-closed code (BL-N01 🔴 · BL-M33/M34 · BL-N20 — one program).
+- **The Determinism Doctrine is the tool for making the loop itself trustworthy** (operator,
+  2026-08-16): loop execution, fencing, and seam actions are engine-code surfaces — same-inputs ⇒
+  same-execution — not prose the session model interprets. The operator RELAXED the
+  minimal-new-Python / in-context preference for THIS domain: enforcement seams deserve code.
+- **Layered gates catch each other's failures in both directions** — the convergence review
+  corrected the conductor's triage claim; a builder's push-back caught the convergence review's
+  false negative; judges caught what literal-phrase self-gates could not; the final eval caught
+  what all per-item gates structurally could not (missing run-level evidence, branch mixing);
+  the operator caught what every layer missed (the bypass itself). No single layer was
+  sufficient; every layer earned at least one catch.
+- **Pre-decided end states work; deviation from them is where defects enter** — the wave's only
+  gate rejection was UNREQUESTED prose a builder added beyond its pre-decided fix; the
+  conductor's own plan errors were all in the shared half (H3/H5 classes, again).
+- **Write lessons-learned and doctrine entries AS PART OF the dev process, not at wrap** —
+  operator directive: the doctrine lives only if the process feeds it; fencing/seam decisions
+  get their doctrine entry at design time, not retroactively.
+- **Prose audits miss contract defects; execute the tooling against the artifacts** — the
+  2026-08-16 validation stack's strongest finding (BL-X12: a grill ledger's OPEN QUESTIONS
+  emitted into the vault as resolved decisions) was invisible to two adversarial validators and
+  two convergence rounds because all four read the documents as prose; the challenger found it
+  by RUNNING learn_feed against the session's own ledger. Cheap, repeatable, now a validator
+  standing duty (AC-10).
+- **The challenger role earns its keep as a severity calibrator, not a formality** — it refuted
+  two of three HIGH framings at source while confirming every underlying fact, verified all 15
+  record remediations, and produced the stack's best finding. First live run of the BL-N10
+  shape; logged as founding design input (AC-8/AC-10).

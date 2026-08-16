@@ -234,6 +234,62 @@ before building.
   the static sea frame); COLOR degrades to semantic glyph prefixes (✓ ⚠ ✗ ● ○) and chips to
   **bold** tokens; one skin, defined once, per-component mappings enumerated at build time.
 
+## Full-grill rulings (2026-08-16, the freeze grill)
+
+- **UX-28 · Entry hierarchy — the wrapper commands are the PREFERRED door (operator, 2026-08-16;
+  closes the UX-5 open question).** Ruling: keep BOTH in-session commands (`/kata-loop` +
+  `/kata-start`, UX-4 copy) — but the preferred manner of execution is the **wrapper shell
+  commands** (`kata-claude` / `kata-codex` / `kata-kiro`), because the wrapper can provision the
+  agent ENVIRONMENT before the host starts: MCP servers, skills (e.g. superpowers), and agentic
+  files loaded from launch. This upgrades the UX-1 wrapper from "branded screen + env check +
+  exec" to **environment provisioner** — the launch-time preload set (which MCP config, which
+  skill packs, per host) becomes an explicit design section; the UX-1 standardness assessment now
+  also covers per-host environment-injection mechanisms (Claude: settings/`--mcp-config`-class
+  surfaces; Codex/Kiro equivalents — assess, do not assume). The guided flow remains reachable
+  from every door; no door is removed.
+
+- **UX-29 · The grammar renderer is a SMALL COMMITTED ENGINE (operator, 2026-08-16).** One tested
+  `tools/` module — the generators' proven `box()`/`frame()`/`vw()`/sea helpers promoted, pure
+  functions over run state, widths ASSERTED at runtime (a width violation raises; it never ships a
+  crooked frame) — and it is **the only new Python** the UX system adds. Everything above it
+  (which surface, what content, when) stays skill-prose calling the engine. Rationale recorded:
+  Determinism Doctrine (durable artifacts ⇒ same bytes) + the mockup sessions' own evidence that
+  freehand rendering breaks the measure constantly; the operator's minimal-Python preference is
+  honored by scope (one module), not by abstinence. In-context rendering and a boxes-only hybrid
+  were considered and rejected (drift-certain; two-author artifacts).
+- **UX-30 · Transcript color ruling (probe 1 result, 2026-08-16).** ANSI is STRIPPED in the
+  Claude Code transcript (both assistant text and tool output; live-probed n=1, Windows
+  Terminal) while UTF-8 glyphs render clean. Therefore: **the UX-8 color-role system applies
+  only on owned-rendering surfaces** (wrapper TTY screens, captured worker consoles, the
+  statusline); **every transcript surface is glyph-first** — severity/status carried by the
+  UX-17 dots and glyph prefixes (✓ ⚠ ✗ ● ○), exactly the UX-27 markdown-skin degradation,
+  now the transcript's PRIMARY form rather than a fallback. See PLATFORM-MATRIX §3.1.
+
+- **UX-31 · Wrapper build scope — ALL THREE hosts in one pass (operator, 2026-08-16).**
+  `kata-claude` / `kata-codex` / `kata-kiro` are assessed and built together, not Claude-first.
+  The UX-1 standardness assessment therefore covers all three hosts (and their per-OS wrapper +
+  env-injection mechanisms) in a single deliverable before the wrapper builds.
+- **UX-32 · The launch preload is an OPEN SEAM; third-party packs are placeholders (operator,
+  2026-08-16).** The wrapper's environment provisioning (UX-28: MCP servers, skills, agentic
+  files) is designed as a **pluggable ingestion seam** — which packs load is configuration, never
+  hard-wired. Near term the seam ingests the CURRENT third-party superpowers pack **as a
+  placeholder**. Standing direction: **KataHarness divests from ALL third-party module
+  components — superpowers and GSD included** — with a kata-native superpowers set (the BL-N04
+  "KataHarness Superpowers" vehicle) replacing the placeholder over time. The seam must make that
+  swap a config change, not a rework.
+
+- **UX-33 · The crew box enumerates executions BY AGENT TYPE (operator, 2026-08-16 morning).**
+  The closeout's WHO DID THE WORK box (UX-19) MUST break out, per agent type: **conductor ·
+  coding/builder agents · validation agents (fresh-context judges/reviewers) · advisor agents ·
+  evaluation agents (the gate + the inline evaluator) · design/plan authors** — each as
+  `agents / executions` (a resume or re-dispatch counts as an execution), plus **miniloop
+  executions by kind** (gate-fix loops, revision loops, reroll loops) and the model tier each
+  type ran at. **Collection status (truth serum, recorded at ruling time):** these counters DO
+  NOT exist yet — the run that prompted this ruling was hand-tallied from its observation log.
+  The counters land with BL-N14 (run state, `.kata/`, never config), and until they exist any
+  rendered crew box MUST carry the "hand-tallied" honesty label. Conductor-context tokens are
+  not separately metered by the host — label that too, never fabricate a split.
+
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
 **All designed as of 2026-08-16.** Still open (not design work): the six platform PROBES

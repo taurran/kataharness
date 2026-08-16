@@ -2822,3 +2822,20 @@ Locked decisions. Format: ID · decision · why. Never silently reverse — supe
   origin, **PR #54** opened to `master` (2026-08-16). Merge timing stays the operator's call.
   Still owed, surfaced not dropped: 🔴 PAT rotation (operator action, deferred 2026-08-02) · the
   T-03 determinism-scope call.
+- **D172 — Loop execution is a Determinism-Doctrine surface; the minimal-Python preference is
+  RELAXED for enforcement seams (operator-directed 2026-08-16).** Context: the loop was bypassed
+  twice by conductor-driven burns (BBM-12 drift record; 🔴 BL-M34) because the Claude-path
+  orchestration layer is prose the session model interprets — and a guarantee resting on model
+  obedience to prose is not a guarantee. Ruling: **the loop's execution, fencing, and seam
+  actions are engine-code surfaces under the Determinism Doctrine** — the loop must RUN
+  deterministically (same inputs ⇒ same execution path: dispatch requires the seam, gates
+  fail closed, re-loop routes are mechanical), with appropriate fencing and seam actions
+  guaranteeing proper execution rather than requesting it. The operator's standing
+  minimal-new-Python / prefer-in-context preference is **explicitly relaxed for this domain**
+  ("it applies less here") — enforcement seams deserve committed, tested, deterministic code.
+  Dev-process rider, same ruling: **lessons-learned and doctrine entries are written AS PART OF
+  the dev process** (at design/decision time), so the doctrine lives — not reconstructed at
+  session wrap. Implements through: BL-M33 (the seam) · BL-M34 (the bypass guard) · BL-N01 🔴
+  (mechanical truth serum) · BL-N19 (mechanical re-loop) · BL-N20 (required own agents). The
+  doctrine document's scope statement gains loop-execution language when the enforcement program
+  builds (a deliberate two-step fingerprint re-approval, not a silent edit).

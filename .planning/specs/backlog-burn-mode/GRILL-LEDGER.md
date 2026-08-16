@@ -76,6 +76,13 @@ doc-grounded grill + convergence gate + DESIGN before any build.
   declaration (chip treatment, UX-16) — it is the one line that tells the user whether the run
   will ever stop and wait for them.
 
+- **BBM-13 · Naming: the mode is "Backlog Burn" in ALL documentation (operator, 2026-08-16).**
+  Documentation says **"Backlog Burn"** (or "backlog burndown") — never bare "burn"/"burns",
+  which is INFORMAL SPEECH ONLY. Same discipline family as UX-16's wave-never-sprint and UX-24's
+  naming rules. Existing slugs stay (branch `burn/backlog-burn-*`, spec dirs `backlog-burn-*` —
+  already carry the full name); the retroactive prose sweep is filed as BL-N23; the rule binds
+  every document written from this ruling forward.
+
 ## Locked from prototype evidence (not re-litigated; cite OBSERVATIONS.md)
 
 - **BBM-7 · Triage precedes the grill, mandatorily** (H2: 2 of 6 items changed materially under
@@ -89,6 +96,49 @@ doc-grounded grill + convergence gate + DESIGN before any build.
 - **BBM-10 · Builders are briefed to push back** (H7: "if the brief is wrong, say so and STOP" —
   three real catches in one wave; it converts builders into second reviewers for one sentence).
 
+## BBM-12 · 🔴 BURNS RUN THE ENTIRE LOOP — operator ruling 2026-08-16, verbatim intent, BINDING NOW
+
+**A backlog burn USES THE ENTIRE LOOP** — initiation → grill → freeze → execute → evaluate →
+handoff → improve — **iterating the loop as it was intended to function.** The conductor-driven
+bypass that ran burn-01 and burn-02 (host-dispatch, no board, no kata-orchestrate, no
+kata-evaluate contract, no final whole-run eval, no improve fold) **is DRIFT, not a mode** — the
+operator's words: taking that shortcut means something is seriously wrong with the harness, and
+"prototype" stopped being an excuse the day the loop machinery shipped.
+
+**The fork is RULED (operator, 2026-08-16, same morning): shape (b) — EACH WAVE IS ONE LOOP.**
+Every wave is a full loop iteration with its own final default-FAIL evaluation, and **a wave can
+be MORE than one loop: if it fails its final eval it is kicked back for another loop iteration**
+— the normal NEEDS_WORK → targeted-fix → re-eval cycle, per wave. The burn is the loop-back
+chain across waves. The broad up-front triage+grill across the whole set (BBM-7/8) still happens
+once and feeds every wave's loop. *(Shape (a) — burn-as-one-loop — is retired as the default;
+recorded here so it is not re-proposed as new.)*
+
+**Companion rulings from the same exchange (operator, 2026-08-16):**
+- **The CURSOR is the interruption token.** Run history, rulings, statuses — everything needed to
+  pick up after an interruption — travels with the cursor (or files traveling with it) as it
+  passes phase to phase. This RESOLVES the burn-02 F5 class going forward (the scope question is
+  answered by the cursor's record, not by branch archaeology) and must align with the BL-N16
+  substrate/graph configuration — one durable record, the rail/cursor a view over it (the
+  conductor's BL-N16 recommendation now operator-aligned). For burn-02 itself: the UX-doc
+  commits RIDE ALONG on this branch by explicit ruling (one-time; future burns get clean scopes
+  via wave-per-loop + the cursor).
+- **Advisor AND evaluator thresholds must be TUNABLE** (the advisor's hooks partially are —
+  `kata.config advisor.hooks`; the evaluator's strictness has no dial at all) → filed BL-N18.
+- **Challenger scope (corrected by the operator within the hour):** the challenger challenges
+  **adversarial validation ONLY** — not the final evals — and runs as a separate subagent or,
+  better, a DIFFERENT MODEL (BL-N10, scope-clarified). The earlier evals-too phrasing in this
+  ledger's first draft is superseded.
+
+Consequences, binding on every future burn: the loop's seams (advisor, inline evaluator,
+telemetry, board, orientation) apply BECAUSE the burn is inside the loop — the "which seams bind"
+question below collapses to "all of them, via the loop." The prior entry's framing (seam gap as
+an open design question) UNDERSOLD the defect and is superseded by this ruling: the gap is not
+that seams lack reach into conductor-driven burns; it is that conductor-driven burns should not
+exist. Enforcement is filed as 🔴 BL-M34 (a prose rule with nothing stopping the bypass is the
+enforcement-sweep class all over again). Burn-02's missing final evaluation is being run
+retroactively (2026-08-16) under the kata-evaluate contract; its verdict decides whether the
+greater loop re-runs over that scope.
+
 ## Still open for the full grill (deliberately undecided today)
 
 external-source adapter contract shape (what a GitHub issue must carry to be grillable) · gate-agent
@@ -96,3 +146,16 @@ brief template + how a judge's verdict is recorded durably · does the partition
 beyond this repo's shape (prototype question 4) · burn's interaction with freeze semantics (D169
 blocks dispatch on non-frozen plans — what is "the plan" when the contract is a multi-item ledger?)
 · cap tuning evidence beyond width-3.
+
+**NEW (2026-08-16, from burn-02 live evidence — the dispatch-seam gap, third instance):** which
+loop-cognition seams bind on a burn? Burn-02 ran conductor-driven through the host dispatch path,
+and as a result: **zero telemetry rows** (BBM-6's own accuracy metric had to be hand-tallied),
+**zero UX-33 agent-type counters**, and — found by operator question — **the standing advisor
+grant never reached the run**: `kata.config` carries `advisor.approved: true` with `planning` in
+its phases, yet the burn's plan authoring and convergence rounds never offered the advisor a
+consult, because the trigger hooks (failThreshold/rerollTrigger/fixLoopCeiling) live inside
+kata-orchestrate, which a conductor-driven burn never enters. (Honest half: no mechanical trigger
+would have tripped anyway — 1 gate rejection vs threshold 2, 0 rerolls — the M4 fire-on-signal
+doctrine behaved correctly; the gap is REACH, not misfire.) The full grill must decide: do burns
+route through the loop's seams (advisor, inline evaluator, telemetry) or carry their own bindings
+at the dispatch seam (BL-M33's missing conductor↔host seam is the common root of all three).

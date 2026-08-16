@@ -5,7 +5,7 @@ description: >-
   offered by the closeout stage; degrades gracefully to a git/diff map when the graph backend is unavailable;
   never blocks and never gates correctness.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: handoff
 status: beta
 agnostic: true
@@ -40,22 +40,29 @@ correctness — that stays with `kata-evaluate`. It maps; it does not judge.
 
 ### Step 1 — Run / refresh the F2 graph runtime
 
-Invoke [[kata-graph]]'s `tools/graph_gen.py` to produce or refresh `kata.graph.json`:
+Invoke [[kata-graph]]'s `tools/graph_gen.py` to produce or refresh the graph. Substitute both placeholders with
+**absolute** paths before running:
 
 ```bash
-cd <repo-root>/tools
-uv run python graph_gen.py --root .. --out ../kata.graph.json
+cd <absolute-repo-root>/tools
+uv run python graph_gen.py --root <absolute-repo-root> --out <absolute-out-path>
 ```
+
+> **Both paths must be absolute.** `graph_gen._safe_path` refuses **by design** any argument containing a `..`
+> component (CWE-23 traversal guard), so relative forms like `--root ..` fail immediately. `--out` may point
+> anywhere writable — missing parent directories are created — so choose the location deliberately (the
+> conventional one is `<absolute-repo-root>/kata.graph.json`).
 
 The generator walks `*.py` files via tree-sitter (AST-only, no `exec`/`eval`), emits `file` and `symbol` nodes
 with PageRank `rank`, and resolves `def` + `import` edges (best-effort `ref`). It is content-hash incremental —
-pass `--prev` if a prior graph exists to reuse unchanged files. Full schema: `protocol/graph.md`.
+pass `--prev` (also absolute) if a prior graph exists to reuse unchanged files. On success it prints the output
+path plus node and edge counts. Full schema: `protocol/graph.md`.
 
-### Step 2 — Load `kata.graph.json` and the run footprint
+### Step 2 — Load the generated graph and the run footprint
 
 Read:
-- `kata.graph.json` — the structural map per `protocol/graph.md` (nodes: `file`/`symbol`; edges: `def`/`ref`/
-  `import`; each node carries a `rank` float).
+- **the `--out` path you chose** in Step 1 (`<absolute-out-path>`) — the structural map per `protocol/graph.md`
+  (nodes: `file`/`symbol`; edges: `def`/`ref`/`import`; each node carries a `rank` float).
 - `.kata/footprint.json` — the run's declared-touched files (F1 artifact from `kata-evaluate`).
 - Optionally `.kata/mutation.json` — non-vacuity proof (confirms real changes occurred).
 - Cross-check with `git diff --name-only HEAD~1..HEAD` (or the relevant range) to capture any files changed

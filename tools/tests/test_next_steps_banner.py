@@ -19,10 +19,12 @@ def test_claude_banner_has_steps_and_entrypoints():
     assert "1) Restart your tool" in out
     assert "2) Start a run" in out
     assert "3) Your first run" in out
-    # documented entry points (grounded against README/skills, D124)
-    assert "/kata-initiate" in out
+    # documented entry points — REAL slash commands only (BL-X02). These names are
+    # spot-checks; test_install_banner_commands.py is the structural guard that no
+    # phantom command can appear here at all.
+    assert "/kata-start" in out
+    assert "/kata-loop" in out
     assert "/kata-onboard" in out
-    assert "/kata-bootstrap" in out
     # platform-correct skills location + restart wording
     assert "~/.claude/skills" in out
     assert "Claude Code: exit and reopen" in out
