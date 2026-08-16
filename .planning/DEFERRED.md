@@ -2,8 +2,46 @@
 
 > PD-1 sanctioned deferral path: every entry here is operator-visible, graded at the gate,
 > and surfaced at handoff. An entry is closed by the run that builds it (link the record).
+>
+> **Schema: `protocol/deferral.md`** (the sanctioned-deferral ledger contract). Entries are H2:
+> `## DEF-<n> — <title> · <STATUS> (<ISO-date>)`, STATUS ∈ `OPEN | ACCEPTED | CLOSED`, with the
+> required **What / Why / Provenance / Owed-to** fields; `accepted_by` / `accepted_at` on an
+> operator-approved park, `closing_commit` on a closure. Append-only.
+>
+> The entries below were retrofitted to that grammar on 2026-08-16
+> (`tm-w1-deferral-contract`). Exactly what that changed, per entry, so the claim can be checked
+> against the diff rather than taken on trust:
+> - **DEF-1** — a field block was **added** under the H2. Its `What` and `Why` values are
+>   reproduced from the original filing, which is preserved verbatim further down under its own
+>   sub-heading, as is the closure record. Its `Provenance` line, and the final clause of its
+>   `Owed-to` line ("discharged ahead of that owner by backlog-burn-01, item BURN-B"), are
+>   **newly written** — the first summarising the filing's own audit note, the second restating
+>   the closure record's "Closed by backlog-burn-01, item BURN-B".
+> - **DEF-2** — **relabelled in place**: `Why deferred` → `Why`, `Owed to` → `Owed-to`. Its
+>   `Provenance` line is **newly written**, summarising the filing's own account of where the
+>   defect was found. Every other bullet, and the closure record, are untouched.
+> - **Both** — a `closing_commit` field was added, each sha resolved against `git log` rather
+>   than asserted.
+>
+> **No entry's substance was changed:** nothing was deleted, no status or date was moved, and no
+> claim about what happened was altered. The lines named above are the only prose this retrofit
+> authored.
 
 ## DEF-1 — kata_preflight._default_runner stderr widening · **CLOSED (2026-08-04)**
+
+- **What:** `tools/kata_preflight.py:397-407` `_default_runner` returns `(returncode, stdout)`
+  — same stderr-discard class as the kata_dispatch defect fixed by the dispatch-stderr-fix run.
+  *(Verbatim from the original filing, preserved below.)*
+- **Why:** the quota-resilience classifier (its own grilled run,
+  `.planning/specs/quota-resilience/REQUIREMENT.md`) decides what preflight signal it consumes;
+  widening now is scope creep on a surgical fix.
+- **Provenance:** filed OPEN 2026-07-21 by the dispatch-stderr-fix run; grill record
+  `.planning/specs/dispatch-stderr-fix/GRILL-LEDGER.md` D4 (operator-approved). Re-assigned
+  2026-07-25 by the audit recorded in the original filing below.
+- **Owed-to:** ~~the quota-resilience Tier 1+2 run~~ → re-assigned to **quota Tier 3**
+  (2026-07-25); discharged ahead of that owner by **backlog-burn-01, item BURN-B**.
+- **closing_commit:** `63bd65f` (*fix(preflight): stop swallowing the reason an install or verify
+  failed (DEF-1)*, 2026-08-04; merged `fdf4be9`, closure recorded in `d3fb968`).
 
 > **Closed by backlog-burn-01, item BURN-B.** `RunnerType` is now
 > `Callable[[list[str]], tuple[int, str, str]]` and `_default_runner` returns
@@ -63,7 +101,9 @@
   the same style is used across `.planning/specs/` (19 ledgers). Any of them emitting today
   publishes decision-less synthesis pages to the vault — a PD-2 violation written to a durable
   store.
-- **Why deferred:** discovered by convergence pass 2 of the session-lifecycle grill (2026-07-27),
+- **Provenance:** filed OPEN 2026-07-27 out of convergence pass 2 of the session-lifecycle grill
+  (which was itself HELD); the measurement above was taken by that pass against the shipped parser.
+- **Why:** discovered by convergence pass 2 of the session-lifecycle grill (2026-07-27),
   which was itself HELD. The fix is a real design choice that belongs to its own grill, not to a
   repair pass: **either** extend `_FIELD_PREFIXES`/`render_page` to handle indented sub-bullets,
   **or** flatten ledger entries to single-paragraph fields (which changes the authoring convention
@@ -71,11 +111,13 @@
 - **Interim posture:** the session-lifecycle grill-close emit is **NOT run**. Whether the block
   extends repo-wide to all 19 ledgers is **an open question this entry does not decide** — it is the
   first thing the owning run must settle.
-- **Owed to:** ~~unassigned~~ → **CLOSED by the `learn-feed-body-loss` run** (branch
+- **Owed-to:** ~~unassigned~~ → **CLOSED by the `learn-feed-body-loss` run** (branch
   `fix/learn-feed-body-loss`), whose frozen contract is
   `.planning/specs/learn-feed-body-loss/GRILL-LEDGER.md` (LFB-1..LFB-4).
 - **Evidence:** `.planning/specs/session-lifecycle/CONVERGENCE-HOLD-2.md` (NEW-7) and
   `CONVERGENCE-HOLD-3.md`.
+- **closing_commit:** `0f8e5f4` (*fix(learn_feed): stop discarding the body of most ledger entries
+  (DEF-2 + BL-M24)*, 2026-08-04; merged `d4650fc`). Closure evidence is the record below.
 
 ### Closure record — measured, not asserted (2026-08-04)
 
