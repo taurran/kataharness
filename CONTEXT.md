@@ -31,6 +31,17 @@ the BBM "the CURSOR is the interruption token" ruling).
 _Avoid_: board **as the concept name** (the cursor's log surface inherits the board file/grammar
 heritage until migration renames land); journal (D135 forbids a second one); progress tracker.
 
+**Trust scale (Guardian)**:
+The five **user-facing trust states**, naming what is CHECKING rather than the code's condition
+(operator-selected from three researched models, TM-A1, 2026-08-16): **Verified** (a machine
+checks this, every time, and blocks on failure) · **Partially verified** (a machine checks part;
+the rest is listed) · **Honor-system** (works only if the AI follows its instructions — nothing
+checks) · **Dormant** (safeguard built, not switched on) · **Broken** (claim doesn't match
+reality). Internal audit categories (FACT/PARTIAL/PROSE/FACADE/FALSE) remain the diagnostic layer
+behind these; every user-facing trust surface uses the Guardian terms.
+_Avoid_ (user-facing): built, wired, unwired, orphaned, FACADE, enforced-in-prose — "archaic and
+confusing to the average user" (operator, TM-A1).
+
 **Spine**:
 The skills that run in **every** mode — the one-shot machine (grill→…→evaluate→handoff). Always present; the
 source of consistency.

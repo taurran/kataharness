@@ -391,6 +391,54 @@ dependency order — C2's run-id format is consumed by B4's record, so C1/C2 res
 - **Provenance:** operator directive + riders (verbatim intent above); `evidence/fanout-survey.md`
   (six external lenses + collision analysis); the five requirements mapped in-session.
 
+### TM-A1 — The Guardian trust scale; fixes route THROUGH the loop · LOCKED
+
+- **Decision (operator, 2026-08-16, three-part — via directive then a three-model comparison):**
+  1. **Ubiquitous-language ruling:** the internal audit categories (FACT/PARTIAL/PROSE/FACADE/
+     FALSE) stay as the diagnostic layer, but "built"/"wired"-class designations are **archaic
+     and confusing to the average user** — every user-facing trust surface uses the **Guardian
+     scale** (operator-picked over an Auditor/SOC-2 model and a Kata/craft model): **Verified ·
+     Partially verified · Honor-system · Dormant · Broken** — naming what is CHECKING, not the
+     code's condition. Baked into `CONTEXT.md`.
+  2. **Remediation routes THROUGH the loop (operator, verbatim intent):** the relabel/fix is
+     "acted upon within the loop — either a re-execution of code or a fix applied during the
+     validation section. **If anything is false or facade it should be another loop pass.**"
+     No out-of-band doc edits; FALSE/FACADE findings are loop work items. This seeds section D's
+     routing rule: a Broken or Dormant-claimed-as-Verified finding is NEEDS_WORK-class and
+     routes to re-loop (F2 consumes this).
+  3. The 5 FALSE + ~25 FACADE promise-audit rows therefore become **work items in the
+     trust-model build's first loop passes**, relabeled in Guardian terms with the mechanism
+     cited when wiring lands.
+- **Rejected — wire-then-true:** prose keeps lying to readers for the build's duration.
+- **Rejected voices:** Auditor (controls language — precise but insider); Kata (house craft
+  voice — distinctive but higher learning curve). Structure identical in all three; voice was
+  the choice.
+- **Provenance:** promise-audit evidence (the 114 rows + distribution finding); PD-2;
+  the three-model comparison presented with previews this session.
+
+### TM-A2 — Split & commit run provenance; drift-checked at branch close, fail ⇒ re-loop · LOCKED
+
+- **Decision (operator, 2026-08-16, accept-with-rider):** machine-specific values (personal
+  paths) migrate to `.kata-settings.json` (the existing machine-local home); `kata.config` and
+  `INTENT.md` become clean, **committed run provenance** — `protocol/state.md:41`'s tier-1
+  "(git)" claim becomes true as written, completing the cursor's machine-change story. A
+  redaction check guards the migration (no personal data committed).
+- **Rider (operator):** the committed provenance is **enforced via drift checks at the close of
+  the branch** — if `kata.config`/`INTENT.md` as committed do not match what the run actually
+  executed (per the cursor record), the close FAILS and the run is **sent back through the
+  loop**. Lands as a section-F close check; consumes TM-C4's records; routes per TM-A1's
+  loop-routed remediation rule.
+- **Rejected — committed run manifest:** a second artifact that can drift from the live config.
+- **Rejected — re-tier honestly:** the resilience-primary directive (TM-C3) argues against
+  accepting the loss.
+- **Provenance:** `.gitignore:10,19` vs `protocol/state.md:41` (cursor dossier governing fact);
+  TM-C3 resilience directive.
+
+*Section A complete. Next: section D (Truth Serum). D5 and D3 are substantially pre-resolved by
+locked branches (TM-C2 run-membership evidence; the anti-vacuity law adopted at TM-C6/D3's
+evidence) — conductor resolves them with citations; operator forks remain at D1 (deferral ledger
+hardening), D2 (detector set v1), D4 (gate-precondition rollout).*
+
 ## Blocked-at-close notes (standing)
 
 Grill-close `learn_feed.py` emit **BLOCKED by 🔴 BL-X12** (the emitter mislabels grill-ledger OPEN
