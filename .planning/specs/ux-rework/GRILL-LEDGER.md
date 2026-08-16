@@ -174,6 +174,20 @@ before building.
     instruction in the title ("reply with a number to choose"). **Width measure:** dense report
     pages may use a **72-column** measure — uniform WITHIN a page always; the launch banner keeps
     64. Widths stay generator-asserted, never eyeballed.
+- **UX-20 · The closeout is a small interactive LOOP (operator-directed 2026-08-16).**
+  - **Structure:** header → *IN PLAIN WORDS* (a short readable narrative — a few tight paragraphs
+    on what the run actually did, ending with pointers to the report and the tour) → *THE ITEMS —
+    each one, truthfully* (per-item dot + plain status + SHA; an item with a finding SAYS SO in its
+    own row) → *GIT — where everything stands* (committed/pushed/PR/merged/tagged as dots, each
+    OPEN circle pointing at the exact menu number that closes it) → the four stat boxes → the
+    decision menu → the sea.
+  - **Options are standard CLI `[n]` tokens** the user types into the reply; groups LOOK DEEPER /
+    GIT / GO AGAIN / WRAP UP.
+  - **Loop behavior:** pick a number → the action executes → a SHORT status line prints → the menu
+    returns (short form) → repeat, until a new run launches or **`[0]` finish** — the final option,
+    which directs the user to recycle the session for a new run or exit.
+  - **Git actions are menu items** (push / open PR / merge-after-PR), so shipping is part of the
+    same loop, not a side quest. Feeds the kata-closeout skill's grill.
 
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
