@@ -29,6 +29,10 @@ Promote to ROADMAP milestones when ready.
 > unenforceable prose), so BL-N01 is largely "build the seam, then hang enforcement off it."
 > Open questions: what is mechanically detectable (stub signatures, unwired symbols — `contract_edges.
 > surviving_stubs` already exists), and where does approval get recorded so the gate can check it?
+> **Prior art landed (2026-08-16 agent-cadre research):** gsd-verifier's 7-step protocol is a
+> working mechanized PD-1 detector — three artifact levels (exists / imported / used-beyond-
+> imports) + data-flow trace + a stub scan (empty impls, hardcoded empty data, log-only bodies).
+> See `specs/agent-cadre/RESEARCH-AGENTS.md`; the truth-serum build should mine it, not reinvent.
 
 > **BL-N02 · "Human Prose" — selectable language modes for everything the harness says.**
 > Modes sketched: Simplified Technical · ELI5 · a model↔model register optimized for concise

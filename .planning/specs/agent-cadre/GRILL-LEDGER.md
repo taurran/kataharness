@@ -106,6 +106,33 @@ temporal learning log, capped active section) · model-tier declaration RELATIVE
 hard model id) · report contract + PD-1/PD-2 injection standing · lightweight (AC-4) · loaded
 via the dispatch seam ONLY (BL-M33/M34).
 
+## Research landed (2026-08-16 — `RESEARCH-AGENTS.md` beside this file; evidence-labeled)
+
+Factual corrections it delivers (accepted as facts, not rulings): **Quicksilver = Hermes v0.19's
+codename** — the AC-4 triad is TWO harnesses · **Hermes has NO agent-definition files** (dispatch
+contract only) — **Pi is the format anchor** (`pi-subagents`: acceptance/completionGuard/
+turnBudget/fallbackModels/defaultContext/memory — the richest schema surveyed) · **superpowers
+ships no agents/ dir; its frontmatter is minimal name+description** (AC-7 borrows a deliberately
+minimal shape; its role prompt-TEMPLATES are the transferable gold) · **AC-9(a) RESOLVED:
+`github.com/karpathy/autoresearch`** (separation-of-powers + structural anti-gaming) · Claude
+Code ships native per-agent memory with a 200-line injection cap (independently corroborates
+BL-N16's distill-for-load) but fails on hardened tools-allowlists (#57507) — **BL-N16 must own
+its own memory path** · **gsd-verifier's 7-step artifact-level protocol is a mechanized PD-1
+detector** — direct prior art for 🔴 BL-N01's truth-serum machinery (cross-noted there).
+
+Challenges the GRILL must answer (research-raised, NOT adopted silently): (1) the roster has no
+FALSE-POSITIVE control in validator/challenger/judge — every elevation sharpens refute-posture,
+nothing bounds it (candidate: anchored confidence rubric with a floor); (2) row 10's four-way
+specialist split is one seat too many — research recommends 3 (doc/field · codebase ·
+experiment) with triage folded into a mandatory brief section (field evidence: deep-research
+systems RETREATED from supervisor splits); (3) researcher stays report-only, externally gated —
+AI-Scientist's self-reviewing cast produced a 42% experimental failure rate with misleading
+claims (arxiv 2502.14297); (4) compiled-vs-authored-portable definition format (BMAD compiles,
+superpowers ships portable prose) — a PREREQUISITE decision for AC-1; (5) a length/budget policy
+for definitions (field spans 47→1,452 lines, no consensus); (6) ecosystem-alignment claims must
+cite files we read — high-star collections proved self-inconsistent (a published read-only
+reviewer convention shipping a reviewer with Write/Edit).
+
 ## Open for the full grill
 
 Naming (the AC-7 ⚠) · BL-N08 before/after sequencing (AC-5) · agent-vs-function call on the
