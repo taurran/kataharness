@@ -692,6 +692,19 @@ G (presentation), H (cross-cutting + security pass).*
 after the final resolutions opened no new branches. Advanced close-out: convergence pass 1 (main
 tree) → pass 2 (security layer) → ELEVATE → close. Grill-close emit remains BLOCKED by BL-X12.*
 
+### Mid-close evidence event — CI red 12 days; the vacuity-prover vacuous on Linux (2026-08-16)
+
+Operator surfaced inbox spam of gauntlet failures mid-convergence. Conductor diagnosis (run
+31966366450): **every CI run since ≥2026-08-04 is FAILED including all master merges** — 62
+failures, ~61 of them mutation-proof meta-tests where `prove_non_vacuous` returns
+`testWentRed: False` on ubuntu for mutations that bite on Windows — the anti-vacuity engine
+cannot prove it can fail on Linux (the TM-D3 violation class, live, in our own machinery), plus
+one statusline empty-argv crash. Filed 🔴 BL-X14 + BL-X15; fixes route through the loop (TM-A1).
+**Trust-ledger sharpening recorded:** the promise audit's FACT grade for the gauntlet rested on
+"CI runs it" — CI ran, failed, and the signal landed only in a spammed inbox: direct evidence
+for TM-G1 (receipts must land where the operator looks) and for TM-D3's tripwire law applying to
+the provers themselves, cross-platform. Guardian status of CI-gauntlet today: **Broken.**
+
 ## Blocked-at-close notes (standing)
 
 Grill-close `learn_feed.py` emit **BLOCKED by 🔴 BL-X12** (the emitter mislabels grill-ledger OPEN

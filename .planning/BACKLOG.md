@@ -483,6 +483,29 @@ Promote to ROADMAP milestones when ready.
 > (`write_approval`, pending queue, unified diffs) exists. True of the DEFAULT config only —
 > tighten the wording so our own comparison stays truthful. One-line doc fix + version bump.
 
+> ## 🔴 **BL-X14 · The mutation-proof harness is platform-fragile — CI has been red for 12 days and the non-vacuity prover proves nothing on Linux. (FILED 2026-08-16, operator-surfaced via inbox spam; conductor-diagnosed from run 31966366450)**
+> **Measured:** every gauntlet CI run since at least 2026-08-04 is FAILED — including every
+> master merge — while the local Windows gauntlet passes 4/4 (verified same day, same SHA
+> `de8578c`). CI tail: **62 failed / 4460 passed**; ~61 of the failures are mutation-proof
+> meta-tests (`test_benchmark.py:1636-1710`, `test_recurrence_detect.py`, `test_usage_meter.py`,
+> `test_validation_misses.py`) all returning `{'testWentRed': False, 'nonVacuous': False}` on
+> ubuntu-latest for mutations that bite on Windows. **Working hypothesis (verify, do not
+> assume):** in the CI environment the sandboxed mutated copy is never what the re-run imports
+> (live/installed module resolves instead — `_redirect_cmd`'s residual-live-root guard checks
+> the command argv, not the import path/environment), so no mutation can ever red a test — **the
+> anti-vacuity engine is itself vacuous on Linux**, the exact TM-D3 law-violation class
+> (a prover that cannot prove it can fail is Dormant, not Verified). Fix routes through the loop
+> (TM-A1). Trust-model evidence rider: the gauntlet's FACT grade in the promise audit rested on
+> "CI runs it" — CI ran, failed, and the only signal surface was the operator's spammed inbox
+> for 12 days: a presentation-layer failure feeding TM-G1 (receipts must land where the operator
+> looks). Guardian status of the CI gauntlet today: **Broken.**
+
+> **BL-X15 · `statusline_chain` empty-argv crash on Linux instead of fail-soft. (FILED
+> 2026-08-16, same CI run)** `tests/test_statusline_chain.py::TestRunChild::test_empty_argv_fail_soft`
+> fails on ubuntu-latest with `IndexError: list index out of range` — the fail-soft contract
+> (statusline must never crash) is violated on the Linux path for an empty delegate argv; passes
+> on Windows. Small, real, platform-conditional; fix with BL-X14's run.
+
 > **BL-N24 · Truth Serum v2 — promote the deferred detectors. (FILED 2026-08-16 from the
 > trust-model grill TM-D2 rider; operator-directed sequencing: EXECUTES AT THE END of everything
 > currently on the backlog, and this item is UPDATED ALONG THE WAY so it is executable when its
