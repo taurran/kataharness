@@ -1,123 +1,73 @@
-# NEXT-SESSION ORIENTATION — written 2026-08-04 (branch `master`)
+# NEXT-SESSION ORIENTATION — written 2026-08-16 (branch `burn/backlog-burn-01`)
 
-> **Copy the block below the rule.** Plain text, no fences, so it pastes clean into a new session
-> after `/clear`. Terminal step first, and ONLY if you are opening a new window:
->
-> ```
-> cd C:\Dev\projects\kataharness
-> ```
->
+> **This file follows the locked agent-orientation format (UX-15): MISSION → GUARDRAILS →
+> CONTEXT → REPORT CONTRACT → YOUR BRIEF, with the copy block LAST.** The ✂ block at the bottom
+> is what the operator pastes into the fresh session — content lines carry zero decoration (UX-7).
 > The authoritative state is `.planning/HANDOFF.md`; this file is the paste companion.
 
----
+━━ KATAHARNESS · AGENT ORIENTATION ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+run: planning-batch-2026-08 · session: next · branch: burn/backlog-burn-01
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Read .planning/HANDOFF.md in full — it is the authoritative state. Then read
-.planning/STATE.md's CURRENT block. Do not read STATE.md wholesale (1400+ lines).
+## MISSION
 
-VERIFY BEFORE ACTING. Stop and report on any mismatch:
-  git status --porcelain                          -> empty
-  git stash list                                  -> empty
-  git rev-parse --abbrev-ref HEAD                 -> master
-  git rev-parse --short origin/master             -> e0eebae   (or later)
-  cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS
-  (use `uv run` — the .venv python false-reds 2 integration tests offline)
+Help the operator decide **the next planning items and how far to plan before coding execution
+starts** — their explicitly set agenda. Everything from the 2026-08-15/16 marathon is recorded in
+depth; your job is to present the decision honestly, take their ruling, and then run whatever
+grill/freeze/build path they choose under the normal loop. Do not invent a different agenda.
 
-WHERE THINGS STAND
-EVERYTHING IS ON MASTER. No open PRs, no unpushed commits. The long-running
-grill/session-lifecycle branch and the MindBridge ingest branch both merged on
-2026-08-03. If you were told to expect a815c2b, an unpushed branch, or open PRs
-#51/#53, that guidance is SUPERSEDED — it was true on 2026-08-02 and is not now.
+## GUARDRAILS
 
-Nine items have shipped. The last two, on 2026-08-04:
-  - every protocol contract is now guarded, AND the protocol folder polices itself:
-    a new file there must be registered or explicitly exempted, or the build fails.
-    Eight contracts had NO protection at all, two of them safety contracts.
-  - the version-bump rule is real: edit a skill without bumping it and the build
-    fails naming it. CI needed fetch-depth: 0 or the check would have reported
-    green while checking nothing.
+- **PD-1/PD-2 bind** (`protocol/prime-directives.md`, loaded first, always). Done requires proof.
+- **D169:** nothing dispatches without a FROZEN plan. Every design produced last session is
+  DRAFT — grill + convergence gate before any build.
+- The session-lifecycle grill remains **HELD** (SL-1..36 must NOT be compiled; CONVERGENCE-HOLD
+  files are authoritative). Read `DECISIONS.md`, never measure it.
+- Never PowerShell Get-Content/Set-Content round-trips on repo files; never `_run_git` for file
+  content; run tests via `uv run` from tools/.
+- Plain English always; item codes always paired with what the thing actually is.
+- The vault is **KIBAN** (`~/Kiban/Vault`) — never PokeVault; never git-ops against it.
+- Internal codenames (Kitchen, engram) never appear in user-facing surfaces (UX-24).
+- Worktrees: manual `git worktree add` at a pinned SHA; builders verify base as step 0 (BBM-9).
 
-ONE THEME RUNS THROUGH ALL NINE: a rule written in a document with nothing in code
-enforcing it. Expect to keep finding that shape — it is the most reliable defect
-generator in this repo.
+## CONTEXT — read in this order
 
-DO NOT INVENT A NEXT ITEM. Section 2 of the handoff lists real candidates; pick with
-the operator.
+| what | where |
+|---|---|
+| Authoritative state | `.planning/HANDOFF.md` §0–§5 (the 2026-08-16 block) |
+| Current block only | `.planning/STATE.md` CURRENT (do NOT read the 1500-line file wholesale) |
+| The planning batch (17 features + 7 fixes) | `.planning/BACKLOG.md` top — BL-N01..N17, BL-X01..X07 |
+| Burn-mode rulings | `.planning/specs/backlog-burn-mode/GRILL-LEDGER.md` (BBM-1..11) |
+| The UX system | `.planning/specs/ux-rework/` — DESIGN.md first, then GRILL-LEDGER (UX-1..27), PLATFORM-MATRIX, **templates/** (generators = pixel-exact spec) |
+| Learning graph | BL-N16 in BACKLOG + `.planning/specs/learning-graph/RESEARCH-HERMES-PI.md` |
+| Burn evidence | `.planning/specs/backlog-burn-01/OBSERVATIONS.md` (H1–H7) |
 
-FOUR THINGS THAT WILL BITE YOU IF YOU SKIP THEM
+The next-step decision inputs (HANDOFF §2, presented, not pre-decided): grill-ready = UX system ·
+Burn mode · learning graph; cheap unblockers = the six platform probes + BL-X01/02/03/05/07;
+full-grill-needed = the Kitchen (operator has unsaid details — live grill) · Truth Serum (shaped
+by BL-M33); candidate execution shape = a small burn over fixes+probes while the first big grill
+runs — a CANDIDATE only.
 
-1. The grill in .planning/specs/session-lifecycle/ is HELD after three convergence
-   passes (9 -> 13 -> 12 HIGH). SL-1..SL-36 must NOT be compiled into a DESIGN.
-   Several carry a "LOCKED" token and are still WRONG — that token records that a
-   branch was decided, not that it survived review. CONVERGENCE-HOLD-{1,2,3}.md are
-   authoritative wherever they disagree with the ledger.
+## REPORT CONTRACT — before this next session ends
 
-2. READ .planning/DECISIONS.md — do not measure it. 2700+ lines of binding law. The
-   held grill above failed three times for exactly one reason: it treated that file
-   as a parse target. D135 forbids a second append-only journal; D133/D142 scope the
-   git carve-out to board-only; D74 makes redaction a hard pre-write gate; D81 makes
-   .kata/ disposable. Any of those will silently invalidate a design.
+☐ the planning-depth decision recorded (which items, in what order, and the go/no-go bar for
+  starting coding execution) ☐ any grill opened is ledgered under `.planning/specs/<name>/`
+☐ push/PR decision surfaced (38+ unpushed commits) ☐ 🔴 PAT rotation surfaced (deferred ≠ dropped)
+☐ T-03 scope call surfaced ☐ handoff refreshed at close
 
-3. Protocol contracts are clause-pinned AND fingerprinted — 23 registered, 21
-   fingerprinted. Editing one turns the suite red until you review your own diff and
-   re-approve via `uv run python validate_skills.py --update-protocol-fingerprint`.
-   That is the machinery working, not a bug. The updater prints; it never writes.
-   TWO files are deliberately fingerprint-exempt because they are registries that
-   must grow with the code: config.md and exec-safety.md. Both are still
-   clause-pinned. Do not "fix" that asymmetry — it is load-bearing, and exec-safety's
-   sink registry was resynced on 2026-08-04 at zero approval cost because of it.
+━━━━━ end orientation ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-4. NEVER use a PowerShell Get-Content/Set-Content round-trip to edit a repo file.
-   It reads UTF-8 with the ANSI codepage and rewrites it double-encoded, corrupting
-   every em-dash and adding a BOM. This happened on 2026-08-04 (repaired in faf2ede).
-   Use the editor tooling. Same class: kata_telemetry._run_git uses text=True with
-   no encoding, so it must NEVER be used to read file CONTENT — it mojibakes every
-   non-ASCII file on Windows, and all 49 SKILL.md files are non-ASCII. Use
-   footprint.blob_at_ref, which returns bytes.
+## YOUR BRIEF — ✂ copy below · paste into new session ✂
 
-HOW TO WORK HERE
-protocol/orchestration.md is binding: "A well-behaved orchestrator does not do the
-work itself." Dispatch builders against a tight frozen brief; gate what returns
-default-FAIL using protocol/authored-artifact-gate.md's six rows. Verify, never
-trust the worker's summary — read the diff, re-run the gate yourself, and reproduce
-the evidence INDEPENDENTLY using different cases than the builder used.
+Load all KataHarness context per CLAUDE.md (prime directives first, then AGENTS.md).
+Then read .planning/HANDOFF.md's 2026-08-16 block in full, and .planning/STATE.md's
+CURRENT block only. Verify ground truth before acting:
+git status --porcelain (empty) · git rev-parse --abbrev-ref HEAD (burn/backlog-burn-01) ·
+cd tools && uv run python scripts/gauntlet.py (4/4 PASS).
+This session's agenda, set by me last session: decide the next planning items and how
+far to plan before we start coding execution. Present the decision inputs from HANDOFF
+section 2 and decide WITH me — do not pre-decide, do not invent a different agenda.
+Everything designed last session is DRAFT: grill and convergence-gate before any build
+(D169). The vault is Kiban. Wave, never sprint. Plain English, always.
 
-That last point earned its place on 2026-08-04. A builder reported that the frozen
-contract's rename-detection mechanism did not work and that it had substituted a
-better one. Reproducing it confirmed the contract was wrong and the builder right —
-git reported a moved-and-rewritten skill as plain delete+add, so it would have
-laundered into "new and exempt". A conductor who accepted the summary, or who
-insisted on the spec, would have shipped an open bypass either way.
-
-ALSO BINDING, PD-2: "Done requires proof, not assertion." Cite gate numbers, paths
-and SHAs — never confidence. The fresh-context convergence gate caught the conductor
-asserting two things that were simply false: that CLAUDE.md contains a count it does
-not contain, and that the validator ships with the skill suite when its own line 2
-says it does not. RUN THAT GATE. Do not grade your own convergence.
-
-OPERATOR PREFERENCES
-Plain English, always. Never a bare work-item code — always pair KH-T02 / BL-F01 /
-T-01 with a plain description of what it actually is. Asked for repeatedly, with
-visible frustration. Do not over-complicate: prefer the smallest change that closes
-the defect, and say plainly WHICH task is being delivered.
-
-MindBridge is OUT OF SCOPE by operator direction. Pre-existing mentions in older
-planning docs are history, not queue items. But NOTE: "out of scope" drops the
-MindBridge chores, NOT the ingest documents — INGEST-EXECUTION-ORDER.md,
-INGEST-PLAIN-ENGLISH.md and BACKLOG-FROM-MINDBRIDGE.md carry the live work queue.
-
-OWED TO THE OPERATOR — surface these, do not silently carry them
-  - Rotate the GitHub PAT: plaintext at settings.json -> env ->
-    GITHUB_PERSONAL_ACCESS_TOKEN, exported into every spawned process.
-    DEFERRED by the operator 2026-08-02. Deferred is not dropped.
-  - (CLOSED 2026-08-04) DEF-2 + BL-M24 are FIXED. learn_feed rendered fields INSTEAD
-    of the body, not as well as it; measured across all 22 ledgers that was 70 entries
-    and 46k characters silently dropped, worst 25 of 37 on session-lifecycle. The body
-    now renders under "## Detail" alongside the fields, the field-less "## Decision"
-    path is unchanged, and the heading regex no longer counts each document's own H1
-    (that was the "1 item skipped" every emit has always reported). Verified by
-    rendering all 22 ledgers before and after: 70 -> 0. THE EMIT BLOCK IS LIFTED.
-  - T-03 scope call: all six determinism laws, or the 13+15 subset.
-
-Section 3 DECISIONS in the handoff are settled; do not re-litigate. Start from
-section 2 NEXT STEP, and pick the next item WITH the operator rather than assuming
-one.
+✂ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ copy ends ━━━━━━━━━━━━━━━━━━━━━━
