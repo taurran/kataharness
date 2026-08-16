@@ -471,7 +471,21 @@ Promote to ROADMAP milestones when ready.
 > (`write_approval`, pending queue, unified diffs) exists. True of the DEFAULT config only —
 > tighten the wording so our own comparison stays truthful. One-line doc fix + version bump.
 
-> ## 🔴 **BL-M34 · The loop can be silently bypassed — and the harness's own burns just did it twice. (FILED 2026-08-16, operator-directed, angry and right)**
+> **BL-N24 · Truth Serum v2 — promote the deferred detectors. (FILED 2026-08-16 from the
+> trust-model grill TM-D2 rider; operator-directed sequencing: EXECUTES AT THE END of everything
+> currently on the backlog, and this item is UPDATED ALONG THE WAY so it is executable when its
+> time comes.)** Truth Serum v1 (TM-D2) ships the MECH detectors as blocking and the SEMI
+> detectors as signals; everything deferred from v1 accumulates HERE with its promotion
+> criterion: (1) **unwired-symbol detection promoted from signal to blocking** once its
+> false-positive rate is proven against the T6–T11 orphan calibration corpus (requires the
+> ref-graph hardening: call-only/bare-name/fabricated-src defects in `graph_gen._extract_refs` —
+> see `specs/trust-model/evidence/detectability.md` class b); (2) **honesty-label propagation
+> mechanized** (class h — provenance join across README→report→closeout, deferred to the
+> presentation layer's fact-provenance rendering in v1); (3) **per-parameter vacuity probes**
+> (class g residual — whole-test mutation proof cannot see dead parametrization legs; needs
+> authored per-param mutation sets or an engine that generates them); (4) any detector-scope cut
+> made during the trust-model build (STANDING RULE: a v1 scope cut lands here as an entry with
+> its promotion criterion, or it is a PD-1 silent deferral).
 > Nothing structural stops a conductor from dispatching designed work straight through the host
 > (Agent tool) with no initiation, no board CLAIM/DONE, no kata-orchestrate, no kata-evaluate
 > contract, no final eval, no improve fold, no telemetry — the entire loop reduced to the

@@ -439,6 +439,79 @@ locked branches (TM-C2 run-membership evidence; the anti-vacuity law adopted at 
 evidence) — conductor resolves them with citations; operator forks remain at D1 (deferral ledger
 hardening), D2 (detector set v1), D4 (gate-precondition rollout).*
 
+### TM-D1 — The deferral ledger gets FULL hardening · LOCKED
+
+- **Decision (operator, 2026-08-16):** pinned canonical paths (`.planning/DEFERRED.md` +
+  `.planning/ASSUMPTIONS.md`) · a machine schema (formalized heading grammar + required fields:
+  what/why/provenance/owed-to, closure discipline) · **an approval record on operator-approved
+  deferrals** — `accepted_by`/`accepted_at`, the gsd-override shape, answering BL-N01's open
+  question "where does approval get recorded so the gate can check it" · **a `protocol/deferral.md`
+  contract registered in `REQUIRED_PROTOCOL` and clause-pinned** so the rules themselves are
+  tamper-evident. Silent-deferral detection (matrix class d — the three-way join
+  PLAN ⋈ tree ⋈ DEFERRED) becomes fully mechanical; a debt marker without a `DEF-*` reference is
+  a BLOCKER (the gsd D3b rule, adopted).
+- **Rejected — schema without the protocol contract:** the detector would work while the rules
+  stayed unguarded — the exact pre-2026-08-03 protocol-folder class.
+- **Rejected — best-effort parsing of prose:** every parse miss is a silent-deferral miss on
+  PD-1's own sanctioned path.
+- **Provenance:** detectability dossier §5 + matrix class d; gsd-verifier D3b/D8 extractions;
+  prime-directives.md PD-1 sanctioned-paths clause.
+
+### TM-D2 — v1: MECH detectors block, SEMI detectors signal; deferred blocks filed as BL-N24 · LOCKED
+
+- **Decision (operator, 2026-08-16, accept-with-rider):** Truth Serum v1 ships **BLOCKING**
+  (gate-refusing): stub-body AST scan (tree-sitter spans) · the silent-deferral three-way join
+  (on TM-D1's hardened ledger) · debt-marker-without-`DEF-*` · stale/wrong-run evidence
+  (TM-C2's extended `evidence_is_current`) · citation-existence resolver · **mutation proof
+  RE-RUN by the gate** — never the worker-reported union (closes the gate-inventory's
+  worker-union hole). **SIGNAL-ONLY** (feeds judges, never blocks): unwired-symbol detection,
+  calibrated on the T6–T11 orphan corpus. Detectors ATTEST and NARROW; judges judge (burn-02
+  meta-finding stated wherever v1 is described).
+- **Rider (operator):** every deferred block is a BACKLOG item executed at the end of the current
+  backlog and **updated along the way** — filed as **BL-N24 (Truth Serum v2)** with per-item
+  promotion criteria and the standing rule: a v1 scope cut lands there or it is a PD-1 silent
+  deferral.
+- **Rejected — everything blocks:** class-b false positives block healthy work and train bypass
+  pressure. **Rejected — minimal v1:** leaves the live BL-X11 stale-evidence class open.
+- **Provenance:** detectability matrix; burn-02 OBSERVATIONS:136; gate-inventory (mutation
+  union); TM-C2.
+
+### TM-D3 — The anti-vacuity companion law + judge tripwires · LOCKED (conductor-resolved; evidence already adopted the law)
+
+- **Decision:** every detector ships with its anti-vacuous-check companion — it REFUSES to
+  certify over zero inputs / absent preconditions (the `check_reuse_claims_producers_exist` /
+  `surface_hash`-zero-file / protocol-folder-zero-scan pattern, now a stated design law). The
+  kata-validate **tripwire generalizes to the judge stack**: every judge proves it can still
+  fail against a known-bad corpus before its verdict is credited (the only existing meta-gate
+  becomes standard equipment). A detector or judge that cannot demonstrate failure-capability is
+  Dormant, not Verified (Guardian terms).
+- **Provenance:** detectability cross-cutting law #1; gate-inventory (tripwire = the only
+  meta-gate); TM-A1 Guardian scale.
+
+### TM-D5 — Evidence identity everywhere · LOCKED (conductor-resolved; TM-C2 already ruled the mechanism)
+
+- **Decision:** every evidence consumer (kata-evaluate's machine-input step first — the BL-X11
+  fix — then review/debrief/closeout/sprint-stop) routes through the extended
+  `evidence_is_current` (SHA fresh AND runId matches, TM-C2). The RESULT parsed-counts
+  cross-gate chimera (BL-X13) is fixed in the same build (per-gate counts or the honesty flag,
+  per its filing). BL-X11 and BL-X13 fold into the trust-model build.
+- **Provenance:** TM-C2; BL-X11/BL-X13 filings; gate-inventory step-5 row.
+
+### TM-D4 — Every completion gate gains its fact-precondition in this program · LOCKED
+
+- **Decision (operator, 2026-08-16):** ALL gates — task, wave, final eval, grill convergence,
+  freeze, grounding, sprint, closeout — gain a truth-serum fact-artifact precondition
+  (refuse-not-warn, the locked house shape) in the trust-model build. The NEW artifacts the
+  inventory identified get created: per-task gate record · convergence-pass record (incl. proof
+  the Advanced double-pass ran as two distinct dispatches, via seam records) · green-at-fork
+  baseline RESULT. Wave-phasing WITHIN the build is the frozen PLAN's job, not a scope cut;
+  any true scope cut lands in BL-N24 per the TM-D2 standing rule.
+- **Provenance:** operator directive #6 (verbatim, recorded in the directives block);
+  gate-inventory SEAM/NEW markers; TM-C4.
+
+*Section D complete. Next: E (grounding agent + judge inputs), then F (plan-grounding close),
+G (presentation), H (cross-cutting + security pass).*
+
 ## Blocked-at-close notes (standing)
 
 Grill-close `learn_feed.py` emit **BLOCKED by 🔴 BL-X12** (the emitter mislabels grill-ledger OPEN
