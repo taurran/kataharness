@@ -4,14 +4,14 @@ status: DRAFT — freeze-candidate, awaiting convergence gate
 opened: 2026-08-16
 compiled: 2026-08-16
 revision: 3 (post round-2 CONVERGE-HOLD; conductor-ruled interims labeled inline)
-sources: GRILL-LEDGER.md (UX-1..UX-32, the ruling record) · PLATFORM-MATRIX.md (UX-11; probe 1 RESOLVED §3.1) · templates/README.md + the gen_* generators and committed HTML outputs (the pixel-exact spec) · launch-template.html · doc-grammar.html · modules/closeout/resources/BRAND.md · .planning/BACKLOG.md (BL-N04/N05/N06/N07/N14/N16) · .planning/specs/backlog-burn-mode/GRILL-LEDGER.md (BBM-11)
+sources: GRILL-LEDGER.md (UX-1..UX-33, the ruling record) · PLATFORM-MATRIX.md (UX-11; probe 1 RESOLVED §3.1) · templates/README.md + the gen_* generators and committed HTML outputs (the pixel-exact spec) · launch-template.html · doc-grammar.html · modules/closeout/resources/BRAND.md · .planning/BACKLOG.md (BL-N04/N05/N06/N07/N14/N16) · .planning/specs/backlog-burn-mode/GRILL-LEDGER.md (BBM-11)
 ---
 
 # DESIGN (freeze-candidate) — the KataHarness UX system
 
 **What this is:** the consolidated design for BL-N06 (launcher) + BL-N07 (UX rework), compiled
 from the 2026-08-15/16 operator design sessions (browser mockup companion, ~20 iterations) and the
-2026-08-16 freeze-grill rulings (UX-28..32). The per-ruling record with rejected alternatives is
+2026-08-16 freeze-grill rulings (UX-28..33). The per-ruling record with rejected alternatives is
 `GRILL-LEDGER.md`; the pixel-exact references sit beside this file (`templates/` — the committed
 HTML outputs plus their width-asserted generators). **This draft is NOT frozen** — it owes the
 convergence gate (§8). Claims cite their ruling (UX-n / BBM-n); anything the ledger did not rule
@@ -153,7 +153,7 @@ reconciliation item at freeze** (§8.1) — this document changes no approved pi
 | **Help + settings** — plain-explanation-first help; numbered-loop settings; vault (Kiban) persistence stated | `templates/gen_remaining.py` | UX-22, UX-24 |
 | **Wave gate** — attention composite: paired warn rules + ⏸ chip → wave map → animated sea → double-border menu | `templates/gen_remaining.py` | UX-23, BBM-11 |
 | **Run board** — /kata-status tree: hierarchical IDs, depth rollups, lineage tags, ownership line ("all owned"); statusline depth chips | `templates/gen_board.py` | UX-25/26 |
-| **Closeout** — IN PLAIN WORDS (divider-bound prose) → truth-serum item list → git block wired to menu numbers → four plain-header stat boxes → double-border decision menu as a mini-LOOP ([n] steps repeat until [0] finish) → sea. **Stat boxes: layout + per-box content locked by UX-19 prose (WHAT GOT DONE · WHO DID THE WORK · QUALITY AND COST · WHAT WE LEARNED, contents enumerated in §8.2); pixel reference LOST** — the v4 rendering lived in gitignored scratch and `gen_closeout5.py` carries only a placeholder comment; reconstruction owed, operator re-approval required (§8.2) **[author-proposed, conductor-ruled interim — operator confirms at freeze]** | `templates/gen_closeout5.py` → `closeout-v6.html` | UX-19/20 |
+| **Closeout** — IN PLAIN WORDS (divider-bound prose) → truth-serum item list → git block wired to menu numbers → four plain-header stat boxes → double-border decision menu as a mini-LOOP ([n] steps repeat until [0] finish) → sea. **Stat boxes: layout + per-box content locked by UX-19 prose (WHAT GOT DONE · WHO DID THE WORK · QUALITY AND COST · WHAT WE LEARNED), the crew box broken out BY AGENT TYPE with the mandatory "hand-tallied" honesty label until the BL-N14 counters exist (UX-33) — contents enumerated in §8.2; pixel reference LOST** — the v4 rendering lived in gitignored scratch and `gen_closeout5.py` carries only a placeholder comment; reconstruction owed, operator re-approval required (§8.2) **[author-proposed, conductor-ruled interim — operator confirms at freeze]** | `templates/gen_closeout5.py` → `closeout-v6.html` | UX-19/20/33 |
 
 ### 3.1 The closeout decision menu — the full option set (UX-19/20)
 
@@ -320,35 +320,64 @@ conformance targets the engine's html form must reproduce, not import sites.
 
 Honestly still open — nothing else:
 
-1. **The convergence gate itself (D169)** — this document is its input, including every
-   [author-proposed] and [conductor-ruled interim] label above (§2.1 dot two-scope narrowing ·
-   §5 engine shape, width policy, and the wrapper-shim carve-out from UX-29's "only new Python"
-   lock · §2.3 role-table recompile + earth-tone note · **§2.3 known palette divergence — which
-   family wins per role between the frozen launch template's `#B5894B`/`#c9d1d9`/`#61afef` and
-   the five generators' CSS is an OPERATOR reconciliation item** · §1 seeded starfield · §2.1
-   spacing + stream-line order · §4.3 seam-config deferral · §4.4 settings routing · §8.2
-   stat-box ruling).
-2. **The four closeout stat boxes — pixel reference LOST** (§3): the v4 rendering is gone with
-   the gitignored scratch; reconstruction owed, **operator re-approval required**
-   **[author-proposed, conductor-ruled interim — operator confirms at freeze]**. More survives
-   than the pixels: UX-19 locks the layout AND the per-box contents, which are the
-   reconstruction input — **WHAT GOT DONE** (items, waves, commits, files, test delta,
-   found→filed) · **WHO DID THE WORK** (agents by role, escalations, miniloops by kind, rerolls,
-   push-backs) · **QUALITY AND COST** (gates first-pass, flagged→fixed+filed, confidence, drift
-   events, tokens with role split, per-wave walls, peak context) · **WHAT WE LEARNED** (decisions
-   locked, lessons, brain pages emitted + read-back, mode evidence). Metric names stay BL-N14
-   grill candidates (UX-19).
-3. **Platform probes 2–6** (matrix §4) — **non-blocking**, each with its conservative default
-   already designed in: probe 2 (pane statusline/hook visibility) → markdown skin mandatory, no
-   ANSI, no live region assumed (§6.4); probe 3 (Codex TUI ANSI passthrough) → glyph-first floor
-   covers both outcomes (§6.2); probe 4 (Kiro hook stdout visibility + #5527) → no Kiro hooks
-   until probed (§6.6); probe 5 (Kiro headless flags) → re-verify before the wrapper build
-   (§6.6); probe 6 (multi-line statusline) → single-line until it passes (§6.5). Plus the
-   non-blocking Mac Claude Code transcript cross-check (§6.2).
-4. **Deferred-to-PLAN details:** preload-seam config shape (§4.3) · engine module name (§5) ·
-   per-component markdown-skin mappings (§2.2, enumerated at build time).
-5. **Run personas / Human Prose integration** — out of scope, lives at BL-N02 (UX-16).
-6. **BL-N14 metric names + confidence derivation** — grilled at BL-N14, not here (§7).
+### 8.1 The convergence gate itself (D169) — and the labeled-item index
+
+This document is the gate's input, including EVERY [author-proposed] and [conductor-ruled
+interim] label above: §2.1 dot two-scope narrowing · §5 engine shape, width policy, and the
+wrapper-shim carve-out from UX-29's "only new Python" lock · §5 engine module name (deferred to
+PLAN, §8.4) · §2.3 role-table recompile + earth-tone note · §2.3 256-color fallback-table
+placement in the engine · **§2.3 known palette divergence — which family wins per role between
+the frozen launch template's `#B5894B`/`#c9d1d9`/`#61afef` and the five generators' CSS is an
+OPERATOR reconciliation item** · §1 seeded starfield · §2.1 spacing + stream-line order · §4.3
+seam-config deferral · §4.4 settings routing · §8.2 stat-box ruling.
+
+### 8.2 The four closeout stat boxes — pixel reference LOST
+
+The v4 rendering is gone with the gitignored scratch (§3); reconstruction owed, **operator
+re-approval required** **[author-proposed, conductor-ruled interim — operator confirms at
+freeze]**. More survives than the pixels: UX-19 locks the layout AND the per-box contents, and
+UX-33 (ruled after revision 3, folded in here) locks the crew box's breakdown — together the
+reconstruction input:
+
+- **WHAT GOT DONE** — items, waves, commits, files, test delta, found→filed (UX-19).
+- **WHO DID THE WORK** — broken out **BY AGENT TYPE** (UX-33): conductor · coding/builder ·
+  validation (fresh-context judges/reviewers) · advisor · evaluation (the gate + the inline
+  evaluator) · design/plan authors — each as `agents / executions` (a resume or re-dispatch
+  counts as an execution), plus escalations, **miniloop executions by kind** (gate-fix, revision,
+  reroll loops), rerolls, push-backs, and the model tier each type ran at (UX-19 + UX-33).
+  **Truth serum (UX-33):** these counters DO NOT exist yet — they land with BL-N14 (run state,
+  `.kata/`, never config); until then any rendered crew box MUST carry the **"hand-tallied"
+  honesty label**, and conductor-context tokens (not separately metered by the host) are labeled
+  too, never fabricated into a split.
+- **QUALITY AND COST** — gates first-pass, flagged→fixed+filed, confidence, drift events, tokens
+  with role split, per-wave walls, peak context (UX-19).
+- **WHAT WE LEARNED** — decisions locked, lessons, brain pages emitted + read-back, mode
+  evidence (UX-19).
+
+Metric names stay BL-N14 grill candidates (UX-19).
+
+### 8.3 Platform probes 2–6 — non-blocking, defaults designed in
+
+Each probe (matrix §4) has its conservative default already designed in: probe 2 (pane
+statusline/hook visibility) → markdown skin mandatory, no ANSI, no live region assumed (§6.4);
+probe 3 (Codex TUI ANSI passthrough) → glyph-first floor covers both outcomes (§6.2); probe 4
+(Kiro hook stdout visibility + #5527) → no Kiro hooks until probed (§6.6); probe 5 (Kiro
+headless flags) → re-verify before the wrapper build (§6.6); probe 6 (multi-line statusline) →
+single-line until it passes (§6.5). Plus the non-blocking Mac Claude Code transcript cross-check
+(§6.2).
+
+### 8.4 Deferred-to-PLAN details
+
+Preload-seam config shape (§4.3) · engine module name (§5) · per-component markdown-skin
+mappings (§2.2, enumerated at build time).
+
+### 8.5 Run personas / Human Prose integration
+
+Out of scope — lives at BL-N02 (UX-16).
+
+### 8.6 BL-N14 metric names + confidence derivation
+
+Grilled at BL-N14, not here (§7).
 
 All SURFACES are designed as of 2026-08-16 (ledger closing note), with the §8.2 stat-box caveat.
 Naming discipline UX-24 binds every one.
