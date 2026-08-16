@@ -5,7 +5,7 @@ description: >-
   acceptance criteria, and a per-task risk note. Use when a missed ownership gap or unmitigated threat has
   very high downstream cost — e.g., security-critical features or architecturally load-bearing phases.
 license: Apache-2.0
-version: 0.3.0
+version: 0.3.1
 category: plan
 status: beta
 agnostic: true

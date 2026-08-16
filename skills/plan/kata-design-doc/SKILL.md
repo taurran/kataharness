@@ -5,7 +5,7 @@ description: >-
   truth both planning and execution serve. Use after grilling, before task-planning, to turn resolved
   decisions into a specific, testable, freeze-ready DESIGN with explicit acceptance and locked decisions.
 license: Apache-2.0
-version: 0.3.0
+version: 0.3.1
 category: plan
 status: beta
 agnostic: true

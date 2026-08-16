@@ -8,7 +8,7 @@ description: >-
   returns a severity-ranked Report{passed, findings[]}. Report-only by default; fixes are
   per-finding human-gated and applied by a single writer, then re-validated once.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: evaluate
 status: beta
 agnostic: true
