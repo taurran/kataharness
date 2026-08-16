@@ -46,7 +46,12 @@ Promote to ROADMAP milestones when ready.
 > explicitly by the operator) that research/coding agents can pick up; ingested into the user's
 > designated vault; includes cloning + customizing a "KataHarness Superpowers" set that loads with
 > the harness; users can author their own specialists and the harness generates the contextual
-> references/files. Open questions (operator-flagged): do superpowers live inside the cadre or in
+> references/files. **RULING (operator, 2026-08-16 — the independence doctrine):** the launch
+> preload seam stays OPEN (UX-32) and near-term ingests the CURRENT third-party superpowers pack
+> as a **placeholder only**; the kata-native superpowers set built under this item REPLACES it.
+> Standing direction: **KataHarness divests from ALL third-party module components — superpowers
+> and GSD included** — third-party packs are reference/placeholder material, never load-bearing
+> harness components; the swap to kata-native must be a config change at the seam, not a rework. Open questions (operator-flagged): do superpowers live inside the cadre or in
 > their own home; relationship to the existing agent-skills toolkit (`agentSkills.dir`,
 > `kata-promote` two-stage gate, STANDARDS §1.3 discriminators) which already governs exactly this
 > shape of thing.
