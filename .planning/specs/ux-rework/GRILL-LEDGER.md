@@ -151,6 +151,23 @@ before building.
   ONLY full-frame rust anywhere; what/held/needed/respond). Rust background chips appear ONLY on
   interruption surfaces, system-wide.
 
+- **UX-19 · Closeout decision block + expanded vitals (operator-directed 2026-08-16).**
+  - **The decision gate is the system's ONLY double-bordered block** (╔═╗) — that border means one
+    thing everywhere: a human decision is being waited on.
+  - **Full option set, every entry real machinery:** understand-map (`kata-understand`; its broken
+    graph command is BL-X03, fix rides this batch) · full report (`.kata/closeout.html`, print-ready
+    → PDF; a dedicated PDF export is a candidate item, not promised) · **go again on THIS repo** —
+    the loop-back re-enters `kata-initiate` carrying context, with the grill dial inline
+    (full/standard/light/**skip = fast reiterate**, the existing D71 rung — ONE door, ONE dial, no
+    third onramp) · different shape on this repo · **new repo — end here, `kata-handoff` first
+    (recommended)** · ship (push/PR/merge) · clean backout (rust) · satisfied/end.
+  - **Final vitals expand to four themed boxes** over the whole combined run: *the work* (items,
+    waves, commits, files, test delta, found→filed) · *the crew* (agents by role, escalations,
+    miniloops by kind, rerolls, push-backs) · *quality & economics* (gates first-pass, flagged→
+    fixed+filed, confidence, drift events, tokens with role split, per-wave walls, peak context) ·
+    *what the run learned* (decisions locked, lessons, brain pages emitted + read-back, mode
+    evidence). All metric names are BL-N14 grill candidates, not frozen.
+
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
 statusline capabilities per host (kata segment exists on Claude; codex/kiro need assessment) ·
