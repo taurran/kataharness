@@ -119,8 +119,121 @@ this program mechanizes).
 
 ## Resolved branches
 
-*(none yet — Phase 1 begins at B1, dependency order: B → C → A → D → E → F → G → H, with A1/A2
-posed when their sections are reached or sooner at operator preference)*
+### TM-B1 — The seam is all four attach points, layered · LOCKED
+
+- **Decision (operator, 2026-08-16):** the seam's authority architecture composes ALL four attach
+  points, layered: (1) **the engine is the only door** — every dispatch is a function call that
+  mints/validates run context, wiring the orphan layer (freeze chokepoint, roles, models, board,
+  roster) in one move; (2) a **fail-closed Claude-adapter hook** intercepts bare `Agent`-tool
+  dispatches at the host boundary; (3) **post-hoc identity verification at every gate** audits
+  the chain; (4) **the wrapper door defers to BL-N21** as the outermost layer, later.
+- **Rejected — engine + post-hoc only:** host-independent and simplest, but the bypass class
+  survives as detectable-not-preventable; both burns showed in-the-moment prose bypass is the live
+  failure, and detection-after was exactly what the operator had to do by hand.
+- **Rejected — hook-first with a minimal engine:** blocks at the boundary but leaves the orphan
+  enforcement layer (roles/models/freeze) unwired — the facade would persist behind a guarded
+  door.
+- **Rationale:** defense in depth; each layer covers the others' blind spot (engine = authority +
+  wiring; hook = in-the-moment blocking on the host; verification = host-independent audit;
+  wrapper = launch invariant). EDR-7 satisfied: all four sit on the dispatcher's side.
+- **Provenance:** SURFACE-MAP §5; DETAILED-PASS discovery 2; the two live bypasses (BL-M34);
+  EDR-7.
+
+### TM-B2 — Hook-guarded Agent path on Claude; interception is an abstract per-host capability · LOCKED
+
+- **Decision (operator, 2026-08-16, accept-with-modification: "fine with option 1, but we need to
+  consider codex, kiro, and other harnesses"):**
+  1. **Claude host:** workers stay on the in-process `Agent` path (host-native statusline, kill
+     binding, background management). The engine mints the dispatch record FIRST; a new
+     **PreToolUse-class hook fail-closes any `Agent` call lacking a valid record**. The hook
+     capability probe is an explicit early task (UX-28 discipline: assess, never assume). This
+     deliberately breaks the all-hooks-fail-soft precedent — scope-gated to kata runs via
+     `kata_scope` so non-kata sessions are untouched.
+  2. **CLI platforms (codex/kiro) — the operator's modification:** their workers already launch
+     through engine code (`_COMMAND_BUILDERS` → subprocess) when sanctioned — but a conductor
+     with Bash can shell `codex exec` / `kiro-cli chat` raw. **The same hook layer therefore also
+     guards raw CLI worker launches through Bash on a Claude conductor** (match the dispatch
+     command shapes, require the record). One interception surface, two guarded doors.
+  3. **Other harnesses as HOST (conductor runs on kiro/codex/etc.):** "dispatch interception" is
+     an **abstract adapter capability**; each adapter binds it natively (Kiro: its PreToolUse
+     equivalent, risk-flagged per PLATFORM-MATRIX issue #5527 — assess; Codex: assess). A host
+     with NO interception primitive runs engine + post-hoc-verify only and **degrades LOUDLY**
+     (the kill-binding precedent: surfaced, never silent) — its runs are
+     detectable-not-preventable and say so.
+  4. **The enforcement level is declared in the run-start truth-serum box** ("enforcement:
+     intercepting / detection-only") — the first concrete G1 presentation-layer element, born
+     from this branch.
+- **Rejected — route Claude through a CLI builder:** abandons the proven in-process model; `-p`
+  verifiably degrades the statusline; loses the host kill binding the M4 ladder depends on.
+- **Rejected — both paths (hook + CLI fallback):** two Claude dispatch paths to keep honest;
+  fallback semantics already covered better by the loud-degrade rule.
+- **Tree effect:** H2's dispatch-half is substantially narrowed (the loud-degrade + abstract
+  capability law lands here); H2 remains open for engine-unavailable/settings-drift cases. G1
+  gains a concrete element.
+- **Provenance:** kata-orchestrate:1247 (in-process default branch); README:189 (headless
+  statusline degradation, verified); gauge hook :35-37 (fail-soft precedent, deliberately
+  broken); ADAPTER-CONTRACT-M4 kill-binding degrade precedent; PLATFORM-MATRIX per-host hook
+  rows.
+
+### TM-B3 — The seam gates ALL agent launches; skill invocation is cursor-tracked, not gated · LOCKED
+
+- **Decision (operator, 2026-08-16):** every launch of another agent — workers, judges
+  (evaluate/review/slop/inline), design/plan authors, the advisor, researchers, kata-validate
+  critics, debug fix-workers, reroll/correct re-dispatches, grill convergence reviewers — MUST
+  carry a seam record; the hook blocks a record-less launch. **In-session skill invocations**
+  (kata-loop → initiate → bootstrap → orchestrate sequencing) are the conductor reading its own
+  instructions, not creating an agent: they emit **cursor phase events** but are not
+  dispatch-gated.
+- **Rejected — gate absolutely everything:** ceremony + a new failure surface on every ordinary
+  skill load, for no trust gain the phase record doesn't already give.
+- **Rejected — workers+judges only:** the advisor-reach gap (zero consults against a standing
+  grant, burn-02) was one of the three recorded bypass symptoms; leaving advisor/research/critics
+  prose-dispatched preserves a proven hole.
+- **Sharpens:** judges' seam records are also where their verdicts persist (C4); the advisor's
+  seam record closes the reach gap mechanically (the hook can also positively confirm the consult
+  happened).
+- **Provenance:** SURFACE-MAP §1 (D1–D12); backlog-burn-mode:146-161 (the reach gap, third
+  bypass symptom); BBM-12.
+
+### TM-B4 — Full engine-minted record, hook validates semantically, mint chains to the cursor · LOCKED
+
+- **Decision (operator, 2026-08-16):** the dispatch record is **engine-minted** with:
+  `runId · taskId · role · platform · resolved model+effort · planPath (freeze VERIFIED at mint
+  via assert_frozen) · briefHash · mintedUtc · seq · agentDef (slot reserved for BL-N20)`. The
+  hook **re-runs the engine validations against the record** (semantic check, not existence
+  check), and the mint **appends a chained entry to the cursor** — so a fabricated record
+  without matching cursor lineage is post-hoc detectable at the next gate.
+- **The launched agent never echoes anything** — validation is wholly dispatcher-side, which
+  eliminates the EDR-7 echo-forgery class rather than mitigating it.
+- **Rejected — existence/shape check only:** a stale or hand-copied record from an earlier
+  dispatch would pass the hook — the T-04 staleness class reborn at the seam.
+- **Rejected — minimal record:** no run identity travels with the launch; C2 stamping and C4
+  verdict persistence would need a second mechanism.
+- **Honest residual (EDR-5 style, stated in the contract):** a deliberately adversarial conductor
+  holds the session and can fabricate files; the seam DETECTS fabrication (cursor-lineage
+  mismatch at post-hoc verification), it does not prevent it. The seam's prevention claim is
+  scoped to drift, laziness, and prompt-obedience failure — the classes actually observed.
+- **Provenance:** EDR-7; `kata_dispatch.build_brief` validations (the seed); T-04
+  identity-not-ancestry; DETAILED-PASS discovery 2.
+
+### TM-B5 — Deny-and-route; park when no legal path; every denial is a visible cursor event · LOCKED
+
+- **Decision (operator, 2026-08-16):** a record-less launch is **DENIED by the hook** with a
+  message naming the legal path (mint via the engine). Denial forces the legal path and needs no
+  human, so it is BBM-11-compatible in unattended shapes. When the **engine itself refuses to
+  mint** (plan not frozen, unknown role, unconfirmed platform) there is no legal path: ESCALATE
+  `human-required`; unattended runs **park the task** (existing async-park pattern), never die
+  silently and never proceed. **Every denial is a cursor event and a G1 visible refusal** — the
+  presentation layer shows the line being held.
+- **Rejected — warn-first rollout:** the exact "warn as a soft status" posture the operator
+  rejected for D169; burns proved warnings scroll past.
+- **Rejected — hard-fail the run:** one prose slip mid-migration would destroy healthy runs;
+  deny-with-legal-path achieves the guarantee without the blast radius.
+- **Provenance:** D169 verbatim ruling; BBM-11; the escalation async-park pattern
+  (kata-orchestrate:884-885).
+
+*Section B complete. Re-derivation: B1–B5 opened no new B-branches; C1 (cursor shape) is next in
+dependency order — C2's run-id format is consumed by B4's record, so C1/C2 resolve before D.*
 
 ## Blocked-at-close notes (standing)
 
