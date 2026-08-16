@@ -149,6 +149,43 @@ Promote to ROADMAP milestones when ready.
 > injects (Hermes’ bounded-curation lesson). Also adopted: staged-write + unified-diff approval
 > queue · security scan on self-written learning (injection-persistence vector).
 
+> **BL-N19 · The re-loop path is FIRST-CLASS in the loop architecture, for ALL run shapes. (NEW
+> 2026-08-16, operator-ruled)** Every run — not just burns — has an OPEN, mechanical path to
+> re-running the greater loop when the final eval fails, exactly parallel to how the evaluator
+> already re-loops an individual coding agent that fails enough times (reroll/fix-loop). Today
+> this exists as prose + the loop-back seam (kata-loop's version-up carry) but there is no
+> mechanical NEEDS_WORK→re-loop route at run level: burn-02's remediation cycle had to be
+> conductor-hand-driven. Composes with BBM-12 (wave-per-loop: a wave re-loops on failed eval),
+> BL-N18 (the threshold that decides "fails"), and the D71 grill dial (a re-loop's grill depth).
+> The architecture rule: NO run shape ships without its failed-final-eval re-entry path defined.
+
+> **BL-N20 · KataHarness runs its OWN agents — never bare host-default agents — for every role.
+> (NEW 2026-08-16, operator-directed; current state VERIFIED)** Verified 2026-08-16: no
+> harness-defined agent identities exist anywhere (`adapters/claude/agents/` absent, no repo
+> agent definitions, `kata_dispatch` references none) — every coding/validation/eval agent in
+> every session to date has been a HOST-DEFAULT agent shaped only by its prompt brief. The item:
+> define KataHarness agent artifacts for every role (the role model: conductor · orchestrator ·
+> coder · validator · evaluator · advisor · arbiter · challenger · learning agent), as the
+> BL-N16 substrate files (frontmatter + markdown, per-agent learning attached), installed by the
+> harness and REQUIRED by dispatch — a dispatch that would fall back to a bare host default
+> fails closed or escalates. Host-native agent features (Claude subagent frontmatter, Codex/Kiro
+> equivalents) are the adapter's rendering of OUR definitions, never the definition itself.
+> Composes: BL-N16 (the substrate IS the agent file) · BL-M33/M34 (the dispatch seam is where
+> "must be our agent" gets enforced) · UX-32 independence doctrine (same principle, agent-level).
+
+> **BL-N21 · Always-loop: the personal global config makes EVERY coding task a full KataHarness
+> loop run. (NEW 2026-08-16, operator-directed)** For the operator's own Claude/Codex/etc.
+> environments (individual-case global config, not a product default): every coding-task
+> execution routes into a FULL loop run — an onramp collects the run-configuration items (the
+> guided flow: shape, care level, fan-out, models, brain/vault, docs, goal optimization — the
+> BBM-5/UX-21 interview), then the loop executes. The onramp ALSO offers, every time, the choice
+> of executing from (a) the INSTALLED KataHarness (the vault/skills install) or (b) the pre-prod
+> LIVE repo (C:\dev\projects\KataHarness) — so dogfooding the development tip is a first-class
+> choice at every launch. Mechanism candidates for the grill: the UX-28 wrapper as the enforcing
+> door + host global-config/hooks that redirect bare coding requests into the onramp. Composes:
+> BL-N06/07 (the wrapper owns the onramp) · UX-31 (all three hosts) · BL-N20 (the loop it
+> launches uses our agents).
+
 > **BL-N18 · Tunable judgment thresholds — advisor hooks AND evaluator strictness. (NEW
 > 2026-08-16, operator-ruled during the burn-02 final-eval exchange)**
 > The advisor's trigger thresholds are config-tunable today (`advisor.hooks.failThreshold`/
