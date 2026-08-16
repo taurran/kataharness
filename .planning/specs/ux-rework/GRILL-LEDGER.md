@@ -123,6 +123,10 @@ before building.
   · paste into new session"** — so the user knows what the block is FOR. Orientation format
   ACCEPTED; final section renamed **REPORT CONTRACT** (it is the agent's report obligations, gated
   by the conductor, not a human section). Handoff execution itself is BL-N15.
+  **LOCKED (same day):** final orientation section order — **MISSION → GUARDRAILS → CONTEXT →
+  REPORT CONTRACT → YOUR BRIEF (the ✂ copy block) LAST** — read everything, then take the paste.
+  Reference specimen: `doc-grammar.html` beside this ledger. Per-run litigation of section
+  CONTENT happens at each item's grill; the FORMAT is settled.
 
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
