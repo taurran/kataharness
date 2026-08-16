@@ -1,8 +1,9 @@
 ---
 spec: trust-model
 item: "The Trust Model — one unified grill (operator-ruled 2026-08-16): the seam (BL-M33/M34) + the cursor + Truth Serum (BL-N01) + the grounding agent + gate preconditions + the plan-grounding close (feeds BL-N19) + the presentation layer"
-status: draft
+status: converged
 opened: 2026-08-16 (absorbs specs/dispatch-seam/GRILL-LEDGER.md, opened same day — its Phase-0 grounding and B1–B11 tree carry over as input; supersede-never-rewrite)
+converged: 2026-08-16 (pass 1 SHIP fifth run · pass 2 SHIP second run · EV-1 accepted; emit blocked by BL-X12, surfaced)
 baseline: master `de8578c` → branch grill/dispatch-seam @ dcdd1b2 · gauntlet 4/4 (pytest 4518)
 tier: kata-grill-advanced (enforcement-critical, architecturally load-bearing; double convergence pass + dedicated security/edge-case pass)
 target: CODEBASE (dev source, operator-selected this session)
@@ -1073,7 +1074,32 @@ NEXT-SESSION-ORIENTATION precedent) → THEN execution dispatches.** No build di
 handoff package is committed. Surface at close; a freeze without the handoff is an incomplete
 close.
 
+### EV-1 — Elevate: the Trust Regression Suite · LOCKED
+
+- **Decision (operator, 2026-08-16, ACCEPTED):** every Guardian "Verified" badge and enforcement
+  claim in the doc layer must cite a check id in a **badge→check registry**; a `validate_skills`
+  check (riding the existing gauntlet) fails an uncited badge AND a cited-but-dead check, every
+  commit. The one-time promise audit becomes a standing CI regression: **trust can only be
+  claimed where a machine can re-derive the claim** — facade regrowth becomes a validator
+  failure, not a future hand-audit finding. Compiled into the DESIGN like any other resolution.
+- **Grounding (this grill's context):** the promise audit's distribution finding (honest labels
+  live exactly where validate_skills runs — T1/T2 were the only FACT rows for that reason);
+  TM-A1's Guardian vocabulary is the guardable term set; `check_reuse_claims_producers_exist` is
+  the working registry-vs-tree precedent.
+
+## GRILL CLOSED — 2026-08-16
+
+Convergence: pass 1 SHIP (fifth run) · pass 2 SHIP (second run) — the Advanced double gate
+satisfied. ELEVATE posed once, ACCEPTED (EV-1). Frontmatter `status:` advanced to **converged**
+by this close act (the R2-H1 rule, applied to this ledger first — dogfooding the enum it rules).
+Output: this ledger (24 branches + 5 amendment blocks + 26 compile residuals + EV-1) + the
+`CONTEXT.md` glossary entries (Cursor · Guardian scale · Kata Superpowers) — consumed next by
+the dispatched design-author (`BRIEF-DESIGN-AUTHOR.draft.md`) per KH-T13.
+
 ## Blocked-at-close notes (standing)
 
 Grill-close `learn_feed.py` emit **BLOCKED by 🔴 BL-X12** (the emitter mislabels grill-ledger OPEN
-questions as resolved decisions). Surface at close; do not run the emit.
+questions as resolved decisions — its `--ledger` route returns zero entries for bullet ledgers
+and its `--decisions` route hardcodes resolved). **Surfaced at this close; the emit was NOT run.**
+The `converged` status write above is INDEPENDENT of the emit (pass-1 SHIP residual 5). The emit
+runs retroactively once BL-X12 closes.
