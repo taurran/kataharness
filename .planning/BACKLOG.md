@@ -115,6 +115,12 @@ Promote to ROADMAP milestones when ready.
 > `engram.autonomy` dial — D33 never bypassed; auto-apply vs human-gated per learning class) ·
 > conflict resolution between contradictory learnings · context-size control as learning accrues ·
 > redaction before vault write (D74) · BC: an agent with no learning file behaves byte-identically.
+> **Field alignment (research landed 2026-08-16, `.planning/specs/learning-graph/RESEARCH-HERMES-PI.md`):**
+> format + load-time injection MATCH the field; temporal audit + specialist spin-off EXCEED it
+> (neither Hermes nor Pi has either). **Adopted design consequence: append for audit, distill for
+> load** — the temporal log audits; a capped curated “active” section (visible fill %) is what
+> injects (Hermes’ bounded-curation lesson). Also adopted: staged-write + unified-diff approval
+> queue · security scan on self-written learning (injection-persistence vector).
 
 > **BL-N08 · "The Kitchen" — decouple the flat run; let tasks bake. (THE BIG ONE)**
 > Chef (conductor) / sous-chef (orchestrator subagent) / dishes (tasks). Today's run pattern is
@@ -234,6 +240,11 @@ Promote to ROADMAP milestones when ready.
 > literal `version: 0.17.0` and redded on any legitimate bump (caught live by the BURN-D builder;
 > fixed to a semver floor at `53cecf8`). Grep the suite for the same class — exact version/count pins
 > against living files — and convert to floors or regenerable assertions.
+
+> **BL-X07 · kata-promote's frontmatter mischaracterizes Hermes.** It calls Hermes a
+> "no-gate instant-universal model"; the 2026 docs show an opt-in staging gate
+> (`write_approval`, pending queue, unified diffs) exists. True of the DEFAULT config only —
+> tighten the wording so our own comparison stays truthful. One-line doc fix + version bump.
 
 > **BL-X06 · Host auto-worktree isolation fails on this repo (path casing) and provisions wrong
 > bases.** The Claude Code worktree isolation refused `C:\dev\...` vs `C:/Dev/...` casing and left
