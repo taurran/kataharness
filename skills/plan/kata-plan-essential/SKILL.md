@@ -4,7 +4,7 @@ description: >-
   Coarse vertical slices with disjoint ownership and a runnable gate per task. Pick this for PoC-grade plans,
   time-boxed spikes, or any context where a lightweight DAG is enough and full threat modeling is not warranted.
 license: Apache-2.0
-version: 0.3.0
+version: 0.3.1
 category: plan
 status: beta
 agnostic: true
@@ -32,7 +32,7 @@ sets ONLY the depth. When `delivery.shape == "incremental"`, run the **roadmap l
 
 **Dispatched as `plan-author` (DESIGN §4.2, dispatch-authoring spec, KH-T13).** Once `DESIGN.md` is frozen,
 the conductor session dispatches this skill as role `plan-author` (`kata_dispatch.build_brief`/`dispatch`,
-`tools/kata_dispatch.py:42`/`:199`) — `sandbox="write"`, in its own [[kata-worktree]] worktree — instead of
+`tools/kata_dispatch.py:43`/`:219`) — `sandbox="write"`, in its own [[kata-worktree]] worktree — instead of
 running it in the conductor's own context (`protocol/orchestration.md`: the conductor gates, it does not
 author under its own gate). The conductor applies `protocol/authored-artifact-gate.md`'s six-row rubric
 (KH-B42) to the returned `PLAN.md` before writing it into the main tree. If a genuinely unresolved

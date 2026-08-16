@@ -8,7 +8,7 @@ description: >-
   returns a severity-ranked Report{passed, findings[]}. Report-only by default; fixes are
   per-finding human-gated and applied by a single writer, then re-validated once.
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 category: evaluate
 status: beta
 agnostic: true
@@ -272,8 +272,8 @@ The critic model must differ from the writer model to defeat self-collusion and 
 
 **When `kata.config` roles are configured (off-host path):** the conductor builds a critic brief via
 `tools/kata_dispatch.build_brief(role="validator", ...)` for the codex critic — the `_COMMAND_BUILDERS`
-for `{"codex", "kiro"}` are the off-host path (`tools/kata_dispatch.py:107-151`). There is no Claude
-builder in `kata_dispatch` (`:13,151` — "Claude is the in-process Agent path … handled by the
+for `{"codex", "kiro"}` are the off-host path (`tools/kata_dispatch.py:127-171`). There is no Claude
+builder in `kata_dispatch` (`:169-170` — "Claude is the in-process Agent path … handled by the
 orchestrator, not here"). This path wires a genuinely different model family for the critic, providing
 anti-collusion protection.
 
@@ -366,7 +366,7 @@ future, optional step — no other skill is edited in this build.
 | `kata_banner.render_validation_banner` | `tools/kata_banner.py` | REUSED tool | Validation-loop init banner |
 | `kata_banner` CLI `--validation` flag | `tools/kata_banner.py:153-175` | REUSED tool | Banner emit as command |
 | `grounding_gate.build_verdict` / `write_grounding` | `tools/grounding_gate.py:56-155,130` | REUSED tool | Grounding leg deterministic verdicts |
-| `kata_dispatch.build_brief` (codex/kiro path) | `tools/kata_dispatch.py:107-151` | REUSED tool | Off-host critic brief (cross-family) |
+| `kata_dispatch.build_brief` (codex/kiro path) | `tools/kata_dispatch.py:43,127-171` | REUSED tool | Off-host critic brief (cross-family) |
 | `kata_board.append_event` | `tools/kata_board.py:60-99` | REUSED tool | Board telemetry |
 | [[kata-closeout]] human-gated apply pattern | `modules/closeout/kata-closeout/SKILL.md:180,40` | REUSED pattern | Fix-gate (Decision-2) |
 | `kata-orchestrate` EVALUATE wiring | `skills/coordinate/kata-orchestrate/SKILL.md:435-442` | NOT TOUCHED | Explicitly unchanged |
