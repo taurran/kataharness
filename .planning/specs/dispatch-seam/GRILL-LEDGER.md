@@ -1,7 +1,7 @@
 ---
 spec: dispatch-seam
 item: "BL-M33 · the conductor↔host dispatch seam (plain name: the code chokepoint every agent launch must pass through)"
-status: draft
+status: absorbed — 2026-08-16, operator-ruled: ONE unified trust-model grill. This ledger's Phase-0 grounding, operator directives, and B1–B11 tree carry forward as INPUT to ../trust-model/GRILL-LEDGER.md (B1→B, B3→C, others mapped there). Do NOT resolve branches here; supersede-never-rewrite.
 opened: 2026-08-16
 baseline: master `de8578c` → branch grill/dispatch-seam · gauntlet 4/4 PASS (pytest 4518) · tree clean
 tier: kata-grill-advanced (enforcement-critical, architecturally load-bearing — M34/N01/N19/N20 all hang off this seam)
