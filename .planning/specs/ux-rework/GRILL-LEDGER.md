@@ -115,6 +115,15 @@ before building.
   (launch, waits, phase breaks it prints); once the host CLI owns the TTY, the live surfaces are the
   statusline + printed static frames.
 
+- **UX-15 · Document grammar rulings (specimen round 1, operator-reviewed):** the breaker hierarchy
+  is THREE levels — **phase transition = the full phase-break block (UX-12)** · major topic inside
+  a phase = heavy parchment breaker with ochre title · minor = light dim breaker with pale title.
+  Standard-output tick (`▏` Prussian, severity by color) ACCEPTED · parchment/ochre tables ACCEPTED
+  · scissors copy blocks ACCEPTED with one change: the label states the destination — **"copy below
+  · paste into new session"** — so the user knows what the block is FOR. Orientation format
+  ACCEPTED; final section renamed **REPORT CONTRACT** (it is the agent's report obligations, gated
+  by the conductor, not a human section). Handoff execution itself is BL-N15.
+
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
 statusline capabilities per host (kata segment exists on Claude; codex/kiro need assessment) ·

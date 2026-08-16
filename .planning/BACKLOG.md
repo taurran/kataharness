@@ -71,6 +71,18 @@ Promote to ROADMAP milestones when ready.
 > Existing anchor points: persona/narration protocols, the two-tier closeout (CLI summary + branded
 > HTML report), the one-dial bootstrap. This is the umbrella; BL-N05/N06 are its first tenants.
 
+> **BL-N15 · Handoff on demand — one verb, standardized execution. (NEW 2026-08-15)**
+> Saying "hand off to a new session" (or close variants) in ANY KataHarness-governed session
+> executes the full standardized handoff: context update · handoff update (frontmatter per
+> `protocol/handoff.md`) · **orientation printout in the locked UX grammar** (the hard agent-
+> orientation format, copy block labeled "paste into new session"). Predictable and repeatable —
+> same artifacts, same order, every time. Existing machinery: `kata-handoff` / `kata-selfhandoff` /
+> `kata-orient` / `kata_handoff_break.py` are real but verb-triggered standardized execution is
+> NOT; the held session-lifecycle grill's surviving findings (trigger never fired · staleness
+> comparator unimplemented · frontmatter fields never carried by real handoffs) are input evidence,
+> NOT its ledger. Ties into the UX rework (grammar) and the Kitchen (roles below). **Operator:
+> work this during the current batch's execution.**
+
 > **BL-N08 · "The Kitchen" — decouple the flat run; let tasks bake. (THE BIG ONE)**
 > Chef (conductor) / sous-chef (orchestrator subagent) / dishes (tasks). Today's run pattern is
 > flat and on-rails; the Kitchen lets execution branches parallelize and optimize *around each
@@ -81,6 +93,20 @@ Promote to ROADMAP milestones when ready.
 > it: the burn's H1 finding — **gating is the serial bottleneck, builders are not** — so the Kitchen
 > must redesign gate placement, not just dispatch. Operator: has unspecified details; grill deep,
 > live.
+>
+> **THE ROLE MODEL (operator-specified 2026-08-15):**
+> - **Conductor** — the PRIMARY session agent: research + brainstorming, the human's interlocutor.
+>   Highest tier the operator will run (recommend Fable, as this session runs).
+> - **Orchestrator** — a THIN dispatched agent at the run's standard coding tier, carrying most of
+>   the orchestration + subagent-execution load. Under the Kitchen it graduates to chef/sous-chef:
+>   managing multiple branches concurrently — things "cooking" while non-dependent work executes —
+>   running the working loop, and employing the judgment agents below.
+> - **Advisor** — as shipped (D167 advisor-executor, fresh-context consult).
+> - **Evaluator** — the fresh-context no-write default-FAIL gate (operator correction: evaluator,
+>   NOT "assessor").
+> - **ARBITER (NEW)** — advisor + second-brain decision-making combined: consults the vault's
+>   decision history when arbitrating. Needs its own definition at grill time.
+> - **Challenger** — cross-model challenge of the adversarial validator (BL-N10).
 
 > **BL-N09 · Fan-out dial — a run-config knob for Kitchen capacity. (NEW 2026-08-15, depends on BL-N08)**
 > Once the Kitchen exists: a `fanOut` configuration alongside mode/economy — three positions,
