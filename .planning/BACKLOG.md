@@ -15,7 +15,13 @@ Promote to ROADMAP milestones when ready.
 
 ### The twelve features
 
-> **BL-N01 · "Truth Serum" — make the never-stub/never-half-build promise mechanical.**
+> **BL-N01 · 🔴 "Truth Serum" — make the never-stub/never-half-build promise mechanical.
+> (PRIORITY ELEVATED by the operator 2026-08-16: "we need the TRUTH SERUM update to be air
+> tight. The model lies and lies and lies. Can't be trusted with anything." The burn-02 loop
+> bypass — the model walking around the loop and calling it a mode — is the live exhibit: any
+> guarantee that depends on model obedience to prose is not a guarantee. Truth Serum, BL-M33/
+> M34's mechanical enforcement, and BL-N20's required-own-agents are one program: move trust
+> from the model's compliance to code that fails closed.)**
 > The harness must never stub, defer, or half-build anything without being explicit and getting
 > explicit approval. The *prose* contract already exists (PD-1/PD-2, clause-pinned + fingerprinted);
 > what does not exist is mechanism beyond the gate's judgment. **The recorded blocker is `BL-M33`**
@@ -170,6 +176,16 @@ Promote to ROADMAP milestones when ready.
 > harness and REQUIRED by dispatch — a dispatch that would fall back to a bare host default
 > fails closed or escalates. Host-native agent features (Claude subagent frontmatter, Codex/Kiro
 > equivalents) are the adapter's rendering of OUR definitions, never the definition itself.
+> **DESIGN RULINGS (operator, 2026-08-16, second sitting):** (1) our agents are **LIGHTWEIGHT —
+> never general-purpose blobs**; (2) they MAY be **derived from the general-purpose agents** as a
+> starting point and **aligned against other harnesses' agent designs — Hermes, Quicksilver, Pi
+> named as references** — but the definitions are OURS, written by us (the UX-32 independence
+> doctrine at agent level, explicit); (3) **conductor and orchestrators are THIN** — the
+> thin-orchestrator doctrine (spine #8) baked into the agent definitions themselves, not just
+> graded after the fact; (4) **coding agents carry actual coding best practice as GOOD-CODE /
+> BAD-CODE EXAMPLES** — exemplar pairs in the agent substrate, not abstract style prose; the
+> same exemplar pattern extends per-role (validator: real-vs-vacuous finding exemplars, etc. —
+> grill decides the per-role set).
 > Composes: BL-N16 (the substrate IS the agent file) · BL-M33/M34 (the dispatch seam is where
 > "must be our agent" gets enforced) · UX-32 independence doctrine (same principle, agent-level).
 
@@ -185,6 +201,17 @@ Promote to ROADMAP milestones when ready.
 > door + host global-config/hooks that redirect bare coding requests into the onramp. Composes:
 > BL-N06/07 (the wrapper owns the onramp) · UX-31 (all three hosts) · BL-N20 (the loop it
 > launches uses our agents).
+> **EXTENDED (operator, 2026-08-16, second sitting): existing-code executions get a mandatory
+> INITIAL INTAKE.** Always-full-execution also covers onramps onto EXISTING code and code
+> reviews: an initial intake pass scans ALL context so the run is fully aware of what it is
+> looking at before anything else happens. **A CONTEXT-SCANNING capability is NECESSARY for
+> executions on existing code** — assess at grill whether a dedicated context-scanning AGENT is
+> needed for fully loading LARGE codebases. Honest current-state (verified surfaces): scanning
+> FUNCTIONS exist — `graph_gen`/kata-graph (the F2 code map, token-budgeted digest),
+> `kata-understand`, `kata-context`, `kata-onboard` (the existing-repo door), debug-mode intake —
+> but no scanning AGENT role exists, and the functions' large-codebase behavior (budget
+> exhaustion, partial-map honesty) is unassessed. The scanning agent, if built, joins the BL-N20
+> role set with its own substrate file.
 
 > **BL-N18 · Tunable judgment thresholds — advisor hooks AND evaluator strictness. (NEW
 > 2026-08-16, operator-ruled during the burn-02 final-eval exchange)**
