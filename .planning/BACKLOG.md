@@ -156,7 +156,10 @@ Promote to ROADMAP milestones when ready.
 > queue · security scan on self-written learning (injection-persistence vector).
 
 > **BL-N19 · The re-loop path is FIRST-CLASS in the loop architecture, for ALL run shapes. (NEW
-> 2026-08-16, operator-ruled)** Every run — not just burns — has an OPEN, mechanical path to
+> 2026-08-16, operator-ruled — provenance: the operator's post-burn-02 directive "the entire
+> loop architecture for all runs has an open path to rerunning the loop if final eval fails,
+> just like our assessor can re-loop the individual coding agent"; AV-2 M11 asked for the
+> asked/answered context — this is it)** Every run — not just burns — has an OPEN, mechanical path to
 > re-running the greater loop when the final eval fails, exactly parallel to how the evaluator
 > already re-loops an individual coding agent that fails enough times (reroll/fix-loop). Today
 > this exists as prose + the loop-back seam (kata-loop's version-up carry) but there is no
@@ -167,8 +170,9 @@ Promote to ROADMAP milestones when ready.
 
 > **BL-N20 · KataHarness runs its OWN agents — never bare host-default agents — for every role.
 > (NEW 2026-08-16, operator-directed; current state VERIFIED)** Verified 2026-08-16: no
-> harness-defined agent identities exist anywhere (`adapters/claude/agents/` absent, no repo
-> agent definitions, `kata_dispatch` references none) — every coding/validation/eval agent in
+> harness-defined agent DEFINITIONS exist anywhere (`adapters/claude/agents/` absent, no repo
+> agent definitions; `kata_dispatch`'s kiro path passes a `--agent <role>` string but no
+> definition artifact backs any role — AV-2 L14 precision) — every coding/validation/eval agent in
 > every session to date has been a HOST-DEFAULT agent shaped only by its prompt brief. The item:
 > define KataHarness agent artifacts for every role (the role model: conductor · orchestrator ·
 > coder · validator · evaluator · advisor · arbiter · challenger · learning agent), as the
@@ -190,7 +194,10 @@ Promote to ROADMAP milestones when ready.
 > "must be our agent" gets enforced) · UX-32 independence doctrine (same principle, agent-level).
 
 > **BL-N21 · Always-loop: the personal global config makes EVERY coding task a full KataHarness
-> loop run. (NEW 2026-08-16, operator-directed)** For the operator's own Claude/Codex/etc.
+> loop run. (NEW 2026-08-16, operator-directed — provenance: the operator's verbatim ask "can we
+> set our global config for claude/codex etc (just in our own individual case) to execute FULL
+> LOOP RUNS … for every single time we execute a coding task? … It should also give us the
+> option to execute from the installed kataharness or the pre-prod live repo. Every time.")** For the operator's own Claude/Codex/etc.
 > environments (individual-case global config, not a product default): every coding-task
 > execution routes into a FULL loop run — an onramp collects the run-configuration items (the
 > guided flow: shape, care level, fan-out, models, brain/vault, docs, goal optimization — the
@@ -222,7 +229,9 @@ Promote to ROADMAP milestones when ready.
 > has no operator knob. Ruling: both become tunable, surfaced in the guided-start interview +
 > the settings screen (UX-21/22), with the D33 floor explicit: no dial ever disables the gate
 > itself. Pairs with the wave-per-loop shape (BBM-12: each wave's eval can kick it back — the
-> threshold decides what "fails" means) and the eval-challenger (BL-N10 extension).
+> threshold decides what "fails" means). *(A stale "eval-challenger (BL-N10 extension)" tail
+> survived here after the operator withdrew that extension — caught by AV-2 H1 and scrubbed
+> 2026-08-16; the challenger challenges adversarial validation ONLY, per BL-N10.)*
 
 > **BL-N17 · Scrub “engram” → “learning” across KataHarness. (NEW 2026-08-16)**
 > The internal term “engram” becomes plain **“learning”** everywhere a user or agent meets it:
@@ -408,7 +417,7 @@ Promote to ROADMAP milestones when ready.
 > **BL-X11 · kata-evaluate's machine-input step doesn't route through the T-04 identity check.
 > (FILED 2026-08-16, from the burn-02 final eval's F1 second-order finding, conductor-corrected.)**
 > The contract prose tells the evaluator to read `.kata/RESULT.json` but never points it at
-> `run_result.py:123`'s resultSha-vs-credited-SHA identity check (the T-04 fix, `bf163fd`) — so a
+> `run_result.py:122`'s (`evidence_is_current`) resultSha-vs-credited-SHA identity check (the T-04 fix, `bf163fd`) — so a
 > literal evaluator meets a stale artifact raw; the burn-02 final eval read a JULY run's 537-green
 > RESULT.json and had to catch the staleness by eye. Doc-seam fix: the skill's machine-input step
 > cites and requires the identity check; NO new mechanism (the guard already exists in code).

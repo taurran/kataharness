@@ -25,6 +25,8 @@ convergence review BEFORE freeze (BBM-7/8) · `waveBoundaries: autonomous` decla
 
 ## Integration queue (conductor-owned fixes accrued from flags/judges)
 
+*(Queue numbering corrected at AV-2 L12 — it briefly read 1,2,2.)*
+
 1. **File a new found-broken backlog item (from the X01 judge — the more serious of the two):**
    `skills/coordinate/kata-bootstrap/resources/run-shapes.md:6` — the `batch` preset pre-fills
    `modules: [bakeoff]`, and `bakeoff` has NO provider skill: **the shipped batch run-shape
@@ -34,7 +36,7 @@ convergence review BEFORE freeze (BBM-7/8) · `waveBoundaries: autonomous` decla
    fallback path documents `grep -n "^def \|^class "` — not a PowerShell cmdlet, so a literal
    follower on this project's stated primary shell fails there. Same doc-vs-mechanism class as
    BL-X03 itself, pre-existing, out of the item's scope. File as the next BL-X code at integration.
-2. **README.md:95 + :202 (from the X07 judge, MED-1):** two LIVE user-facing lines carry the same
+3. **README.md:95 + :202 (from the X07 judge, MED-1):** two LIVE user-facing lines carry the same
    Hermes false-claim class in different words ("promotes learned behavior without a human gate" ·
    "which Hermes doesn't have") — invisible to the builder's literal-phrase self-gate, caught by
    the judgment layer. Hand-authored README prose = conductor-owned (the burn-01 partition);
@@ -44,8 +46,13 @@ convergence review BEFORE freeze (BBM-7/8) · `waveBoundaries: autonomous` decla
 
 ## FINAL VERDICT — round 2: **PASS** (2026-08-16)
 
-The wave cleared its loop the normal way: NEEDS_WORK → targeted fix against the same plan →
-re-evaluation → PASS. The round-2 evaluator (fresh context, anchor tier) re-derived every
+The run cleared the loop's eval→fix→re-eval SEMANTICS: NEEDS_WORK → targeted fix against the
+same plan → re-evaluation → PASS. Stated precisely (AV-2 M4): the cycle was CONDUCTOR-HAND-DRIVEN
+— no mechanical run-level re-loop route exists (that is BL-N19) — so this was the loop's shape
+honored by hand, not its machinery executing. **Recorded deviation, deliberate and
+operator-visible:** BBM-12's wave-per-loop ruling landed MID-remediation and was NOT applied
+retroactively to burn-02 — one run-level final eval covered both waves; every future burn gets
+per-wave evals. The round-2 evaluator (fresh context, anchor tier) re-derived every
 remediation itself: reproduced the mutation probe · byte-verified the footprint · re-ran the
 gauntlet (4/4, 4493) · proved the fixed test's four previously-dead params bite (its own
 real-command injection redded all four) · verified every filing truthful against the live tree ·
@@ -83,7 +90,7 @@ FILED and live; this run's shape remains recorded DRIFT under BBM-12.
 | post-close | final eval | **VERDICT: NEEDS_WORK (run level; item content PASSED independent re-derivation).** F1 no machine evidence + a stale JULY `.kata/RESULT.json` on disk · F2 the drift entered the record only under operator challenge, mid-eval (independently confirming the operator's dishonesty call) · F3/F4 record overstatements · F5 branch mixing · F6/F7 lows | remediation round opened: records corrected · BL-X10/X11 filed · fix builder dispatched · evidence emission queued |
 | remediation | fix1 | targeted fix BUILT + merged (`d3f55fd`): the 4 vacuous params now BITE — per-branch contract map; probe (b) proved the previously-dead leg catches even a REAL command name in a skills branch (the old subset check structurally could not) | gauntlet 4/4 (4493) in worktree; one honest cost stated: a host legitimately gaining slash commands reds the test by design, forcing a deliberate reclassification |
 | remediation | rulings | operator ruled live: **BBM-12 fork = WAVE-PER-LOOP** (a wave re-loops if its final eval fails) · cursor = the interruption token (BL-N16-aligned) · BL-N18 tunable advisor+evaluator thresholds filed · challenger scope CORRECTED to adversarial validation only, separate subagent/different model · F5 resolved by explicit ride-along ruling (one-time) | |
-| remediation | evidence | **F1 CLOSED: durable gate artifacts emitted** at `evidence/` — RESULT.json (`baselineSha c2be115`, `resultSha 32725a5`, exit 0, the 4-gate PASS summary in stdoutTail) · footprint.json (withinFootprint TRUE) · mutation.json (**allNonVacuous TRUE — live probe**: baseline green → phantom-injected mutant RED → restored). Honesty labels: RESULT's `parsedCounts` (2/0/3) are last-match-PER-LABEL across the tail (round-2 eval LOW-1 precision fix: `passed 2` is the integration block, `skipped 3` is the UNIT block's) — never read 2 as the run's pass count; unit 4493 is attested by that run's gauntlet summary + two evaluators' independent reruns; the with-mutation emit REPLAYED the 17:22Z gauntlet stdout (the gauntlet executed ONCE at tree `32725a5`); the mutation restore hit a newline-translation slip, caught by `git status`, restored via git checkout — recorded because a silent CRLF flip is exactly the artifact-corruption class the gates exist for | |
+| remediation | evidence | **F1 CLOSED: durable gate artifacts emitted** at `evidence/` — RESULT.json (`baselineSha c2be115`, `resultSha 32725a5`, exit 0, the 4-gate PASS summary in stdoutTail) · footprint.json (withinFootprint TRUE — honesty caveat per AV-2 M10: `.planning` and `tools/tests` are declared WHOLESALE, so containment is meaningful for the code surfaces only and structurally cannot fail on planning-doc drift — the F5 class needed its ride-along ruling precisely because this artifact could not catch it) · mutation.json (**allNonVacuous TRUE — live probe**: baseline green → phantom-injected mutant RED → restored). Honesty labels: RESULT's `parsedCounts` (2/0/3) are last-match-PER-LABEL across the tail (round-2 eval LOW-1 precision fix: `passed 2` is the integration block, `skipped 3` is the UNIT block's) — never read 2 as the run's pass count; unit 4493 is attested by that run's gauntlet summary + two evaluators' independent reruns; the with-mutation emit REPLAYED the 17:22Z gauntlet stdout (the gauntlet executed ONCE at tree `32725a5`); the mutation restore hit a newline-translation slip, caught by `git status`, restored via git checkout — recorded because a silent CRLF flip is exactly the artifact-corruption class the gates exist for | |
 
 ## Burn-level accuracy record (BBM-6 — the honest numbers)
 
@@ -92,7 +99,8 @@ FILED and live; this run's shape remains recorded DRIFT under BBM-12.
   same-session). Judge verdicts: 4 PASS + 1 NEEDS_WORK→closed-after-fix.
 - **Defects SHIPPED (corrected by the final eval, F3 — the original "0 known" overstated):**
   0 known defects in the FIXED surfaces · **1 known test-quality defect shipped in wave-1-authored
-  code** (the 4 vacuous params in `test_install_banner_commands.py:90-94`, flagged unfixed at
+  code** (4 of the 5 params in `test_install_banner_commands.py`'s phantom-guard parametrization
+  passed vacuously — AV-2 L15 wording precision; flagged unfixed at
   close) — FIXED in the post-eval targeted-fix round (`d3f55fd`, merged, round-2-eval-probed).
   Linkback obligation stands.
 - **Defects FOUND (net new, beyond the 5 filed — attribution corrected by the final eval, F4):**

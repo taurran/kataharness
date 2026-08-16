@@ -15,7 +15,7 @@ authored-by: the overnight session (operator-directed: "execute as far as you ca
 cd C:\Dev\projects\kataharness
 git status --porcelain                          -> empty
 git rev-parse --abbrev-ref HEAD                 -> burn/backlog-burn-02
-git rev-list --count burn/backlog-burn-01..HEAD -> ~20 (burn-02 commits)
+git rev-list --count burn/backlog-burn-01..HEAD -> grows with remediation; 35 at the AV-2 audit (the branch NAME is the durable fact, not the count — AV-2 H3 caught the stale "~20")
 cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS (pytest 4493)
 ```
 
@@ -33,7 +33,9 @@ cd tools && uv run python scripts/gauntlet.py   -> 4/4 PASS (pytest 4493)
    biggest) · 1 escalation (recorded plan amendment) · 1 gate rejection (fixed) · H1's
    serial-gate bottleneck did NOT reproduce · H6 wrong-base did NOT recur.
    **FINAL EVAL: round 1 NEEDS_WORK → targeted-fix round → round 2 PASS (2026-08-16).** The
-   wave cleared its loop the normal way. Durable gate evidence emitted (`specs/backlog-burn-02/
+   cycle honored the loop's SEMANTICS by hand — no mechanical run-level re-loop route exists
+   (BL-N19); one run-level eval covered both waves (wave-per-loop ruled mid-remediation, NOT
+   applied retroactively — recorded deviation, AV-2 M4). Durable gate evidence emitted (`specs/backlog-burn-02/
    evidence/` — RESULT/footprint/mutation, live non-vacuity probe, two evaluators re-derived it).
    F5 RULED (ride-along, one-time) · the vacuous-params fix MERGED and eval-probed · records
    corrected. PASS ≠ nothing left: 🔴 BL-M34 loop-bypass enforcement, BL-X08/09/10/11, BL-N18
@@ -68,10 +70,11 @@ The burn-02 plan amendment (X02 owner set) is committed history.
 
 ## 4. WHERE EVERYTHING IS
 
-`specs/backlog-burn-02/{PLAN,OBSERVATIONS}.md` (the burn + its evidence) ·
+`specs/backlog-burn-02/{PLAN,OBSERVATIONS,evidence/}` (the burn + its evidence) ·
 `specs/ux-rework/{DESIGN,CONVERGENCE-R1,GRILL-LEDGER,PLATFORM-MATRIX}.md` (the freeze candidate +
-its audit trail) · `DECISIONS.md` D171 · `BACKLOG.md` (BL-X08/X09 filed; BL-N04 independence
-ruling) · PR #54. Prior handoff block below still binds for everything it covers.
+its audit trail; rulings UX-28..33) · `DECISIONS.md` D171+D172 · `BACKLOG.md` (filed this
+session: 🔴 BL-M34 · BL-X08/X09/X10/X11 · BL-N18/N19/N20/N21 · amendments to BL-N01 🔴 /N04/N10
+/N16) · LESSONS-LEARNED 2026-08-16 block · PR #54. Prior handoff block below still binds for everything it covers.
 
 ---
 

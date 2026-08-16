@@ -59,6 +59,7 @@ launch-template palette divergence (which hex family wins per role: the frozen l
 `#B5894B`/`#c9d1d9`/`#61afef` or the five later generators')** · confirm the UX-17 glyph-only
 narrowing (dots keep color-carries-state on owned surfaces; outcomes move to ✓/⚠/✗ where color
 is stripped) · confirm the wrapper Python-shim carve-out of UX-29 · approve the stat-box
-reconstruction plan (UX-19's full per-box content list survives as the input) · the
+reconstruction plan (UX-19's full per-box content list survives as the input, PLUS the UX-33
+agent-type breakout ruled after rev 3 — the reconstruction must carry both) · the
 [author-proposed] items the reviewer triaged as operator-class (preload seam config shape —
 cheap to rule now, drift vector if deferred).

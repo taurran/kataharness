@@ -10,7 +10,8 @@ last_updated: "2026-08-16T12:00:00.000Z"
 > **CURRENT (2026-08-16 — THE OVERNIGHT EXECUTION, branch `burn/backlog-burn-02` stacked on
 > `burn/backlog-burn-01`, both PUSHED, PR #54 open to master):**
 > **(1) D171 RULED (operator):** UX grill first · go bar = parallel small burn over the BL-X fixes
-> + probes · push+PR now. All three executed.
+> + probes · push+PR now. Executed with ONE recorded deviation (AV-2 M5): of the go-bar's probe
+> half, only probe 1 ran (and pre-freeze at that); probes 2–6 remain owed to the operator.
 > **(2) backlog-burn-02 COMPLETE — 5/5 items, two waves, hybrid-gated (the BBM-1..11 rules run
 > live for the first time).** X01 config.md example (gate REJECTED an overclaiming clause, fixed) ·
 > X02 installer banner (rule-2 ESCALATION → recorded plan amendment → built, +8-test structural
@@ -23,17 +24,20 @@ last_updated: "2026-08-16T12:00:00.000Z"
 > fix MERGED `d3f55fd`, round-2-probed). **BBM-12 ruled (operator, angry, right): burns run the
 > ENTIRE loop — this burn's shape is recorded DRIFT. The retroactive FINAL EVAL ran the full
 > cycle: round 1 NEEDS_WORK → targeted fixes + durable gate evidence (`evidence/`, live mutation
-> probe) + F5 ride-along RULED → round 2 PASS. Wave-per-loop RULED for all future burns; 🔴
-> BL-M34 (bypass enforcement) + BL-X08/09/10/11 + BL-N18 filed and open.**
-> **(3) UX DESIGN at FREEZE-CANDIDATE** — compiled by a dispatched author, three convergence
-> rounds (R1 7H → R2 3H → R3 conductor-verified clean); every overnight conductor ruling labeled
+> probe) + F5 ride-along RULED → round 2 PASS (hand-driven semantics, not machinery — BL-N19).
+> Wave-per-loop RULED for all future burns (NOT retro-applied to burn-02 — recorded deviation);
+> 🔴 BL-M34 + BL-X08/09/10/11 + BL-N18/N19/N20/N21 + 🔴 BL-N01 elevation + D172 filed/recorded
+> and open.**
+> **(3) UX DESIGN at FREEZE-CANDIDATE** — compiled by a dispatched author, TWO fresh convergence
+> rounds (R1 7H → R2 3H) + a conductor line-by-line verification of rev 3 (NOT an independent
+> round — AV-2 M8 precision); every overnight conductor ruling labeled
 > "[author-proposed, conductor-ruled interim — operator confirms at freeze]" and indexed in §8.1.
 > **The freeze itself WAITS for the operator** — the morning list is in
-> `specs/ux-rework/CONVERGENCE-R1.md` (incl. the launch-template palette reconciliation). UX-28..32
+> `specs/ux-rework/CONVERGENCE-R1.md` (incl. the launch-template palette reconciliation). UX-28..33
 > ruled live (wrapper = preferred door + env provisioner · small committed engine · glyph-first
 > transcript, probe 1 RESOLVED: ANSI stripped, glyphs clean · all three wrappers one pass · open
 > preload seam + THIRD-PARTY INDEPENDENCE doctrine: divest from superpowers AND GSD, packs are
-> placeholders).
+> placeholders · UX-33 crew box by agent type).
 > **★ OWED THE OPERATOR (morning):** UX freeze sign-off (the CONVERGENCE-R1 list) · PR #54 merge
 > timing + whether burn-02 gets its own PR (stacked) · 🔴 PAT rotation (deferred 2026-08-02, NOT
 > dropped) · T-03 determinism-scope call · probes 2–6 (minutes each, non-blocking) · BL-X08 triage

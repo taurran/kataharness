@@ -263,6 +263,16 @@ command and removes the class.
 
 ---
 
+## RETROACTIVE DRIFT RECORD (2026-08-16 — added per AV-2 M9; this run's record owed it too)
+
+**This burn ran OUTSIDE the loop** — conductor-driven host dispatch, no initiation/run-config,
+no board CLAIM/DONE, no kata-orchestrate, ad-hoc gating briefs, no final whole-run evaluation,
+no improve fold, no telemetry rows. At the time it was framed as "the prototype"; the operator
+ruled on 2026-08-16 (BBM-12) that burns use the ENTIRE loop and this shape is DRIFT, not a mode
+— a ruling that indicts burn-01 equally (🔴 BL-M34: "the harness's own burns just did it
+twice"). The evidence H1–H7 collected here remains valid AS evidence; the run's process does
+not. Recorded retroactively so this file stops reading as a clean run.
+
 ## Design questions the mode must answer (collect answers, do not guess)
 
 1. **Where do gates go?** If H1 holds, is default-FAIL gating parallelisable without losing
