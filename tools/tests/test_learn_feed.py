@@ -995,25 +995,53 @@ def test_cli_bullet_only_ledger_reported(tmp_path, capsys):
 # Real-ledger integration (the actual files, when present in the repo)
 # ---------------------------------------------------------------------------
 
+# The two real ledgers are LIVING files: a grill can append a new anchor, and an
+# `· open` entry can later be resolved. Both are legitimate change, so these
+# integration probes assert FLOORS over the historically-recorded anchors rather
+# than exact pins (BL-X05; same shape as the semver floor in
+# test_validate_prime_directives.py). What CANNOT legitimately change: a recorded
+# anchor disappearing, a resolved entry reverting to open, an anchor landing in
+# two statuses, or a status outside the parser's two-value vocabulary.
+_MM_LOCKED_AT_FREEZE = {f"MM-{n}" for n in range(1, 12)}
+_CA_RESOLVED_AT_FREEZE = {"R-1", "R-2", "R-3", "R-7", "R-8", "R-9", "R-10", "R-11", "R-13"}
+_CA_KNOWN_AT_FREEZE = _CA_RESOLVED_AT_FREEZE | {"R-4", "R-5", "R-6", "R-12", "R-43"}
+_STATUS_VOCABULARY = {"resolved", "open"}
+
+
 @pytest.mark.skipif(not _MM_LEDGER.exists(), reason="real MM ledger not present")
-def test_real_mm_ledger_all_eleven_locked():
+def test_real_mm_ledger_locked_entries_stay_resolved():
     entries = learn_feed.parse_grill_ledger(_MM_LEDGER.read_text(encoding="utf-8"))
-    resolved = [e["anchor"] for e in entries if e["status"] == "resolved"]
-    assert resolved == [f"MM-{n}" for n in range(1, 12)]
+    resolved = {e["anchor"] for e in entries if e["status"] == "resolved"}
+    # FLOOR: the eleven `· LOCKED` branches must all still parse as resolved. A
+    # twelfth MM entry is growth, not a regression, so it must not red this.
+    assert resolved >= _MM_LOCKED_AT_FREEZE, (
+        f"MM ledger lost locked entries: {sorted(_MM_LOCKED_AT_FREEZE - resolved)}"
+    )
+    # Parser sanity, regenerable: every parsed entry carries the MM-n anchor grammar.
+    assert entries and all(e["anchor"].startswith("MM-") for e in entries)
 
 
 @pytest.mark.skipif(not _CA_LEDGER.exists(), reason="real context-autonomy ledger not present")
 def test_real_context_autonomy_ledger_statuses():
     entries = learn_feed.parse_grill_ledger(_CA_LEDGER.read_text(encoding="utf-8"))
-    by_status = {}
+    by_status: dict[str, set[str]] = {}
     for e in entries:
         by_status.setdefault(e["status"], set()).add(e["anchor"])
-    assert by_status.get("resolved") == {
-        "R-1", "R-2", "R-3", "R-7", "R-8", "R-9", "R-10", "R-11", "R-13",
-    }
-    assert by_status.get("open") == {"R-4", "R-5", "R-6", "R-12", "R-43"}
+    resolved = by_status.get("resolved", set())
+    still_open = by_status.get("open", set())
+    assert set(by_status) <= _STATUS_VOCABULARY, f"unknown status parsed: {set(by_status)}"
+    # FLOOR: everything resolved at freeze stays resolved (resolution is one-way)...
+    assert resolved >= _CA_RESOLVED_AT_FREEZE, (
+        f"CA ledger lost resolved entries: {sorted(_CA_RESOLVED_AT_FREEZE - resolved)}"
+    )
+    # ...and no recorded anchor may vanish, whichever bucket it now sits in.
+    # (`· open` ⇒ open classification itself is pinned on fixtures above.)
+    assert (resolved | still_open) >= _CA_KNOWN_AT_FREEZE, (
+        f"CA ledger lost anchors: {sorted(_CA_KNOWN_AT_FREEZE - (resolved | still_open))}"
+    )
+    assert not (resolved & still_open), "an anchor cannot be both resolved and open"
     dates = {e["anchor"]: e["date"] for e in entries}
-    assert dates["R-1"] == "2026-07-04"
+    assert dates["R-1"] == "2026-07-04"  # a recorded date is history, not living state
 
 
 # ---------------------------------------------------------------------------

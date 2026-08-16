@@ -197,8 +197,14 @@ def test_ps1_fetches_go_through_invoke_katagit():
     that in ErrorRecords and Stop preference turns the FIRST one into a TERMINATING
     abort mid-fetch — which is exactly how stale ref locks get created (the D157
     class this file exists for; observed live 2026-07-21). Both ps1 fetch sites must
-    stay on the Invoke-KataGit wrapper; a bare fetch is a regression of that fix."""
-    assert PS1.count("Invoke-KataGit fetch --quiet origin") == 2
+    stay on the Invoke-KataGit wrapper; a bare fetch is a regression of that fix.
+
+    BL-X05: this was an exact `== 2` pin against a LIVING script, so a third
+    (correctly wrapped) fetch site would have redded it for no reason. The binding
+    facts are (a) the two known sites are still wrapped -- a FLOOR -- and (b) NO
+    bare fetch exists anywhere in the script, which is the assertion below and the
+    one that actually carries the guarantee for any site, known or new."""
+    assert PS1.count("Invoke-KataGit fetch --quiet origin") >= 2
     assert "git fetch origin" not in PS1
 
 
