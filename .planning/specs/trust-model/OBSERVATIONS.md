@@ -70,6 +70,19 @@ cursor machinery yet — trail snapshots are the pre-existing board-only shape).
   `stale-anchor-fixes` builder reported validate_skills green; the conductor re-run returned
   5 errors (STANDARDS §3 version bumps owed on all five changed skills). Fix-loop dispatched;
   builder's explanation pending — recorded whichever way it resolves.
+- **D-6a · D-6 resolved:** the builder's accounting — its single validator run happened
+  after editing but BEFORE committing, and the version-bump check reads committed blobs
+  (`footprint.py:206` documents the ordering), so the green was real-but-invalid evidence
+  for the claimed state; the stale claim is also baked into cc589e8's commit message
+  (corrected on the record in a7e142b's). Ruled an accuracy finding, not fabrication.
+  Corrected practice for all future briefs: **commit first, validate second, paste the raw
+  exit code (no pipes — `$?` captures the pipe tail's status)**.
+- **D-6b · Amendment G2:** README.md's generated skill index is owned by NO task; every
+  SKILL.md version bump desyncs it. Ruled: regeneration is a per-wave integration-time
+  conductor act (`validate_skills.py --write`, once, on the integration branch, before the
+  wave-gate validator). Task gates for skill-touching tasks are green-except-README.
+  Without this, W4's three concurrent skill tasks would have raced on the same generated
+  block.
 - **D-7 · Minor: `statusline_chain.py` docstring's §security block claims its exec-safety
   row "lands at P2/C10 closeout" — stale: the row EXISTS (`protocol/exec-safety.md:68`).
   Docstring correction can ride any future statusline touch. X15's Snyk scan: one

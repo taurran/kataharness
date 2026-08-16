@@ -367,6 +367,7 @@ reads overlap as drift:
 | `tools/learn_feed.py` | W1 `fix-learn-feed-truth` → W7 `close-machinery` (redaction class-table extension — ONE scrub per RS-M7) |
 | `protocol/exec-safety.md` | W1 `exec-safety-registration` → W8 `hook-activation` (the hook's own sink row, RS-L4) |
 | the five stale-anchor SKILL.md files | W1 `stale-anchor-fixes` (anchor lines only) → W4/W5 full inbound-contract rewrites |
+| `README.md` (generated skill index) | **Amendment G2 (conductor, 2026-08-16):** owned by NO task — every SKILL.md version bump desyncs the generated index, so regeneration (`validate_skills.py --write`) is a per-wave INTEGRATION-time conductor act, run exactly once on the integration branch after merging the wave's task branches, before the wave-gate validator run. Skill-touching task gates are judged green-except-README (that one error class is integration-owed). Applies to W1 and especially W4/W5. |
 
 `kata-orchestrate/SKILL.md`'s stale anchors are fixed inside its own W4 rewrite (not W1) to
 avoid a same-file double-touch; the ledger's "five skills fix in wave 1" is satisfied by the
