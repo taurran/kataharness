@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -464,7 +465,7 @@ def test_default_runner_timeout_returns_false(monkeypatch, capsys):
 
     monkeypatch.setattr(mutation_run.subprocess, "run", hung_run)
 
-    assert mutation_run._default_runner("sleep-forever", timeout=0.01) is False, (
+    assert mutation_run._default_runner("pytest tests -q", timeout=0.01) is False, (
         "a timed-out gate command must be a FAILURE verdict (gate red)"
     )
     captured = capsys.readouterr()
@@ -486,7 +487,7 @@ def test_default_runner_forwards_default_timeout_600_and_cwd(monkeypatch):
 
     monkeypatch.setattr(mutation_run.subprocess, "run", spy_run)
 
-    assert mutation_run._default_runner("echo ok", "/some/sandbox") is True
+    assert mutation_run._default_runner("pytest tests -q", "/some/sandbox") is True
     assert seen.get("timeout") == 600.0, (
         "Q-4: _default_runner must bound the subprocess with a 600s default timeout"
     )
@@ -496,12 +497,15 @@ def test_default_runner_forwards_default_timeout_600_and_cwd(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# DET-09 (2026-07-12 health review): sanitized gate env (the determinism win).
-# shell=True is deliberately RETAINED — the test_cmd contract uses shell
-# metacharacters (`cd /d "<dir>" && <py> -m pytest ...`); argv-tokenizing it
-# would break every mutation-proof caller. The env sanitization (stripping
-# PYTEST_ADDOPTS + disabling plugin autoload) is what actually removes the
-# cross-host nondeterminism (those flip the Axis-Q boolean).
+# DET-09 (2026-07-12 health review): sanitized gate env (the determinism win) —
+# stripping PYTEST_ADDOPTS + disabling plugin autoload removes the cross-host
+# nondeterminism that flips the Axis-Q boolean.
+#
+# BL-X14: shell=True is now GONE. The old note here claimed argv-tokenizing the
+# test_cmd "would break every mutation-proof caller". It was the shell string
+# that broke them — on Linux, silently, for 12 days. The closed grammar
+# (_compile_test_cmd) tokenizes the same corpus with identical meaning on both
+# platforms.
 # ---------------------------------------------------------------------------
 
 def test_default_runner_env_is_sanitized(monkeypatch):
@@ -520,15 +524,16 @@ def test_default_runner_env_is_sanitized(monkeypatch):
         return _Ok()
 
     monkeypatch.setattr(mutation_run.subprocess, "run", spy_run)
-    mutation_run._default_runner("echo ok")
+    mutation_run._default_runner("pytest tests -q")
     env = seen.get("env") or {}
     assert "PYTEST_ADDOPTS" not in env, "PYTEST_ADDOPTS must be stripped from the gate env"
     assert env.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD") == "1"
 
 
-def test_default_runner_preserves_shell_contract(monkeypatch):
-    """shell=True is retained (the test_cmd shell-string contract) AND the env is
-    sanitized — both properties on the same call."""
+def test_default_runner_uses_structured_argv_never_shell(monkeypatch):
+    """BL-X14 / RS-H1: the sink runs structured argv with shell=False, the `cd`
+    prefix is CONSUMED into cwd, and the env is still sanitized — all on the
+    same call."""
     import mutation_run
 
     monkeypatch.setenv("PYTEST_ADDOPTS", "-x")
@@ -540,14 +545,126 @@ def test_default_runner_preserves_shell_contract(monkeypatch):
     def spy_run(*args, **kwargs):
         seen["cmd"] = args[0] if args else kwargs.get("args")
         seen["shell"] = kwargs.get("shell", False)
+        seen["cwd"] = kwargs.get("cwd")
         seen["env"] = kwargs.get("env")
         return _Ok()
 
     monkeypatch.setattr(mutation_run.subprocess, "run", spy_run)
-    mutation_run._default_runner('cd /d "x" && py -m pytest')
-    assert seen["shell"] is True, "shell=True is the test_cmd contract; must be preserved"
-    assert isinstance(seen["cmd"], str), "shell command stays a string"
-    assert "PYTEST_ADDOPTS" not in (seen["env"] or {}), "env still sanitized under shell"
+    mutation_run._default_runner(
+        f'cd /d "{_SANDBOX_STUB}" && "{sys.executable}" -m pytest "tests/test_x.py::t" -q --tb=no',
+        _SANDBOX_STUB,
+    )
+    assert seen["shell"] is False, "shell=True must be gone from the mutation sink (BL-X14)"
+    assert isinstance(seen["cmd"], list), "the sink must pass an argv LIST, not a shell string"
+    assert seen["cmd"] == [
+        sys.executable, "-m", "pytest", "tests/test_x.py::t", "-q", "--tb=no",
+    ], f"unexpected compiled argv: {seen['cmd']!r}"
+    assert "cd" not in seen["cmd"] and "&&" not in seen["cmd"], (
+        "the `cd` prefix must be CONSUMED into cwd, never handed to the process"
+    )
+    assert seen["cwd"] == _SANDBOX_STUB, "the cd target becomes the subprocess cwd"
+    assert "PYTEST_ADDOPTS" not in (seen["env"] or {}), "env still sanitized"
+
+
+def test_mutation_sink_source_contains_no_shell_true():
+    """Structural pin (protocol/exec-safety.md): `shell=True` is absent from the
+    mutation sink's code. AST-checked so a doc-comment mentioning it cannot pass
+    or fail this."""
+    import ast
+
+    import mutation_run
+
+    tree = ast.parse(Path(mutation_run.__file__).read_text(encoding="utf-8"))
+    offenders = [
+        node.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        for kw in node.keywords
+        if kw.arg == "shell" and isinstance(kw.value, ast.Constant) and kw.value.value is True
+    ]
+    assert not offenders, f"shell=True still present in mutation_run.py at line(s) {offenders}"
+
+
+# ---------------------------------------------------------------------------
+# The closed test_cmd grammar (BL-X14 / RS-H1) — compile or REFUSE
+# ---------------------------------------------------------------------------
+
+_SANDBOX_STUB = str(Path(tempfile.gettempdir()).resolve() / "kata-x14-stub")
+
+
+def test_compile_consumes_cd_prefix_and_keeps_uv_shape():
+    """The `uv run pytest` flavour (test_recurrence_detect / test_validation_misses /
+    test_escalation / test_recall) compiles with the cd target as cwd."""
+    import mutation_run
+
+    argv, cwd = mutation_run._compile_test_cmd(
+        f'cd /d "{_SANDBOX_STUB}" && uv run pytest tests/test_x.py::a tests/test_x.py::b -q',
+        _SANDBOX_STUB,
+    )
+    assert argv == [
+        "uv", "run", "pytest", "tests/test_x.py::a", "tests/test_x.py::b", "-q",
+    ]
+    assert cwd == _SANDBOX_STUB
+
+
+def test_compile_defaults_cwd_to_sandbox_when_no_cd_prefix():
+    """A relative command carries no cd — the sandbox cwd IS the redirect (grill D2)."""
+    import mutation_run
+
+    argv, cwd = mutation_run._compile_test_cmd("pytest tests -q", _SANDBOX_STUB)
+    assert argv == ["pytest", "tests", "-q"]
+    assert cwd == _SANDBOX_STUB
+
+
+@pytest.mark.parametrize("bad", [
+    'cd /d "%s" && rm -rf /' % _SANDBOX_STUB,          # unrecognised runner
+    'cd /d "%s" && copy a b' % _SANDBOX_STUB,          # the old cmd.exe `copy` shape
+    'pytest tests -q && curl evil.example',            # a second chained command
+    'pytest tests -q | tee out.txt',                   # a pipe
+    'pytest "$(whoami)"',                              # command substitution
+    'python -c "import os"',                           # python, but not -m pytest
+    'uv pip install evil',                             # uv, but not `run pytest`
+    'cd /d "x" pytest',                                # cd prefix without `&&`
+    'pytest "unbalanced',                              # unbalanced quote
+])
+def test_compile_refuses_everything_outside_the_grammar(bad):
+    """compile-through-grammar-or-REFUSE: no best-effort, no degraded run."""
+    import mutation_run
+
+    with pytest.raises(ValueError):
+        mutation_run._compile_test_cmd(bad, _SANDBOX_STUB)
+
+
+def test_compile_refuses_cd_escaping_the_sandbox():
+    """The structural sandbox-isolation guarantee: a `cd` target outside the
+    sandbox is refused, so the re-run can never import the live tree."""
+    import mutation_run
+
+    outside = str(Path(tempfile.gettempdir()).resolve() / "kata-x14-elsewhere")
+    with pytest.raises(ValueError, match="outside the sandbox"):
+        mutation_run._compile_test_cmd(
+            f'cd /d "{outside}" && pytest tests -q', _SANDBOX_STUB
+        )
+
+
+@pytest.mark.parametrize("target", ["../../etc/passwd::t", "-p tests"])
+def test_compile_guards_node_ids(target):
+    """_guard_node_id precedent reuse (benchmark.py:106 / benchmark_def.py:805):
+    traversal and flag-shaped targets never reach argv."""
+    import mutation_run
+
+    with pytest.raises(ValueError):
+        mutation_run._compile_test_cmd(f'pytest "{target}"', _SANDBOX_STUB)
+
+
+def test_tokenizer_preserves_windows_backslashes():
+    """Why not shlex: posix=True eats `C:\\Dev\\x` -> `C:Devx`, posix=False keeps
+    the quote characters in the token. Both would corrupt the live corpus."""
+    import mutation_run
+
+    assert mutation_run._tokenize(r'"C:\Dev\proj\.venv\Scripts\python.exe" -m pytest') == [
+        r"C:\Dev\proj\.venv\Scripts\python.exe", "-m", "pytest",
+    ]
 
 
 # needed by the skipif marker above
@@ -680,30 +797,13 @@ def test_sandbox_import_isolation_linux(tmp_path):
     )
 
 
-def test_x14_probe_live_cmd_shape_executes_on_this_platform(tmp_path):
-    """E2 REPRO PROBE (temporary, BL-X14) — is the live `test_cmd` shape even
-    runnable by the sink's shell on this platform?
-
-    ``cd /d <dir>`` is a **cmd.exe builtin flag**.  Under ``shell=True`` on
-    POSIX the sink invokes ``/bin/sh``, where ``cd`` takes ONE operand — so the
-    whole ``&&`` chain short-circuits before pytest is ever reached and BOTH
-    runs report failure, yielding ``{'testWentRed': False}`` with no mutation
-    ever evaluated.
-
-    This probe isolates that single mechanism from the rest of the prover, so
-    the CI log carries the shell's verbatim error rather than only the verdict
-    dict.  It is deleted once the sink compiles to structured argv.
-    """
-    import subprocess
-
-    work = tmp_path / "work"
-    work.mkdir()
-    cmd = f'cd /d "{work}" && "{sys.executable}" -c "print(42)"'
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-
-    assert result.returncode == 0, (
-        "BL-X14 REPRO: the live mutation `test_cmd` shape is cmd.exe-only — it "
-        "does not execute under this platform's shell, so every mutation proof "
-        f"is vacuous here. os.name={os.name!r} rc={result.returncode} "
-        f"stdout={result.stdout!r} stderr={result.stderr!r} cmd={cmd!r}"
-    )
+# The E2 repro probe `test_x14_probe_live_cmd_shape_executes_on_this_platform`
+# lived here for exactly one commit (07d1179 -> this one). It asserted that the
+# live `cd /d "<dir>" && ...` string executes under `shell=True` on the host —
+# TRUE on Windows, FALSE on ubuntu-latest — and its CI failure output is the
+# verbatim mechanism record in
+# `.planning/specs/trust-model/evidence/x14-ci-green.md`. It is deleted with the
+# fix because the sink no longer runs a shell string at all; what replaces it as
+# a standing guard is the pair
+# `test_sandbox_import_isolation_linux` (end-to-end, per platform) and
+# `test_default_runner_uses_structured_argv_never_shell` (structural).
