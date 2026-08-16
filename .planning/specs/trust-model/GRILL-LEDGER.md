@@ -948,6 +948,16 @@ one statusline empty-argv crash. Filed 🔴 BL-X14 + BL-X15; fixes route through
 for TM-G1 (receipts must land where the operator looks) and for TM-D3's tripwire law applying to
 the provers themselves, cross-platform. Guardian status of CI-gauntlet today: **Broken.**
 
+## Operator sequencing mandate (2026-08-16, recorded verbatim-intent — binding on the close)
+
+**"As soon as this gets frozen we will need to do a FULL DOCUMENTED handoff with agent
+orientation. That will have to happen before we execute."** Sequence therefore: grill close →
+design-author → plan-author → FREEZE (D169) → **full kata-handoff (STATE current-block rewrite +
+HANDOFF turnover block + the locked UX-15 agent-orientation format with its paste block, per the
+NEXT-SESSION-ORIENTATION precedent) → THEN execution dispatches.** No build dispatch before the
+handoff package is committed. Surface at close; a freeze without the handoff is an incomplete
+close.
+
 ## Blocked-at-close notes (standing)
 
 Grill-close `learn_feed.py` emit **BLOCKED by 🔴 BL-X12** (the emitter mislabels grill-ledger OPEN
