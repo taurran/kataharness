@@ -84,6 +84,24 @@ itself. This is a core trust model… actually back trust with fact/truth."**
 Assessment delivered: `.planning/specs/trust-model/ASSESSMENT.md` (the trust ledger T1–T18, the
 six-component control loop, verified seeds, honest limits, program-shape recommendation).
 
+**Operator directive — 2026-08-16, second sitting (verbatim intent; proto-ruling, NOT locked):**
+Truth Serum gains a **PRESENTATION LAYER** — component 7. Not only implement it across the spine
+and substrate, but present its effects to users "in a manner that demonstrates it at work": show
+a hard line exists for truthfulness as a requirement, show the validation portion actually works,
+so users "can trust the output and trust the results in terms of projects and research."
+Recorded in `trust-model/DETAILED-PASS.md` §3 component 7 with its evidence-grounded seeds (the
+ruled UX-16/19/20 run-start truth-serum box · the boxes=data grammar · quote-verbatim-never-
+recompute · traveling honesty labels) and its dependency edge on the UX freeze sign-off.
+
+**Detailed pass delivered ("Assess further first" ruling):** four evidence dossiers committed at
+`trust-model/evidence/` (promise-audit 114 rows · cursor dossier · detectability matrix ·
+gate inventory) + the synthesis `trust-model/DETAILED-PASS.md`. Headline consequences for THIS
+grill: the cursor merges into this grill's tree (B3, expanded — the seam mints what the cursor
+records; judge verdicts are persisted by the dispatcher because judges are no-write by design);
+D81/D135 dictate the cursor is a board upgrade + fold, never a new journal; two standing
+contradictions surfaced for operator ruling (kata.config/INTENT.md gitignored vs. tier-1 "(git)";
+the honesty-relabel scope for the 5 FALSE + ~25 FACADE promise rows).
+
 ## Resolved branches
 
 *(none yet — grilling begins after the operator confirms the ground-truth map and rules on the
