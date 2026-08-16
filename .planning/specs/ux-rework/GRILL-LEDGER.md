@@ -278,6 +278,18 @@ before building.
   "KataHarness Superpowers" vehicle) replacing the placeholder over time. The seam must make that
   swap a config change, not a rework.
 
+- **UX-33 · The crew box enumerates executions BY AGENT TYPE (operator, 2026-08-16 morning).**
+  The closeout's WHO DID THE WORK box (UX-19) MUST break out, per agent type: **conductor ·
+  coding/builder agents · validation agents (fresh-context judges/reviewers) · advisor agents ·
+  evaluation agents (the gate + the inline evaluator) · design/plan authors** — each as
+  `agents / executions` (a resume or re-dispatch counts as an execution), plus **miniloop
+  executions by kind** (gate-fix loops, revision loops, reroll loops) and the model tier each
+  type ran at. **Collection status (truth serum, recorded at ruling time):** these counters DO
+  NOT exist yet — the run that prompted this ruling was hand-tallied from its observation log.
+  The counters land with BL-N14 (run state, `.kata/`, never config), and until they exist any
+  rendered crew box MUST carry the "hand-tallied" honesty label. Conductor-context tokens are
+  not separately metered by the host — label that too, never fabricate a split.
+
 ## Remaining UX agenda (operator-listed 2026-08-15, untouched this session)
 
 **All designed as of 2026-08-16.** Still open (not design work): the six platform PROBES

@@ -244,6 +244,13 @@ Promote to ROADMAP milestones when ready.
 > in `kata.config` — config is settings, counters are state. New counters needed: agent executions
 > · miniloop tally · flagged→remediated · confidence (derivation TBD); tokens/time already flow
 > from the telemetry ledger.
+> **Agent-type breakdown ruling (operator, 2026-08-16 — UX-33):** the agent-execution counter is
+> PER TYPE, not a single total: conductor · coding/builders · validation (judges/reviewers) ·
+> advisor · evaluation (gate + inline) · design/plan authors — each as agents/executions (resumes
+> count), plus miniloops BY KIND and the model tier per type. Verified gap: host-Agent-tool
+> dispatches (this planning branch's burns) write NO telemetry rows today — the counter must hook
+> the dispatch seam itself, whichever path dispatches (kata_dispatch AND the conductor's direct
+> host dispatches), or the crew box undercounts exactly the runs that most need auditing.
 
 > *(Burn-mode design rulings from this session live in
 > `.planning/specs/backlog-burn-mode/GRILL-LEDGER.md` — BBM-1..BBM-10.)*
