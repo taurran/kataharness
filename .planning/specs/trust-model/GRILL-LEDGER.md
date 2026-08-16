@@ -692,6 +692,93 @@ G (presentation), H (cross-cutting + security pass).*
 after the final resolutions opened no new branches. Advanced close-out: convergence pass 1 (main
 tree) → pass 2 (security layer) → ELEVATE → close. Grill-close emit remains BLOCKED by BL-X12.*
 
+## Convergence pass 1 — HOLD (4H/10M/4L), and the findings were right. Remediations below AMEND the named branches.
+
+The fresh-context reviewer verified 20+ citations (one materially wrong — mine, H4) and found a
+hard three-branch contradiction plus unowned formats. Every remediation below specifies within
+the operator's locked intent; none reverses an operator ruling. Each amendment is binding on the
+DESIGN compile as if written in its branch.
+
+**R-H1 (amends TM-B3/B4/B5) — phase-scoped minting.** The record's freeze check binds exactly the
+roles whose work EXECUTES a plan (coder; task-scoped judges; anything dispatched against a plan
+task). Pre-freeze roles (design-author, plan-author, grill convergence reviewers, researchers,
+grill-time advisor) mint against **the governing artifact of their phase** — frozen `INTENT.md`
+(initiation), the converged grill ledger (authoring) — recorded in a new `governs` field.
+`assert_frozen` runs for plan-governed mints exactly as D169 rules; a per-role required-field
+table lands in the DESIGN. D169's scope is restored, not widened.
+
+**R-H2 (amends TM-C2) — run-membership defined in one sentence.** Gate evidence must carry the
+EXACT runId of the run being gated; ancestor/prior-run artifacts are legal as *inputs* but never
+as gate evidence; the sanctioned cross-run path is the parent consuming a child's recorded
+DOWN/VERDICT summary (which carries the child's runId) at fan-in/close. Each wave-loop's gate
+uses its own evidence; a re-loop pass re-emits its gates. Fail-closed preserved; BBM-12 unblocked.
+
+**R-H3 (amends TM-C4) — the capture mechanism is named.** The adapter hook layer binds BOTH
+edges: PreToolUse-class (deny, TM-B2) and **PostToolUse-class (capture)** — the post-hook appends
+the VERDICT/DOWN record mechanically when a seam-dispatched judge/arm returns, correlated via the
+dispatch record (R-L4). The capability probe covers both edges in the same early task. Where the
+post-edge is unavailable: loud degrade, and the **close backstop is already mechanical** — TM-F2/
+TM-D4 refuse closure without verdict records, so prose-era capture cannot silently satisfy the
+gate. Dependents (N19 route, wave gates, convergence-pass records) inherit the mechanism, not
+prose.
+
+**R-H4 (amends TM-A3/TM-G1+G3) — my mis-statement corrected, per PD-2.** The UX system's true
+state: `DESIGN.md` rev 3, `status: DRAFT — freeze-candidate, awaiting convergence gate`; rounds
+R1 and R2 both returned CONVERGE-HOLD; rev 3 was **conductor-verified line-by-line, NOT
+independently convergence-reviewed**; the operator's sign-off list is open. "Convergence-clean"
+is retracted (the reviewer caught the conductor inheriting a handoff claim instead of reading the
+source — recorded as this grill's own validation-miss). Sequencing amended: the combined artifact
+(UX DESIGN + the four trust surfaces) receives a **full fresh-context round-3 convergence pass**
+before the operator's freeze sign-off; the trust-model program's non-UX build does NOT block on
+the UX freeze — only the presentation-layer build wave does.
+
+**R-M1 (amends TM-B4):** dispatch records are **single-use** — consumed at hook validation
+(a consumed record fails re-validation) — and carry a short `mintedUtc` expiry. Replay closed.
+**R-M2 (amends TM-C1/C5):** PHASE/VERDICT/SPAWN/DOWN/DENY lines are **seam-authored** (engine
+mint/capture paths + the hook), never worker-authored; "orchestrator-only" is corrected — the
+conductor's pre-orchestrator phase events are written by the seam functions it calls.
+**R-M3 (amends TM-C1/C6/C7):** ONE grammar migration, ONE pin re-approval: appended-field form
+(`seq` after the timestamp; optional `parent-seq` lineage field), the full new TYPE enumeration
+(PHASE, VERDICT, SPAWN, DOWN, DENY), the run-header block (`RUN <runId>` + `prev-run:` +
+`parent-run:` + `prev-segment:`), and the fold/parser updates land in the same build wave. Exact
+BNF in the DESIGN.
+**R-M4 (amends TM-C3/G1):** resilience levels are DEFINED and DERIVED, never asserted: **full**
+(trail push on + snapshots verified) · **local** (snapshots verified, no push) · **degraded**
+(skips detected). The snapshot skip sentinel becomes a recorded cursor event at the seam call
+site, so the declared level is a fold over recorded fact.
+**R-M5 (amends TM-B3/B4):** `ROLE_GROUPS` extends in the build (reviewer · slop · inline-eval ·
+advisor · critic · challenger · grounding); `HOST_ONLY_ROLES` unchanged pending the cadre grill;
+tier mapping stays `SKILL_WORK_CLASS`.
+**R-M6 (amends TM-D3):** tripwire corpora activate PER JUDGE as they land (the TM-H1
+activation-order pattern): a judge without a corpus is declared **Honor-system**, never blocked;
+corpus ownership = the build wave wiring that judge's precondition; home = per-judge fixtures on
+the kata-validate precedent; proof cadence = per-build (CI) with the corpus hash on the cursor.
+Deny-everything dissolved.
+**R-M7 (amends TM-B2):** the Bash CLI-shape leg carries its honest residual — best-effort,
+evadable by indirection; its run-start declaration is **Partially verified**, never
+"intercepting". The Agent-tool leg alone may claim interception.
+**R-M8 (amends TM-A2/C7):** child runs NEVER rewrite the committed `kata.config`; per-arm
+variation lives ONLY in the freeze-minted arm registry (committed with the plan). The close
+drift-check for a tree = committed config + registry vs. each cursor's recorded execution;
+fan-in cannot conflict on config by construction.
+**R-M9 (amends TM-F1/H1):** the evidence declaration is a PLAN frontmatter per-task `evidence:`
+field; `parse_plan_tasks`, the plan-author skills, and the freeze gate extend to carry/check it —
+**added to TM-H1's migration scope explicitly.**
+**R-M10 (amends TM-D2/E1):** the mutation re-run's actor is the **grounding agent at the
+validation-stack head** (engine-run, orchestrator-triggered before the evaluator dispatch); its
+record is the evaluator's precondition — the evaluator refuses without a grounding-run mutation
+record. The worker-union hole closes at a named seam.
+
+**R-L1 (amends TM-A2):** corrected — `state.md:41`'s tier-1 claim covers `kata.config` (via the
+delivery row) and never claimed `INTENT.md`; committing INTENT.md is a NEW ruling under the
+resilience directive, not a restoration. **R-L2:** the fanout-survey's "K3" anchor is the
+**K5** schema (`protocol/board.md:57`) — corrected here; the evidence file stands with this
+erratum. **R-L3 (amends TM-H3):** BL-N01 closes **at v1 scope** (TM-D2); v2 = BL-N24 — stated
+per TM-A3's own uncited-claim rule. **R-L4 (amends TM-B4):** records live under `.kata/dispatch/`
+(tier-3 is correct: the CURSOR chain entry is the durable half, D81-consistent); the engine
+writes a pending-record pointer at mint; the hook correlates the `Agent` call to the pending
+record and consumes it (R-M1).
+
 ### Mid-close evidence event — CI red 12 days; the vacuity-prover vacuous on Linux (2026-08-16)
 
 Operator surfaced inbox spam of gauntlet failures mid-convergence. Conductor diagnosis (run
