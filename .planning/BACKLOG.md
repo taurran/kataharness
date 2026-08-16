@@ -254,6 +254,13 @@ Promote to ROADMAP milestones when ready.
 > survived here after the operator withdrew that extension — caught by AV-2 H1 and scrubbed
 > 2026-08-16; the challenger challenges adversarial validation ONLY, per BL-N10.)*
 
+> **BL-N22 · Rename "economy" → "express" across KataHarness. (NEW 2026-08-16, operator-directed
+> — "we need to rename this economy")** The economy mode/tier naming becomes "express" everywhere
+> a user or agent meets it (config values, D59/CLAUDE.md routing prose, guided-start copy,
+> docs). BC-sensitive exactly like BL-N17's engram scrub: config-value aliases + migration note,
+> validated by the load-guard; same-shaped item, likely same run. Pairs with AC-11 (in express
+> mode the advisor/challenger steps up one tier from the working tier).
+
 > **BL-N17 · Scrub “engram” → “learning” across KataHarness. (NEW 2026-08-16)**
 > The internal term “engram” becomes plain **“learning”** everywhere a user or agent meets it:
 > config keys (`engram.autonomy` → `learning.autonomy`, `engram.learnFeed.dir` →

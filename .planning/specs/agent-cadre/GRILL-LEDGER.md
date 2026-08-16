@@ -48,6 +48,18 @@ sources: BL-N20 · BL-N04 · BL-N16 (the living substrate) · BL-N10 (challenger
   the exact repo with evidence labels rather than guessing) **and other research-agent repos**.
   Research specialists follow the same cadre rules (AC-1..4: lightweight, living, evidence-label
   discipline in-substrate, use mandated).
+- **AC-11 · Advisor + Challenger model routing: ALWAYS A STEP UP; default Fable; prefer the
+  OPPOSITE family from the validator (operator, 2026-08-16, fifth sitting).** The advisor and
+  challenger default to **Fable**; when a model of the opposite family from the validator is
+  available, use it — operator named **"Opus or Sol"** as the step-up set (⚠ "Sol" recorded
+  verbatim: presumed a non-Anthropic-family model name; identify precisely at grill, do not
+  guess). The invariant: **the advisor/challenger tier is always a STEP UP** from the tier of
+  the work it judges — cross-family preferred for the challenger (independence is the point,
+  per the BL-N10 correction). In **express mode** (the mode currently named "economy" — the
+  operator directs a RENAME, filed as BL-N22) the advisor/challenger "just steps up" — one tier
+  above the mode's working tier rather than jumping to the ceiling. This REFINES D59's ladder:
+  judgment-over-work roles step UP relative to the judged work; only build/encode work tiers
+  down. `kata_models` resolver + the substrate files carry this when built.
 - **AC-10 · Validators EXECUTE the tooling against the artifacts; challengers attack coverage.
   (Process lesson from the 2026-08-16 stack, elevated to a design rule.)** Two independent
   Opus-5 validators plus two convergence rounds all audited artifacts AS PROSE — and the stack's
