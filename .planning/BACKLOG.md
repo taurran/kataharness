@@ -110,11 +110,13 @@ Promote to ROADMAP milestones when ready.
 > · the engram/learn-feed vault emission (`learn_feed.py`, D151 — run learnings → vault pages) ·
 > `kata-improve` (today's HARNESS-wide folding — exactly what becomes per-agent) · `agentSkills.dir`
 > + `engram.learnFeed.dir` (vault-external persistence precedent) · LESSONS-LEARNED.md capture.
-> **Resilience/cursor question (operator-posed, to settle at grill):** should the run-status
-> "cursor" (the phase rail) merge with the stage/step resilience record (board · `Kata-Task:`
-> trailers · restore machinery)? Conductor's recommendation to test at grill: the rail stays a pure
-> VIEW rendered FROM the durable run record — one source of truth, no second store — with learning
-> actions logged into that same record for observability. Assessed-against-the-field: Hermes + Pi
+> **Resilience/cursor — RULED (operator, 2026-08-16, the burn-02 final-eval exchange):** the
+> CURSOR is the phase-to-phase interruption TOKEN — it (or files traveling with it) carries ALL
+> history, rulings, and statuses, so any interruption knows exactly where to pick up. It must
+> align with THIS item's graph-substrate configuration — one durable record; the rail/cursor is a
+> VIEW over it (the conductor's one-source-of-truth recommendation, now operator-aligned). The
+> grill's remaining job is the mechanism (what the cursor physically is relative to board ·
+> `Kata-Task:` trailers · restore machinery), not the principle. Assessed-against-the-field: Hermes + Pi
 > alignment research dispatched 2026-08-16.
 > **RULINGS (operator, 2026-08-16 — the open questions are now settled):**
 > 1. **A dedicated LEARNING AGENT + GATE apply all learning.** Learning application is never a side
@@ -146,6 +148,17 @@ Promote to ROADMAP milestones when ready.
 > load** — the temporal log audits; a capped curated “active” section (visible fill %) is what
 > injects (Hermes’ bounded-curation lesson). Also adopted: staged-write + unified-diff approval
 > queue · security scan on self-written learning (injection-persistence vector).
+
+> **BL-N18 · Tunable judgment thresholds — advisor hooks AND evaluator strictness. (NEW
+> 2026-08-16, operator-ruled during the burn-02 final-eval exchange)**
+> The advisor's trigger thresholds are config-tunable today (`advisor.hooks.failThreshold`/
+> `rerollTrigger`/`fixLoopCeiling` in `kata.config` — verified live) but surface nowhere in the
+> guided start or settings; the EVALUATOR has no strictness dial at all — default-FAIL is the
+> posture (never tunable away, D33), but what severity kicks a wave back vs rides as a finding
+> has no operator knob. Ruling: both become tunable, surfaced in the guided-start interview +
+> the settings screen (UX-21/22), with the D33 floor explicit: no dial ever disables the gate
+> itself. Pairs with the wave-per-loop shape (BBM-12: each wave's eval can kick it back — the
+> threshold decides what "fails" means) and the eval-challenger (BL-N10 extension).
 
 > **BL-N17 · Scrub “engram” → “learning” across KataHarness. (NEW 2026-08-16)**
 > The internal term “engram” becomes plain **“learning”** everywhere a user or agent meets it:
@@ -192,10 +205,13 @@ Promote to ROADMAP milestones when ready.
 > lets the Kitchen architecture itself determine the parallel-branch ceiling. Config-surface work +
 > the Kitchen's capacity model; strictly sequenced after BL-N08.
 
-> **BL-N10 · "Challenger" — cross-model challenge of the adversarial validator.**
+> **BL-N10 · "Challenger" — cross-model challenge of the adversarial validator AND the evals.**
 > The adversarial validator runs on a DIFFERENT model (another Claude, or a Codex model); then a
 > strong model (Opus/Fable) comes back to CHALLENGE the validator's findings — accuracy control on
-> the adval itself. Includes proving Codex models can actually execute here (today `_COMMAND_BUILDERS`
+> the adval itself. **EXTENDED (operator, 2026-08-16): the challenger also challenges
+> EVALUATIONS — final default-FAIL evals get cross-examined, not just the validator** (ruled
+> during the burn-02 final-eval exchange; a wave's eval verdict should survive a challenger
+> before it kicks a wave back through the loop or clears it). Includes proving Codex models can actually execute here (today `_COMMAND_BUILDERS`
 > covers codex/kiro but the Claude path is orchestrator-prose, and non-Anthropic ladders in
 > `kata_models.py` are empty placeholders). Open question: does this need multi-agent orchestration,
 > and does it inherit BL-M33's missing dispatch seam?

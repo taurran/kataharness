@@ -98,12 +98,27 @@ kata-evaluate contract, no final whole-run eval, no improve fold) **is DRIFT, no
 operator's words: taking that shortcut means something is seriously wrong with the harness, and
 "prototype" stopped being an excuse the day the loop machinery shipped.
 
-Two sanctioned shapes, the fork to be ruled at the full grill (both keep the WHOLE loop):
-- **(a) burn = ONE greater-loop run** — one broad triage+grill across the set (BBM-7/8), one
-  freeze, waves as the execute phase's internal structure, ONE final default-FAIL evaluation of
-  the integrated outcome; **if the final eval fails, the greater loop runs AGAIN — like normal.**
-- **(b) wave = one greater loop each** — every wave is a full loop iteration with its own eval;
-  the burn is the loop-back chain.
+**The fork is RULED (operator, 2026-08-16, same morning): shape (b) — EACH WAVE IS ONE LOOP.**
+Every wave is a full loop iteration with its own final default-FAIL evaluation, and **a wave can
+be MORE than one loop: if it fails its final eval it is kicked back for another loop iteration**
+— the normal NEEDS_WORK → targeted-fix → re-eval cycle, per wave. The burn is the loop-back
+chain across waves. The broad up-front triage+grill across the whole set (BBM-7/8) still happens
+once and feeds every wave's loop. *(Shape (a) — burn-as-one-loop — is retired as the default;
+recorded here so it is not re-proposed as new.)*
+
+**Companion rulings from the same exchange (operator, 2026-08-16):**
+- **The CURSOR is the interruption token.** Run history, rulings, statuses — everything needed to
+  pick up after an interruption — travels with the cursor (or files traveling with it) as it
+  passes phase to phase. This RESOLVES the burn-02 F5 class going forward (the scope question is
+  answered by the cursor's record, not by branch archaeology) and must align with the BL-N16
+  substrate/graph configuration — one durable record, the rail/cursor a view over it (the
+  conductor's BL-N16 recommendation now operator-aligned). For burn-02 itself: the UX-doc
+  commits RIDE ALONG on this branch by explicit ruling (one-time; future burns get clean scopes
+  via wave-per-loop + the cursor).
+- **Advisor AND evaluator thresholds must be TUNABLE** (the advisor's hooks partially are —
+  `kata.config advisor.hooks`; the evaluator's strictness has no dial at all) → filed BL-N18.
+- **A CHALLENGER agent challenges the EVALS** — extends BL-N10 beyond challenging the adversarial
+  validator: final evaluations get cross-examined too.
 
 Consequences, binding on every future burn: the loop's seams (advisor, inline evaluator,
 telemetry, board, orientation) apply BECAUSE the burn is inside the loop — the "which seams bind"
