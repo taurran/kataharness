@@ -757,3 +757,54 @@ artifacts (paths that exist, lines on the cursor), not message text.
 - **DEF-14..DEF-21 filed** from builder/judge deferral candidates — none silently dropped;
   BL-N24-class items (Ellipsis-only stubs, bare-name false-negative class, constant-level
   orphans) recorded here FOR THE PLANNING WINDOW rather than DEF-filed (backlog-fence).
+
+## The G26 CI strand (2026-08-17) — two rounds, three defects, instances 4–6 of the platform/promise-divergence family
+
+Loop-A integration went CI-red TWICE on the windows leg at
+`test_kata_board.py::test_concurrent_rotations_never_clobber_an_archive` (a W2-era test on
+code no Loop-A task touched) before going green. Ruling **G26**: a stacked
+root-cause-before-fix task (`task/tm-la-rotation-liveness-fix`, the D-24/D-27 precedent),
+two rounds, merges `c9e6b6a` (edb206a) + `4904922` (c2778ec), both trailered and verified.
+
+- **D-28 · Round 1 (run 32003837572, red @ b880810): the Windows sharing-violation window.**
+  `os.replace(board.md → archive)` needs DELETE access on its source; a concurrently held
+  read handle (any racer inside `_read_cursor_bytes`, or AV/indexer) vetoes it —
+  `PermissionError` winerror 32 (source held) / 5 (destination held), raw-OS probed. All
+  four racers can lose a round this way; the test's "progress guaranteed by construction"
+  docstring was POSIX reasoning (the D-25 shape). Forced-contention reproduction: pre-fix
+  20/25 all-fail rounds; post-fix 0/25 with exactly one winner per round. Cure: a bounded
+  7-attempt (~187 ms) retry on exactly the measured transient class; election semantics
+  untouched; exhaustion still refuses loudly, now naming the OS error and the budget.
+  20×/20 green locally pre-fix — contention-dependent, CI-runner-only; the conductor did
+  NOT wave it through as a flake.
+- **D-29 · Round 2 (run 32006013216, red @ c9e6b6a): two deeper defects the upgraded
+  refusal diagnostics exposed.** (1) An `O_CREAT|O_EXCL` archive reservation is
+  RE-ACQUIRABLE mid-`os.replace` (the destination is momentarily free during the replace —
+  measured steal rate 1-in-20 000), letting two racers co-own one archive path, each one's
+  cleanup wrecking the other's (the observed ENOENT + moved-0-observed-121 refusals).
+  (2) 🔴 **The blank-cursor branch was an election violation with data loss:** a racer that
+  read the cursor as absent (a real window between a winner's archive-move and publish)
+  reached `path.unlink()` behind a *"harmless — no data is involved"* comment, DELETED the
+  winner's published cursor (measured 98B→34B) and published its own header — **two runs
+  each believing they owned the cursor**, the exact property D-25's election exists to
+  prevent, asserted in a comment instead of enforced at the boundary (the D-26 shape,
+  again). Cure: archive names are RUN-PRIVATE (`board.<stamp>.<run-token>.archive.md`,
+  token derived from the already-minted run id — no new entropy sink, law 9; no consumer
+  parses archive names, grep-verified) so name contention is REMOVED not narrowed; and
+  blankness is PROVEN before any discard (move to the run's own private archive, inspect,
+  restore-and-refuse if non-blank). Revert-proof: pre-fix the blank-branch test ends
+  `DID NOT RAISE` — the racer silently became a second winner. Cascade probe 60 rounds
+  0 all-fail; forced 25 rounds 25 wins; G11 10× 87/87 each; full gauntlet 5128/3 green.
+- **Conductor scope ratifications:** the round-1 minimal-blast-radius call (retry only the
+  measured syscall) and the round-2 in-grant correctness fix (defect 2 feeds the observed
+  cascade) — both ratified; `archive_token` stays public (test-consumed).
+- **Green CI citation (the strand's proof): run 32008635522 @ `4904922` — SUCCESS both
+  legs.** Two superseded evaluator mints recorded honestly: records `…-50` (subject tip
+  b880810, went red) and `…-52` (subject tip c9e6b6a, went red) were claimed but never
+  launched; the Loop-A final eval runs under a fresh record at the true cured tip.
+- **Family note for the lessons fold:** with D-25 (rename no-op), D-26 (docstring promise),
+  D-27 (POSIX strands), this makes SIX instances of one meta-defect — a concurrency/
+  platform property asserted in prose and falsified by measurement. The burn's detectors
+  (D-26's boundary-enforcement thesis) and this strand's upgraded refusal diagnostics (the
+  round-2 root cause was legible ONLY because round 1's cure put the diagnosis in the
+  assertion) are the accumulating counter-machinery.
