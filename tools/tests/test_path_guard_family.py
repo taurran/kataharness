@@ -41,6 +41,7 @@ _GUARDS = [
     ("benchmark_def", "_guard_path"),
     ("iac_apply", "_safe_abs"),
     ("iac_detect", "_safe_abs"),
+    ("evidence_grammar", "_guard_path"),
     ("kata_dash", "_safe_path"),
     ("kata_dash_demo", "_safe_path"),
     ("kata_host_settings", "_safe_abs"),
