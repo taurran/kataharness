@@ -6,7 +6,7 @@ description: >-
   and how often to check in, then write kata.config and launch the loop. Re-entrant — reads an existing
   config to reconfigure. Invoke to start or reconfigure any kata run.
 license: Apache-2.0
-version: 0.7.0
+version: 0.8.0
 category: coordinate
 status: beta
 agnostic: true
@@ -33,10 +33,49 @@ free-text prompt)*. Voice per `protocol/persona.md`.
 > (`initiation → harness → closeout`). `kata-loop` calls this skill for the middle. Direct `kata-bootstrap` use
 > stays valid and unchanged (BC: the loop is optional).
 
+## Phase awareness — bootstrap is positioned by the cursor, not by memory
+
+Bootstrap is **phase-aware by contract**, on the same two rules as [[kata-loop]]:
+
+- **Seam init is the first act of a bootstrap-entered run.** Call
+  `kata_dispatch.run_start(kata_dir, repo_root=…)` before Phase 0 unless [[kata-loop]] already ran
+  it for this run. It discriminates new-vs-resume mechanically, rotates + mints on new, ADOPTS the
+  header's `runId` on resume, reaps orphan dispatch records, writes the run marker, probes the
+  hook + deny tripwire, and returns the minimal run-start `declaration` — **print it**. Its
+  enforcement / capture / resilience grades are DERIVED from those probes; never assert a grade the
+  probes did not return.
+- **Every composition boundary emits a PHASE event** through the seam `phase()` function,
+  `kata_dispatch.phase(kata_dir, "<msg>")`. The msg grammar is enforced
+  (`open <PHASE> [k=v …]` | `close <PHASE> [k=v …]` | `run-closed [k=v …]`) over the closed
+  vocabulary `INITIATION · GRILL · AUTHORING · FREEZE · EXECUTION (wave=<n>) · FINAL-GATE ·
+  CLOSEOUT · LOOP-BACK`. An unknown token, a double-open, or a re-open of a closed phase is a
+  refusal recorded as a DENY event.
+  - a bootstrap-entered **authoring** run (composing a design/plan with no prior initiation) opens
+    `AUTHORING` — that open event, plus the priming-prompt hash, IS the weakest governor rung's
+    predicate, and the rung is graded **Honor-system**, declared and never dressed as Verified;
+  - handing the composed run to [[kata-orchestrate]] opens `EXECUTION wave=<n>`;
+  - routing to [[kata-sprint]] at a boundary closes the finished wave and opens the next.
+- **Read position from the cursor, never from context memory** —
+  `kata_dispatch.phase_state(cursor)` → `{"open": [...], "closed": [...], "runClosed": bool}`. This
+  matters most on **re-entry**, which is exactly the case where an agent's recollection is least
+  trustworthy: a re-entrant bootstrap determines what already happened from the cursor and the
+  committed trail, never from a belief about the prior session.
+- **In-session skill sequencing is CURSOR-TRACKED, NOT dispatch-gated (TM-B3).** Bootstrap invoking
+  [[kata-readiness]], [[kata-preflight]], [[kata-sprint]], or [[kata-orchestrate]] is the conductor
+  reading its own instructions: PHASE events, no dispatch records, no denial for lacking one. Only
+  the launch of *another agent* mints.
+
+**Governor consequence, stated plainly:** a run that entered via initiation/`kata-loop` mints under
+`intent : frozen` — so bootstrap must not hand off to the orchestrator while `INTENT.md` still reads
+`status: draft`; the seam will refuse to mint and the task PARKS. A direct one-shot run that never
+entered via initiation governs under `plan` exactly as today (BC).
+
 ## Phase 0 — readiness (always)
 Invoke [[kata-readiness]]. On **BLOCK**, stop and surface the blocker (don't compose a run on a broken env). On
 re-entrant detection (an existing `kata.config`), offer **same-as-last / step a family up a tier / change
-run-shape** instead of cold-start. WARNs are surfaced, not blocking.
+run-shape** instead of cold-start. WARNs are surfaced, not blocking. Readiness also reports the
+**run-marker / seam-init** state (its Scope-1 checks) — a run marker naming a different `runId`, or a
+cursor whose run is already CLOSED, is resolved here, before any composition.
 
 ### Phase 0 — force-run marker (CA-L36/CA-L37, first-run gating)
 Before composing, call `kata_settings.first_run_required(home)` (E2). It returns
@@ -62,7 +101,9 @@ When the re-entered config has `delivery.shape == "incremental"`, read [[kata-re
 verdict** (`{sprintIndex, gateStatus, boundary}`, rebuilt from the git trail) and **route** — this is the entry
 host for the boundary; `kata-orchestrate` stays sprint-blind (D24d), so the dispatch lives here:
 - **`boundary: gated`** (sprint gate green, awaiting the boundary) ⇒ invoke **[[kata-sprint]]** to run the G1–G4
-  course-correct (the only place steering happens), then proceed to the next sprint plan.
+  course-correct (the only place steering happens), then proceed to the next sprint plan. "Gate
+  green" here means the **persisted evaluate VERDICT record** on the cursor, not a remembered
+  outcome — [[kata-sprint]]'s stop-gate owns that check and will refuse without the record.
 - **`boundary: dirty`** (mid-sprint, uncommitted work) ⇒ **resume the active sprint** via [[kata-orchestrate]]
   (no boundary, no steering — the sprint is a one-shot in flight).
 - **no open roadmap** ⇒ normal composition (Phases 1–4 below).
@@ -248,7 +289,12 @@ Surface the advisor posture in the composed-config summary (never silent).
 
 Bootstrap writes the config
 **by construction** — it does NOT re-validate it (that is [[kata-orchestrate]]'s fail-closed load-guard, GB12;
-a second validation pass here would be redundant bloat). Then hand off to the loop ([[kata-orchestrate]]).
+a second validation pass here would be redundant bloat). Then emit
+`phase(kata, "open EXECUTION wave=<n>")` and hand off to the loop ([[kata-orchestrate]]).
+
+**Child runs NEVER rewrite the committed `kata.config`.** Per-arm variation lives ONLY in the
+freeze-minted arm registry committed with the plan, so a fan-in cannot conflict on config by
+construction. If a composition seems to need a per-arm config edit, that is an ESCALATE, not a write.
 
 **Second-brain learn feed (`engram.learnFeed.dir`, SB-L7):** at config-write, seed `engram.learnFeed.dir`
 from `kata_settings.default_learn_feed_dir(settings)` (`tools/kata_settings.py`) when `vaultDir` is set —
