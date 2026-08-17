@@ -788,7 +788,18 @@ def read_cursor(kata_dir: str | Path) -> Cursor:
     return parse_cursor(path.read_text(encoding="utf-8"))
 
 
-def _reserve_archive_path(kata: Path, stamp: str) -> Path:
+def archive_token(run_id: str) -> str:
+    """The run-private component of an archive name: the run id's hex tail.
+
+    Derived, never minted: ``mint_run_id`` stays the module's sole entropy sink
+    (doctrine law 9), so an archive name is a pure function of the run id and a test
+    that pins the run id pins the filename exactly.  ``RUN_ID_RE`` has already
+    guaranteed the tail is ``[0-9a-f]+``, i.e. filename-safe without escaping.
+    """
+    return validate_run_id(run_id).rsplit("-", 1)[1][:8]
+
+
+def _reserve_archive_path(kata: Path, stamp: str, token: str) -> Path:
     """Reserve an unused archive name with an atomic ``O_CREAT|O_EXCL`` create.
 
     Exclusive create is the only primitive that is genuinely exclusive on both
@@ -800,15 +811,30 @@ def _reserve_archive_path(kata: Path, stamp: str) -> Path:
     seam's rename-election erratum: a primitive that succeeds quietly is not an
     election.)
 
+    **Why the name is run-private** (CI run 32006013216, windows-latest round 7).
+    Exclusive create makes a name un-shareable only while the file EXISTS, and
+    ``os.replace`` onto that reservation momentarily frees it: measured raw-OS on this
+    host, a concurrent ``O_CREAT|O_EXCL`` stole the destination of a live
+    ``os.replace`` once in 20 000 attempts.  Two racers then hold the SAME archive
+    path, and each one's own cleanup destroys the other's — one racer's ``unlink``
+    leaves the other reading ENOENT off the archive it just filled, and one racer's
+    fresh placeholder leaves the other reading 0 bytes where it had moved 121.  Both
+    of those refusals are in the CI log verbatim.  Seeding every candidate with the
+    STARTING RUN's own token removes the contention instead of narrowing it: two runs
+    cannot propose the same candidate at all, so there is no window left to lose.
+    The ``.<n>`` suffix stays as the backstop for a caller that reuses a run id.
+
     The returned path exists as an empty placeholder that the caller OWNS; the caller's
-    ``os.replace`` then overwrites its own reservation.  Naming contract preserved:
-    ``board.<utc-compact>.archive.md``, with a ``.<n>`` suffix on collision.
+    ``os.replace`` then overwrites its own reservation.  Naming contract:
+    ``board.<utc-compact>.<run-token>.archive.md``, with a ``.<n>`` suffix on collision
+    — the ``board.`` prefix and ``.archive.md`` suffix that every doc and glob keys on
+    are unchanged.
     """
     stem = Path(CURSOR_FILENAME).stem
     last_exc: OSError | None = None
     for n in range(_MAX_ARCHIVE_COLLISIONS):
         suffix = "" if n == 0 else f".{n}"
-        candidate = kata / f"{stem}.{stamp}{suffix}.archive.md"
+        candidate = kata / f"{stem}.{stamp}.{token}{suffix}.archive.md"
         try:
             os.close(os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
         except FileExistsError as exc:
@@ -906,9 +932,10 @@ def start_run(
     """Rotate any pre-existing cursor, then write this run's header block.
 
     The run-isolation duty (see ``protocol/cursor.md``): a pre-existing cursor is
-    moved to ``board.<utc-compact>.archive.md`` before the header is written, so the
-    live cursor carries only the current run's events and prior-run CLAIM/DONE pairs
-    cannot contaminate the fold.
+    moved to ``board.<utc-compact>.<run-token>.archive.md`` before the header is
+    written, so the live cursor carries only the current run's events and prior-run
+    CLAIM/DONE pairs cannot contaminate the fold.  (The ``<run-token>`` component is
+    what makes the name unreachable by any other run — :func:`_reserve_archive_path`.)
 
     New-run vs resume discrimination, orphan reaping, and the run-marker write belong
     to the seam's ``run_start()`` (DESIGN §1.3/§2.4, PLAN wave 3); this is the
@@ -918,11 +945,15 @@ def start_run(
     one kata dir is a caller error: two runs cannot share a cursor.  It is now DETECTED
     and refused loudly instead of silently losing an archive or a run's log:
 
-    * the archive name is acquired by atomic exclusive create, so racing rotations
-      always get DISTINCT names and no archive is ever clobbered; and
+    * the archive name is PRIVATE to the starting run and acquired by atomic exclusive
+      create, so racing rotations can neither collide on a name nor clobber an archive
+      — and no racer's cleanup can ever reach a path another racer owns; and
     * the moved bytes are verified against the bytes this call observed, so a rotation
       that interleaved with another rotation — or with a worker append — refuses
       instead of archiving somebody else's cursor; and
+    * a cursor that reads as BLANK is proven blank by moving it before it is discarded
+      (:func:`_discard_blank_cursor`), so this call can never delete a live cursor a
+      racer published while this one was holding stale bytes; and
     * the header is published atomically and EXCLUSIVELY (:func:`_publish_cursor`), so
       the cursor is never observable half-written and two runs can never both believe
       they claimed it.  Publication — never the rename — is what elects the winner.
@@ -945,26 +976,24 @@ def start_run(
     kata.mkdir(parents=True, exist_ok=True)
     path = kata / CURSOR_FILENAME
 
-    observed = _read_cursor_bytes(path)
-    if observed.strip():
-        stamp = (now or datetime.now(UTC)).astimezone(UTC).strftime(_UTC_COMPACT)
-        _rotate_cursor(kata, path, observed, stamp)
-    elif path.exists():
-        # A blank cursor holds nothing to archive, but it does hold the NAME, and the
-        # claim below is exclusive.  Drop it (losing a race to another start_run doing
-        # the same is harmless — no data is involved) so a crash-left empty file cannot
-        # wedge every future run.
-        try:
-            path.unlink()
-        except OSError:
-            pass
-
+    # The header is built FIRST because the run id is what makes this run's archive
+    # name private to it (:func:`archive_token`).  Minting is side-effect-free, so an
+    # id built for a rotation that then refuses costs nothing.
     header = RunHeader(
         run_id=validate_run_id(run_id) if run_id else mint_run_id(now=now, entropy=entropy),
         prev_run=prev_run,
         parent_run=parent_run,
         prev_segment=prev_segment,
     )
+    token = archive_token(header.run_id)
+    stamp = (now or datetime.now(UTC)).astimezone(UTC).strftime(_UTC_COMPACT)
+
+    observed = _read_cursor_bytes(path)
+    if observed.strip():
+        _rotate_cursor(kata, path, observed, stamp, token)
+    elif path.exists():
+        _discard_blank_cursor(kata, path, stamp, token)
+
     # Claiming the cursor is the act that decides the winner: exactly one racer can
     # publish the header, so two runs can never both believe they own this cursor.
     try:
@@ -1039,7 +1068,81 @@ def _move_cursor_onto_reservation(path: Path, archive: Path) -> None:
             time.sleep(_ROTATE_RETRY_BACKOFF[attempt])
 
 
-def _rotate_cursor(kata: Path, path: Path, observed: bytes, stamp: str) -> Path:
+def _unlink_quietly(path: Path) -> None:
+    """Remove a file this run OWNS, tolerating a removal that already happened."""
+    try:
+        path.unlink()
+    except OSError:
+        pass
+
+
+def _discard_blank_cursor(kata: Path, path: Path, stamp: str, token: str) -> None:
+    """Drop a blank cursor file — but only after PROVING it is blank.
+
+    A crash-left empty ``board.md`` holds the NAME the exclusive claim below needs, so
+    it has to go or it wedges every future run.  What it must never do is take a LIVE
+    cursor with it.  The previous form did exactly that::
+
+        elif path.exists():
+            path.unlink()   # "harmless — no data is involved"
+
+    The comment was false, and measurably so (deterministic probe, this host): a racer
+    that observed ``b""`` — a real window, between a winner's archive-move and its
+    publish — reaches this branch AFTER the winner has published, finds ``path``
+    existing, and DELETES the winner's complete cursor.  It then claims the freed name
+    and publishes its own header, so the round ends with two runs each believing they
+    own the cursor and one run's cursor silently destroyed.  That is the D-25 election
+    violation reappearing at the one place the exclusive claim does not guard, and the
+    same D-26 shape as everything else in this file: a property asserted in a comment
+    instead of enforced at the boundary.
+
+    Enforced version: move the file to this run's PRIVATE archive name first, then look
+    at what actually moved.  Blank ⇒ discard the archive, the name is free, proceed.
+    Not blank ⇒ we were holding stale bytes and this is somebody's live cursor: restore
+    it and refuse.  The delete now only ever touches a path this run reserved, holding
+    bytes this run has read.
+    """
+    archive = _reserve_archive_path(kata, stamp, token)
+    try:
+        _move_cursor_onto_reservation(path, archive)
+    except FileNotFoundError:
+        _unlink_quietly(archive)
+        return  # already gone — the name is free, which is all this branch wanted
+    except OSError as exc:
+        _unlink_quietly(archive)
+        raise CursorGrammarError(
+            f"kata_board: the blank cursor at {path} could not be cleared ({exc}) — "
+            "another start_run raced this one; two runs cannot share a cursor"
+        ) from exc
+
+    try:
+        moved = archive.read_bytes()
+    except OSError as exc:
+        raise CursorGrammarError(
+            f"kata_board: cleared the blank cursor at {path} but could not verify what "
+            f"moved ({exc}) — the bytes are at {archive}; nothing was discarded"
+        ) from exc
+
+    if not moved.strip():
+        _unlink_quietly(archive)
+        return
+
+    # It was NOT blank: a cursor was published under this call between the read and the
+    # move.  Put it back and refuse — deleting it is what this function exists to stop.
+    try:
+        _publish_cursor(path, moved, exclusive=True)
+        _unlink_quietly(archive)
+        where = f"restored to {path}"
+    except OSError:
+        where = f"kept at {archive}"
+    raise CursorGrammarError(
+        f"kata_board: the cursor at {path} was blank when read but held {len(moved)} "
+        f"bytes when cleared — another run published it under this one. The content is "
+        f"{where}; nothing was discarded. Resolve the overlap, then retry."
+    )
+
+
+def _rotate_cursor(kata: Path, path: Path, observed: bytes, stamp: str, token: str) -> Path:
     """Archive the observed cursor bytes, or refuse loudly.  Returns the archive path.
 
     **Every** failure inside leaves as a :class:`CursorGrammarError`.  Windows reports
@@ -1049,9 +1152,11 @@ def _rotate_cursor(kata: Path, path: Path, observed: bytes, stamp: str) -> Path:
     refusal class instead, with the OS error quoted so nothing is hidden.
 
     Transient contention on the move itself is absorbed first, not translated — see
-    :func:`_move_cursor_onto_reservation`.
+    :func:`_move_cursor_onto_reservation`.  The archive name is private to *token*'s
+    run (:func:`_reserve_archive_path`), so every path touched below is one no other
+    racer can reach.
     """
-    archive = _reserve_archive_path(kata, stamp)
+    archive = _reserve_archive_path(kata, stamp, token)
 
     try:
         try:

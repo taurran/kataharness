@@ -246,13 +246,101 @@ def test_rotations_at_an_identical_stamp_get_distinct_archives(tmp_path):
 def test_reserved_archive_name_is_exclusive(tmp_path):
     """The reservation is an atomic exclusive create: the second call cannot get it."""
     kata_dir = _fresh(tmp_path)
-    first = kata_board._reserve_archive_path(kata_dir, "20260816T101500Z")
-    second = kata_board._reserve_archive_path(kata_dir, "20260816T101500Z")
+    token = kata_board.archive_token(RUN_B)
+    first = kata_board._reserve_archive_path(kata_dir, "20260816T101500Z", token)
+    second = kata_board._reserve_archive_path(kata_dir, "20260816T101500Z", token)
 
     assert first != second, "a reserved name must never be handed out twice"
     assert first.exists() and second.exists()
-    assert first.name == "board.20260816T101500Z.archive.md"
-    assert second.name == "board.20260816T101500Z.1.archive.md"
+    assert first.name == "board.20260816T101500Z.beef0001.archive.md"
+    assert second.name == "board.20260816T101500Z.beef0001.1.archive.md"
+
+
+def test_an_archive_name_is_unreachable_by_any_other_run(tmp_path):
+    """THE NAME-COLLISION PIN for CI run 32006013216 (windows-latest, round 7).
+
+    Exclusive create makes a name un-shareable only while the file EXISTS — and
+    ``os.replace`` onto a reservation momentarily frees it. Measured raw-OS on this
+    host: a concurrent ``O_CREAT|O_EXCL`` stole the destination of a live ``os.replace``
+    1 time in 20 000. Two racers then own ONE archive path, and each one's own cleanup
+    wrecks the other: one unlinks it, leaving the other reading ENOENT off the archive
+    it had just filled; one re-creates it as a placeholder, leaving the other reading 0
+    bytes where it had moved 121. Both refusals appear verbatim in the CI log.
+
+    This models that window exactly — free the name mid-flight, then let a DIFFERENT run
+    reserve — and pins the cure at the level where it is structural rather than narrow:
+    a run's archive names are unreachable by any other run, so the window has nothing
+    left to lose. Pre-fix the two runs land on the identical path.
+    """
+    kata_dir = _fresh(tmp_path)
+    stamp = "20260816T101500Z"
+    mine = kata_board._reserve_archive_path(kata_dir, stamp, kata_board.archive_token(RUN_B))
+
+    # The measured window: os.replace has momentarily freed the destination name.
+    mine.unlink()
+    theirs = kata_board._reserve_archive_path(kata_dir, stamp, kata_board.archive_token(RUN_C))
+
+    assert theirs != mine, (
+        "another run reserved this run's archive path — the exact double ownership "
+        f"that produced round 7's ENOENT and 0-byte refusals ({mine.name})"
+    )
+    assert kata_board.archive_token(RUN_B) in mine.name
+    assert kata_board.archive_token(RUN_C) in theirs.name
+
+
+def test_a_blank_cursor_read_never_deletes_a_live_cursor(tmp_path, monkeypatch):
+    """THE ELECTION PIN: the blank-cursor branch must not destroy somebody's cursor.
+
+    ``start_run``'s blank branch used to unlink whatever sat at ``board.md`` on the
+    reasoning that "no data is involved". There is a real window in which that is false
+    — between a winner's archive-move and its publish, a racer reads the cursor as
+    ABSENT — and by the time the racer reaches the branch the winner has published a
+    COMPLETE cursor, which the racer then deletes and replaces with its own header.
+    Pre-fix that is measurable and deterministic: the winner's cursor does not survive
+    and the round ends with TWO runs each believing they own the cursor — the D-25
+    election violation, reappearing at the one path the exclusive claim does not guard.
+
+    Forced here with no thread timing: the racer is handed ``b""`` while the winner
+    completes an entire ``start_run`` underneath it.
+    """
+    kata_dir = _fresh(tmp_path)
+    kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, "winner-content")
+    real_read = kata_board._read_cursor_bytes
+
+    def read_as_absent(path):
+        real_read(path)
+        monkeypatch.setattr(kata_board, "_read_cursor_bytes", real_read)
+        kata_board.start_run(kata_dir, run_id=RUN_C, now=FIXED_NOW)  # the winner
+        return b""  # ...but this racer is still holding the pre-winner observation
+
+    monkeypatch.setattr(kata_board, "_read_cursor_bytes", read_as_absent)
+
+    with pytest.raises(kata_board.CursorGrammarError) as exc:
+        kata_board.start_run(kata_dir, run_id=RUN_B, now=FIXED_NOW)
+    assert "nothing was discarded" in str(exc.value)
+
+    assert kata_board.read_cursor(kata_dir).run_id == RUN_C, (
+        "the winner's live cursor must survive a racer's blank-cursor read"
+    )
+
+
+def test_a_genuinely_blank_cursor_is_still_cleared(tmp_path):
+    """The blank branch still does its job: a crash-left empty cursor cannot wedge runs.
+
+    The guard above must not be bought by leaving stale empty files behind — an empty
+    ``board.md`` holds the NAME the exclusive claim needs.
+    """
+    kata_dir = tmp_path / "kata"
+    kata_dir.mkdir()
+    (kata_dir / kata_board.CURSOR_FILENAME).write_bytes(b"   \n")
+
+    header = kata_board.start_run(kata_dir, run_id=RUN_B, now=FIXED_NOW)
+
+    assert header.run_id == RUN_B
+    assert kata_board.read_cursor(kata_dir).run_id == RUN_B
+    assert not list(kata_dir.glob("board.*.archive.md")), (
+        "a blank cursor holds no history worth archiving"
+    )
 
 
 def test_forced_interleaving_rotation_refuses_and_loses_nothing(tmp_path, monkeypatch):
