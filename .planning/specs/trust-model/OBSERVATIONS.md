@@ -128,6 +128,24 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   Interim honesty: the repo suite runs 6-red on the fingerprint mismatch until the G3
   paste — that is the two-step working, not a regression (named here so nobody "fixes" it).
 
+- **D-19 · cursor-grammar landed; amendment G8 adds the consumer-migration task the plan
+  missed.** Gate re-run 69/69; both pinned board.md clauses SURVIVE verbatim (only the
+  digest changed — the two-step working as designed); digest
+  `245fbbbc94ed950506c3b31b44018278590743c0e3f1505f4db2b312278c1f26` queued for the G3
+  paste (old pin `30df4ea7…`). Compile decisions recorded by the builder (utc-compact
+  format, kata-dir-relative payload token, seq-space concurrency.json with the clock-trust
+  `sec` field retired, END-before-START tie-break). **G8:** DESIGN §2.2 requires all
+  fold/parser updates in the SAME wave, but the frozen plan allocated only the K3 snippet —
+  four surviving 5-field parsers (`kata_dash_model.parse_board` · `kata_restore.fold_board`
+  · `kata_telemetry.parse_progress_events` · `kata_crew._latest_board_heartbeat`) would
+  SILENTLY mis-read 6-field lines (seq as agent, agent as TYPE), and `kata_dash_demo` needs
+  the legal `start_run` mint (14 loud test failures, correct refusals). New task
+  **tm-w2-cursor-consumers** dispatched, STACKED on the cursor-grammar branch (3558da3);
+  its `kata_restore.py` grant is the `fold_board` REGION ONLY (parse_plan_tasks stays the
+  parallel evidence-grammar task's — within-wave disjointness held at region level,
+  declared). W3 inputs flagged by the builder: the PHASE msg enum is the seam's to enforce;
+  SPAWN/DOWN child-span placement is seam machinery.
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
