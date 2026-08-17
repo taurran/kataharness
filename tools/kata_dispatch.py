@@ -1290,43 +1290,112 @@ def _legal_path_for(governs: str, role: str) -> str:
     return f"mint through kata_dispatch.mint() with a governor in {sorted(GOVERNORS)}"
 
 
+#: Suffix of the CLAIM TOKEN — the artifact whose atomic exclusive creation elects the
+#: single winner of a dispatch record (see :func:`claim_record`).
+CLAIM_TOKEN_SUFFIX = ".claim"
+
+#: Test seam (house pattern — the same reason ``dispatch()`` takes an injectable
+#: ``runner``): when set, called with the record id at the EXACT race point, after the
+#: winner election and before the retention move, so a test can force an interleaving
+#: deterministically instead of relying on thread timing.  ``None`` in production.
+_CLAIM_RACE_HOOK = None
+
+
+def claim_token_path(kata_dir: str | Path, rid: str) -> Path:
+    """Path of a record's claim token (the winner-election artifact)."""
+    return record_path(kata_dir, rid, consumed=True).with_suffix(CLAIM_TOKEN_SUFFIX)
+
+
 def claim_record(kata_dir: str | Path, rid: str) -> dict:
-    """**The atomic single-use claim** — ``os.rename`` into ``consumed/`` (DESIGN §1.5, RS-H2).
+    """**The atomic single-use claim** (DESIGN §1.5, RS-H2) — election, then retention.
 
-    Consumption is an atomic claim, not a check-then-act: the record file is renamed
-    into ``<kata_dir>/dispatch/consumed/``.  Two racing claimants both target the same
-    SOURCE, so exactly one rename can succeed; every loser's rename fails and its
-    validation fails with it ⇒ deny.  **Parallel-dispatch order-independence is ACHIEVED
-    BY the claim, never assumed**, and ``fs_atomic``'s replace-only primitive is
-    explicitly NOT the mechanism (a replace would let the loser silently overwrite the
-    winner's claim — the exact opposite of single-use).
+    The load-bearing property is RS-H2's: *two racing claimants ⇒ exactly ONE wins; every
+    loser is denied.* **Parallel-dispatch order-independence is ACHIEVED BY the claim,
+    never assumed.**  ``fs_atomic``'s replace-only primitive is explicitly NOT the
+    mechanism — a replace would let a loser silently overwrite the winner's claim, the
+    exact opposite of single-use.
 
-    Mark-consumed-and-RETAIN: the claimed record stays on disk under ``consumed/`` for
-    lineage; only PRE-hook re-validation fails on it (R3-M1).
+    Two steps, and the split matters:
+
+    1. **Winner election — atomic exclusive create** of ``consumed/<rid>.claim`` via
+       ``os.open(O_CREAT|O_EXCL)``.  Exactly one caller can create a given path; every
+       other gets ``FileExistsError`` ⇒ denied with the re-mint path named.
+    2. **Retention move — ``os.rename``** of the pending record into ``consumed/``,
+       exactly as DESIGN §1.5 specifies, giving mark-consumed-and-retain (R3-M1): the
+       record stays on disk for lineage and only PRE-hook re-validation fails on it.
+
+    **Why the election is not the rename itself** (measured on this host, not assumed —
+    Windows, CPython 3.14, NTFS; 8 threads × 200 iterations):
+
+        os.rename same src → same dst, concurrent : ALL 8 succeeded, 200/200 runs
+        O_CREAT|O_EXCL election + rename          : exactly 1 winner, 200/200 runs
+
+    DESIGN §1.5's "two racing pre-hooks ⇒ one rename wins; the loser's validation fails"
+    is POSIX reasoning, where a rename unlinks the source and the loser gets ENOENT.  It
+    does **not** hold on Windows: a rename there is performed against an OPEN HANDLE to
+    the source (``FileRenameInfo``), and renaming a file to the path it already occupies
+    is a documented **no-op success** (verified sequentially on this host).  Claimants
+    that opened the source before the winner's rename landed therefore all report
+    success — the primitive silently degrades from an election to a no-op.  Sequentially
+    it looks correct (the second caller does get ``FileNotFoundError``), which is exactly
+    why a single-shot test passed and only a repeated in-process race caught it.
+
+    The DESIGN's *property* is preserved and its named mechanism is kept for the move;
+    only the winner election is strengthened to a primitive that is genuinely exclusive
+    on both platforms.
+
+    Honest residual (fail-closed, never fail-open): a claimant that dies between the
+    election and the retention move leaves a token behind, and the record is denied from
+    then on.  That is the safe direction — a stuck record refuses, it never double-issues
+    — and the refusal names the re-mint path.
 
     Raises
     ------
     RecordClaimRefused
-        Already consumed (naming the re-mint path — the retry-race message of pass-2
-        low 11), never minted, or lost the race.
+        Lost the election / already consumed (naming the re-mint path — the retry-race
+        message of pass-2 low 11), or never minted.
     """
     kata = _safe_kata_dir(kata_dir)
     pending = record_path(kata, rid)
     consumed = record_path(kata, rid, consumed=True)
+    token = claim_token_path(kata, rid)
     consumed.parent.mkdir(parents=True, exist_ok=True)
 
+    already_consumed = (
+        f"kata_dispatch: dispatch record {rid!r} is already CONSUMED — a record is "
+        "single-use (the atomic claim is the replay control). A legitimate retry "
+        "racing its own consumed record must RE-MINT: call kata_dispatch.mint() "
+        "again and launch against the new record; never reuse a consumed one."
+    )
+
+    # --- 1. WINNER ELECTION: atomic exclusive create.  Exactly one caller can win. ---
+    try:
+        fd = os.open(token, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError as exc:
+        raise RecordClaimRefused(already_consumed) from exc
+    except OSError as exc:
+        raise RecordClaimRefused(
+            f"kata_dispatch: cannot elect a claimant for dispatch record {rid!r} at "
+            f"{token!s} ({exc}) — refusing to dispatch without a claim; re-mint."
+        ) from exc
+    os.close(fd)
+
+    if _CLAIM_RACE_HOOK is not None:  # test seam — the exact race point
+        _CLAIM_RACE_HOOK(rid)
+
+    # --- 2. RETENTION MOVE: os.rename into consumed/, per DESIGN §1.5. ---
     try:
         os.rename(pending, consumed)
     except OSError as exc:
-        # Loser of the race, a replay, or a record that never existed.  All three are the
-        # same refusal, and the message names the ONE legal path out of the retry race.
+        # We hold the token but there is nothing to consume. Release it so a record id
+        # is never permanently poisoned by a claim of something that was never minted,
+        # then refuse.
+        try:
+            os.unlink(token)
+        except OSError:
+            pass
         if consumed.exists():
-            raise RecordClaimRefused(
-                f"kata_dispatch: dispatch record {rid!r} is already CONSUMED — a record is "
-                "single-use (the atomic claim is the replay control). A legitimate retry "
-                "racing its own consumed record must RE-MINT: call kata_dispatch.mint() "
-                "again and launch against the new record; never reuse a consumed one."
-            ) from exc
+            raise RecordClaimRefused(already_consumed) from exc
         raise RecordClaimRefused(
             f"kata_dispatch: no pending dispatch record {rid!r} at {pending!s} ({exc}) — "
             "a launch without a minted record is denied; mint via kata_dispatch.mint()."

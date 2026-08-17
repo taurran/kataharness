@@ -552,10 +552,12 @@ def test_end_to_end_validator_on_codex(tmp_path):
 # THE SEAM — trust-model DESIGN §1 (PLAN wave 3, task seam-engine)
 # ===========================================================================
 
+import collections  # noqa: E402
 import concurrent.futures  # noqa: E402
 import inspect  # noqa: E402
 import os  # noqa: E402
 import re  # noqa: E402
+import sys  # noqa: E402
 import threading  # noqa: E402
 from datetime import UTC, datetime  # noqa: E402
 
@@ -563,6 +565,11 @@ import kata_board as kb  # noqa: E402
 import kata_trail as ktr  # noqa: E402
 
 _NOW = datetime(2026, 8, 16, 12, 0, 0, tzinfo=UTC)
+
+#: Rounds the in-process claim race runs (see test_record_claim_is_atomic_single_use).
+#: The defect this guards reproduced ~1 run in 5, so a single round could pass while the
+#: RS-H2 property was broken; 25 rounds makes one pytest invocation decisive.
+_RACE_ROUNDS = 25
 
 
 def _write_md(path: Path, frontmatter: str, body: str = "# doc\n") -> Path:
@@ -895,45 +902,135 @@ def test_mint_fails_closed_on_an_unconfirmed_platform(tmp_path):
         )
 
 
-# ----- THE DECLARED EVIDENCE NODE (PLAN frontmatter `evidence:` for seam-engine) -----
-def test_record_claim_is_atomic_single_use(tmp_path):
-    """RS-H2 — consumption is an ATOMIC CLAIM (os.rename), not a check-then-act.
+def test_claim_election_is_exclusive_under_a_forced_interleaving(tmp_path, monkeypatch):
+    """RS-H2, proven DETERMINISTICALLY — no thread timing, no luck.
 
-    Two racing claimants target the same SOURCE file, so exactly one rename can win;
-    every loser's claim fails and its validation fails with it => deny. Parallel-dispatch
-    order-independence is ACHIEVED BY the claim, never assumed.
+    Claimant A is suspended at the EXACT race point (after the winner election, before
+    the retention move) and claimant B is run to completion inside that window. B must
+    be denied. This is the property a probabilistic thread race can only sample: it
+    pins the one interleaving that matters, every run.
     """
     kata = _kata(tmp_path)
-    record = _mint_ok(kata, _FROZEN_PLAN)
-    rid = record["recordId"]
+    rid = _mint_ok(kata, _FROZEN_PLAN)["recordId"]
+    observed = {}
 
-    claimants = 8
-    barrier = threading.Barrier(claimants)
+    def at_race_point(claimed_rid):
+        # Disarm first so B's own claim does not re-enter this hook.
+        monkeypatch.setattr(kd, "_CLAIM_RACE_HOOK", None)
+        assert claimed_rid == rid
+        # B runs fully while A holds the election but has NOT yet moved the record.
+        with pytest.raises(kd.RecordClaimRefused, match="RE-MINT") as exc:
+            kd.claim_record(kata, rid)
+        observed["b_denied"] = str(exc.value)
+        # B must not have consumed anything: the pending record is still A's to move.
+        observed["pending_intact"] = kd.record_path(kata, rid).is_file()
 
-    def claim():
-        barrier.wait()
-        try:
-            return ("won", kd.claim_record(kata, rid))
-        except kd.RecordClaimRefused as exc:
-            return ("denied", str(exc))
+    monkeypatch.setattr(kd, "_CLAIM_RACE_HOOK", at_race_point)
+    record = kd.claim_record(kata, rid)          # A wins
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=claimants) as pool:
-        futures = [pool.submit(claim) for _ in range(claimants)]
-        outcomes = [f.result() for f in futures]
-
-    winners = [o for o in outcomes if o[0] == "won"]
-    losers = [o for o in outcomes if o[0] == "denied"]
-    assert len(winners) == 1, f"exactly one claimant may win, got {len(winners)}"
-    assert len(losers) == claimants - 1
-
-    # mark-consumed-and-RETAIN (R3-M1): the record persists for lineage...
+    assert observed["b_denied"], "the losing claimant was never denied"
+    assert observed["pending_intact"] is True
+    assert record["recordId"] == rid
     assert kd.record_path(kata, rid, consumed=True).is_file()
-    # ...and the pending copy is gone, so a replay cannot re-claim it.
     assert not kd.record_path(kata, rid).exists()
 
-    # A serial replay is refused with the RE-MINT path named (retry-race, pass-2 low 11).
+
+def test_the_election_precedes_the_move_so_a_held_token_denies(tmp_path):
+    """The token is what elects: a pre-existing token denies even with a pending record.
+
+    This is the structural half of the fix — if the election were the rename (as DESIGN
+    §1.5's POSIX reasoning assumed), a live pending record would still be claimable.
+    """
+    kata = _kata(tmp_path)
+    rid = _mint_ok(kata, _FROZEN_PLAN)["recordId"]
+    token = kd.claim_token_path(kata, rid)
+    token.parent.mkdir(parents=True, exist_ok=True)
+    token.touch()
+
+    assert kd.record_path(kata, rid).is_file()          # the record IS still pending
     with pytest.raises(kd.RecordClaimRefused, match="RE-MINT"):
         kd.claim_record(kata, rid)
+    assert kd.record_path(kata, rid).is_file()          # ...and was not consumed
+
+
+def test_os_rename_alone_is_not_a_single_winner_primitive_here(tmp_path):
+    """The measured fact the fix rests on — regression-pinned, not folklore.
+
+    DESIGN §1.5 reasons from POSIX ("one rename wins; the loser's ENOENT denies it").
+    On Windows a rename runs against an OPEN HANDLE to the source, and renaming a file
+    to the path it already occupies is a no-op SUCCESS, so concurrent claimants can all
+    report success. This test asserts the sequential contract that made the bug look
+    absent, and — on the platform where it bites — the concurrent one that exposed it.
+    """
+    src, dst = tmp_path / "src", tmp_path / "dst"
+    src.write_text("x", encoding="utf-8")
+    dst.write_text("y", encoding="utf-8")
+    # Sequentially the primitive looks like a perfect election on every platform...
+    with pytest.raises(OSError):
+        os.rename(src, dst)
+
+    if sys.platform == "win32":
+        # ...and here is the no-op-success behaviour that breaks it concurrently.
+        same = tmp_path / "same"
+        same.write_text("z", encoding="utf-8")
+        os.rename(same, same)                    # no raise: a rename to self succeeds
+        assert same.is_file()
+
+
+# ----- THE DECLARED EVIDENCE NODE (PLAN frontmatter `evidence:` for seam-engine) -----
+def test_record_claim_is_atomic_single_use(tmp_path):
+    """RS-H2 — consumption is an ATOMIC CLAIM: exactly ONE winner, every loser denied.
+
+    "Parallel-dispatch order-independence is ACHIEVED BY the claim, never assumed."
+
+    The race is run ``_RACE_ROUNDS`` times IN-PROCESS. That is deliberate and is the
+    regression guard for the defect this node originally missed: with a single round
+    the bug reproduced only ~1 run in 5, so one pytest invocation could pass while the
+    property was broken. A single invocation now samples the interleaving many times,
+    and the deterministic proof lives in
+    ``test_claim_election_is_exclusive_under_a_forced_interleaving``.
+    """
+    claimants = 8
+    tally = collections.Counter()
+
+    for round_no in range(_RACE_ROUNDS):
+        kata = _kata(tmp_path / f"r{round_no}")
+        record = _mint_ok(kata, _FROZEN_PLAN)
+        rid = record["recordId"]
+        barrier = threading.Barrier(claimants)
+
+        def claim(_kata=kata, _rid=rid, _barrier=barrier):
+            _barrier.wait()
+            try:
+                return ("won", kd.claim_record(_kata, _rid))
+            except kd.RecordClaimRefused as exc:
+                return ("denied", str(exc))
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=claimants) as pool:
+            futures = [pool.submit(claim) for _ in range(claimants)]
+            outcomes = [f.result() for f in futures]
+
+        winners = [o for o in outcomes if o[0] == "won"]
+        losers = [o for o in outcomes if o[0] == "denied"]
+        tally[len(winners)] += 1
+        assert len(winners) == 1, (
+            f"round {round_no}: exactly one claimant may win, got {len(winners)} "
+            f"(outcomes={[o[0] for o in outcomes]})"
+        )
+        assert len(losers) == claimants - 1
+        assert all("RE-MINT" in o[1] for o in losers), "every loser must name the re-mint path"
+        assert winners[0][1]["recordId"] == rid
+
+        # mark-consumed-and-RETAIN (R3-M1): the record persists for lineage...
+        assert kd.record_path(kata, rid, consumed=True).is_file()
+        # ...and the pending copy is gone, so a replay cannot re-claim it.
+        assert not kd.record_path(kata, rid).exists()
+
+        # A serial replay is refused with the RE-MINT path named (retry-race, pass-2 low 11).
+        with pytest.raises(kd.RecordClaimRefused, match="RE-MINT"):
+            kd.claim_record(kata, rid)
+
+    assert tally == collections.Counter({1: _RACE_ROUNDS}), f"winner tally: {dict(tally)}"
 
 
 def test_claim_of_a_never_minted_record_is_denied(tmp_path):
