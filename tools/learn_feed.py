@@ -94,10 +94,18 @@ refusal is checked for EVERY target in a pre-scan BEFORE anything is written
 Redaction (SB-L4 — G4/D151 operator-directed light touch)
 ----------------------------------------------------------
 Deterministic pattern scrub (AWS ``AKIA[0-9A-Z]{16}``, ``github_pat_…``,
-``-----BEGIN…PRIVATE KEY``, ``password/token/secret[:=]<value>`` classes) →
+``-----BEGIN…PRIVATE KEY``, ``password/token/secret[:=]<value>`` classes, plus the
+RS-M7 extension: vendor key shapes, JWTs, credentialed connection strings, ``Bearer``
+values and the generic ``api_key``/``client_secret``/``access_key`` labels) →
 ``[REDACTED:<class>]``, counted per page (frontmatter ``redactions: N``) and in
-the emit report. Redaction NEVER blocks emit (the conscious re-scope of engram
+the emit report. Redaction NEVER blocks emit HERE (the conscious re-scope of engram
 C3's fail-closed gate for the loop feed — recorded in the DESIGN + D151).
+
+``redact`` is also **THE one scrub** the trust-model close reaches from its two named
+points (``kata_close.redact_at_commit_act`` / ``redact_at_snapshot_edge``, RS-M7). The
+blocking posture is the CALLER's, not this function's: the learn feed never blocks, and
+the commit act fails closed on any detected class. One table, two policies — and the
+table is the only place a class is ever defined.
 
 Security posture (exec-safety.md)
 ---------------------------------
@@ -252,6 +260,22 @@ _BODY_TITLE_ALONE = "Decision"
 
 # SB-L4 redaction classes — fixed apply order, bounded patterns (linear scan; no
 # nested/chained quantifiers — ReDoS-safe by construction).
+#
+# ONE SCRUB, TWO CALL POINTS (RS-M7 / DESIGN §8 S4).  This table is THE class table: the
+# trust-model close reaches it through `kata_close.redact_at_commit_act` (committed run
+# provenance, at the branch-close commit act — never at mint, which is what closes the
+# TOCTOU window) and `kata_close.redact_at_snapshot_edge` (cursor/trail content at the
+# snapshot-or-push edge).  Neither point owns a pattern of its own, deliberately: a second
+# table is how two scrubs drift apart and one of them quietly stops covering a class.
+#
+# The extension below (rows 7-14) was added by that task.  Every row keeps the original
+# construction rules — bounded quantifiers, no nesting, linear scan — and the apply order
+# of the first six rows is UNCHANGED, so an existing page's counts do not move except
+# where a genuinely new class matches.
+#
+# Redaction is DETECTION, and the honesty label travels with the table: a clean result
+# means no class HERE matched, never that no secret is present.  Undetected content is a
+# stated residual (trust-model DESIGN §11).
 _REDACTION_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("aws-key", re.compile(r"AKIA[0-9A-Z]{16}")),
     ("github-pat", re.compile(r"github_pat_[A-Za-z0-9_]+")),
@@ -259,6 +283,23 @@ _REDACTION_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("password", re.compile(r"\bpassword\s*[:=]\s*\S+", re.IGNORECASE)),
     ("token", re.compile(r"\btoken\s*[:=]\s*\S+", re.IGNORECASE)),
     ("secret", re.compile(r"\bsecret\s*[:=]\s*\S+", re.IGNORECASE)),
+    # --- RS-M7 extension (trust-model close-machinery) ---
+    # Ordered most-specific-first: a vendor-shaped literal is recognised as ITS class
+    # before the generic `<label>: <value>` rows below can claim it, so the recorded
+    # class name stays useful in the refusal message.
+    ("anthropic-key", re.compile(r"sk-ant-[A-Za-z0-9_-]{16,128}")),
+    ("openai-key", re.compile(r"\bsk-[A-Za-z0-9]{20,64}\b")),
+    ("google-api-key", re.compile(r"AIza[0-9A-Za-z_-]{35}")),
+    ("slack-token", re.compile(r"xox[baprs]-[A-Za-z0-9-]{10,120}")),
+    ("jwt", re.compile(r"\beyJ[A-Za-z0-9_-]{8,300}\.[A-Za-z0-9_-]{8,300}\.[A-Za-z0-9_-]{8,300}")),
+    # A URL carrying inline credentials — `scheme://user:pass@host`.  Bounded on every
+    # segment; the `@` terminator is what keeps it from running away over a line.
+    ("connection-string", re.compile(r"\b[a-z][a-z0-9+.-]{1,20}://[^\s:/@]{1,64}:[^\s@/]{1,64}@")),
+    ("bearer", re.compile(r"\bBearer\s+[A-Za-z0-9._~+/=-]{12,512}", re.IGNORECASE)),
+    # The generic labelled-credential rows, mirroring the original three in shape.
+    ("api-key", re.compile(r"\bapi[_-]?key\s*[:=]\s*\S+", re.IGNORECASE)),
+    ("credential", re.compile(r"\b(?:passwd|pwd|client[_-]?secret|access[_-]?key)\s*[:=]\s*\S+",
+                              re.IGNORECASE)),
 )
 
 
