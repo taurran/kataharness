@@ -10,11 +10,14 @@ that produces a gated, scored, ordered, hashed, or committed artifact.
 **Plus, per D172 (operator-directed 2026-08-16): loop execution itself.** The loop's
 execution, fencing, and seam actions are engine-code surfaces under this doctrine — the loop
 must RUN deterministically (same inputs ⇒ same execution path: dispatch requires the seam,
-gates fail closed, re-loop routes are mechanical), with fencing and seam actions that
-GUARANTEE proper execution rather than requesting it. The operator's standing
-minimal-new-Python preference is explicitly relaxed for these enforcement seams ("it applies
-less here") — an enforcement seam deserves committed, tested, deterministic code, because a
-guarantee resting on model obedience to prose is not a guarantee.
+gates fail closed, re-loop routes are mechanical), with appropriate fencing and seam actions
+guaranteeing proper execution rather than requesting it. An enforcement seam deserves
+committed, tested, deterministic code, because a guarantee resting on model obedience to
+prose is not a guarantee. **Honest residual (law 15, applied to this scope statement): the
+newly-scoped loop-execution surface is NOT YET CONFORMANT** — the enforcement program that
+makes it so is open work (BL-M33 the seam · BL-M34 the bypass guard · BL-N01 mechanical
+truth serum · BL-N19 mechanical re-loop · BL-N20 required own agents); this sentence
+retires when those land.
 
 ## The rule
 
@@ -25,7 +28,7 @@ judgment is reserved for questions no rule can decide — and even then the *dec
 style preference; it is what makes gate verdicts auditable, evidence re-derivable, and drift
 detectable. A nondeterministic gate is a gate that cannot be trusted twice.
 
-## The ten laws
+## The laws (1–10, 13, 15)
 
 1. **One pinned git helper.** Every git call whose stdout is parsed goes through a shared
    helper pinning: `core.quotepath=off` · `--no-renames` (where file sets are compared) ·
@@ -86,17 +89,15 @@ discipline (TM-G2 — quote verbatim from the artifact at the surface, recompute
 and the EDR-5 honest-residual house style (trust-model DESIGN §11). Adoption record and
 constraints: `.planning/DECISIONS.md` D173.
 
-**Numbering:** law numbers are stable identifiers — assigned once, never renumbered, never
-reused (the DET-registry rule applied to laws). The numbers between 10 and 15 that do not
-appear here are deliberately unassigned and stay reserved; a future law takes a fresh number,
-never a gap number.
-
-13. **Recompute, don't shape-check.** A format or pattern check on a digest, count, id, or
-    set asserts only well-formedness — an existence check in validation clothing. Any gate
-    that consumes such a value recomputes it from the source bytes (or re-derives the set)
-    and asserts equality; a carried-forward or producer-reported value is never credited at
-    the boundary it is supposed to protect. A value the gate did not itself re-derive is the
-    producer's word, reported back as verification.
+13. **Recompute, don't shape-check.** A format or pattern check on a digest, count, derived
+    set, or content-addressed id asserts only well-formedness — an existence check in
+    validation clothing. Any gate that consumes such a value recomputes it from the source
+    bytes (or re-derives the set) and asserts equality; a carried-forward or
+    producer-reported value is never credited at the boundary it is supposed to protect. A
+    value the gate did not itself re-derive is the producer's word, reported back as
+    verification. This law governs values that STAND FOR CONTENT; a law-9 minted id is
+    compared as stored data and is out of law 13's scope — it has no source to recompute
+    from.
     *(Models: `check_protocol_integrity` recomputes `protocol_fingerprint(path)` from live
     file bytes and compares it to the pin — never a hex-shape match
     (`validate_skills.py:993-999`); `drift_gate.snapshots_match` byte-compares scrubbed
@@ -106,19 +107,21 @@ never a gap number.
 15. **Scope honesty.** A detector, validator, or sweep publishes its coverage set — the
     roots it inspected, the count it checked, and its exclusions — as part of its own
     output, because an unstated exclusion is indistinguishable from coverage. The coverage
-    universe is enumerated, never remembered; and the highest-privilege code is never the
-    least-checked — inspection ranks by write-capability, more scrutiny for more privilege.
-    *(Models: `validate_skills.py` prints its checked denominator ("N skills checked — …");
-    the protocol-folder rule — every `protocol/*.md` must land in exactly one of
-    `REQUIRED_PROTOCOL` or `PROTOCOL_EXEMPT`, and a file in neither fails the validator by
-    name (`validate_skills.py:643-655`); `protocol/exec-safety.md`'s sink registry, which
-    enumerates every execution site — the highest-privilege call class — and requires each
-    new site to register. House style: the honest-residual register (EDR-5, trust-model
-    DESIGN §11) states what is NOT covered inside the contract itself.)*
+    universe is enumerated, never remembered; and the highest-privilege call classes are
+    enumerated in a registry (the exec-safety model), so the most privileged code cannot be
+    the least-checked by omission.
+    *(Models — the count half: `validate_skills.py` prints its checked denominator, the
+    `{scope} checked — {N} error(s), {M} warning(s)` summary line
+    (`validate_skills.py:1211`). The exclusion half: the protocol-folder rule — every
+    `protocol/*.md` must land in exactly one of `REQUIRED_PROTOCOL` or `PROTOCOL_EXEMPT`,
+    and a file in neither fails the validator by name (`validate_skills.py:643-655`) — and
+    `protocol/exec-safety.md`'s sink registry, which requires every execution site — the
+    highest-privilege call class — to register. House style: the honest-residual register
+    (EDR-5, trust-model DESIGN §11) states what is NOT covered inside the contract itself.)*
 
-**Enforcement class:** same as laws 1–10 — a violation in a gate/score/digest path is a
-gate-failing finding, class `nondeterminism`, enforced today by review at the gate (the
-skill-level checker remains NOT built; see Enforcement below).
+**Enforcement class:** laws 1–10, 13, and 15 share one enforcement class — a violation in a
+gate/score/digest path is a gate-failing finding, class `nondeterminism`, enforced today by
+review at the gate (the skill-level checker remains NOT built; see Enforcement below).
 
 ## Where judgment is allowed
 
@@ -131,11 +134,11 @@ NEEDS_WORK reasoning, research synthesis — places where no rule can decide. Ev
 
 ## Enforcement
 
-- New engine code: review against the ten laws; a violation in a gate/score/digest path is a
-  gate-failing finding (class `nondeterminism`).
+- New engine code: review against laws 1–10, 13, and 15; a violation in a gate/score/digest
+  path is a gate-failing finding (class `nondeterminism`).
 - **Skill-level enforcement** (a `nondeterminism`-class check wired into `kata-review` /
   `kata-evaluate`) is **NOT built** — it is a named open follow-up (`AGENTS.md` Conventions).
-  Today the ten laws are enforced by human/agent review at the gate, not by a tool.
+  Today laws 1–10, 13, and 15 are enforced by human/agent review at the gate, not by a tool.
 
 ## The DET registry — adoption-time debt, ALL RESOLVED (reconciled 2026-07-25)
 
@@ -155,14 +158,16 @@ retained, never deleted, so a downstream consumer can reconcile against them.
 | DET-06 | `COLUMNS`-driven diffstat width | `footprint.py:294` (`--stat=200 --stat-graph-width=200`) |
 | DET-07 | `drift_gate` set-union iteration order | `drift_gate.py:185` |
 | DET-08 | `build_ledger_row` `json.dumps` without `sort_keys` | `kata_telemetry.py:1464-1470` |
-| DET-09 | gate-runner inherited env / shell semantics | `mutation_check` / `mutation_run` env sanitization (see law 8 — `shell=True` deliberately RETAINED on the arbitrary-command path) |
+| DET-09 | gate-runner inherited env / shell semantics | `mutation_check` / `mutation_run` env sanitization (see law 8 — the arbitrary-command path's `shell=True` exception is since RETIRED: closed-grammar structured argv, `mutation_run.py:438`, registered at `protocol/exec-safety.md:69`) |
 | DET-10 | `evidence_digest` bare `"\n".join` | `kata_telemetry.py:449-465` (netstring) |
 | DET-11 | benchmark float-tie rank by insertion order | `benchmark.py:591-594,779-782` |
 | DET-12 | temp-path scrub missed `/var/folders`; node-id separators | `drift_gate.py:107-111,151` |
 | DET-13 | `uuid4`+`now` benchmark identity later compared | `benchmark_def.py:340-372` (opt-in content-addressed `benchmark_ca_<hex>`) |
 | DET-14 | wall-clock in durable graph artifacts | `graph_gen.py:489,713` (injectable `generated_at`; nothing hashes it) |
 
-**There is no open determinism adoption debt.** A new violation opens a new DET id.
+**There is no open determinism adoption debt on the `tools/` engine surface.** A new
+violation opens a new DET id. (The D172 loop-execution surface is newly in scope and not yet
+conformant — see the Scope statement's honest residual.)
 - Repo conventions already load-bearing and kept: LF pinned via `.gitattributes` ("build/
   handoff sizes must be deterministic"), `encoding="utf-8"` on every read/write (verified
   zero gaps at adoption), pure-function engines with injected runners.
