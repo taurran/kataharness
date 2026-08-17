@@ -64,8 +64,9 @@ detectable. A nondeterministic gate is a gate that cannot be trusted twice.
    autoload-reliant tests (pytest-asyncio/mock/django) FAIL under the gate when they pass
    normally, *deflating* the score (adval R1). Reserve the blanket env-disable for the
    arbitrary-command path (`mutation_run._default_runner`) where argv can't be injected; there
-   `shell=True` is retained because the `test_cmd` contract is a shell string (operator-trust,
-   exec-safety-registered). Gate runners also carry timeouts — a hung gate is a
+   the old `shell=True` exception is RETIRED — `test_cmd` compiles through a closed grammar
+   into structured argv and runs `shell=False`, refusing anything outside the grammar
+   (BL-X14 / RS-H1, exec-safety-registered). Gate runners also carry timeouts — a hung gate is a
    nondeterministic outcome.
 9. **Randomness mints identity only.** No randomness in sampling, tie-breaking, or scoring,
    ever. A minted id (`uuid4`) is persisted then compared as stored data; content-addressed
