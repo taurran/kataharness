@@ -516,3 +516,66 @@ commit-first-validate-second, and its task's `evidence:` node names VERBATIM fro
 Enforcement this wave: Dormant (hook is W8). Capture: Honor-system, engine-by-conductor —
 the conductor invokes the capture/record legs by hand around Agent-tool dispatches, declared
 per RS-M5.
+
+## Wave-4 integration record (2026-08-17 — every fact below mechanically re-derived)
+
+- **Four task branches merged no-ff with `Kata-Task:` trailers, each verified post-merge
+  (G10.2):** `6a5ada3 tm-w4-coordinate-skills-migration` (tip 58fc17a incl. the close_run cure) ·
+  `8fe656a tm-w4-cursor-rename-sweep` (G17 stacked task, f8e31d4) · `c16caeb
+  tm-w4-orchestrate-seam-migration` (98a6021) · `59ac923 tm-w4-authoring-skills-migration`
+  (10cb4e4 incl. the G16 follow-up).
+- **Judge verdicts (fresh-context, default-FAIL, one per item, all captured on the cursor
+  via the seam):** authoring PASS first round (F1 MEDIUM → ruling G16 → cure 10cb4e4
+  conductor-verified; F2 LOW W5-owed) · orchestrate PASS first round, zero blocking findings
+  (6/6 anchors, capture(kind=) + arm-scan verified real, all-plan governor reading verified
+  against check_governor) · sweep PASS first round · coordinate NEEDS_WORK (close_run phantom
+  at three new sites — the reuse-claims class, caught by the judge; builder and conductor both
+  missed it) → cure 58fc17a (NOT-YET-BUILT qualifiers; Path-A step 3 parked, sequence stops)
+  → re-verdict PASS. Conductor ruling on the builder's step-4 question: stop-at-step-3 stays
+  as authored; sanctioning loop-back over an open predecessor is W7's ruling.
+- **Conductor integration acts, each a distinct vetoable commit:** G3 cursor.md pin paste
+  `0ccfc698…` (592672f; digest independently derived 3×: builder report, cure re-verify,
+  integrated tree — exact match each; supersedes intermediate `7cf63a2b…`, D-19 precedent) ·
+  G18 path-swaps in six un-owned protocol contracts (4949b11: advice ×3 / escalation ×1 /
+  narration ×3 / steering ×1 / state `[[kata-cursor]]` ×1 / orientation skill-name ×1; heritage
+  `.kata/board.md` kept; observability.md left for W9; prime-directives:110 stays as authored)
+  + six fingerprint re-approvals (5bad9a7 advice · dcbb6d1 escalation+narration PAIRED in one
+  commit, declared same-file-staging deviation · 509f6d0 orientation · 37c96d7 state ·
+  522192f steering) · G2 README regeneration (8786489).
+- **Integration gauntlet 4/4** (pytest-unit 0 · pytest-integration 0 · ruff 0 ·
+  validate-skills 0; validator 49 skills, 0 errors, 0 warnings) + **G11 loop:**
+  test_record_claim_is_atomic_single_use ×10 sequential fresh processes, 10/10 pass.
+- **Spot-audit (ONE, live on the burn's own run records):** re-claim of consumed record
+  run-20260817T034343Z-e3b50e43-1 → RecordClaimRefused (single-use, re-mint path named);
+  body-embedded `VERDICT: PASS` → CaptureRefused (line-1 only, body never scanned). Both
+  refusals fired on the LIVE seam, not fixtures.
+- **Dogfood closure of the N1 label (conductor side):** this wave is the seam's first
+  production use — run_start / mint ×6 / claim ×6 / phase / capture ×4 / refusal-driven DENY
+  all exercised live by the conductor loop. Skills-side wiring landed in kata-orchestrate
+  (46 LS sites) + the conductor spine. Enforcement remains Honor-system (nothing denies a
+  bypass until W8) — stated.
+- **Rulings issued this wave:** G16 (plan-tier evidence bullet follow-up, executed) · G17
+  (rename-completion sweep as stacked task, executed) · G18 (protocol path-swap integration
+  act + per-file re-approvals, executed). Operator veto surface: the G3 paste + six G18
+  re-approvals, one revert each; the three rulings themselves vetoable by objection.
+- **Carried to W5's brief:** convergence-reviewer role-token ladder row (named seam comment,
+  kata_dispatch.py:456-467) · kata-evaluate `ASSUMPTIONS.md` bare-path fix (judge F2) ·
+  kata-evaluate:186 stale `protocol/board.md` ref + retired wall-clock/`sec` concurrency
+  schema row (superseded by the D-19 seq-space fold) · worker-report `VERDICT:` first-line
+  contract coherence (orchestrate made it mandatory for workers; W5 owns judge enums) ·
+  optional host-only restatement at LS-20/21 (judge R4).
+- **Carried to W7's brief:** R3 (LOOP-BACK close vs the terminal-write refusal — close_run
+  must close it or run-closed refuses) · lift the three NOT-YET-BUILT close_run qualifiers
+  (protocol/cursor.md ~:201, kata-loop ~:72 and ~:196-205 step 3) when tools/kata_close.py
+  lands · rule loop-back-over-open-predecessor semantics · the stale law-8 mutation_run
+  example fold (D-20, standing).
+- **Carried to W9's brief:** protocol/observability.md — 6 `protocol/board.md` path refs +
+  5 stale line-number anchors into the renamed file (:110,112,114,127,150) — W9 owns the file.
+- **Lessons (harness-fold candidates, kata-improve):** (1) E7 reuse-claim sweeps must include
+  BARE-BACKTICKED identifiers, not only `module.symbol`/`symbol()` forms — the close_run
+  phantom passed builder and conductor sweeps shaped the narrow way; judge R5 + builder
+  root-cause agree. (2) `git merge -F -` does not read stdin (unlike git commit) — merge
+  messages go via `-F <file>`; and a `cmd /c` wrapper under Git Bash swallows commands
+  entirely (two G10 tooling nuances observed live this wave).
+- **DEF-4..DEF-11 filed** (.planning/DEFERRED.md) from builder deferral candidates — none
+  silently dropped.

@@ -178,3 +178,83 @@ writing, and no ledger's authoring style was changed.
 - **Owed-to:** the next wave that owns `tools/tests/` guard files (W6 `judge-tripwire-corpora`
   or W7 `gate-preconditions` may absorb it as a one-line ride-along, conductor to assign at
   that wave's briefs; otherwise the burn closeout sweep).
+
+## DEF-4 — no skill-to-role map exists; ROLE_GROUPS has no reporter role · OPEN (2026-08-17)
+
+- **What:** `kata_roles.ROLE_GROUPS` is a closed enum but nothing maps a skill to a role.
+  The W4 orchestrate migration authored the role column in its LS registry in-file and
+  declared it authored-there; five picks are named contestable in the file, and
+  `kata-benchmark-report` ⇒ `researcher` is the weakest fit (no reporter role exists).
+- **Why:** widening the role enum is a cadre-grill decision (kata_roles.py:13 says so);
+  inventing it mid-burn would be drift.
+- **Provenance:** tm-w4-orchestrate-seam-migration builder deferral 1; judge residual R4.
+- **Owed-to:** the cadre grill / planning-window backlog (role map + possible reporter role).
+
+## DEF-5 — no engine helper enumerates arms / child runIds · OPEN (2026-08-17)
+
+- **What:** exactly-once arm spawn is checked by scanning `dispatch_dir()` + `consumed/` for
+  a record with `taskId == arm_label` (works because records are retained after consumption).
+  The proper helper is named as a gap in kata-orchestrate/SKILL.md ~:235-238.
+- **Why:** out of every W4 task's ownership (engine code); the workaround is correct on the
+  shipped surface (judge-verified) but should not calcify.
+- **Provenance:** tm-w4-orchestrate builder deferral 2 (a removed reuse over-claim).
+- **Owed-to:** a W5+ engine fast-follow or the backlog.
+
+## DEF-6 — phase boundaries are instructed, not mechanically checked · OPEN (2026-08-17)
+
+- **What:** kata-orchestrate pins four phase boundaries, but no check asserts every
+  `open EXECUTION wave=<n>` is eventually closed.
+- **Why:** the natural home is close-machinery (W7) or a validator check — not W4 prose.
+- **Provenance:** tm-w4-orchestrate builder deferral 3.
+- **Owed-to:** W7 close-machinery adjacency, else the backlog.
+
+## DEF-7 — skill renames have no registry-completeness check · OPEN (2026-08-17)
+
+- **What:** three registries key on skill identity (kata_models.SKILL_WORK_CLASS, adapter
+  command files, the generated README index) and only the README is validator-enforced. The
+  board→cursor rename silently broke the first two until the G17 sweep; a SKILL_WORK_CLASS
+  absence silently tiers a skill UP to critical/anchor (kata_models.py `.get(skill, "critical")`).
+- **Why:** fifth first-use/keyed-registry-with-no-on-ramp instance (fingerprints D-8, guard
+  family D-20, _safe_kata_dir D-24, ledger frontmatter D-16); the pattern deserves one fix.
+- **Provenance:** tm-w4-coordinate builder deferral DEF-b; the G17 sweep is the evidence.
+- **Owed-to:** planning-window backlog — a rename-completeness check.
+
+## DEF-8 — CONTEXT.md:234 still illustrates the retired 5-field cursor grammar · OPEN (2026-08-17)
+
+- **What:** the glossary's example shows the 5-field line the canonical parser now REFUSES
+  (test_kata_board.py calls it a parse refusal). Path refs were fixed by the G17 sweep;
+  the grammar example was deliberately left (content change, not a rename ref).
+- **Why:** glossary content is kata-context's surface; rewriting it was outside the sweep's
+  mechanical grant.
+- **Provenance:** tm-w4-cursor-rename-sweep builder deferral 1.
+- **Owed-to:** a kata-context glossary pass.
+
+## DEF-9 — protocol/deferral.md has no mechanical conformance validator · OPEN (2026-08-17)
+
+- **What:** kata-defer now emits the canonical grammar and the templates were proven
+  parseable by a throwaway script, but nothing committed checks live DEFERRED/ASSUMPTIONS
+  entries; conformance is Honor-system until W6 truth_serum lands B3 (and B3 covers the
+  same-line BLOCKER rule, not a full entry-schema parse).
+- **Why:** committing a parser tool is a deliberate Python-surface judgment call (operator
+  preference: keep tools/ minimal); not decided mid-wave.
+- **Provenance:** tm-w4-authoring builder deferral DC-1.
+- **Owed-to:** W6 blocking-detectors brief notes the boundary; a parser tool = operator call.
+
+## DEF-10 — grill convergence/status-write duties are triplicated across tier files · OPEN (2026-08-17)
+
+- **What:** the convergence-pass record + grill-close status write live near-duplicated in
+  the three grill tier SKILLs; `skills/plan/kata-grill/RUBRIC.md` is the tier-invariant home
+  but was in no W4 grant, and its "Grill-close emit" section still omits the status write
+  (a RUBRIC-only reader could close a grill without writing `status: converged`).
+- **Why:** consolidating needed an un-granted file; duplication was the fence-respecting shape.
+- **Provenance:** tm-w4-authoring builder deviation 2 + deferral DC-2.
+- **Owed-to:** the next authorized touch of kata-grill/RUBRIC.md (kata-improve or a later wave).
+
+## DEF-11 — deferral.md pins .planning/DEFERRED.md absolutely; wrong for non-.planning targets · OPEN (2026-08-17)
+
+- **What:** the contract hardcodes `.planning/DEFERRED.md`/`.planning/ASSUMPTIONS.md`; a
+  target repo with a different planning root has no defined ledger home. kata-defer now
+  writes the pinned path (contract wins) without inventing a resolution rule.
+- **Why:** resolving it is a protocol amendment (fingerprint two-step), not a W4 skill edit.
+- **Provenance:** tm-w4-authoring builder deferral DC-3.
+- **Owed-to:** a deferral.md amendment at a later wave / backlog.
