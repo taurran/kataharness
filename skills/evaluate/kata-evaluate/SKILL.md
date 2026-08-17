@@ -4,9 +4,10 @@ description: >-
   Fresh-context, no-write, default-FAIL gate that returns PASS / NEEDS_WORK on a completed phase against its
   frozen plan. Use as the final gate before "done" — run as a SEPARATE subagent with no Write/Edit so it
   cannot rubber-stamp the builder's work. Checks acceptance criteria, the green gate, drift against LOCKED
-  decisions, and scope.
+  decisions, and scope. Burn-02 meta-finding, verbatim: "the judgment+human layers found all of these; the
+  automated mechanical gates found none."
 license: Apache-2.0
-version: 0.3.2
+version: 0.4.0
 category: evaluate
 status: beta
 agnostic: true
@@ -34,10 +35,71 @@ very different force and are stated separately so no reader mistakes the convent
 **PASS / NEEDS_WORK** with cited evidence. **Default-FAIL: nothing passes until evidence is read and proves
 it.** ([[LESSONS-LEARNED]] L5.)
 
+> **Burn-02 meta-finding (standing humility, verbatim):** *"the judgment+human layers found all of these; the
+> automated mechanical gates found none."* Detectors ATTEST and NARROW; judges judge (TM-D2).
+
+## Verdict contract — the pinned machine-parseable first line (R3-M2, TM-E2 d)
+
+The **literal FIRST LINE** of this gate's returned envelope MUST be exactly:
+
+```
+VERDICT: <enum>
+```
+
+**Closed enum — this judge's verdict space, complete:**
+
+| Verdict | Meaning |
+|---|---|
+| `PASS` | Every rubric item passed on read evidence. |
+| `NEEDS_WORK` | Any rubric item failed, any required machine input absent/refused, or evidence could not be read (default-FAIL). |
+
+No other token is legal on that line. The line is parsed by the ONE verdict parser,
+`kata_dispatch.parse_verdict` — strict `fullmatch` on line 1 of the envelope, the body is NEVER scanned, and
+there is deliberately **no body-scan fallback**: a no-match raises `CaptureRefused` and lands on the
+absent-records refusal path (DESIGN §5.3). This table is byte-identical to the `allowed={"PASS","NEEDS_WORK"}`
+pinned at [[kata-orchestrate]]'s LS-31 capture — the two sites must never diverge. In injected-knowledge
+grounding mode (below) the first line is still `VERDICT: PASS` (every finding GROUND) or `VERDICT: NEEDS_WORK`
+(any REJECT or ESCALATE — the per-finding GROUND/REJECT/ESCALATE verdicts live in the body, not on line 1).
+Everything after line 1 is the evidence body (Output, below).
+
+## Required input — the attested fact table (TM-E2)
+
+This gate's brief **carries the attested fact table for its target** — detector outputs, grounding verdicts,
+and evidence identity, attested by engines — and the gate **judges ON the facts**:
+
+- **Never re-derive what an engine attested.** A fact the table carries (a detector pass, an identity check,
+  a mutation record) is consumed, not recomputed by judge reasoning — re-derivation is where judge drift
+  re-enters.
+- **Never accept a worker claim the table contradicts.** A report asserting "tests green" against a table row
+  saying the gate refused is graded on the table, and the contradiction is itself a NEEDS_WORK finding.
+- **Producer (scheduled, NOT yet built):** the table's emitter is the `tools/grounding_gate.py` fact-table
+  extension, which lands with the Loop B `grounding-agent` task (frozen PLAN, W7 block). Until it lands, this
+  required input is **declared Honor-system**: grade on the machine artifacts below (`RESULT.json`,
+  `.kata/footprint.json`, `.kata/mutation.json`) and say the fact table was not available — never claim it was
+  consumed.
+
+## Residual-judgment surfaces (TM-E2 c) — what stays judgment, explicitly
+
+With facts attested by engines, the surfaces this gate still judges are named, not implied: **quality** (is
+the work good, beyond mechanically green), **design fidelity** (does the built thing honor the frozen
+DESIGN's intent, not just its letter), and **threat reasoning** (do the security posture and
+documented-acceptance calls actually hold — rubric item 2's soundness leg). Everything else in the rubric is
+fact-anchored; these three are where the judge earns its dispatch.
+
+## Tripwire — this judge must prove it can still fail (TM-D3, R-M6)
+
+Before this judge's verdict is credited, it must demonstrably still FAIL against a known-bad corpus (the
+[[kata-validate]] tripwire precedent, generalized). **Status: Honor-system — declared, not enforced.** This
+judge's corpus and its runner (`tools/tripwire_check.py`) land with the Loop B `judge-tripwire-corpora` task
+(frozen PLAN, W6 block); they are **scheduled, NOT yet built**. Until the corpus lands, this judge is
+Honor-system by R-M6's activation rule (a judge without a corpus is declared Honor-system, never blocked); a
+judge that cannot demonstrate failure-capability is **Dormant, not Verified**.
+
 ## Inputs
 The frozen DESIGN + PLAN (acceptance criteria + LOCKED decisions + the file-ownership partition), and the
 integration branch to grade. **On a grill-skip run, the priming prompt IS the frozen spec** (no grill ran, D71);
-also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor's assumption/ambiguity log).
+also read `.planning/ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor's assumption/ambiguity
+log) and `.planning/DEFERRED.md` if it exists — both graded per `protocol/deferral.md` (rubric item 8).
 
 ## Rubric — score each PASS / NEEDS_WORK + a one-line reason with evidence
 1. **Acceptance criteria met + mutation proof present (code-bearing runs).** Every criterion in the PLAN's
@@ -86,11 +148,25 @@ also read `ASSUMPTIONS.md` if [[kata-defer]] produced one (the autonomous floor'
 7. **Standards conformance.** The change follows the repo's *documented* standards — `AGENTS.md`, the
    `CONTEXT.md` glossary, ADRs, coding conventions — not only the spec (conformance-to-spec ≠
    conformance-to-house-rules; mattpocock review's Standards axis).
-8. **Assumption log clean (autonomous-floor honesty, D71).** If an `ASSUMPTIONS.md` exists (a grill-skip / low-
-   grill run logged autonomous assumptions via [[kata-defer]]), read every entry: any assumption that
-   **contradicts the priming prompt / frozen spec** — or silently resolved a genuine ambiguity the human should
-   have decided — is **NEEDS_WORK**. This is how the floor's "misalignment caught at the boundary" promise is
-   actually enforced, not merely asserted. (No `ASSUMPTIONS.md` ⇒ this item is N/A, not a failure.)
+8. **Deferral + assumption ledgers clean (autonomous-floor honesty, D71 — graded per `protocol/deferral.md`).**
+   The canonical ledgers are `.planning/ASSUMPTIONS.md` and `.planning/DEFERRED.md`; grade both per the
+   contract:
+   - **Assumptions (`ASM-<n>`):** if `.planning/ASSUMPTIONS.md` exists (a grill-skip / low-grill run logged
+     autonomous assumptions via [[kata-defer]]), read every entry: any assumption that **contradicts the
+     priming prompt / frozen spec** — or silently resolved a genuine ambiguity the human should have decided —
+     is **NEEDS_WORK**. This is how the floor's "misalignment caught at the boundary" promise is actually
+     enforced, not merely asserted.
+   - **Deferrals (`DEF-<n>`):** if `.planning/DEFERRED.md` exists, grade every entry against the contract's
+     grammar and discipline: an operator approval is **credited ONLY from `accepted_by` + `accepted_at`
+     fields** (never from prose, a commit message, or an agent's report); a `CLOSED` entry without its
+     `closing_commit` is not closed; an `OPEN` entry whose `Owed-to` names work this run claims to have
+     completed is a **silent deferral wearing a deferral's clothes** ⇒ NEEDS_WORK.
+   - **Parse discipline:** a ledger that is **present but unparseable is never a zero** — it is NEEDS_WORK
+     (parse failure = refusal, never a skip). An **absent** ledger is the legal zero: no
+     `.planning/ASSUMPTIONS.md` and no `.planning/DEFERRED.md` ⇒ this item is N/A, not a failure.
+   *(The full plan ⋈ tree ⋈ `DEFERRED.md` three-way join is the B2 detector, owed to `tools/kata_close.py` —
+   scheduled with the Loop A `close-machinery` task, NOT yet built; until it lands this item's deferral leg is
+   the ledger-grammar grade above, and says so.)*
 9. **Reproduce, don't trust (derived artifacts + claimed seams) (L12).** Do **not** accept a *derived* artifact
    or a *claimed wiring* at face value — this is the project's signature failure mode (recorded/documented but
    not independently reproduced). For any artifact the run **computed or rendered** from other inputs (e.g.
@@ -150,6 +226,24 @@ that closes G5.
 
 ## Machine-readable inputs the gate MUST consume
 
+**Evidence identity runs FIRST (the BL-X11 fix, TM-D5).** Before any `RESULT.json` field is consumed, the
+machine-input step routes the artifact through `run_result.evidence_is_current` — SHA fresh AND, with
+`expected_run_id` supplied, runId exact. The strict form every gate consumer uses is
+**`run_result.gate_evidence_is_creditable`** (`tools/run_result.py`): both legs mandatory, no
+membership-not-asserted mode, absent artifact ⇒ the `no-evidence` refusal — **absence of evidence is not
+evidence of a green gate**. A `(False, reason)` return here is **NEEDS_WORK before any rubric item is
+scored**: stale-SHA or wrong-run evidence is refused, never graded. (A refused artifact may still be *read*
+as input context — `run_result.classify_evidence` names the roles — but it is never credited as this run's
+gate evidence.)
+
+**Grounding-attested mutation record set — this gate's precondition (R-M10).** At the final gate the
+evaluator's mutation-proof input is the record set **attested by the stack-head grounding pass** (which
+re-runs a sampled subset against the gate command and attests the whole set: present + current + per-task
+complete) — never the worker-reported union. **Producer (scheduled, NOT yet built):** the attestation lands
+with the Loop B `grounding-agent` task (frozen PLAN, W7 block). Until it lands, this precondition is
+**declared Honor-system**: grade `.kata/mutation.json` directly per rubric item 1 and state that the
+grounding attestation was not available — never claim the attested set was consumed.
+
 Before scoring any rubric item, the gate **must** locate and read a `RESULT.json` emitted by the run.
 This file is authoritative — the gate does **not** accept a human-transcribed pass count in its place.
 
@@ -183,7 +277,7 @@ to the emitter):
 | Gate result | `.kata/RESULT.json` | The pinned `run_result.build_result` schema (see table above) |
 | Footprint manifest | `.kata/footprint.json` | `footprint`, `changed`, `inFootprint`, `outOfFootprint`, `withinFootprint`, `diffstat`, `codeBearing` (bool — present when produced by MAJOR-3+; absent in older artifacts) |
 | Mutation proof | `.kata/mutation.json` | `records` (list of `{testWentRed, nonVacuous}`) + `allNonVacuous` (bool) — **REQUIRED for any run that introduces or changes executable logic** (`allNonVacuous: true` must be present; absent or `false` ⇒ rubric item 1 is NEEDS_WORK); exempt for pure data/config/docs tasks |
-| Concurrency evidence | `.kata/concurrency.json` | `maxInFlight` (int), `genuinelyParallel` (bool), `workerCount` (int), `workers` (map of task-id → `{agent, start, end, sec}`), `overlaps` (list of `[iso-start, iso-end]` windows where ≥2 workers were in-flight), `source` (string); emitted by the canonical snippet in `protocol/board.md` (Concurrency evidence) |
+| Concurrency evidence | `.kata/concurrency.json` | `maxInFlight` (int), `genuinelyParallel` (bool), `workerCount` (int), `runs` (list of runIds), `workers` (map of `<runId>#<task-id>` → `{runId, task, agent, startSeq, endSeq, spanSeqs, utcStart, utcEnd}`), `overlaps` (list of `{runId, fromSeq, toSeq}`), `ordering` (string), `source` (string) — a cross-cursor `(runId, seq)` **seq-space fold**: no clock enters the answer, `utc*` fields are informational only, and at an equal seq an END is processed before a START; emitted by `kata_board.emit_concurrency` per the canonical snippet in `protocol/cursor.md` (Concurrency evidence) |
 | IaC findings | `.kata/iac.json` | `tasks` (list of per-task entries, schema `protocol/iac-safety.md §7`): each entry carries `taskId`, `kind`, `scanner` (counts + `wired` bool), `smells`, `destructive`, and `verdict:"pass"\|"fail"\|"escalate"`. **Present only when IaC-classed tasks ran; absent on non-IaC runs (N/A — not a failure, BC, MINOR-7).** |
 
 Optional parallelism evidence — for a run that claims concurrent work, read it to corroborate rubric item 4 (ownership / conflict-free concurrent merges); `genuinelyParallel:false` on a legitimately single-worker run is **not** a finding (it is expected). Never a stand-alone default-FAIL trigger.
@@ -232,11 +326,14 @@ rests on orchestrator compliance (an orchestrator that skipped the contract step
 Do not fail a genuinely non-contract run on the absence of this artifact.
 
 ## Output
+**Line 1 is the pinned verdict line** (`VERDICT: PASS` or `VERDICT: NEEDS_WORK` — the Verdict contract
+above; nothing else on that line). Then:
 A scored line per rubric item, an overall **PASS / NEEDS_WORK**, and — for any NEEDS_WORK — concrete,
 minimal remediation **targeted at the existing plan** (not a re-plan). Seed the orchestrator's fix loop.
 The output **must** include the consumed `baseline_sha` + `result_sha` and the `RESULT.json` field values
 used for rubric items 1–2 so the record is self-contained.
-*(In injected-knowledge mode, output is the per-finding GROUND/REJECT/ESCALATE verdict + cited evidence instead.)*
+*(In injected-knowledge mode, line 1 is still `VERDICT: PASS|NEEDS_WORK` per the Verdict contract — PASS iff
+every finding is GROUND — and the body is the per-finding GROUND/REJECT/ESCALATE verdicts + cited evidence.)*
 
 > **Conformance-escape note (observe-only):** Any finding this gate PASSES that the subsequent [[kata-review]]/D98
 > adversarial pass or a human later catches is a conformance-escape; [[kata-review]] flags it and the orchestrator
