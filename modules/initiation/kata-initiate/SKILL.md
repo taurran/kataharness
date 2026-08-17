@@ -6,7 +6,7 @@ description: >-
   to readiness under dual control (user "execute" anytime OR grill self-proposes), then freeze INTENT.md
   and hand full context to the harness. Invoke to start any Kata Loop run.
 license: Apache-2.0
-version: 0.8.1
+version: 0.9.0
 category: coordinate
 status: beta
 agnostic: true
@@ -45,6 +45,44 @@ under the Prime Directives (workers additionally receive them at the orientation
 Then invoke [[kata-readiness]]. On **BLOCK**, stop and surface the blocker. On **WARN**, surface and allow
 proceed. Use the readiness verdict's priming-prompt richness score to pre-select a recommended
 grill depth for Phase 3 (the human always chooses).
+
+### Phase 0c — seam init and the INITIATION phase event
+
+Initiation is a named phase, and the **initiation governor rung's predicate is an OPEN INITIATION
+(or AUTHORING) phase event on the live cursor**. Without that event on the cursor, an
+initiation-phase mint has no legal rung and refuses.
+
+- **Invoked from [[kata-loop]]** ⇒ the conductor already called
+  `kata_dispatch.run_start(kata_dir, repo_root=…)` and emitted `open INITIATION`. **Do not emit a
+  second one** — opening an already-open phase is refused and recorded as a DENY event. Read the
+  position instead: `kata_dispatch.phase_state(cursor)` → `{"open": [...], "closed": [...],
+  "runClosed": bool}`.
+- **Invoked standalone** ⇒ call `run_start` yourself, print its `declaration`, then
+  `kata_dispatch.phase(kata_dir, "open INITIATION")`.
+
+**Honest grade, always declared:** the initiation rung is **Honor-system** — the weakest rung on the
+ladder. Pre-freeze it is self-serviceable by the conductor, which is exactly why it is graded that
+way; cursor lineage is its detection channel, not a prevention. Never render it as Verified.
+
+**Phase events emitted by this skill** (all through the seam `phase()` function — never hand-written
+onto the cursor, which would be a worker authoring a seam TYPE):
+
+| Where | The call |
+|---|---|
+| Phase 0c, standalone entry only | `phase(kata, "open INITIATION")` |
+| Phase 5, the grill begins | `phase(kata, "open GRILL")` |
+| Phase 5, grill reaches readiness (or is skipped) | `phase(kata, "close GRILL")` |
+| Phase 6, the freeze act begins | `phase(kata, "open FREEZE")` |
+| Phase 6, `INTENT.md` written frozen | `phase(kata, "close FREEZE")` then `phase(kata, "close INITIATION")` |
+
+A `skip`-depth grill still records `open GRILL` / `close GRILL` — "we chose not to grill" and "we
+have no record either way" must not read identically on the cursor.
+
+**In-session sequencing is CURSOR-TRACKED, NOT dispatch-gated.** This skill invoking
+[[kata-readiness]], [[kata-context]], or [[kata-bootstrap]] is the conductor reading its own
+instructions: PHASE events, no dispatch record required. **Launching another agent is different** —
+a grill researcher, an advisor consult, or a convergence reviewer is a real dispatch and mints
+through `kata_dispatch.mint(governs=…, role=…, …)` like any other.
 
 ---
 
@@ -453,10 +491,12 @@ implementation), and any `fixes`, `features`, `modulesAdded`, `changeSummary` de
 (D153/U1)**.
 
 Assemble an `answers` dict from **all** of the operator-supplied values gathered in Phases 1–3 and
-the gate above. Call `tools/intent_scaffold.py :: write_intent(path, answers)` to produce the draft
-`INTENT.md` at the repo/project root. **Do not hand-craft the INTENT.md frontmatter inline** —
+the gate above. Call `tools/intent_scaffold.py :: write_intent(path, answers)` — **without
+`freeze`**, so the file is written `status: draft` — to produce the draft `INTENT.md` at the
+repo/project root. **Do not hand-craft the INTENT.md frontmatter inline** —
 `write_intent` is the only authorised writer; it enforces the `protocol/intent.md` schema and
-validates enum values fail-closed.
+validates enum values fail-closed. `freeze=True` belongs to the Phase-6 freeze act and nowhere
+else; passing it here would declare a contract frozen while the interview is still running.
 
 The `answers` dict keys match the `build_intent` signature exactly:
 
@@ -493,8 +533,11 @@ vocabulary.
 
 ## Phase 5 — grill to readiness (dual control)
 
-This is the spec-to-ready engine. Drive `[[kata-grill-standard]]` (or the tier chosen in Phase 3) at
-the selected depth. Two independent paths can end the grill — either suffices:
+Emit `phase(kata, "open GRILL")` first. This is the spec-to-ready engine. Drive
+`[[kata-grill-standard]]` (or the tier chosen in Phase 3) at the selected depth. Two independent
+paths can end the grill — either suffices; **both close the phase** with
+`phase(kata, "close GRILL")` before Phase 6, so the cursor records how the grill ended rather than
+just that it stopped:
 
 ### Path A — user says "execute"
 The user may type **"execute"** (or equivalent: "go", "ship it", "skip the rest") at **any point
@@ -568,24 +611,43 @@ Note: the understand-map ([[kata-understand]]) is offered by [[kata-closeout]] a
 
 ## Phase 6 — freeze INTENT.md and hand off
 
+Open the phase first: `phase(kata, "open FREEZE")`.
+
 1. **Fill `readiness`** in the `answers` dict: the agent's "enough-to-execute" verdict and its
    one-paragraph rationale (which branches were resolved, which were deferred and why, what the
    autonomous floor will handle in-loop via `kata-defer`).
 
-2. **Freeze `INTENT.md`**: call `tools/intent_scaffold.py :: write_intent(path, answers)` with the
+2. **Freeze `INTENT.md`**: call
+   `tools/intent_scaffold.py :: write_intent(path, answers, freeze=True)` with the
    complete `answers` dict (including the populated `readiness` field) to overwrite the draft.
-   The file is now frozen — it is the contract the harness executes against. Do not modify it after
-   this point; a new initiation session is required to produce a new `INTENT.md`.
+   **`freeze=True` is what writes `status: frozen` into the frontmatter, and it is keyword-only and
+   never inferred** — this Phase-6 act is the ONLY place in the harness that passes it. Every other
+   write (every interview-in-progress save, Phase 4's draft included) omits the argument and
+   therefore writes `status: draft`. Omitting it here does not merely mislabel the file: the seam's
+   `intent` governor rung reads that field, so a draft-labelled INTENT means **every
+   initiation-entered dispatch is refused and the run parks**. The file is now frozen — it is the
+   contract the harness executes against. Do not modify it after this point; a new initiation
+   session is required to produce a new `INTENT.md`.
    `write_intent` enforces the schema and `..`-traversal guard; pass the absolute path of the
    repo/project root + `"INTENT.md"`.
 
-3. **Verify the freeze:** confirm the written file's frontmatter round-trips as valid YAML and that
-   all required keys from `protocol/intent.md` are present (parse and spot-check — `build_intent`
-   already validates, but this is the final belt-and-suspenders check before hand-off).
+3. **Verify the freeze:** confirm the written file's frontmatter round-trips as valid YAML, that
+   all required keys from `protocol/intent.md` are present, and that **`status:` reads `frozen`**
+   (parse and spot-check — `build_intent` already validates, but this is the final
+   belt-and-suspenders check before hand-off, and the `status` field is the one the seam will read).
+   `intent_scaffold.intent_status(path)` is the fail-closed reader; it raises rather than guessing
+   on an unreadable file.
 
-4. **Hand off**: surface the frozen `INTENT.md` + the written `kata.config` + a summary of the
+4. **Record the freeze on the cursor**: `phase(kata, "close FREEZE")`, then
+   `phase(kata, "close INITIATION")`. Closing INITIATION is not bookkeeping — it is what makes
+   **initiation-rung exclusivity** real: once the phase is closed (or the run records a stronger
+   governor such as `plan:frozen`), initiation-governed minting is REFUSED, and re-opening
+   INITIATION on a run with a frozen plan is a recorded DENY-class event.
+
+5. **Hand off**: surface the frozen `INTENT.md` + the written `kata.config` + a summary of the
    `CONTEXT.md` additions made during this session. The harness (kata-bootstrap →
-   kata-orchestrate) picks up from here.
+   kata-orchestrate) picks up from here — and from here it mints under `intent : frozen`, which the
+   step-2 `freeze=True` call is what made reachable.
 
 ---
 
