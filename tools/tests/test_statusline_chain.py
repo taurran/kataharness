@@ -689,6 +689,40 @@ _D5_COMPOSITION_GOLDEN = (
 )
 
 
+#: Fixed hex entropy for cursor fixtures. ``mint_run_id`` takes BOTH its inputs injected
+#: (Determinism Doctrine law 9 — randomness mints identity only, nothing decides on it), so
+#: the emitted run-header is byte-deterministic across runs and hosts.
+_FIXTURE_RUN_ENTROPY = "0f1e2d3c"
+
+
+def _cursor(rows: list[tuple[str, str, str, str, str]]) -> str:
+    """Emit a cursor fixture through the CANONICAL emitter — never hand-authored strings.
+
+    *rows* are ``(utc, agent, type, task, msg)``; ``seq`` is assigned in emission order
+    from 1. Wave 2 migrated the board to the 6-field cursor grammar
+    (``utc | seq | agent | TYPE | task | msg`` under a ``RUN <run-id>`` header), and
+    ``kata_board.parse_cursor`` REFUSES anything else — a legacy 5-field literal is read
+    as a refusal, so ``kata_crew`` degrades every chip to STALE (▱) rather than
+    fabricating freshness. Any fixture whose heartbeats must actually be READ therefore
+    has to be built here, by ``format_header`` + ``format_line``, so the test exercises
+    the same grammar production the writers use.
+    """
+    import kata_board
+
+    header = kata_board.format_header(
+        kata_board.RunHeader(
+            run_id=kata_board.mint_run_id(now=_FIXED_NOW, entropy=_FIXTURE_RUN_ENTROPY)
+        )
+    )
+    lines = "".join(
+        kata_board.format_line(
+            utc=utc, seq=seq, agent=agent, type=type_, task=task, msg=msg
+        )
+        for seq, (utc, agent, type_, task, msg) in enumerate(rows, start=1)
+    )
+    return header + lines
+
+
 def _write_roster(root: Path, workers: dict) -> None:
     """Write a conductor roster ``<root>/.kata/dispatch.json`` (single-writer format)."""
     (root / ".kata").mkdir(parents=True, exist_ok=True)
@@ -744,10 +778,14 @@ class TestSegmentCompositionD5:
             "c2": _worker("coder", "opus", "H", "2026-07-14T11:45:00+00:00"),
             "v1": _worker("validator", "son", "M", "2026-07-14T11:48:00+00:00"),
         }
-        board = (
-            "## board\n\n"
-            "2026-07-14T11:58:00+00:00 | agent-c1 | PROGRESS | c1 | building\n"
-            "2026-07-14T11:59:00+00:00 | agent-c2 | PROGRESS | c2 | building\n"
+        # Built through the canonical emitter (wave-2 6-field cursor grammar). The SAME two
+        # PROGRESS heartbeats as the legacy literal this replaced — same stamps, agents, tasks
+        # and msgs — so the golden bytes below are unchanged: only the fixture's GRAMMAR moved.
+        board = _cursor(
+            [
+                ("2026-07-14T11:58:00+00:00", "agent-c1", "PROGRESS", "c1", "building"),
+                ("2026-07-14T11:59:00+00:00", "agent-c2", "PROGRESS", "c2", "building"),
+            ]
         )
         seg = _render_full(
             tmp_path, payload=payload, workers=workers, board=board, start_name="KataHarness"
