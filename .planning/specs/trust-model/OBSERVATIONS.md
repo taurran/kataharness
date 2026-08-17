@@ -466,3 +466,53 @@ re-approvals (one revert each).
   the record carries what the docstrings claim.
 - D-23..D-26 physically sit under the Wave-2 heading (append-only discipline); this section
   is wave 3's record of them plus the strand above.
+
+## Wave-4 dispatch record (2026-08-17 — THE FIRST ENGINE-MINTED DISPATCHES; Execution rule 4's dogfood rule now binding)
+
+Three builders dispatched off base `5ed67a4` (the pushed tip; one handoff commit past the
+orientation's `6a06b4b`), Opus tier (D131, Fable anchor −1), pinned worktrees under
+`C:\dev\projects\_kata_wt	rust-model\` (BBM-9), disjoint ownership per the frozen PLAN
+wave-4 map + recorded amendments G5/G7 and the rulings below.
+
+**Dogfood (first live production use of the seam):** conductor ran `kata_dispatch.run_start`
+in the conductor worktree (kata dir `.kata/`) — runId `run-20260817T034343Z-e3b50e43`, mode
+new, declaration honestly derived: enforcement `Dormant (pre-activation)` · capture
+`Honor-system (engine-by-conductor)` · resilience `Partially verified (local)`. Three mints
+`governs=plan` against the frozen PLAN (state=frozen verified by the governor), each carrying
+its full builder brief (briefHash recorded): seq 1 `tm-w4-orchestrate-seam-migration`
+(brief 84b86009cb034581…) · seq 2 `tm-w4-coordinate-skills-migration` (b58b00bfb226b444…) ·
+seq 3 `tm-w4-authoring-skills-migration` (69d594948da6a00b…). All three records CLAIMED at
+launch (atomic single-use election; tokens + retained records in `.kata/dispatch/consumed/`).
+`open EXECUTION wave=4` PHASE on the cursor; cadence snapshot committed
+`501e8078421ae2700304cf429826c4bce5539f91` @ `refs/kata/trails/run-20260817T034343Z-e3b50e43`.
+Enforcement remains Honor-system-DECLARED (nothing denies a bypass until W8) — stated.
+Every brief carries the advisor channel, H7 pushback, G10 tooling rules, D-6a
+commit-first-validate-second, and its task's `evidence:` node names VERBATIM from the PLAN.
+
+**Conductor rulings at dispatch (binding, G-series):**
+- **G12 — board→cursor rename cross-reference scope.** ~90 files reference
+  `protocol/board.md`/`kata-board` (grep at dispatch). Builders migrate references ONLY
+  inside their grants. The coordinate builder grep-enumerates the full surface and returns a
+  three-class table: (a) historical/gated records — NEVER edited (the D-1
+  records-stay-as-authored precedent; includes the fenced BACKLOG/DECISIONS); (b)
+  other-W4-task-owned files — that task's duty (kata-orchestrate's own brief carries its
+  board→cursor prose); (c) live un-owned surfaces — listed for conductor integration acts or
+  a dispatched follow-up sweep (the G8 precedent). Out-of-grant dangling refs at the task
+  gate are integration-owed, declared not silent.
+- **G13 — ownership reconciliation (freeze-gate-fold class):** `protocol/board.md` joins
+  `coordinate-skills-migration`'s edit set — the PLAN body text declares the rename as this
+  task's; the frontmatter map omitted it. Cross-wave sequential share with W2 cursor-grammar,
+  legal per the RUBRIC rule.
+- **G14 — rename names pinned at dispatch (within-wave coherence):** `protocol/board.md` →
+  `protocol/cursor.md`; `skills/coordinate/kata-board/` → `skills/coordinate/kata-cursor/`;
+  `REQUIRED_PROTOCOL` key `board.md` → `cursor.md`. The runtime file `.kata/board.md` and
+  module `tools/kata_board.py` KEEP heritage names — no code rename is in any frozen task
+  text; prose states the heritage honestly.
+- **G15 — evidence-node rename mapping:** the frozen node
+  `artifact:skills/coordinate/kata-board/SKILL.md` names the pre-rename path; the conductor
+  evaluates it at the task gate against the git-tracked rename successor and records the
+  mapping here. The frozen PLAN stays as authored (D-17 erratum-of-record precedent).
+
+Enforcement this wave: Dormant (hook is W8). Capture: Honor-system, engine-by-conductor —
+the conductor invokes the capture/record legs by hand around Agent-tool dispatches, declared
+per RS-M5.
