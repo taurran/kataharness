@@ -6,7 +6,7 @@ description: >-
   spikes, or when a full adversarial pass is planned later. Burn-02 meta-finding, verbatim: "the
   judgment+human layers found all of these; the automated mechanical gates found none."
 license: Apache-2.0
-version: 0.2.0
+version: 0.2.1
 category: evaluate
 status: beta
 agnostic: true
@@ -77,7 +77,12 @@ draft is the context and the user has explicitly accepted reduced coverage.
   the depth contract but keeps the same names — **quality** (decision judgment on the drift-magnets),
   **design fidelity** and **threat reasoning** only as far as the two smell-test surfaces reach (the skipped
   depth is stated in the output, per this tier's scope note).
-- **Tripwire (TM-D3, R-M6): Honor-system — declared, not enforced.** This judge's known-bad corpus and its
-  runner (`tools/tripwire_check.py`) land with the Loop B `judge-tripwire-corpora` task — **scheduled, NOT
-  yet built**. Until the corpus lands this judge is Honor-system per R-M6 (never blocked); a judge that
-  cannot demonstrate failure-capability is **Dormant, not Verified**.
+- **Tripwire (TM-D3, R-M6): corpus LANDED — activation is a derived, recorded fact.** This judge's
+  known-bad corpus lives under this skill's `fixtures/` dir; the runner `tools/tripwire_check.py` proves
+  **mechanical corpus conformance** per build (`tools/tests/test_tripwire_check.py`, riding the CI
+  gauntlet), and `tripwire_check.check_judge` derives the activation state (`verified` / `dormant` /
+  `honor-system`) from the corpus on disk. **Honest boundary:** the tripwire proves CORPUS CONFORMANCE —
+  shape-conformant fixtures demanding a failing verdict this judge's enum admits — NOT an observed live
+  judge failure (that v2 is BL-N24-class); the grade for this clause is the derived activation state,
+  **never "Verified (live-judged)"**. A judge that cannot demonstrate failure-capability is **Dormant, not
+  Verified**; no corpus ⇒ Honor-system per R-M6 (never blocked).
