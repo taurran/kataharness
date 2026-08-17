@@ -948,7 +948,7 @@ PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
 PROTOCOL_FINGERPRINTS: dict[str, str] = {
     "advice.md": "c811801ef8701f0873a8e2dc9edd093da891d17a1c1eb250e1fd8fdca69f500a",
     "authored-artifact-gate.md": "b90eb9ded18eb324382d23772cabc7740112da964983317ed196858c486ae535",
-    "board.md": "30df4ea775519fdb3709c7d9ddd0e6982a38189f9b23ae9a47cf018035d310ba",
+    "board.md": "9faea138d52b639649874cc9c7a00791a017de6ecc7db410f7b79cfd61849f60",
     "deferral.md": "249b9eb666be0988c1f2529175dd98fdff0707baff8c866cbe01b41d8c0829e8",
     "dependencies.md": "652df1a8f46b93cd13f1e54ba19ec8725ec9e48c02e4b03ea5a8e27bcafe972c",
     "engram.md": "ad01a873d4aff387c85f3798db7494ed6750aab4c1054b876e9282c9fbf2d879",
