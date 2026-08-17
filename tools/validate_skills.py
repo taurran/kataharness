@@ -1055,7 +1055,7 @@ DOCS_FINGERPRINTS: dict[str, str] = {
     # G24, wave 8: the pin ADDITION. The value below is the sentinel described
     # above — it MUST mismatch until the conductor reviews the printed candidate
     # and pastes it at integration. Never paste it from a builder.
-    "docs/DETERMINISM-DOCTRINE.md": "PENDING-CONDUCTOR-PASTE",
+    "docs/DETERMINISM-DOCTRINE.md": "47d6a52b6be171961a92c6aed37acf26e6266969ac33bc2d06328b6baa3f1413",
 }
 
 
