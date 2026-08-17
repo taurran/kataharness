@@ -58,6 +58,7 @@ import os
 import re
 import secrets
 import tempfile
+import time
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -120,11 +121,33 @@ _UTC_COMPACT = "%Y%m%dT%H%M%SZ"
 #: into a hang, and a hang is a nondeterministic outcome (doctrine law 8's reasoning).
 _MAX_ARCHIVE_COLLISIONS = 1000
 
+#: Windows contention errnos a rotation may RETRY, and nothing else.  A held handle on
+#: the cursor makes ``MoveFileEx`` refuse: CPython opens files without
+#: ``FILE_SHARE_DELETE`` and the rename needs DELETE access on its source, so a peer
+#: racer sitting inside :func:`_read_cursor_bytes` — or an AV/indexer scanning the file
+#: a worker just appended to — is enough.  Measured raw-OS on a Windows host (no kata
+#: code in the loop): a held handle on the SOURCE answers winerror 32
+#: (ERROR_SHARING_VIOLATION), a held handle on the reserved DESTINATION answers
+#: winerror 5 (ERROR_ACCESS_DENIED), and the identical rename succeeds the instant the
+#: handle closes.  Transient by measurement, therefore retryable.
+#:
+#: The predicate keys on ``winerror``, which POSIX does not have: a Linux ``EACCES`` is
+#: a genuinely broken ACL and stays a first-class refusal, never a retry storm.
+_TRANSIENT_WINERRORS: frozenset[int] = frozenset({5, 32})
+
+#: The rotation's retry schedule — BOUNDED, and short enough to stay inside a caller's
+#: patience: seven attempts across ~187 ms.  A bound rather than an open loop for
+#: exactly the reason ``_MAX_ARCHIVE_COLLISIONS`` is bounded: an unbounded wait turns
+#: contention into a hang, and a hang is a nondeterministic outcome (doctrine law 8).
+#: The delays are backoff only — nothing in the grammar or the fold reads a clock, so
+#: wall-clock stays non-load-bearing.
+_ROTATE_RETRY_BACKOFF: tuple[float, ...] = (0.002, 0.005, 0.01, 0.02, 0.05, 0.1)
+
 #: Test seam (house pattern — mirrors ``kata_dispatch._CLAIM_RACE_HOOK``): when set, it
 #: is called with the RESERVED archive path at the EXACT race point — after the archive
-#: name is reserved, before the cursor is moved onto it — so a test can force an
-#: interleaving deterministically instead of relying on thread timing.  ``None`` in
-#: production.
+#: name is reserved, before the cursor is moved onto it, and again before EVERY retry of
+#: that move — so a test can force an interleaving deterministically instead of relying
+#: on thread timing.  ``None`` in production.
 _ROTATE_RACE_HOOK = None
 
 
@@ -902,12 +925,21 @@ def start_run(
       instead of archiving somebody else's cursor; and
     * the header is published atomically and EXCLUSIVELY (:func:`_publish_cursor`), so
       the cursor is never observable half-written and two runs can never both believe
-      they claimed it.  Publication is what elects the winner, which is also why
-      progress is guaranteed: whichever racer publishes first has succeeded.
+      they claimed it.  Publication — never the rename — is what elects the winner.
 
     **A refused rotation is non-destructive:** it puts back what it moved, so the live
     cursor survives the refusal.  Every refusal names where the bytes ended up; nothing
     is destroyed to make an error go away.
+
+    **What is NOT promised: that some racer always wins.**  An earlier revision of this
+    docstring claimed progress was guaranteed by construction because publication elects
+    the winner.  CI run 32003837572 (windows-latest) falsified it — a whole round of
+    rotations refused, none published — and the reason is that a racer must first ARCHIVE
+    the cursor, and on Windows any concurrently held handle can veto that rename.  The
+    transient window is now ridden out with a bounded retry
+    (:func:`_move_cursor_onto_reservation`), which is what makes progress the ordinary
+    outcome; contention outlasting that budget is still a loud refusal, by design.  Every
+    outcome is success-or-typed-refusal — that part IS structural.
     """
     kata = _safe_path(kata_dir)
     kata.mkdir(parents=True, exist_ok=True)
@@ -950,6 +982,63 @@ def start_run(
     return header
 
 
+def _is_transient_contention(exc: OSError) -> bool:
+    """True for the two MEASURED Windows contention errnos, and nothing else.
+
+    Narrow on purpose.  Broadening this to "any ``PermissionError``" would make a real
+    ACL failure look like a race worth waiting out, and would make the retry below a
+    fail-open dressed as resilience.  ``winerror`` is absent on POSIX, so this is
+    ``False`` there by construction.
+    """
+    return (
+        isinstance(exc, PermissionError)
+        and getattr(exc, "winerror", None) in _TRANSIENT_WINERRORS
+    )
+
+
+def _move_cursor_onto_reservation(path: Path, archive: Path) -> None:
+    """Move the cursor onto its reserved archive name, riding out TRANSIENT contention.
+
+    **Why a retry exists here at all** (CI run 32003837572 @ ``b880810``, windows-latest
+    leg: *"round 8: every rotation failed — no progress"*).  ``os.replace`` is the one
+    syscall in this path that a concurrent handle can veto: on Windows a rename needs
+    DELETE access on its source, and CPython's own ``open`` shares read and write but
+    NOT delete — so every racer sitting inside :func:`_read_cursor_bytes`, and every
+    AV/indexer scanning the file a worker just appended to, can turn this rename into
+    ``PermissionError``.  Without a retry a single such window costs a racer its whole
+    rotation, and a window that covers all of them at once costs the round every one of
+    them — which is precisely the all-fail round CI observed and this box never did.
+    Nothing about it was lucky or unlikely; it was unretried.
+
+    **Why retrying is safe** — it weakens none of the D-25/D-27 guarantees:
+
+    * A refused ``os.replace`` moved nothing, so a retry re-attempts from the identical
+      state; the reservation is made ONCE, before the loop, so retries can never leak
+      archive names.
+    * Election is unchanged: the winner is still whoever publishes the header
+      exclusively (:func:`_publish_cursor`), never whoever renames.
+    * A retry that lands after a racer completed its own rotation moves that racer's
+      freshly published header instead, which the caller's byte-identity check already
+      catches and restores — the retry cannot convert a loss into a silent win.
+    * Retries are BOUNDED (``_ROTATE_RETRY_BACKOFF``) and the exhausted case still
+      refuses loudly.  Waiting longer is not a stronger guarantee, it is a hang.
+
+    Progress is therefore *durable against the transient window*, not guaranteed
+    absolutely — see :func:`start_run`.
+    """
+    attempts = len(_ROTATE_RETRY_BACKOFF) + 1
+    for attempt in range(attempts):
+        if _ROTATE_RACE_HOOK is not None:  # test seam — see the module constant
+            _ROTATE_RACE_HOOK(archive)
+        try:
+            os.replace(path, archive)
+            return
+        except OSError as exc:
+            if attempt == attempts - 1 or not _is_transient_contention(exc):
+                raise
+            time.sleep(_ROTATE_RETRY_BACKOFF[attempt])
+
+
 def _rotate_cursor(kata: Path, path: Path, observed: bytes, stamp: str) -> Path:
     """Archive the observed cursor bytes, or refuse loudly.  Returns the archive path.
 
@@ -958,15 +1047,15 @@ def _rotate_cursor(kata: Path, path: Path, observed: bytes, stamp: str) -> Path:
     ACCESS_DENIED) at whichever syscall happens to lose the race, so translating them
     one call site at a time is whack-a-mole: the whole critical section gets one
     refusal class instead, with the OS error quoted so nothing is hidden.
+
+    Transient contention on the move itself is absorbed first, not translated — see
+    :func:`_move_cursor_onto_reservation`.
     """
     archive = _reserve_archive_path(kata, stamp)
 
-    if _ROTATE_RACE_HOOK is not None:  # test seam — see the module constant
-        _ROTATE_RACE_HOOK(archive)
-
     try:
         try:
-            os.replace(path, archive)
+            _move_cursor_onto_reservation(path, archive)
         except OSError as exc:
             # Nothing was moved onto our reservation, so it is provably ours and empty:
             # removing it is safe and leaves no phantom archive behind.
@@ -974,11 +1063,19 @@ def _rotate_cursor(kata: Path, path: Path, observed: bytes, stamp: str) -> Path:
                 archive.unlink()
             except OSError:
                 pass
-            detail = (
-                "vanished mid-rotation"
-                if isinstance(exc, FileNotFoundError)
-                else f"could not be moved ({exc})"
-            )
+            if isinstance(exc, FileNotFoundError):
+                detail = "vanished mid-rotation"
+            elif _is_transient_contention(exc):
+                # Named precisely so the next red CI run reads as a diagnosis instead of
+                # an archaeology exercise: this one is contention that OUTLASTED the
+                # budget, not a lost race.
+                detail = (
+                    f"stayed held by another handle ({exc}) through "
+                    f"{len(_ROTATE_RETRY_BACKOFF) + 1} attempts over "
+                    f"{sum(_ROTATE_RETRY_BACKOFF) * 1000:.0f} ms"
+                )
+            else:
+                detail = f"could not be moved ({exc})"
             raise CursorGrammarError(
                 f"kata_board: the cursor at {path} {detail} — another start_run raced "
                 "this one; two runs cannot share a cursor"

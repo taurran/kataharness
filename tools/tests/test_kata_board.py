@@ -24,6 +24,7 @@ Coverage
 from __future__ import annotations
 
 import json
+import os
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
@@ -291,6 +292,173 @@ def test_forced_interleaving_rotation_refuses_and_loses_nothing(tmp_path, monkey
     )
 
 
+# ---------------------------------------------------------------------------
+# Rotation LIVENESS — transient Windows contention must cost a retry, not the run
+#
+# The falsified claim (CI run 32003837572 @ b880810, windows-latest leg): "progress is
+# guaranteed by construction … wins can never be empty".  It is not.  Every rotation in
+# a round can be refused because ``os.replace`` — the move of the cursor onto its
+# reserved archive name — answers PermissionError on Windows whenever ANY other handle
+# holds the cursor open: CPython opens files without ``FILE_SHARE_DELETE``, and
+# ``MoveFileEx`` needs DELETE access on the source.  Measured raw-OS on this host (no
+# kata code): a held read handle ⇒ winerror 32 (ERROR_SHARING_VIOLATION) on the source,
+# a held handle on the reservation ⇒ winerror 5 (ERROR_ACCESS_DENIED) on the
+# destination, and in BOTH cases the identical rename succeeds the instant the handle
+# closes.  Transient, therefore retryable; and every racer in ``start_run`` holds
+# exactly such a handle inside ``_read_cursor_bytes``, as does any AV/indexer scanning
+# the file the round just appended to.
+# ---------------------------------------------------------------------------
+
+
+class _SharingViolation(PermissionError):
+    """A PermissionError carrying ``winerror`` on EVERY platform.
+
+    The defect is Windows-only, but the retry policy is not: pinning it only under
+    ``os.name == "nt"`` would leave the whole loop unexercised on the ubuntu leg — the
+    exact asymmetry that let the D-27 POSIX strand hide.  A subclass attribute shadows
+    ``OSError.winerror`` (which is absent on POSIX and read-only on Windows), so the
+    shape reaching the code under test is byte-identical to the real thing.  The REAL
+    OS error is pinned separately, by the Windows-only held-handle test below.
+    """
+
+    winerror = 32
+
+
+class _FlakyReplace:
+    """Stand-in for ``kata_board.os`` whose ``replace`` fails the first *failures*
+    times — but ONLY for the cursor→archive move, so publication is untouched.
+    """
+
+    def __init__(self, failures: int, exc: type[OSError] = _SharingViolation) -> None:
+        self._left = failures
+        self._exc = exc
+        self.calls = 0
+
+    def __getattr__(self, name: str):  # everything else is the real os module
+        return getattr(os, name)
+
+    def replace(self, src, dst):
+        if not str(dst).endswith(".archive.md"):
+            return os.replace(src, dst)
+        self.calls += 1
+        if self._left > 0:
+            self._left -= 1
+            raise self._exc(13, "the process cannot access the file (injected)")
+        return os.replace(src, dst)
+
+
+def test_transient_contention_at_the_rotation_window_is_retried_not_refused(
+    tmp_path, monkeypatch
+):
+    """THE LIVENESS PIN for CI run 32003837572. Deterministic; no thread timing.
+
+    Pre-fix this raises ``CursorGrammarError`` on the FIRST sharing violation and the
+    rotation is lost — which, when every racer in a round loses it at once, is exactly
+    the observed "every rotation failed — no progress".  Post-fix the bounded retry
+    absorbs the transient window and the rotation completes with its guarantees intact:
+    the original content is archived exactly once and the new run owns a live cursor.
+    """
+    kata_dir = _fresh(tmp_path)
+    kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, "content-that-must-survive")
+    flaky = _FlakyReplace(failures=3)
+    monkeypatch.setattr(kata_board, "os", flaky)
+
+    header = kata_board.start_run(kata_dir, run_id=RUN_B, now=FIXED_NOW)
+
+    assert header.run_id == RUN_B
+    assert flaky.calls == 4, "3 refusals absorbed, the 4th attempt is the one that moved"
+    archives = sorted(kata_dir.glob("board.*.archive.md"))
+    assert len(archives) == 1, f"one rotation, one archive: {archives}"
+    assert "content-that-must-survive" in archives[0].read_text(encoding="utf-8")
+    assert kata_board.read_cursor(kata_dir).run_id == RUN_B
+
+
+def test_rotation_retries_are_bounded_and_exhaustion_still_refuses_loudly(
+    tmp_path, monkeypatch
+):
+    """The retry is a BOUNDED absorber, never a fail-open and never an open loop.
+
+    Contention that outlasts the budget is still a first-class refusal: the run is
+    denied, the live cursor survives untouched, no phantom archive is left behind, and
+    the message names both the OS error and the budget it exhausted.
+    """
+    kata_dir = _fresh(tmp_path)
+    kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, "never-rotated")
+    flaky = _FlakyReplace(failures=10_000)  # contention that never lifts
+    monkeypatch.setattr(kata_board, "os", flaky)
+
+    with pytest.raises(kata_board.CursorGrammarError) as exc:
+        kata_board.start_run(kata_dir, run_id=RUN_B, now=FIXED_NOW)
+
+    assert flaky.calls == len(kata_board._ROTATE_RETRY_BACKOFF) + 1, (
+        "the retry must be bounded by the declared backoff schedule"
+    )
+    assert "attempts" in str(exc.value), f"the refusal must name the budget: {exc.value}"
+    assert kata_board.read_cursor(kata_dir).run_id == RUN_A, "the cursor must survive"
+    assert "never-rotated" in (kata_dir / kata_board.CURSOR_FILENAME).read_text(
+        encoding="utf-8"
+    )
+    assert not list(kata_dir.glob("board.*.archive.md")), "no phantom archive"
+
+
+def test_a_permission_error_without_a_windows_errno_is_never_retried(
+    tmp_path, monkeypatch
+):
+    """The retried class is NARROW: only the two measured Windows contention errnos.
+
+    A POSIX ``EACCES`` — a genuinely broken ACL — carries no ``winerror``, so it must
+    refuse on the first attempt rather than burn the budget pretending a permission
+    problem might heal itself.
+    """
+    kata_dir = _fresh(tmp_path)
+    kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, "content")
+    flaky = _FlakyReplace(failures=1, exc=PermissionError)
+    monkeypatch.setattr(kata_board, "os", flaky)
+
+    with pytest.raises(kata_board.CursorGrammarError):
+        kata_board.start_run(kata_dir, run_id=RUN_B, now=FIXED_NOW)
+
+    assert flaky.calls == 1, "a non-contention PermissionError must not be retried"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="held handles only block rename on Windows")
+def test_a_real_held_cursor_handle_costs_a_retry_not_the_rotation(tmp_path, monkeypatch):
+    """The same pin driven by the REAL OS error, not an injected one (Windows only).
+
+    A genuine read handle is held open across the first rotation attempt — precisely
+    what a peer racer inside ``_read_cursor_bytes`` holds, and what an AV/indexer holds
+    over a file just written — and released before the second.  Pre-fix the first
+    ``PermissionError`` (winerror 32) ends the rotation; post-fix the retry rides it out.
+    The interleaving is forced through the rotation race seam, so nothing here depends
+    on thread scheduling.
+    """
+    kata_dir = _fresh(tmp_path)
+    kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, "held-handle-marker")
+    board = kata_dir / kata_board.CURSOR_FILENAME
+    holder: list = []
+
+    def _hold_then_release(_reserved_path):
+        # Called before EVERY attempt: hold the cursor open for the first, let go for
+        # the second — the shortest honest model of transient contention.
+        if holder:
+            holder.pop().close()
+        else:
+            holder.append(board.open("rb"))
+
+    monkeypatch.setattr(kata_board, "_ROTATE_RACE_HOOK", _hold_then_release)
+    try:
+        header = kata_board.start_run(kata_dir, run_id=RUN_B, now=FIXED_NOW)
+    finally:
+        for fh in holder:
+            fh.close()
+
+    assert header.run_id == RUN_B
+    archives = sorted(kata_dir.glob("board.*.archive.md"))
+    assert len(archives) == 1
+    assert "held-handle-marker" in archives[0].read_text(encoding="utf-8")
+    assert kata_board.read_cursor(kata_dir).run_id == RUN_B
+
+
 def test_concurrent_rotations_never_clobber_an_archive(tmp_path):
     """G11 in-process race: N rounds of real threads contending on one cursor.
 
@@ -319,9 +487,20 @@ def test_concurrent_rotations_never_clobber_an_archive(tmp_path):
     claims the name exclusively — so the assertions below stay unconditional on both
     platforms rather than being framed per-platform.
 
-    **Progress is now guaranteed by construction, not by luck:** publication elects the
-    winner, and whichever racer publishes first has succeeded, so ``wins`` can never be
-    empty. That is why the progress assertion needs no platform framing.
+    **Progress — the honest statement, after CI falsified the previous one.** This
+    docstring used to claim progress was "guaranteed by construction … ``wins`` can never
+    be empty", on the reasoning that publication elects the winner. CI run 32003837572
+    (windows-latest, ``b880810``) refuted it with ``round 8: every rotation failed — no
+    progress``: before a racer can publish it must ARCHIVE, and on Windows the archiving
+    rename is vetoable by any concurrently held handle — including the ones every OTHER
+    racer holds inside ``_read_cursor_bytes``. Nothing elected a winner because nobody
+    got that far. What is structural is success-or-typed-refusal; progress is now made
+    the ordinary outcome by riding out that window with a bounded retry
+    (``kata_board._move_cursor_onto_reservation``, pinned deterministically above). The
+    assertion below therefore tests a real property with a real failure mode: a
+    no-progress round means contention that outlasted the whole budget, which is worth
+    a red build — so it carries the refusals with it, and the next red run reads as a
+    diagnosis rather than an archaeology dig.
     """
     rounds, workers = 25, 4
 
@@ -357,7 +536,11 @@ def test_concurrent_rotations_never_clobber_an_archive(tmp_path):
         assert not any(t.is_alive() for t in threads), f"round {r}: a rotation hung"
 
         assert not unexpected, f"round {r}: non-CursorError escaped: {unexpected!r}"
-        assert wins, f"round {r}: every rotation failed — no progress"
+        assert wins, (
+            f"round {r}: every rotation failed — no progress. The refusals name the "
+            f"syscall that lost, which is the whole diagnosis: "
+            + " || ".join(str(e) for e in refusals)
+        )
 
         archives = list(kata_dir.glob("board.*.archive.md"))
         hits = [a for a in archives if marker in a.read_text(encoding="utf-8")]
