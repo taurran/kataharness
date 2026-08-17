@@ -471,7 +471,7 @@ re-approvals (one revert each).
 
 Three builders dispatched off base `5ed67a4` (the pushed tip; one handoff commit past the
 orientation's `6a06b4b`), Opus tier (D131, Fable anchor −1), pinned worktrees under
-`C:\dev\projects\_kata_wt	rust-model\` (BBM-9), disjoint ownership per the frozen PLAN
+`C:\dev\projects\_kata_wt\trust-model\` (BBM-9), disjoint ownership per the frozen PLAN
 wave-4 map + recorded amendments G5/G7 and the rulings below.
 
 **Dogfood (first live production use of the seam):** conductor ran `kata_dispatch.run_start`
