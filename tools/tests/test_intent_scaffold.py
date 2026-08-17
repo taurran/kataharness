@@ -456,12 +456,23 @@ def test_write_intent_default_status_is_draft(tmp_path):
     assert fm["status"] == "draft"
 
 
-def test_write_intent_freeze_true_writes_frozen(tmp_path):
+def test_freeze_true_writes_frozen_status(tmp_path):
+    """The write-path freeze, end-to-end: freeze=True ⇒ `status: frozen` on disk.
+
+    NAME IS LOAD-BEARING — do not rename. The frozen PLAN declares this exact
+    node as this task's evidence:
+        test:tools/tests/test_intent_scaffold.py::test_freeze_true_writes_frozen_status
+    (.planning/specs/trust-model/PLAN.md:261). The declaration was frozen before
+    the build; a differently-named test does not discharge it.
+    """
     from intent_scaffold import write_intent
     target = tmp_path / "INTENT.md"
     write_intent(str(target), FULL_ANSWERS, freeze=True)
-    fm = _parse_frontmatter(target.read_text(encoding="utf-8"))
-    assert fm["status"] == "frozen"
+    text = target.read_text(encoding="utf-8")
+    # Parsed form: the field carries the frozen token.
+    assert _parse_frontmatter(text)["status"] == "frozen"
+    # Raw form too — the literal line a reader/grep would see in the artifact.
+    assert "status: frozen" in text
 
 
 def test_write_intent_freeze_is_keyword_only(tmp_path):
@@ -674,3 +685,166 @@ def test_legacy_positional_call_signature_unchanged(tmp_path):
     target = tmp_path / "INTENT.md"
     write_intent(str(target), FULL_ANSWERS)
     assert target.exists()
+
+
+# ---------------------------------------------------------------------------
+# The "appended LAST, never reordered" invariant — pinned STRUCTURALLY.
+#
+# yaml.safe_load is order-insensitive, so every parsed-form assertion above is
+# blind to key ORDER. The additive-amendment claim in protocol/intent.md ("no
+# existing field was removed or reordered") is therefore unpinned by them: an
+# edit that inserted `status` in the middle would keep all of them green. These
+# tests read the RAW frontmatter text instead.
+# ---------------------------------------------------------------------------
+
+def _frontmatter_text(text: str) -> str:
+    """Return the raw YAML frontmatter block, un-parsed, order preserved."""
+    lines = text.splitlines()
+    assert lines[0].strip() == "---"
+    for i, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            return "\n".join(lines[1:i])
+    raise ValueError("No closing frontmatter delimiter found")
+
+
+def _top_level_key_order(text: str) -> list[str]:
+    """Top-level frontmatter keys in EMITTED order (nested keys are indented)."""
+    keys = []
+    for line in _frontmatter_text(text).splitlines():
+        if line[:1].isalpha() and ":" in line:
+            keys.append(line.split(":", 1)[0])
+    return keys
+
+
+PRE_FIELD_KEY_ORDER = ["kind", "goal", "fixes", "features", "modulesAdded",
+                       "changeSummary", "target", "grillDepth", "readiness"]
+
+
+def test_status_is_the_final_top_level_key():
+    from intent_scaffold import build_intent
+    assert _top_level_key_order(build_intent(FULL_ANSWERS))[-1] == "status"
+    assert _top_level_key_order(build_intent(FULL_ANSWERS, freeze=True))[-1] == "status"
+
+
+def test_status_is_appended_not_inserted():
+    """Every pre-existing key keeps its exact position; status is added at the end."""
+    from intent_scaffold import build_intent
+    assert _top_level_key_order(build_intent(FULL_ANSWERS)) == [*PRE_FIELD_KEY_ORDER, "status"]
+
+
+def test_status_appended_after_optional_acceptance_criteria():
+    """With the optional field present, status is still last."""
+    from intent_scaffold import build_intent
+    text = build_intent({**FULL_ANSWERS, "acceptanceCriteria": ["a", "b"]})
+    assert _top_level_key_order(text) == [
+        *PRE_FIELD_KEY_ORDER, "acceptanceCriteria", "status",
+    ]
+
+
+def test_output_minus_status_line_is_byte_identical_to_pre_field_build():
+    """Golden: dropping the emitted `status:` line reproduces the pre-field bytes.
+
+    This is the amendment's whole BC claim as a byte assertion — the new field
+    costs exactly one appended line and perturbs nothing else in the artifact.
+    Mutation-proof: reordering the frontmatter dict, or re-rendering any other
+    value, breaks this even though every parsed-form test stays green.
+    """
+    from intent_scaffold import build_intent
+
+    text = build_intent(FULL_ANSWERS)
+    stripped = text.replace("status: draft\n", "", 1)
+
+    # The pre-field bytes, reconstructed independently of the builder: the same
+    # YAML dump of the same ordered mapping, minus the appended row.
+    import yaml as _yaml
+    pre_field_fm = _yaml.dump(
+        {
+            "kind": FULL_ANSWERS["kind"],
+            "goal": FULL_ANSWERS["goal"],
+            "fixes": FULL_ANSWERS["fixes"],
+            "features": FULL_ANSWERS["features"],
+            "modulesAdded": FULL_ANSWERS["modulesAdded"],
+            "changeSummary": FULL_ANSWERS["changeSummary"],
+            "target": {
+                "kind": FULL_ANSWERS["target"]["kind"],
+                "path": FULL_ANSWERS["target"]["path"],
+                "vault": FULL_ANSWERS["target"]["vault"],
+                "platform": FULL_ANSWERS["target"]["platform"],
+            },
+            "grillDepth": FULL_ANSWERS["grillDepth"],
+            "readiness": FULL_ANSWERS["readiness"],
+        },
+        default_flow_style=False, allow_unicode=True, sort_keys=False,
+    )
+    assert _frontmatter_text(stripped) + "\n" == pre_field_fm
+
+
+def test_draft_and_frozen_differ_only_in_the_status_line():
+    """The freeze changes exactly one line — nothing else in the artifact moves."""
+    from intent_scaffold import build_intent
+    draft = build_intent(FULL_ANSWERS).replace("status: draft\n", "", 1)
+    frozen = build_intent(FULL_ANSWERS, freeze=True).replace("status: frozen\n", "", 1)
+    assert draft == frozen
+
+
+# ---------------------------------------------------------------------------
+# The two-rungs-must-agree law, pinned.
+#
+# protocol/intent.md states: "Two governor rungs that read a `status:` field
+# must not disagree about what that field means." That law lives in prose and
+# in a deliberate copy of kata_restore's posture — nothing mechanical held the
+# copy in sync, so a later edit to either side could silently fork the seam's
+# `plan` and `intent` rungs. These tests are that mechanism.
+#
+# Importing kata_restore here is safe: its module level is imports, constants
+# and compiled regexes only — every subprocess.run call sits inside a function
+# body (kata_restore.py:94, :128), so no git/subprocess work happens at import.
+# ---------------------------------------------------------------------------
+
+def test_frontmatter_regex_matches_kata_restore():
+    """intent_scaffold's frontmatter matcher must equal kata_restore's."""
+    import intent_scaffold
+    import kata_restore
+    assert intent_scaffold._FM_RE.pattern == kata_restore._FM_RE.pattern
+    assert intent_scaffold._FM_RE.flags == kata_restore._FM_RE.flags
+
+
+def test_known_status_sets_align_with_kata_restore():
+    """Both rungs read the same two-value vocabulary, per the schema."""
+    import intent_scaffold
+    import kata_restore
+    assert (
+        intent_scaffold._KNOWN_INTENT_STATUSES == kata_restore._KNOWN_PLAN_STATUSES
+    ), "the `intent` and `plan` rungs must not disagree about `status:`"
+    assert intent_scaffold._KNOWN_INTENT_STATUSES == frozenset({"draft", "frozen"})
+
+
+def test_readers_agree_on_the_same_file(tmp_path):
+    """Behavioural half of the law: both readers, one file, same verdict.
+
+    Stronger than comparing constants — it pins that the two rungs actually
+    return the same token for identical input, across all three outcomes.
+    """
+    import intent_scaffold
+    import kata_restore
+
+    cases = [
+        ("---\nstatus: frozen\n---\n\nbody\n", "frozen"),
+        ("---\nstatus: draft\n---\n\nbody\n", "draft"),
+        ("---\nstatus: FROZEN — sealed at the gate\n---\n\nbody\n", "frozen"),
+        ("---\nkind: project\n---\n\nbody\n", "absent"),
+        ("---\nstatus:\n---\n\nbody\n", "absent"),
+    ]
+    for i, (body, expected) in enumerate(cases):
+        p = tmp_path / f"case{i}.md"
+        p.write_text(body, encoding="utf-8")
+        assert intent_scaffold.intent_status(p) == expected
+        assert kata_restore.plan_status(p) == expected
+
+    # And they agree on REFUSING the same unrecognized value.
+    bad = tmp_path / "bad.md"
+    bad.write_text("---\nstatus: sealed\n---\n\nbody\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        intent_scaffold.intent_status(bad)
+    with pytest.raises(ValueError):
+        kata_restore.plan_status(bad)
