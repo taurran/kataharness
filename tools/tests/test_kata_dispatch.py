@@ -546,3 +546,897 @@ def test_end_to_end_validator_on_codex(tmp_path):
     assert result["platform"] == "codex"
     assert result["payload"]["verdict"] == "hold"  # the role verdict (distinct axis)
     assert result["payload"]["findings"][0]["severity"] == "MAJOR"
+
+
+# ===========================================================================
+# THE SEAM — trust-model DESIGN §1 (PLAN wave 3, task seam-engine)
+# ===========================================================================
+
+import concurrent.futures  # noqa: E402
+import inspect  # noqa: E402
+import os  # noqa: E402
+import re  # noqa: E402
+import threading  # noqa: E402
+from datetime import UTC, datetime  # noqa: E402
+
+import kata_board as kb  # noqa: E402
+import kata_trail as ktr  # noqa: E402
+
+_NOW = datetime(2026, 8, 16, 12, 0, 0, tzinfo=UTC)
+
+
+def _write_md(path: Path, frontmatter: str, body: str = "# doc\n") -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"---\n{frontmatter}\n---\n\n{body}", encoding="utf-8")
+    return path
+
+
+def _kata(tmp_path: Path, *, entropy: str = "abcd1234") -> Path:
+    """A kata dir carrying one live (open) run."""
+    kata = tmp_path / ".kata"
+    kb.start_run(kata, now=_NOW, entropy=entropy)
+    return kata
+
+
+def _mint_ok(kata: Path, plan: Path, **kw):
+    return kd.mint(
+        governs="plan", role="coder", task_id=kw.pop("task_id", "t1"), kata_dir=kata,
+        plan_path=plan, brief={"objective": "build it"}, now=_NOW, **kw,
+    )
+
+
+# --------------------------------------------------------------------- §1.4 the ladder
+
+
+class TestLedgerStatus:
+    """The `ledger` rung's predicate — the closed four-value enum (DESIGN §1.4, R2-H1)."""
+
+    @pytest.mark.parametrize("raw,expected", [
+        ("status: draft", "draft"),
+        ("status: converged", "converged"),
+        ("status: frozen", "frozen"),
+        ("status: absorbed", "absorbed"),
+        ("status: CONVERGED — closed 2026-08-16 after the fifth SHIP", "converged"),
+        ("status: frozen (D169 freeze act, conductor-performed)", "frozen"),
+        ("spec: x", "absent"),
+        ("status: ''", "absent"),
+    ])
+    def test_first_word_parse(self, tmp_path, raw, expected):
+        """First-word parse (BL-F01), mirroring plan_status / intent_status exactly."""
+        led = _write_md(tmp_path / "GRILL-LEDGER.md", raw)
+        assert kd.ledger_status(led) == expected
+
+    def test_unrecognized_status_raises_never_coerces(self, tmp_path):
+        led = _write_md(tmp_path / "GRILL-LEDGER.md", "status: mostly-done-ish")
+        with pytest.raises(ValueError, match="unrecognized status"):
+            kd.ledger_status(led)
+
+    def test_missing_frontmatter_raises(self, tmp_path):
+        led = tmp_path / "GRILL-LEDGER.md"
+        led.write_text("# no frontmatter here\n", encoding="utf-8")
+        with pytest.raises(ValueError, match="no YAML frontmatter"):
+            kd.ledger_status(led)
+
+    def test_ordering(self):
+        """draft < converged; frozen satisfies whatever converged satisfies."""
+        assert kd.ledger_satisfies("converged", "draft") is True
+        assert kd.ledger_satisfies("draft", "converged") is False
+        assert kd.ledger_satisfies("frozen", "converged") is True
+        assert kd.ledger_satisfies("frozen", "draft") is True
+        # absorbed ROUTES; it never satisfies. absent never satisfies.
+        assert kd.ledger_satisfies("absorbed", "draft") is False
+        assert kd.ledger_satisfies("absent", "draft") is False
+
+
+class TestAbsorbedRouting:
+    """`absorbed` ROUTES the mint to the absorbing ledger (E6, pass-1 SHIP residual 2)."""
+
+    def _corpus(self, tmp_path):
+        """The LIVE corpus shape: a prose-only routing target in the status line.
+
+        The status VALUE is quoted here because the live `dispatch-seam` ledger's is not,
+        and its unquoted ``operator-ruled: ONE …`` makes that file's frontmatter invalid
+        YAML — see ``test_unquoted_colon_in_a_status_line_refuses_never_guesses``, the
+        corpus defect this build found and reported rather than silently worked around.
+        """
+        specs = tmp_path / "specs"
+        target = _write_md(specs / "trust-model" / "GRILL-LEDGER.md", "status: converged")
+        source = _write_md(
+            specs / "dispatch-seam" / "GRILL-LEDGER.md",
+            'status: "absorbed — 2026-08-16, operator-ruled: ONE unified trust-model grill. '
+            "This ledger's tree carries forward as INPUT to ../trust-model/GRILL-LEDGER.md "
+            '(B1 to B). Do NOT resolve branches here."',
+        )
+        return source, target
+
+    def test_unquoted_colon_in_a_status_line_refuses_never_guesses(self, tmp_path):
+        """The LIVE dispatch-seam ledger's frontmatter is not valid YAML (build finding).
+
+        Its unquoted ``status: absorbed — …, operator-ruled: ONE …`` carries a second
+        ``": "`` inside a plain scalar, which no YAML parser accepts. The predicate holds
+        the same fail-closed posture as ``plan_status`` / ``intent_status``: a broken
+        status is a DATA problem to resolve by hand (quote the value or add an
+        ``absorbed-into:`` key), never a guess and never a default.
+        """
+        led = _write_md(
+            tmp_path / "GRILL-LEDGER.md",
+            "status: absorbed — 2026-08-16, operator-ruled: ONE unified grill",
+        )
+        with pytest.raises(ValueError, match="not valid YAML"):
+            kd.ledger_status(led)
+
+    def test_prose_token_resolution_matches_the_live_corpus(self, tmp_path):
+        source, target = self._corpus(tmp_path)
+        assert kd.resolve_absorbed_ledger(source) == target.resolve()
+
+    def test_absorbed_into_key_wins_over_prose(self, tmp_path):
+        specs = tmp_path / "specs"
+        declared = _write_md(specs / "declared" / "GRILL-LEDGER.md", "status: converged")
+        _write_md(specs / "prose" / "GRILL-LEDGER.md", "status: converged")
+        source = _write_md(
+            specs / "src" / "GRILL-LEDGER.md",
+            "absorbed-into: ../declared/GRILL-LEDGER.md\n"
+            "status: absorbed — see ../prose/GRILL-LEDGER.md for the story",
+        )
+        assert kd.resolve_absorbed_ledger(source) == declared.resolve()
+
+    def test_two_candidate_tokens_is_ambiguous_and_parks(self, tmp_path):
+        specs = tmp_path / "specs"
+        _write_md(specs / "a" / "GRILL-LEDGER.md", "status: converged")
+        _write_md(specs / "b" / "GRILL-LEDGER.md", "status: converged")
+        source = _write_md(
+            specs / "src" / "GRILL-LEDGER.md",
+            "status: absorbed into ../a/GRILL-LEDGER.md and ../b/GRILL-LEDGER.md",
+        )
+        with pytest.raises(kd.AbsorbedRoutingAmbiguous, match="ambiguous"):
+            kd.resolve_absorbed_ledger(source)
+
+    def test_no_token_is_ambiguous_and_parks(self, tmp_path):
+        source = _write_md(
+            tmp_path / "specs" / "src" / "GRILL-LEDGER.md",
+            "status: absorbed — folded into the other grill, ask the conductor",
+        )
+        with pytest.raises(kd.AbsorbedRoutingAmbiguous, match="names no routing target"):
+            kd.resolve_absorbed_ledger(source)
+
+    def test_absent_target_parks(self, tmp_path):
+        source = _write_md(
+            tmp_path / "specs" / "src" / "GRILL-LEDGER.md",
+            "status: absorbed into ../ghost/GRILL-LEDGER.md",
+        )
+        with pytest.raises(kd.AbsorbedRoutingAmbiguous, match="does not exist"):
+            kd.resolve_absorbed_ledger(source)
+
+    def test_target_escaping_the_specs_root_parks(self, tmp_path):
+        _write_md(tmp_path / "outside" / "GRILL-LEDGER.md", "status: converged")
+        source = _write_md(
+            tmp_path / "specs" / "src" / "GRILL-LEDGER.md",
+            "status: absorbed into ../../outside/GRILL-LEDGER.md",
+        )
+        with pytest.raises(kd.AbsorbedRoutingAmbiguous, match="escapes the specs root"):
+            kd.resolve_absorbed_ledger(source)
+
+    def test_absolute_target_parks(self, tmp_path):
+        source = _write_md(
+            tmp_path / "specs" / "src" / "GRILL-LEDGER.md",
+            "absorbed-into: /etc/GRILL-LEDGER.md\nstatus: absorbed",
+        )
+        with pytest.raises(kd.AbsorbedRoutingAmbiguous, match="not a ledger-relative"):
+            kd.resolve_absorbed_ledger(source)
+
+    def test_routing_cycle_parks(self, tmp_path):
+        specs = tmp_path / "specs"
+        _write_md(specs / "a" / "GRILL-LEDGER.md",
+                  "absorbed-into: ../b/GRILL-LEDGER.md\nstatus: absorbed")
+        _write_md(specs / "b" / "GRILL-LEDGER.md",
+                  "absorbed-into: ../a/GRILL-LEDGER.md\nstatus: absorbed")
+        with pytest.raises(kd.AbsorbedRoutingAmbiguous, match="cycle"):
+            kd.resolve_absorbed_ledger(specs / "a" / "GRILL-LEDGER.md")
+
+    def test_mint_routes_through_an_absorbed_ledger(self, tmp_path):
+        """The whole point: a mint against an absorbed ledger lands on the absorbing one."""
+        source, target = self._corpus(tmp_path)
+        kata = _kata(tmp_path)
+        record = kd.mint(
+            governs="ledger", role="design-author", task_id="t-author", kata_dir=kata,
+            ledger_path=source, brief={"o": "author the design"}, now=_NOW,
+        )
+        assert record["governedRef"] == str(target.resolve())
+        assert record["governedState"] == "converged"
+        assert record["governedRoutedFrom"] == str(source.resolve())
+
+
+# ----- THE DECLARED EVIDENCE NODE (PLAN frontmatter `evidence:` for seam-engine) -----
+def test_mint_refuses_unmet_governor_state(tmp_path):
+    """Per-rung refusal: EVERY governor x an unmet state ⇒ refuse-to-mint ⇒ park (TM-B5).
+
+    The engine's refusal is typed, names the park path, and lands a DENY cursor event
+    naming the legal path (DESIGN §1.8). No rung has a silent-permissive edge.
+    """
+    kata = _kata(tmp_path)
+    draft_plan = _write_md(tmp_path / "PLAN.md", "status: DRAFT — awaiting freeze-gate")
+    draft_ledger = _write_md(tmp_path / "specs" / "s" / "GRILL-LEDGER.md", "status: draft")
+    keyless_ledger = _write_md(tmp_path / "specs" / "k" / "GRILL-LEDGER.md", "spec: k")
+    draft_intent = _write_md(tmp_path / "INTENT.md", "status: draft")
+
+    cases = [
+        # (mint kwargs, expected refusal fragment)
+        (dict(governs="plan", role="coder", plan_path=draft_plan), "plan rung unmet"),
+        (dict(governs="ledger", role="design-author", ledger_path=draft_ledger), "ledger rung unmet"),
+        (dict(governs="ledger", role="researcher", ledger_path=keyless_ledger), "ledger rung unmet"),
+        # a role class with NO ledger row is refused there — an unlisted row is an unruled one
+        (dict(governs="ledger", role="coder", ledger_path=draft_ledger), "no ledger-governed rung"),
+        (dict(governs="intent", role="coder", intent_path=draft_intent), "intent rung unmet"),
+        # the initiation rung with no open INITIATION/AUTHORING phase on the live cursor
+        (dict(governs="initiation", role="plan-author", priming_prompt_hash="deadbeef"),
+         "no INITIATION or AUTHORING phase is open"),
+        # ...and with an open phase but no priming-prompt hash (the rung's provenance)
+        (dict(governs="initiation", role="plan-author"), "requires priming_prompt_hash"),
+        # unknown governor ⇒ the closed vocabulary refuses
+        (dict(governs="vibes", role="coder"), "unknown governor"),
+        # unknown role ⇒ refused before any predicate runs
+        (dict(governs="plan", role="wizard", plan_path=draft_plan), "unknown role"),
+    ]
+
+    for kwargs, fragment in cases:
+        with pytest.raises(kd.MintRefused) as exc:
+            kd.mint(task_id="t-refuse", kata_dir=kata, brief={"o": "x"}, now=_NOW, **kwargs)
+        assert fragment in str(exc.value), f"{kwargs} did not refuse with {fragment!r}"
+        # TM-B5: the refusal names the park path and the escalation kind
+        assert exc.value.park_path.endswith(os.path.join("escalations", "t-refuse.json"))
+        assert exc.value.escalation_kind == "human-required"
+
+    # ...and no record was written for any of them
+    assert not list(kd.dispatch_dir(kata).glob("*.json"))
+    # ...while every denial IS a cursor DENY event naming a legal path (DESIGN §1.8)
+    denies = [ln for ln in kb.read_cursor(kata).lines if ln.type == "DENY"]
+    assert len(denies) == len(cases)
+    assert all("legal path:" in ln.msg for ln in denies)
+
+
+def test_governs_is_required_keyword_only_with_no_default(tmp_path):
+    """R3-M4 / BL-F01 verbatim: an omittable governor is the D136 silent-permissive class."""
+    kata = _kata(tmp_path)
+    with pytest.raises(TypeError, match="governs"):
+        kd.mint(role="coder", task_id="t", kata_dir=kata, brief={})
+    param = inspect.signature(kd.mint).parameters["governs"]
+    assert param.kind is inspect.Parameter.KEYWORD_ONLY
+    assert param.default is inspect.Parameter.empty
+
+
+class TestRungExclusivity:
+    """RS-H3 — the initiation rung is refused once a stronger governor exists."""
+
+    def test_initiation_mint_succeeds_while_the_phase_is_open(self, tmp_path):
+        kata = _kata(tmp_path)
+        kd.phase(kata, "open INITIATION", repo_root=str(tmp_path), now=_NOW)
+        record = kd.mint(
+            governs="initiation", role="plan-author", task_id="t-init", kata_dir=kata,
+            priming_prompt_hash="cafe1234", brief={"o": "author"}, now=_NOW,
+        )
+        assert record["governs"] == "initiation"
+        # graded Honor-system, never dressed as Verified (R3-H2 / R4-H1)
+        assert record["governorGrade"] == "Honor-system"
+
+    def test_refused_once_a_stronger_governor_is_recorded(self, tmp_path):
+        kata = _kata(tmp_path)
+        kd.phase(kata, "open INITIATION", repo_root=str(tmp_path), now=_NOW)
+        _mint_ok(kata, _FROZEN_PLAN, task_id="t-plan")  # records plan:frozen
+        with pytest.raises(kd.MintRefused, match="initiation-rung exclusivity"):
+            kd.mint(
+                governs="initiation", role="plan-author", task_id="t-init", kata_dir=kata,
+                priming_prompt_hash="cafe1234", brief={"o": "author"}, now=_NOW,
+            )
+
+    def test_refused_once_the_phase_has_closed(self, tmp_path):
+        kata = _kata(tmp_path)
+        kd.phase(kata, "open AUTHORING", repo_root=str(tmp_path), now=_NOW)
+        kd.phase(kata, "close AUTHORING", repo_root=str(tmp_path), now=_NOW)
+        with pytest.raises(kd.MintRefused, match="already CLOSED"):
+            kd.mint(
+                governs="initiation", role="design-author", task_id="t-init", kata_dir=kata,
+                priming_prompt_hash="cafe1234", brief={"o": "author"}, now=_NOW,
+            )
+
+    def test_reopening_initiation_is_a_recorded_deny_class_event(self, tmp_path):
+        kata = _kata(tmp_path)
+        kd.phase(kata, "open INITIATION", repo_root=str(tmp_path), now=_NOW)
+        kd.phase(kata, "close INITIATION", repo_root=str(tmp_path), now=_NOW)
+        _mint_ok(kata, _FROZEN_PLAN, task_id="t-plan")
+        with pytest.raises(kd.PhaseRefused, match="DENY-class event"):
+            kd.phase(kata, "open INITIATION", repo_root=str(tmp_path), now=_NOW)
+        denies = [ln for ln in kb.read_cursor(kata).lines if ln.type == "DENY"]
+        assert denies and "RS-H3" in denies[-1].msg
+
+
+# --------------------------------------------------------------------- §1.5 the record
+
+
+def test_mint_writes_the_full_record_and_a_chained_spawn_line(tmp_path):
+    """DESIGN §1.5 field list + the SPAWN lineage that makes fabrication post-hoc detectable."""
+    kata = _kata(tmp_path)
+    record = _mint_ok(kata, _FROZEN_PLAN)
+    for field in ("runId", "taskId", "role", "platform", "model", "effort", "governs",
+                  "governedRef", "briefHash", "mintedUtc", "seq", "agentDef"):
+        assert field in record
+    assert record["agentDef"] is None            # RESERVED for BL-N20, unpopulated in v1
+    assert record["governs"] == "plan"
+    assert record["briefHash"] == kd.brief_hash({"objective": "build it"})
+
+    on_disk = json.loads(Path(record["recordPath"]).read_text(encoding="utf-8"))
+    assert on_disk["recordId"] == record["recordId"]
+
+    cursor = kb.read_cursor(kata)
+    spawn = [ln for ln in cursor.lines if ln.type == "SPAWN"]
+    assert len(spawn) == 1
+    assert spawn[0].seq == record["seq"]
+    assert kd._spawn_fields(spawn[0].msg)["record"] == record["recordId"]
+
+
+def test_mint_wires_the_role_resolver(tmp_path):
+    """resolve_roles had ZERO callers (SURFACE-MAP); the mint is its call site."""
+    kata = _kata(tmp_path)
+    record = kd.mint(
+        governs="plan", role="validator", task_id="t-mm", kata_dir=kata,
+        plan_path=_FROZEN_PLAN, brief={"o": "check"},
+        roles_block={"validator": {"platform": "codex", "model": "gpt-5-codex"}},
+        confirmed_platforms=["codex"], now=_NOW,
+    )
+    assert record["platform"] == "codex" and record["model"] == "gpt-5-codex"
+
+
+def test_mint_fails_closed_on_an_unconfirmed_platform(tmp_path):
+    kata = _kata(tmp_path)
+    with pytest.raises(ValueError, match="not confirmed"):
+        kd.mint(
+            governs="plan", role="validator", task_id="t-mm", kata_dir=kata,
+            plan_path=_FROZEN_PLAN, brief={"o": "check"},
+            roles_block={"validator": {"platform": "codex"}}, confirmed_platforms=[], now=_NOW,
+        )
+
+
+# ----- THE DECLARED EVIDENCE NODE (PLAN frontmatter `evidence:` for seam-engine) -----
+def test_record_claim_is_atomic_single_use(tmp_path):
+    """RS-H2 — consumption is an ATOMIC CLAIM (os.rename), not a check-then-act.
+
+    Two racing claimants target the same SOURCE file, so exactly one rename can win;
+    every loser's claim fails and its validation fails with it => deny. Parallel-dispatch
+    order-independence is ACHIEVED BY the claim, never assumed.
+    """
+    kata = _kata(tmp_path)
+    record = _mint_ok(kata, _FROZEN_PLAN)
+    rid = record["recordId"]
+
+    claimants = 8
+    barrier = threading.Barrier(claimants)
+
+    def claim():
+        barrier.wait()
+        try:
+            return ("won", kd.claim_record(kata, rid))
+        except kd.RecordClaimRefused as exc:
+            return ("denied", str(exc))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=claimants) as pool:
+        futures = [pool.submit(claim) for _ in range(claimants)]
+        outcomes = [f.result() for f in futures]
+
+    winners = [o for o in outcomes if o[0] == "won"]
+    losers = [o for o in outcomes if o[0] == "denied"]
+    assert len(winners) == 1, f"exactly one claimant may win, got {len(winners)}"
+    assert len(losers) == claimants - 1
+
+    # mark-consumed-and-RETAIN (R3-M1): the record persists for lineage...
+    assert kd.record_path(kata, rid, consumed=True).is_file()
+    # ...and the pending copy is gone, so a replay cannot re-claim it.
+    assert not kd.record_path(kata, rid).exists()
+
+    # A serial replay is refused with the RE-MINT path named (retry-race, pass-2 low 11).
+    with pytest.raises(kd.RecordClaimRefused, match="RE-MINT"):
+        kd.claim_record(kata, rid)
+
+
+def test_claim_of_a_never_minted_record_is_denied(tmp_path):
+    kata = _kata(tmp_path)
+    rid = kd.record_id(kb.read_cursor(kata).run_id, 99)
+    with pytest.raises(kd.RecordClaimRefused, match="no pending dispatch record"):
+        kd.claim_record(kata, rid)
+
+
+def test_record_id_is_guarded_against_traversal(tmp_path):
+    kata = _kata(tmp_path)
+    with pytest.raises(kd.RecordClaimRefused, match="not a dispatch-record id"):
+        kd.record_path(kata, "../../etc/passwd")
+
+
+class TestValidateRecord:
+    """Hook validation is SEMANTIC, not existence (TM-B4) — the T-04 staleness class."""
+
+    def test_valid_record_passes(self, tmp_path):
+        kata = _kata(tmp_path)
+        record = _mint_ok(kata, _FROZEN_PLAN)
+        report = kd.validate_record(
+            record, kata_dir=kata, expected_brief_hash=record["briefHash"],
+            expected_role="coder", plan_path=_FROZEN_PLAN, now=_NOW,
+        )
+        assert report["ok"] is True and report["expired"] is False
+
+    def test_record_from_another_run_never_validates(self, tmp_path):
+        kata = _kata(tmp_path)
+        record = _mint_ok(kata, _FROZEN_PLAN)
+        record = {**record, "runId": kb.mint_run_id(now=_NOW, entropy="ffff0000")}
+        with pytest.raises(kd.SeamError, match="run-membership law"):
+            kd.validate_record(record, kata_dir=kata, plan_path=_FROZEN_PLAN)
+
+    def test_fabricated_record_without_cursor_lineage_fails(self, tmp_path):
+        """S1: a record can be forged on disk; it cannot forge the cursor line beside it."""
+        kata = _kata(tmp_path)
+        real = _mint_ok(kata, _FROZEN_PLAN)
+        seq = real["seq"] + 50
+        forged = {**real, "seq": seq, "recordId": kd.record_id(real["runId"], seq)}
+        with pytest.raises(kd.SeamError, match="NO matching SPAWN line"):
+            kd.validate_record(forged, kata_dir=kata, plan_path=_FROZEN_PLAN)
+
+    def test_brief_hash_mismatch_fails(self, tmp_path):
+        kata = _kata(tmp_path)
+        record = _mint_ok(kata, _FROZEN_PLAN)
+        with pytest.raises(kd.SeamError, match="briefHash mismatch"):
+            kd.validate_record(record, kata_dir=kata, expected_brief_hash="0" * 64,
+                               plan_path=_FROZEN_PLAN)
+
+    def test_expiry_is_advisory_never_load_bearing(self, tmp_path):
+        """RS-M12: the atomic claim is THE replay control; wall-clock never refuses."""
+        kata = _kata(tmp_path)
+        record = _mint_ok(kata, _FROZEN_PLAN)
+        much_later = datetime(2026, 8, 20, 12, 0, 0, tzinfo=UTC)
+        report = kd.validate_record(record, kata_dir=kata, plan_path=_FROZEN_PLAN, now=much_later)
+        assert report["ok"] is True          # a judge may legally return hours (days) later
+        assert report["expired"] is True
+        assert report["expiryIsAdvisory"] is True
+
+    def test_claim_and_validate_denies_the_second_caller(self, tmp_path):
+        kata = _kata(tmp_path)
+        record = _mint_ok(kata, _FROZEN_PLAN)
+        first = kd.claim_and_validate(kata, record["recordId"], plan_path=_FROZEN_PLAN, now=_NOW)
+        assert first["validation"]["ok"] is True
+        with pytest.raises(kd.RecordClaimRefused):
+            kd.claim_and_validate(kata, record["recordId"], plan_path=_FROZEN_PLAN, now=_NOW)
+
+
+# --------------------------------------------------------------------- §1.6 the parser
+
+
+class TestVerdictParser:
+    """The ONE verdict parser: strict fullmatch on LINE 1 of the ENVELOPE (DESIGN §1.6)."""
+
+    def test_line_one_verdict_parses(self):
+        assert kd.parse_verdict("VERDICT: PASS\nreasoning follows") == "PASS"
+        assert kd.parse_verdict({"text": "VERDICT: NEEDS_WORK\nbody"}) == "NEEDS_WORK"
+        assert kd.parse_verdict({"content": [{"text": "VERDICT: SHIP"}]}) == "SHIP"
+
+    def test_body_embedded_verdict_is_not_a_verdict(self):
+        """A fake VERDICT line in the BODY must not parse — repo content cannot forge one."""
+        assert kd.parse_verdict("Here is my analysis.\nVERDICT: PASS\n") is None
+        assert kd.parse_verdict("```\nVERDICT: PASS\n```") is None
+        assert kd.parse_verdict("intro\n\nVERDICT: PASS") is None
+        # ...including a diff hunk quoting a real verdict line
+        assert kd.parse_verdict("+++ b/x\n+VERDICT: PASS\n") is None
+
+    def test_line_one_must_fullmatch(self):
+        assert kd.parse_verdict("VERDICT: PASS (with caveats)") is None
+        assert kd.parse_verdict("The VERDICT: PASS") is None
+        assert kd.parse_verdict("  VERDICT: PASS") is None
+        assert kd.parse_verdict("VERDICT:PASS") is None
+        assert kd.parse_verdict("") is None
+        assert kd.parse_verdict(None) is None
+
+    def test_trailing_whitespace_and_crlf_tolerated(self):
+        assert kd.parse_verdict("VERDICT: PASS  \r\nbody") == "PASS"
+
+    def test_closed_enum_binds_when_supplied(self):
+        allowed = frozenset({"PASS", "NEEDS_WORK"})
+        assert kd.parse_verdict("VERDICT: PASS", allowed=allowed) == "PASS"
+        assert kd.parse_verdict("VERDICT: RUBBERSTAMP", allowed=allowed) is None
+
+
+class TestCapture:
+    def _minted(self, tmp_path):
+        kata = _kata(tmp_path)
+        record = kd.mint(
+            governs="plan", role="evaluator", task_id="t-gate", kata_dir=kata,
+            plan_path=_FROZEN_PLAN, brief={"o": "judge it"}, now=_NOW,
+        )
+        return kata, record
+
+    def test_capture_writes_a_valid_verdict_line_and_payload(self, tmp_path):
+        kata, record = self._minted(tmp_path)
+        out = kd.capture(
+            "VERDICT: PASS\nthe gate held", record["recordId"], kata_dir=kata,
+            evidence_pointers=["RESULT.json"], repo_root=str(tmp_path), now=_NOW,
+        )
+        assert out["verdict"] == "PASS"
+        # the conductor-invoked leg is declared Honor-system (RS-M5)
+        assert out["grade"] == "Honor-system (engine-by-conductor)"
+        line = out["line"]
+        assert line.type == "VERDICT" and line.payload           # payload REQUIRED
+        assert line.parent_seq == record["seq"]                  # chained to the SPAWN
+        payload = json.loads(kb.payload_path(kata, line.payload).read_text(encoding="utf-8"))
+        kb.validate_verdict_payload(payload)
+        assert payload["judgeDispatchSeq"] == record["seq"]
+
+    def test_no_match_is_the_absent_records_refusal_never_a_body_scan(self, tmp_path):
+        kata, record = self._minted(tmp_path)
+        with pytest.raises(kd.CaptureRefused, match="body is NEVER scanned"):
+            kd.capture(
+                "Summary of my work.\nVERDICT: PASS\n", record["recordId"], kata_dir=kata,
+                repo_root=str(tmp_path), now=_NOW,
+            )
+        assert not [ln for ln in kb.read_cursor(kata).lines if ln.type == "VERDICT"]
+
+    def test_absent_record_refuses(self, tmp_path):
+        kata = _kata(tmp_path)
+        rid = kd.record_id(kb.read_cursor(kata).run_id, 42)
+        with pytest.raises(kd.CaptureRefused, match="ABSENT RECORD"):
+            kd.capture("VERDICT: PASS", rid, kata_dir=kata, repo_root=str(tmp_path))
+
+    def test_capture_works_on_a_consumed_record(self, tmp_path):
+        """A judge returns AFTER its record was claimed — the normal path, not an error."""
+        kata, record = self._minted(tmp_path)
+        kd.claim_record(kata, record["recordId"])
+        out = kd.capture("VERDICT: PASS", record["recordId"], kata_dir=kata,
+                         repo_root=str(tmp_path), now=_NOW)
+        assert out["verdict"] == "PASS"
+
+    def test_down_line_for_a_child_run(self, tmp_path):
+        """Children NEVER write the parent's log — the PARENT's seam writes DOWN (§2.3)."""
+        kata, record = self._minted(tmp_path)
+        child = kb.mint_run_id(now=_NOW, entropy="beef0001")
+        out = kd.capture(
+            "VERDICT: PASS\ndone", record["recordId"], kata_dir=kata, kind="down",
+            child_run_id=child, reason="rendezvous", repo_root=str(tmp_path), now=_NOW,
+        )
+        assert out["line"].type == "DOWN"
+        payload = json.loads(kb.payload_path(kata, out["line"].payload).read_text(encoding="utf-8"))
+        assert payload["childRunId"] == child
+
+    def test_capture_fires_the_snapshot_cadence_and_records_it(self, tmp_path):
+        """D-17 wiring: the cadence fires on VERDICT and its outcome is RECORDED (R-M4)."""
+        kata, record = self._minted(tmp_path)
+        out = kd.capture("VERDICT: PASS", record["recordId"], kata_dir=kata,
+                         repo_root=str(tmp_path), now=_NOW)
+        assert out["snapshot"] is not None
+        assert out["snapshot"]["kind"] == ktr.RECORD_KIND_SNAPSHOT
+        assert out["snapshot"]["trigger"] == "VERDICT"
+        recorded = kd.read_trail_records(kata)
+        assert recorded and recorded[-1]["trigger"] == "VERDICT"
+
+
+# --------------------------------------------------------------------- §2.6 phases
+
+
+class TestPhaseGrammar:
+    def test_the_closed_vocabulary(self, tmp_path):
+        kata = _kata(tmp_path)
+        for msg in ("open INITIATION", "close INITIATION", "open GRILL", "close GRILL",
+                    "open EXECUTION wave=1", "close EXECUTION wave=1", "open FINAL-GATE"):
+            kd.phase(kata, msg, repo_root=str(tmp_path), now=_NOW)
+        lines = [ln for ln in kb.read_cursor(kata).lines if ln.type == "PHASE"]
+        assert len(lines) == 7
+
+    @pytest.mark.parametrize("msg,fragment", [
+        ("open DESIGNING", "vocabulary is CLOSED"),
+        ("start GRILL", "legal verb"),
+        ("open", "with no phase"),
+        ("open EXECUTION", "REQUIRES 'wave="),
+        ("open EXECUTION wave=one", "REQUIRES 'wave="),
+        ("open GRILL notakv", "not a 'k=v' parameter"),
+        ("", "non-empty string"),
+    ])
+    def test_grammar_refusals(self, tmp_path, msg, fragment):
+        kata = _kata(tmp_path)
+        with pytest.raises(kd.PhaseRefused, match=re.escape(fragment)):
+            kd.phase(kata, msg, repo_root=str(tmp_path), now=_NOW)
+
+    def test_close_without_open_is_refused(self, tmp_path):
+        kata = _kata(tmp_path)
+        with pytest.raises(kd.PhaseRefused, match="not open on this run"):
+            kd.phase(kata, "close GRILL", repo_root=str(tmp_path), now=_NOW)
+
+    def test_double_open_is_refused(self, tmp_path):
+        kata = _kata(tmp_path)
+        kd.phase(kata, "open GRILL", repo_root=str(tmp_path), now=_NOW)
+        with pytest.raises(kd.PhaseRefused, match="already OPEN"):
+            kd.phase(kata, "open GRILL", repo_root=str(tmp_path), now=_NOW)
+
+    def test_execution_waves_are_distinct_phase_identities(self, tmp_path):
+        kata = _kata(tmp_path)
+        kd.phase(kata, "open EXECUTION wave=1", repo_root=str(tmp_path), now=_NOW)
+        kd.phase(kata, "close EXECUTION wave=1", repo_root=str(tmp_path), now=_NOW)
+        kd.phase(kata, "open EXECUTION wave=2", repo_root=str(tmp_path), now=_NOW)
+        assert kd.phase_state(kb.read_cursor(kata))["open"] == ["EXECUTION(wave=2)"]
+
+    def test_phase_fires_the_snapshot_cadence(self, tmp_path):
+        kata = _kata(tmp_path)
+        out = kd.phase(kata, "open GRILL", repo_root=str(tmp_path), now=_NOW)
+        assert out["snapshot"]["trigger"] == "PHASE"
+
+
+class TestRunClosedTerminality:
+    """'Run is closed' is a RECORDED terminal state, never convention (R4 residual 3)."""
+
+    def _closed(self, tmp_path):
+        kata = _kata(tmp_path)
+        kd.phase(kata, "run-closed verdict=PASS", repo_root=str(tmp_path), now=_NOW)
+        return kata
+
+    def test_nothing_is_legal_after_run_closed(self, tmp_path):
+        kata = self._closed(tmp_path)
+        assert kd.is_run_closed(kb.read_cursor(kata)) is True
+        with pytest.raises(kd.PhaseRefused, match="NOTHING is legal"):
+            kd.phase(kata, "open CLOSEOUT", repo_root=str(tmp_path), now=_NOW)
+        with pytest.raises(kd.MintRefused, match="is CLOSED"):
+            _mint_ok(kata, _FROZEN_PLAN)
+        with pytest.raises(kd.SeamError, match="is CLOSED"):
+            kd.deny(kata, "late denial", legal_path="start a new run")
+
+    def test_run_closed_refused_while_phases_are_open(self, tmp_path):
+        kata = _kata(tmp_path)
+        kd.phase(kata, "open CLOSEOUT", repo_root=str(tmp_path), now=_NOW)
+        with pytest.raises(kd.PhaseRefused, match="still open"):
+            kd.phase(kata, "run-closed", repo_root=str(tmp_path), now=_NOW)
+
+
+def test_deny_names_the_legal_path(tmp_path):
+    kata = _kata(tmp_path)
+    line = kd.deny(kata, "record-less Agent launch", legal_path=kd.RETRY_RACE_LEGAL_PATH,
+                   task="t1", now=_NOW)
+    assert line.type == "DENY"
+    assert "legal path:" in line.msg and "re-mint" in line.msg
+
+
+def test_retry_race_message_names_the_remint():
+    msg = kd.retry_race_deny_message("run-20260816T120000Z-abcd1234-3")
+    assert "already consumed" in msg and "single-use" in msg
+    assert "re-mint" in kd.RETRY_RACE_LEGAL_PATH
+
+
+def test_every_seam_line_round_trips_through_the_cursor_parser(tmp_path):
+    """SPAWN / DENY / PHASE / VERDICT are all valid under the W2 grammar (round-trip)."""
+    kata = _kata(tmp_path)
+    kd.phase(kata, "open EXECUTION wave=3", repo_root=str(tmp_path), now=_NOW)
+    record = _mint_ok(kata, _FROZEN_PLAN)
+    kd.capture("VERDICT: PASS", record["recordId"], kata_dir=kata, repo_root=str(tmp_path),
+               now=_NOW)
+    kd.deny(kata, "a bare launch", legal_path="mint via kata_dispatch.mint()", now=_NOW)
+
+    raw = kb.cursor_path(kata).read_text(encoding="utf-8")
+    cursor = kb.parse_cursor(raw)                       # a refusal here would raise
+    types = {ln.type for ln in cursor.lines}
+    assert {"PHASE", "SPAWN", "VERDICT", "DENY"} <= types
+    # every parsed line re-renders through the canonical formatter (round-trip)
+    for line in cursor.lines:
+        rendered = kb.format_line(
+            utc=line.utc, seq=line.seq, agent=line.agent, type=line.type,
+            task=line.task, msg=line.msg, parent_seq=line.parent_seq, payload=line.payload,
+        )
+        assert kb.parse_line(rendered) == kb.CursorLine(
+            utc=line.utc, seq=line.seq, agent=line.agent, type=line.type, task=line.task,
+            msg=line.msg, parent_seq=line.parent_seq, payload=line.payload, pos=0,
+        )
+
+
+# --------------------------------------------------------------------- §2.4 run_start
+
+
+class TestRunStart:
+    def test_new_run_mints_and_rotates(self, tmp_path):
+        kata = tmp_path / ".kata"
+        first = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW, entropy="aaaa0001")
+        assert first["mode"] == "new" and first["rotated"] is False
+        second = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW, entropy="aaaa0002",
+                              force_new=True)
+        assert second["mode"] == "new" and second["rotated"] is True
+        assert second["runId"] != first["runId"]
+        assert second["prevRun"] == first["runId"]      # the loop-back chain pointer
+
+    def test_resume_adopts_the_header_run_id_and_never_re_mints(self, tmp_path):
+        kata = tmp_path / ".kata"
+        first = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW, entropy="bbbb0001")
+        kd.phase(kata, "open EXECUTION wave=1", repo_root=str(tmp_path), now=_NOW)
+        again = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW, entropy="bbbb0002")
+        assert again["mode"] == "resume" and again["adopted"] is True
+        assert again["runId"] == first["runId"]
+        assert again["rotated"] is False
+        # the pre-resume cursor content survives (no rotation happened)
+        assert [ln.type for ln in kb.read_cursor(kata).lines].count("PHASE") == 1
+
+    def test_a_closed_run_rotates_and_mints(self, tmp_path):
+        kata = tmp_path / ".kata"
+        first = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW, entropy="cccc0001")
+        kd.phase(kata, "run-closed verdict=PASS", repo_root=str(tmp_path), now=_NOW)
+        nxt = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW, entropy="cccc0002")
+        assert nxt["mode"] == "new" and nxt["rotated"] is True
+        assert nxt["runId"] != first["runId"]
+
+    def test_torn_rotation_is_detected(self, tmp_path):
+        kata = tmp_path / ".kata"
+        kata.mkdir(parents=True)
+        kb.cursor_path(kata).write_text("this is not a run header\n", encoding="utf-8")
+        with pytest.raises(kd.SeamError, match="TORN ROTATION"):
+            kd.run_start(kata, repo_root=str(tmp_path), now=_NOW)
+
+    def test_empty_cursor_is_reported_and_recovered(self, tmp_path):
+        kata = tmp_path / ".kata"
+        kata.mkdir(parents=True)
+        kb.cursor_path(kata).write_text("   \n", encoding="utf-8")
+        out = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW, entropy="dddd0001")
+        assert out["tornRotation"].startswith("empty-cursor")
+        assert out["mode"] == "new"
+
+    def test_orphan_records_are_reaped_never_deleted(self, tmp_path):
+        """Crash mid-mint => a record with no cursor lineage => reaped at seam init (§1.5.5)."""
+        kata = _kata(tmp_path)
+        run_id = kb.read_cursor(kata).run_id
+        orphan = kd.record_path(kata, kd.record_id(run_id, 7))
+        orphan.parent.mkdir(parents=True, exist_ok=True)
+        orphan.write_text(json.dumps({"runId": run_id, "seq": 7}), encoding="utf-8")
+        live = _mint_ok(kata, _FROZEN_PLAN)
+
+        out = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW)
+        assert out["mode"] == "resume"
+        reaped = {r["recordId"] for r in out["reaped"]}
+        assert orphan.stem in reaped
+        assert live["recordId"] not in reaped                 # the in-flight record survives
+        assert (kd.dispatch_dir(kata) / kd.REAPED_DIRNAME / orphan.name).is_file()
+        assert kd.record_path(kata, live["recordId"]).is_file()
+
+    def test_rotation_reaps_every_prior_run_record(self, tmp_path):
+        kata = _kata(tmp_path)
+        record = _mint_ok(kata, _FROZEN_PLAN)
+        out = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW, entropy="eeee0001",
+                           force_new=True)
+        assert {r["recordId"] for r in out["reaped"]} == {record["recordId"]}
+
+    def test_run_marker_is_written_for_the_future_hook(self, tmp_path):
+        """RS-L5 — the deny hook reads a marker, never walks the filesystem per call."""
+        kata = tmp_path / ".kata"
+        out = kd.run_start(kata, repo_root=str(tmp_path), now=_NOW, entropy="ffff0001")
+        marker = kd.read_run_marker(kata)
+        assert marker["runId"] == out["runId"]
+        assert Path(marker["kataDir"]) == kata.resolve()
+
+    def test_mint_refuses_without_a_live_cursor(self, tmp_path):
+        with pytest.raises(kd.MintRefused, match="Call run_start"):
+            kd.mint(governs="plan", role="coder", task_id="t", kata_dir=tmp_path / ".kata",
+                    plan_path=_FROZEN_PLAN, brief={})
+
+
+class TestProbesAndDeclaration:
+    """The declaration is DERIVED from probes, never asserted (DESIGN §1.7 / §6.2 / §6.4)."""
+
+    def test_pre_hook_declaration_is_honest(self, tmp_path):
+        out = kd.run_start(tmp_path / ".kata", repo_root=str(tmp_path), now=_NOW,
+                           entropy="1111aaaa")
+        assert out["hook"]["installed"] is False
+        assert out["tripwire"]["result"] == "no-result"
+        assert out["enforcement"] == "Dormant (pre-activation)"
+        assert out["capture"] == "Honor-system (engine-by-conductor)"
+        assert out["resilience"]["display"] == "Partially verified (local)"
+        assert out["declaration"].splitlines() == [
+            "enforcement: Dormant (pre-activation)",
+            "capture: Honor-system (engine-by-conductor)",
+            "resilience: Partially verified (local)",
+        ]
+
+    def test_no_result_tripwire_never_inherits_a_prior_declaration(self):
+        """pass-2 high 2: no result => Dormant, and a green fingerprint cannot rescue it."""
+        green_fp = {"installed": True, "digest": "d", "matches": True}
+        assert kd.derive_enforcement(
+            green_fp, {"result": "no-result", "denied": None}
+        ) == "Dormant (pre-activation)"
+
+    def test_tripwire_and_fingerprint_are_jointly_necessary(self):
+        denied = {"result": "probed", "denied": True}
+        assert kd.derive_enforcement(
+            {"installed": True, "matches": False}, denied) == "Dormant (pre-activation)"
+        assert kd.derive_enforcement(
+            {"installed": True, "matches": True}, denied) == "Verified (intercepting)"
+        assert kd.derive_enforcement(
+            {"installed": True, "matches": True}, denied, bash_leg=True
+        ) == "Partially verified (bash-leg)"
+        assert kd.derive_enforcement(
+            {"installed": True, "matches": True}, denied, host_intercepts=False
+        ) == "Honor-system (detection-only host)"
+
+    def test_an_undenied_tripwire_is_dormant_not_verified(self):
+        assert kd.derive_enforcement(
+            {"installed": True, "matches": True}, {"result": "probed", "denied": False}
+        ) == "Dormant (pre-activation)"
+
+    def test_a_crashing_prober_is_a_no_result_never_a_pass(self):
+        def boom():
+            raise RuntimeError("hook wedged")
+        assert kd.deny_tripwire_probe(boom)["result"] == "no-result"
+
+    def test_injected_prober_is_honoured(self, tmp_path):
+        out = kd.run_start(tmp_path / ".kata", repo_root=str(tmp_path), now=_NOW,
+                           entropy="2222aaaa", tripwire_prober=lambda: True)
+        assert out["tripwire"] == {"result": "probed", "denied": True, "reason": None}
+        # ...but with no hook file the fingerprint cannot match, so it stays Dormant
+        assert out["enforcement"] == "Dormant (pre-activation)"
+
+    def test_hook_fingerprint_of_a_present_file(self, tmp_path):
+        hook = tmp_path / "hook.py"
+        hook.write_text("print('deny')\n", encoding="utf-8")
+        fp = kd.hook_fingerprint(tmp_path, path=hook)
+        assert fp["installed"] is True and len(fp["digest"]) == 64
+        assert fp["matches"] is None                       # nothing to compare against
+        matched = kd.hook_fingerprint(tmp_path, path=hook, expected_digest=fp["digest"])
+        assert matched["matches"] is True
+
+    def test_declaration_refuses_invented_vocabulary(self):
+        with pytest.raises(ValueError, match="ONLY trust vocabulary"):
+            kd.format_run_start_declaration(
+                enforcement="Mostly working", capture="Verified (post-edge)",
+                resilience="Partially verified (local)",
+            )
+        with pytest.raises(ValueError, match="table"):
+            kd.format_run_start_declaration(
+                enforcement="Dormant (pre-activation)", capture="Great",
+                resilience="Partially verified (local)",
+            )
+
+    def test_capture_edge_derivation(self):
+        assert kd.derive_capture(None) == "Honor-system (engine-by-conductor)"
+        assert kd.derive_capture({"result": "probed", "captured": True}) == "Verified (post-edge)"
+
+
+class TestConfigSettingsConsistency:
+    """TM-H2 — settings drift is DETECTED at seam init."""
+
+    def _settings(self, command, digest=None):
+        hook = {"type": "command", "command": command}
+        if digest:
+            hook["digest"] = digest
+        return {"hooks": {"PreToolUse": [{"matcher": "Agent", "hooks": [hook]}]}}
+
+    def test_both_absent_is_consistent(self):
+        out = kd.config_settings_consistency(None, None, fingerprint={"installed": False})
+        assert out["consistent"] is True and out["drift"] == []
+
+    def test_settings_registering_an_absent_hook_is_drift(self):
+        out = kd.config_settings_consistency(
+            None, self._settings("python adapters/claude/hooks/kata-seam-guard.py"),
+            fingerprint={"installed": False},
+        )
+        assert out["drift"] == ["settings-registers-absent-hook"]
+
+    def test_present_but_unregistered_is_drift(self):
+        out = kd.config_settings_consistency(
+            None, {}, fingerprint={"installed": True, "digest": "a"})
+        assert out["drift"] == ["hook-present-but-unregistered"]
+
+    def test_digest_mismatch_is_drift(self):
+        out = kd.config_settings_consistency(
+            None, self._settings("py kata-seam-guard.py", digest="old"),
+            fingerprint={"installed": True, "digest": "new"},
+        )
+        assert "hook-digest-mismatch" in out["drift"]
+
+    def test_config_declaring_an_unregistered_hook_is_drift(self):
+        out = kd.config_settings_consistency(
+            {"hooks": {"seamGuard": True}}, {}, fingerprint={"installed": False},
+        )
+        assert out["drift"] == ["config-declares-unregistered-hook"]
+
+
+def test_resilience_is_a_fold_over_recorded_fact(tmp_path):
+    """R-M4: the declared level folds RECORDED snapshot outcomes, never the config flag."""
+    kata = _kata(tmp_path)
+    kd.phase(kata, "open GRILL", repo_root=str(tmp_path), now=_NOW)
+    records = kd.read_trail_records(kata)
+    assert records, "the cadence outcome must be recorded on the cursor"
+    derived = ktr.derive_resilience(records, push_trail_configured=True)
+    # tmp_path is not a git repo, so the snapshot honestly SKIPS — and a skip dominates.
+    assert derived["level"] == ktr.RESILIENCE_DEGRADED
+    assert derived["basis"]["pushConfigured"] is True      # echoed, never an input
