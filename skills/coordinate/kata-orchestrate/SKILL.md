@@ -59,6 +59,13 @@ prose** in § The loop (which now points here).
 
 **Engine unavailable ⇒ the run cannot mint ⇒ no-legal-path PARK** (below), never a silent prose fallback.
 
+> **Carried durability residual (label travels with the claim, PD-2).** Cursor publication is
+> complete-or-absent and exclusive via `temp + os.link`. On a filesystem **without usable hardlinks** it falls
+> back to exclusive-create-then-write, whose **zero-byte window is a stated, unclosed residual** — a racer can
+> observe a zero-byte cursor there. `run_start` reports that benign half as `tornRotation` and starts fresh over
+> it; the honest claim is *"complete-or-absent on hardlink-capable filesystems"*, never an unqualified
+> "atomic everywhere".
+
 ### The three acts, at every launch site
 
 | # | Act | Call | What it writes |
@@ -86,7 +93,7 @@ The governor vocabulary is a CLOSED enum with a mechanical predicate per rung
 
 | Rung | Predicate | Who mints under it |
 |---|---|---|
-| `plan` | `assert_frozen(plan_path)` at mint | **every launch site in this file** |
+| `plan` | `kata_restore.assert_frozen(plan_path)` at mint | **every launch site in this file** |
 | `ledger` | `kata_dispatch.ledger_status(...)` over the grill-ledger frontmatter, closed enum `draft \| converged \| frozen \| absorbed` | grill-phase researchers/advisor, design/plan-authors — [[kata-grill]] / [[kata-plan]], never here |
 | `intent` | `INTENT.md` frontmatter `status: frozen` | harness-entry mints — [[kata-loop]] / [[kata-bootstrap]], never here |
 | `initiation` | an open `INITIATION`/`AUTHORING` phase on the live cursor + the priming-prompt hash | initiation-phase mints — [[kata-initiate]], never here |
@@ -101,7 +108,7 @@ verbatim. `plan` (like `intent`) is a **role-agnostic** rung in the engine: `kat
 researchers/advisors, and a grill-skip run has no ledger at all). Guardian grade of the `plan` rung:
 **Verified** (`kata_dispatch.GOVERNOR_GRADE["plan"]`).
 
-**Always pass `plan_path`** — `governs='plan'` refuses without it, and `assert_frozen` is re-run **at every
+**Always pass `plan_path`** — `governs='plan'` refuses without it, and `kata_restore.assert_frozen` is re-run **at every
 mint**, so a plan that thaws mid-run stops the next dispatch instead of the next gate.
 
 ### Refuse-to-mint ⇒ PARK. Never proceed, never die silently. (TM-B5)
@@ -220,9 +227,15 @@ one cursor per run stays true at every node).
 - **The registry is FREEZE-MINTED, never invented at dispatch.** The frozen PLAN / `benchmark_def` carries the
   whole tree BEFORE any dispatch: `arm_label → pre-minted child runId → worktree root → parent-close policy`.
   **Consume it; never mint an arm id yourself.**
-- **Exactly-once spawn.** Before spawning an arm, check the registry entry against the cursor's `SPAWN` lines
-  (`kata_dispatch.recorded_governors` / the arm's pre-minted runId). On resume you **read the registry** and
-  re-spawn only entries with no recorded spawn — the pre-minted id is what makes resume idempotent.
+- **Exactly-once spawn.** Mint each arm with **`task_id=<arm_label>`**. Before spawning, check whether that arm
+  already has a dispatch record: scan `kata_dispatch.dispatch_dir(kata_dir)` and its `consumed/` subdirectory for
+  a record whose `taskId == arm_label` (records are **retained** after consumption precisely for this kind of
+  lineage read). A record present ⇒ the arm was already spawned ⇒ **do not re-spawn**; resume by capturing its
+  outcome. On resume you **read the registry** and spawn only entries with no record.
+  **Honest gap, stated:** the engine exposes no arm-enumerating helper today — `kata_dispatch.recorded_governors`
+  folds SPAWN lines for *governor* fields and does **not** return child runIds, and the SPAWN msg carries
+  `record=<rid>`, not the arm's runId. The `taskId == arm_label` scan above is the check that actually works with
+  the shipped surface; an arm-registry helper is a fair fast-follow, not a thing to assume exists.
 - **Spawn and DOWN are dispatcher-witnessed.** `mint(...)` writes the parent's `SPAWN`; when the arm reaches a
   terminal state the **parent's** seam writes `DOWN` via `capture(envelope, recordId, kind="down",
   child_run_id=<arm runId>, reason=…)`. **Children never write the parent's cursor.**
@@ -1730,7 +1743,7 @@ payload). You then **park** the escalating task **and its DAG-dependents** (remo
     drift ledger + the escalation `resolution`) — supersede, never silently rewrite the frozen plan; re-dispatch
     the tightened task — **[LS-28 · seam: `mint(governs="plan", role="coder")` → launch →
     `capture(kind="verdict")`]**. **The supersede lands on the PLAN before the re-mint**, because `mint` re-runs
-    `assert_frozen(plan_path)` and stamps the governed ref: mint first and the record cites the pre-supersede
+    `kata_restore.assert_frozen(plan_path)` and stamps the governed ref: mint first and the record cites the pre-supersede
     plan. This is the *only* way new knowledge enters the build.
   - **REJECT** (ungrounded/unsound) → log it in the escalation payload; do **not** fold; if the gap remains,
     re-classify **human-required**.
