@@ -240,14 +240,15 @@ def test_write_intent_roundtrip_no_orphans(tmp_path):
 # ---------------------------------------------------------------------------
 
 # (module, function, number of atomic writes the function must perform).
-# gate_emit.emit_gate_artifacts owns TWO of the eight sites (footprint.json and
-# mutation.json) in one function body, so the per-function count is pinned rather
+# gate_emit.emit_gate_artifacts owns THREE of the nine sites (footprint.json,
+# mutation.json, and — since the W7 gate-preconditions wiring — preconditions.json)
+# in one function body, so the per-function count is pinned rather
 # than mere presence — a partial conversion inside that function would otherwise
 # still satisfy an "atomic_write_text( in src" check.
 _GATE_CRITICAL_SITES = [
     ("run_result", "write_result", 1),  # RESULT.json
     ("contract_gate", "write_contract_gate", 1),  # contract-gate.json
-    ("gate_emit", "emit_gate_artifacts", 2),  # footprint.json + mutation.json
+    ("gate_emit", "emit_gate_artifacts", 3),  # footprint.json + mutation.json + preconditions.json (W7)
     ("grounding_gate", "write_grounding", 1),  # grounding.json
     ("drift_gate", "emit_deferrals", 1),  # deviations/deferred.json
     ("drift_gate", "emit_drift_report", 1),  # drift/<finding_id>.json
@@ -271,10 +272,12 @@ def _legacy_bytes(tmp_path: Path, text: str) -> bytes:
     return data
 
 
-def test_burn_a_covers_exactly_the_eight_scoped_sites():
-    """The frozen contract scopes EIGHT call sites; the pin list must total eight,
-    so dropping one silently is a test failure rather than an invisible omission."""
-    assert sum(n for _, _, n in _GATE_CRITICAL_SITES) == 8
+def test_burn_a_covers_exactly_the_nine_scoped_sites():
+    """The frozen contract scoped EIGHT call sites; the ninth (preconditions.json,
+    W7 gate-preconditions) joined at Loop-B integration — recorded there, so the
+    count is nine and dropping one silently is a test failure rather than an
+    invisible omission."""
+    assert sum(n for _, _, n in _GATE_CRITICAL_SITES) == 9
 
 
 @pytest.mark.parametrize(("modname", "funcname", "n_writes"), _GATE_CRITICAL_SITES)

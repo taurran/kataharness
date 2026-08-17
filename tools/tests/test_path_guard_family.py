@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 _GUARDS = [
     ("kata_board", "_safe_path"),
     ("gate_emit", "_safe_path"),
+    ("gate_preconditions", "_guard_path"),
     ("grounding_gate", "_safe_path"),
     ("escalation", "_safe_kata_dir"),
     ("intent_scaffold", "_safe_path"),
@@ -57,6 +58,7 @@ _GUARDS = [
     ("kata_version", "_safe_abs"),
     ("recurrence_detect", "_guard_path"),
     ("usage_meter", "_guard_path"),
+    ("tripwire_check", "_guard_path"),
 ]
 
 
