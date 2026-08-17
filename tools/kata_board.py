@@ -115,6 +115,18 @@ _RUN_PREFIX = "RUN "
 
 _UTC_COMPACT = "%Y%m%dT%H%M%SZ"
 
+#: Upper bound on same-stamp archive-name collisions before rotation refuses loudly.
+#: A bound rather than an open loop: an unbounded scan turns a pathological directory
+#: into a hang, and a hang is a nondeterministic outcome (doctrine law 8's reasoning).
+_MAX_ARCHIVE_COLLISIONS = 1000
+
+#: Test seam (house pattern — mirrors ``kata_dispatch._CLAIM_RACE_HOOK``): when set, it
+#: is called with the RESERVED archive path at the EXACT race point — after the archive
+#: name is reserved, before the cursor is moved onto it — so a test can force an
+#: interleaving deterministically instead of relying on thread timing.  ``None`` in
+#: production.
+_ROTATE_RACE_HOOK = None
+
 
 # ---------------------------------------------------------------------------
 # Errors
@@ -753,6 +765,69 @@ def read_cursor(kata_dir: str | Path) -> Cursor:
     return parse_cursor(path.read_text(encoding="utf-8"))
 
 
+def _reserve_archive_path(kata: Path, stamp: str) -> Path:
+    """Reserve an unused archive name with an atomic ``O_CREAT|O_EXCL`` create.
+
+    Exclusive create is the only primitive that is genuinely exclusive on both
+    platforms: exactly one caller can create a given path and every other caller gets
+    ``FileExistsError``.  The scan it replaced — ``while archive.exists(): …`` followed
+    by ``os.replace`` — was a TOCTOU: two concurrent rotations select the same free
+    name, and ``os.replace`` is replace-existing by contract, so the second silently
+    clobbers the first one's archive and never says a word.  (Same defect class as the
+    seam's rename-election erratum: a primitive that succeeds quietly is not an
+    election.)
+
+    The returned path exists as an empty placeholder that the caller OWNS; the caller's
+    ``os.replace`` then overwrites its own reservation.  Naming contract preserved:
+    ``board.<utc-compact>.archive.md``, with a ``.<n>`` suffix on collision.
+    """
+    stem = Path(CURSOR_FILENAME).stem
+    last_exc: OSError | None = None
+    for n in range(_MAX_ARCHIVE_COLLISIONS):
+        suffix = "" if n == 0 else f".{n}"
+        candidate = kata / f"{stem}.{stamp}{suffix}.archive.md"
+        try:
+            os.close(os.open(candidate, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+        except FileExistsError as exc:
+            last_exc = exc
+            continue
+        except PermissionError as exc:
+            # Windows: a name whose delete is still pending answers ACCESS_DENIED, not
+            # EEXIST, until the deletion completes — and a racing refusal's restore path
+            # unlinks exactly such a name.  Unavailable is unavailable, whichever errno
+            # the OS chooses to say it with; take the next candidate.
+            last_exc = exc
+            continue
+        return candidate
+    raise CursorGrammarError(
+        f"kata_board: no archive name available for stamp {stamp!r} in {kata} after "
+        f"{_MAX_ARCHIVE_COLLISIONS} candidates (last: {last_exc}) — refusing to rotate "
+        "rather than scan without bound"
+    )
+
+
+def _read_cursor_bytes(path: Path) -> bytes:
+    """Read the cursor for rotation, treating contention as a loud refusal.
+
+    On Windows a file another writer holds open raises ``PermissionError``
+    (ERROR_SHARING_VIOLATION) rather than blocking, so a raw OSError here means
+    "somebody else is writing this cursor right now" far more often than it means a
+    broken ACL.  Either way the caller gets one refusal class, with the OS error quoted
+    so the real cause is never hidden behind our interpretation of it.
+    """
+    if not path.exists():
+        return b""
+    try:
+        return path.read_bytes()
+    except FileNotFoundError:
+        return b""  # vanished between the check and the read — nothing to rotate
+    except OSError as exc:
+        raise CursorGrammarError(
+            f"kata_board: cannot read the cursor at {path} to rotate it ({exc}) — "
+            "most likely another writer holds it open; two runs cannot share a cursor"
+        ) from exc
+
+
 def start_run(
     kata_dir: str | Path,
     *,
@@ -773,19 +848,29 @@ def start_run(
     New-run vs resume discrimination, orphan reaping, and the run-marker write belong
     to the seam's ``run_start()`` (DESIGN §1.3/§2.4, PLAN wave 3); this is the
     grammar primitive that seam act calls.
+
+    **Concurrency contract — enforced, not assumed.** Two `start_run` calls racing on
+    one kata dir is a caller error: two runs cannot share a cursor.  It is now DETECTED
+    and refused loudly instead of silently losing an archive or a run's log:
+
+    * the archive name is acquired by atomic exclusive create, so racing rotations
+      always get DISTINCT names and no archive is ever clobbered; and
+    * the moved bytes are verified against the bytes this call observed, so a rotation
+      that interleaved with another rotation — or with a worker append — refuses
+      instead of archiving somebody else's cursor.
+
+    **A refused rotation is non-destructive:** it puts back what it moved, so the live
+    cursor survives the refusal.  Every refusal names where the bytes ended up; nothing
+    is destroyed to make an error go away.
     """
     kata = _safe_path(kata_dir)
     kata.mkdir(parents=True, exist_ok=True)
     path = kata / CURSOR_FILENAME
 
-    if path.exists() and path.read_text(encoding="utf-8").strip():
+    observed = _read_cursor_bytes(path)
+    if observed.strip():
         stamp = (now or datetime.now(UTC)).astimezone(UTC).strftime(_UTC_COMPACT)
-        archive = kata / f"{Path(CURSOR_FILENAME).stem}.{stamp}.archive.md"
-        n = 1
-        while archive.exists():  # never clobber an archive; deterministic suffix
-            archive = kata / f"{Path(CURSOR_FILENAME).stem}.{stamp}.{n}.archive.md"
-            n += 1
-        os.replace(path, archive)
+        _rotate_cursor(kata, path, observed, stamp)
 
     header = RunHeader(
         run_id=validate_run_id(run_id) if run_id else mint_run_id(now=now, entropy=entropy),
@@ -793,8 +878,80 @@ def start_run(
         parent_run=parent_run,
         prev_segment=prev_segment,
     )
-    path.write_text(format_header(header), encoding="utf-8")
+    try:
+        path.write_text(format_header(header), encoding="utf-8")
+    except OSError as exc:  # the header write contends for the same path
+        raise CursorGrammarError(
+            f"kata_board: could not write the run header to {path} ({exc}) — another "
+            "start_run raced this one; two runs cannot share a cursor"
+        ) from exc
     return header
+
+
+def _rotate_cursor(kata: Path, path: Path, observed: bytes, stamp: str) -> Path:
+    """Archive the observed cursor bytes, or refuse loudly.  Returns the archive path.
+
+    **Every** failure inside leaves as a :class:`CursorGrammarError`.  Windows reports
+    contention through several transient errnos (sharing violation, delete-pending
+    ACCESS_DENIED) at whichever syscall happens to lose the race, so translating them
+    one call site at a time is whack-a-mole: the whole critical section gets one
+    refusal class instead, with the OS error quoted so nothing is hidden.
+    """
+    archive = _reserve_archive_path(kata, stamp)
+
+    if _ROTATE_RACE_HOOK is not None:  # test seam — see the module constant
+        _ROTATE_RACE_HOOK(archive)
+
+    try:
+        try:
+            os.replace(path, archive)
+        except OSError as exc:
+            # Nothing was moved onto our reservation, so it is provably ours and empty:
+            # removing it is safe and leaves no phantom archive behind.
+            try:
+                archive.unlink()
+            except OSError:
+                pass
+            detail = (
+                "vanished mid-rotation"
+                if isinstance(exc, FileNotFoundError)
+                else f"could not be moved ({exc})"
+            )
+            raise CursorGrammarError(
+                f"kata_board: the cursor at {path} {detail} — another start_run raced "
+                "this one; two runs cannot share a cursor"
+            ) from exc
+
+        archived = archive.read_bytes()
+        if archived != observed:
+            # We moved somebody else's cursor.  Refusing is right, but refusing must not
+            # leave the run worse off than it found it: put the bytes back so the live
+            # cursor survives, and only keep them in the archive if a cursor already
+            # exists again (exclusive create decides, so the restore cannot clobber).
+            try:
+                fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                with os.fdopen(fd, "wb") as fh:
+                    fh.write(archived)
+                archive.unlink()
+                where = f"restored to {path}"
+            except OSError:
+                # A cursor already exists again, or the path is momentarily locked by
+                # another writer.  Either way the bytes stay in the archive — retained,
+                # never dropped.
+                where = f"kept at {archive}"
+            raise CursorGrammarError(
+                f"kata_board: rotation moved {len(archived)} bytes but observed "
+                f"{len(observed)} — the cursor changed under this rotation (a racing "
+                f"start_run, or a worker still appending). The moved content is "
+                f"{where}; nothing was discarded. Resolve the overlap, then retry."
+            )
+    except OSError as exc:  # any remaining contention errno on any syscall above
+        raise CursorGrammarError(
+            f"kata_board: rotation of {path} was interrupted ({exc}) — another "
+            "start_run raced this one; two runs cannot share a cursor"
+        ) from exc
+
+    return archive
 
 
 # ---------------------------------------------------------------------------
