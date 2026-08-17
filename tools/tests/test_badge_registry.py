@@ -183,20 +183,22 @@ def test_a_freeform_command_is_never_a_check_id(tmp_path, monkeypatch):
     assert any("not a legal evidence declaration" in f for f in _errors(v.check_badge_registry([])))
 
 
-def test_a_declared_before_active_probe_is_not_a_live_check():
-    """RS-H4 applied to badges: a probe whose target does not exist yet cannot verify today.
+def test_the_deny_tripwire_probe_graduated_to_a_live_check():
+    """RS-H4 applied to badges, AFTER graduation (Loop C, G29/G30).
 
-    ``probe:deny-tripwire`` is registered in the committed probe registry with status
-    ``declared-before-active`` — the wave-8 seam guard it runs against has not landed. A
-    badge citing it would claim Verified on the strength of a check that cannot run, which
-    is precisely the no-result-must-not-inherit rule one layer up.
+    ``probe:deny-tripwire`` shipped ``declared-before-active`` while the wave-8 seam guard
+    did not yet exist; the guard landed at Loop C and G29 flipped the registry status to
+    ``active``. This test is the graduation event's downstream: the probe is now a LIVE
+    check (``_badge_check_is_live`` returns None — a badge MAY cite it), exactly as
+    ``gauntlet`` always could. The no-result-must-not-inherit rule is still guarded — by
+    the seam guard's own Dormant-on-no-result derivation (test_seam_guard.py) — this row
+    simply records that the target now exists.
     """
     probes = evidence_grammar.load_probe_registry()
-    assert probes["deny-tripwire"].status == "declared-before-active"
+    assert probes["deny-tripwire"].status == "active"
     assert probes["gauntlet"].status == "active"
 
-    dead = v._badge_check_is_live("probe:deny-tripwire", REPO)
-    assert dead and "declared-before-active" in dead and "pending_graduation" in dead
+    assert v._badge_check_is_live("probe:deny-tripwire", REPO) is None
     assert v._badge_check_is_live("probe:gauntlet", REPO) is None
 
 
