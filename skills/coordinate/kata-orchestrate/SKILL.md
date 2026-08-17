@@ -26,7 +26,7 @@ tags:
 
 You are the **plan-guardian**. You own the frozen DESIGN + PLAN, task assignment, the file-ownership
 partition, and the gates. Workers execute against the frozen plan and **never re-plan** — discovered
-unknowns ESCALATE to you (via [[kata-board]]) for a *deliberate* decision. This is the spine: **the plan
+unknowns ESCALATE to you (via [[kata-cursor]]) for a *deliberate* decision. This is the spine: **the plan
 does not drift.**
 
 **Binding: `protocol/orchestration.md` (spine #8) — "A well-behaved orchestrator does not do the work itself."**
@@ -323,16 +323,16 @@ own [[kata-worktree]]); as each integrates, **recompute the frontier** and dispa
 `waves:` in the plan are a *derived view* of this frontier, not a hard gate — independent work never waits on
 an unrelated wave.
 
-**Run-start board hygiene (run-isolation).** Before the first dispatch, **rotate any pre-existing
-`.kata/board.md`** to `.kata/board.<utc>.archive.md` (or truncate it) so the board holds **only this run's**
-events. The concurrency evidence (`protocol/board.md` → Concurrency evidence) computes over the whole board;
+**Run-start cursor hygiene (run-isolation).** Before the first dispatch, **rotate any pre-existing
+`.kata/board.md`** to `.kata/board.<utc>.archive.md` (or truncate it) so the cursor holds **only this run's**
+events. The concurrency evidence (`protocol/cursor.md` → Concurrency evidence) computes over the whole cursor;
 stale prior-run `CLAIM`/`DONE` rows would otherwise contaminate `maxInFlight`/`overlaps` and falsify the
-`worker-clock` provenance. A per-run board is the precondition for honest concurrency evidence.
+`worker-clock` provenance. A per-run cursor is the precondition for honest concurrency evidence.
 **Rotate/clear `.kata/dispatch.json` alongside it (freeze-gate F1 — the D3 LOCKED edge).** The crew
-roster (§ The loop step 2 below) is single-writer and run-scoped exactly like the board; a crashed prior
+roster (§ The loop step 2 below) is single-writer and run-scoped exactly like the cursor; a crashed prior
 run leaves never-closed entries whose open workers would otherwise render **phantom crew chips** on the
 statusline (a fabricated liveness signal — D4-class). Rotate/clear the roster on the **same run-start
-sweep** as the board so the first dispatch starts from an empty roster.
+sweep** as the cursor so the first dispatch starts from an empty roster.
 
 1. **Isolate.** Use [[kata-worktree]] to give each dispatchable task-owner its own worktree on a per-task
    branch (a lone sequential task may run directly on the integration branch).
@@ -362,7 +362,7 @@ sweep** as the board so the first dispatch starts from an empty roster.
    - **Roster entry (per dispatch — DISPLAY-ONLY; single-writer = the conductor).** At every worker
      dispatch, write the crew roster entry via `kata_crew.write_roster_entry(kata_dir, task_id, role=<role>,
      model=<shortname>, effort=<L|M|H>)` (`tools/kata_crew.py`), where `kata_dir` is the **integration /
-     target-repo root's `.kata/`** (the same shared root as the board — never a per-task worktree's `.kata/`):
+     target-repo root's `.kata/`** (the same shared root as the cursor — never a per-task worktree's `.kata/`):
      - **`role`** from the roles vocabulary (`kata_roles.ROLE_GROUPS`: coder/validator/researcher/orchestrator/
        evaluator) — a build worker dispatched via [[kata-tdd]] is `coder`; the chip shows its uppercased first
        letter (C/V/R/O/E).
@@ -371,7 +371,7 @@ sweep** as the board so the first dispatch starts from an empty roster.
        it is the **anchor's** short-name (the model the worker actually runs at).
      - **`effort`** = the dispatch reasoning-effort tier (`L`/`M`/`H`).
      The roster **feeds the statusline crew chips only** — it **never gates, never kills, and never feeds
-     liveness ENFORCEMENT** (the F3 liveness monitor below stays **board-driven**, not roster-driven). Close the
+     liveness ENFORCEMENT** (the F3 liveness monitor below stays **cursor-driven**, not roster-driven). Close the
      entry at the task gate (step 3) via `kata_crew.close_roster_entry(kata_dir, task_id)` so the chip clears
      when the task leaves the active frontier. **Single-writer contract:** only the conductor writes the roster —
      workers never touch `.kata/dispatch.json` (the D3 LOCKED edge; a phantom or worker-forged chip is a D4-class
@@ -382,7 +382,7 @@ sweep** as the board so the first dispatch starts from an empty roster.
    - the task's `<action>`, `<read_first>`, `<acceptance_criteria>`, and its **owned files** (it may edit
      nothing else);
    - the rule: *"Execute against the frozen plan. Do not re-plan or re-decide any LOCKED decision. If you
-     hit an unknown or the plan seems wrong, STOP and ESCALATE via the board — do not improvise."*
+     hit an unknown or the plan seems wrong, STOP and ESCALATE via the cursor — do not improvise."*
    - the escalate predicate: *"Escalate if completing your task's acceptance test requires writing a file you
      do not own (`kind: orchestrator-resolvable`), OR if the frozen plan has no solution for a must-deliver
      part of your task and you cannot resolve it without improvising (`kind: research-needed` — do NOT guess;
@@ -393,11 +393,11 @@ sweep** as the board so the first dispatch starts from an empty roster.
    - self-stamp `CLAIM` (start) to the **shared** `.kata/board.md` at the **integration/target-repo root**
      (not the per-task worktree's `.kata/`) via `kata_board.append_event` with your **own process clock**
      when you begin, and `DONE` (end) when your verify passes — so concurrency is provable from artifacts
-     (see `protocol/board.md` → Concurrency evidence). The shared root is the integration/target-repo root,
+     (see `protocol/cursor.md` → Concurrency evidence). The shared root is the integration/target-repo root,
      not the per-task worktree (S3b lesson: per-task worktrees have their own `.kata/` paths; only the
-     integration root's `.kata/board.md` is the shared board the orchestrator and evaluator read).
+     integration root's `.kata/board.md` is the shared cursor the orchestrator and evaluator read).
    - **emit a `PROGRESS` heartbeat (F3 — mandated, not optional):** append a `PROGRESS` line to the shared
-     board via the purpose-built `kata_board.append_progress(kata_dir, agent, task, step, n, label)`
+     cursor via the purpose-built `kata_board.append_progress(kata_dir, agent, task, step, n, label)`
      (`tools/kata_board.py` — it emits the exact required `msg` shape; don't hand-roll it through
      `append_event`) **per owned-module completed AND at least once per `livenessDeadline`/2 of wall-clock** (a long
      single module must not read as dark), with `msg` = `<modulesDone>/<modulesOwned> <label>`; a task with
@@ -421,13 +421,13 @@ sweep** as the board so the first dispatch starts from an empty roster.
        injects the exact command into the brief:
        `uv run --directory <resolved-tools-dir> python -m kata_telemetry emit-trailer --repo-root <worker-worktree-root> --index <i> --verify-exit <e> [--passed <n>] [--failed <n>] [--skipped <n>] [--lint <e>] [--paths ...]`
        — `--repo-root` is **required** (the `uv run --directory` prefix changes CWD to the harness tools dir, so an
-       unqualified default would digest the WRONG repo; the `protocol/board.md` pass-the-path-as-argv precedent).
+       unqualified default would digest the WRONG repo; the `protocol/cursor.md` pass-the-path-as-argv precedent).
      - **Ordering:** stage everything the chunk changed → emit the trailer (the digest reads the index) → commit
        immediately, no edits between emit and commit — the full ordering mandate lives in [[kata-tdd]]'s
        checkpoint-cadence section (do not restate it here).
      - **Tools-dir unresolvable ⇒ degrade, never guess.** If the orchestrator cannot resolve its harness `tools/`
        directory, the mandate is **omitted** and the task's **`effectiveMode` is recorded `"off"`** (mandate not
-       dispatched) with a board **NOTE** — the EXISTING per-task effective-mode degrade taxonomy (M4-L10 as
+       dispatched) with a cursor **NOTE** — the EXISTING per-task effective-mode degrade taxonomy (M4-L10 as
        amended), NOT a third degrade shape. The task then appears in `zeroCheckpointTasks` only as the arithmetic
        consequence, and the ledger distinguishes the cause by its recorded effective mode.
    - **Dispatch budget line (CA-L9/L10/L11 — context-autonomy; MANDATORY prose in EVERY dispatch brief).** Before
@@ -467,7 +467,7 @@ sweep** as the board so the first dispatch starts from an empty roster.
    Every dispatchable task → dispatch concurrently (background); each in its own worktree.
 
    **Liveness monitor (F3 — dark-worker detection; NO blind kill).** While workers run, the orchestrator
-   watches the shared board for staleness: a worker with a `CLAIM` but no `DONE` whose **most recent
+   watches the shared cursor for staleness: a worker with a `CLAIM` but no `DONE` whose **most recent
    `CLAIM`/`PROGRESS` line is older than** a configurable deadline (`livenessDeadline`, default 10 min) is
    **stale** — the clock measures time since the LAST heartbeat, so a worker that heartbeats once and then
    hangs is still detected. On staleness, DO NOT SIGKILL and DO NOT silently re-dispatch. Instead route it
@@ -495,7 +495,7 @@ sweep** as the board so the first dispatch starts from an empty roster.
    and the toolchain supported, else mark the task's scan `degraded` and **surface it** (never a silent
    clean, never a hard-block on scanner-absence); `off` ⇒ skip by policy, surfaced. A finding that cannot
    converge to zero has a **documented-acceptance terminal state**: genuine hardening → in-repo acceptance
-   (`.snyk` reason + expiry) → a board **DECISION** → [[kata-evaluate]] grades the acceptance's *soundness*,
+   (`.snyk` reason + expiry) → a cursor **DECISION** → [[kata-evaluate]] grades the acceptance's *soundness*,
    not the raw count. (This is the generic first-party gate. The **debug-mode** `snyk_code_scan` fix-gate and
    the **IaC** `snyk_iac_scan` gate are intentional named integrations — unchanged.)
    **Lane-check must be commit-scoped, NOT branch-range (F5).** Compute the task's changed files with
@@ -520,7 +520,7 @@ sweep** as the board so the first dispatch starts from an empty roster.
    2. **Per-checkpoint lane drift:** for each checkpoint sha, `kata_telemetry.checkpoint_changed_files(repo_root, sha)`
       then `footprint.partition(changed, ownership)["out_of_footprint"]` (the `kata_telemetry.checkpoint_lane_drift`
       wrapper composes exactly this — REUSES footprint, no reimplementation).
-   3. **Per-checkpoint slack:** `kata_telemetry.parse_progress_events(<shared board text>, task_id)` →
+   3. **Per-checkpoint slack:** `kata_telemetry.parse_progress_events(<shared cursor text>, task_id)` →
       `kata_telemetry.resolve_estimate(median, <plan-frontmatter estimate>)` → `kata_telemetry.slack_ratio(events,
       estimate_min, now_utc)`. The **class-median source resolves IDENTICALLY to the append path** (read/append
       symmetry, T4): a harness-repo run reads the local `.planning/telemetry-ledger.md`; a target-repo run reads
@@ -530,7 +530,7 @@ sweep** as the board so the first dispatch starts from an empty roster.
    4. **Build + write the record:** `kata_telemetry.build_task_telemetry(...)` (schema v1 — per-checkpoint verify
       counts + lane drift + slack; `firstTripIndex`/`ladderEvents` schema'd null/empty in P0) then
       `kata_telemetry.write_task_telemetry(kata_dir, record)` → `.kata/telemetry/<taskId>.json` (**fail-soft** — an
-      OSError returns a `{"skipped": …}` sentinel surfaced as a board NOTE, never a gate).
+      OSError returns a `{"skipped": …}` sentinel surfaced as a cursor NOTE, never a gate).
    5. **Zero-checkpoint tell (LOW-12):** a task that reports **DONE with ZERO checkpoint commits** under effective
       mode ≠ `off` ⇒ record it toward `zeroCheckpointTasks` — **a NOTE, never a gate** (a compliance tell that
       feeds calibration).
@@ -579,7 +579,7 @@ sweep** as the board so the first dispatch starts from an empty roster.
    |---|---|
    | `"pass"` | Proceed to integrate. |
    | `"fail"` (scanner high/critical, scanner unwired/errored, syntax error, malformed plan artifact) | Default-FAIL fix loop — worker revises IaC; gate re-runs. |
-   | `"escalate"` (destroy/replace on stateful resource; IAM/secrets/network-topology change) | **Orchestrator** calls `build_escalation` (`tools/escalation.py:47`) then `write_escalation` (`tools/escalation.py:153`) with `kind:"human-required"`, writes `.kata/escalations/<task-id>.json`, and parks the task per `protocol/escalation.md`. **The task leaves the active frontier and this pass ends for it — Tier-2 is NOT reached for a Tier-1-escalated task.** Never auto-resolved — no rule clears a destroy silently. |
+   | `"escalate"` (destroy/replace on stateful resource; IAM/secrets/network-topology change) | **Orchestrator** calls `build_escalation` (`tools/escalation.py:46`) then `write_escalation` (`tools/escalation.py:152`) with `kind:"human-required"`, writes `.kata/escalations/<task-id>.json`, and parks the task per `protocol/escalation.md`. **The task leaves the active frontier and this pass ends for it — Tier-2 is NOT reached for a Tier-1-escalated task.** Never auto-resolved — no rule clears a destroy silently. |
 
    **Mixed IaC + code task:** run **both** the normal verify (tests/security scan) and the IaC gate.
    Both must pass before the task integrates.
@@ -605,7 +605,7 @@ sweep** as the board so the first dispatch starts from an empty roster.
    2. **Write the SIBLING artifact + audit (no Tier-1 perturbation).** Build the runtime artifact per
       `iac_apply.iac_apply_schema` and write it with `iac_apply.emit_iac_apply` → **`.kata/iac-apply.json`**. Append an
       append-only apply-audit row via `iac_apply.build_apply_audit_record` (actor/time/rationale — reuses the
-      escalation/board audit substrate; no new sink). **Do NOT touch `.kata/iac.json`** — that is Tier-1's analysis
+      escalation/cursor audit substrate; no new sink). **Do NOT touch `.kata/iac.json`** — that is Tier-1's analysis
       artifact and perturbing it breaks the D111 fail-closed re-classification; Tier-2 state lives ONLY in the sibling.
    3. **Park, never auto-apply.** `CAPABILITY_REQUIRED`, `APPROVAL_INVALIDATED`, `DRIFT_ABORT`, and `CREDS_ABSENT` →
       `human-required` escalation: call `escalation.build_escalation` then `escalation.write_escalation` with
@@ -635,7 +635,7 @@ self-handoff checks below — **never mid-task**), consult the operator→agent 
   `<kata_dir>/AGENT_STOP` file OR a `## AGENT_STOP` line in `STEERING.md` — means **halt cleanly at THIS
   boundary**: dispatch nothing new, **park** in-flight tasks (they resume via the normal restore path), refresh the
   `HANDOFF.md` (`kata-handoff kind: self`), and stop. This is a boundary halt, **never a blind mid-task kill**
-  (`protocol/board.md`). Absent the marker ⇒ continue unchanged.
+  (`protocol/cursor.md`). Absent the marker ⇒ continue unchanged.
 - **Active directives.** Call `kata_steer.read_active_directives(<STEERING.md>)`. For each returned directive:
   if it fits **within the frozen plan**, act on it and record it; if it would **change the plan**, do NOT silently
   obey — route it through the escalation/re-plan path (spine #1: the plan does not drift; the operator's directive
@@ -645,10 +645,10 @@ self-handoff checks below — **never mid-task**), consult the operator→agent 
 - **Kill-switch verbs (quota-resilience G-3; ADDITIVE — no `KATA_OFF` directive ⇒ inert).** Before the generic
   directive handling above, pass the returned directives through `kata_quota.parse_kill_switch(directives)`
   (`tools/kata_quota.py`). For each recognized `off` subsystem: `advisor` ⇒ lapse the advisor for the run's
-  remainder, reason `operator-directed` (the same lapse machinery as budget exhaustion — loud board `DECISION`,
+  remainder, reason `operator-directed` (the same lapse machinery as budget exhaustion — loud cursor `DECISION`,
   reported in the after-action rollup + closeout); `provider` / `provider:<name>` ⇒ lapse that dispatch lane
   run-wide (subsequent dispatches for the lane revert to the host path, the LD7 posture, reason
-  `operator-directed`). Every `unknown` entry (a malformed `KATA_OFF` use) is surfaced as a **loud board `NOTE`
+  `operator-directed`). Every `unknown` entry (a malformed `KATA_OFF` use) is surfaced as a **loud cursor `NOTE`
   naming the rejected line** — never silently ignored, never run-fatal (a typo must not kill a run and must not
   vanish). Consumed kill-switch directives move to `## Consumed / delivered` like any other directive.
 
@@ -718,20 +718,20 @@ by [[kata-selfhandoff]] and are **not re-decided here**; this step is the conduc
    ladder).
    Completions integrate **in completion order** — a linear integration-branch history, not a wave-batched one.
 
-   **Board durability (cadence 1 — D133/B1):** immediately after the integration commit lands, call
+   **Cursor durability (cadence 1 — D133/B1):** immediately after the integration commit lands, call
    `kata_trail.snapshot_board(repo_root)` (`tools/kata_trail.py`) to commit the current
    `.kata/board.md` to `refs/kata/trail`. This is a mechanical, git-plumbing-only call — it writes
-   ONLY the board to the orphan ref, never touches the working tree or index, never pushes, and
-   returns a skip sentinel on any non-fatal condition (absent board, busy lock, subprocess error).
-   A skip result is logged at `NOTE` level on the board and does NOT block integration — it is a
+   ONLY the cursor to the orphan ref, never touches the working tree or index, never pushes, and
+   returns a skip sentinel on any non-fatal condition (absent cursor, busy lock, subprocess error).
+   A skip result is logged at `NOTE` level on the cursor and does NOT block integration — it is a
    durability enhancement, not a gate. This call site closes Gap 2/3 (D132) at integration
    granularity, independently of the PreCompact auto-checkpoint hook (built last in the same spec).
 
 ## The M4 scheduler (ADDITIVE — M4-P1; fires IFF a task's effective `inlineEval` mode == `on`; BC: below `on` ⇒ inert)
 
 This subsection is **ADDITIVE** and consumes the M4-P0 checkpoint stream — it **REUSES existing machinery** (the
-`DECISION` board line, the existing escalation kinds, the [[kata-worktree]] abort route) and introduces **NO new
-board TYPE, NO new escalation kind, NO new enum, NO new Python**. It fires **IFF a task's effective `inlineEval`
+`DECISION` cursor line, the existing escalation kinds, the [[kata-worktree]] abort route) and introduces **NO new
+cursor TYPE, NO new escalation kind, NO new enum, NO new Python**. It fires **IFF a task's effective `inlineEval`
 mode == `on`**. Under `telemetry` (or `off`/absent) the P0 posture is **byte-for-byte unchanged**: signal vectors
 are recorded (§ The loop step 3 per-task telemetry) and **nothing is scheduled, gated, killed, or rerolled**
 (M4-L8/M4-L10; `telemetry` keeps the P0 never-blocks posture). Under `on`, the scheduler additionally turns each
@@ -744,10 +744,13 @@ new checkpoint into a trigger decision.
   loop step 3), scan the task's **ACTIVE attempt branch** for NEW checkpoint commits via
   `kata_telemetry.scan_checkpoints(repo_root, <active attempt branch>, integration_ref)` (the oldest-first
   `{sha, record}` list). The happy path costs **zero LLM calls** (M4-L1).
-- **Cursor bookkeeping.** Keep a per-task cursor = the **last-seen checkpoint sha**, as **in-context bookkeeping**
-  exactly like the fix-loop thrash counters (NOT a `state.json` field, NOT a board event TYPE, no new Python) —
-  the ladder `DECISION` lines are the durable recount trail (see *Cursor recovery* in the ladder). Only
-  checkpoints newer than the cursor are scored.
+- **Checkpoint-pointer bookkeeping.** Keep a per-task **checkpoint pointer** = the **last-seen checkpoint sha**,
+  as **in-context bookkeeping** exactly like the fix-loop thrash counters (NOT a `state.json` field, NOT a cursor
+  event TYPE, no new Python) — the ladder `DECISION` lines are the durable recount trail (see *Checkpoint-pointer
+  recovery* in the ladder). Only checkpoints newer than the pointer are scored.
+  **Naming (post board→cursor rename):** this per-task pointer is **NOT the run cursor**. "Cursor" now means the
+  run's one durable temporal record (`protocol/cursor.md`, § The seam); this M4 bookkeeping is a transient
+  in-context sha pointer and is called the **checkpoint pointer** everywhere in this file to keep the two apart.
 - **Per new checkpoint:** compute drift + slack via the SAME P0 machinery — `kata_telemetry.checkpoint_lane_drift`
   for the out-of-footprint set; `kata_telemetry.parse_progress_events` → `kata_telemetry.resolve_estimate` →
   `kata_telemetry.slack_ratio` for slack — then call
@@ -805,13 +808,14 @@ producer bug and RAISES loudly (`kata_risk._derive_class_extras`, `tools/kata_ri
 
 ## The corrective-action ladder (ADDITIVE — M4-P1; M4-L5 / A1-Q1 / A1-Q5 verbatim — reuse, don't invent)
 
-Per-task trigger count is **in-context bookkeeping** + one board `DECISION` line per ladder event — **the line
+Per-task trigger count is **in-context bookkeeping** + one cursor `DECISION` line per ladder event — **the line
 CARRIES the checkpoint sha**:
 `ladder: <task> trigger <n> @<sha> score <s> verdict <v>` (the L2/L3 `DECISION`-cadence pattern; a raise-trigger
-uses the `@<sha|SCAN-ERR> score ERR` shape above). **No new board TYPE, no new escalation kind** — the ladder
+uses the `@<sha|SCAN-ERR> score ERR` shape above). **No new cursor TYPE, no new escalation kind** — the ladder
 reuses the existing `DECISION` line and the existing kinds.
 
-- **Cursor recovery rule (gate v1 HIGH-3).** The happy-path cursor (last-seen sha per task) is in-context only;
+- **Checkpoint-pointer recovery rule (gate v1 HIGH-3).** The happy-path checkpoint pointer (last-seen sha per
+  task — NOT the run cursor) is in-context only;
   on conductor compaction/restart, **adjudicated checkpoint shas recount from the ladder `DECISION` lines and are
   NEVER re-triggered** (the sha on each line is what makes recovery sound).
 - **Batch rule (re-gate v2 MED-4 — normal AND recovery scans, ONE rule).** In ANY scan batch, the slack term is
@@ -828,7 +832,7 @@ reuses the existing `DECISION` line and the existing kinds.
   - **(ii) at dispatch failure:** R2 chain exhaustion or a `fallback_chain` of `[None]` (the resolved economy
     model is already the family floor) ⇒ the **same skip + degrade route** — do NOT omit-and-inherit (the R2 OMIT
     terminus in § Dispatch-time model selection does NOT apply to this slot; M4-L7 v2 carve-out).
-  In both cases: a board **NOTE** + a `degraded` ledger entry; **the inline evaluator NEVER dispatches via the
+  In both cases: a cursor **NOTE** + a `degraded` ledger entry; **the inline evaluator NEVER dispatches via the
   OMIT/inherit path and never at the anchor** (never OMIT-inherit).
   Verdicts (A1-Q1 — ONE recovery primitive, parameterized by anchor commit + brief delta):
   - `continue` ⇒ **write the ladder `DECISION` line (verdict continue) — its sha MUST adjudicate, else recovery
@@ -842,7 +846,7 @@ reuses the existing `DECISION` line and the existing kinds.
     opens at the anchor** (the existing abort route); the reroll `DECISION` line **names the new attempt branch**
     (the scheduler polls ONLY the active one).
     **Liveness-clock semantics on a ladder kill (L19 sweep MED-2):** the killed attempt's open `CLAIM` (no
-    `DONE`, append-only board) is ADJUDICATED by the reroll/correct `DECISION` line and is **not a staleness
+    `DONE`, append-only cursor) is ADJUDICATED by the reroll/correct `DECISION` line and is **not a staleness
     source**; the fresh attempt's `CLAIM` is the liveness reset. If the fresh dispatch itself stalls past
     `livenessDeadline`, the liveness path applies to the FRESH attempt normally — the monitor never
     double-handles the adjudicated kill.
@@ -867,7 +871,7 @@ reuses the existing `DECISION` line and the existing kinds.
     ladder action, the adaptive fail-bump counter, and the streak clear.
 - **Trigger #2 (same task) ⇒ GROUNDING PASS before any second reroll.** YOU (the plan-guardian) re-anchor the task
   against the FROZEN plan — **is the SPEC the defect?** Output = a **tightened task brief** (clarified within plan
-  bounds, board `DECISION`), and ONLY THEN reroll #2. A **plan-defect finding routes through the EXISTING general
+  bounds, cursor `DECISION`), and ONLY THEN reroll #2. A **plan-defect finding routes through the EXISTING general
   supersede path** (deliberate, audited re-plan via `kind: human-required` where LOCKED text is touched — gate v1
   LOW-13; see the *Research-needed → GROUND* route in `## Escalation`); the **contract-surface supersede route**
   (`## Escalation`) applies **ONLY** when the plan declares `builds_against` and a contract surface changes.
@@ -890,7 +894,7 @@ reuses the existing `DECISION` line and the existing kinds.
   (nudge → human-required) and staleness alone **NEVER authorizes a kill** (the dark worker may be
   healthy-but-slow; the double-writer hazard); (3) **present-but-bad evidence** (a triggered, committed
   checkpoint) routes **ONLY through the M4 ladder**, and an inline-eval `reroll`/`correct` verdict is the one
-  bounded auto-kill authority (board-logged `DECISION`) — it **stands even if the worker has meanwhile gone dark**
+  bounded auto-kill authority (cursor-logged `DECISION`) — it **stands even if the worker has meanwhile gone dark**
   (an evidence-backed kill is not a blind kill); (4) the **M4 ladder ENDS at the task gate** — the final-gate fix
   loop and its thrash budget count only their own cycles, and **M4 ladder history never spends the thrash budget
   and vice versa** (M4-L8); (5) inside a debug-class task, kata-diagnose's hypothesis loop is the WORKER's
@@ -1004,7 +1008,7 @@ cause and may incur runaway cost on an unintended model.
 `kata_models.resolve(skill, mode, anchor, family=family, coder_floor=coder_floor, premium=<models.premium>)`;
 the NO-FIRE reason is read from `kata_models.premium_status(premium, anchor, family=family, mode=mode)` →
 `{fires, reason}` (`tools/kata_models.py`). A NO-FIRE (`reason ≠ "fires"`) is **not a failure** — it surfaces
-as a board **NOTE** (§3.2) and the dispatch simply runs at the resolved non-premium tier.
+as a cursor **NOTE** (§3.2) and the dispatch simply runs at the resolved non-premium tier.
 
 A **failed premium dispatch** ⇒ **immediate OMIT/inherit at the anchor rung** — never an explicit anchor id
 (this tracks a mid-run `/model` switch and preserves the amended invariant).
@@ -1014,7 +1018,7 @@ dispatch failure — auth or not — LAPSES `models.premium.approved` for the re
 re-offers, no retry storm — the exact pattern R2 exists to prevent).
 
 For the premium rung **ONLY**, **401/403 ⇒ *premium-unavailable*** (NOT the `human-required` raise baseline R2
-takes): **OMIT-inherit + LOUD surface** — a board **DECISION** + a ledger `degraded {scope: "premium", reason:
+takes): **OMIT-inherit + LOUD surface** — a cursor **DECISION** + a ledger `degraded {scope: "premium", reason:
 "auth-40x" | "unavailable"}` row + a handoff note. Premium is an OPTIONAL elevation whose failure has a
 semantically-correct safe fallback (the anchor = the exact no-approval behavior); **unattended survival wins,
 never silent**. **Baseline (non-premium) R2 auth-raise behavior is UNCHANGED** — the R2 401/403
@@ -1029,7 +1033,7 @@ ABSENT `adaptive` block ⇒ `{"enabled": False}` ⇒ **every step in this sectio
 Dispatch-time protocol above runs byte-for-byte as v0.2.1** (the load-time BC leg). A malformed
 block ⇒ the resolver RAISES ⇒ load-guard STOP + escalate (GB12/D45). Hold ONE
 `state = kata_adaptive.new_state()` for the run; after a conductor restart, rebuild it via
-`state = kata_adaptive.state_from_recount(kata_adaptive.recount_from_decisions(<the board's tier:
+`state = kata_adaptive.state_from_recount(kata_adaptive.recount_from_decisions(<the cursor's tier:
 DECISION payloads>, <premium rung>))` — the recount is PARTIAL by design (budget spend + consumed
 bump marks are the only durably-recountable keys; sub-threshold bump counters, streaks, and dampers
 have no `tier:` line and restart EMPTY — conservative: a restarted conductor under-adapts to base
@@ -1048,7 +1052,7 @@ short-name ⇒ emit its explicit id. Apply the R1 coder-floor to the result exac
 The premium rung emits `premium.offer` itself via the resolver's event path. **The AT-L4 roster
 NEVER modulates down:** kata-evaluate, kata-review/grill/slop/validate verdict passes, AND
 [[kata-inline-eval]] (economy-classed but kill-authority judgment) keep their L0 resolution as a
-floor. Every non-zero delta writes a board DECISION with the payload from
+floor. Every non-zero delta writes a cursor DECISION with the payload from
 `kata_adaptive.render_tier_decision(task, from_rung, to_rung, reason)` — LOUD, never silent, and
 the durable recount trail (AT-L7).
 
@@ -1100,7 +1104,7 @@ advice exists for the task** (the shared once-guard, § Advisor consult):
   advised redispatches count toward streak/damper accounting as normal attempts, no special-casing
   (S-15e).
 - **Accepted loss (S-11b corollary):** a conductor restart mid-deferral loses the earned-but-unconsumed bump —
-  `bumpCounters` are **structurally unrecountable** (no board DECISION mirrors them, unlike the `advisor:`
+  `bumpCounters` are **structurally unrecountable** (no cursor DECISION mirrors them, unlike the `advisor:`
   spend trail) — so the task simply RE-EARNS it on its next failures; this is the accepted **under-adapt**
   direction, and the loop NEVER emits the fail-bump DECISION at earn time to compensate.
 Gate/dispatch/spend/NO-FIRE/EV-1 all run per § Advisor consult. The consult resolves at
@@ -1113,7 +1117,7 @@ v3 keys, calibration's C-3 input.
 
 **Mid-run `/model` switch (AT-L17b):** on detecting an anchor change, call
 `kata_adaptive.anchor_switch_reset(state)` (bumps/streaks/dampers cleared, budget spend PRESERVED)
-+ a board NOTE naming the reset. Anchor-relative state re-based against a different ladder is
++ a cursor NOTE naming the reset. Anchor-relative state re-based against a different ladder is
 undefined arithmetic; reset is the honest posture.
 
 ## Advisor consult (config-gated spine)
@@ -1159,7 +1163,7 @@ is thereby structurally impossible.
 **Dispatch mechanics (every consult, whatever the hook/escalation that triggered it):**
 1. **Gate — the SOLE legality check.** Call `kata_models.advisor_status(advisor, anchor, family=…, mode=…,
    event=<the ADVISOR_EVENTS member>)` → `{fires, reason, rung}`. **A NO-FIRE on ANY conjunct** (`fires: False`)
-   ⇒ **unadvised-proceed with the surfaced `reason` as a board NOTE — NEVER a consult-at-anchor-without-consent,
+   ⇒ **unadvised-proceed with the surfaced `reason` as a cursor NOTE — NEVER a consult-at-anchor-without-consent,
    never a block** (S-21). The NO-FIRE reasons (precedence order): `absent` · `not-enabled` · `not-approved` ·
    `mode-excluded` (essential + unknown modes, G-8) · `standard-not-granted` (the G-2 carve-out arm unsatisfied)
    · `no-event` · `unknown-event`.
@@ -1169,19 +1173,19 @@ is thereby structurally impossible.
    granted-then-FAILED dispatch **CONSUMES its budget call** — `kata_advisor.record_advisor_spend(state, event)`
    commits BEFORE the dispatch outcome is known (matches the `kata_adaptive` dispatch-commit precedent; prevents
    retry-mining). A denied spend records nothing and proceeds unadvised. **Exhaustion ⇒ loud lapse** for the
-   run's remainder: board DECISION + a `state.advisor.lapses[]` entry + handoff note; the loop proceeds
+   run's remainder: cursor DECISION + a `state.advisor.lapses[]` entry + handoff note; the loop proceeds
    UNADVISED (never blocks).
 3. **Rung emission (S-24 — the S-24 conjunct satisfied BY CONSTRUCTION).** Dispatch `kata-advise` at EXACTLY
    `status["rung"]`: **`None` ⇒ OMIT the `model` parameter** (arm (a) inherit-at-anchor — no premium machinery
    consulted; the fable-anchored dogfood configuration is ALIVE here); **a short-name ⇒ emit its `ID_MAP` id**
    (arm (b) — a sub-fable anchor consults `"fable"`, never one-rung-above arithmetic, never mythos). The
    conductor NEVER proposes its own rung.
-4. **Board lines (S-3).** Three lines per consult, with a HARD binding on which one carries the `advisor:`
+4. **Cursor lines (S-3).** Three lines per consult, with a HARD binding on which one carries the `advisor:`
    prefix:
    - a **NOTE at request** (task, event, question summary);
    - a **DECISION at disposition** — the `meta.disposition` summary, **free text that MUST NOT begin
      `advisor:`**;
-   - the **per-consult spend/recount DECISION line** — the SINGLE board line beginning `advisor:`
+   - the **per-consult spend/recount DECISION line** — the SINGLE cursor line beginning `advisor:`
      (`advisor: <consult-id> event <event>`), rendered by `kata_advisor.render_advisor_decision`. This
      `advisor:`-prefixed line is the ONLY one the durable recount trail
      `kata_advisor.recount_from_advisor_decisions` parses (it reads ONLY `advisor:`-prefixed lines) to restore
@@ -1190,7 +1194,7 @@ is thereby structurally impossible.
      free text and never begins `advisor:`.
 5. **State writes — single-writer orchestrator via `kata_board.write_state`.** `.kata/state.json` gains an
    `advisor` field `{used, byEvent, lapses, outcomes}` (S-23b). Every write goes through
-   `kata_board.write_state` (never a direct file write); on restart, recount `used`/`byEvent` from the board's
+   `kata_board.write_state` (never a direct file write); on restart, recount `used`/`byEvent` from the cursor's
    advisor DECISION lines (the fix-loop-counter recount precedent). **At run start, seed the advisor spend
    state by counting any existing `.kata/advice/grill-*.json` artifacts** — grill-time consults (kata-initiate
    S-17b) have no `.kata/state.json` yet, so the artifact IS their durable spend record; each counts against
@@ -1203,7 +1207,7 @@ is thereby structurally impossible.
    verbatim** (G-7).
 
 **Fail postures (§3.10).**
-- **Consult dispatch failure** ⇒ surfaced board NOTE + proceed **UNADVISED** — one-step lapse to
+- **Consult dispatch failure** ⇒ surfaced cursor NOTE + proceed **UNADVISED** — one-step lapse to
   unadvised-proceed, **never a ladder walk** (S-7); the consumed budget call stays consumed (S-19a). It also
   **ARMS the once-guard**: a granted-but-failed dispatch COUNTS as the task's one auto-consult, recorded as a
   per-task `state.advisor.lapses[]` entry (a failed consult writes no artifact for the glob to catch), so
@@ -1216,7 +1220,7 @@ is thereby structurally impossible.
 
 **Grant lapse on a mid-run `/model` or mode switch (S-15c/S-19b/S-26c).** A mid-run anchor change or mode change
 **LAPSES the advisor grant in BOTH modes** — no legal re-ask moment remains in-run; the run completes
-**UNADVISED with a loud board NOTE (never silent)**; spend already recorded is preserved. The next run
+**UNADVISED with a loud cursor NOTE (never silent)**; spend already recorded is preserved. The next run
 re-consents at its mode's moment. (This rides alongside the § Adaptive tiering `anchor_switch_reset` NOTE; the
 advisor lapse is its own surfaced line.)
 
@@ -1248,8 +1252,8 @@ This section is **additive** — the host/`Agent`-tool path (step 2 of the loop 
 
 **At each role-group dispatch site**, if `resolved_roles[role]["platform"] ≠ host_platform`:
 
-1. Build a task-brief via `kata_dispatch.build_brief(task_id, role, platform, model=..., objective=..., result_path=..., ...)` (`tools/kata_dispatch.py:42`). Use `sandbox="read-only"` for read-only roles (validator, researcher); `sandbox="write"` for coder.
-2. Call `kata_dispatch.dispatch(brief, worktree)` (`tools/kata_dispatch.py:177`) — this launches the platform's headless CLI in the worktree (N2 adapter) and captures a normalized RESULT envelope (N3).
+1. Build a task-brief via `kata_dispatch.build_brief(task_id, role, platform, model=..., objective=..., result_path=..., ...)` (`tools/kata_dispatch.py:80`). Use `sandbox="read-only"` for read-only roles (validator, researcher); `sandbox="write"` for coder.
+2. Call `kata_dispatch.dispatch(brief, worktree)` (`tools/kata_dispatch.py:256`) — this launches the platform's headless CLI in the worktree (N2 adapter) and captures a normalized RESULT envelope (N3).
 3. Read the RESULT envelope; fold the role's `payload` per the per-role contract: validator → `{verdict, findings}`; researcher → `{claim, source, confidence, groundsToPlan}`; coder → the gate RESULT shape.
 
 **Role-group → dispatch-site map (L-MP5):**
@@ -1258,13 +1262,13 @@ This section is **additive** — the host/`Agent`-tool path (step 2 of the loop 
 |---|---|---|
 | `validator` | the **Adversarial red-team before merge** step (`## Final gate` step 7) + the **Research-needed → grounding gate** review (`## Escalation`) | Read-only; **stub-test-proven v1 path** (validator→codex; live-CLI flags pinned at build, guarded by the confirm-probe). |
 | `researcher` | `kata-research` on a **Research-needed** escalation (`## Escalation`) | Read-only; **stub-test-proven v1 path** (researcher→kiro; live-CLI flags pinned at build, guarded by the confirm-probe). |
-| `coder` | the per-task **worker dispatch** (`## The loop` step 2, sandbox=write) | Supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`); **NOT a path this build proves** (honest scope). |
+| `coder` | the per-task **worker dispatch** (`## The loop` step 2, sandbox=write) | Supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:80`); **NOT a path this build proves** (honest scope). |
 | `evaluator` | Host only | The accept/send-back/reroll mechanism is **DEFERRED** (DESIGN §8 *Deferred / fast-follow*, MM-1). |
 | `orchestrator` | Host only in v1 | Non-Claude orchestrator host is **DEFERRED** (LD11). |
 
 **LD6 — Concurrency:** Off-host dispatches run as **concurrent background subprocesses** reconciled with the rolling frontier and `.kata/concurrency.json`. Disjoint file-ownership ensures no races; the same frontier invariants (dispatchable iff `depends_on` drained + owned files disjoint from in-flight tasks + `builds_against` edges satisfied at freeze, never waiting on provider integration) apply equally to cross-model tasks.
 
-**LD7 — Host fallback:** When the RESULT envelope carries `status ∈ {failed, timeout, fallback}`, **fall back to the host's `Agent`-tool path** (the existing subagent dispatch), **log the failure** (a board `ESCALATE` or `BLOCK` event), and **surface it** in the conversation. A routed platform failing repeatedly within a run is **flagged unconfirmed for that run** — all subsequent dispatch sites for that platform revert to the host path, and the incident is recorded in the drift ledger. The next run's preflight re-evaluates `confirmedPlatforms`.
+**LD7 — Host fallback:** When the RESULT envelope carries `status ∈ {failed, timeout, fallback}`, **fall back to the host's `Agent`-tool path** (the existing subagent dispatch), **log the failure** (a cursor `ESCALATE` or `BLOCK` event), and **surface it** in the conversation. A routed platform failing repeatedly within a run is **flagged unconfirmed for that run** — all subsequent dispatch sites for that platform revert to the host path, and the incident is recorded in the drift ledger. The next run's preflight re-evaluates `confirmedPlatforms`.
 
 **Provider quota-resilience (quota-resilience Tier 1+2, G-2/G-4/G-9; ADDITIVE — no failure signals ⇒ inert,
 byte-identical).** BEFORE the LD7 fallback handling, every `failed`/`timeout` RESULT envelope passes through
@@ -1275,7 +1279,7 @@ unclassified-failure count per dispatch lane** (reset on any success) and feed
 
 - **Lapse (`lapse: true`)** fires on the **FIRST classified provider signal** (`rate-limited` /
   `quota-exhausted` / `auth` — the premium fires-on-first precedent) or at **2 consecutive generic failures**
-  (`provider-unavailable`). Record a loud board `DECISION` naming lane + reason (the durable trail), append
+  (`provider-unavailable`). Record a loud cursor `DECISION` naming lane + reason (the durable trail), append
   `degraded {scope: "provider", reason: <reason>}` to the run summary (validated fail-closed by
   `kata_telemetry._validate_degraded`), and route by **path criticality (G-9)**:
   - **Optional subsystem** (advisor consults, or a routed lane with an LD7 host fallback available) ⇒
@@ -1294,12 +1298,12 @@ unclassified-failure count per dispatch lane** (reset on any success) and feed
 ⚠ `kata_adaptive`'s `budget-exhausted` is kata's OWN premium/advisor spend budget — a different thing; never
 route it through this classifier (the brief §2d do-NOT-conflate warning).
 
-**Honest scope (v1):** The **read-only roles** (validator→codex, researcher→kiro) are **wired and stub-test-proven** this build — the cross-model chain is exercised end-to-end against an injectable stub runner; the **live per-platform CLI flags are point-in-time and pinned/verified at build, with the confirm-probe as the standing guard** (a real multi-model run is gated on install + confirm). Coder-routing (write sandbox) is architecturally described and supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:42`) but is **not** proven by this build. Evaluator injection-point thresholds are deferred (DESIGN §8 *Deferred / fast-follow*, MM-1). Orchestrator-host reassignment is deferred (LD11).
+**Honest scope (v1):** The **read-only roles** (validator→codex, researcher→kiro) are **wired and stub-test-proven** this build — the cross-model chain is exercised end-to-end against an injectable stub runner; the **live per-platform CLI flags are point-in-time and pinned/verified at build, with the confirm-probe as the standing guard** (a real multi-model run is gated on install + confirm). Coder-routing (write sandbox) is architecturally described and supported by `build_brief(sandbox="write")` (`tools/kata_dispatch.py:80`) but is **not** proven by this build. Evaluator injection-point thresholds are deferred (DESIGN §8 *Deferred / fast-follow*, MM-1). Orchestrator-host reassignment is deferred (LD11).
 
 ## Escalation (the no-re-plan escape valve)
 An escalation is an **async event** — it does **NOT halt the run**. The escalating worker writes the
 **structured payload** (`protocol/escalation.md` → `.kata/escalations/<task-id>.json`) and appends the
-one-line `ESCALATE | <task-id> | <summary>` to [[kata-board]] (the board stays one-line; detail lives in the
+one-line `ESCALATE | <task-id> | <summary>` to [[kata-cursor]] (the cursor stays one-line; detail lives in the
 payload). You then **park** the escalating task **and its DAG-dependents** (remove them from the frontier),
 **keep dispatching the rest of the frontier**, and checkpoint completions as they integrate.
 
@@ -1308,7 +1312,7 @@ payload). You then **park** the escalating task **and its DAG-dependents** (remo
   yourself and re-dispatch a tightened task; this **never reaches a human**.
 - **Advice-requested** (§3.7; ADDITIVE, config-gated; BC: no `advisor` grant ⇒ the kind is never raised, and
   if one arrives on an ungranted run the gate NO-FIREs `not-approved`/`standard-not-granted` ⇒ the task
-  redispatches **UNADVISED** with a surfaced board NOTE, never blocked). A worker (or an in-harness
+  redispatches **UNADVISED** with a surfaced cursor NOTE, never blocked). A worker (or an in-harness
   planner-worker — S-17a) requests a scoped advisor consult by raising the **`advice-requested`** escalation
   kind (`protocol/escalation.md`), question carried in `decisionNeeded`. It is **async/non-halting** —
   standard park semantics: the requesting attempt ENDS, the task + DAG-dependents park, the frontier keeps
@@ -1422,12 +1426,12 @@ After the frontier drains (all tasks integrated), on the integration branch:
    dangler ⇒ **NEEDS_WORK** (route to the fix loop below). **Sentinel-absence ≠ implemented** (M1-L9): these
    scans prove *structure* only; real behavior is proven by the full default-FAIL suite re-run on the merged
    tree (which exercises each dependent's tests against the provider's integrated body).
-4. **Emit the concurrency evidence** — run the canonical snippet from `protocol/board.md`
+4. **Emit the concurrency evidence** — run the canonical snippet from `protocol/cursor.md`
    (section: "Concurrency evidence (`.kata/concurrency.json`)") against the run's `.kata/` to produce
-   `.kata/concurrency.json`. The snippet body lives only in `protocol/board.md` (K3 — do not duplicate it
+   `.kata/concurrency.json`. The snippet body lives only in `protocol/cursor.md` (K3 — do not duplicate it
    here). This is parallelism evidence the evaluator reads to corroborate rubric item 4; a legitimately
    single-worker run producing `maxInFlight:1`/`genuinelyParallel:false` is **not** a failure — this step
-   never fails a sequential run (K6). Preconditions the snippet relies on (see `protocol/board.md`): the board
+   never fails a sequential run (K6). Preconditions the snippet relies on (see `protocol/cursor.md`): the cursor
    was rotated to be **per-run** (run-start hygiene above), and workers **share a synchronized clock** — flag
    the latter as a known limitation for any future multi-host run before trusting `overlaps`.
 5. Dispatch [[kata-evaluate]] as a **fresh-context, no-write** subagent → PASS / NEEDS_WORK. On a grill-skip /
@@ -1473,7 +1477,7 @@ After the frontier drains (all tasks integrated), on the integration branch:
    Track **two counters** as transient in-context bookkeeping **while running the fix loop** — the orchestrator
    counts its own eval→fix iterations as it goes:
    - **Per-area count** — keyed on the task being fixed; tracks how many consecutive fix cycles that area has
-     failed. The orchestrator **writes a `DECISION` board line per fix-cycle** (`NEEDS_WORK fix: <area> cycle <n>`)
+     failed. The orchestrator **writes a `DECISION` cursor line per fix-cycle** (`NEEDS_WORK fix: <area> cycle <n>`)
      — these are the durable recount trail on resume. (The `DECISION` TYPE already exists; this specifies the
      per-fix-cycle *cadence*, not a new TYPE — L6.)
    - **Run-level ceiling** — a total fix-cycle count across all areas, so A↔B oscillation (area A passes after
@@ -1490,9 +1494,9 @@ After the frontier drains (all tasks integrated), on the integration branch:
    > in `decisionNeeded`/`rationale`), async-parked per the existing contract, supersede-not-rewrite, never
    > silent. Spine #1/#2 preserved."*
 
-   These counts are **NOT** a `state.json` field, **NOT** a board event TYPE, **NOT** written via
+   These counts are **NOT** a `state.json` field, **NOT** a cursor event TYPE, **NOT** written via
    `kata_board.update_task`, and introduce **no new Python** (L4). They are the orchestrator's own fix-loop
-   bookkeeping; the `DECISION` board lines are the recount trail.
+   bookkeeping; the `DECISION` cursor lines are the recount trail.
 
    **At N=2 (3rd failure of one area) OR the run-level ceiling:**
    1. STOP the fix loop on that area.
@@ -1555,8 +1559,8 @@ After the frontier drains (all tasks integrated), on the integration branch:
        `append_miss` (the field already exists in the miss schema — `validation_misses` carries `run_id` in
        `_NULLABLE_STR_FIELDS`, treated like `guard_ref`). Source it from a **run-scoped identifier the
        orchestrator already holds** — the run's existing run identity (e.g. the `<baseline_sha>` /
-       integration-run id already passed to `gate_emit.py` at step 2, or the per-run board's UTC stamp from the
-       run-start board rotation, or a single uuid minted once here) — **one id per run, never per-miss.** This is
+       integration-run id already passed to `gate_emit.py` at step 2, or the per-run cursor's UTC stamp from the
+       run-start cursor rotation, or a single uuid minted once here) — **one id per run, never per-miss.** This is
        what makes distinct-run counting robust: the detector counts **distinct `run_id`** per cluster, so several
        misses from one run collapse to **one** run (not several rows). **BC (additive):** `run_id` is nullable
        and missing-key-allowed, so legacy / other-writer misses that omit it still validate and simply fall back
@@ -1624,7 +1628,7 @@ After the frontier drains (all tasks integrated), on the integration branch:
       T4 creates the header-carrying artifact and appending to a missing file RAISES).
    3. **Append + the approval gate (D141(b) — the commit carrying the row is NOT self-authorizing):** append via
       `kata_telemetry.append_ledger_row(<resolved path>, row)`, then **commit the ledger row ONLY on explicit
-      operator approval recorded as a board `DECISION` line at this append site.** Step 8's bare "Commit" above does
+      operator approval recorded as a cursor `DECISION` line at this append site.** Step 8's bare "Commit" above does
       **not** authorize this row's commit — D141(b) forbids creating an autonomous-git path by implication. When
       the resolved ledger is **outside the run's target repo** (the normal target-repo case — the target's closeout
       commit structurally cannot carry a harness-repo row), **request a SECOND, explicitly human-gated commit in
@@ -1650,8 +1654,8 @@ After the frontier drains (all tasks integrated), on the integration branch:
 
 > **Contracts:** `protocol/narration.md` (the phase→plain-language map + cadence + breakthrough + honesty guard)
 > and `protocol/persona.md` (the voice). Read both before emitting any narration. This section wires
-> them into the orchestrator's conversation output; the `改善型` dashboard, statusline, and board
-> (`protocol/board.md`) remain the granular firehose and are **unchanged** by this section.
+> them into the orchestrator's conversation output; the `改善型` dashboard, statusline, and cursor
+> (`protocol/cursor.md`) remain the granular firehose and are **unchanged** by this section.
 
 ### When to narrate
 
@@ -1688,7 +1692,7 @@ or run configuration can suppress a breakthrough alert.
 | A critical failure (run cannot proceed; a spine invariant is at risk; a security-relevant finding) | Surface it in the conversation immediately, with the finding and the path forward. |
 | `kata-evaluate` returns NEEDS_WORK | State the verdict plainly in the first message after the result is known. |
 
-This is additive and independent of the board signal: the board's `ESCALATE`/`BLOCK` entries and the
+This is additive and independent of the cursor signal: the cursor's `ESCALATE`/`BLOCK` entries and the
 conversation breakthrough alert are **both** required — neither substitutes for the other.
 
 ### Honesty guard (`narration.md §4`)
