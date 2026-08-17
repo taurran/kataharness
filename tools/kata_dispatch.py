@@ -16,7 +16,8 @@ run_start(kata_dir, ...)              -> dict   new-vs-resume, rotation, reaping
                                                 probes, and the §6.4 declaration
 mint(*, governs, role, ...)           -> dict   the governor ladder (§1.4) + the dispatch
                                                 record (§1.5) + the SPAWN cursor line
-claim_record(kata_dir, record_id)     -> dict   the ATOMIC single-use claim (os.rename)
+claim_record(kata_dir, record_id)     -> dict   the ATOMIC single-use claim (exclusive-create
+                                                election, then the retention rename)
 validate_record(record, ...)          -> dict   the SEMANTIC re-validation the hook runs
 capture(envelope, record_id, ...)     -> dict   the ONE verdict parser + VERDICT/DOWN line
 phase(kata_dir, msg, ...)             -> line   the §2.6 closed phase vocabulary
@@ -454,6 +455,18 @@ _ROLE_CLASS: dict[str, str] = {
     "advisor": "grill-phase",
 }
 
+# NAMED SEAM, not an oversight — the DESIGN §1.4 row "Grill-phase researchers / advisor /
+# convergence reviewers ⇒ ledger : present(draft)" names a FUNCTION ("convergence
+# reviewer") that has no role token of its own.  A convergence reviewer is dispatched
+# today under `reviewer` / `critic` / `challenger`, all of which map to `plan-executing`
+# above and therefore have NO ledger rung: minting one under `ledger` refuses with
+# "no ledger-governed rung".  That refusal is deliberate and fail-closed — this build
+# will not silently widen a rung to cover a guess about which token a judge uses.
+# **W5 `judge-contract-rewrites` owns the assignment**: that wave enumerates each judge's
+# contract and must decide whether a convergence reviewer dispatches under a grill-phase
+# token or whether one of these tokens gains the grill-phase row here.  Until it does,
+# the grill-phase rung is reachable via `researcher` and `advisor` only.
+
 #: The ledger rung's minimum state, BY ROLE CLASS (DESIGN §1.4 rows 2 and 4).  A role
 #: class absent from this map has NO ledger-governed rung and is refused there —
 #: fail-closed, because an unlisted row is an unruled one.
@@ -665,7 +678,9 @@ def ledger_satisfies(status: str, minimum: str) -> bool:
     return _LEDGER_RANK[status] >= _LEDGER_RANK[minimum]
 
 
-def _absorbed_target(ledger: Path) -> Path:
+def _absorbed_target(
+    ledger: Path, *, park_path: str | Path | None = None, task_id: str | None = None
+) -> Path:
     """Resolve ONE hop of `absorbed` routing.  Ambiguity ⇒ refuse (E6).
 
     **The resolution rule, in full** (DESIGN §1.4 leaves the mechanism to the build;
@@ -684,7 +699,13 @@ def _absorbed_target(ledger: Path) -> Path:
        specs root).  Sibling-spec routing only; anything wider ⇒ refuse.
 
     Every refusal is a :class:`AbsorbedRoutingAmbiguous` ⇒ park.  The rule never guesses.
+    ``park_path``/``task_id`` are threaded from the mint so the refusal CARRIES the park
+    destination its docstring promises; a bare diagnostic call (no dispatch in flight, so
+    nothing to park) leaves them unset.
     """
+    def refuse(message: str) -> AbsorbedRoutingAmbiguous:
+        return AbsorbedRoutingAmbiguous(message, park_path=park_path, task_id=task_id)
+
     fm = _frontmatter(ledger, what="ledger")
     declared = fm.get("absorbed-into")
     if declared is not None and str(declared).strip():
@@ -697,14 +718,14 @@ def _absorbed_target(ledger: Path) -> Path:
             if match and match not in found:
                 found.append(match)
         if not found:
-            raise AbsorbedRoutingAmbiguous(
+            raise refuse(
                 f"kata_dispatch: ledger at {ledger!s} is 'absorbed' but names no routing "
                 "target: neither an 'absorbed-into:' frontmatter key nor exactly one "
                 "'*LEDGER.md' token in its status prose. Refusing to guess the absorbing "
                 "ledger.",
             )
         if len(found) > 1:
-            raise AbsorbedRoutingAmbiguous(
+            raise refuse(
                 f"kata_dispatch: ledger at {ledger!s} is 'absorbed' and its status prose "
                 f"names {len(found)} candidate ledgers {found} — ambiguous. Add an "
                 "'absorbed-into:' frontmatter key naming the one absorbing ledger.",
@@ -713,47 +734,63 @@ def _absorbed_target(ledger: Path) -> Path:
         source = "status-line prose token"
 
     if "\\" in token or Path(token).is_absolute() or Path(token).drive or token.startswith("/"):
-        raise AbsorbedRoutingAmbiguous(
+        raise refuse(
             f"kata_dispatch: ledger at {ledger!s} routes to {token!r} ({source}), which is "
             "not a ledger-relative POSIX path. Refusing to follow it.",
         )
     target = (ledger.parent / token).resolve()
     boundary = ledger.parent.parent.resolve()
     if boundary != target and boundary not in target.parents:
-        raise AbsorbedRoutingAmbiguous(
+        raise refuse(
             f"kata_dispatch: ledger at {ledger!s} routes to {token!r} ({source}), which "
             f"escapes the specs root {boundary!s}. Sibling-spec routing only.",
         )
     if not target.is_file():
-        raise AbsorbedRoutingAmbiguous(
+        raise refuse(
             f"kata_dispatch: ledger at {ledger!s} routes to {token!r} ({source}), which "
             f"does not exist at {target!s}. Refusing to mint against a phantom ledger.",
         )
     return target
 
 
-def resolve_absorbed_ledger(ledger_path: str | Path) -> Path:
+def resolve_absorbed_ledger(
+    ledger_path: str | Path,
+    *,
+    park_path: str | Path | None = None,
+    task_id: str | None = None,
+) -> Path:
     """Follow `absorbed` routing to the absorbing ledger (DESIGN §1.4, E6).
 
     ``absorbed`` **never satisfies a mint and never hard-fails as unknown — it ROUTES
     the mint to the absorbing ledger.**  A non-absorbed ledger is returned unchanged, so
     this is safe to call unconditionally.  A routing chain is followed to at most
     ``ABSORBED_MAX_HOPS``; a cycle or an over-long chain is a refusal, never a loop.
+
+    Note that this reads each hop's frontmatter, so it can also raise the plain
+    ``ValueError`` :func:`ledger_status` raises on an unreadable / frontmatter-less /
+    invalid-YAML ledger.  Callers on a mint path MUST convert that to a typed refusal —
+    :func:`check_governor` does, so no raw ValueError escapes a mint (§1.8).
+
+    ``park_path``/``task_id`` are threaded from the mint so refusals carry the park
+    destination; a bare diagnostic call leaves them unset.
     """
+    def refuse(message: str) -> AbsorbedRoutingAmbiguous:
+        return AbsorbedRoutingAmbiguous(message, park_path=park_path, task_id=task_id)
+
     current = Path(ledger_path).resolve()
     seen: list[Path] = []
     for _hop in range(ABSORBED_MAX_HOPS):
         if ledger_status(current) != "absorbed":
             return current
         seen.append(current)
-        target = _absorbed_target(current)
+        target = _absorbed_target(current, park_path=park_path, task_id=task_id)
         if target in seen:
-            raise AbsorbedRoutingAmbiguous(
+            raise refuse(
                 f"kata_dispatch: absorbed-routing cycle through {target!s} "
                 f"(chain: {[str(p) for p in seen]}). Refusing to mint.",
             )
         current = target
-    raise AbsorbedRoutingAmbiguous(
+    raise refuse(
         f"kata_dispatch: absorbed-routing chain from {ledger_path!s} exceeds "
         f"{ABSORBED_MAX_HOPS} hops (chain: {[str(p) for p in seen]}). Refusing to mint.",
     )
@@ -983,9 +1020,19 @@ def check_governor(
             )
         # `absorbed` ROUTES the mint to the absorbing ledger (E6) — never satisfies,
         # never hard-fails as unknown.  Ambiguity inside the routing is a park.
-        resolved = resolve_absorbed_ledger(ledger_path)
+        #
+        # The routing pre-step READS FRONTMATTER, so it raises the same ValueError class
+        # `ledger_status` does (unreadable file / no frontmatter / invalid YAML).  It is
+        # wrapped for exactly the reason the plan and intent rungs wrap theirs: a raw
+        # ValueError escaping here would leave the mint with no typed refusal, no park
+        # path, and NO cursor DENY event — the silent-permissive shape §1.8 forbids.
+        # This is not hypothetical: the live dispatch-seam ledger's invalid YAML (D-23)
+        # reaches the engine through this exact call.
         try:
+            resolved = resolve_absorbed_ledger(ledger_path, park_path=park, task_id=task_id)
             status = ledger_status(resolved)
+        except AbsorbedRoutingAmbiguous:
+            raise  # already a typed refusal carrying park_path/task_id
         except ValueError as exc:
             raise refuse(f"kata_dispatch: ledger rung unmet — {exc}") from exc
         if not ledger_satisfies(status, minimum):
@@ -1593,8 +1640,12 @@ def _fire_cadence(
     seq = _kb.next_seq(cursor)
     pointer = _kb.payload_pointer(run_id, seq)
     _kb.write_payload(kata, pointer, record)
+    # Always stamped SEAM_AGENT, never the caller's `agent`: the durability record is
+    # authored by the SEAM itself, not by whoever the PHASE/VERDICT line is attributed
+    # to.  read_trail_records filters on exactly this, so a caller passing agent="x"
+    # cannot put its durability records outside the resilience fold.
     _kb.append_event(
-        kata, agent, "NOTE", task, _sanitize_msg(_trail.format_record_line(record)),
+        kata, SEAM_AGENT, "NOTE", task, _sanitize_msg(_trail.format_record_line(record)),
         payload=pointer, seq=seq, now=now,
     )
     return record
@@ -1603,9 +1654,19 @@ def _fire_cadence(
 def read_trail_records(kata_dir: str | Path) -> list[dict]:
     """Every durability record recorded on the cursor, in order.  Feeds ``derive_resilience``.
 
-    Reads the payload JSON behind seam-authored NOTE lines and keeps the ones whose
+    Reads the payload JSON behind **seam-authored** NOTE lines and keeps the ones whose
     ``kind`` is a ``kata_trail`` record kind — so the declared resilience level is a
     **fold over recorded fact**, exactly as R-M4 requires, and never an assertion.
+
+    The agent filter is load-bearing, not cosmetic.  NOTE is a WORKER-authored type in
+    the §2.3 writer classes, and this fold is what can raise resilience to
+    ``Verified (full)``; without the filter any worker's NOTE payload carrying a 40-hex
+    ``commit`` plus a ``ref`` would lift the run's declared durability.  Filtering to
+    ``SEAM_AGENT`` makes the "seam-authored" half of the sentence TRUE where this engine
+    owns the writer.  Honest residual, unchanged and recorded (§11): nothing physically
+    stops a worker from writing a line that CLAIMS the seam's agent id — the cursor's
+    writer-class separation is a convention the seam honours and the post-hoc lineage
+    audit detects, not a mechanism that prevents forgery.
     """
     kata = _safe_kata_dir(kata_dir)
     try:
@@ -1615,7 +1676,7 @@ def read_trail_records(kata_dir: str | Path) -> list[dict]:
     kinds = {_trail.RECORD_KIND_SNAPSHOT, _trail.RECORD_KIND_PUSH_RECEIPT}
     out: list[dict] = []
     for line in sorted(cursor.lines, key=lambda ln: (ln.seq, ln.pos)):
-        if line.type != "NOTE" or not line.payload:
+        if line.type != "NOTE" or not line.payload or line.agent != SEAM_AGENT:
             continue
         try:
             data = json.loads(_kb.payload_path(kata, line.payload).read_text(encoding="utf-8"))

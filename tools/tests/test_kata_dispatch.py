@@ -731,6 +731,40 @@ class TestAbsorbedRouting:
         with pytest.raises(kd.AbsorbedRoutingAmbiguous, match="not a ledger-relative"):
             kd.resolve_absorbed_ledger(source)
 
+    def test_chain_longer_than_the_hop_cap_parks(self, tmp_path):
+        """An acyclic chain past ABSORBED_MAX_HOPS refuses — bounded, never a long walk."""
+        specs = tmp_path / "specs"
+        depth = kd.ABSORBED_MAX_HOPS + 2
+        for i in range(depth):
+            _write_md(
+                specs / f"s{i}" / "GRILL-LEDGER.md",
+                f"absorbed-into: ../s{i + 1}/GRILL-LEDGER.md\nstatus: absorbed",
+            )
+        _write_md(specs / f"s{depth}" / "GRILL-LEDGER.md", "status: converged")
+        with pytest.raises(kd.AbsorbedRoutingAmbiguous, match="exceeds"):
+            kd.resolve_absorbed_ledger(specs / "s0" / "GRILL-LEDGER.md")
+
+    def test_routing_refusals_carry_the_park_path_when_minting(self, tmp_path):
+        """The docstring promises "⇒ park"; the refusal must actually CARRY the park path."""
+        kata = _kata(tmp_path)
+        source = _write_md(
+            tmp_path / "specs" / "src" / "GRILL-LEDGER.md",
+            "status: absorbed — folded in, ask the conductor",
+        )
+        with pytest.raises(kd.AbsorbedRoutingAmbiguous) as exc:
+            kd.mint(
+                governs="ledger", role="design-author", task_id="t-absorb", kata_dir=kata,
+                ledger_path=source, brief={"o": "author"}, now=_NOW,
+            )
+        assert exc.value.park_path is not None
+        assert exc.value.park_path.endswith(os.path.join("escalations", "t-absorb.json"))
+        assert exc.value.task_id == "t-absorb"
+        assert exc.value.escalation_kind == "human-required"
+        # ...and a bare diagnostic call (no dispatch in flight) leaves it unset
+        with pytest.raises(kd.AbsorbedRoutingAmbiguous) as bare:
+            kd.resolve_absorbed_ledger(source)
+        assert bare.value.park_path is None
+
     def test_routing_cycle_parks(self, tmp_path):
         specs = tmp_path / "specs"
         _write_md(specs / "a" / "GRILL-LEDGER.md",
@@ -765,6 +799,18 @@ def test_mint_refuses_unmet_governor_state(tmp_path):
     draft_ledger = _write_md(tmp_path / "specs" / "s" / "GRILL-LEDGER.md", "status: draft")
     keyless_ledger = _write_md(tmp_path / "specs" / "k" / "GRILL-LEDGER.md", "spec: k")
     draft_intent = _write_md(tmp_path / "INTENT.md", "status: draft")
+    missing_ledger = tmp_path / "specs" / "gone" / "GRILL-LEDGER.md"
+    # The LIVE corpus shape (D-23): an unquoted second ": " makes the frontmatter invalid
+    # YAML. This reaches the engine through the absorbed-ROUTING pre-step, which used to
+    # let a raw ValueError escape mint() with no park path and no DENY event.
+    bad_yaml_ledger = _write_md(
+        tmp_path / "specs" / "y" / "GRILL-LEDGER.md",
+        "status: absorbed — 2026-08-16, operator-ruled: ONE unified grill",
+    )
+    unrouted_ledger = _write_md(
+        tmp_path / "specs" / "u" / "GRILL-LEDGER.md",
+        "status: absorbed — folded into the other grill, ask the conductor",
+    )
 
     cases = [
         # (mint kwargs, expected refusal fragment)
@@ -773,6 +819,15 @@ def test_mint_refuses_unmet_governor_state(tmp_path):
         (dict(governs="ledger", role="researcher", ledger_path=keyless_ledger), "ledger rung unmet"),
         # a role class with NO ledger row is refused there — an unlisted row is an unruled one
         (dict(governs="ledger", role="coder", ledger_path=draft_ledger), "no ledger-governed rung"),
+        # the ROUTING pre-step reads frontmatter too: an unreadable ledger, and the live
+        # corpus's invalid YAML, must both be TYPED refusals, never a raw ValueError
+        (dict(governs="ledger", role="design-author", ledger_path=missing_ledger),
+         "cannot read ledger"),
+        (dict(governs="ledger", role="design-author", ledger_path=bad_yaml_ledger),
+         "not valid YAML"),
+        # ...and an absorbed ledger naming no routing target parks like every other rung
+        (dict(governs="ledger", role="design-author", ledger_path=unrouted_ledger),
+         "names no routing target"),
         (dict(governs="intent", role="coder", intent_path=draft_intent), "intent rung unmet"),
         # the initiation rung with no open INITIATION/AUTHORING phase on the live cursor
         (dict(governs="initiation", role="plan-author", priming_prompt_hash="deadbeef"),
@@ -1546,6 +1601,31 @@ class TestConfigSettingsConsistency:
             {"hooks": {"seamGuard": True}}, {}, fingerprint={"installed": False},
         )
         assert out["drift"] == ["config-declares-unregistered-hook"]
+
+
+def test_a_worker_note_cannot_lift_the_resilience_level(tmp_path):
+    """NOTE is a WORKER-authored type; only SEAM-authored ones feed the resilience fold.
+
+    Without the agent filter, any worker could append a NOTE whose payload carried a
+    40-hex commit + ref and lift the run's declared durability to Verified (full) — a
+    trust claim manufactured by the thing being judged.
+    """
+    kata = _kata(tmp_path)
+    cursor = kb.read_cursor(kata)
+    seq = kb.next_seq(cursor)
+    pointer = kb.payload_pointer(cursor.run_id, seq)
+    kb.write_payload(kata, pointer, ktr.push_receipt_record(
+        run_id=cursor.run_id, ref="refs/kata/trails/x", commit="a" * 40, remote="origin",
+    ))
+    kb.append_event(kata, "sneaky-worker", "NOTE", "t1", "totally a push receipt",
+                    payload=pointer, seq=seq, now=_NOW)
+
+    assert kd.read_trail_records(kata) == []
+    assert ktr.derive_resilience(kd.read_trail_records(kata))["level"] == ktr.RESILIENCE_LOCAL
+
+    # ...while the seam's own record IS folded (the filter is not simply "drop everything")
+    kd.phase(kata, "open GRILL", repo_root=str(tmp_path), now=_NOW)
+    assert kd.read_trail_records(kata), "seam-authored durability records must still fold"
 
 
 def test_resilience_is_a_fold_over_recorded_fact(tmp_path):
