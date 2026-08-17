@@ -34,6 +34,302 @@ You dispatch, gate, and route; you do not author the code, tests, design doc, or
 That contract is the complementary constraint to this file's plan-guardian role and is clause-pinned +
 fingerprinted so it cannot be silently deleted or inverted.
 
+## The seam — every launch is `mint` → launch → `capture`
+
+**Binding on every dispatch instruction in this file.** An agent launch is a **code act, not a prose act**
+(Trust Model DESIGN §1.1): the engine is the only door. The engine is `tools/kata_dispatch.py`; the run's one
+durable temporal record is the **cursor** (`protocol/cursor.md`; engine `tools/kata_board.py`).
+
+> **Heritage naming (be precise, don't be confused).** The *concept* is the cursor. The *runtime file* is still
+> `.kata/board.md` and the *module* is still `tools/kata_board.py` (`kata_board.CURSOR_FILENAME == "board.md"`) —
+> **no code rename is in any frozen task**, so every `board`-spelled path/symbol below is the heritage spelling of
+> the cursor, never a second artifact. The two names that DID move are `protocol/cursor.md` (was
+> `protocol/board.md`) and the `[[kata-cursor]]` skill (was `kata-board`).
+
+### Seam init — one act, before precondition 0
+
+Call `kata_dispatch.run_start(kata_dir, repo_root=…, config=…, settings=…)` **before precondition 0** and before
+any other act in this file. It performs new-run-vs-resume discrimination, cursor rotation + runId mint (new runs
+only), orphan-record reaping, the run-marker write, the hook-fingerprint and deny-tripwire probes, and the
+config-vs-settings consistency check, and it returns the run-start **declaration** (`enforcement` / `capture` /
+`resilience`) already DERIVED from those probes. **Surface the returned `declaration` verbatim** — it is derived,
+never asserted, and re-wording it is a PD-2 violation. A resumed run **ADOPTS** the header's runId (never
+re-mints); a re-loop or loop-back passes `force_new=True`. **`run_start` replaces the old run-start rotation
+prose** in § The loop (which now points here).
+
+**Engine unavailable ⇒ the run cannot mint ⇒ no-legal-path PARK** (below), never a silent prose fallback.
+
+### The three acts, at every launch site
+
+| # | Act | Call | What it writes |
+|---|---|---|---|
+| 1 | **mint** | `kata_dispatch.mint(governs=…, role=…, task_id=…, kata_dir=…, plan_path=…, brief=<the brief>)` | the pending dispatch record `.kata/dispatch/<runId>-<seq>.json` **and** the seam-authored `SPAWN` cursor line; returns `recordId` / `recordPath` / `spawnSeq` |
+| 2 | **launch** | the host binding — Claude → the `Agent` tool; off-host → `kata_dispatch.dispatch(brief, worktree)` (§ Cross-model dispatch) | nothing on the cursor (the seam already wrote `SPAWN`) |
+| 3 | **capture** | `kata_dispatch.capture(envelope, recordId, kata_dir=…, kind="verdict"\|"down", task=…)` | the seam-authored `VERDICT` line (judges/workers) or `DOWN` line (child runs) + its pointed-to payload |
+
+`governs` is **required, keyword-only, and has no default** — an omittable governor is the D136
+silent-permissive class. `mint` also requires `brief=` (hashed here) **or** `brief_digest=`: `briefHash` is a
+required record field.
+
+**Record consumption is an ATOMIC SINGLE-USE CLAIM.** After W8 the pre-hook consumes it
+(`kata_dispatch.claim_and_validate`). **Until W8 ships (enforcement `Dormant (pre-activation)`), YOU claim it
+yourself**: call `kata_dispatch.claim_record(kata_dir, recordId)` immediately before the launch. A `RecordClaimRefused`
+means the record is consumed, absent, or lost a race — **never reuse a consumed record.** A legitimate retry
+racing its own consumed record is denied with `kata_dispatch.retry_race_deny_message(recordId)` +
+`kata_dispatch.RETRY_RACE_LEGAL_PATH`: **re-mint and relaunch against the NEW record.** Every retry, every
+fallback step-down, and every reroll is therefore its own mint — records are never recycled.
+
+### The governor rung — every mint in this file is `governs="plan"`
+
+The governor vocabulary is a CLOSED enum with a mechanical predicate per rung
+(`kata_dispatch.GOVERNORS == {plan, ledger, intent, initiation}`, DESIGN §1.4):
+
+| Rung | Predicate | Who mints under it |
+|---|---|---|
+| `plan` | `assert_frozen(plan_path)` at mint | **every launch site in this file** |
+| `ledger` | `kata_dispatch.ledger_status(...)` over the grill-ledger frontmatter, closed enum `draft \| converged \| frozen \| absorbed` | grill-phase researchers/advisor, design/plan-authors — [[kata-grill]] / [[kata-plan]], never here |
+| `intent` | `INTENT.md` frontmatter `status: frozen` | harness-entry mints — [[kata-loop]] / [[kata-bootstrap]], never here |
+| `initiation` | an open `INITIATION`/`AUTHORING` phase on the live cursor + the priming-prompt hash | initiation-phase mints — [[kata-initiate]], never here |
+
+**Why `plan` for all of them, mechanically:** this skill runs only after a frozen PLAN exists (precondition 2),
+so every dispatch here is *"anything dispatched against a plan task"* — DESIGN §1.4's plan-executing row,
+verbatim. `plan` (like `intent`) is a **role-agnostic** rung in the engine: `kata_dispatch.check_governor`'s
+`plan` branch applies **no role-class test** (only the `ledger` rung is role-class-scoped via
+`kata_dispatch._ROLE_CLASS` / `_LEDGER_MINIMUM`). So an execution-phase `researcher` or `advisor` mint —
+[[kata-research]] on a Research-needed escalation, `kata-advise` on any consult hook — governs under
+`plan : frozen` here, **not** under the grill-phase `ledger : draft` row (that row scopes *grill-phase*
+researchers/advisors, and a grill-skip run has no ledger at all). Guardian grade of the `plan` rung:
+**Verified** (`kata_dispatch.GOVERNOR_GRADE["plan"]`).
+
+**Always pass `plan_path`** — `governs='plan'` refuses without it, and `assert_frozen` is re-run **at every
+mint**, so a plan that thaws mid-run stops the next dispatch instead of the next gate.
+
+### Refuse-to-mint ⇒ PARK. Never proceed, never die silently. (TM-B5)
+
+When the engine refuses to mint it raises `kata_dispatch.MintRefused` (or its `AbsorbedRoutingAmbiguous`
+subclass) — plan not frozen, unknown role, unmet governor state, no live cursor, a closed run, or a record-id
+collision. **There is no legal path past a refuse-to-mint.** The exception carries `escalation_kind ==
+"human-required"` and `park_path` (`.kata/escalations/<task-id>.json`) so you never derive them:
+
+1. **ESCALATE `kind: human-required`** — build + persist the payload via `escalation.build_escalation(...)` →
+   `escalation.write_escalation(kata_dir, payload)` at the exception's `park_path`.
+2. **PARK the task and its DAG-dependents** — the existing async-park pattern (§ Escalation, and the
+   Trigger #3 async-park in § The corrective-action ladder). The frontier keeps draining; **the run does not
+   halt and the task does not proceed unminted.**
+3. The engine has already written the cursor `DENY` event naming the legal path
+   (`kata_dispatch.deny(..., legal_path=…)`), and a denial is a **visible refusal on the presentation layer** —
+   the line being held is shown, not asserted.
+4. **Unattended runs park identically.** Denial-forces-the-legal-path needs no human; a refuse-to-mint does, so
+   it parks rather than proceeding. Rejected shapes stay rejected: **no warn-first soft mode, no
+   hard-fail-the-run.**
+
+**Never launch an agent without a claimed record**, whatever the reason — that is exactly the bypass the W8
+hook will deny, and doing it pre-activation is drift by PD-1/PD-2 even while nothing yet stops it.
+
+### Capture — one parser, line 1 of the envelope, no body scan
+
+`capture(...)` re-reads the minted record, parses the verdict, and appends the seam-authored line:
+
+- **`kind="verdict"`** — every judge and every worker return. `kata_dispatch.parse_verdict` does a strict
+  `fullmatch` on **line 1 of the tool-result ENVELOPE** for `VERDICT: <ENUM>`; the body is **never** scanned, so
+  repo content, diff hunks, and inlined advice payloads cannot forge a verdict. Pass `allowed=<the judge's enum>`
+  where the judge contract pins one.
+- **`kind="down"`** — a child run (an arm) reaching a terminal state. **Children never write the parent's
+  cursor**: the parent's seam writes `DOWN` by reading the child cursor's terminal state.
+- **No parseable verdict on line 1, or an absent record ⇒ `CaptureRefused`** — the absent-records refusal path
+  (DESIGN §5.3). **There is deliberately no body-scan fallback.** Re-dispatch through `mint`; never hand-write
+  the outcome.
+- **Every worker brief in this file therefore mandates `VERDICT: <ENUM>` as the literal FIRST LINE of the
+  final report** (the report contract's "verdict + pointer inline" — § The loop step 2), because that line is
+  what the capture edge parses.
+- Pre-W8 the capture leg is conductor-invoked and its `source` defaults to `"engine-by-conductor"` ⇒ the returned
+  grade is **`Honor-system (engine-by-conductor)`**. Say so; never render it as `Verified (post-edge)`.
+
+### Phase events this skill emits (§2.6)
+
+Call `kata_dispatch.phase(kata_dir, "<verb> <PHASE> [k=v …]")`. The vocabulary is CLOSED
+(`kata_dispatch.PHASES`: `INITIATION · GRILL · AUTHORING · FREEZE · EXECUTION · FINAL-GATE · CLOSEOUT ·
+LOOP-BACK`) and the msg grammar is enforced (`open <PHASE> [k=v…] | close <PHASE> [k=v…] | run-closed [k=v…]`);
+a violation raises `PhaseRefused`, and re-opening a closed phase is a recorded DENY-class event. **`EXECUTION`
+is the one parameterized phase** — always carry `wave=<n>`.
+
+| Boundary in this skill | PHASE call |
+|---|---|
+| First dispatchable frontier of a wave | `phase(kata_dir, "open EXECUTION wave=<n>")` |
+| That wave's tasks all integrated | `phase(kata_dir, "close EXECUTION wave=<n>")` |
+| Entering § Final gate | `phase(kata_dir, "open FINAL-GATE")` |
+| [[kata-evaluate]] PASS + red-team settled, handing to closeout | `phase(kata_dir, "close FINAL-GATE")` |
+
+**Read your position from the cursor, never from context memory** (TM-C5): on resume,
+`kata_dispatch.phase_state(cursor)` tells you which phases are open/closed and `kata_dispatch.is_run_closed(cursor)`
+tells you the run is terminal. Do not re-derive the wave from what you remember.
+
+**In-session skill invocations are cursor-tracked, NOT dispatch-gated** (TM-B3): reading [[kata-worktree]],
+[[kata-orient]], [[kata-handoff]], [[kata-selfhandoff]], [[kata-defer]], [[kata-preflight]], and the
+[[kata-lang-profile]] / [[kata-iac-terraform]] / [[kata-iac-cloudformation]] **overlay injections** is the
+conductor reading its own instructions — they emit PHASE events, **never dispatch records**. The overlays are
+*content folded into another launch's brief*, not launches. Everything in the registry below IS a launch of
+another agent and IS dispatch-gated.
+
+### DECISION-as-cursor-record
+
+`DECISION` is an ORCHESTRATOR-authored **cursor** TYPE (`kata_board.ORCH_TYPES`), written via
+`kata_board.append_event(kata_dir, agent, "DECISION", task, msg)` against the integration root's `.kata/`.
+Every `DECISION` this file names — ladder events, tier moves, advisor spend/recount, fix-cycle counts, lapses,
+supersedes, backout approvals, human-approved re-dispatches — **is a cursor record, not conversation prose**.
+That is what makes the recount trails (`kata_adaptive.recount_from_decisions`,
+`kata_advisor.recount_from_advisor_decisions`, the fix-loop counters) sound across a restart. A decision that
+exists only in the conversation did not happen.
+
+### Rider 2 — pre-assessed overlap at partition time
+
+Ownership disjointness stays the default and the **fail-closed clobber protection stays for any UN-assessed
+overlap**. A small result overrun is acceptable **only when pre-assessed**: at partition/dispatch time you
+declare the overlap tolerance — which files, which two tasks, why the overrun is bounded — as a cursor
+`DECISION` **before** either task is minted. Anything not declared there is a lane violation at the task gate,
+exactly as today. **You may not assess an overlap after observing it**; a post-hoc tolerance is a
+rationalization, and the gate treats it as drift.
+
+### The per-task mutation re-run trigger — the contract (DESIGN §3.6)
+
+At **every task gate** (§ The loop step 3), trigger the deterministic ENGINE re-run over the worker's **claimed**
+mutation set, using **the task's OWN verify command** (narrow by construction — never the integration suite).
+The re-run is not milliseconds: `prove_non_vacuous` copies the project tree to a sandbox and runs the test
+command twice per asserted line.
+
+- **Cap `N = 5` (default).** Claimed set **≤ N** ⇒ re-run **all** lines.
+- **Beyond N ⇒ sample N.** The sampling key is a **stated deterministic sort key**, quoted verbatim from the
+  DESIGN: *sort by `(file path, line number)` ascending, take the first N*. No randomness, explicit total order
+  (Determinism Doctrine laws 9/10).
+- **Record the sampling on the cursor — NO SILENT TRUNCATION.** Write a `DECISION` naming the task, the claimed
+  set size, `N`, and the sampled subset. A sampled re-run that is not recorded is indistinguishable from a
+  skipped one, which is the whole failure this closes.
+- **Activation ordering (BL-X14).** The blocking mutation precondition ACTIVATES **per platform** only after
+  🔴 BL-X14 closes (the prover proven able to FAIL on that platform). Until then the precondition is declared
+  **Honor-system** on that platform, and **no Linux task gate fail-closes on a Broken prover** — surface the
+  declaration, never a silent pass.
+- **Honest residual, stated in-contract:** the re-run proves the worker's **CLAIMED** set bites;
+  **claimed-set completeness stays worker-asserted.** Say so wherever the record is cited.
+
+### Tree runs — the freeze-minted arm registry (DESIGN §2.7)
+
+**The two-tier law:** in-wave tasks stay **lines on this run's cursor**. Bakeoff arms, Backlog-Burn wave-loops,
+and Kitchen bakes mint **child runs** — own runId, own cursor, own worktree, `parent-run:` header (arm = run, so
+one cursor per run stays true at every node).
+
+- **The registry is FREEZE-MINTED, never invented at dispatch.** The frozen PLAN / `benchmark_def` carries the
+  whole tree BEFORE any dispatch: `arm_label → pre-minted child runId → worktree root → parent-close policy`.
+  **Consume it; never mint an arm id yourself.**
+- **Exactly-once spawn.** Before spawning an arm, check the registry entry against the cursor's `SPAWN` lines
+  (`kata_dispatch.recorded_governors` / the arm's pre-minted runId). On resume you **read the registry** and
+  re-spawn only entries with no recorded spawn — the pre-minted id is what makes resume idempotent.
+- **Spawn and DOWN are dispatcher-witnessed.** `mint(...)` writes the parent's `SPAWN`; when the arm reaches a
+  terminal state the **parent's** seam writes `DOWN` via `capture(envelope, recordId, kind="down",
+  child_run_id=<arm runId>, reason=…)`. **Children never write the parent's cursor.**
+- **Per-arm parent-close policy — `cancel | park | abandon-with-rendezvous`:**
+
+  | Policy | At parent close |
+  |---|---|
+  | `cancel` | kill the arm; write its `DOWN` with the reason; its commits are quarantined, never merged into graded results |
+  | `park` | leave the arm parked at its last checkpoint; write `DOWN` naming the park; it resumes via the normal restore path |
+  | `abandon-with-rendezvous` | do **not** kill: name the successor rendezvous in the `DOWN` reason; the successor adopts the arm |
+
+  **`abandon-with-rendezvous` is MANDATORY across BBM-12 wave rollovers** — the Continue-As-New hazard. A wave
+  rollover that `cancel`s a live arm loses work that the next wave was supposed to inherit. Arms are killed at
+  parent close **unless** their policy names a successor rendezvous; unrendezvoused orphans reap at the next
+  `run_start`.
+- **Declared fold reducers — an undeclared concurrent merge is a FAIL-LOUD REFUSAL.** Before folding any two
+  arms' results you must have a **declared reducer** for that fold (named in the frozen plan/registry) and
+  **bounded child summaries only** — never raw child output. No declared reducer ⇒ **refuse the merge loudly and
+  escalate**; do not pick one, and do not blend. Order of record is **`(runId, seq)` + parent fold-order**.
+- **Fan-in is mechanical-only.** Merge-parents + the `Kata-Run:` / `Kata-Arm:` trailers, **fail-closed on
+  conflict**. **No evil merges** — a fan-in commit that changes content is PD-2 falsehood in git history.
+- **Child runs NEVER rewrite the committed `kata.config`.** Per-arm variation lives ONLY in the freeze-minted
+  registry, so fan-in cannot conflict on config by construction.
+- **A re-loop of a wave is a SIBLING CHILD:** `parent-run:` = the same parent (the tree that roll-up folds walk),
+  `prev-run:` = the failed sibling (the history that iteration walks).
+- **Bakeoff selection is a recorded supersede:** a `DECISION` records the winner + every losing runId,
+  `-s ours`-shaped, never content blending; version-select stays a human act.
+
+### The launch-site registry — LS-01 … LS-46
+
+**Every dispatch-gated launch site in this file, enumerated.** Each site below carries its `LS-nn` id inline
+next to its `mint(...)` annotation, so the pairing is greppable in both directions: a registry row with no inline
+site, or an inline `Dispatch`/`invoke` instruction with no `mint(`, is a migration hole.
+
+`governs` is **`plan`** at all 46 (see § The governor rung above). `role` must be a member of
+`kata_roles.ROLE_GROUPS` — `mint` refuses an unknown role.
+
+| LS | Site | Target | `role` | `capture(kind=)` |
+|---|---|---|---|---|
+| LS-01 | Comprehension phase | [[kata-comprehend]] | `researcher` | `verdict` |
+| LS-02 | Deviation-discovery phase | [[kata-deviate]] | `critic` | `verdict` |
+| LS-03 | Fix-application step 1 — characterize | [[kata-characterize]] | `coder` | `verdict` |
+| LS-04 | Fix-application step 3 — the fix worker | [[kata-tdd]] | `coder` | `verdict` |
+| LS-05 | Fix-application step 5 — conformance | [[kata-evaluate]] | `evaluator` | `verdict` |
+| LS-06 | Fix-application step 5 — D98 red-team | [[kata-review]] | `reviewer` | `verdict` |
+| LS-07 | The loop step 2 — the per-task worker | [[kata-tdd]] | `coder` | `verdict` |
+| LS-08 | The loop step 2 — AO `research-needed`, pre-dispatch | [[kata-research]] | `researcher` | `verdict` |
+| LS-09 | The loop step 2 — continuation `pt-N+1` from the anchor | [[kata-tdd]] | `coder` | `verdict` |
+| LS-10 | Liveness monitor — the staleness root-cause pass | [[kata-diagnose]] | `validator` | `verdict` |
+| LS-11 | Ladder trigger #1 — the inline eval | [[kata-inline-eval]] | `inline-eval` | `verdict` |
+| LS-12 | Ladder `correct` — fresh dispatch from the CURRENT checkpoint | [[kata-tdd]] | `coder` | `verdict` |
+| LS-13 | Ladder `reroll` — fresh dispatch from the LAST GOOD anchor | [[kata-tdd]] | `coder` | `verdict` |
+| LS-14 | Ladder re-adjudication — the SECOND, blind inline eval | [[kata-inline-eval]] | `inline-eval` | `verdict` |
+| LS-15 | Ladder trigger #2 — the reroll-grounding consult | [[kata-advise]] | `advisor` | `verdict` |
+| LS-16 | Ladder trigger #2 — reroll #2 on the tightened brief | [[kata-tdd]] | `coder` | `verdict` |
+| LS-17 | Adaptive Leg C — the fail-threshold consult | [[kata-advise]] | `advisor` | `verdict` |
+| LS-18 | Adaptive Leg C — the advised redispatch at the prior rung | [[kata-tdd]] | `coder` | `verdict` |
+| LS-19 | Advisor consult — the shared rung-emission dispatch | [[kata-advise]] | `advisor` | `verdict` |
+| LS-20 | Cross-model dispatch — the off-host CLI launch | per role-group | the routed role | `verdict` |
+| LS-21 | Cross-model LD7 — the host-fallback relaunch | per role-group | the routed role | `verdict` |
+| LS-22 | Escalation — orchestrator-resolvable tightened re-dispatch | [[kata-tdd]] | `coder` | `verdict` |
+| LS-23 | Escalation — `advice-requested` consult | [[kata-advise]] | `advisor` | `verdict` |
+| LS-24 | Escalation — the advised redispatch (advice inlined) | [[kata-tdd]] | `coder` | `verdict` |
+| LS-25 | Escalation — `research-needed` | [[kata-research]] | `researcher` | `verdict` |
+| LS-26 | Escalation — grounding gate, injected-knowledge conformance | [[kata-evaluate]] | `evaluator` | `verdict` |
+| LS-27 | Escalation — grounding gate, injected-knowledge soundness | [[kata-review]] | `reviewer` | `verdict` |
+| LS-28 | Escalation — GROUND ⇒ re-dispatch the tightened task | [[kata-tdd]] | `coder` | `verdict` |
+| LS-29 | Supersede route (c) — in-flight member, re-dispatched | [[kata-tdd]] | `coder` | `verdict` |
+| LS-30 | Supersede route (c) — integrated member, force-re-opened | [[kata-tdd]] | `coder` | `verdict` |
+| LS-31 | Final gate step 5 — the gate | [[kata-evaluate]] | `evaluator` | `verdict` |
+| LS-32 | Final gate step 5 — the slop check | [[kata-slop-check]] | `slop` | `verdict` |
+| LS-33 | Fix loop — material re-run of the conformance judge | [[kata-evaluate]] | `evaluator` | `verdict` |
+| LS-34 | Fix loop — material re-run of the red-team judge | [[kata-review]] | `reviewer` | `verdict` |
+| LS-35 | Fix loop — the ONE confirmation pass | [[kata-evaluate]] | `evaluator` | `verdict` |
+| LS-36 | Fix loop — the targeted fix worker (incl. the ceiling resume) | [[kata-tdd]] | `coder` | `verdict` |
+| LS-37 | Fix loop at N=2 / ceiling — root cause | [[kata-diagnose]] | `validator` | `verdict` |
+| LS-38 | Fix loop — the fix-loop-ceiling consult | [[kata-advise]] | `advisor` | `verdict` |
+| LS-39 | Final gate step 7 — adversarial red-team before merge | [[kata-review]] | `reviewer` | `verdict` |
+| LS-40 | Final gate — recurrence-hardening proposal draft | [[kata-improve]] | `plan-author` | `verdict` |
+| LS-41 | Benchmark closeout step 4 — the report renderer | [[kata-benchmark-report]] | `researcher` | `verdict` |
+| LS-42 | Benchmark setup step 3 — the arm child-run spawn | the arm's conductor | `orchestrator` | **`down`** |
+| LS-43 | Adaptive AT-L8 — the fail-bump redispatch, one rung up | [[kata-tdd]] | `coder` | `verdict` |
+| LS-44 | R2 fallback — each step-down **re-launch** | the failing site's target | the failing site's role | `verdict` |
+| LS-45 | Premium one-step chain — the OMIT/inherit **re-launch** | the failing site's target | the failing site's role | `verdict` |
+| LS-46 | Liveness ladder — the human-approved re-dispatch | [[kata-tdd]] | `coder` | `verdict` |
+
+**LS-42 is the only `kind="down"` site** — an arm is a child RUN, not a task line (§ Tree runs).
+**LS-44 / LS-45 are launch sites in their own right, not retries of one:** a dispatch record is single-use, so
+every fallback step-down **re-mints**. Reusing the failing dispatch's record is the retry-reads-as-replay denial.
+
+**Role assignments authored HERE (declared, not inherited).** `kata_roles.ROLE_GROUPS` is a closed enum but the
+repo carries **no skill→role map**; the column above is this file's assignment, and the five non-obvious ones are
+named so a reviewer can contest them rather than discover them: [[kata-diagnose]] ⇒ `validator` (read-only,
+returns a verdict), [[kata-comprehend]] ⇒ `researcher`, [[kata-deviate]] ⇒ `critic` (its adversarial
+refute-or-promote step), [[kata-improve]]'s proposal sub-mode ⇒ `plan-author`, [[kata-benchmark-report]] ⇒
+`researcher` (**closest fit — the enum has no reporter role**). Changing one of these is a one-cell edit here,
+not a rewrite of the sites.
+
+### Honesty label — carry it wherever a seam claim appears
+
+Until wave 8 activates the fail-closed hook, **nothing denies a bypass**: `run_start`'s derived declaration reads
+`enforcement: Dormant (pre-activation)` and `capture: Honor-system (engine-by-conductor)`, and the healthy
+default `resilience: Partially verified (local)`. The seam is **followed, not enforced** — say exactly that in
+run-start narration, reports, and closeouts. Do not write "intercepting", "enforced", or "verified dispatch"
+while the hook is absent. Degraded modes are **per-capability, never viral**, and every one is declared at
+run-start.
+
 ## Preconditions (verify before any dispatch)
 0. **Load `kata.config`** (`protocol/config.md`). **Absent ⇒ assume Standard** (D25) and proceed. Present ⇒
    **fail closed (GB12):** malformed JSON at the read step ⇒ **STOP and escalate**; a parsed config is then
