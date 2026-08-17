@@ -1,25 +1,90 @@
-# protocol/board.md — append-only coordination board schema
+# protocol/board.md — the CURSOR: one durable temporal record per run
 
-Canonical schema for the machine-coordination board consumed by [[kata-board]] and [[kata-orchestrate]].
-Machine state — kept separate from durable Obsidian docs ([[STANDARDS]] §5).
+Canonical grammar for the run's one log — the **cursor** — consumed by [[kata-board]] and
+[[kata-orchestrate]]. Machine state — kept separate from durable Obsidian docs ([[STANDARDS]] §5).
+
+**The concept is the CURSOR**: it marks where in the process the run is sitting and where it is
+currently executing. The FILE still carries its `board.md` heritage name this wave; the file/skill
+rename rides the later migration task. Everything below is the cursor contract.
 
 - **Location:** `.kata/board.md` in the target repo's integration worktree.
 - **Append-only:** agents append lines; no agent edits or deletes a prior line (no last-writer clobber —
   [[LESSONS-LEARNED]] L3).
-- **Line format:** `<ISO-8601-UTC> | <agent-id> | <TYPE> | <task-id> | <one-line message>`
-- **TYPE vocabulary:**
-  | TYPE | Author | Meaning |
-  |---|---|---|
-  | `CLAIM` | worker | worker self-stamped start of a task — appended by the worker, with the worker's own process clock, to the shared `.kata/board.md` at the integration/target-repo root (not the per-task worktree's `.kata/`) |
-  | `DONE` | worker | worker self-stamped end of a task — appended by the worker, with the worker's own process clock, to the shared `.kata/board.md` at the integration/target-repo root, after task `<verify>` passes; signals ready for the orchestrator gate |
-  | `BLOCK` | worker | cannot proceed (environment/dependency) |
-  | `ESCALATE` | worker | the frozen plan is unclear/wrong — needs an orchestrator decision (never re-plan) |
-  | `NOTE` | worker | lateral info for peers |
-  | `DECISION` | orchestrator only | a deliberate ruling resolving a BLOCK/ESCALATE |
-  | `PROGRESS` | worker | mandated liveness heartbeat (F3); `msg` carries `<modulesDone>/<modulesOwned> <label>` (e.g. `3/5 writing tests`) — the structured progress signal the liveness monitor and Freeze/Float M4 slack-timing read |
+- **One log per run.** No sidecar structured log, no second journal, no git-only cursor.
+- **Engine:** `tools/kata_board.py` is the single writer and the single canonical parser. Nothing
+  hand-rolls this grammar; a second parser is a second source of truth.
 
-`CLAIM`/`DONE` are the worker-self-stamped start/end of a task; because the worker authors them with its own process clock, the board is the artifact-of-record for concurrency (it does not depend on orchestrator-written timestamps).
+## The grammar
 
+```bnf
+cursor        ::= run-header line*
+run-header    ::= "RUN " run-id NL
+                  ( "prev-run: "     run-id  NL )?     ; iteration chain (re-loop/loop-back)
+                  ( "parent-run: "   run-id  NL )?     ; tree structure (child runs)
+                  ( "prev-segment: " path    NL )?     ; chained segmenting (RESERVED NOW,
+                                                       ;   built when a real cursor gets big)
+run-id        ::= "run-" utc-compact "-" hex+          ; sortable, humane; randomness
+                                                       ;   mints identity only (Determinism
+                                                       ;   Doctrine)
+line          ::= utc FS seq-field FS agent-id FS type FS task-id FS msg NL
+FS            ::= " | "
+seq-field     ::= seq ( "~" parent-seq )?              ; parent-seq = dispatch lineage: the seq
+                                                       ;   of the SPAWN line this line descends
+                                                       ;   from (worker-line lineage stamps)
+seq           ::= digit+                               ; monotonic per run
+type          ::= worker-type | orch-type | seam-type
+worker-type   ::= "CLAIM" | "DONE" | "BLOCK" | "ESCALATE" | "NOTE" | "PROGRESS"
+orch-type     ::= "DECISION"
+seam-type     ::= "PHASE" | "VERDICT" | "SPAWN" | "DOWN" | "DENY"
+msg           ::= one-line-text ( " payload=" path )?  ; pointed-to JSON payload (escalation
+                                                       ;   idiom); REQUIRED for VERDICT
+```
+
+`utc-compact` is `%Y%m%dT%H%M%SZ` — the run id therefore sorts chronologically as a plain string.
+
+**The old 5-field grammar parses NOWHERE.** A line of the pre-migration form
+`<utc> | <agent> | <TYPE> | <task> | <msg>` is a parse **REFUSAL**, never a silent skip, and a
+legacy line inside an otherwise valid cursor aborts the whole parse. This is deliberate: a silently
+skipped row is an invisible hole in the audit trail, which is the failure class this contract exists
+to remove.
+
+A legacy row whose `msg` happened to contain ` | ` presents as six fields, so the field count alone
+does not catch it. Two gates do the work: the digits-only `seq` field is the **primary**
+discriminator (a legacy row's field 2 is an agent id, which is normally not all digits), and the
+closed TYPE enumeration at field 4 is the **second** gate that fires when field 2 *is* numeric —
+because the check then lands on what was the legacy task-id. **Honest residual:** a legacy row that
+satisfies both — an all-digits agent id, a task-id that is literally one of the TYPE tokens, and a
+` | ` inside its msg — would parse as a well-formed cursor line with shifted fields. No mechanical
+check here closes that; the migration is what closes it, by leaving no legacy rows to read.
+
+## TYPE vocabulary and writer classes
+
+Three writer classes, disjoint. A writer never authors another class's TYPE.
+
+| TYPE | Writer class | Meaning |
+|---|---|---|
+| `CLAIM` | worker | worker self-stamped start of a task — appended by the worker to the shared `.kata/board.md` at the integration/target-repo root (not the per-task worktree's `.kata/`) |
+| `DONE` | worker | worker self-stamped end of a task — appended after task `<verify>` passes; signals ready for the orchestrator gate |
+| `BLOCK` | worker | cannot proceed (environment/dependency) |
+| `ESCALATE` | worker | the frozen plan is unclear/wrong — needs an orchestrator decision (never re-plan) |
+| `NOTE` | worker | lateral info for peers |
+| `PROGRESS` | worker | mandated liveness heartbeat (F3); `msg` carries `<modulesDone>/<modulesOwned> <label>` (e.g. `3/5 writing tests`) — the structured progress signal the liveness monitor and Freeze/Float M4 slack-timing read |
+| `DECISION` | orchestrator only | a deliberate ruling resolving a BLOCK/ESCALATE |
+| `PHASE` | seam only | a Kata-Loop phase event (open/close/run-closed) |
+| `VERDICT` | seam only | a judge/arm verdict captured from a return envelope — **REQUIRES a payload pointer** |
+| `SPAWN` | seam only | a dispatch was minted; the lineage anchor `~parent-seq` stamps point at |
+| `DOWN` | seam only | a child run reached a terminal state, with reason |
+| `DENY` | seam only | a launch was refused, naming the legal path |
+
+- **Seam-authored types are written by the seam functions, never by a worker and never by hand.**
+  "Orchestrator-only" is corrected for these five: the conductor's pre-orchestrator phase events are
+  written by the seam functions it calls, not by the conductor's own hand.
+- **Children NEVER write the parent's log.** At abandon-with-rendezvous the parent's seam writes the
+  `DOWN` record by reading the child cursor's terminal state at the next parent seam act;
+  unrendezvoused orphans reap at seam init.
+- **Invariants:** workers never author `DECISION` or any seam type; every `BLOCK`/`ESCALATE` is
+  answered by a `DECISION` before the task resumes; the cursor is the countable audit trail for the
+  drift ledger.
 - **PROGRESS is a mandated liveness heartbeat (F3)** — the worker emits one per owned-module completed
   AND at least once per `livenessDeadline`/2 of wall-clock (a long single module must not read as dark);
   a task with no countable modules heartbeats as `0/1 <label>`. Staleness is measured from the **most
@@ -29,103 +94,125 @@ Machine state — kept separate from durable Obsidian docs ([[STANDARDS]] §5).
   estimator. The DECISION/BLOCK/ESCALATE invariants are unchanged; a **missing** PROGRESS never gates a
   task — it only triggers the liveness monitor's staleness path (nudge → escalate → human-gated
   re-dispatch; never a blind kill).
-- **Invariants:** workers never author `DECISION`; every `BLOCK`/`ESCALATE` is answered by a `DECISION`
-  before the task resumes; the board is the countable audit trail for the drift ledger.
+
+## Seq assignment and the ordering of record
+
+- The appending writer stamps `(observed max) + 1`. Seam-authored lines come from the single seam
+  writer and are therefore unique; concurrent worker appends may race — **duplicate worker seqs are
+  legal** and are ordered by file position.
+- **Ordering of record = `(runId, seq)` + parent fold-order; wall-clock is NEVER load-bearing.**
+  The `utc` field is recorded for humans and is informational only. File position is the explicit
+  total-order tie-break a duplicate seq requires.
+- **Parent fold-order:** runs walk the `parent-run:` tree, parents before their children; roots and
+  runs whose parent is not in the fold sort by run id (which is chronological). A `parent-run:` cycle
+  is a fail-loud refusal.
+- Lineage references (`~parent-seq`) always target seam-authored — therefore unique — seqs.
+- **This closes the clock-trust problem, it does not manage it.** The pre-migration board derived
+  concurrency from worker process clocks and had to assume a synchronized clock, which cross-host
+  skew would have invalidated. Ordering now lives in seq space, so the multi-machine / multi-model
+  direction needs no skew-tolerant stamp for ordering to hold.
+
+## Header semantics
+
+- `prev-run:` walks **history** (iteration: a re-loop or a loop-back).
+- `parent-run:` walks the **tree** (child runs; roll-up folds walk this edge).
+- Both are pointers with distinct semantics; a root-level re-loop has no parent by definition and
+  carries a `prev-run:` chain only. A re-loop of a wave is a sibling child: same `parent-run:`, with
+  `prev-run:` naming the failed sibling.
+- `prev-segment:` is **RESERVED**: it is parsed and round-tripped, and no segmenting machinery is
+  built. It is written only when segmenting lands.
+- **The reader is exactly as strict as the writer.** Header keys are read in the BNF's order
+  (`prev-run:`, then `parent-run:`, then `prev-segment:`), each at most once; a permutation is a
+  refusal. One header therefore has exactly one legal serialization, so two byte-different headers
+  can never mean the same thing — the same write/read symmetry that makes a line's round trip exact.
+- **A `parent-run:` cycle is a fail-loud refusal, and a run naming ITSELF as parent is a cycle.**
+  Exempting the self-edge would accept the shortest cycle while refusing every longer one.
+
+## Payloads
+
+- A payload pointer is the `msg` suffix ` payload=<path>` — the escalation line+payload idiom
+  (`protocol/escalation.md`), which keeps the cursor one line per event.
+- The pointer is **kata-dir-relative** (`payloads/<runId>-<seq>.json`) so it resolves from the
+  cursor's own location and survives rotation and worktree moves. The file therefore lives at
+  `.kata/payloads/<runId>-<seq>.json` (tier-3 cache; durability is the trail snapshot's job).
+- The pointer is path-guarded on **both write and parse**: relative only, no `..`, no whitespace, no
+  field separator (CWE-23).
+- `VERDICT` **requires** a payload. A VERDICT line without one is refused when written and refused
+  when read. Its payload schema:
+
+```json
+{
+  "verdict": "<verdict token>",
+  "evidencePointers": ["<pointer>", "..."],
+  "judgeDispatchSeq": 0,
+  "runId": "run-<utc-compact>-<hex>"
+}
+```
+
+- The payload is written **before** the line that points at it, so a pointer is never dangling.
+- A line carries **at most one** payload pointer. A msg may not smuggle a bare ` payload=` token, so
+  a two-token line is one this engine could never have emitted; it is refused on read rather than
+  resolved to the last token, which would parse into a msg that cannot be re-emitted.
+
+## Run isolation — required for the evidence to be honest
+
+The fold computes over the whole cursor, so `.kata/board.md` MUST contain **only the current run's
+events**. The seam therefore **rotates any pre-existing board at run start** — moving `.kata/board.md`
+to `.kata/board.<utc-compact>.archive.md` before the header write — so prior-run `CLAIM`/`DONE` pairs
+cannot contaminate this run's `maxInFlight`/`overlaps`. Without this, stale rows would be folded in
+and this run's evidence would be false. Rotation happens only at run **start**: a crash-resume adopts
+the existing header's `runId` and continues on the same cursor.
+
+`kata_board.start_run()` performs the rotation and the header write; it never mints a run id
+implicitly on an append, because the run id is minted by exactly one seam act at run start.
 
 ## Concurrency evidence (`.kata/concurrency.json`)
 
-**Purpose.** Because board timestamps were historically written by the orchestrator, they correctly recorded
-concurrency but could not, on their own, distinguish live concurrent execution from a faithful sequential
-replay. Worker self-stamped `CLAIM`/`DONE` entries (K4) close this gap: each timestamp is authored by the
-worker's own process clock, making concurrency provable from artifacts alone. After every run the orchestrator
-runs the canonical snippet below against the shared `.kata/board.md` to emit `.kata/concurrency.json` — a
-machine-readable concurrency evidence artifact the evaluator can read independently. (See
-`.planning/specs/ws2-loop-autonomy/AUDIT.md` §7.)
+**Purpose.** Worker self-stamped `CLAIM`/`DONE` entries make concurrency provable from artifacts
+alone. After every run the orchestrator emits `.kata/concurrency.json` — a machine-readable
+concurrency evidence artifact the evaluator can read independently. The fold is a **cross-cursor
+`(runId, seq)` fold**: a task's in-flight span runs from its earliest `CLAIM` seq to its latest `DONE`
+seq (a re-dispatched task keeps its full span — a naive last-write `CLAIM` would erase a real overlap
+and undercount concurrency), and the sweep is over seq space, so no clock enters the answer. At an
+equal seq an END is processed before a START, so a hand-off is never inflated into an overlap.
 
-**Per-run board (run-isolation — required for the artifact to be honest).** The snippet computes over the
-whole board, so `.kata/board.md` MUST contain **only the current run's events**. The orchestrator therefore
-**rotates any pre-existing board at run start** — move `.kata/board.md` to `.kata/board.<utc>.archive.md` (or
-truncate it) before the first `CLAIM` — so prior-run `CLAIM`/`DONE` pairs cannot contaminate this run's
-`maxInFlight`/`overlaps`. Without this, stale rows (including older orchestrator-stamped ones) would be folded
-in and the `worker-clock` provenance claim would be false for those rows.
+**Fold is pure; side effects only after fold completes.** `fold_concurrency` performs no I/O, reads no
+clock, and is deterministic; `emit_concurrency` reads, folds, and only then writes. A refusing fold
+produces no artifact — an unreadable cursor is a refusal, never a silently emitted zero.
 
-**Clock-trust assumption.** The proof rests on worker process clocks. It assumes all workers **share a
-synchronized clock** (true for same-host subagents today). Cross-host clock skew — the multi-machine /
-multi-model direction of Phase 5 — invalidates `overlaps` and can yield negative `sec`; **revisit this snippet
-before any multi-machine run** (a skew-tolerant or orchestrator-issued monotonic stamp).
-
-**Schema (K5):**
+**Schema:**
 
 ```json
 {
   "maxInFlight": 3,
   "genuinelyParallel": true,
   "workerCount": 4,
-  "workers": { "<task-id>": { "agent": "<id>", "start": "<iso>", "end": "<iso>", "sec": 39.0 } },
-  "overlaps": [ ["<iso-start>", "<iso-end>"] ],
-  "source": "board.md CLAIM/DONE self-stamps (worker-clock); per-run board + synchronized clocks assumed"
+  "runs": ["<runId>", "..."],
+  "workers": {
+    "<runId>#<task-id>": {
+      "runId": "<runId>", "task": "<task-id>", "agent": "<agent-id>",
+      "startSeq": 1, "endSeq": 9, "spanSeqs": 8,
+      "utcStart": "<iso>", "utcEnd": "<iso>"
+    }
+  },
+  "overlaps": [ {"runId": "<runId>", "fromSeq": 2, "toSeq": 7} ],
+  "ordering": "(runId, seq, file-position) + parent fold-order; wall-clock never load-bearing",
+  "source": "cursor CLAIM/DONE seq spans (cross-cursor (runId, seq) fold); utc fields are informational only"
 }
 ```
 
-**Canonical snippet (single source of truth — K3; orchestrator runs this in-context at the gate):**
+*Erratum carried forward:* the fan-out survey cites this schema as "K3". The K3 anchor was the
+canonical **snippet**; the **schema** is K5. Both now live here.
+
+**Canonical emit (single source of truth — the orchestrator runs this in-context at the gate):**
 
 ```python
-import json, sys
-from datetime import datetime
-from pathlib import Path
+import sys
+import kata_board
 
-kata = Path(sys.argv[1])                       # the run's .kata/ dir (integration root)
-board = (kata / "board.md").read_text(encoding="utf-8")
-
-# Pair earliest CLAIM (start) / latest DONE (end) per task from the self-stamped board.
-# - earliest CLAIM / latest DONE => a re-dispatched task's full in-flight span is kept
-#   (a naive last-write CLAIM would erase a real overlap and undercount concurrency).
-# - a row whose timestamp is not ISO-8601 is skipped, never crashes the emit.
-# Assumes a per-run board (the orchestrator rotates .kata/board.md at run start) and a
-# synchronized worker clock (see the run-isolation + clock-trust notes above).
-starts, ends, owner = {}, {}, {}
-for raw in board.splitlines():
-    parts = [p.strip() for p in raw.split("|")]
-    if len(parts) < 5:
-        continue
-    ts, agent, typ, task, _msg = parts[:5]
-    try:
-        when = datetime.fromisoformat(ts)
-    except ValueError:
-        continue                               # non-ISO / corrupted row — skip, don't abort
-    if typ == "CLAIM":
-        if task not in starts or when < starts[task]:
-            starts[task] = when                # earliest CLAIM = true in-flight start
-        owner.setdefault(task, agent)
-    elif typ == "DONE":
-        if task not in ends or when > ends[task]:
-            ends[task] = when                  # latest DONE = true in-flight end
-
-workers, intervals = {}, []
-for task in sorted(starts):
-    if task not in ends:
-        continue                               # still in-flight / unterminated; skip
-    s, e = starts[task], ends[task]
-    workers[task] = {"agent": owner[task], "start": s.isoformat(), "end": e.isoformat(),
-                     "sec": round((e - s).total_seconds(), 1)}  # negative => clock skew (see note)
-    intervals.append((s, e, task))
-
-# Sweep interval endpoints for max concurrent in-flight + overlap windows (>=2).
-events = sorted([(s, +1) for s, _e, _t in intervals] + [(e, -1) for _s, e, _t in intervals])
-active = max_in_flight = 0
-overlaps, win_start = [], None
-for ts, delta in events:
-    prev = active; active += delta
-    if prev < 2 <= active: win_start = ts
-    if prev >= 2 > active and win_start is not None:
-        overlaps.append([win_start.isoformat(), ts.isoformat()]); win_start = None
-    max_in_flight = max(max_in_flight, active)
-
-out = {"maxInFlight": max_in_flight, "genuinelyParallel": max_in_flight >= 2,
-       "workerCount": len(workers), "workers": workers, "overlaps": overlaps,
-       "source": "board.md CLAIM/DONE self-stamps (worker-clock); per-run board + synchronized clocks assumed"}
-(kata / "concurrency.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
-print(json.dumps(out, indent=2))
+# argv[1] = the run's .kata/ dir (integration root).
+# Optional argv[2:] = additional cursor files (child-run arms) to fold across.
+print(kata_board.emit_concurrency(sys.argv[1], extra_cursor_paths=sys.argv[2:]))
 ```
 
 Run form (Windows; `python` not on PATH): `uv run --directory tools python - <abs-path-to-.kata> <<'PY' … PY`.
