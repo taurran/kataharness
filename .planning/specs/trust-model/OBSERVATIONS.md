@@ -808,3 +808,21 @@ two rounds, merges `c9e6b6a` (edb206a) + `4904922` (c2778ec), both trailered and
   (D-26's boundary-enforcement thesis) and this strand's upgraded refusal diagnostics (the
   round-2 root cause was legible ONLY because round 1's cure put the diagnosis in the
   assertion) are the accumulating counter-machinery.
+
+## Loop-A FINAL EVAL — PASS (2026-08-17, fresh-context default-FAIL judge @ efeae5b)
+
+All eight legs re-derived under the judge's own execution: 7 trailered merges with
+second-parents byte-exact · zero drift across 57 changed paths (G6/G20/G21/G26 + conductor
+acts all traced) · gauntlet green incl. full pytest 5128/3 · all 7 declared evidence nodes
+standalone · five per-task acceptance spot-checks (incl. an unplanned live anti-vacuity
+demonstration when the judge's own scratch run grazed tools/.venv and B1 REFUSED) · the G26
+shipped state verified (run-private archives, prove-before-discard, bounded class-gated
+retry) with CI 32008635522 re-confirmed both legs · 14 record claims verified (the
+`efdaf047…` pin now has FOUR independent derivations; the superseded evaluator mints -50/-52
+confirmed claimed-never-launched) · PD-2 sweep clean. The judge's close: the two prior D-22
+failures did not repeat — where the record had room to over-claim, it under-claimed.
+Residuals R1–R8 carried (R1 spot-audit denominators must pin their input set — conductor
+practice, adopted; R2 filed as DEF-22). **Loop B is unlocked.** Operator surface: rulings
+G21–G26 (one veto line each) + the cursor.md paste + the two G9 commits.
+
+## DEF-22 (filed via the Loop-A eval R2) — see .planning/DEFERRED.md

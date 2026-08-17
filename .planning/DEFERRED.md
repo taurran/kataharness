@@ -372,3 +372,17 @@ writing, and no ledger's authoring style was changed.
 - **Provenance:** W4 orchestrate deferral 4 (not DEF-filed then — filed now); Loop-A
   close-machinery judge residual.
 - **Owed-to:** planning-window backlog (tooling hygiene).
+
+## DEF-22 — six prose sites still describe the pre-G26 archive-name shape · OPEN (2026-08-17)
+
+- **What:** G26 made archive names run-private (`board.<stamp>.<run-token>.archive.md`) but
+  `protocol/cursor.md:170`, `protocol/observability.md:126`, `kata-readiness:132`,
+  `kata-orient:113`, and `kata_restore.py:1026,1169` still describe `board.<utc>.archive.md`.
+  No consumer PARSES archive names (grep-verified at the fix), so nothing breaks — but it is
+  the burn's own prose/code-divergence meta-defect family.
+- **Why:** the six sites span W2/W4/W9-owned files outside the G26 grant; fixing them
+  mid-strand would have been ownership drift, and cursor.md re-triggers the fingerprint
+  two-step.
+- **Provenance:** Loop-A FINAL EVAL residual R2.
+- **Owed-to:** W9 guardian-relabel (owns observability.md) + a small authorized sweep for
+  the rest; the cursor.md leg pairs with any next fingerprint two-step.
