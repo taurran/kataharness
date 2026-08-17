@@ -692,3 +692,68 @@ artifact (or a caller contract should bind it) is a design ruling, filed not pat
 **Conductor lesson (kata-improve fold, joining R14):** a refusal/error message's narration
 is a DESCRIPTION of the legal path, never evidence the path was taken. Records cite
 artifacts (paths that exist, lines on the cursor), not message text.
+
+## Loop-A integration record (2026-08-17 — the G19 consolidated wave: frozen W5 + W6-detectors + W7 close-machinery/doctrine; every fact mechanically re-derived)
+
+- **Five task branches merged no-ff with `Kata-Task:` trailers, each verified post-merge
+  (G10.2):** `1515338 tm-la-judge-contract-rewrites` (tip d268444) · `28bb512
+  tm-la-blocking-detectors` (f49ac87) · `ccbac76 tm-la-signal-detectors` (74c00e7) ·
+  `27ebb6e tm-la-close-machinery` (tip b92e34e) · `2f0b192 tm-la-doctrine-amendment`
+  (tip bee2ed3).
+- **Judge verdicts (fresh-context, default-FAIL, one per item, captured via the seam):**
+  blocking-detectors PASS first round (the judge mutation-tested the no-exec-sinks tripwire;
+  3 live stub findings in existing tools/ recorded) · signal-detectors PASS first round
+  (E7 edge_honesty deviation UPHELD; `UNATTESTED` accepted as in-scope — both
+  conductor-ratified) · judge-contract-rewrites NEEDS_WORK ×2 (F1 `allowed=`-wiring
+  present-tense over-claim at five sites; F2 the F1-cure's reviewer site list wrong —
+  LS-33/35 are evaluator sites, LS-39 omitted) → cures 68e03f2 + d268444 → PASS round 3 ·
+  close-machinery NEEDS_WORK (the G25 LIFO ordering GLOSS inverted at six prose sites while
+  the code was correct — INCLUDING in the ratified proposal text, the conductor's miss too)
+  → cure b92e34e → PASS · doctrine-amendment: the ONE advanced grill NEEDS_WORK (B1 law-13
+  vs law-9 contradiction · B2 DET-09 row · B3 numbering paragraph · B4 scope-honesty
+  self-violation; N1–N7) → fold bee2ed3 → grill re-verdict PASS, constraints re-held
+  byte-level (core rule + judgment boundary md5-identical), zero E5 escalations across both
+  passes.
+- **Rulings this loop:** **G21** (reviewer token carries the grill-phase ladder row —
+  live-proven: reviewer mints at ledger:draft, critic/challenger refused) · **G22-extension**
+  (DET-09 row + "ten laws" heading/Enforcement wording joined the doctrine fold) · **G23**
+  (numbers stay 13/15 per D173's naming; the Numbering paragraph deleted; the
+  never-a-gap-number sentence struck) · **G24** (the doctrine fingerprint pin ADDITION —
+  no pin exists today — rides Loop B `ev1-badge-registry`, the validator-check owner) ·
+  **G25 as RESTATED** (LOOP-BACK over an open predecessor is legal; `close_run` closes
+  still-open phases LIFO — most-recently-opened FIRST, so LOOP-BACK closes FIRST — then
+  writes `run-closed` with `loopBack=1`; the original ratified gloss said "last" and the
+  judge's fixture falsified it — conductor accuracy note, same D-22 family) · **@overload
+  suppressor promotion DECLINED** (E3: block-and-signal is the correct fail-safe posture;
+  a new suppressor class needs its own escalation with evidence).
+- **Conductor integration acts, each distinct and vetoable:** G3 cursor.md pin paste
+  `efdaf047…` (digest derived by builder, judge, and conductor-on-integrated-tree — three
+  independent exact matches; supersedes the never-pasted intermediates b9ae816…/0ccfc698…)
+  · G9 guard-family rows for `kata_close._safe_path` + `truth_serum._guard_path`
+  (invariants conductor-re-verified live; family test 71/71 after) · G9 exec-safety sink
+  rows for `kata_close._pinned_git` + `kata_close.default_evidence_runner` (judge-verified
+  against the real sinks; test_exec_safety 15/15 after) · G2 README regeneration.
+- **Spot-audit (ONE, conductor, live):** (1) the merged B1 detector run over the INTEGRATED
+  tools/ tree — BLOCK with exactly the 3 known findings (drift_gate.py:79,
+  iac_apply.py:815, kata_web.py:620 — the latter two are deliberate n=0-live/quiet-override
+  shapes) out of 947 candidates, matching the task judge's independent run; B1's production
+  input is the task-modified set, so these block nothing today — they are W7
+  gate-preconditions input-set evidence. (2) The G24 gap demonstrated live: one word of
+  docs/DETERMINISM-DOCTRINE.md mutated (RETIRED→RETAINED), validator exit 0, mutation NOT
+  caught, file restored byte-clean — priority evidence for the Loop-B pin addition.
+- **Integration gauntlet 4/4** (pytest-unit 0 · pytest-integration 0 · ruff 0 · validate-skills 0; validator 49 skills, 0 errors, 0 warnings) + **G11:** the close race/interleaving set ×10 sequential fresh processes 40/40 pass, plus the seam atomic-claim node 1/1.
+- **DEF-12/DEF-13 inputs:** close-machinery answered the §1.8 DENY boundary for ITS surface
+  only (a close refusal is a recorded gate verdict, not a DENY-class act) and its analysis
+  argues FOR DEF-12's change on the claim/capture surface — both DEFs stay OPEN as filed.
+- **Carried to Loop B briefs:** corpora activate per-judge under the NEW W5 contracts (the
+  first loop whose eval judges run under them) · grounding-agent reconciles the
+  `v1-provisional` fact-table row shape shipped by truth_signals · ev1-badge-registry gains
+  G24 (the doctrine pin addition + its check) and the S3↔badge-registry wiring ·
+  gate-preconditions (stacked) reads B1's input-set question (the 3 live tree findings +
+  truth_serum self-block DEF-16) and the per-judge tripwire activation per R-M6.
+- **Operator veto surface this loop:** the cursor.md paste (one revert) · the two G9 row
+  commits · rulings G21–G25 (vetoable by objection) · the doctrine amendment itself lands
+  with NO mechanical pin until Loop B (stated, not hidden).
+- **DEF-14..DEF-21 filed** from builder/judge deferral candidates — none silently dropped;
+  BL-N24-class items (Ellipsis-only stubs, bare-name false-negative class, constant-level
+  orphans) recorded here FOR THE PLANNING WINDOW rather than DEF-filed (backlog-fence).

@@ -288,3 +288,87 @@ writing, and no ledger's authoring style was changed.
 - **Provenance:** wave-4 FINAL EVAL round-2 finding F3 + its cure record (the conductor
   itself ran the probe bare and copied the narration as fact).
 - **Owed-to:** a DESIGN §1.8/TM-B5 boundary ruling — with DEF-12, W7 adjacency or the backlog.
+
+## DEF-14 — post-G21 staleness: grill-tier residual paragraphs + engine docstring rows · OPEN (2026-08-17)
+
+- **What:** kata-grill-standard/SKILL.md:61-65 and kata-grill-advanced/SKILL.md:70-74 still
+  say the convergence-reviewer function has no role token (G21 assigned it to `reviewer`),
+  and their kata_dispatch.py:458-468 anchor shifted with the comment rewrite;
+  `check_governor`'s docstring ladder table (~:962) and `mint`'s (~:959) omit the reviewer
+  token from the grill-phase row.
+- **Why:** the grill tiers are W4-owned files (closed wave) and the docstring lines sit
+  outside the G21 region grant — fixing either mid-loop would have been ownership drift.
+- **Provenance:** tm-la-judge-contract-rewrites deferral 1+2; judge residual 1 (3 rounds).
+- **Owed-to:** a small authorized sweep (Loop C/D window) or kata-improve.
+
+## DEF-15 — the `allowed=` enum binding is wired at ONE of six judge dispatch sites · OPEN (2026-08-17)
+
+- **What:** the W5 contracts pin per-judge closed enums, but only LS-31 passes
+  `allowed={"PASS","NEEDS_WORK"}` at capture; the reviewer (LS-06/27/34/39), slop (LS-32)
+  and inline-eval (LS-11/14) sites pass bare `capture(kind="verdict")`. The contracts now
+  say DECLARED-not-yet-wired honestly (cure 68e03f2).
+- **Why:** the wiring lives in kata-orchestrate/SKILL.md (W4-owned, closed); wiring it
+  mid-Loop-A would have been drift.
+- **Provenance:** judge-contract-rewrites judge F1 + residual 4.
+- **Owed-to:** the next authorized kata-orchestrate touch (W8 hook wave is adjacent) or a
+  dispatched mini-task; the honest label must not calcify.
+
+## DEF-16 — truth_serum's B3 self-blocks the detector's own source · OPEN (2026-08-17)
+
+- **What:** protocol/deferral.md:177-178 carves out the LEDGER from the same-line rule but
+  not the detector module whose regexes/contract name the same markers; any future task
+  modifying tools/truth_serum.py self-blocks with 12 findings.
+- **Why:** adding a self-exemption is not in the frozen DESIGN; E3 forbids silent suppressors.
+- **Provenance:** tm-la-blocking-detectors builder DC-1; conductor spot-audit corroborates
+  the input-set question (W7 gate-preconditions chooses B3's inputs).
+- **Owed-to:** gate-preconditions (Loop B, stacked) rules the input set; a deferral.md
+  carve-out widening is the fallback (its own two-step).
+
+## DEF-17 — swap S2's default resolver to truth_serum's B5 · OPEN (2026-08-17)
+
+- **What:** truth_signals.prose_claim_signals ships a local existence-only resolver with an
+  injectable seam proven load-bearing by test; now that truth_serum.resolve_citations is
+  merged in the same tree, the swap is a one-call-site change.
+- **Why:** both modules were built concurrently in disjoint grants; neither could import
+  the other's unmerged branch.
+- **Provenance:** tm-la-signal-detectors builder deferral 1.
+- **Owed-to:** a Loop B/C fast-follow (grounding-agent is the natural consumer to drive it).
+
+## DEF-18 — record a config-provenance digest at run_start · OPEN (2026-08-17)
+
+- **What:** close_run's provenance check falls back to the working tree (labeled
+  `source: "working-tree"`) because run_start records no config digest; an edit between
+  the run's read and the close is invisible. `executed_provenance=` is the closure.
+- **Why:** run_start is seam-engine surface (W3-gated), not close-machinery's grant.
+- **Provenance:** tm-la-close-machinery builder DC-1; residual stated in every payload.
+- **Owed-to:** the seam owner at a later authorized touch / backlog.
+
+## DEF-19 — a dedicated plan-item binding field for deferral entries · OPEN (2026-08-17)
+
+- **What:** the close's deferral binding is prose-derived (heading + What fields); an entry
+  whose What merely mentions a task id over-binds. A `Defers:` field in protocol/deferral.md
+  would make it structural.
+- **Why:** deferral.md is clause-pinned + fingerprinted — its own two-step, not a mid-loop edit.
+- **Provenance:** tm-la-close-machinery builder DC-2 (the defect-2 fix narrowed the rule and
+  pinned the residual direction by test).
+- **Owed-to:** a deferral.md amendment at a later wave / backlog.
+
+## DEF-20 — migrate_machine_local has no caller in the loop · OPEN (2026-08-17)
+
+- **What:** kata_config.split_machine_local + kata_settings work and are tested, but nothing
+  invokes the migration; bootstrap/preflight is the natural once-per-operator home.
+- **Why:** kata-bootstrap/kata-preflight are outside close-machinery's grant.
+- **Provenance:** tm-la-close-machinery builder DC-4.
+- **Owed-to:** a coordinate-skill touch at a later authorized window / backlog.
+
+## DEF-21 — repo-root ruff scope/version drift makes the root invocation useless as a gate · OPEN (2026-08-17)
+
+- **What:** unpinned `uvx ruff` (0.16.3 at last observation) over the REPO ROOT reports ~71
+  errors, all in `.planning/specs/ux-rework/templates/*.py` and `adapters/claude/*.py`;
+  the CI gate runs tools-scoped (working-directory: tools) and is green. Builders keep
+  rediscovering the discrepancy (W4 orchestrate, Loop A close-machinery judge).
+- **Why:** the offending trees are un-owned by any frozen task; pinning ruff's version or
+  scoping the root config is a tooling decision.
+- **Provenance:** W4 orchestrate deferral 4 (not DEF-filed then — filed now); Loop-A
+  close-machinery judge residual.
+- **Owed-to:** planning-window backlog (tooling hygiene).
