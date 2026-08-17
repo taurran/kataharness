@@ -298,15 +298,30 @@ def test_concurrent_rotations_never_clobber_an_archive(tmp_path):
     least one rotation succeeds, every failure is a loud CursorError, and the live
     cursor still parses.
 
-    **What this test actually falsifies, measured rather than assumed:** run against the
-    pre-fix algorithm on this host, the marker invariant held in 25/25 rounds (a barrier
-    start makes the losers hit a missing cursor rather than a completed one, so the
-    byte-level clobber does not reproduce here) — but raw ``FileNotFoundError`` and
+    **What this test falsifies, measured rather than assumed.** Against the pre-fix
+    algorithm on this host the marker invariant held in 25/25 rounds (a barrier start
+    makes losers hit a missing cursor rather than a completed one, so the byte-level
+    clobber does not reproduce here) — but raw ``FileNotFoundError`` and
     ``PermissionError`` escaped in every configuration, which the loud-refusal assertion
     catches. The clobber itself is pinned deterministically by the forced-interleaving
-    test above; this one pins the property that ``start_run`` has exactly two outcomes
-    under contention — success, or a CursorError — which is what caught three separate
-    Windows defects while this fix was being written.
+    test above.
+
+    **POSIX (CI run 31989512531, ubuntu leg — the pending proof for this revision).**
+    The ubuntu leg failed here on "no progress" with
+    ``CursorParseError: cursor has no run-header block``. That message can only come from
+    ``parse_header``, which ``start_run`` never calls — so it was a READER landing in a
+    window where ``board.md`` existed with no header. The window was real and in
+    PRODUCTION code, not in this test: the cursor was published by creating it with
+    ``O_CREAT|O_EXCL`` and writing afterwards (both in the header write and in the
+    refusal's restore path), so the file existed at zero bytes in between. Windows hides
+    that window behind sharing violations; POSIX has no such serialization. The cure is
+    in the code — :func:`kata_board._publish_cursor` now publishes complete-or-absent and
+    claims the name exclusively — so the assertions below stay unconditional on both
+    platforms rather than being framed per-platform.
+
+    **Progress is now guaranteed by construction, not by luck:** publication elects the
+    winner, and whichever racer publishes first has succeeded, so ``wins`` can never be
+    empty. That is why the progress assertion needs no platform framing.
     """
     rounds, workers = 25, 4
 
@@ -353,6 +368,75 @@ def test_concurrent_rotations_never_clobber_an_archive(tmp_path):
 
         # Whatever the interleaving, the surviving cursor is still a valid cursor.
         assert kata_board.read_cursor(kata_dir).header.run_id
+
+
+def test_live_cursor_is_never_observable_without_a_run_header(tmp_path):
+    """THE POSIX PIN — the property CI run 31989512531 (ubuntu leg) falsified.
+
+    A concurrent reader samples ``board.md`` throughout a contended rotation. Absent is
+    legal (there is a real window between archiving the old cursor and publishing the
+    new header), but **existing-and-headerless is not**: that is the stranded cursor a
+    reader turns into ``CursorParseError: cursor has no run-header block``, which is
+    exactly what the ubuntu leg reported. Pre-fix, the cursor was created with
+    ``O_CREAT|O_EXCL`` and written afterwards — a genuine zero-byte window, in
+    production code, in both the header write and the refusal's restore path. Windows
+    masks it behind sharing violations; POSIX does not.
+
+    Deliberately split from the race test above, and deliberately NOT asserting
+    progress: on Windows a hot reader holding the cursor open makes ``os.replace`` fail
+    with a sharing violation, so every rotation in a round can legitimately end in a
+    typed refusal. That satisfies the contract (success-or-typed-refusal) but would make
+    a progress assertion here a lie about what is being tested. Strand-freedom and the
+    refusal class stay unconditional on both platforms.
+    """
+    rounds, workers = 12, 3
+
+    for r in range(rounds):
+        kata_dir = tmp_path / f"round{r}"
+        kata_dir.mkdir()
+        kata_board.start_run(kata_dir, run_id=RUN_A)
+        kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, f"content-{r}")
+
+        board = kata_dir / kata_board.CURSOR_FILENAME
+        strands: list[bytes] = []
+        unexpected: list[BaseException] = []
+        stop = threading.Event()
+        gate = threading.Barrier(workers)
+
+        def observe() -> None:
+            while not stop.is_set():
+                try:
+                    data = board.read_bytes()
+                except OSError:
+                    continue  # absent or momentarily unreadable — both legal
+                if not data or not data.startswith(b"RUN "):
+                    strands.append(data)
+
+        def rotate(i: int) -> None:
+            gate.wait()
+            try:
+                kata_board.start_run(kata_dir, run_id=f"run-20260816T21{i:04d}Z-{i:08x}")
+            except kata_board.CursorError:
+                pass  # typed refusal is a legal outcome — see the docstring
+            except BaseException as exc:  # noqa: BLE001
+                unexpected.append(exc)
+
+        watcher = threading.Thread(target=observe, daemon=True)
+        watcher.start()
+        threads = [threading.Thread(target=rotate, args=(i,)) for i in range(workers)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=30)
+        stop.set()
+        watcher.join(timeout=30)
+
+        assert not unexpected, f"round {r}: non-CursorError escaped: {unexpected!r}"
+        assert not strands, (
+            f"round {r}: the live cursor was observable without a run-header "
+            f"{len(strands)}x (first sample: {strands[0]!r}) — this is the stranded "
+            "cursor the ubuntu leg's CursorParseError was reading"
+        )
 
 
 # ---------------------------------------------------------------------------
