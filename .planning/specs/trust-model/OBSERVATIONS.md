@@ -973,3 +973,30 @@ wave.** **Loop C is unlocked.**
   table FILED not edited (fence, GATE-PLAN ruling 2).
 - **DEF-29..DEF-31 filed** (capture-edge live probe for Verified-post-edge; the marker-loss
   fail-open residual channel; the global-settings install Human Moment).
+
+## Loop-C FINAL EVAL — PASS (2026-08-17, fresh-context default-FAIL judge @ 022e143)
+
+Whole-loop re-derivation: 1 trailered merge (second-parent 548cd68 exact) + named conductor
+acts, zero drift across 10 paths, the hook digest == sha256(kata-seam-guard.py) exact. The
+enforcement flip is mutation-proven across FOUR independent legs, three execution-based: (1)
+the task-level judge (-85) hand-rolled real subprocess mutants — neutered validator AND
+blanket-denier both derive Dormant; (2) the COMMITTED genuine mutation tests
+(test_a_neutered_hook_fails_the_tripwire, test_a_blanket_denier_fails_the_scope_leg) — verified
+not-stubs; (3) CI run 32028410601 SUCCESS both platforms at the tip, running those tests in the
+gauntlet; (4) the conductor's own live spot-audit (the real hook denied a record-less call on
+the burn's own cursor). A deny-everything hook CANNOT read as Verified — fingerprint+tripwire
+jointly necessary, neither inherits. The install-gated posture is stated with no global-live
+overclaim (settings.snippet.json is a template; §11 global settings unguardable; grade
+"Verified (intercepting) WHERE INSTALLED"). The transient-flake note is honest (does not claim
+4/4-first-try; CI arbiter green). Zero critical/blocking findings.
+
+**Evaluator-capability disclosure + LESSON (improve-fold candidate):** the final-eval judge
+ran as a read-only Explore agent and could execute committed tests (Bash) but not author
+scratch mutants (no Write), so it substituted CI + structural re-derivation for the
+self-execution legs and DISCLOSED this rather than hiding it. Ruling: for enforcement-critical
+mutation-proofs the discipline is to COMMIT the mutation tests (so they run in-suite + CI) —
+which this builder did — rather than rely on a judge hand-rolling them; the honest disclosure
+is exactly the PD-2 behavior wanted. No re-eval required; the four-leg proof stands.
+
+**Loop D is unlocked** — the final build wave (guardian-relabel, W9), carrying G27 (badge
+registry grant) + G31 (kata-orchestrate stop-pre-claiming) + the fence-parked BACKLOG table.
