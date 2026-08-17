@@ -54,7 +54,7 @@ This is today's `kata-review` at its original depth — the default for any non-
   of the envelope; the body is NEVER scanned and there is deliberately **no body-scan fallback** (a no-match
   is `CaptureRefused`, the absent-records refusal path). Dispatchers bind this enum by passing
   `allowed={"SHIP","HOLD"}` at capture; today only [[kata-orchestrate]]'s LS-31 pins its set (the
-  evaluator's `PASS|NEEDS_WORK`) — the reviewer dispatch sites (LS-06/27/33/34/35) pass bare
+  evaluator's `PASS|NEEDS_WORK`) — the reviewer dispatch sites (LS-06/27/34/39) pass bare
   `capture(kind="verdict")`, so the enum binding there is DECLARED, not yet wired (the wiring is
   kata-orchestrate's file, W4-owned). The RUBRIC's "overall SHIP / HOLD recommendation" in the body
   restates this line; the two must agree, and line 1 is the copy the machine reads.
