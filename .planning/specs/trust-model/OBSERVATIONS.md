@@ -164,6 +164,19 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   still describes the retired mutation_run shell=True exception — owed to the W7
   doctrine-amendment task's fold (recorded here so it is folded, not rediscovered).
 
+- **D-21 · cursor-consumers (G8) landed; per-consumer refusal rulings recorded; two
+  follow-ons routed.** Gate re-run 422/422. Refusal semantics chosen deliberately per
+  consumer and tested: dash renders UNREADABLE never idle · restore records
+  `board-unparseable` in `degraded_reasons`, destroys nothing · telemetry PROPAGATES (gate
+  parser, never-skip posture) · crew stays fail-soft per its F3 contract with the refusal
+  logged. Legacy fixtures survive only inside refusal tests; fixtures now built through the
+  canonical emitter. **Routed:** (1) the stale statusline golden fixture (legacy 5-field
+  board literal, correctly refused ⇒ two ▰→▱ glyphs) → its wave-1 owner
+  (tm-w1-fix-statusline-crash) as a stacked follow-up, in flight; (2) `fold_board` still
+  selects by wall-clock — a deliberate non-change (parser migration ≠ semantic re-basing);
+  the seq re-basing is a W3-adjacent decision, recorded here for the seam wave's brief; (3)
+  latent naive/aware datetime mix in fold_board's min/max (pre-existing) — noted with (2).
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
