@@ -579,3 +579,52 @@ per RS-M5.
   entirely (two G10 tooling nuances observed live this wave).
 - **DEF-4..DEF-11 filed** (.planning/DEFERRED.md) from builder deferral candidates — none
   silently dropped.
+
+## G19 — OPERATOR-DIRECTED RE-SCOPE (2026-08-17): waves 5–9 consolidate to FOUR loops, run back-to-back autonomously
+
+Operator directive (verbatim-intent, given live in-session): *"Consolidate to four loops, and
+don't wait between each. Run them back to back in an end to end burn, and then give me the
+full post-loop report once it's all done. I'm going to go to bed and would like to wake up to
+a completed end to end run."*
+
+**What changes:** ONLY the wave grouping of the frozen PLAN's `waves:` map for waves 5–9.
+Every task contract, ownership grant, dependency edge, evidence declaration, gate, and
+recorded rationale stays frozen as authored. The consolidation was derived from the frozen
+`depends_on:` map and verified against it:
+
+- **Loop A** = judge-contract-rewrites (anchor) ∥ blocking-detectors ∥ signal-detectors ∥
+  close-machinery ∥ doctrine-amendment (anchor). All five have every dependency landed
+  (W1–W3) and disjoint ownership.
+- **Loop B** = judge-tripwire-corpora ∥ grounding-agent ∥ ev1-badge-registry, with
+  **gate-preconditions STACKED on the corpora branch** (the G8/G17 stacked-task precedent —
+  its `depends_on` includes judge-tripwire-corpora).
+- **Loop C** = hook-activation ALONE — the TM-H1 activate-LAST law and its own gate with the
+  live deny-tripwire stay intact, exactly as frozen.
+- **Loop D** = guardian-relabel-pass — the PLAN deviation-3 rationale (relabel must cite
+  post-activation results) stays intact, exactly as frozen.
+
+**Preserved orderings (load-bearing, unchanged):** corpora after judge contracts ·
+gate-preconditions after corpora · hook after ALL migrations + judge contracts +
+gate-preconditions · relabel after hook. The full loop runs per consolidated wave (builders →
+conductor re-runs → fresh-context default-FAIL judges per item → cures → ONE spot-audit →
+integration with trailers/G2/G3-class acts → gauntlet → push+CI → default-FAIL final eval).
+
+**Blast-radius trade, declared:** a failed Loop-A final eval re-loops five tasks instead of
+one wave's worth. Accepted by the operator's directive; per-task judge gates before
+integration keep the cure surface per-task.
+
+**Autonomy rider:** the operator's directive makes the remaining human-approval moments
+(doctrine fingerprint re-approval; any further G3-class pastes) conductor-performed acts with
+the FULL VETO SURFACE enumerated in the post-loop report — the G3 precedent extended by
+explicit operator direction, recorded here. Outward-facing posture unchanged: pushes go only
+to the existing origin burn branch; `cursor.pushTrail` stays default never-push; the BACKLOG
+truth-status leg of W9 stays fence-parked unless the planning-window fence is verifiably
+lifted (GATE-PLAN ruling 2) — it will be FILED via OBSERVATIONS instead.
+
+**G20 — ownership amendment riding G19:** `close-machinery` (Loop A) additionally gains the
+three W4 NOT-YET-BUILT `close_run` qualifier sites (`protocol/cursor.md` ~:201,
+`skills/coordinate/kata-loop/SKILL.md` ~:72 and the parked Path-A step 3 at ~:196-205) — to
+flip them true when `tools/kata_close.py` lands in the same loop — plus the W7-carried
+rulings it must make in its own contract: R3 (LOOP-BACK close before the terminal write) and
+the loop-back-over-open-predecessor semantics. The `protocol/cursor.md` touch re-triggers the
+fingerprint two-step (conductor re-derives + pastes at Loop-A integration, one more veto line).
