@@ -551,8 +551,9 @@ def test_payload_pointer_traversal_is_refused(evil):
 
 
 def test_payload_traversal_is_refused_on_parse():
-    """A traversal pointer inside a cursor line is refused at parse time too."""
-    with pytest.raises(kata_board.CursorGrammarError):
+    """A traversal pointer inside a cursor line is refused at parse time too — and as a
+    CursorParseError, so a fail-soft consumer catches exactly one class on the read path."""
+    with pytest.raises(kata_board.CursorParseError):
         kata_board.parse_line(
             "2026-08-16T10:15:00+00:00 | 4 | seam | VERDICT | T1 | "
             "PASS payload=../../secrets.json"

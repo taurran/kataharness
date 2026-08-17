@@ -426,7 +426,10 @@ def parse_line(raw: str, *, pos: int = 0) -> CursorLine:
     payload: str | None = None
     if PAYLOAD_TOKEN in msg:
         msg, _, payload = msg.rpartition(PAYLOAD_TOKEN)
-        payload = _guard_pointer(payload.strip(), what="payload")
+        try:  # on the READ path every refusal is a CursorParseError, so a fail-soft
+            payload = _guard_pointer(payload.strip(), what="payload")
+        except CursorGrammarError as exc:  # consumer catches exactly one class
+            raise CursorParseError(f"{exc} in: {line!r}") from exc
     msg = msg.strip()
     if not msg:
         raise CursorParseError(f"kata_board: empty msg in: {line!r}")
@@ -469,7 +472,10 @@ def parse_header(text: str) -> tuple[RunHeader, int]:
         raise CursorParseError(
             f"kata_board: cursor must open with 'RUN <run-id>', got: {first!r}"
         )
-    run_id = validate_run_id(first[len(_RUN_PREFIX) :].strip())
+    try:  # read path: one refusal class (see parse_line)
+        run_id = validate_run_id(first[len(_RUN_PREFIX) :].strip())
+    except CursorGrammarError as exc:
+        raise CursorParseError(str(exc)) from exc
     i += 1
 
     pointers: dict[str, str] = {}
@@ -483,11 +489,14 @@ def parse_header(text: str) -> tuple[RunHeader, int]:
                 f"kata_board: duplicate run-header key {key!r}"
             )
         value = candidate[len(key) + 2 :].strip()
-        pointers[key] = (
-            _guard_pointer(value, what="prev-segment")
-            if key == "prev-segment"
-            else validate_run_id(value)
-        )
+        try:  # read path: one refusal class (see parse_line)
+            pointers[key] = (
+                _guard_pointer(value, what="prev-segment")
+                if key == "prev-segment"
+                else validate_run_id(value)
+            )
+        except CursorGrammarError as exc:
+            raise CursorParseError(f"{exc} (run-header key {key!r})") from exc
         i += 1
 
     return (
