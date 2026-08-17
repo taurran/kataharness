@@ -7,7 +7,7 @@ description: >-
   (skip|light|standard|full, D71). Invoke from kata-bootstrap before composing a run, or standalone as
   an "is my kata environment ready?" doctor.
 license: Apache-2.0
-version: 0.2.2
+version: 0.3.0
 category: coordinate
 status: beta
 agnostic: true
@@ -31,6 +31,41 @@ each a checklist; report PASS / WARN / BLOCK per item and an overall verdict.
 - Skills tree present and the validator is green (`tools/` → `uv run python validate_skills.py`, exit 0).
 - Required host tools on PATH for the chosen run (e.g. `git`, the test runner, `uv`/language toolchain).
 - A subagent-capable host is available (orchestrate's dispatch binding).
+
+### Scope 1b — seam init and the run marker (read-only)
+
+The seam is the door every dispatch goes through, so its state is a readiness fact. All four checks
+below are **reads**: readiness never calls `run_start` — that is the caller's act — it reports what
+the caller will find.
+
+- **The cursor's position and terminality.** Read `.kata/board.md` (heritage filename; the cursor is
+  what it holds — `protocol/cursor.md`) via `kata_board.read_cursor(kata_dir)`. Then:
+  - **absent cursor, or a cursor whose run is CLOSED** (`kata_dispatch.is_run_closed(cursor)`) ⇒
+    the caller's `run_start` will discriminate **new**: rotate + mint a fresh `runId`. Report it —
+    a fresh mint is normal, but the operator should never be surprised by one.
+  - **live cursor with an unclosed run** ⇒ `run_start` will **RESUME**: ADOPT the header's `runId`,
+    reap orphan dispatch records, continue. Report the adopted `runId` and the open phases
+    (`kata_dispatch.phase_state(cursor)` → `{open, closed, runClosed}`). This is what keeps
+    pre-crash gate artifacts valid evidence under the exact-runId rule.
+  - **a cursor file that exists but carries no parseable run-header** is a **TORN ROTATION** ⇒
+    **BLOCK**. Do not guess a run identity; `run_start` refuses loudly here and so does readiness.
+    A zero-byte cursor is the benign half of the same tear (reported, run starts fresh over it).
+    Rotation is atomic — archive rename, then header write — so a tear is a real event, not noise.
+- **The run marker.** `kata_dispatch.read_run_marker(kata_dir)` returns the
+  `{schema, runId, kataDir, mode, startedUtc}` scope marker (`.kata/run-marker.json`), or `None`
+  when absent/unreadable. It is what scopes the deny hook to kata runs so non-kata sessions are
+  untouched. Report: **absent** ⇒ no seam-initialised run here (expected before `run_start`);
+  **present with a `runId` that differs from the live cursor's header** ⇒ **BLOCK** — a marker and a
+  cursor disagreeing about which run is live is a stale-marker condition the caller must resolve
+  before composing, never a discrepancy to average over.
+- **Hook + deny-tripwire posture, reported as DERIVED grades, never asserted.**
+  `kata_dispatch.hook_fingerprint(repo_root)` and `kata_dispatch.deny_tripwire_probe()` are the
+  probes; `derive_enforcement` / `derive_capture` turn them into the Guardian value. **A tripwire
+  that returns no result is `Dormant (pre-activation)` — never an inherited prior declaration.**
+  A missing hook is not a BLOCK: it is a declared degraded mode, per-capability and never viral.
+- **Orphan dispatch records.** A pending record under `.kata/dispatch/` with no matching SPAWN line
+  on the cursor is a crash-mid-mint orphan. Report the count; `run_start`'s orphan pass is what
+  reaps them, so this is information for the caller, not a blocker.
 
 ## Scope 2 — target readiness
 - Inside a git repo with a **clean working tree** (uncommitted churn ⇒ WARN — execution wants a clean fork).
@@ -65,19 +100,23 @@ each a checklist; report PASS / WARN / BLOCK per item and an overall verdict.
   L3) — it never writes `.kata/` itself. One-shot runs (no `delivery` / `shape: one-shot`) skip this entirely.
 - **Lost-run detection (R5 extension — restore-hardening B2, D134).** When the sprint-progression rebuild
   (above) finds `.kata/` absent or stale but `refs/kata/trail` is present, treat this as a *lost-run* condition
-  and extend the rebuild to include the durable board:
-  1. Read `board.md` from `refs/kata/trail` (`git cat-file -p refs/kata/trail:board.md`) and fold it to the
-     frontier using the canonical concurrency reduce (`protocol/board.md` canonical snippet, `fold_board` in
-     `tools/kata_restore.py`).  The folded board CORROBORATES in-flight ownership but **never gates** the
-     re-dispatch set.
+  and extend the rebuild to include the durable cursor:
+  1. Read `board.md` from `refs/kata/trail` (`git cat-file -p refs/kata/trail:board.md` — heritage
+     filename, cursor contents) and fold it to the frontier using the canonical concurrency reduce
+     (`protocol/cursor.md` canonical snippet, `fold_board` in `tools/kata_restore.py`).  The folded
+     cursor CORROBORATES in-flight ownership but **never gates** the re-dispatch set.
+     **Honest label — `fold_board` still selects by WALL-CLOCK**, not by seq: the parser migrated to
+     the 6-field grammar, but the fold's selection semantics were deliberately not re-based. Do not
+     describe this frontier as seq-ordered; the cursor's *ordering of record* is `(runId, seq)` and
+     this particular fold does not yet use it.
   2. Re-dispatch set = all task-ids in the frozen PLAN **minus** those with an integration commit on the
      integration branch (mapped via the `Kata-Task: <id>` trailer in each commit — `collect_integrated_tasks`
      in `tools/kata_restore.py`).  **Tier-2 (integration history) is AUTHORITATIVE for DONE.**
-     A task absent from the board (not even a CLAIM) but non-integrated is re-dispatched; a task with a board
-     `DONE` but no integration commit is also re-dispatched.  Gating on board CLAIMs would silently drop
+     A task absent from the cursor (not even a CLAIM) but non-integrated is re-dispatched; a task with a cursor
+     `DONE` but no integration commit is also re-dispatched.  Gating on cursor CLAIMs would silently drop
      early-wave tasks a crash never durably recorded — the PLAN + integration history are the only always-durable
      sources.
-  3. Report the re-dispatch set + board frontier in the verdict (flagged as `lost_run: true`).  Call
+  3. Report the re-dispatch set + cursor frontier in the verdict (flagged as `lost_run: true`).  Call
      `kata_restore.restore(repo_root, plan_path, integration_branch)` to materialize the cleanup (C2 stale
      branch + worktree prune) and write the board back to `.kata/board.md` **without rotation** (no archive
      file — see R5-norotate below).
@@ -91,9 +130,9 @@ each a checklist; report PASS / WARN / BLOCK per item and an overall verdict.
   **Read-only on the verdict path:** readiness calls `kata_restore.restore` which handles the `.kata/` writes
   only on the confirmed lost-run code path; the readiness verdict itself stays read-only.
 - **R5-norotate:** a *resume* MUST NOT rotate `.kata/board.md` to `.kata/board.<utc>.archive.md`.  Rotation
-  is a run-start action ([[kata-orchestrate]] loop preamble); a resume restores the orphan-ref board into
-  place and skips rotation entirely.  Rotating would archive the recovered CLAIM/DONE lines and empty the
-  live board, defeating the restore.
+  is a run-start action (`kata_dispatch.run_start` → `kata_board.start_run`); a resume restores the
+  orphan-ref cursor into place, ADOPTS the header's `runId`, and skips rotation entirely.  Rotating would
+  archive the recovered CLAIM/DONE lines and empty the live cursor, defeating the restore.
 
 ## Scope 3 — priming-prompt richness → recommended grill depth (D71)
 Assess the **priming prompt** (the human's original spec for this run) and recommend a starting **grill-depth
@@ -111,6 +150,12 @@ writes — the recommendation is returned to bootstrap.
 
 ## Verdict
 Return a compact structured verdict (overall PASS/WARN/BLOCK + the per-item findings + the re-entrant
-`kata.config` summary if any + the **recommended grill depth + rationale**). **BLOCK** = a hard stop bootstrap
+`kata.config` summary if any + the **seam-init report from Scope 1b** — `{runId, mode: new|resume,
+runMarker: present|absent|stale, tornRotation, enforcement, capture, orphanRecords}` — + the
+**recommended grill depth + rationale**). **BLOCK** = a hard stop bootstrap
 must resolve before composing a run; **WARN** = surface to the user but allow proceed. The grill-depth
 recommendation is advisory (never BLOCK/WARN). The check never installs, never writes, never mutates the repo.
+
+**Every Scope-1b value is REPORTED AS OBSERVED.** A probe that returned no result is reported as
+no-result (`Dormant (pre-activation)`), never as the previous run's declaration and never as a
+grade the probe did not produce. Readiness reports state; it does not improve it.
