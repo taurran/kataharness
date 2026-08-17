@@ -880,6 +880,27 @@ def test_mint_writes_the_full_record_and_a_chained_spawn_line(tmp_path):
     assert kd._spawn_fields(spawn[0].msg)["record"] == record["recordId"]
 
 
+def test_mint_refuses_to_overwrite_an_existing_record_path(tmp_path):
+    """Same defect class as the claim election: a colliding seq must be LOUD, not silent.
+
+    `seq` comes from next_seq(cursor), a read-then-write, so two concurrent mints would
+    compute the same seq and the second would silently clobber the first's record while
+    both appended a SPAWN line naming the same id. kata_board's contract assumes the
+    seam is a single writer; the record path is now reserved exclusively, so a violation
+    refuses instead of destroying a minted record.
+    """
+    kata = _kata(tmp_path)
+    cursor = kb.read_cursor(kata)
+    collided = kd.record_path(kata, kd.record_id(cursor.run_id, kb.next_seq(cursor)))
+    collided.parent.mkdir(parents=True, exist_ok=True)
+    collided.write_text('{"squatter": true}', encoding="utf-8")
+
+    with pytest.raises(kd.MintRefused, match="already exists"):
+        _mint_ok(kata, _FROZEN_PLAN)
+    # the pre-existing record is intact — nothing was overwritten
+    assert json.loads(collided.read_text(encoding="utf-8")) == {"squatter": True}
+
+
 def test_mint_wires_the_role_resolver(tmp_path):
     """resolve_roles had ZERO callers (SURFACE-MAP); the mint is its call site."""
     kata = _kata(tmp_path)

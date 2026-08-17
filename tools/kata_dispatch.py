@@ -1071,9 +1071,19 @@ def record_path(kata_dir: str | Path, rid: str, *, consumed: bool = False) -> Pa
     return base / f"{_guard_record_id(rid)}.json"
 
 
-def _write_json_atomic(target: Path, payload: dict) -> Path:
-    """Write JSON via temp + ``os.replace``.  ``sort_keys=True`` (doctrine law 5)."""
+def _write_json_atomic(target: Path, payload: dict, *, exclusive: bool = False) -> Path:
+    """Write JSON via temp + ``os.replace``.  ``sort_keys=True`` (doctrine law 5).
+
+    ``exclusive=True`` first RESERVES the path with an atomic ``O_CREAT|O_EXCL`` create,
+    so a colliding writer is refused loudly instead of silently clobbering the first
+    writer's content.  Two syscalls, deliberately: the reservation gives collision
+    detection (the only primitive that is genuinely exclusive on both platforms — see
+    :func:`claim_record` for the measurement), the temp+replace gives atomic publication.
+    Raises ``FileExistsError`` when the path is already taken.
+    """
     target.parent.mkdir(parents=True, exist_ok=True)
+    if exclusive:
+        os.close(os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
     fd, tmp_path = tempfile.mkstemp(dir=target.parent, suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
@@ -1257,7 +1267,25 @@ def mint(
     if "routedFrom" in governed:
         record["governedRoutedFrom"] = governed["routedFrom"]
 
-    path = _write_json_atomic(record_path(kata, rid), record)
+    # The record path is RESERVED exclusively.  `seq` comes from next_seq(cursor), a
+    # read-then-write: two concurrent mints would compute the SAME seq and the second
+    # would silently clobber the first's record while both appended a SPAWN line naming
+    # the same id.  kata_board's grammar contract assumes the seam is a single writer
+    # ("seam-authored lines come from the single seam writer and are therefore unique,
+    # which is why lineage references always target seam-authored seqs") — this makes
+    # that assumption ENFORCED rather than merely documented, and a violation loud.
+    # Same defect class as the claim election (RS-H2): a property assumed, not enforced.
+    try:
+        path = _write_json_atomic(record_path(kata, rid), record, exclusive=True)
+    except FileExistsError as exc:
+        raise MintRefused(
+            f"kata_dispatch: dispatch record {rid!r} already exists — seq {seq} on run "
+            f"{cursor.run_id} is already taken. The seam is a SINGLE writer by contract "
+            "(kata_board §2.2: seam-authored seqs are unique, which is what lineage "
+            "references rely on); a collision means two mints raced or the cursor was "
+            "rewound. Refusing to overwrite a minted record.",
+            park_path=park, task_id=task_id,
+        ) from exc
 
     msg = (
         f"mint role={role} governs={governed['governs']} state={governed['state']} "
