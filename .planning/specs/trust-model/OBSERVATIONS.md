@@ -264,6 +264,26 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   practice upgraded: intermittency loops (≥10×) join the conductor re-run for
   concurrency-bearing tests.
 
+- **D-25 · 🔴 DESIGN §1.5 ERRATUM (Windows) + the atomic-claim cure — the burn's deepest
+  catch so far.** The "atomic claim by os.rename" premise is POSIX reasoning: on Windows,
+  renaming a file to the path it already occupies is a DOCUMENTED NO-OP SUCCESS, so a
+  rename-election silently degrades to everyone-wins (raw-OS probe, no kata code: 8/8
+  claimants "won" every one of 200 rounds; the pre-fix `claim_record` produced multiple
+  winners in 32/200). Sequential runs look perfect — which is why single-shot verification
+  passed while the replay control was broken. **Cure (84ab704):** election by
+  `O_CREAT|O_EXCL` exclusive create (probe: {1: 300/300}); retention move stays the §1.5
+  rename (mark-consumed-and-retain preserved); loser denied with the re-mint path named;
+  pinned by a deterministic forced-interleaving test + the declared node now runs the race
+  25× in-process. **Same-class audit found a second defect, fixed (8c75e87):** two
+  concurrent mints computing the same seq would silently clobber a record file — the path
+  is now exclusively reserved; collision ⇒ refuse-to-mint ⇒ park. **Third instance routed:**
+  `kata_board.start_run`'s archive-name TOCTOU (reported-not-touched, W2 owner; follow-up
+  dispatched). **Standing practice (G11):** a concurrency-property test must run its race
+  N times in-process AND pin the property by forced interleaving where injectable; the
+  conductor re-run loops concurrency-bearing tests ≥10× (this discipline is what caught
+  the 1-in-5 flake the builder's green single-shots missed). The gated DESIGN stays as
+  authored; this erratum is the record.
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
