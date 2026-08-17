@@ -97,6 +97,21 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   values pre-derived. Task tm-w2-ledger-status-normalization itself: complete at G4 scope,
   zero edits (trust-model verified conformant), validator green.
 
+- **D-17 · cursor-durability landed with one git-forced erratum + three routings.**
+  (1) **ERRATUM (recorded here; the gated DESIGN stays as authored):** DESIGN §2.5 /
+  PLAN's `refs/kata/trail/<runId>` is UNCONSTRUCTIBLE while the legacy `refs/kata/trail`
+  exists (git directory/file ref conflict, error text preserved in the module docstring) —
+  per-run refs live at **`refs/kata/trails/<runId>`** (`RUN_TRAIL_REF_PREFIX`), legacy ref
+  untouched; both DESIGN intents preserved. (2) `cursor.pushTrail` needs NO kata_config
+  schema entry (additive keys legal by that validator's own contract) but DOES need a
+  `protocol/config.md` registry row — no task owns that file: **ownership amendment G6:
+  the row rides W7 `close-machinery`** (owner of the offer's machinery; builder-suggested
+  row text preserved in the task report). (3) `protocol/exec-safety.md:61`'s
+  `snapshot_board` row is now understated (new inputs: per-run ref from a regex-guarded
+  runId, payload basenames, caller-supplied cursor basename) — routed to the exec-safety
+  builder at W2 integration. Honest label carried: cadence + record mechanism are
+  test-exercised but have NO production caller until W3's seam — by plan, stated.
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
