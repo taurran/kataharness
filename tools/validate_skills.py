@@ -947,7 +947,7 @@ PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
 #: NOTE the deliberate absence of `config.md` and `exec-safety.md` — the two declared
 #: registry-shaped fingerprint exemptions; see the SCOPE note above.
 PROTOCOL_FINGERPRINTS: dict[str, str] = {
-    "advice.md": "c811801ef8701f0873a8e2dc9edd093da891d17a1c1eb250e1fd8fdca69f500a",
+    "advice.md": "794103395300753725eaf2ac03c5dfc2dc142d017373fd8d6d0027563327e75e",
     "authored-artifact-gate.md": "b90eb9ded18eb324382d23772cabc7740112da964983317ed196858c486ae535",
     # Heritage key `board.md` renamed to `cursor.md` with the file (W4). The digest below is
     # the PRE-rename value and is EXPECTED to mismatch until the conductor's G3 re-approval
