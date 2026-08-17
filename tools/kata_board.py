@@ -424,6 +424,15 @@ def parse_line(raw: str, *, pos: int = 0) -> CursorLine:
         raise CursorParseError(f"kata_board: empty agent-id/task-id in: {line!r}")
 
     payload: str | None = None
+    if msg.count(PAYLOAD_TOKEN) > 1:
+        # Write/read symmetry: format_line refuses a msg carrying the reserved token,
+        # so a line with two of them could never have been emitted by this engine.
+        # Taking the last one would parse it into a msg that cannot be re-emitted —
+        # a round-trip this contract must not have.
+        raise CursorParseError(
+            f"kata_board: {PAYLOAD_TOKEN!r} appears {msg.count(PAYLOAD_TOKEN)} times; "
+            f"a line carries at most one payload pointer, in: {line!r}"
+        )
     if PAYLOAD_TOKEN in msg:
         msg, _, payload = msg.rpartition(PAYLOAD_TOKEN)
         try:  # on the READ path every refusal is a CursorParseError, so a fail-soft
@@ -455,8 +464,9 @@ def parse_header(text: str) -> tuple[RunHeader, int]:
     """Parse the run-header block.
 
     Returns ``(header, consumed)`` where *consumed* is the number of raw text lines
-    the header occupied (leading blank lines included).  Pointer keys may appear in
-    any order; each may appear at most once.
+    the header occupied (leading blank lines included).  Pointer keys are read in the
+    BNF's order and each may appear at most once — the reader is exactly as strict as
+    the writer, so a given header has exactly one legal serialization.
     """
     raw_lines = text.splitlines()
     i = 0
@@ -479,6 +489,7 @@ def parse_header(text: str) -> tuple[RunHeader, int]:
     i += 1
 
     pointers: dict[str, str] = {}
+    next_allowed = 0  # header keys are read in BNF order — one header, one serialization
     while i < len(raw_lines):
         candidate = raw_lines[i].strip()
         key = next((k for k in _HEADER_KEYS if candidate.startswith(f"{k}: ")), None)
@@ -488,6 +499,14 @@ def parse_header(text: str) -> tuple[RunHeader, int]:
             raise CursorParseError(
                 f"kata_board: duplicate run-header key {key!r}"
             )
+        position = _HEADER_KEYS.index(key)
+        if position < next_allowed:
+            raise CursorParseError(
+                f"kata_board: run-header key {key!r} is out of BNF order; the block is "
+                f"'RUN' then {list(_HEADER_KEYS)} — the reader is as strict as the writer "
+                "so a header has exactly one serialization"
+            )
+        next_allowed = position + 1
         value = candidate[len(key) + 2 :].strip()
         try:  # read path: one refusal class (see parse_line)
             pointers[key] = (
@@ -566,7 +585,17 @@ def run_fold_order(cursors: Sequence[Cursor]) -> tuple[str, ...]:
     roots: list[str] = []
     for rid, c in by_id.items():
         parent = c.header.parent_run
-        if parent and parent in by_id and parent != rid:
+        if parent == rid:
+            # A 1-cycle is a cycle.  Exempting the self-edge here would silently
+            # reclassify it as a ROOT while cycles of length >= 2 stay refused —
+            # the contract says "a parent-run: cycle is a fail-loud refusal",
+            # unconditionally.  Caught explicitly because the unreachable-check
+            # below cannot see a run that made itself a root.
+            raise CursorParseError(
+                f"kata_board: parent-run cycle through {rid!r} "
+                "(a run cannot be its own parent)"
+            )
+        if parent and parent in by_id:
             children[parent].append(rid)
         else:
             roots.append(rid)

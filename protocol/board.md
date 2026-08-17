@@ -46,8 +46,16 @@ msg           ::= one-line-text ( " payload=" path )?  ; pointed-to JSON payload
 `<utc> | <agent> | <TYPE> | <task> | <msg>` is a parse **REFUSAL**, never a silent skip, and a
 legacy line inside an otherwise valid cursor aborts the whole parse. This is deliberate: a silently
 skipped row is an invisible hole in the audit trail, which is the failure class this contract exists
-to remove. The digits-only `seq` field is the discriminator, so a legacy row whose `msg` happened to
-contain ` | ` is refused too rather than mis-parsed.
+to remove.
+
+A legacy row whose `msg` happened to contain ` | ` presents as six fields, so the field count alone
+does not catch it. Two gates do the work: the digits-only `seq` field is the **primary**
+discriminator (a legacy row's field 2 is an agent id, which is normally not all digits), and the
+closed TYPE enumeration at field 4 is the **second** gate that fires when field 2 *is* numeric —
+because the check then lands on what was the legacy task-id. **Honest residual:** a legacy row that
+satisfies both — an all-digits agent id, a task-id that is literally one of the TYPE tokens, and a
+` | ` inside its msg — would parse as a well-formed cursor line with shifted fields. No mechanical
+check here closes that; the migration is what closes it, by leaving no legacy rows to read.
 
 ## TYPE vocabulary and writer classes
 
@@ -113,6 +121,12 @@ Three writer classes, disjoint. A writer never authors another class's TYPE.
   `prev-run:` naming the failed sibling.
 - `prev-segment:` is **RESERVED**: it is parsed and round-tripped, and no segmenting machinery is
   built. It is written only when segmenting lands.
+- **The reader is exactly as strict as the writer.** Header keys are read in the BNF's order
+  (`prev-run:`, then `parent-run:`, then `prev-segment:`), each at most once; a permutation is a
+  refusal. One header therefore has exactly one legal serialization, so two byte-different headers
+  can never mean the same thing — the same write/read symmetry that makes a line's round trip exact.
+- **A `parent-run:` cycle is a fail-loud refusal, and a run naming ITSELF as parent is a cycle.**
+  Exempting the self-edge would accept the shortest cycle while refusing every longer one.
 
 ## Payloads
 
@@ -136,6 +150,9 @@ Three writer classes, disjoint. A writer never authors another class's TYPE.
 ```
 
 - The payload is written **before** the line that points at it, so a pointer is never dangling.
+- A line carries **at most one** payload pointer. A msg may not smuggle a bare ` payload=` token, so
+  a two-token line is one this engine could never have emitted; it is refused on read rather than
+  resolved to the last token, which would parse into a msg that cannot be re-emitted.
 
 ## Run isolation — required for the evidence to be honest
 

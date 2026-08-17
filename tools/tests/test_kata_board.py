@@ -163,6 +163,30 @@ def test_header_refuses_duplicate_pointer_key():
         kata_board.parse_header(text)
 
 
+def test_header_keys_must_be_in_bnf_order():
+    """The reader is as strict as the writer: one header, one serialization."""
+    permuted = f"RUN {RUN_A}\nparent-run: {RUN_B}\nprev-run: {RUN_B}\n"
+    with pytest.raises(kata_board.CursorParseError) as exc:
+        kata_board.parse_header(permuted)
+    assert "out of BNF order" in str(exc.value)
+
+    canonical = f"RUN {RUN_A}\nprev-run: {RUN_B}\nparent-run: {RUN_B}\n"
+    header, _consumed = kata_board.parse_header(canonical)
+    assert kata_board.format_header(header) == canonical
+
+
+def test_emitted_header_key_order_matches_the_bnf():
+    """Every emitted header is already in the order the reader demands."""
+    header = kata_board.RunHeader(
+        run_id=RUN_A,
+        prev_run=RUN_B,
+        parent_run=RUN_B,
+        prev_segment="segments/prior.md",
+    )
+    keys = [ln.split(":")[0] for ln in kata_board.format_header(header).splitlines()[1:]]
+    assert keys == list(kata_board._HEADER_KEYS)
+
+
 def test_cursor_without_header_is_refused():
     """A cursor is 'run-header line*' — a headerless body is a refusal."""
     with pytest.raises(kata_board.CursorParseError):
@@ -453,6 +477,40 @@ def test_parent_run_cycle_is_refused(tmp_path):
         kata_board.run_fold_order([kata_board.read_cursor(a), kata_board.read_cursor(b)])
 
 
+def test_parent_run_self_cycle_is_refused(tmp_path):
+    """A 1-cycle IS a cycle: a run naming ITSELF as parent must never fold as a root.
+
+    The contract's refusal is unconditional; exempting the self-edge would accept the
+    shortest cycle while refusing every longer one.
+    """
+    selfie = _fresh(tmp_path, "selfie", run_id=RUN_A, parent_run=RUN_A)
+    cursor = kata_board.read_cursor(selfie)
+    assert cursor.header.parent_run == RUN_A  # the header itself round-trips
+
+    with pytest.raises(kata_board.CursorParseError) as exc:
+        kata_board.run_fold_order([cursor])
+    assert "cycle" in str(exc.value)
+
+    # The refusal must hold through every fold that stacks on run_fold_order.
+    with pytest.raises(kata_board.CursorParseError):
+        kata_board.fold_order([cursor])
+    with pytest.raises(kata_board.CursorParseError):
+        kata_board.fold_concurrency([cursor])
+    with pytest.raises(kata_board.CursorParseError):
+        kata_board.emit_concurrency(selfie)
+    assert not (selfie / "concurrency.json").exists()
+
+
+def test_parent_run_self_cycle_is_refused_alongside_healthy_runs(tmp_path):
+    """The self-cycle is refused even when other runs in the fold are well-formed."""
+    healthy = _fresh(tmp_path, "healthy", run_id=RUN_B)
+    selfie = _fresh(tmp_path, "selfie", run_id=RUN_A, parent_run=RUN_A)
+    with pytest.raises(kata_board.CursorParseError):
+        kata_board.run_fold_order(
+            [kata_board.read_cursor(healthy), kata_board.read_cursor(selfie)]
+        )
+
+
 # ---------------------------------------------------------------------------
 # Lineage stamps
 # ---------------------------------------------------------------------------
@@ -548,6 +606,51 @@ def test_payload_pointer_traversal_is_refused(evil):
     """CWE-23: a crafted payload pointer never reaches a filesystem sink."""
     with pytest.raises(kata_board.CursorGrammarError):
         kata_board._guard_pointer(evil, what="payload")
+
+
+def test_double_payload_token_is_refused_on_parse():
+    """Write/read symmetry: format_line can never emit two payload tokens, so parsing
+    a hand-crafted double-token line into a re-emittable msg is refused."""
+    with pytest.raises(kata_board.CursorParseError) as exc:
+        kata_board.parse_line(
+            "2026-08-16T10:15:00+00:00 | 4 | seam | VERDICT | T1 | "
+            "PASS payload=payloads/a.json payload=payloads/b.json"
+        )
+    assert "at most one payload pointer" in str(exc.value)
+
+
+def test_no_line_survives_a_round_trip_it_could_not_have_been_written_as(tmp_path):
+    """Every parseable line re-renders byte-identically — the symmetry the two folds buy."""
+    kata_dir = _fresh(tmp_path)
+    kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, "plain")
+    kata_board.append_verdict(
+        kata_dir,
+        "seam",
+        TASK,
+        "judged",
+        {
+            "verdict": "PASS",
+            "evidencePointers": [],
+            "judgeDispatchSeq": 1,
+            "runId": RUN_A,
+        },
+    )
+    for line, raw in zip(
+        kata_board.read_cursor(kata_dir).lines, _cursor_lines(kata_dir), strict=True
+    ):
+        assert (
+            kata_board.format_line(
+                utc=line.utc,
+                seq=line.seq,
+                agent=line.agent,
+                type=line.type,
+                task=line.task,
+                msg=line.msg,
+                parent_seq=line.parent_seq,
+                payload=line.payload,
+            ).rstrip("\n")
+            == raw
+        )
 
 
 def test_payload_traversal_is_refused_on_parse():
