@@ -222,38 +222,38 @@
     {
       "id": "evaluate-dormant-not-verified",
       "file": "skills/evaluate/kata-evaluate/SKILL.md",
-      "anchor": "is **Dormant, not Verified**",
-      "reason": "The R-M6 negation: a judge that cannot demonstrate failure-capability is Dormant. Withholding the badge."
+      "anchor": "**never \"Verified",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
     },
     {
       "id": "inline-eval-dormant-not-verified",
       "file": "skills/evaluate/kata-inline-eval/SKILL.md",
-      "anchor": "is **Dormant, not Verified**",
-      "reason": "The same R-M6 negation, on the inline evaluator."
+      "anchor": "**never \"Verified",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
     },
     {
       "id": "review-advanced-dormant-not-verified",
       "file": "skills/evaluate/kata-review-advanced/SKILL.md",
-      "anchor": "is **Dormant, not Verified**",
-      "reason": "The same R-M6 negation, on the advanced reviewer."
+      "anchor": "**never \"Verified",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
     },
     {
       "id": "review-essential-dormant-not-verified",
       "file": "skills/evaluate/kata-review-essential/SKILL.md",
-      "anchor": "is **Dormant, not Verified**",
-      "reason": "The same R-M6 negation, on the essential reviewer."
+      "anchor": "**never \"Verified",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
     },
     {
       "id": "review-standard-dormant-not-verified",
       "file": "skills/evaluate/kata-review-standard/SKILL.md",
-      "anchor": "is **Dormant, not Verified**",
-      "reason": "The same R-M6 negation, on the standard reviewer."
+      "anchor": "**never \"Verified",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
     },
     {
       "id": "slop-check-dormant-not-verified",
       "file": "skills/evaluate/kata-slop-check/SKILL.md",
-      "anchor": "is **Dormant, not Verified**",
-      "reason": "The same R-M6 negation, on the slop check."
+      "anchor": "**never \"Verified",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
     },
     {
       "id": "iac-cloudformation-verified-reuse",
@@ -272,6 +272,42 @@
       "file": "skills/execute/kata-lang-profile/SKILL.md",
       "anchor": "Verified real; this skill's overlay is",
       "reason": "Sits under the \"Reuse surfaces (verified - cite by name, protocol/reuse-claims.md)\" heading: it asserts the cited PRECEDENT exists, which is the reuse-claims guard's job, not a Guardian trust grade."
+    },
+    {
+      "id": "evaluate-flip-dormant-line",
+      "file": "skills/evaluate/kata-evaluate/SKILL.md",
+      "anchor": "remains **Dormant, not Verified**",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
+    },
+    {
+      "id": "review-advanced-flip-honor-line",
+      "file": "skills/evaluate/kata-review-advanced/SKILL.md",
+      "anchor": "Verified**; no corpus",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
+    },
+    {
+      "id": "review-essential-flip-honor-line",
+      "file": "skills/evaluate/kata-review-essential/SKILL.md",
+      "anchor": "Verified**; no corpus",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
+    },
+    {
+      "id": "review-standard-flip-honor-line",
+      "file": "skills/evaluate/kata-review-standard/SKILL.md",
+      "anchor": "Verified**; no corpus",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
+    },
+    {
+      "id": "slop-check-flip-honor-line",
+      "file": "skills/evaluate/kata-slop-check/SKILL.md",
+      "anchor": "Verified**; no corpus",
+      "reason": "negation/downgrade from the G28 clause-flip: the line asserts the ABSENCE or refusal of verification (never-Verified-live-judged / Dormant-not-Verified / Honor-system), which claims no trust. Re-anchored at Loop-B integration after the flip reworded the W5 tripwire clauses (EV-1's first live cross-branch catch)."
+    },
+    {
+      "id": "inline-eval-flip-dormant-line",
+      "file": "skills/evaluate/kata-inline-eval/SKILL.md",
+      "anchor": "failure-capability is **Dormant, not",
+      "reason": "negation/downgrade from the G28 clause-flip (see the re-anchored sibling rows): asserts the absence of verification, claims no trust."
     }
   ]
 }
