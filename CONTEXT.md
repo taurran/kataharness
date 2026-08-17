@@ -231,7 +231,7 @@ directory — repeated paired measurements instead of one large task. _Avoid_: C
 
 ## Live telemetry & the dashboard (loop-hardening S1, 2026-06-21)
 **Coordination board** (`.kata/board.md`):
-Append-only event log of an orchestrated run (`protocol/board.md`): `<utc> | <agent> | <TYPE> | <task> | <msg>`.
+Append-only event log of an orchestrated run (`protocol/cursor.md`): `<utc> | <agent> | <TYPE> | <task> | <msg>`.
 Workers append (`CLAIM/DONE/BLOCK/ESCALATE/NOTE/PROGRESS`); only the orchestrator authors `DECISION`. Written by
 `tools/kata_board.py`. _Avoid_: editing prior lines (append-only, L3); confusing it with `state.json`.
 
@@ -242,7 +242,7 @@ wavesDone. Written ONLY via `kata_board.write_state`/`update_task`. _Avoid_: a w
 **PROGRESS heartbeat**:
 Originally the opt-in S1 board TYPE for dashboard bars; since Milestone 1 (F3) it is the **mandated liveness
 heartbeat** — `… | PROGRESS | <task> | <modulesDone>/<modulesOwned> <label>`, one per owned-module completed and
-at least once per `livenessDeadline`/2 wall-clock (see `protocol/board.md`). Read by the dashboard AND the
+at least once per `livenessDeadline`/2 wall-clock (see `protocol/cursor.md`). Read by the dashboard AND the
 orchestrator's liveness monitor; still **excluded from coordination logic and concurrency evidence**. Maps to
 `percent = round(done/owned*100)`. _Avoid_: treating it as a coordination signal — or as optional (F3).
 

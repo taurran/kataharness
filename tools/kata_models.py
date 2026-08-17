@@ -319,8 +319,8 @@ SKILL_WORK_CLASS: dict[str, str] = {
     # -----------------------------------------------------------------------
     # coordinate/
     # -----------------------------------------------------------------------
-    "kata-board":       "economy",   # status board — reporting
     "kata-bootstrap":   "critical",  # initiation orchestration
+    "kata-cursor":      "economy",   # run cursor — reporting
     "kata-loop":        "critical",  # main execution loop — orchestration
     "kata-onboard":     "economy",   # mechanical onboarding
     "kata-orchestrate": "critical",  # orchestration

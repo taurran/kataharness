@@ -685,7 +685,7 @@ def test_collect_integrated_tasks_bounded_by_plan_freeze(tmp_path):
 def test_fold_board_parity_canonical_reduce():
     """fold_board reproduces the documented K3 canonical reduce result.
 
-    Canonical rule (protocol/board.md K3):
+    Canonical rule (protocol/cursor.md K3):
     - earliest CLAIM per task = true in-flight start (survives re-dispatch spans)
     - latest DONE per task = true in-flight end
     - in_flight = tasks with a CLAIM but no DONE

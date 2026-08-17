@@ -27,7 +27,7 @@ you can't green in one step. A worker switches tdd→diagnose only on a failure 
 - **Stay in your owned files.** Do not touch files outside your ownership boundary.
 - **Don't re-plan.** If the fix reveals a design flaw requiring structural change, that is a finding to
   escalate — not a mandate to rebuild. The diagnosis loop produces a fix within the current plan.
-- **Escalate via [[kata-board]]** if the fix needs a file you don't own or the plan looks wrong.
+- **Escalate via [[kata-cursor]]** if the fix needs a file you don't own or the plan looks wrong.
 - Ground your mental model in the domain glossary ([[kata-context]] / `CONTEXT.md`) and any ADRs /
   decision-ledger entries for the area **before** hypothesising.
 

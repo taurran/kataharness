@@ -45,7 +45,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-import kata_board  # the ONE canonical cursor parser (protocol/board.md / DESIGN §2.2)
+import kata_board  # the ONE canonical cursor parser (protocol/cursor.md / DESIGN §2.2)
 from fs_atomic import atomic_write_text
 
 #: Where a cursor REFUSAL is RECORDED.  This module may never raise on cursor text

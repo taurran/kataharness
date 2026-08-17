@@ -220,10 +220,10 @@ def test_a_file_in_BOTH_structures_is_an_ERROR(tmp_path, monkeypatch):
     """Exactly one of the two, never both -- otherwise 'exempt' could silently shadow a
     registered contract's guards and nothing would say so."""
     _clone_protocol(tmp_path, monkeypatch)
-    monkeypatch.setitem(v.PROTOCOL_EXEMPT, "board.md", "bogus double-listing")
+    monkeypatch.setitem(v.PROTOCOL_EXEMPT, "cursor.md", "bogus double-listing")
 
     findings = v.check_protocol_folder_is_fully_registered([])
-    assert any("board.md" in f.where and "BOTH" in f.msg and f.level == "ERROR"
+    assert any("cursor.md" in f.where and "BOTH" in f.msg and f.level == "ERROR"
                for f in findings)
 
 

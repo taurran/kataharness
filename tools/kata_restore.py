@@ -4,7 +4,7 @@ Implements the five-step restore flow from DESIGN §2 B3:
 
 1. detect_lost_run      — tier-3 cache absent/stale AND refs/kata/trail present.
 2. read_board_from_trail + fold_board — read the durable board from the orphan ref;
-   fold to a frontier view with the canonical concurrency reduce (protocol/board.md).
+   fold to a frontier view with the canonical concurrency reduce (protocol/cursor.md).
 3. compute_redispatch_set — re-dispatch set = frozen PLAN tasks MINUS tasks with an
    integration commit (mapped via the Kata-Task: trailer in each integration commit).
    The folded board CORROBORATES in-flight ownership but NEVER gates the set.
@@ -50,7 +50,7 @@ import yaml
 
 import evidence_grammar
 
-# The ONE canonical cursor parser (protocol/board.md / DESIGN §2.2).  ``fold_board``
+# The ONE canonical cursor parser (protocol/cursor.md / DESIGN §2.2).  ``fold_board``
 # owns no grammar of its own — a second parser is a second source of truth.
 import kata_board
 
@@ -149,11 +149,11 @@ def read_board_from_trail(repo_root: str = ".") -> str:
     return result.stdout
 
 
-# canonical reduce — keep in lockstep with protocol/board.md (K3)
+# canonical reduce — keep in lockstep with protocol/cursor.md (K3)
 def fold_board(board_content: str) -> dict[str, Any]:
     """Fold the board to a frontier view using the canonical concurrency reduce.
 
-    Implements the canonical snippet from ``protocol/board.md`` (K3 — single
+    Implements the canonical snippet from ``protocol/cursor.md`` (K3 — single
     source of truth for the concurrency reduce logic).  Pure function — no
     filesystem access.
 

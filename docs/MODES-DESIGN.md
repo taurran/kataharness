@@ -50,7 +50,7 @@ module bolts onto any tier without entangling. (D20.)
 
 ## Spine vs modules
 - **Spine (always runs — the consistency machine):** `kata-grill` · `kata-context` · `kata-design-doc` · `kata-plan` ·
-  `kata-orchestrate` · `kata-board` · `kata-worktree` · `kata-tdd` · **`kata-evaluate`** · `kata-handoff` ·
+  `kata-orchestrate` · `kata-cursor` · `kata-worktree` · `kata-tdd` · **`kata-evaluate`** · `kata-handoff` ·
   `kata-selfhandoff`. Every mode ends at the **same** `kata-evaluate` default-FAIL gate.
 - **Modules (additive feature-sets):** `quality` (= `kata-review` + `kata-diagnose` + deeper grill/plan gate) ·
   `design` (own spec) · `bakeoff` (N-variant orchestration; "tier" = N) · `improve` (`kata-improve`, powers

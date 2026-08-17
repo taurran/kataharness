@@ -6,7 +6,7 @@ description: >-
   acceptance criteria — red→green→refactor, behavior over implementation, escalate unknowns instead of
   improvising.
 license: Apache-2.0
-version: 0.4.1
+version: 0.5.0
 category: execute
 status: beta
 agnostic: true
@@ -31,7 +31,7 @@ constraints layered on.
 - **Stay in your lane.** Edit only the files this task OWNS (listed in your assignment). Touching another
   task's file is drift — don't.
 - **Do not re-plan.** The interface, the decisions, and the acceptance criteria are frozen. If something is
-  unclear, missing, or looks wrong, **append `ESCALATE` to [[kata-board]] and STOP** — do not improvise a fix
+  unclear, missing, or looks wrong, **append `ESCALATE` to [[kata-cursor]] and STOP** — do not improvise a fix
   or re-decide a LOCKED decision.
 - **Default-FAIL.** The task is not done until its `<verify>` command passes (tests green; security clean if
   in scope). Read the evidence; don't assume.
@@ -136,7 +136,7 @@ reference set (deep-modules / interface-design / mocking / tests / refactoring) 
 boundary or mocking question arises, prefer integration-style tests through the public interface.
 
 ## Report
-When your `<verify>` passes and you touched only owned files: append `DONE` to [[kata-board]] with the verify
+When your `<verify>` passes and you touched only owned files: append `DONE` to [[kata-cursor]] with the verify
 result, and hand the diff back for the orchestrator's gate. If blocked: `BLOCK`/`ESCALATE` and stop.
 
 ## Checkpoint cadence (M4 — only when the dispatch brief mandates it)
