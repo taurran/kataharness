@@ -177,6 +177,32 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   the seq re-basing is a W3-adjacent decision, recorded here for the seam wave's brief; (3)
   latent naive/aware datetime mix in fold_board's min/max (pre-existing) — noted with (2).
 
+## Wave-2 integration record (2026-08-16)
+
+- Six task branches merged no-ff with trailers (cursor-grammar b946170 · cursor-consumers
+  96ee106 · statusline-fixture ba1f91a · cursor-durability 2c6f835 · evidence-grammar
+  09fced4 (one mechanical import-collision resolution, recorded in the merge body) ·
+  intent-freeze-field 22bb03a) + the exec-safety snapshot-row widening merge.
+- **Conductor integration acts, each a distinct vetoable commit:** G3 board.md pin
+  `9faea138…` (8d61974) · G3 intent.md pin `3a45250…` (d04dce0) — both digests
+  independently re-derived on the integrated tree, exact match · G9 guard-registry
+  acknowledgment (d575c15, invariants conductor-re-verified) · ruff `--fix` on four I001
+  import-sort findings in cursor-consumers test files (cd5e2d5, G2-class tool-generated
+  fix; the wave gauntlet caught what task gates did not lint — task briefs gain a
+  ruff-check line from W3 on).
+- **Integration gauntlet 4/4** (pytest-unit, pytest-integration, ruff, validate-skills — 0
+  errors after the pin pastes). **CI GREEN both platforms** at the tip: run 31984365831,
+  SHA `cd5e2d5`. Judge verdicts: 3× PASS first-round (durability, evidence-grammar,
+  consumers), 2× NEEDS_WORK cured + conductor-verified (cursor-grammar self-cycle →
+  d6bb759; intent evidence-node rename + two mutation-proven pins → decfc1c).
+  Spot-audit: mutated-PLAN probes both REFUSED by the new reflexive evidence check, real
+  plan passes (control). Ledger-status task closed at G4 scope (table filed, D-16).
+- Carried to W3's brief: fold_board seq re-basing decision + the naive/aware TypeError
+  escape path + the stale "canonical K3" prose at kata_restore.py:150 (judge findings) ·
+  kata_restore's `_TRAIL_REF` cannot read run-scoped snapshots · the prose-only
+  `absorbed`-routing target (R2) · PHASE msg enum enforcement · SPAWN/DOWN child-span
+  machinery.
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
