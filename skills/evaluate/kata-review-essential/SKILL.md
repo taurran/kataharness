@@ -61,9 +61,12 @@ draft is the context and the user has explicitly accepted reduced coverage.
 
   The line is parsed by the ONE verdict parser, `kata_dispatch.parse_verdict` — strict `fullmatch` on line 1
   of the envelope; the body is NEVER scanned and there is deliberately **no body-scan fallback** (a no-match
-  is `CaptureRefused`, the absent-records refusal path). Dispatchers pass `allowed={"SHIP","HOLD"}` at
-  capture. The body's SHIP / HOLD restates this line; the two must agree, and line 1 is the copy the machine
-  reads.
+  is `CaptureRefused`, the absent-records refusal path). Dispatchers bind this enum by passing
+  `allowed={"SHIP","HOLD"}` at capture; today only [[kata-orchestrate]]'s LS-31 pins its set (the
+  evaluator's `PASS|NEEDS_WORK`) — the reviewer dispatch sites (LS-06/27/33/34/35) pass bare
+  `capture(kind="verdict")`, so the enum binding there is DECLARED, not yet wired (the wiring is
+  kata-orchestrate's file, W4-owned). The body's SHIP / HOLD restates this line; the two must agree, and
+  line 1 is the copy the machine reads.
 - **Attested fact table as REQUIRED input (TM-E2).** The review's brief carries the attested fact table for
   its target (detector outputs + grounding verdicts + evidence identity). **Judge ON the facts: never
   re-derive what an engine attested; never accept a worker claim the table contradicts** — the contradiction

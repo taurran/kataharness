@@ -117,7 +117,11 @@ VERDICT: <continue|correct|reroll>
 CLOSED enum, complete: `continue | correct | reroll`; no other token is legal on line 1. The line is parsed
 by the ONE verdict parser, `kata_dispatch.parse_verdict` — strict `fullmatch` on line 1 of the envelope; the
 body is NEVER scanned and there is deliberately **no body-scan fallback** (a no-match is `CaptureRefused`,
-the absent-records refusal path). Dispatchers pass `allowed={"continue","correct","reroll"}` at capture.
+the absent-records refusal path). Dispatchers bind this enum by passing
+`allowed={"continue","correct","reroll"}` at capture; today only [[kata-orchestrate]]'s LS-31 pins its set
+(the evaluator's `PASS|NEEDS_WORK`) — this judge's dispatch sites (LS-11/LS-14) pass bare
+`capture(kind="verdict")`, so the enum binding there is DECLARED, not yet wired (the wiring is
+kata-orchestrate's file, W4-owned).
 
 Then, below it:
 

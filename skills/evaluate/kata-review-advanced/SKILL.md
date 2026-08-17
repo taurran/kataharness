@@ -59,8 +59,11 @@ HOLD. HOLD findings are specific enough that the re-grill or fix target is unamb
 
   The line is parsed by the ONE verdict parser, `kata_dispatch.parse_verdict` — strict `fullmatch` on line 1
   of the envelope; the body is NEVER scanned and there is deliberately **no body-scan fallback** (a no-match
-  is `CaptureRefused`, the absent-records refusal path). Dispatchers pass `allowed={"SHIP","HOLD"}` at
-  capture. This applies to **each** convergence pass this tier runs: the Advanced grill double-pass is two
+  is `CaptureRefused`, the absent-records refusal path). Dispatchers bind this enum by passing
+  `allowed={"SHIP","HOLD"}` at capture; today only [[kata-orchestrate]]'s LS-31 pins its set (the
+  evaluator's `PASS|NEEDS_WORK`) — the reviewer dispatch sites (LS-06/27/33/34/35) pass bare
+  `capture(kind="verdict")`, so the enum binding there is DECLARED, not yet wired (the wiring is
+  kata-orchestrate's file, W4-owned). This applies to **each** convergence pass this tier runs: the Advanced grill double-pass is two
   distinct dispatches, and each pass returns its own `VERDICT: SHIP|HOLD` first line under its own record.
   The body's SHIP / HOLD restates line 1; the two must agree, and line 1 is the copy the machine reads.
 - **Attested fact table as REQUIRED input (TM-E2).** The review's brief carries the attested fact table for
