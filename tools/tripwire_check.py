@@ -112,8 +112,10 @@ Honest limits (v1) — stated, not implied away
    joins ``JUDGES``.  ``test_every_evaluate_skill_is_registered_or_named_non_judge``
    turns that into a loud failure instead of a silent gap — the protocol-folder lesson
    (nothing enumerated the directory, so new members were invisible) applied here.
-4. **The corpus hash covers file bytes, not fixture meaning.**  Reordering fields inside
-   a fixture changes the hash; the hash is a change-detector, not a semantic identity.
+4. **The corpus hash covers file content, not fixture meaning.**  Reordering fields
+   inside a fixture changes the hash; the hash is a change-detector, not a semantic
+   identity.  Line endings are normalised first (see :func:`corpus_hash`) so the same
+   committed corpus fingerprints identically on the Windows and Linux gauntlet legs.
 
 Security posture
 ----------------
@@ -482,9 +484,16 @@ def corpus_hash(paths: list[Path], *, repo_root: str | Path | None = None) -> st
     """Stable sha256 over the corpus files' repo-relative paths and contents.
 
     Deterministic by construction (Determinism Doctrine): POSIX-normalised relative
-    paths, sorted by ``_repo_hash``, raw file bytes, no clock and no host path in the
-    digest.  Reuses ``graph_gen._bytes_hash`` / ``_repo_hash`` — the same pair
-    ``truth_serum`` reuses for its staleness check.
+    paths, sorted by ``_repo_hash``, no clock and no host path in the digest.  Reuses
+    ``graph_gen._bytes_hash`` / ``_repo_hash`` — the same pair ``truth_serum`` reuses
+    for its staleness check.
+
+    **Line endings are normalised before hashing**, and that is load-bearing rather
+    than cosmetic: this repo's working copies carry CRLF on Windows and LF on the
+    Linux CI leg for byte-identical committed blobs, so hashing raw bytes would make
+    the recorded corpus fingerprint disagree across the two gauntlet legs for a corpus
+    nobody touched.  A fingerprint that changes when nothing changed is a false
+    tamper signal, and a check that cries wolf trains people to ignore it.
     """
     root = _guard_root(repo_root)
     file_hashes: dict[str, str] = {}
@@ -493,7 +502,8 @@ def corpus_hash(paths: list[Path], *, repo_root: str | Path | None = None) -> st
             rel = path.resolve().relative_to(root).as_posix()
         except ValueError:
             rel = path.name
-        file_hashes[rel] = _bytes_hash(path.read_bytes())
+        data = path.read_bytes().replace(b"\r\n", b"\n")
+        file_hashes[rel] = _bytes_hash(data)
     return _repo_hash(file_hashes)
 
 

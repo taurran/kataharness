@@ -449,6 +449,25 @@ def test_corpus_hash_is_deterministic_and_content_sensitive(tmp_path: Path) -> N
     assert tc.corpus_hash(paths, repo_root=root) != first, "a content change went unseen"
 
 
+def test_corpus_hash_is_line_ending_agnostic(tmp_path: Path) -> None:
+    """The same committed corpus must fingerprint identically on both gauntlet legs.
+
+    Working copies carry CRLF on Windows and LF on Linux for byte-identical blobs, so
+    a raw-bytes digest would report a phantom corpus change on every platform switch.
+    """
+    contract = _synth_contract()
+    body = _fixture(contract.slug, "HOLD")
+    root = _synth_repo(tmp_path, contract.slug, fixtures={"a.json": body})
+    path = (root / contract.corpus_dir / "a.json")
+
+    path.write_bytes(body.replace("\r\n", "\n").encode("utf-8"))
+    lf = tc.corpus_hash([path], repo_root=root)
+    path.write_bytes(body.replace("\r\n", "\n").replace("\n", "\r\n").encode("utf-8"))
+    crlf = tc.corpus_hash([path], repo_root=root)
+
+    assert lf == crlf, "the corpus fingerprint moved on a line-ending change alone"
+
+
 def test_corpus_hash_is_sensitive_to_the_file_set(tmp_path: Path) -> None:
     contract = _synth_contract()
     root = _synth_repo(
