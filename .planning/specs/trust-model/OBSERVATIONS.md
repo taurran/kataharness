@@ -916,3 +916,60 @@ exec-safety scan already reaches adapters/claude/hooks/, so the hook task MUST r
 sink row or the validator fails; R5/DEF-24 (preconditions not yet demanded at the gate call
 sites) must not calcify; R10/DEF-15 (allowed= wiring) needs a ruling if ridden on the hook
 wave.** **Loop C is unlocked.**
+
+## Loop-C integration record (2026-08-17 — the LAST switch: Honor-system ends)
+
+- **One task branch merged no-ff with its `Kata-Task:` trailer, verified post-merge:**
+  `tm-lc-hook-activation` (tip 548cd68 = the hook 6dddf32 + the G30 badge graduation).
+  8-file diff (7 grant + G30's badge test); README already in sync (no skill frontmatter
+  changed); validator 50/0/0.
+- **Judge verdict (fresh-context, default-FAIL, NEW W5, captured via the seam): PASS first
+  round — and it is the burn's single most-verified gate.** The judge drove the REAL script
+  end-to-end (deny/allow/replay/semantic-revalidation/non-kata-silence/internal-error) and
+  **MUTATION-PROVED the enforcement claim**: a neutered validator AND a blanket-denier both
+  derive `Dormant`; only the genuine hook derives `Verified (intercepting)`. A
+  deny-everything hook cannot read as Verified — the RS-H4 fingerprint+tripwire are jointly
+  necessary and neither inherits. Capture edge proven both paths (sync post-edge; async
+  SubagentStop+agentId); O_CREAT|O_EXCL capture-guard raced; deny appends a cursor DENY line;
+  hostile agent_id never reaches the FS; internal deadline 10s < settings timeout 20s pinned
+  as a pair; settings digest matches the file.
+- **Conductor spot-audit (ONE, live on the burn's OWN cursor):** the real hook, run against a
+  record-less Agent call in the conductor's live kata scope, returned the PreToolUse
+  deny-JSON (`permissionDecision: deny`, "a record-less launch is denied"). Enforcement is
+  genuinely active on this tree, not just in fixtures.
+- **Rulings this loop:** G29 (probe deny-tripwire → active + the pinning-assertion flip;
+  executed by the builder) · **G30** (conductor act: graduate the ev1 badge test that pinned
+  `declared-before-active` — the sibling task is closed; the flip is its downstream) · **G31**
+  (the kata-orchestrate stop-pre-claiming + recordId-in-brief documentation is a
+  post-activation truth-fix — ridden into Loop D, W9's doc-honesty domain) · **G32** (the G29
+  cross-wave touch of probe_registry.json + test_evidence_grammar.py is SANCTIONED — the W2
+  task deliberately seeded the probe `declared-before-active` and authored the flip
+  instruction; a recorded cross-wave shared-file).
+- **The honest post-activation posture, stated:** the hook is BUILT, tested, mutation-proven,
+  and its settings.snippet.json carries the install digest — but the snippet is a committed
+  TEMPLATE; it is NOT installed into any operator's live `~/.claude/settings.json`, and
+  `~/.claude/settings.json` is unguardable by kata (§11 residual). So enforcement is
+  **proven-live-via-the-tripwire-and-subprocess, install-gated** — the conductor's own
+  dispatches this burn ran Honor-system (the hook was not intercepting THIS session), and
+  every dispatch named its recordId anyway (the de-facto convention G31 documents). Guardian
+  grade for the seam: **Verified (intercepting) WHERE INSTALLED**, with the install + the
+  UNPROBED scopes (interactive/Kiro/Codex/nested-Agent/global-settings) as open operator
+  Human Moments.
+- **Gauntlet + G11 + live tripwire — with an honest flake note.** The FIRST integration
+  gauntlet invocation reported `pytest-unit FAIL` (exit 1) while the summary's other three
+  gates passed; the specific failing test was not captured (the gauntlet streams uncaptured).
+  Under D-25/G11 discipline this was hunted, NOT waved through: the full `-m "not integration"`
+  suite was re-run THREE times (once with `-p no:randomly`) — **5374 passed / 3 skipped, zero
+  failures each** — and the new concurrency/subprocess-heavy surface (`test_seam_guard.py`)
+  looped **15× standalone, 43/43 every time**. 18 subsequent clean runs; the red did not
+  reproduce. Assessed as an unreproduced transient (most plausibly a subprocess-spawn
+  resource/timing hiccup under the gauntlet's concurrent load on Windows — the class the
+  seam-guard tests are most exposed to), recorded here rather than relabeled 4/4-first-try.
+  The clean gauntlet 4/4 for the record is the re-run below; **CI on both platforms is the
+  cross-platform arbiter** (unlike D-28, this occurrence is local-single, not CI-seen). G11
+  seam-guard race set ×10 = 30/30; live tripwire denies end-to-end.
+- **Carried to Loop D:** G27 (badge registry grant) · G31 (the kata-orchestrate fix) ·
+  DEF-22 (observability.md stale refs) · the §10 closes citations · the BACKLOG truth-status
+  table FILED not edited (fence, GATE-PLAN ruling 2).
+- **DEF-29..DEF-31 filed** (capture-edge live probe for Verified-post-edge; the marker-loss
+  fail-open residual channel; the global-settings install Human Moment).

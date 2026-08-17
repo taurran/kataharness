@@ -447,3 +447,36 @@ writing, and no ledger's authoring style was changed.
 - **Provenance:** tm-lb-grounding-agent builder DC-3; corroborated by the corpora builder's
   scan (all-Low, same class).
 - **Owed-to:** an operator security-policy call (surfaced on the veto ledger).
+
+## DEF-29 — wire a live capture-edge probe so derive_capture can grade Verified (post-edge) · OPEN (2026-08-17)
+
+- **What:** the capture edge is built and proven (both paths), but `run_start` grades capture
+  from a `capture_edge_probe` the frozen W8 block never asked for, so it stays
+  `Honor-system (engine-by-conductor)` at run start. The shape needed:
+  `{"result": "probed", "captured": True}` from a real mint→claim→post-edge cycle.
+- **Why:** inventing the probe was outside the frozen block (the builder's declared deviation 4).
+- **Provenance:** tm-lc-hook-activation builder DC-2 + judge residual 2.
+- **Owed-to:** a seam-adjacent follow-up / backlog.
+
+## DEF-30 — the marker-loss / find_run_marker-OSError fail-open window · OPEN (2026-08-17)
+
+- **What:** a run marker lost mid-run, or an OSError in `find_run_marker`, reads as non-kata
+  ⇒ allow (RS-L5). The residual channel is the post-hoc cursor-lineage audit; the shadowing
+  edge (an inner marker-less .kata hiding an outer live run) is in the same family.
+- **Why:** fail-open here is the DESIGN's stated limit (a scope check cannot fail closed
+  without denying every non-kata session on the host); closing it needs an ownership handle
+  the hook deliberately does not take.
+- **Provenance:** tm-lc-hook-activation stated residual (RS-L5) + the kata_scope shadowing note.
+- **Owed-to:** the post-hoc lineage audit machinery / a DESIGN §11 boundary ruling.
+
+## DEF-31 — the hook is a committed template, not installed; global-settings install is an operator Human Moment · OPEN (2026-08-17)
+
+- **What:** `settings.snippet.json` carries the hook entries + install digest, but nothing
+  installs them into an operator's live `~/.claude/settings.json` (which kata cannot guard,
+  §11). Enforcement is proven-live-via-tripwire but install-gated; a real global-scope install
+  + interactive-session confirmation are UNPROBED operator acts (probe Human Moments 1 & 3).
+- **Why:** installing into the operator's global config is an outward act requiring explicit
+  operator consent — never an autonomous conductor act.
+- **Provenance:** tm-lc-hook-activation UNPROBED-scopes section + the honest post-activation
+  posture note.
+- **Owed-to:** operator Human Moment (surfaced on the veto/decision ledger in the post-loop report).
