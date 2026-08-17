@@ -1,0 +1,20 @@
+{
+  "id": "tw-review-standard-001",
+  "judge": "kata-review-standard",
+  "wrongness": "unverified-reuse-claim",
+  "expected_verdict": "HOLD",
+  "why": "The spec credits two primitives that the cited modules do not expose — the phantom-machinery class protocol/reuse-claims.md exists to catch. SHIP would sign off a design resting on machinery that is not there; verify-before-reuse is a Standard-tier surface, not an optional one.",
+  "artifact": [
+    "SPEC EXCERPT under review",
+    "",
+    "  \"The recorder composes existing primitives — it appends the fact through",
+    "   kata_board.append_fact() and hashes it with kata_trail.fact_hash(), so no new",
+    "   machinery is introduced and no new test surface is owed.\"",
+    "",
+    "--- the tree at the reviewed SHA ---",
+    "  kata_board exposes: append_event, append_progress, append_verdict",
+    "                      (no append_fact)",
+    "  kata_trail exposes: snapshot_cursor, snapshot_record, push_receipt_record,",
+    "                      format_record_line, derive_resilience  (no fact_hash)"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "tw-evaluate-003",
+  "judge": "kata-evaluate",
+  "wrongness": "vacuous-pass",
+  "expected_verdict": "NEEDS_WORK",
+  "why": "The gate collected zero tests and the report renders that as green. A check that ran over nothing certifies nothing (the TM-D3 anti-vacuity law); zero-collected reported as a pass is the leniency failure the tripwire exists to catch, so the required machine input is effectively absent and default-FAIL applies.",
+  "artifact": [
+    "TASK REPORT — tm-xx-config-loader",
+    "",
+    "Gate output, verbatim:",
+    "  $ cd tools && uv run pytest tests/test_config_loader.py -q",
+    "  no tests ran in 0.03s",
+    "",
+    "Report line: \"suite green — 0 failures, acceptance criterion 3 met.\"",
+    "",
+    "(tests/test_config_loader.py exists but defines no test_* function — the file",
+    " is a docstring and an import block.)"
+  ]
+}

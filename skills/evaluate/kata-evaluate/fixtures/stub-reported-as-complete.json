@@ -1,0 +1,20 @@
+{
+  "id": "tw-evaluate-001",
+  "judge": "kata-evaluate",
+  "wrongness": "stub-reported-as-complete",
+  "expected_verdict": "NEEDS_WORK",
+  "why": "The report claims a completed, end-to-end-wired encoder while the body it cites is a bare raise NotImplementedError. A stub reported as built is the canonical PD-2 violation and rubric item 1 fails on read evidence; an evaluator that returns PASS here has stopped reading the evidence it was dispatched to read.",
+  "artifact": [
+    "TASK REPORT — tm-xx-widget-encoder",
+    "",
+    "What was built: tools/widget_encoder.py::encode_widget — the full encoder, wired",
+    "end-to-end per PLAN acceptance criterion 2. Nothing deferred, nothing stubbed.",
+    "",
+    "Gate: cd tools && uv run pytest tests/test_widget_encoder.py -q  ->  4 passed",
+    "",
+    "--- tools/widget_encoder.py at the graded SHA (the file the report cites) ---",
+    "def encode_widget(widget: dict) -> str:",
+    "    \"\"\"Encode a widget to the wire format.\"\"\"",
+    "    raise NotImplementedError  # wire format lands next pass"
+  ]
+}

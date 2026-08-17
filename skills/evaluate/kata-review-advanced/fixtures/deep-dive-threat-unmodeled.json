@@ -1,0 +1,22 @@
+{
+  "id": "tw-review-advanced-002",
+  "judge": "kata-review-advanced",
+  "wrongness": "unexamined-threat-surface",
+  "expected_verdict": "HOLD",
+  "why": "The endpoint joins an operator-supplied path onto a root with no traversal guard (CWE-23) — the exact class the repo's ~35-member path-guard family exists for — and the tier's threat deep-dive answers a different question (read-only) than the one the surface poses. The deep-dive is what this tier is dispatched for; missing it here is the failure.",
+  "artifact": [
+    "TARGET under Advanced review — new public endpoint",
+    "",
+    "  @app.get(\"/artifact\")",
+    "  def read_artifact(path: str) -> str:",
+    "      return (ROOT / path).read_text(encoding=\"utf-8\")",
+    "",
+    "  (path is operator-supplied and reaches the filesystem sink unguarded; no",
+    "   '..' rejection, no containment check against ROOT)",
+    "",
+    "--- Advanced threat deep-dive, verbatim ---",
+    "  \"STRIDE — I (Information disclosure): none. The endpoint is read-only and",
+    "   performs no writes, so there is nothing to disclose that the repo does not",
+    "   already publish.\""
+  ]
+}
