@@ -4,9 +4,10 @@ description: >-
   Fresh-context, no-write EVALUATE-phase gate that grades a completed run for AI-slop and spiraling-session
   signals. Active only when kata/module/slop is declared in the run's modules (zero-cost silent no-op
   otherwise). Returns SLOP-DETECTED / CLEAN with severity and evidence; SLOP-DETECTED is a non-negotiable
-  NEEDS_WORK gate finding — never downgraded to advisory.
+  NEEDS_WORK gate finding — never downgraded to advisory. Burn-02 meta-finding, verbatim: "the
+  judgment+human layers found all of these; the automated mechanical gates found none."
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 category: evaluate
 status: beta
 agnostic: true
@@ -31,6 +32,44 @@ structured verdict. This agent runs from a **fresh context**, is **structurally 
 `allowed-tools` list above omits Write/Edit — this is a binding contract, not a suggestion; a
 kata-slop-check agent that edits or proposes fixes is misconfigured). You grade; you do not fix.
 Remediation belongs to the producing agent or the orchestrator's fix loop.
+
+> **Burn-02 meta-finding (standing humility, verbatim):** *"the judgment+human layers found all of these; the
+> automated mechanical gates found none."* Detectors ATTEST and NARROW; judges judge (TM-D2).
+
+## Judge contract (trust-model W5 — TM-E2, R3-M2)
+
+- **Pinned first line.** The **literal FIRST LINE** of this check's returned envelope MUST be exactly
+  `VERDICT: <enum>` with the CLOSED enum — this judge's complete verdict space:
+
+  | Verdict | Meaning |
+  |---|---|
+  | `CLEAN` | Every check (G1–G6, A1–A3) ran and found no signal. |
+  | `SLOP-DETECTED` | At least one check produced a finding — maps to NEEDS_WORK, never advisory. |
+
+  The line is parsed by the ONE verdict parser, `kata_dispatch.parse_verdict` — strict `fullmatch` on line 1
+  of the envelope; the body is NEVER scanned and there is deliberately **no body-scan fallback** (a no-match
+  is `CaptureRefused`, the absent-records refusal path). Dispatchers bind this enum by passing
+  `allowed={"SLOP-DETECTED","CLEAN"}` at capture; today only [[kata-orchestrate]]'s LS-31 pins its set (the
+  evaluator's `PASS|NEEDS_WORK`) — this check's dispatch site (LS-32) passes bare `capture(kind="verdict")`,
+  so the enum binding there is DECLARED, not yet wired (the wiring is kata-orchestrate's file, W4-owned).
+  The verdict-schema block below (its `Result:` field) is the
+  body's structured restatement of line 1; the two must agree, and line 1 is the copy the machine reads.
+- **Attested fact table as REQUIRED input (TM-E2).** This check's brief carries the attested fact table for
+  its target (detector outputs + grounding verdicts + evidence identity). **Judge ON the facts: never
+  re-derive what an engine attested; never accept a worker claim the table contradicts** — a G5-class claim
+  the table already refutes is graded from the table, and the contradiction is itself a finding.
+  **Producer (scheduled, NOT yet built):** the table's emitter is the `tools/grounding_gate.py` fact-table
+  extension, landing with the Loop B `grounding-agent` task. Until it lands this input is declared
+  Honor-system — grade on the run artifacts directly and say the table was not available.
+- **Residual-judgment surfaces (TM-E2 c), explicit:** what stays judgment here is named — **quality**
+  (severity calls, A1's inflation-vs-precision line), **design fidelity** (G4's authorised-exception and
+  G6's constraint-drift reads against the frozen plan), **threat reasoning** (whether a G5 fabrication or A2
+  fake-done touches a security-critical deliverable). The greps and existence checks are mechanical; these
+  calls are this judge's.
+- **Tripwire (TM-D3, R-M6): Honor-system — declared, not enforced.** This judge's known-bad corpus and its
+  runner (`tools/tripwire_check.py`) land with the Loop B `judge-tripwire-corpora` task — **scheduled, NOT
+  yet built**. Until the corpus lands this judge is Honor-system per R-M6 (never blocked); a judge that
+  cannot demonstrate failure-capability is **Dormant, not Verified**.
 
 ## Dispatch and seam
 
@@ -236,7 +275,11 @@ the files / locations inspected.
 
 ### Output structure
 
+Line 1 of the returned envelope is the pinned verdict line (Judge contract above), then the structured body:
+
 ```
+VERDICT: SLOP-DETECTED | CLEAN
+
 ## kata-slop-check verdict
 
 Result: SLOP-DETECTED | CLEAN

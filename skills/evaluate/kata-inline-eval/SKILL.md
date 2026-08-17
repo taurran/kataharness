@@ -5,9 +5,10 @@ description: >-
   orchestrator when a checkpoint's risk score crosses τ, it reads ONLY the chunk diff, the task brief,
   and the signal record + score vector, then returns exactly one verdict — continue | correct | reroll —
   as a machine-parseable first line. It judges the chunk against the evidence; it never edits, re-plans,
-  or sees other tasks.
+  or sees other tasks. Burn-02 meta-finding, verbatim: "the judgment+human layers found all of these; the
+  automated mechanical gates found none."
 license: Apache-2.0
-version: 0.1.1
+version: 0.2.0
 category: evaluate
 status: beta
 agnostic: true
@@ -44,6 +45,32 @@ the worker** — a checkpoint that reads clean but does not stand up to the evid
 
 You do NOT see other tasks, the plan for other waves, or any live worker session. If the evidence you were
 handed is missing or unreadable, say so and return `reroll` (default-toward-caution) — never invent a pass.
+
+> **Burn-02 meta-finding (standing humility, verbatim):** *"the judgment+human layers found all of these; the
+> automated mechanical gates found none."* Detectors ATTEST and NARROW; judges judge (TM-D2).
+
+### Attested facts are input, not homework (TM-E2)
+
+Input 3 — the signal record + score vector — is **engine-attested fact** (`should_trigger`'s own output):
+consume it as given; **never re-derive what the engine attested** (do not recompute the score), and **never
+accept a worker claim the record contradicts** — a commit message asserting "small cosmetic change" against
+a signal record showing a triggered risk vector is graded on the record, and the contradiction itself is
+evidence. This is the judge-input contract's fact-table discipline applied to the facts this judge already
+receives. **The full attested fact table** (detector outputs + grounding verdicts + evidence identity) is
+emitted by the `tools/grounding_gate.py` fact-table extension, which lands with the Loop B `grounding-agent`
+task — **scheduled, NOT yet built**; when it lands it joins these inputs, and until then this judge's
+attested facts are exactly inputs 1–3.
+
+**Residual-judgment surfaces (TM-E2 c), explicit:** what stays judgment here — **quality** (is the chunk
+sound work against the brief), **design fidelity** (does it stay inside the task's plan bounds), **threat
+reasoning** (does the diff open a security hole the signals only hinted at). The signal vector narrows; you
+judge.
+
+**Tripwire (TM-D3, R-M6): Honor-system — declared, not enforced.** This judge's known-bad corpus and its
+runner (`tools/tripwire_check.py`) land with the Loop B `judge-tripwire-corpora` task — **scheduled, NOT yet
+built**. Until the corpus lands this judge is Honor-system per R-M6 (never blocked); a judge that cannot
+demonstrate failure-capability is **Dormant, not Verified** — a live caveat for a judge carrying kill
+authority, stated rather than papered over.
 
 ## Verdict — return exactly one of continue | correct | reroll
 Judge the chunk against the diff and the brief, then pick the single verdict that the evidence supports:
@@ -84,7 +111,19 @@ The **FIRST LINE** of your output MUST be exactly:
 VERDICT: <continue|correct|reroll>
 ```
 
-(one token, no punctuation, no prose on that line — the scheduler parses it). Then, below it:
+(one token, no punctuation, no prose on that line — the scheduler parses it).
+
+**This first line is the judge-stack generalization seed (trust-model W5, R3-M2) — it STAYS as-is.** The
+CLOSED enum, complete: `continue | correct | reroll`; no other token is legal on line 1. The line is parsed
+by the ONE verdict parser, `kata_dispatch.parse_verdict` — strict `fullmatch` on line 1 of the envelope; the
+body is NEVER scanned and there is deliberately **no body-scan fallback** (a no-match is `CaptureRefused`,
+the absent-records refusal path). Dispatchers bind this enum by passing
+`allowed={"continue","correct","reroll"}` at capture; today only [[kata-orchestrate]]'s LS-31 pins its set
+(the evaluator's `PASS|NEEDS_WORK`) — this judge's dispatch sites (LS-11/LS-14) pass bare
+`capture(kind="verdict")`, so the enum binding there is DECLARED, not yet wired (the wiring is
+kata-orchestrate's file, W4-owned).
+
+Then, below it:
 
 - for every verdict: a one-to-three line **reason citing the diff**;
 - for `correct`: the **corrective NOTE (≤ 10 lines)** for the redispatch brief;

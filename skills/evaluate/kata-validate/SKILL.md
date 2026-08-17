@@ -8,7 +8,7 @@ description: >-
   returns a severity-ranked Report{passed, findings[]}. Report-only by default; fixes are
   per-finding human-gated and applied by a single writer, then re-validated once.
 license: Apache-2.0
-version: 0.1.1
+version: 0.2.0
 category: evaluate
 status: beta
 agnostic: true
@@ -60,6 +60,34 @@ validate(payload, target="auto", profile) -> Report{ passed: bool, findings: Fin
 - **`Report{passed, findings[]}`** — `passed` is **default-FAIL**: starts `false`, becomes `true` only
   when every dispatched critic returns clean AND the tripwire fired correctly. `findings[]` is the
   severity-ranked list rendered by the writer (§6).
+
+### Judge-contract alignment (trust-model W5 — TM-E2, R3-M2)
+
+> **Burn-02 meta-finding (standing humility, verbatim):** *"the judgment+human layers found all of these; the
+> automated mechanical gates found none."* Detectors ATTEST and NARROW; judges judge (TM-D2).
+
+The judge contracts this loop lifts methods from now carry the W5 shape — a pinned `VERDICT: <enum>` first
+line under a CLOSED per-judge enum ([[kata-evaluate]] `PASS|NEEDS_WORK` · kata-review tiers `SHIP|HOLD` ·
+[[kata-slop-check]] `SLOP-DETECTED|CLEAN` · [[kata-inline-eval]] `continue|correct|reroll`), the attested
+fact table as required input, and the TM-D3 tripwire clause. Alignment here:
+
+- **Seam-dispatched returns open with the pinned first line.** When kata-validate itself is dispatched
+  through the seam (`kata_dispatch.mint` → launch → `kata_dispatch.capture`), the **literal FIRST LINE** of
+  its returned envelope is `VERDICT: PASS` iff `Report.passed` is `true` (i.e. `compute_passed` returned
+  `True`), else `VERDICT: FAIL` — the CLOSED enum is `PASS | FAIL`, the direct render of the `passed` bool.
+  Strict `fullmatch` on line 1 by `kata_dispatch.parse_verdict`; the body is never scanned; dispatchers pass
+  `allowed={"PASS","FAIL"}` at capture. (Invoked conversationally — its always-available mode — there is no
+  capture edge and the Report rendering of §6 stands alone.)
+- **Judge ON attested facts.** Deterministic-leg outputs (grounding verdicts, tripwire assertion, severity
+  math) are engine-attested facts: critics consume them, never re-derive them, and never accept a payload
+  claim those facts contradict — the contradiction is itself a finding. The full **attested fact table**
+  emitter (`tools/grounding_gate.py` fact-table extension) lands with the Loop B `grounding-agent` task —
+  **scheduled, NOT yet built**; until it lands the deterministic-first cascade (§4) is this loop's attested
+  fact set.
+- **Tripwire status: LIVE — the precedent the judge stack generalizes.** Unlike the six judge contracts
+  (Honor-system until their corpora land, R-M6), this loop's failure-capability proof already runs per
+  invocation: `validation_report.tripwire_corpus` + `assert_tripwire_flagged` (§5). A run whose tripwire
+  does not fire never reports `passed: true`.
 
 ### CRITICAL isolation invariant — payload-as-data (the keystone)
 

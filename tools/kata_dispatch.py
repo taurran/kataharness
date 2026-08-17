@@ -441,7 +441,6 @@ _ROLE_CLASS: dict[str, str] = {
     "validator": "plan-executing",
     "evaluator": "plan-executing",
     "orchestrator": "plan-executing",
-    "reviewer": "plan-executing",
     "slop": "plan-executing",
     "inline-eval": "plan-executing",
     "critic": "plan-executing",
@@ -453,19 +452,25 @@ _ROLE_CLASS: dict[str, str] = {
     # "Grill-phase researchers / advisor / convergence reviewers"
     "researcher": "grill-phase",
     "advisor": "grill-phase",
+    # G21 (W5 judge-contract-rewrites): the convergence-reviewer FUNCTION dispatches
+    # under the `reviewer` token, which carries the DESIGN §1.4 "convergence reviewers
+    # ⇒ ledger : present(draft)" row.  See the ruling record in the seam comment below.
+    "reviewer": "grill-phase",
 }
 
-# NAMED SEAM, not an oversight — the DESIGN §1.4 row "Grill-phase researchers / advisor /
-# convergence reviewers ⇒ ledger : present(draft)" names a FUNCTION ("convergence
-# reviewer") that has no role token of its own.  A convergence reviewer is dispatched
-# today under `reviewer` / `critic` / `challenger`, all of which map to `plan-executing`
-# above and therefore have NO ledger rung: minting one under `ledger` refuses with
-# "no ledger-governed rung".  That refusal is deliberate and fail-closed — this build
-# will not silently widen a rung to cover a guess about which token a judge uses.
-# **W5 `judge-contract-rewrites` owns the assignment**: that wave enumerates each judge's
-# contract and must decide whether a convergence reviewer dispatches under a grill-phase
-# token or whether one of these tokens gains the grill-phase row here.  Until it does,
-# the grill-phase rung is reachable via `researcher` and `advisor` only.
+# NAMED SEAM — ASSIGNED by W5 `judge-contract-rewrites` (ruling G21).  The DESIGN §1.4
+# row "Grill-phase researchers / advisor / convergence reviewers ⇒ ledger :
+# present(draft)" names a FUNCTION ("convergence reviewer") that has no role token of
+# its own.  The assignment: the convergence-reviewer function dispatches under the
+# `reviewer` token — the grill convergence pass IS a fresh-context kata-review launch
+# (kata-grill-standard runs one; kata-grill-advanced runs two distinct dispatches) —
+# so `reviewer` carries the grill-phase ladder row above and the grill-phase ledger
+# rung (minimum `draft`) is reachable via `researcher`, `advisor`, and `reviewer`.
+# `critic` and `challenger` deliberately KEEP no ledger rung: no convergence pass is
+# specified to dispatch under them, and an unlisted row stays an unruled one
+# (fail-closed — this build widens exactly the token the function uses, nothing more).
+# The plan/intent rungs are role-agnostic and unaffected: a task-scoped `reviewer`
+# judge still mints under governs="plan" exactly as before.
 
 #: The ledger rung's minimum state, BY ROLE CLASS (DESIGN §1.4 rows 2 and 4).  A role
 #: class absent from this map has NO ledger-governed rung and is refused there —
