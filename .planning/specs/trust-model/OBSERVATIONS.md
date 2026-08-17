@@ -234,6 +234,36 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   built-and-exercised-by-tests but has NO production caller until W7's gate wiring — the
   same honest label class as D-17's cadence note, now stated.
 
+- **D-23 · 🔴 D-16 R2 was WRONG: the dispatch-seam ledger's frontmatter is NOT valid YAML.**
+  `.planning/specs/dispatch-seam/GRILL-LEDGER.md:4`'s unquoted status value carries a second
+  `": "` inside a plain scalar — `yaml.safe_load` refuses the whole frontmatter. R2's
+  "already parses `absorbed`" was derived from FIRST-WORD INSPECTION, not a YAML parse; the
+  new fail-closed `ledger_status` predicate correctly RAISES on the live file today, and a
+  mint governed by it parks. Correction of record for the D-16 table + **FOR THE PLANNING
+  WINDOW (fence)**: quote the value, or better add `absorbed-into:
+  ../trust-model/GRILL-LEDGER.md` — the seam's routing rule prefers that explicit key over
+  prose extraction. Until fixed, the routing rule is proven against the corpus SHAPE
+  (quoted fixture with the identical prose), not the live bytes — stated by the builder,
+  carried here.
+- **D-24 · seam-engine landed (33 public functions, 187 tests); compile decisions +
+  process findings.** (1) The durability record rides a seam-authored NOTE line with the
+  record JSON as payload (no sixth cursor TYPE invented; NOTE is not a cadence trigger so
+  no recursion) — `read_trail_records` makes `derive_resilience` a fold over recorded fact.
+  (2) `EXECUTION(wave=<n>)` phase identity: per-wave open/close matching enforced. (3) The
+  `ledger` rung is role-class-scoped fail-closed (an unlisted role-class row is unruled ⇒
+  refused). (4) D-17's "no production caller" label for kata_trail's cadence CLOSES —
+  `phase()`/`capture()` are that caller. (5) **Fourth first-use registry hit:**
+  `kata_dispatch._safe_kata_dir` trips the guard-family tripwire — G9-class conductor act
+  queued for integration (invariants builder-verified, conductor re-verifies at paste).
+  (6) **G10.4 (tooling rule):** file appends go through Python with explicit UTF-8, never
+  `Get-Content | Add-Content` (mojibake caught and reverted by the builder pre-commit).
+  (7) **Conductor re-run caught an INTERMITTENT gate failure the builder's single-shot
+  runs missed:** `test_record_claim_is_atomic_single_use` fails ~1-in-5 with TWO winners —
+  the RS-H2 atomic-claim property itself in question on Windows; fix-loop dispatched with
+  root-cause-before-fix orders (claim vs harness). Wave-3 gate blocked on it. Re-run
+  practice upgraded: intermittency loops (≥10×) join the conductor re-run for
+  concurrency-bearing tests.
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
