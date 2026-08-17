@@ -112,6 +112,22 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   builder at W2 integration. Honest label carried: cadence + record mechanism are
   test-exercised but have NO production caller until W3's seam — by plan, stated.
 
+- **D-18 · intent-freeze-field landed; ONE plan gap escalated and amended.** Gate re-run
+  62/62; keyword-only `freeze=True` writer + fail-closed `intent_status` reader (mirrors
+  `plan_status` posture); additive intent.md amendment with both pinned clauses surviving;
+  digest `3a45250790721964fc3140420cedf5e2054551e438a90190568760b573245722` queued for the
+  G3 integration paste (old pin `aaf46320…`). **ESCALATION accepted + ownership amendment
+  G7:** the Phase-6 freeze CALL SITE (`modules/initiation/kata-initiate/SKILL.md:575`,
+  `write_intent(path, answers)` — no `freeze=True`) is owned by NO task in the frozen plan,
+  leaving `intent: frozen` unreachable in production (W3's rung would refuse every
+  initiation-entered run). G7: **W4 `coordinate-skills-migration` gains
+  `modules/initiation/kata-initiate/SKILL.md`** (the one-line Phase-6 call-site update +
+  its phase-emission duties, which that task's contract already implies for the conductor
+  spine). Builder's declared truth-repair of the acceptanceCriteria row (a knowingly-false
+  byte-identical claim corrected to output-equivalence) ACCEPTED — reviewed in the diff.
+  Interim honesty: the repo suite runs 6-red on the fingerprint mismatch until the G3
+  paste — that is the two-step working, not a regression (named here so nobody "fixes" it).
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
