@@ -107,15 +107,41 @@ Honest limits (v1) — stated, not implied away
    SKILL.md that keeps its tokens while inverting their meanings still passes.  The miss
    is DEMONSTRATED by ``test_contract_pin_is_token_presence_only_stated_miss``, not just
    prosed.
-3. **The registry is hand-maintained.**  A seventh judge landing under
+3. **BOTH registries are hand-maintained.**  A seventh judge landing under
    ``skills/evaluate/`` is not auto-discovered; it is invisible to this runner until it
    joins ``JUDGES``.  ``test_every_evaluate_skill_is_registered_or_named_non_judge``
    turns that into a loud failure instead of a silent gap — the protocol-folder lesson
-   (nothing enumerated the directory, so new members were invisible) applied here.
+   (nothing enumerated the directory, so new members were invisible) applied here.  But
+   that mitigation has the same shape as the gap it closes: ``NON_JUDGE_EVALUATE_SKILLS``
+   is hand-maintained too, and filing a REAL judge into it silences the completeness
+   check by design.  Nothing mechanical distinguishes "reports, never gates" from "a
+   judge nobody wanted to write a corpus for" — that call is human, and the set is where
+   it is recorded.
 4. **The corpus hash covers file content, not fixture meaning.**  Reordering fields
    inside a fixture changes the hash; the hash is a change-detector, not a semantic
-   identity.  Line endings are normalised first (see :func:`corpus_hash`) so the same
-   committed corpus fingerprints identically on the Windows and Linux gauntlet legs.
+   identity.  Line endings are normalised first (see :func:`corpus_hash`), which is a
+   defensive guard, not a fix for an observed divergence — this repo's checkouts are LF
+   on every platform today.
+5. **NO GATE CONSUMES the activation state.**  This runner reports; nothing yet refuses
+   on what it reports.  The declared consumer is the ``gate_preconditions`` work (frozen
+   PLAN, W7: "per-judge tripwire preconditions activate per R-M6"), which **does not
+   exist at this tip**.  :func:`main`'s exit ``1`` on a Dormant judge is a REPORT code,
+   not an enforced gate: CI never invokes this CLI — only ``tests/test_tripwire_check.py``
+   rides the gauntlet — so a Dormant judge fails the test suite through the tests'
+   assertions, and nothing anywhere blocks a verdict on tripwire status.
+6. **``record_corpus_hash`` has NO production caller.**  It is exercised by
+   ``tests/test_tripwire_check.py`` and reachable by hand through the ``--record`` CLI
+   flag; no seam act, conductor act, or gate calls it during a run.  Built and
+   exercised, not wired — the same honest label the cursor cadence carried before its
+   caller landed, and a W7 wiring candidate.
+7. **The corpora test whether a judge HONORS contradicting evidence, not whether it
+   FINDS it.**  Every fixture embeds its own refuting ground truth beside the claim —
+   the stub body under the "fully wired" report, the empty record set under the
+   "double-pass ran", the fact table under the "comprehensive coverage".  So the corpus
+   exercises *"the disproof was placed in front of the judge and the judge still had to
+   fail it"*, which is deliberately the easier half.  A judge that would rubber-stamp a
+   claim it had to go dig against is NOT caught here; that requires handing a judge a
+   real repository and a real diff, which is v2 territory (an LLM run, per limit 1).
 
 Security posture
 ----------------
@@ -488,12 +514,18 @@ def corpus_hash(paths: list[Path], *, repo_root: str | Path | None = None) -> st
     ``graph_gen._bytes_hash`` / ``_repo_hash`` — the same pair ``truth_serum`` reuses
     for its staleness check.
 
-    **Line endings are normalised before hashing**, and that is load-bearing rather
-    than cosmetic: this repo's working copies carry CRLF on Windows and LF on the
-    Linux CI leg for byte-identical committed blobs, so hashing raw bytes would make
-    the recorded corpus fingerprint disagree across the two gauntlet legs for a corpus
-    nobody touched.  A fingerprint that changes when nothing changed is a false
-    tamper signal, and a check that cries wolf trains people to ignore it.
+    **Line endings are normalised before hashing — DEFENSIVELY, against a divergence
+    this repo does not currently have.**  Stated precisely, because the first version
+    of this docstring claimed an observed divergence that does not exist here:
+    ``.gitattributes`` carries ``* text=auto eol=lf`` AND ``*.json text eol=lf``, so
+    checkouts land LF on every platform (verified against a Windows working tree under
+    ``core.autocrlf=true``), and a raw-bytes digest would agree across the gauntlet legs
+    today.  The normalisation is kept anyway because the *fingerprint* must not depend
+    on a checkout attribute that lives outside this module: drop or narrow that
+    ``.gitattributes`` rule and a raw-bytes hash would start reporting a corpus change
+    on a corpus nobody touched.  A fingerprint that moves when nothing moved is a false
+    tamper signal, and a check that cries wolf trains people to ignore it — so this
+    guards the property directly rather than inheriting it.
     """
     root = _guard_root(repo_root)
     file_hashes: dict[str, str] = {}
