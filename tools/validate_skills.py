@@ -964,7 +964,7 @@ PROTOCOL_FINGERPRINTS: dict[str, str] = {
     "narration.md": "e751971438b9ed2dce081b66cae8b7ac9544fc7d2f59f51cdc51c46b4cb12f33",
     "observability.md": "d9d71aa9f8c596ff1f391158038ee5fe08954031a3f287672b544154e66ef439",
     "orchestration.md": "bc0aee0520b48b69f94f3b9242ac427bb587866e7d45dd74d221317de02b2daf",
-    "orientation.md": "b926c41b9e61945b1450c96ec8e89044c33668ef5d63414038279787c61c455e",
+    "orientation.md": "c4393c4c05f59c581e9e0f73814d3a35c9bdd3ef71b618cf51902a028a79cce9",
     "persona.md": "987ab6fd61e6688508b638e6a05118371aa061f319167f944ab16a45cf1c23ab",
     "prime-directives.md": "3d5787e3bab577bd0ae3111bcfcad8712fd69dde43b9f61af2c54d4fd378b829",
     "recall.md": "6edfd018c9c4d62f27f9b94e081e6e15b4002dd13a2277aa7d214ddff4f0d405",
