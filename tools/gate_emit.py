@@ -6,12 +6,23 @@ COMPOSES; never reimplements the underlying libraries.
 Public API
 ----------
 emit_gate_artifacts(...)  -> dict   — writes RESULT.json, footprint.json, mutation.json (opt.)
-                                      and returns a summary dict.
+                                      and preconditions.json (opt.), and returns a summary dict.
+
+Gate preconditions (DESIGN §3.3)
+--------------------------------
+A gate may be handed a ``gate_preconditions.PreconditionReport``.  When it is, the report
+is written to ``preconditions.json`` FIRST and a REFUSED report stops the emit **before the
+gate command runs** — refuse-not-warn, so no artifact set is ever produced under
+unattested facts.  Passing no report is a DECLARED backward-compatible choice with the same
+meaning as ``run_result.evidence_is_current``'s membership-not-asserted mode: it does not
+mean the preconditions passed, it means **they were not asserted**, and the summary says so
+in ``preconditionsAsserted``.
 
 CLI
 ---
 python -m gate_emit --gate-name N --command C --footprint A B C \\
-                    --baseline SHA --result SHA [--out .kata]
+                    --baseline SHA --result SHA [--out .kata] \\
+                    [--preconditions PATH]
 
 Security note (from PLAN threat model): the ``command`` argument is operator-supplied
 and runs via run_result.run_gate (shell=True).  Attacker-reachable only through the
@@ -28,6 +39,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import footprint as _footprint
+import gate_preconditions as _gp
 import run_result
 from fs_atomic import atomic_write_text
 
@@ -45,6 +57,7 @@ def emit_gate_artifacts(
     out_dir: str | Path,
     *,
     mutation_records: list[dict] | None = None,
+    preconditions: "_gp.PreconditionReport | None" = None,
     runner: Callable[[str], tuple] | None = None,
     utc: str | None = None,
 ) -> dict:
@@ -74,6 +87,14 @@ def emit_gate_artifacts(
         ``mutation_check.mutation_verdict``.  Pass ``None`` (default) to skip
         writing ``mutation.json``.  An empty list is valid — ``allNonVacuous``
         is ``True`` (vacuous truth: no counter-evidence; documented choice).
+    preconditions:
+        A ``gate_preconditions.PreconditionReport`` for this gate (DESIGN §3.3).
+        Written to ``preconditions.json`` **before** anything else, so a refusal
+        is a recorded event rather than a message.  A REFUSED report raises
+        ``gate_preconditions.PreconditionRefused`` and the gate command is NEVER
+        run — refuse-not-warn.  ``None`` (default) is the declared BC mode:
+        preconditions were **NOT ASSERTED** (not "passed"), recorded as
+        ``preconditionsAsserted: False`` in the summary.
     runner:
         Callable ``(command: str) -> (output: str, exit_code: int)``.
         Defaults to ``run_result.run_gate`` so callers need not import it.
@@ -95,12 +116,39 @@ def emit_gate_artifacts(
         ``parsedCounts``    — bool: True if a pytest summary line was matched;
                               False means counts are unavailable (not a clean 0/0)
         ``exitCode``        — int: process exit code from the gate command
+        ``preconditionPath``      — abs path to ``preconditions.json``, or ``None``
+        ``preconditionsAsserted`` — bool: whether a report was supplied at all
+
+    Raises
+    ------
+    gate_preconditions.PreconditionRefused
+        When *preconditions* is a REFUSED report.  Raised **before** the gate
+        command runs, after the report is written — the refusal is recorded, and
+        no artifact set is produced under unattested facts.
     """
     if runner is None:
         runner = run_result.run_gate
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
+
+    # ------------------------------------------------------------------
+    # 0. Gate preconditions FIRST (DESIGN §3.3) — record, then refuse.
+    #    Order is load-bearing: the report is written before the refusal is
+    #    raised, so the refusal cites an ARTIFACT and not an exception message
+    #    (the R14 rider: a refusal's narration is a description of the legal
+    #    path, never evidence the path was taken).
+    # ------------------------------------------------------------------
+    precondition_path: Path | None = None
+    if preconditions is not None:
+        precondition_path = out / "preconditions.json"
+        atomic_write_text(precondition_path, preconditions.to_json(), encoding="utf-8")
+        if preconditions.blocking:
+            raise _gp.PreconditionRefused(
+                f"{preconditions.summary()} — gate {gate_name!r} NOT run; "
+                f"refusal recorded at {precondition_path}",
+                report=preconditions,
+            )
 
     # ------------------------------------------------------------------
     # 1. Run the gate and write RESULT.json
@@ -158,6 +206,12 @@ def emit_gate_artifacts(
         "resultPath": str(result_path.resolve()),
         "footprintPath": str(footprint_path.resolve()),
         "mutationPath": str(mutation_path.resolve()) if mutation_path is not None else None,
+        "preconditionPath": (
+            str(precondition_path.resolve()) if precondition_path is not None else None
+        ),
+        # NOT "preconditions passed" — "preconditions were asserted".  False means the
+        # caller never said, which is a fact about the caller, not about the gate.
+        "preconditionsAsserted": preconditions is not None,
         "withinFootprint": man["withinFootprint"],
         "passed": result["passed"],
         "failed": result["failed"],
@@ -207,19 +261,39 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="Git SHA of the integration HEAD under evaluation")
     p.add_argument("--out", default=".kata", metavar="DIR",
                    help="Output directory for artifacts (default: .kata)")
+    p.add_argument("--preconditions", default=None, metavar="PATH",
+                   help=("Path to a gate_preconditions report JSON (DESIGN §3.3). A "
+                         "REFUSED report stops the emit before the gate runs; the "
+                         "refusal's fact classes are printed and the CLI exits 2."))
     return p
 
 
 if __name__ == "__main__":
     args = _build_parser().parse_args()
-    summary = emit_gate_artifacts(
-        gate_name=args.gate_name,
-        command=args.command,
-        footprint=args.footprint,
-        baseline_sha=args.baseline_sha,
-        result_sha=args.result_sha,
-        out_dir=_safe_path(args.out),
+    report = (
+        _gp.load_report(_safe_path(args.preconditions))
+        if args.preconditions is not None else None
     )
+    try:
+        summary = emit_gate_artifacts(
+            gate_name=args.gate_name,
+            command=args.command,
+            footprint=args.footprint,
+            baseline_sha=args.baseline_sha,
+            result_sha=args.result_sha,
+            out_dir=_safe_path(args.out),
+            preconditions=report,
+        )
+    except _gp.PreconditionRefused as refusal:
+        # Distinct exit code (2) from a red gate (1): "the gate never ran" and "the gate
+        # ran and failed" are different facts, and collapsing them would let a caller
+        # read a refusal as a test failure.
+        print(refusal.report.to_json())
+        for check in refusal.report.refusals:
+            print(f"REFUSED {check.fact_class}: {check.reason}", file=sys.stderr)
+            print(f"  system of record: {check.system_of_record}", file=sys.stderr)
+            print(f"  remedy: {check.remedy}", file=sys.stderr)
+        sys.exit(2)
     print(json.dumps(summary, indent=2))
     # Q-10: fail closed (D136).  A nonzero gate exit OR an out-of-footprint change
     # is a gate FAILURE — the CLI must exit nonzero so a caller/CI never reads the
