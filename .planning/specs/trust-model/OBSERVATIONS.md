@@ -352,3 +352,13 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   pre-existing Medium (CWE-78 class) on the registered operator-domain sink, unchanged by
   the fix (verified by revert-and-rescan); no `.snyk` entry added (outside task ownership) —
   surfaced here for the wave gate.
+
+## Wave-2 FINAL EVAL — PASS on re-verdict (2026-08-16)
+
+First round NEEDS_WORK (F1 six untrailered merges / F2 false record sentence — the
+CONDUCTOR accuracy finding, D-22); cure re-verified by the same fresh-context evaluator:
+attestation commits empty + trailered (cat-file), integration-time attribution resolves
+from merges+attestations alone, full gauntlet re-run 4/4 at the cured HEAD, CI citation
+cd5e2d5 intact. Residual table carried in the verdict. **Wave 3 unlocked.** Operator
+surface: D-22 (the burn record carried a false claim for one gate cycle) + the two G3
+re-approvals (one revert each).
