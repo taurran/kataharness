@@ -1030,3 +1030,39 @@ registry grant) + G31 (kata-orchestrate stop-pre-claiming) + the fence-parked BA
   build-and-run wiring-completeness gate (a different mechanism from the seam guard) — DC-1,
   out of grant, routed to a W5-follow-up class item (DEF-32).
 - **Integration gauntlet 4/4** (pytest-unit 0 · pytest-integration 0 · ruff 0 · validate-skills 0; validator 50 skills 0/0) clean first try; CI citation below.
+
+## PROGRAM CLOSE — close_run over the burn's own cursor (2026-08-17): the machinery FAIL-CLOSED, honestly (D-30)
+
+`kata_close.close_run(".kata", plan_path=specs/trust-model/PLAN.md, ...)` was invoked over the
+burn's own run `run-20260817T034343Z-e3b50e43` as the final dogfood — the close machinery
+this burn BUILT, grounding the run that built it. **It REFUSED (`CloseRefused`), and that is
+the correct, honest outcome — the machinery fail-closes rather than rubber-stamps, on its very
+first live subject.**
+
+- **The refusal, verbatim-in-substance:** *"required records are ABSENT. provenance:
+  kata.config is not committed at the close ref — committed run provenance is the record the
+  drift check compares against, and it does not exist."* Bound to the fact class's system of
+  record (D134); the absent-records backstop for capture-edge loss (§1.6/RS-L1).
+- **Why it is correct, not a defect:** this is a SELF-HOSTED harness-build conductor run, not a
+  normal target-repo run. `.kata/` is gitignored; no root `kata.config`/`INTENT.md` is
+  committed at the close ref (verified: `git ls-files` has no root kata.config; none on disk).
+  A target run commits that provenance; a conductor building KataHarness itself has none. The
+  close machinery correctly declines to ground a drift check against a record that does not
+  exist — refusing to fake a close is EXACTLY the Trust Model thesis.
+- **Not forced, not simulated (G25 / the close-machinery builder's own anti-simulation rule):**
+  no `kata.config` was fabricated to force a green close (that would be the drift the burn
+  exists to prevent); the terminal `run-closed` line was NOT hand-written (only `close_run`
+  may author it, and it refused) — so **the burn's cursor honestly stays OPEN**, because the
+  machine correctly refused to close it. `accepted_by`/`accepted_at` were supplied but the
+  absent-records refusal is a harder stop than the verdict-acceptance path and fires before it
+  (a real nuance — the refusal message's "two legal paths" is verdict-scoped; an
+  absent-REQUIRED-record is the §1.6 backstop, not a NEEDS_WORK verdict — DEF-33).
+- **The burn's completion does NOT rest on close_run returning CLOSED.** It rests on the FIVE
+  fresh-context default-FAIL FINAL EVAL PASSes (waves 1–4 + Loops A/B/C/D), CI green on both
+  platforms at every loop tip, and the full built-gated-integrated scope. The W9 gate declared
+  this program close **Honor-system** ("where the conductor invoked capture legs by hand") —
+  an Honor-system-declared refusal-for-cause is within that frame and is the truthful result.
+- **This is the close machinery's first live proof:** built in Loop A, it refused its first
+  real close for a precise, correct reason rather than rubber-stamping the very run that
+  authored it. The Trust Model burn ends with its own close machinery telling the truth about
+  the burn.

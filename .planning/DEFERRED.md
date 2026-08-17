@@ -492,3 +492,19 @@ writing, and no ledger's authoring style was changed.
 - **Provenance:** tm-ld-guardian-relabel-pass DC-1 + its judge residual.
 - **Owed-to:** a W5-follow-up remediation task (relabel those two lines to the honest state, or
   build the gate) — planning-window backlog candidate.
+
+## DEF-33 — close_run's provenance precondition has no self-hosted-run exemption · OPEN (2026-08-17)
+
+- **What:** `close_run` requires a committed `kata.config` at the close ref for the TM-A2
+  provenance drift check; a self-hosted harness-build conductor run (`.kata/` gitignored, no
+  committed target config) can never satisfy it, so the program-level close of a burn against
+  KataHarness ITSELF always refuses with absent-records. Separately, the refusal message
+  advertises the two verdict-legal paths (another loop / recorded acceptance) but the
+  absent-REQUIRED-record refusal is the §1.6 backstop and fires BEFORE the acceptance
+  conversion — so `accepted_by`/`accepted_at` do not convert it at that layer.
+- **Why:** a self-hosted-run exemption (or an explicit "conductor run, provenance N/A" mode)
+  is a DESIGN §5.4/§1.6 boundary ruling, not a mid-close patch; faking a config to pass would
+  be the exact drift the check exists to catch.
+- **Provenance:** the burn's own program close (D-30) — the close machinery's first live subject.
+- **Owed-to:** a DESIGN §5 boundary ruling (self-hosted/conductor-run close semantics) +
+  aligning the refusal message's legal-paths text with the absent-records backstop class.
