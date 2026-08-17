@@ -150,7 +150,6 @@ def test_board_opens_with_a_run_header(tmp_path):
     append is refused, which is precisely how the grammar migration broke the demo.
     """
     import kata_board
-
     import kata_dash_demo
 
     kata_dir = tmp_path / ".kata"
@@ -167,7 +166,6 @@ def test_board_opens_with_a_run_header(tmp_path):
 def test_board_lines_are_canonical_cursor_lines(tmp_path):
     """Every non-header, non-blank cursor line must satisfy the 6-field grammar."""
     import kata_board
-
     import kata_dash_demo
 
     kata_dir = tmp_path / ".kata"
@@ -191,7 +189,6 @@ def test_demo_board_rejects_the_legacy_grammar(tmp_path):
     unverified — a legacy fixture that passes proves nothing changed.
     """
     import kata_board
-
     import kata_dash_demo
 
     kata_dir = tmp_path / ".kata"

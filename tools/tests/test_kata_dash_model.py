@@ -19,8 +19,9 @@ inside refusal tests, where they must raise.
 
 from __future__ import annotations
 
-import kata_board
 import pytest
+
+import kata_board
 
 # ---------------------------------------------------------------------------
 # Cursor fixture builders — canonical emitter, never a hand-typed grammar
