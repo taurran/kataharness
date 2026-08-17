@@ -826,3 +826,73 @@ practice, adopted; R2 filed as DEF-22). **Loop B is unlocked.** Operator surface
 G21–G26 (one veto line each) + the cursor.md paste + the two G9 commits.
 
 ## DEF-22 (filed via the Loop-A eval R2) — see .planning/DEFERRED.md
+
+## Loop-B integration record (2026-08-17 — corpora ∥ grounding ∥ EV-1 with gate-preconditions STACKED + the G28 flip; every fact mechanically re-derived)
+
+- **Five task branches merged no-ff with `Kata-Task:` trailers, each verified post-merge:**
+  `314bb8a tm-lb-judge-tripwire-corpora` (tip 262f584 incl. the docstring cure) · `da2a618
+  tm-lb-tripwire-clause-flip` (G28, d164294) · `022f0dd tm-lb-gate-preconditions` (45f9f8d,
+  stacked on the corpora tip per G19) · `d3f1dea tm-lb-grounding-agent` (8fa2de3) ·
+  `bf4ffbb tm-lb-ev1-badge-registry` (b402237).
+- **Judge verdicts (fresh-context, default-FAIL, NEW W5 contracts, captured via the seam):**
+  grounding PASS first round (its own tamper probes; residuals: parse recomputes the roll-up
+  only — consumer-wave rec; DEF-17's premise REFUTED by E7: no public per-citation B5
+  callable exists) · ev1 PASS first round (the scope-attack survived; F1 anchor-breadth
+  closing assertion routed to the G27/W9 grant; the judge's trailer-present remark was
+  contradicted by the conductor's mechanical check — noted) · corpora NEEDS_WORK (a FALSE
+  observed-divergence claim in the line-ending rationale + two of three honest labels
+  missing from the module's own docstrings) → cure 262f584 → PASS · gate-preconditions PASS
+  first round (E8 falsified two ways and held; the DEF-16 ruling — task-modified input set,
+  no self-exemption — endorsed; a mid-build wrong-SHA table-pairing bug found by the builder
+  and pinned) · the G28 flip conductor-verified (six files, pins still green).
+- **Conductor integration acts, each distinct and vetoable:** G9 guard rows
+  (`gate_preconditions`, `tripwire_check`) + the fs_atomic nine-scoped-sites acknowledgment
+  incl. the judge-F1 rename (ad7c142) · G9 `kata-grounding: economy` work-class row
+  (5bb2997) · **G24 re-approval — the doctrine fingerprint pin pasted `47d6a52b…`, derived
+  FOUR independent times; the Loop-A demonstrated mutation-passes-unseen gap is CLOSED**
+  (9503b95) · the EV-1 registry reconciliation (1ff75b9, below) · G2 README (03d5ab8).
+- **🏆 EV-1's FIRST LIVE CATCH, at its own integration:** the G28 clause-flip (one branch)
+  reworded the six tripwire clauses while the badge registry (another branch) anchored the
+  OLD wording — at merge, the validator fired 11 uncited-claim-term errors + 5 stale-anchor
+  errors. Exactly the cross-branch drift class EV-1 was built for, caught the first time two
+  concurrent branches could produce it. Reconciled as a conductor act on the growing
+  registry: 5 re-anchors + 6 new `non_claims` rows (all negation/downgrade lines), validator
+  back to 0/0 at 50 skills.
+- **Spot-audit (ONE, conductor, live, cross-task):** the composition no single judge could
+  run — a REAL truth_serum B1 report over two integrated files → `grounding_gate.
+  detector_rows` → `build_fact_table` → render → parse round-trip (verdict GROUND), then the
+  tampered roll-up REFUSED with the law-13 recompute message. The detector→table seam works
+  across the two tasks' code on the integrated tree; the table→final_gate hop remains
+  honestly unwired (the close/W8 wiring, stated).
+- **Integration gauntlet 4/4** after TWO in-integration catches: (1) EV-1 (above); (2) the
+  corpora completeness check fired on the sibling-branch `kata-grounding` skill
+  (unclassified new evaluate-family member) — filed in `NON_JUDGE_EVALUATE_SKILLS` per its
+  own contract's not-a-judge statement, a distinct conductor commit. Final: pytest-unit 0 ·
+  pytest-integration 0 · ruff 0 · validate-skills 0 (50 skills, 0 errors). G11 regression:
+  board suite ×3 (87/87 each incl. the G26 races), close race set 4/4, benchmark watchlist
+  103/103 (the two environmental reds the grounding judge saw did NOT reproduce).
+  **Conductor accuracy note (D-6a class, self-caught):** the first gauntlet invocation
+  piped the runner into `tail` and echoed `$?` — the printed GAUNTLET_EXIT=0 was the
+  pipe tail's, while pytest-unit had FAILED; the failure surfaced anyway in the summary
+  table and was root-caused, but the rule is re-learned: never read a gate's exit through
+  a pipe.
+- **Rulings this loop:** G27 (badge_registry.json becomes a cross-wave shared file; W9/Loop-D
+  gains a grant + the anchor-breadth closing assertion lands there) · G28 (the clause-flip,
+  executed) · the R-M10 engine-stricter-than-contract reconciliation ruled
+  no-text-change-needed (the kata-evaluate clause stays true until a grounding pass actually
+  runs — first at the burn's own close) · the co-author-trailer question ruled non-material
+  (G10.3 binds `Kata-Task:` only).
+- **Carried to Loop C (hook-activation):** the exec-safety scan already reaches
+  `adapters/claude/hooks/kata-seam-guard.py` (the ev1 fixture proves enforcement pre-landing)
+  — the hook builder MUST register its sink row or the validator fails · DEF-15 (the
+  `allowed=` wiring is the natural rider on the hook wave's kata-orchestrate adjacency —
+  NOT granted yet, needs a ruling if ridden) · the fact-table→final_gate wiring question.
+- **Carried to Loop D (relabel):** G27 grant · the two `pending_graduation` rows route
+  through promise-audit finding 8 · every `BUILT—Verified` mark needs a registry row with a
+  live check in the same commit (W9's registry work is proportional to its relabel work).
+- **DEF-23..DEF-28 filed**; smaller nits (read_mutation_closure root-guard, the
+  quote-paraphrase in limit 5, HOST_ONLY_ROLES attribution, stale mutation_run anchor ×2
+  faithful-quote class, TestExecSafety ImportFrom gap, PlatformActivation citation-on-
+  honor-system-rows cosmetic) recorded HERE as fold-candidates for any authorized touch.
+- **Operator veto surface this loop:** the G24 paste (one revert) · the four other act
+  commits · rulings G27/G28 (vetoable by objection).

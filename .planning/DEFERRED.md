@@ -386,3 +386,64 @@ writing, and no ledger's authoring style was changed.
 - **Provenance:** Loop-A FINAL EVAL residual R2.
 - **Owed-to:** W9 guardian-relabel (owns observability.md) + a small authorized sweep for
   the rest; the cursor.md leg pairs with any next fingerprint two-step.
+
+## DEF-23 — the X14 closure record is human-authored markdown; activation parses its table shape · OPEN (2026-08-17)
+
+- **What:** `gate_preconditions.mutation_activation` derives per-platform state by parsing
+  the committed evidence note's run/SHA tables (block-bound after the builder's own
+  wrong-pairing bug). The parse is only as strong as the note's shape; a structured
+  machine-emitted closure artifact (or probe) would make it a fold over machine fact.
+- **Why:** the note's format predates the engine; changing it is an evidence-contract call.
+- **Provenance:** tm-lb-gate-preconditions builder deferral 1; stated in-contract.
+- **Owed-to:** the close/probe machinery at a later authorized touch / backlog.
+
+## DEF-24 — gate_preconditions is not yet DEMANDED at the orchestrate/evaluate call sites · OPEN (2026-08-17)
+
+- **What:** the engine + the gate_emit door exist and are exercised (refusal ⇒ exit 2, no
+  RESULT), but kata-orchestrate/kata-evaluate contract text does not yet require the
+  preconditions report at their gates — W4/W5-owned surfaces outside the Loop-B grants.
+- **Why:** wiring them mid-loop would have been ownership drift.
+- **Provenance:** tm-lb-gate-preconditions builder deferral 2; PD-2 label verified by its judge.
+- **Owed-to:** Loop C/D adjacency (the hook wave touches kata-orchestrate context) or a
+  dedicated follow-up; the honest label must not calcify.
+
+## DEF-25 — final_gate checks fact-table PRESENCE, not schema · OPEN (2026-08-17)
+
+- **What:** `final_gate` requires the attested fact table as a dict; now that
+  grounding_gate's `kata.grounding.fact-table/v1` schema landed in the same loop, the check
+  should validate shape (and treat `mutationAttestation: null` as a refusal — the grounding
+  judge's parse-breadth recommendation joins here).
+- **Why:** the two tasks built concurrently; neither could bind to the other's unmerged shape.
+- **Provenance:** tm-lb-gate-preconditions builder deferral 3 + the grounding judge residual 1.
+- **Owed-to:** a small follow-up on the integrated tree (both surfaces now exist).
+
+## DEF-26 — a mutation-attestation record kind on the cursor · OPEN (2026-08-17)
+
+- **What:** the R-M10 attestation is a caller-passed dict; recording it as a cursor fold
+  (the tripwire corpus-hash pattern) would make it recorded fact rather than argument.
+- **Why:** cursor record kinds are seam vocabulary — a deliberate addition, not a rider.
+- **Provenance:** tm-lb-gate-preconditions builder deferral 4.
+- **Owed-to:** seam-adjacent follow-up / backlog.
+
+## DEF-27 — drop `v1-provisional` from truth_signals.ROW_SCHEMA · OPEN (2026-08-17)
+
+- **What:** the consumer the marker awaited (grounding's fact table) landed and is a
+  test-asserted strict superset; the producer-side constant rename is one line in
+  truth_signals.py plus its schema-string tests.
+- **Why:** truth_signals.py was a sibling task's grant during Loop B.
+- **Provenance:** tm-lb-grounding-agent builder DC-2.
+- **Owed-to:** any next authorized truth_signals touch (supersedes nothing in DEF-17, which
+  stays open as amended: the B5 swap needs a public per-citation surface first).
+
+## DEF-28 — a shared .snyk rationale for the CLI `_safe_path` python/PT LOW class · OPEN (2026-08-17)
+
+- **What:** Snyk's taint engine does not credit the repo's hand-rolled `..`-component guard
+  idiom, producing standing LOW findings on every CLI module using it (gate_emit
+  un-suppressed today; grounding_gate + tripwire_check joined the class this burn). The
+  honest options: one shared rationale entry covering the guard family (reason + expiry per
+  the existing .snyk pattern), or a recorded decision to leave the class visible.
+- **Why:** .snyk is a policy file outside every task grant; per-file entries would be
+  inconsistent.
+- **Provenance:** tm-lb-grounding-agent builder DC-3; corroborated by the corpora builder's
+  scan (all-Low, same class).
+- **Owed-to:** an operator security-policy call (surfaced on the veto ledger).
