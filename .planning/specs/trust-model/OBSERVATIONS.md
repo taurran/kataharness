@@ -628,3 +628,37 @@ flip them true when `tools/kata_close.py` lands in the same loop — plus the W7
 rulings it must make in its own contract: R3 (LOOP-BACK close before the terminal write) and
 the loop-back-over-open-predecessor semantics. The `protocol/cursor.md` touch re-triggers the
 fingerprint two-step (conductor re-derives + pastes at Loop-A integration, one more veto line).
+
+## Wave-4 FINAL EVAL round 1 — NEEDS_WORK (2026-08-17) + the cure (D-22 class, forward-only)
+
+The fresh-context final eval re-derived legs 1–5, 7, 8 fully green (topology exact, zero
+drift across 53 paths, gauntlet green under its own execution incl. full pytest 4927/3 and
+the G11 ×10 loop, all four evidence nodes standalone, all four acceptance spot-checks, CI
+re-verified) and FAILED the wave on leg 6: two claims in the integration record's "Dogfood
+closure" bullet did not survive re-derivation. The conductor's record — again — is where the
+gate bit (the D-22 precedent working as designed).
+
+**ERRATUM (the original bullet stays as authored above; this correction is the record):**
+- **F1 cure:** at the time the record was committed (7b257bc) the true counts were
+  **mint ×9 / claim ×9** — seqs 1, 2, 3 (wave openers) · 6 (authoring judge) · 9 (G16
+  follow-up) · 10 (orchestrate judge) · 11 (coordinate judge) · 12 (G17 sweep) · 15 (sweep
+  judge) — not ×6. The bullet was drafted from the dispatch-time state and not refreshed;
+  the eval's own dispatch (seq 20) later made it 10. `capture ×4` and `phase ×1` were exact.
+- **F2 cure (the claim is WITHDRAWN):** "refusal-driven DENY … exercised live" was FALSE as
+  written — the two spot-audit refusals raised typed exceptions (`RecordClaimRefused`,
+  `CaptureRefused`) but **no cursor DENY event existed on this run at record time**
+  (`deny()` is invoked on the mint/governor refusal path per §1.8, not by claim/capture
+  refusals). Honest restatement: two refusal classes fired live without DENY lines; the
+  DENY event class was UNEXERCISED on this run when the record was written.
+- **Post-finding live exercise (recorded fact, not a retro-justification):** a deliberate
+  unmet-governor mint (`governs="ledger"`, role `coder` — a plan-executing class with no
+  ledger rung) was refused with the typed `MintRefused` naming the legal path, the task
+  PARKED at `.kata/escalations/deny-probe-w4-cure.json`, and the seam wrote cursor DENY
+  line **seq 21**. The §1.4 role-class fail-closed rung and the §1.8
+  every-denial-is-a-cursor-event law are both now live-exercised on THIS run.
+- **DEF-12 filed:** whether claim/capture refusals should ALSO write cursor DENY events
+  (§1.8's "every denial is a cursor DENY event" vs the current mint-path-only behavior) is
+  a real boundary question surfaced by this finding — filed, not silently absorbed.
+- Judge note N2 acknowledged: `4949b11`'s `Kata-Task: tm-w4-cursor-rename-sweep` trailer on
+  a G18 conductor act is loose attribution in service of the rename (the D-22
+  integration-time-attribution nuance, tier-2 semantics) — recorded, not repeated.

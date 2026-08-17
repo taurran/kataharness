@@ -258,3 +258,17 @@ writing, and no ledger's authoring style was changed.
 - **Why:** resolving it is a protocol amendment (fingerprint two-step), not a W4 skill edit.
 - **Provenance:** tm-w4-authoring builder deferral DC-3.
 - **Owed-to:** a deferral.md amendment at a later wave / backlog.
+
+## DEF-12 — claim/capture refusals raise typed exceptions but write no cursor DENY event · OPEN (2026-08-17)
+
+- **What:** `kata_dispatch.deny()` (the §1.8 "every denial is a cursor DENY event" law) is
+  invoked only on the mint/governor refusal path. `RecordClaimRefused` (replay/lost
+  election) and `CaptureRefused` (no line-1 verdict) raise typed exceptions naming the
+  legal path but append nothing to the cursor — a refusal a later reader of the cursor
+  cannot see. The wave-4 final eval surfaced the boundary by falsifying a conductor record
+  claim that conflated the two (F2, cured in the wave-4 erratum).
+- **Why:** whether §1.8's law SHOULD extend to claim/capture refusals is a design ruling
+  (cursor noise vs auditability trade), not a mid-burn patch; the current behavior is as
+  built and tested in W3, not a defect against any frozen acceptance.
+- **Provenance:** wave-4 FINAL EVAL round-1 finding F2 + its cure record.
+- **Owed-to:** a DESIGN §1.8 boundary ruling — W7 close-machinery adjacency or the backlog.
