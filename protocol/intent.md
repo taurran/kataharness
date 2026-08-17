@@ -8,8 +8,19 @@ may not fork it.
 > additive amendment to the PINNED schema, not a fork — the required set is unchanged and existing `INTENT.md`
 > files that omit this field remain fully valid.
 
+> **Additive amendment (Trust Model W2, 2026-08-16):** `status` added — a closed two-value enum
+> `draft | frozen`, always emitted by `intent_scaffold` on every new `INTENT.md`.  This is an additive
+> amendment to the PINNED schema, not a fork — the required set is unchanged, no existing field was removed
+> or reordered, and existing `INTENT.md` files that omit `status` remain fully valid (they read as `absent`,
+> which is never coerced to `frozen`).
+
 > **BC:** `INTENT.md` absent ⇒ the harness reads the frozen DESIGN as today. Initiation is additive; the
 > greater loop remains fully optional.
+
+> **BC (freeze field, R3-H2):** a **direct one-shot harness run** — no initiation — governs under `plan`
+> exactly as today; `intent: frozen` binds ONLY runs that entered via initiation / the kata-loop.  The freeze
+> field adds a governor rung for initiation-entered runs; it takes nothing away from the one-shot path, and no
+> previously-legal run becomes a denied run because of it.
 
 ## Location
 `INTENT.md` (Markdown with YAML frontmatter) at the working-branch root. Written once by `kata-initiate`,
@@ -28,7 +39,8 @@ frozen at the end of the initiation session, never mutated mid-run.
 | `target` | `object` | WHERE/ON WHAT the run executes — see *target sub-schema* below. |
 | `grillDepth` | `"skip" \| "light" \| "standard" \| "full"` | The grill tier chosen during initiation (maps to `config.tiers["kata-grill"]`). Frozen here so closeout + kata-loop can reconstruct the run's rigor level. |
 | `readiness` | `string` | The agent's "enough-to-execute" verdict + rationale — one paragraph stating which decision branches are resolved and what, if anything, remains to be discovered mid-run. Honest: if readiness is conditional, say so. |
-| `acceptanceCriteria` | `string[]` **(OPTIONAL)** | Checkable success criteria captured in the Phase-2 mirror (step 2g) — "how we'll know it's done."  Framed as outcomes, not implementation.  **Absent or empty is valid** (e.g. `research` runs or when the human explicitly confirms no checkable criteria for this run).  `build_intent` emits this field only when non-empty; absent ⇒ byte-identical output to pre-field builds (BC). |
+| `acceptanceCriteria` | `string[]` **(OPTIONAL)** | Checkable success criteria captured in the Phase-2 mirror (step 2g) — "how we'll know it's done."  Framed as outcomes, not implementation.  **Absent or empty is valid** (e.g. `research` runs or when the human explicitly confirms no checkable criteria for this run).  `build_intent` emits this field only when non-empty; absent ⇒ output identical to a build that omits the field (BC). |
+| `status` | `"draft" \| "frozen"` | The machine-checkable freeze state of this artifact (Trust Model W2, R2-H1/R3-L2). `draft` = written but not yet sealed; `frozen` = sealed by `kata-initiate` at its Phase-6 freeze act. `intent_scaffold.build_intent` / `write_intent` emit `frozen` **only** when the caller passes the keyword-only `freeze=True` argument by name — never inferred from the answers dict, never a call-site default. Read back by `intent_scaffold.intent_status` under the **first-word parse rule** (BL-F01): the value is split on whitespace and the first word case-folded, so `status: frozen — sealed at the Phase-6 gate` parses as `frozen`; absent/empty ⇒ `absent` (never coerced to `frozen`); any other first word ⇒ raises. |
 
 ### `target` sub-schema
 
@@ -50,7 +62,23 @@ frozen at the end of the initiation session, never mutated mid-run.
   readiness and proposes execute (user confirms) — both paths write and freeze this file.
 - **version-up gap capture (D88).** For `kind: version-up`, `goal` must capture the *actual* objective of
   the upgrade, not just "improve the thing". The `fixes[]` / `features[]` split makes it auditable.
+- **The freeze is a named act, not an inference.** `status: frozen` is written by exactly one code path —
+  a caller naming `freeze=True` on `intent_scaffold.write_intent` (`kata-initiate`'s Phase-6 freeze).
+  Every other write, including every interview-in-progress save, omits the argument and writes `draft`.
+  A freeze reachable by inference — a heuristic over the answers, a defaulted argument, a "looks complete"
+  guess — would be a silent-permissive default of the D136 class, which is the failure this rung exists to
+  eliminate.  Writer and reader (`intent_status`) live together in `tools/intent_scaffold.py` so the two
+  halves of one schema row cannot drift apart; the dispatch seam is a **consumer** of `intent_status`, not
+  its owner.
+- **Fail-closed reading.** `intent_status` mirrors `kata_restore.plan_status` in posture verbatim: same
+  first-word parse rule, same three-way return (`draft` / `frozen` / `absent`), same refusal to coerce an
+  unrecognized value in either direction.  Two governor rungs that read a `status:` field must not disagree
+  about what that field means.
 - **Validator.** `protocol/intent.md` is in `REQUIRED_PROTOCOL`; `check_protocol_schemas` enforces that
   every required term is documented here (`kind`, `goal`, `fixes`, `features`, `changeSummary`, `target`,
   `grillDepth`, `readiness`).  `acceptanceCriteria` is documented as an **optional** term — it is not in
-  the required set and existing `INTENT.md` files that omit it remain fully valid.
+  the required set and existing `INTENT.md` files that omit it remain fully valid.  `status` is likewise
+  documented but not in the validator's required-term set: adding it there would fail every pre-amendment
+  `INTENT.md` in the wild, and the BC law above is precisely that those artifacts stay legal.  This file is
+  fingerprinted, so this amendment carries its own two-step — the digest is re-approved by hand after the
+  diff is reviewed (the `acceptanceCriteria` precedent).
