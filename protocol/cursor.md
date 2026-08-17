@@ -1,18 +1,27 @@
-# protocol/board.md — the CURSOR: one durable temporal record per run
+# protocol/cursor.md — the CURSOR: one durable temporal record per run
 
-Canonical grammar for the run's one log — the **cursor** — consumed by [[kata-board]] and
+Canonical grammar for the run's one log — the **cursor** — consumed by [[kata-cursor]] and
 [[kata-orchestrate]]. Machine state — kept separate from durable Obsidian docs ([[STANDARDS]] §5).
 
 **The concept is the CURSOR**: it marks where in the process the run is sitting and where it is
-currently executing. The FILE still carries its `board.md` heritage name this wave; the file/skill
-rename rides the later migration task. Everything below is the cursor contract.
+currently executing. This contract file and its skill completed the heritage rename
+(`protocol/board.md` → `protocol/cursor.md`; `skills/coordinate/kata-board` → `kata-cursor`; the
+`REQUIRED_PROTOCOL` registry key moved with them). **Two heritage names deliberately REMAIN, and
+this is stated rather than tidied away:** the runtime file is still `.kata/board.md` and the engine
+module is still `tools/kata_board.py`. No frozen task renames either one, and renaming a runtime
+path or an importable module is a code change, not a doc change — so the names below are the true
+ones, not aspirational. Everything here is the cursor contract.
 
-- **Location:** `.kata/board.md` in the target repo's integration worktree.
+- **Location:** `.kata/board.md` in the target repo's integration worktree (heritage filename; the
+  cursor is what it holds).
 - **Append-only:** agents append lines; no agent edits or deletes a prior line (no last-writer clobber —
   [[LESSONS-LEARNED]] L3).
 - **One log per run.** No sidecar structured log, no second journal, no git-only cursor.
-- **Engine:** `tools/kata_board.py` is the single writer and the single canonical parser. Nothing
-  hand-rolls this grammar; a second parser is a second source of truth.
+- **Engine:** `tools/kata_board.py` is the single writer and the single canonical parser (heritage
+  module name, above). Nothing hand-rolls this grammar; a second parser is a second source of truth.
+- **Seam-authored lines come from `tools/kata_dispatch.py`**, never from a hand-written append:
+  `phase()` writes PHASE, `capture()` writes VERDICT/DOWN, `mint()` writes SPAWN, `deny()` writes
+  DENY. Those five functions are the only legal authors of the seam TYPEs below.
 
 ## The grammar
 
@@ -165,6 +174,38 @@ the existing header's `runId` and continues on the same cursor.
 
 `kata_board.start_run()` performs the rotation and the header write; it never mints a run id
 implicitly on an append, because the run id is minted by exactly one seam act at run start.
+
+**Publication is complete-or-absent, with ONE stated residual.** `_publish_cursor` writes the
+header bytes to a sibling temp file and `os.link`s them into place, so a concurrent reader sees the
+whole cursor or no cursor — never a zero-byte file — and the link doubles as the exclusivity
+election (exactly one run claims the cursor). **Residual, carried not hidden:** on a filesystem
+with no usable hardlinks the publish falls back to exclusive-create-then-write, whose **zero-byte
+window** is real. A reader landing in that window gets a loud parse refusal (`cursor has no
+run-header block`), never a silently empty fold — the failure is visible, but the window is not
+closed on that filesystem class.
+
+## Phase events — the position of record
+
+`PHASE` lines are how a run says where it is. The closed vocabulary (one enum, no free text):
+
+```
+INITIATION · GRILL · AUTHORING · FREEZE · EXECUTION (parameterized wave=<n>) ·
+FINAL-GATE · CLOSEOUT · LOOP-BACK
+```
+
+- **msg grammar:** `open <PHASE> [k=v …]` | `close <PHASE> [k=v …]` | `run-closed [k=v …]`,
+  enforced by `kata_dispatch.parse_phase_msg` — an unknown phase token or verb is a refusal.
+- **Position is READ, never remembered.** Every phase-aware contract derives its position from the
+  cursor (`kata_dispatch.phase_state(cursor)` → `{open, closed, runClosed}`), never from what an
+  agent believes it just did. A conversational recollection is not a position.
+- **`run-closed` is terminal and written exactly once**, by `close_run` (W7 `close-machinery`,
+  `tools/kata_close.py` — **NOT YET BUILT**; the §1.3 contract names it, no code exposes it today).
+  Nothing is legal on the cursor after it. **Until W7 lands, no terminal line is written and every
+  run stays open on its cursor** — stated so the absence is a known gap rather than a silent one.
+  The READER half already exists and is live: `run_start`'s resume test reads for the terminal line
+  via `kata_dispatch.is_run_closed`, and today it correctly finds none.
+- Re-opening a closed phase is a **DENY-class event**, recorded as a DENY line naming the legal
+  path — not a silent no-op.
 
 ## Concurrency evidence (`.kata/concurrency.json`)
 
