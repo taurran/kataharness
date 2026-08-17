@@ -4,7 +4,7 @@ description: >-
   Coarse vertical slices with disjoint ownership and a runnable gate per task. Pick this for PoC-grade plans,
   time-boxed spikes, or any context where a lightweight DAG is enough and full threat modeling is not warranted.
 license: Apache-2.0
-version: 0.3.1
+version: 0.3.2
 category: plan
 status: beta
 agnostic: true
@@ -50,6 +50,9 @@ without drift:
   LOCKED decision unassigned to a task.
 - Assign **disjoint file ownership** (the load-bearing property — never skip this).
 - Build the **wave/DAG** (`ownership`, `waves`, `depends_on` frontmatter) from the ownership partition.
+- Build the per-task **`evidence:`** frontmatter map with it — **REQUIRED and non-waivable at this tier**, per
+  the RUBRIC's completion-evidence section: **no plan item freezes without its completion-evidence
+  declaration**. Essential coarsens the *slices*, never the declaration.
 - Every task MUST carry: **`owns`** (disjoint file set), **`action`** (quoting every LOCKED decision it
   implements verbatim from the DESIGN — the no-drift line, **non-waivable at any tier, D33**), **`verify`**
   (runnable, default-FAIL), and **falsifiable `acceptance_criteria`**. `read_first` is present but may be

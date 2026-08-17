@@ -4,7 +4,7 @@ description: >-
   Full vertical-slice plan with disjoint ownership, wave DAG, threat model, phase verification, and SUMMARY.
   The default for any non-trivial build — today's kata-plan at its original depth.
 license: Apache-2.0
-version: 0.3.1
+version: 0.3.2
 category: plan
 status: beta
 agnostic: true
@@ -48,6 +48,9 @@ Run the **full method** as defined in the RUBRIC:
 - Decompose into well-scoped vertical slices, each cutting end-to-end through the layers it needs.
 - Assign **disjoint file ownership** across all tasks; sequence shared-file contention in the DAG.
 - Build the complete `ownership` / `waves` / `depends_on` frontmatter from the partition.
+- Build the per-task **`evidence:`** frontmatter map alongside them — **REQUIRED**, per the RUBRIC's
+  completion-evidence section: **no plan item freezes without its completion-evidence declaration**, authored
+  in the closed three-form grammar and grammar-checked before freeze.
 - Every task has a **runnable `verify`** (default-FAIL), **`read_first`**, **`action`** (LOCKED decisions
   quoted verbatim from the DESIGN), and **falsifiable acceptance criteria**.
 - Include a **threat model** (trust boundaries + STRIDE-ish register) for every task that adds

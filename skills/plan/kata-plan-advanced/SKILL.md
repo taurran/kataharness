@@ -5,7 +5,7 @@ description: >-
   acceptance criteria, and a per-task risk note. Use when a missed ownership gap or unmitigated threat has
   very high downstream cost — e.g., security-critical features or architecturally load-bearing phases.
 license: Apache-2.0
-version: 0.3.1
+version: 0.3.2
 category: plan
 status: beta
 agnostic: true
@@ -57,6 +57,10 @@ Run the **full Standard-depth method (see the RUBRIC)** **plus**:
   negative assertion (what must NOT be true if the task is done correctly) in addition to the positive ones.
 - **Per-task risk note.** After each task's acceptance criteria, add a one-line `risk:` field naming the
   highest-residual risk if this task is implemented incorrectly and what the blast radius is.
+- **Completion evidence at Advanced slice granularity — REQUIRED.** Standard's per-task `evidence:`
+  frontmatter map (RUBRIC's completion-evidence section: **no plan item freezes without its completion-evidence
+  declaration**) is authored against *these* tighter slices — each finer-grained slice carries its own
+  declaration, and a declaration that would still pass with that slice's work reverted is vacuous.
 
 The Advanced tier is strictly a superset of Standard — it produces the same artifact types (plan frontmatter +
 per-task structure + SUMMARY) but with higher coverage, tighter slicing, and an explicit threat register.

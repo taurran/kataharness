@@ -32,11 +32,63 @@ the file; never let ownership overlap.
 ownership:      { T1: [files...], T2: [files...], ... }   # disjoint across all tasks
 waves:          { wave1: [T1], wave2: [T2, T3], ... }     # parallelizable sets
 depends_on:     { T2: [T1], T3: [T1], T4: [T1, T2] }      # the DAG
+evidence:       { T1: ["artifact:<path>"], T2: [...] }    # REQUIRED — one entry per task (below)
 builds_against: { D1: ["C1@<64-hex surfaceHash>"] }       # dependent -> contract pins (OPTIONAL)
 ```
 
 Derive waves from the DAG: a wave is the set of tasks whose dependencies are all satisfied and whose file
 sets are disjoint. Sequential single-task waves are fine; parallel waves are the payoff.
+
+## Completion evidence — the per-task `evidence:` field (REQUIRED)
+
+**No plan item freezes without its completion-evidence declaration.** One entry per task in the PLAN
+frontmatter, authored here by the plan-author and checked at the freeze gate — a task with no `evidence:`
+entry **fails plan freeze**. This is what lets the close resolve every plan item mechanically instead of
+degrading to file-touch heuristics: at close time the declaration is the thing re-run or re-checked, so
+"done" is a fact a machine re-derives rather than a claim a report asserts.
+
+```yaml
+evidence:
+  T1: ["artifact:skills/plan/kata-plan/RUBRIC.md"]
+  T2: ["test:tools/tests/test_evidence_grammar.py::test_test_form_compiles_to_the_design_pinned_argv"]
+  T3: ["probe:gauntlet"]
+```
+
+**The grammar is CLOSED — three forms, no fourth, no escape hatch. Do not restate it in your own words;
+CITE it:**
+
+- **Implementation:** `tools/evidence_grammar.py` — `FORMS`, `parse_declaration` (the outer
+  `fullmatch` grammar), `compile_declaration`, and `check_evidence_map` (the whole-plan check). That module
+  is the one place a declaration is parsed, guarded, and REFUSED.
+- **Registered contract:** `protocol/exec-safety.md`'s three `evidence_grammar` rows (`artifact:` /
+  `test:` / `probe:` forms) — trust domain, guard, and compiled argv per form. Those rows were written
+  before the module and the module is built to them; a divergence is resolved out loud, never by quietly
+  rewriting either side.
+
+One-line orientation only — **the two sources above are authoritative**: `artifact:<repo-relative-path>`
+(NEVER executed; existence/wiring-checked) · `test:<pytest-node-id>` (compiled to structured argv, no
+shell, ever) · `probe:<registered-name>` (a NAME resolved against the committed `tools/probe_registry.json`;
+an unregistered name is REFUSED, never executed as a command, never auto-registered).
+
+**A freeform command string is not evidence and is REFUSED at the freeze gate** — `"pytest -q tools/tests"`,
+`"run the suite"`, and a bare path with no form prefix all fail `parse_declaration` before any inner guard
+runs. If a task's real proof fits none of the three forms, the answer is a new registered probe entry
+(repo-committed, reviewed like code), never a looser field.
+
+**Authoring rules:**
+
+- **Declare what proves THIS task**, not the suite. A node-ID that would still pass with the task's work
+  reverted is a vacuous declaration — the same defect class as a test that asserts nothing.
+- **Name the NEW test node-IDs the task will create**, not only pre-existing ones: the declaration is the
+  contract that the test gets written.
+- **Verify before you cite** (`protocol/reuse-claims.md`): an `artifact:` path or a `probe:` name asserted
+  without checking is a phantom-machinery claim. A `probe:` name must already exist in
+  `tools/probe_registry.json` — the grammar refuses an unregistered name at freeze, by design.
+- Multiple declarations per task are normal (the test **and** the artifact it lands).
+- **Round-trip the map before freezing.** `check_evidence_map(evidence, task_ids, repo_root=<root>)` raises
+  on all four defect shapes: no `evidence:` map at all · a task with no declaration · a declaration that
+  fails the grammar or an inner guard · a key naming a task that does not exist (a typo there silently
+  leaves a REAL task undeclared).
 
 ## Contract edges (`builds_against`) — Freeze/Float M1
 
@@ -94,6 +146,9 @@ edge list in `kata.graph.json` (built by [[kata-graph]]).
   classification or magnitude — restate verbatim so a worker can't drift).
 - **verify** — the runnable, default-FAIL command(s) that prove the task done.
 - **acceptance_criteria** — falsifiable checks a fresh-context evaluator can confirm.
+- **evidence** *(REQUIRED — see the completion-evidence section above)* — the task's completion-evidence
+  declaration(s) in the closed three-form grammar, carried in the PLAN's frontmatter `evidence:` map. A task
+  with no declaration **fails plan freeze**; a declaration that does not parse fails it too.
 - **estimate** *(OPTIONAL, minutes)* — a per-task time estimate feeding the M4 slack signal (A1-Q3, the
   ledger-median → frontmatter → absent precedence). Omit it freely; a task with no `estimate:` simply falls
   through to the next source. When present it MUST be numeric (minutes) — a present-but-non-numeric
@@ -147,6 +202,10 @@ quantum, clamped by the 0.80 hard cap of the worker window.
   freeze** (A1-Q3 freeze-time validation — bootstrap does not validate plans, so the freeze is the gate).
 - Any per-task `class:` present is one of `code | research | debug`; an unknown value **fails the freeze**
   (same freeze-time validation gate as `estimate:`).
+- **Every task has a grammar-valid `evidence:` declaration** — the whole map round-trips through
+  `evidence_grammar.check_evidence_map` without raising. Unlike `estimate:`/`class:` this field is not
+  optional: an absent declaration, an unparseable one, or a key naming a non-existent task each **fail the
+  freeze** (TM-F1/R-M9 — no plan item freezes without its completion-evidence declaration).
 - **No plan task id begins `area:`** — that prefix is reserved for [[kata-orchestrate]]'s M4 per-area
   `failureKinds` attribution convention, so a colliding task id would corrupt closeout attribution; a task id
   starting `area:` **fails the freeze** (re-gate v2 LOW-6).
