@@ -2,9 +2,19 @@
 
 **Status:** adopted 2026-07-12 (Fable 5 health review); **DET registry reconciled 2026-07-25 —
 all 14 adoption-time stragglers RESOLVED and re-verified against code.**
+**Amended 2026-08-16:** laws 13 + 15 adopted and the loop-execution scope added
+(D172 / D173 — see the amendment section after law 10).
 Read with `docs/STANDARDS.md`.
 **Scope:** every engine module in `tools/`, every adapter, and every skill-prose instruction
 that produces a gated, scored, ordered, hashed, or committed artifact.
+**Plus, per D172 (operator-directed 2026-08-16): loop execution itself.** The loop's
+execution, fencing, and seam actions are engine-code surfaces under this doctrine — the loop
+must RUN deterministically (same inputs ⇒ same execution path: dispatch requires the seam,
+gates fail closed, re-loop routes are mechanical), with fencing and seam actions that
+GUARANTEE proper execution rather than requesting it. The operator's standing
+minimal-new-Python preference is explicitly relaxed for these enforcement seams ("it applies
+less here") — an enforcement seam deserves committed, tested, deterministic code, because a
+guarantee resting on model obedience to prose is not a guarantee.
 
 ## The rule
 
@@ -64,6 +74,50 @@ detectable. A nondeterministic gate is a gate that cannot be trusted twice.
     deterministic tie-break (id/label) — stated, not implied by sort stability.
     *(Model: `project_find.py` ranking. Straggler DET-11 RESOLVED: `benchmark.py:591-594`
     (pareto-best `min` over `(-composite, label)`) and `:779-782` (rank sort) — matched keys.)*
+
+## Amendment 2026-08-16 — laws 13 and 15 (D173, riding the D172 scope amendment)
+
+**Provenance, labeled (PD-2):** both laws originate in an external harness's
+determinism-conformance audit — single-corpus, batch-reviewed rather than adversarially
+grilled as amendments, no live-run evidence behind it — and were adopted because each was
+independently ruled in substance by our own same-day records: the trust-model provenance
+discipline (TM-G2 — quote verbatim from the artifact at the surface, recompute at the gate)
+and the EDR-5 honest-residual house style (trust-model DESIGN §11). Adoption record and
+constraints: `.planning/DECISIONS.md` D173.
+
+**Numbering:** law numbers are stable identifiers — assigned once, never renumbered, never
+reused (the DET-registry rule applied to laws). The numbers between 10 and 15 that do not
+appear here are deliberately unassigned and stay reserved; a future law takes a fresh number,
+never a gap number.
+
+13. **Recompute, don't shape-check.** A format or pattern check on a digest, count, id, or
+    set asserts only well-formedness — an existence check in validation clothing. Any gate
+    that consumes such a value recomputes it from the source bytes (or re-derives the set)
+    and asserts equality; a carried-forward or producer-reported value is never credited at
+    the boundary it is supposed to protect. A value the gate did not itself re-derive is the
+    producer's word, reported back as verification.
+    *(Models: `check_protocol_integrity` recomputes `protocol_fingerprint(path)` from live
+    file bytes and compares it to the pin — never a hex-shape match
+    (`validate_skills.py:993-999`); `drift_gate.snapshots_match` byte-compares scrubbed
+    snapshots rather than trusting a recorded verdict. Anti-model:
+    `re.match(r"^[0-9a-f]{64}$", claimed)` — plausible hex passes it, so fabrication does.)*
+
+15. **Scope honesty.** A detector, validator, or sweep publishes its coverage set — the
+    roots it inspected, the count it checked, and its exclusions — as part of its own
+    output, because an unstated exclusion is indistinguishable from coverage. The coverage
+    universe is enumerated, never remembered; and the highest-privilege code is never the
+    least-checked — inspection ranks by write-capability, more scrutiny for more privilege.
+    *(Models: `validate_skills.py` prints its checked denominator ("N skills checked — …");
+    the protocol-folder rule — every `protocol/*.md` must land in exactly one of
+    `REQUIRED_PROTOCOL` or `PROTOCOL_EXEMPT`, and a file in neither fails the validator by
+    name (`validate_skills.py:643-655`); `protocol/exec-safety.md`'s sink registry, which
+    enumerates every execution site — the highest-privilege call class — and requires each
+    new site to register. House style: the honest-residual register (EDR-5, trust-model
+    DESIGN §11) states what is NOT covered inside the contract itself.)*
+
+**Enforcement class:** same as laws 1–10 — a violation in a gate/score/digest path is a
+gate-failing finding, class `nondeterminism`, enforced today by review at the gate (the
+skill-level checker remains NOT built; see Enforcement below).
 
 ## Where judgment is allowed
 
