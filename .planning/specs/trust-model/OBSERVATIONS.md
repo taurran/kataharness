@@ -179,10 +179,19 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
 
 ## Wave-2 integration record (2026-08-16)
 
-- Six task branches merged no-ff with trailers (cursor-grammar b946170 · cursor-consumers
-  96ee106 · statusline-fixture ba1f91a · cursor-durability 2c6f835 · evidence-grammar
-  09fced4 (one mechanical import-collision resolution, recorded in the merge body) ·
-  intent-freeze-field 22bb03a) + the exec-safety snapshot-row widening merge.
+- Six task branches merged no-ff (cursor-grammar b946170 · cursor-consumers 96ee106 ·
+  statusline-fixture ba1f91a · cursor-durability 2c6f835 · evidence-grammar 09fced4 (one
+  mechanical import-collision resolution, recorded in the merge body) · intent-freeze-field
+  22bb03a) + the exec-safety snapshot-row widening merge (9b37dc4).
+  **CORRECTED per wave-gate finding F1/F2 (D-22): six of these seven merge messages carried
+  NO `Kata-Task:` trailer** — a conductor tooling quoting defect swallowed the message
+  bodies, and the original sentence here ("merged no-ff with trailers") was written from
+  intent, not re-derivation: a false claim in the burn's own record, caught by the wave
+  gate. Cure (forward-only, no history rewrite — rewriting would invalidate the cd5e2d5 CI
+  citation): six integration-attestation commits (eb0a07d · de52bdd · 65f3438 · 9beeb42 ·
+  865189e · e1c1ba5), each carrying its task's trailer, trailer presence mechanically
+  verified post-commit. Only 09fced4 (the here-string-committed conflict resolution)
+  carried its trailer natively.
 - **Conductor integration acts, each a distinct vetoable commit:** G3 board.md pin
   `9faea138…` (8d61974) · G3 intent.md pin `3a45250…` (d04dce0) — both digests
   independently re-derived on the integrated tree, exact match · G9 guard-registry
@@ -202,6 +211,28 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   kata_restore's `_TRAIL_REF` cannot read run-scoped snapshots · the prose-only
   `absorbed`-routing target (R2) · PHASE msg enum enforcement · SPAWN/DOWN child-span
   machinery.
+
+- **D-22 · Conductor accuracy finding (BBM-6 class, symmetric with D-6):** the wave-2
+  integration record claimed "merged with trailers" without re-deriving it; the wave-gate
+  evaluator falsified the claim with one command. Root cause: `cmd /c` interpolation of
+  PowerShell backtick-newlines silently produced subject-only merge messages; the sentence
+  was then copied from wave 1's (true) record. **Ruling G10 (binding on all future waves):**
+  (1) merge/commit messages are written ONLY via here-strings (the proven path), never via
+  `cmd /c` string interpolation; (2) immediately after every merge, the conductor
+  mechanically verifies trailer presence (`git log --format='%(trailers:...)'` or
+  cat-file) — commit first, verify second, the same rule builders were already held to;
+  (3) worker briefs from wave 3 on NO LONGER instruct workers to write `Kata-Task:`
+  trailers (kata-tdd:162 marks it integration-only — waves 1–2 worker trailers were
+  conductor-briefed, recorded here as a declared deviation, and are why DONE resolution
+  still worked while the merge trailers were missing); integration commits alone carry it.
+  **Attribution notes:** cd5e2d5 (ruff --fix) and 4616996 (row widening) carry task
+  trailers but are conductor acts in service of those tasks — integration-time commits, so
+  tier-2 semantics hold, with the nuance recorded here. **Two record patches flagged by
+  the evaluator:** D-19's queued board.md digest `245fbbbc…` was legitimately superseded
+  by `9faea138…` (the d6bb759 judge-cure re-edited board.md; the paste used the final
+  value — delta now explained); D-20 addendum: `parse_plan_tasks(check_evidence=True)` is
+  built-and-exercised-by-tests but has NO production caller until W7's gate wiring — the
+  same honest label class as D-17's cadence note, now stated.
 
 ## Discoveries (append-only)
 
