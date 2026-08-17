@@ -5,7 +5,7 @@ description: >-
   → frozen INTENT.md) → HARNESS (kata-orchestrate + the built loop) → CLOSEOUT (kata-closeout +
   kata-understand) — and owns the context-carrying loop-back that re-enters initiation on version-up.
 license: Apache-2.0
-version: 0.3.0
+version: 0.4.0
 category: coordinate
 status: beta
 agnostic: true
@@ -69,11 +69,12 @@ closed one is a **refusal recorded as a DENY event** — never a silent no-op.
 GRILL / AUTHORING / FREEZE boundaries are emitted by the skills that own those stages (the grill
 and the freeze act) — this conductor does not double-stamp them.
 
-**`run-closed` is the terminal record**, written exactly once by `close_run` at the end of the
-whole loop — `close_run` is W7 `close-machinery` (`tools/kata_close.py`) and is **NOT YET BUILT**.
-Nothing is legal on the cursor after that line, but **until W7 lands the line is never written and
-the run stays open**. Do not simulate it: hand-writing a `run-closed` PHASE line would be a
-conductor authoring a seam TYPE, and the gap is meant to be visible, not papered over.
+**`run-closed` is the terminal record**, written exactly once by `close_run`
+(`tools/kata_close.py`) at the end of the whole loop. Nothing is legal on the cursor after that
+line. Never hand-write it: a conductor authoring a seam TYPE is drift, and `close_run` is the only
+sanctioned writer — it refuses to stamp the line until the run has PROVEN itself against the frozen
+plan (the three-way join, the provenance drift check, the commit-act scrub), so a hand-written line
+would be a close that skipped the proof.
 
 ### 3. Position is READ, never remembered (TM-C5)
 
@@ -194,15 +195,19 @@ human's decision:
 **Record the loop-back on the cursor, then emit the compact loop-back banner** so the operator sees
 the new cycle begin. The order matters:
 
-1. `phase(kata, "open LOOP-BACK")`.
-2. Close the phases the run still holds open.
-3. **⛔ PARKED UNTIL W7 — not an executable step today.** The terminal `run-closed` record is
-   `close_run`'s to write, and `close_run` is W7 `close-machinery` (`tools/kata_close.py`), **NOT
-   YET BUILT**: a conductor following this sequence today finds nothing to call. **The sequence
-   STOPS here.** Record the gap — the run is left open on its cursor, with no terminal line — and
-   surface it; do not hand-write the line, and do not improvise a substitute close. What happens
-   between this step and the next run is W7's ruling to make, not this contract's to assume.
-4. *(after W7)* The next run's `run_start(kata, force_new=True, prev_run=<this runId>)` mints a
+1. `phase(kata, "open LOOP-BACK")`. **Opening `LOOP-BACK` over an open predecessor is LEGAL** —
+   a loop-back exists precisely to record that a run is departing while work is still open, so
+   requiring the predecessor to be closed first would make the record unwritable in the only
+   situation it describes. (The ruling; `phase()` already permits it — it refuses only a re-open.)
+2. `close_run(kata, plan_path=…, repo_root=…)`. **Do not close the open phases by hand.** The
+   closer closes every still-open phase **LIFO** — `LOOP-BACK` last, because it was opened last —
+   and only then stamps the terminal `run-closed` line, which records `loopBack=1` so the
+   successor's `prev-run:` chain is corroborated by the predecessor's own terminal record.
+   Reconciliation happens AT the close; a phase is never left open across the terminal line.
+   `close_run` refuses if the run has not proven itself against the frozen plan — that refusal is
+   the loop-back's gate too, and it emits a close artifact to cite (`.kata/close/<runId>-close.md`).
+   With `close_open_phases=False` it refuses instead of closing them, naming the instruction.
+3. The next run's `run_start(kata, force_new=True, prev_run=<this runId>)` mints a
    fresh `runId` whose header carries the `prev-run:` chain pointer. A loop-back **always
    re-mints**; only a crash-resume adopts.
 
