@@ -272,3 +272,19 @@ writing, and no ledger's authoring style was changed.
   built and tested in W3, not a defect against any frozen acceptance.
 - **Provenance:** wave-4 FINAL EVAL round-1 finding F2 + its cure record.
 - **Owed-to:** a DESIGN §1.8 boundary ruling — W7 close-machinery adjacency or the backlog.
+
+## DEF-13 — refuse-to-mint names a park path nothing is obliged to create · OPEN (2026-08-17)
+
+- **What:** `MintRefused` computes and names `.kata/escalations/<taskId>.json` as the legal
+  path (TM-B5), but no code writes it — parking is left to the caller
+  (`escalation.write_escalation`), and nothing binds the caller to do it. An unattended
+  refusal can therefore die silently DESPITE the message promising a park, which is the
+  exact silent-death TM-B5 exists to prevent. Sibling of DEF-12 (refusals that leave no
+  cursor DENY): both are §1.8-adjacent "the message claims more than the machinery does"
+  boundaries.
+- **Why:** binding the park into the refusal path (or into a caller contract) is a design
+  ruling with API consequences (who owns the escalation payload's required fields at
+  refusal time?) — not a mid-burn patch.
+- **Provenance:** wave-4 FINAL EVAL round-2 finding F3 + its cure record (the conductor
+  itself ran the probe bare and copied the narration as fact).
+- **Owed-to:** a DESIGN §1.8/TM-B5 boundary ruling — with DEF-12, W7 adjacency or the backlog.

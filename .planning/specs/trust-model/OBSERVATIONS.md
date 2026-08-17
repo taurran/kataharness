@@ -662,3 +662,33 @@ gate bit (the D-22 precedent working as designed).
 - Judge note N2 acknowledged: `4949b11`'s `Kata-Task: tm-w4-cursor-rename-sweep` trailer on
   a G18 conductor act is loose attribution in service of the rename (the D-22
   integration-time-attribution nuance, tier-2 semantics) — recorded, not repeated.
+
+## Wave-4 FINAL EVAL round 2 — NEEDS_WORK (F3) + the cure (the same class, one layer deeper)
+
+Round 2 verified the F1/F2 cures closed (nine seqs exact; DENY seq 21 live; DEF-12 valid;
+code state byte-identical to the green-lit tip) and found **F3**: the erratum's sentence
+"the task PARKED at `.kata/escalations/deny-probe-w4-cure.json`" asserted an artifact that
+did not exist. The conductor had copied the refusal message's ADVISORY narration ("an
+unattended run PARKS the task at …") into the record as a performed fact — but parking is
+the CALLER's act (`kata_dispatch._park_path` only computes the path so the refusal can name
+it; `escalation.write_escalation` is the act), and the probe was run bare. The correction
+delivering the do-not-assert-unexercised-machinery lesson itself asserted unperformed
+machinery. Caught by the same judge on its second pass — the D-22 precedent applied twice
+in one wave, both times against the conductor's own prose.
+
+**CORRECTION OF RECORD:** at the time of the round-1 erratum, NO park had been performed;
+the clause was false as written and is WITHDRAWN in that form.
+
+**The park is now PERFORMED, as the caller's act:** `escalation.build_escalation(taskId=
+"deny-probe-w4-cure", kind="human-required", …)` → `escalation.write_escalation(".kata", …)`
+→ `.kata/escalations/deny-probe-w4-cure.json` written and verified present (recommendation:
+retire the probe task — its purpose, the live §1.8 DENY exercise, is complete; surfaced on
+the operator veto ledger with everything else).
+
+**DEF-13 filed:** a refusal that NAMES a park path which nothing is obliged to create is
+the same boundary family as DEF-12 — whether refuse-to-mint should itself write the park
+artifact (or a caller contract should bind it) is a design ruling, filed not patched.
+
+**Conductor lesson (kata-improve fold, joining R14):** a refusal/error message's narration
+is a DESCRIPTION of the legal path, never evidence the path was taken. Records cite
+artifacts (paths that exist, lines on the cursor), not message text.
