@@ -1459,6 +1459,17 @@ def claim_record(kata_dir: str | Path, rid: str) -> dict:
         _CLAIM_RACE_HOOK(rid)
 
     # --- 2. RETENTION MOVE: os.rename into consumed/, per DESIGN §1.5. ---
+    #
+    # Platform divergence, closed EXPLICITLY rather than left to the OS (same class as the
+    # election defect this fix cured): if a retained record is already present while its
+    # token is absent — a hand-removed token, or records from an older build — then
+    # Windows' rename REFUSES (FileExistsError, handled below) while POSIX's rename
+    # SILENTLY REPLACES the destination, destroying retained lineage and returning a
+    # false "win". Refusing here makes both platforms behave the same way. The check is
+    # a safe check-then-act precisely because the election above already serialized us:
+    # only one claimant is ever inside this window.
+    if consumed.exists():
+        raise RecordClaimRefused(already_consumed)
     try:
         os.rename(pending, consumed)
     except OSError as exc:
