@@ -77,8 +77,9 @@ frozen at the end of the initiation session, never mutated mid-run.
 - **Validator.** `protocol/intent.md` is in `REQUIRED_PROTOCOL`; `check_protocol_schemas` enforces that
   every required term is documented here (`kind`, `goal`, `fixes`, `features`, `changeSummary`, `target`,
   `grillDepth`, `readiness`).  `acceptanceCriteria` is documented as an **optional** term — it is not in
-  the required set and existing `INTENT.md` files that omit it remain fully valid.  `status` is likewise
-  documented but not in the validator's required-term set: adding it there would fail every pre-amendment
-  `INTENT.md` in the wild, and the BC law above is precisely that those artifacts stay legal.  This file is
-  fingerprinted, so this amendment carries its own two-step — the digest is re-approved by hand after the
-  diff is reviewed (the `acceptanceCriteria` precedent).
+  the required set and existing `INTENT.md` files that omit it remain fully valid.  `status` is documented
+  here but is likewise **not** in `REQUIRED_PROTOCOL`'s term list — note that that list is a
+  *documentation*-presence check on this file, never a check on artifacts, so it neither blesses nor rejects
+  any `INTENT.md` in the wild; adding `status` to it is an optional later hardening, not a BC question.
+  This file is fingerprinted, so this amendment carries its own two-step — the digest is re-approved by
+  hand after the diff is reviewed (the `acceptanceCriteria` precedent).
