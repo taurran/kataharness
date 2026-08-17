@@ -7,7 +7,7 @@ description: >-
   decisions, and scope. Burn-02 meta-finding, verbatim: "the judgment+human layers found all of these; the
   automated mechanical gates found none."
 license: Apache-2.0
-version: 0.4.0
+version: 0.4.1
 category: evaluate
 status: beta
 agnostic: true
@@ -89,11 +89,17 @@ fact-anchored; these three are where the judge earns its dispatch.
 ## Tripwire — this judge must prove it can still fail (TM-D3, R-M6)
 
 Before this judge's verdict is credited, it must demonstrably still FAIL against a known-bad corpus (the
-[[kata-validate]] tripwire precedent, generalized). **Status: Honor-system — declared, not enforced.** This
-judge's corpus and its runner (`tools/tripwire_check.py`) land with the Loop B `judge-tripwire-corpora` task
-(frozen PLAN, W6 block); they are **scheduled, NOT yet built**. Until the corpus lands, this judge is
-Honor-system by R-M6's activation rule (a judge without a corpus is declared Honor-system, never blocked); a
-judge that cannot demonstrate failure-capability is **Dormant, not Verified**.
+[[kata-validate]] tripwire precedent, generalized). **Status: corpus LANDED — activation is a derived,
+recorded fact.** This judge's known-bad corpus lives under this skill's `fixtures/` dir, and its runner
+`tools/tripwire_check.py` proves **mechanical corpus conformance** per build
+(`tools/tests/test_tripwire_check.py`, riding the CI gauntlet): `tripwire_check.check_judge` derives the
+activation state (`verified` / `dormant` / `honor-system`) from the corpus on disk — shape-conformant
+fixtures under this judge's closed enum, at least one demanding a FAILING verdict. **Honest boundary (the
+corpora task's own):** the tripwire proves CORPUS CONFORMANCE, not an observed live judge failure — no LLM
+judge is invoked; the live-failure v2 is BL-N24-class. The Guardian grade for this clause is therefore the
+derived activation state, **never "Verified (live-judged)"**. A judge that cannot demonstrate
+failure-capability remains **Dormant, not Verified**; a judge without a corpus remains Honor-system per
+R-M6 (never blocked).
 
 ## Inputs
 The frozen DESIGN + PLAN (acceptance criteria + LOCKED decisions + the file-ownership partition), and the
