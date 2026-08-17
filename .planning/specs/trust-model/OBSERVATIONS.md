@@ -284,6 +284,22 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   the 1-in-5 flake the builder's green single-shots missed). The gated DESIGN stays as
   authored; this erratum is the record.
 
+- **D-26 · The wave-3 pattern, named (builder's lesson, adopted):** three seam defects
+  shared one shape — **a property promised in a docstring but not enforced at the
+  boundary** (rename-as-election · seam-seq uniqueness · park-path-on-refusal; the W2
+  rotation TOCTOU is the same family). The cure each time: make the guarantee structural.
+  This IS Truth Serum's thesis applied to our own code mid-burn — feeds the W6 detector
+  rationale and the burn's lessons at close. Judge cures verified: seam-engine 05553dc
+  (live-corpus mint now parks with a typed refusal + DENY; 194/194 + 10× declared-node
+  loop clean under conductor re-run; the worker-NOTE resilience-lift hole closed with the
+  seam-agent filter, systemic writer-class residual restated not silently closed);
+  rotation fix 52dd729 merged (trailer verified). Wave-3 judges: evidence-identity PASS
+  first round (4 non-blocking hardening notes recorded in its verdict); seam-engine
+  NEEDS_WORK → cured. Non-blocking judge notes carried to W5: the convergence-reviewer
+  role token needs its ladder row assigned at judge-contract-rewrites (named seam comment
+  in code); evidence-identity's `\x7f`/DEL component char + the aspirational consumer
+  list wording.
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
