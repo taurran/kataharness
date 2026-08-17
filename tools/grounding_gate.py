@@ -150,7 +150,9 @@ def grounding_verdict(
     ------
     ValueError
         If ``finding["groundsToPlan"]`` is absent or not one of
-        ``{"YES", "NO", "PARTIAL"}``.  ``build_finding`` enforces this enum, but
+        ``{"YES", "NO", "PARTIAL"}``.  ``escalation.build_finding`` (``tools/escalation.py:233``
+        — qualified here after the Loop-A E7 lesson that a BARE-BACKTICKED identifier reads as
+        this module's own) enforces this enum, but
         other producers can construct a finding dict directly — an unvalidated
         lowercase/typo/absent value would silently skip the ESCALATE branch
         (D136 — decision code hard-fails on malformed input, never a silent
