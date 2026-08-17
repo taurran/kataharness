@@ -24,6 +24,7 @@ Coverage
 from __future__ import annotations
 
 import json
+import threading
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -42,6 +43,7 @@ AGENT = "S1a-worker"
 TASK = "T1"
 RUN_A = "run-20260816T101500Z-a1b2c3d4"
 RUN_B = "run-20260816T111500Z-beef0001"
+RUN_C = "run-20260816T121500Z-c0ffee02"
 FIXED_NOW = datetime(2026, 8, 16, 10, 15, 0, tzinfo=UTC)
 
 
@@ -214,6 +216,143 @@ def test_start_run_rotates_a_pre_existing_cursor(tmp_path):
     assert RUN_A in archives[0].read_text(encoding="utf-8")
     assert kata_board.read_cursor(kata_dir).run_id == RUN_B
     assert _cursor_lines(kata_dir) == [], "the new run's cursor must start empty"
+
+
+# ---------------------------------------------------------------------------
+# Rotation concurrency — the archive name is ELECTED, never scanned-then-taken
+# ---------------------------------------------------------------------------
+
+
+def test_rotations_at_an_identical_stamp_get_distinct_archives(tmp_path):
+    """Same utc stamp, two rotations: distinct archive names, both contents kept.
+
+    The collision suffix is what the naming contract promises; this pins that it still
+    holds when the stamp cannot disambiguate.
+    """
+    kata_dir = _fresh(tmp_path)
+    kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, "content-of-run-zero")
+    kata_board.start_run(kata_dir, run_id=RUN_B, now=FIXED_NOW)
+    kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, "content-of-run-one")
+    kata_board.start_run(kata_dir, run_id=RUN_C, now=FIXED_NOW)
+
+    archives = sorted(kata_dir.glob("board.*.archive.md"))
+    assert len(archives) == 2, f"expected two distinct archives, got {archives}"
+    blob = "\n".join(a.read_text(encoding="utf-8") for a in archives)
+    assert "content-of-run-zero" in blob
+    assert "content-of-run-one" in blob
+
+
+def test_reserved_archive_name_is_exclusive(tmp_path):
+    """The reservation is an atomic exclusive create: the second call cannot get it."""
+    kata_dir = _fresh(tmp_path)
+    first = kata_board._reserve_archive_path(kata_dir, "20260816T101500Z")
+    second = kata_board._reserve_archive_path(kata_dir, "20260816T101500Z")
+
+    assert first != second, "a reserved name must never be handed out twice"
+    assert first.exists() and second.exists()
+    assert first.name == "board.20260816T101500Z.archive.md"
+    assert second.name == "board.20260816T101500Z.1.archive.md"
+
+
+def test_forced_interleaving_rotation_refuses_and_loses_nothing(tmp_path, monkeypatch):
+    """DETERMINISTIC pin (no thread timing): drive a competing rotation at the exact
+    race point via the test seam, and prove the loser refuses loudly while leaving the
+    directory exactly as it found it — the winner's cursor still live, the original
+    content archived once.
+
+    **This is the falsifying pin for the reported defect.** Replaying this exact
+    interleaving against the pre-fix name selection (scan for a free name, then
+    ``os.replace`` onto it) was measured on this host: the original content was
+    CLOBBERED (marker survives = False) and nothing was raised. Both assertions below
+    therefore fail on the old algorithm and pass on the new one.
+    """
+    kata_dir = _fresh(tmp_path)
+    kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, "original-content-marker")
+
+    def _competing_rotation(_reserved_path):
+        # Disarm before recursing so the nested rotation runs cleanly.
+        monkeypatch.setattr(kata_board, "_ROTATE_RACE_HOOK", None)
+        kata_board.start_run(kata_dir, run_id=RUN_C, now=FIXED_NOW)
+
+    monkeypatch.setattr(kata_board, "_ROTATE_RACE_HOOK", _competing_rotation)
+
+    with pytest.raises(kata_board.CursorGrammarError) as exc:
+        kata_board.start_run(kata_dir, run_id=RUN_B, now=FIXED_NOW)
+    assert "nothing was discarded" in str(exc.value)
+
+    # The winner (the competing rotation) still owns a LIVE cursor: a refusal must not
+    # leave the run without one.
+    assert kata_board.read_cursor(kata_dir).run_id == RUN_C
+
+    archives = sorted(kata_dir.glob("board.*.archive.md"))
+    assert len(archives) == 1, f"exactly the winner's archive should remain: {archives}"
+    assert "original-content-marker" in archives[0].read_text(encoding="utf-8"), (
+        "the pre-fix TOCTOU clobbered exactly this content"
+    )
+
+
+def test_concurrent_rotations_never_clobber_an_archive(tmp_path):
+    """G11 in-process race: N rounds of real threads contending on one cursor.
+
+    Invariants per round: the round's unique marker survives in EXACTLY one archive, at
+    least one rotation succeeds, every failure is a loud CursorError, and the live
+    cursor still parses.
+
+    **What this test actually falsifies, measured rather than assumed:** run against the
+    pre-fix algorithm on this host, the marker invariant held in 25/25 rounds (a barrier
+    start makes the losers hit a missing cursor rather than a completed one, so the
+    byte-level clobber does not reproduce here) — but raw ``FileNotFoundError`` and
+    ``PermissionError`` escaped in every configuration, which the loud-refusal assertion
+    catches. The clobber itself is pinned deterministically by the forced-interleaving
+    test above; this one pins the property that ``start_run`` has exactly two outcomes
+    under contention — success, or a CursorError — which is what caught three separate
+    Windows defects while this fix was being written.
+    """
+    rounds, workers = 25, 4
+
+    for r in range(rounds):
+        kata_dir = tmp_path / f"round{r}"
+        kata_dir.mkdir()
+        kata_board.start_run(kata_dir, run_id=RUN_A)
+        marker = f"unique-marker-round-{r}"
+        kata_board.append_event(kata_dir, AGENT, "NOTE", TASK, marker)
+
+        refusals: list[BaseException] = []
+        unexpected: list[BaseException] = []
+        wins: list[str] = []
+        gate = threading.Barrier(workers)
+
+        def rotate(i: int) -> None:
+            gate.wait()  # release all threads into the race together
+            try:
+                header = kata_board.start_run(
+                    kata_dir, run_id=f"run-20260816T20{i:04d}Z-{i:08x}"
+                )
+                wins.append(header.run_id)
+            except kata_board.CursorError as exc:  # loud, expected under contention
+                refusals.append(exc)
+            except BaseException as exc:  # noqa: BLE001 — the point is to catch anything
+                unexpected.append(exc)
+
+        threads = [threading.Thread(target=rotate, args=(i,)) for i in range(workers)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=30)
+        assert not any(t.is_alive() for t in threads), f"round {r}: a rotation hung"
+
+        assert not unexpected, f"round {r}: non-CursorError escaped: {unexpected!r}"
+        assert wins, f"round {r}: every rotation failed — no progress"
+
+        archives = list(kata_dir.glob("board.*.archive.md"))
+        hits = [a for a in archives if marker in a.read_text(encoding="utf-8")]
+        assert len(hits) == 1, (
+            f"round {r}: marker found in {len(hits)} archives (expected exactly 1) — "
+            f"archives={[a.name for a in archives]}, refusals={len(refusals)}"
+        )
+
+        # Whatever the interleaving, the surviving cursor is still a valid cursor.
+        assert kata_board.read_cursor(kata_dir).header.run_id
 
 
 # ---------------------------------------------------------------------------
