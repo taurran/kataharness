@@ -13,6 +13,10 @@ Coverage:
 - invalid 'grillDepth' raises ValueError
 - write_intent writes a file whose frontmatter round-trips as valid YAML
 - the '..' traversal guard in write_intent rejects escape paths
+- the additive `status: draft|frozen` freeze field (R2-H1/R3-L2): explicit
+  keyword-only `freeze=True` is the ONLY writer of `frozen`
+- the fail-closed `intent_status` reader (first-word parse, BL-F01), including
+  the statusless-legacy-INTENT backward-compatibility path
 """
 
 from __future__ import annotations
@@ -372,3 +376,301 @@ def test_write_intent_roundtrips_acceptance_criteria(tmp_path):
     text = target.read_text(encoding="utf-8")
     fm = _parse_frontmatter(text)
     assert fm["acceptanceCriteria"] == criteria
+
+
+# ---------------------------------------------------------------------------
+# R2-H1 / R3-L2 — the additive `status: draft|frozen` freeze field
+#
+# The whole point of the field is that `frozen` is UNREACHABLE except by a
+# caller naming `freeze=True`. These tests attack that from both sides: the
+# default must be draft everywhere, and the argument must not be settable by
+# accident (positionally) or by inference from the answers dict.
+# ---------------------------------------------------------------------------
+
+def test_build_intent_emits_status_field():
+    """The frontmatter always carries a `status:` key (additive amendment)."""
+    from intent_scaffold import build_intent
+    fm = _parse_frontmatter(build_intent(FULL_ANSWERS))
+    assert "status" in fm, "status must always be emitted"
+
+
+def test_build_intent_default_status_is_draft():
+    """Omitted freeze argument ⇒ `draft`. Never a defaulted freeze."""
+    from intent_scaffold import build_intent
+    fm = _parse_frontmatter(build_intent(FULL_ANSWERS))
+    assert fm["status"] == "draft"
+
+
+def test_build_intent_freeze_true_writes_frozen():
+    from intent_scaffold import build_intent
+    fm = _parse_frontmatter(build_intent(FULL_ANSWERS, freeze=True))
+    assert fm["status"] == "frozen"
+
+
+def test_build_intent_freeze_false_writes_draft():
+    """Explicit freeze=False is the same as omitting it."""
+    from intent_scaffold import build_intent
+    fm = _parse_frontmatter(build_intent(FULL_ANSWERS, freeze=False))
+    assert fm["status"] == "draft"
+    assert build_intent(FULL_ANSWERS, freeze=False) == build_intent(FULL_ANSWERS)
+
+
+def test_build_intent_freeze_is_keyword_only():
+    """A positional second argument must be a TypeError, not a silent freeze.
+
+    Mutation-proof: if the `*` marker is dropped from the signature, a caller
+    passing a truthy positional would silently freeze the artifact.
+    """
+    from intent_scaffold import build_intent
+    with pytest.raises(TypeError):
+        build_intent(FULL_ANSWERS, True)  # noqa: FBT003 — that is the point
+
+
+def test_build_intent_freeze_not_inferred_from_answers():
+    """A `status`/`freeze`/`frozen` key in the answers dict must NOT freeze it.
+
+    The freeze is a named argument, never inferred from the payload — a dict
+    key that could flip the governor rung would be exactly the silent-permissive
+    default (D136 class) the explicit argument exists to eliminate.
+    """
+    from intent_scaffold import build_intent
+    for smuggled in ("status", "freeze", "frozen"):
+        answers = {**FULL_ANSWERS, smuggled: "frozen"}
+        fm = _parse_frontmatter(build_intent(answers))
+        assert fm["status"] == "draft", (
+            f"answers[{smuggled!r}] must not be able to freeze the artifact"
+        )
+
+
+def test_build_intent_status_differs_between_modes():
+    """The two modes must produce different text (the field is load-bearing)."""
+    from intent_scaffold import build_intent
+    assert build_intent(FULL_ANSWERS, freeze=True) != build_intent(FULL_ANSWERS)
+
+
+def test_write_intent_default_status_is_draft(tmp_path):
+    from intent_scaffold import write_intent
+    target = tmp_path / "INTENT.md"
+    write_intent(str(target), FULL_ANSWERS)
+    fm = _parse_frontmatter(target.read_text(encoding="utf-8"))
+    assert fm["status"] == "draft"
+
+
+def test_write_intent_freeze_true_writes_frozen(tmp_path):
+    from intent_scaffold import write_intent
+    target = tmp_path / "INTENT.md"
+    write_intent(str(target), FULL_ANSWERS, freeze=True)
+    fm = _parse_frontmatter(target.read_text(encoding="utf-8"))
+    assert fm["status"] == "frozen"
+
+
+def test_write_intent_freeze_is_keyword_only(tmp_path):
+    from intent_scaffold import write_intent
+    target = tmp_path / "INTENT.md"
+    with pytest.raises(TypeError):
+        write_intent(str(target), FULL_ANSWERS, True)  # noqa: FBT003
+
+
+def test_write_intent_freeze_matches_build_intent(tmp_path):
+    """write_intent(freeze=True) must write exactly build_intent(freeze=True)."""
+    from intent_scaffold import build_intent, write_intent
+    target = tmp_path / "INTENT.md"
+    write_intent(str(target), FULL_ANSWERS, freeze=True)
+    assert target.read_text(encoding="utf-8") == build_intent(FULL_ANSWERS, freeze=True)
+
+
+# ---------------------------------------------------------------------------
+# intent_status — the fail-closed reader (mirrors kata_restore.plan_status,
+# kata_restore.py:347-377). Writer and reader are round-tripped against each
+# other so the two halves of the schema row cannot drift apart.
+# ---------------------------------------------------------------------------
+
+def _write_raw(tmp_path, body: str, name: str = "INTENT.md"):
+    """Write a raw INTENT.md and return its path (bypasses the builder)."""
+    p = tmp_path / name
+    p.write_text(body, encoding="utf-8")
+    return p
+
+
+def test_intent_status_roundtrips_draft(tmp_path):
+    from intent_scaffold import intent_status, write_intent
+    target = tmp_path / "INTENT.md"
+    write_intent(str(target), FULL_ANSWERS)
+    assert intent_status(target) == "draft"
+
+
+def test_intent_status_roundtrips_frozen(tmp_path):
+    from intent_scaffold import intent_status, write_intent
+    target = tmp_path / "INTENT.md"
+    write_intent(str(target), FULL_ANSWERS, freeze=True)
+    assert intent_status(target) == "frozen"
+
+
+def test_intent_status_accepts_str_path(tmp_path):
+    from intent_scaffold import intent_status, write_intent
+    target = tmp_path / "INTENT.md"
+    write_intent(str(target), FULL_ANSWERS, freeze=True)
+    assert intent_status(str(target)) == "frozen"
+
+
+def test_intent_status_absent_when_no_status_key(tmp_path):
+    """BC: a legacy INTENT.md written before the amendment has no `status:`.
+
+    It must read as "absent" — not frozen (silent-permissive), not an error
+    (which would break every pre-amendment artifact).
+    """
+    from intent_scaffold import intent_status
+    legacy = _write_raw(tmp_path, LEGACY_STATUSLESS_INTENT)
+    assert intent_status(legacy) == "absent"
+
+
+def test_intent_status_absent_is_not_frozen(tmp_path):
+    """The load-bearing half of the BC path: absent must never equal frozen."""
+    from intent_scaffold import intent_status
+    legacy = _write_raw(tmp_path, LEGACY_STATUSLESS_INTENT)
+    assert intent_status(legacy) != "frozen"
+
+
+def test_intent_status_absent_when_empty_value(tmp_path):
+    from intent_scaffold import intent_status
+    p = _write_raw(tmp_path, "---\nkind: project\nstatus:\n---\n\nbody\n")
+    assert intent_status(p) == "absent"
+
+
+def test_intent_status_absent_when_whitespace_value(tmp_path):
+    from intent_scaffold import intent_status
+    p = _write_raw(tmp_path, '---\nkind: project\nstatus: "   "\n---\n\nbody\n')
+    assert intent_status(p) == "absent"
+
+
+def test_intent_status_first_word_parse_with_trailing_prose(tmp_path):
+    """BL-F01 first-word rule: trailing prose after the token is ignored."""
+    from intent_scaffold import intent_status
+    p = _write_raw(
+        tmp_path,
+        "---\nkind: project\n"
+        "status: frozen — sealed at the Phase-6 gate (operator confirmed)\n"
+        "---\n\nbody\n",
+    )
+    assert intent_status(p) == "frozen"
+
+
+def test_intent_status_first_word_parse_draft_with_prose(tmp_path):
+    from intent_scaffold import intent_status
+    p = _write_raw(
+        tmp_path,
+        "---\nkind: project\nstatus: draft — interview still open\n---\n\nbody\n",
+    )
+    assert intent_status(p) == "draft"
+
+
+def test_intent_status_case_folded(tmp_path):
+    from intent_scaffold import intent_status
+    p = _write_raw(tmp_path, "---\nkind: project\nstatus: FROZEN\n---\n\nbody\n")
+    assert intent_status(p) == "frozen"
+
+
+def test_intent_status_unrecognized_raises(tmp_path):
+    """Fail-closed: an unknown token is never coerced in either direction."""
+    from intent_scaffold import intent_status
+    p = _write_raw(tmp_path, "---\nkind: project\nstatus: sealed\n---\n\nbody\n")
+    with pytest.raises(ValueError, match="unrecognized status"):
+        intent_status(p)
+
+
+def test_intent_status_typo_raises(tmp_path):
+    """A near-miss typo must raise, not silently read as its neighbour."""
+    from intent_scaffold import intent_status
+    p = _write_raw(tmp_path, "---\nkind: project\nstatus: frozzen\n---\n\nbody\n")
+    with pytest.raises(ValueError, match="unrecognized status"):
+        intent_status(p)
+
+
+def test_intent_status_missing_file_raises(tmp_path):
+    from intent_scaffold import intent_status
+    with pytest.raises(ValueError, match="cannot read INTENT"):
+        intent_status(tmp_path / "nope" / "INTENT.md")
+
+
+def test_intent_status_no_frontmatter_raises(tmp_path):
+    from intent_scaffold import intent_status
+    p = _write_raw(tmp_path, "# North-Star Intent\n\nno frontmatter here\n")
+    with pytest.raises(ValueError, match="no YAML frontmatter"):
+        intent_status(p)
+
+
+def test_intent_status_invalid_yaml_raises(tmp_path):
+    from intent_scaffold import intent_status
+    p = _write_raw(tmp_path, "---\nkind: [unclosed\n---\n\nbody\n")
+    with pytest.raises(ValueError, match="not valid YAML"):
+        intent_status(p)
+
+
+def test_intent_status_non_mapping_frontmatter_raises(tmp_path):
+    from intent_scaffold import intent_status
+    p = _write_raw(tmp_path, "---\n- just\n- a\n- list\n---\n\nbody\n")
+    with pytest.raises(ValueError, match="not a mapping"):
+        intent_status(p)
+
+
+def test_intent_status_returns_only_enum_values(tmp_path):
+    """Every non-raising return is one of exactly three tokens."""
+    from intent_scaffold import intent_status, write_intent
+    draft = tmp_path / "d.md"
+    frozen = tmp_path / "f.md"
+    write_intent(str(draft), FULL_ANSWERS)
+    write_intent(str(frozen), FULL_ANSWERS, freeze=True)
+    legacy = _write_raw(tmp_path, LEGACY_STATUSLESS_INTENT, name="legacy.md")
+    got = {intent_status(draft), intent_status(frozen), intent_status(legacy)}
+    assert got == {"draft", "frozen", "absent"}
+
+
+# ---------------------------------------------------------------------------
+# BC — statusless legacy INTENT.md files must not break any existing path
+# ---------------------------------------------------------------------------
+
+LEGACY_STATUSLESS_INTENT = """---
+kind: version-up
+goal: A pre-amendment INTENT.md, written before the status field existed.
+fixes: []
+features:
+- something
+modulesAdded: []
+changeSummary: Legacy artifact.
+target:
+  kind: self
+  path: ''
+  vault: ''
+  platform: claude
+grillDepth: standard
+readiness: Ready.
+---
+
+# North-Star Intent
+"""
+
+
+def test_legacy_statusless_intent_frontmatter_still_parses(tmp_path):
+    """The legacy artifact remains a schema-valid, readable INTENT.md."""
+    legacy = _write_raw(tmp_path, LEGACY_STATUSLESS_INTENT)
+    fm = _parse_frontmatter(legacy.read_text(encoding="utf-8"))
+    required = {"kind", "goal", "fixes", "features", "modulesAdded",
+                "changeSummary", "target", "grillDepth", "readiness"}
+    assert required <= fm.keys()
+    assert "status" not in fm
+
+
+def test_legacy_answers_without_status_still_build():
+    """An answers dict from a pre-amendment caller still builds without raising."""
+    from intent_scaffold import build_intent
+    result = build_intent(FULL_ANSWERS)
+    assert isinstance(result, str)
+
+
+def test_legacy_positional_call_signature_unchanged(tmp_path):
+    """Pre-amendment call sites (path, answers) / (answers) keep working."""
+    from intent_scaffold import build_intent, write_intent
+    build_intent(FULL_ANSWERS)
+    target = tmp_path / "INTENT.md"
+    write_intent(str(target), FULL_ANSWERS)
+    assert target.exists()
