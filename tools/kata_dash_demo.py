@@ -140,6 +140,14 @@ def _run_demo(
     if board_file.exists():
         board_file.unlink()
 
+    # Mint this demo run's cursor: start_run is the ONE legal minting path (DESIGN
+    # §2.4 — runId is minted by a single seam act at run start, and append_event
+    # never mints implicitly).  Without it the first append has no run-header to
+    # append to and kata_board refuses, which is what broke the demo when the
+    # grammar migrated.  The unlink above already cleared the prior cursor, so
+    # start_run's rotation is a no-op and no archive file is left in the demo dir.
+    kata_board.start_run(kata_dir)
+
     workers = [
         {
             "agent": w["agent"],

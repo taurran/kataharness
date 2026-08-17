@@ -16,6 +16,7 @@ from datetime import UTC, datetime, timezone
 import pytest
 
 import kata_advisor as _ka
+import kata_board
 import kata_telemetry as kt
 
 # ---------------------------------------------------------------------------
@@ -321,16 +322,35 @@ def test_validate_inline_eval_bad_raises(bad):
 # ===========================================================================
 
 
-def _pline(ts, task, done, owned, label="work") -> str:
-    return f"{ts} | agent-1 | PROGRESS | {task} | {done}/{owned} {label}"
+#: Cursor fixtures are built through the canonical EMITTER (kata_board.format_header /
+#: format_line), never hand-typed — a hand-typed grammar in a test is a second source of
+#: truth, and the legacy 5-field fixtures this file used to carry parse NOWHERE now
+#: (DESIGN §2.2).  A legacy line survives below ONLY inside the refusal test.
+_RUN_ID = "run-20260704T100000Z-beef0001"
+
+#: A LEGACY 5-field PROGRESS line — kept only to be REFUSED.
+_LEGACY_PLINE = "2026-07-04T10:00:00Z | agent-1 | PROGRESS | T1 | 1/5 work"
+
+
+def _cursor(*rows: tuple[str, str, str, str, str]) -> str:
+    """Build a cursor from ``(utc, agent, TYPE, task, msg)`` rows; seq stamped 1..N."""
+    header = kata_board.format_header(kata_board.RunHeader(run_id=_RUN_ID))
+    return header + "".join(
+        kata_board.format_line(
+            utc=utc, seq=i, agent=agent, type=typ, task=task, msg=msg
+        )
+        for i, (utc, agent, typ, task, msg) in enumerate(rows, start=1)
+    )
+
+
+def _prow(ts, task, done, owned, label="work") -> tuple[str, str, str, str, str]:
+    return (ts, "agent-1", "PROGRESS", task, f"{done}/{owned} {label}")
 
 
 def test_parse_progress_events_extracts_this_task():
-    board = "\n".join(
-        [
-            _pline("2026-07-04T10:00:00Z", "T1", 1, 5),
-            _pline("2026-07-04T10:05:00Z", "T1", 3, 5),
-        ]
+    board = _cursor(
+        _prow("2026-07-04T10:00:00Z", "T1", 1, 5),
+        _prow("2026-07-04T10:05:00Z", "T1", 3, 5),
     )
     events = kt.parse_progress_events(board, "T1")
     assert events == [
@@ -340,29 +360,63 @@ def test_parse_progress_events_extracts_this_task():
 
 
 def test_parse_progress_events_ignores_other_tasks_and_types():
-    board = "\n".join(
-        [
-            _pline("2026-07-04T10:00:00Z", "T2", 1, 5),  # other task
-            "2026-07-04T10:01:00Z | agent-1 | CLAIM | T1 | started",  # other type
-            _pline("2026-07-04T10:05:00Z", "T1", 2, 5),
-        ]
+    board = _cursor(
+        _prow("2026-07-04T10:00:00Z", "T2", 1, 5),  # other task
+        ("2026-07-04T10:01:00Z", "agent-1", "CLAIM", "T1", "started"),  # other type
+        _prow("2026-07-04T10:05:00Z", "T1", 2, 5),
     )
     assert kt.parse_progress_events(board, "T1") == [
         {"ts": "2026-07-04T10:05:00Z", "done": 2, "owned": 5}
     ]
 
 
-def test_parse_progress_events_short_line_skipped():
-    """Fail-safe (LOW-12): an unattributable <5-field line is skipped, not raised."""
-    board = "corrupted line with no pipes\n" + _pline("2026-07-04T10:00:00Z", "T1", 1, 3)
-    assert kt.parse_progress_events(board, "T1") == [
-        {"ts": "2026-07-04T10:00:00Z", "done": 1, "owned": 3}
-    ]
+def test_parse_progress_events_empty_cursor_is_absence_not_refusal():
+    """No cursor written yet ⇒ no events.  Absence and refusal are distinct."""
+    assert kt.parse_progress_events("", "T1") == []
+    assert kt.parse_progress_events("  \n\n", "T1") == []
+
+
+def test_parse_progress_events_refuses_a_legacy_5_field_line():
+    """MIGRATION PROOF: a legacy line PROPAGATES as TelemetryError, never a skip.
+
+    This REPLACES the old LOW-12 short-line skip.  This module is a gate parser —
+    an unreadable cursor means the slack signal cannot be trusted, and averaging
+    over the readable remainder is exactly the skip-and-average it refuses.
+    """
+    board = _cursor(_prow("2026-07-04T10:05:00Z", "T1", 3, 5)) + _LEGACY_PLINE + "\n"
+    with pytest.raises(kt.TelemetryError, match="UNPARSEABLE"):
+        kt.parse_progress_events(board, "T1")
+
+
+def test_parse_progress_events_corrupted_line_propagates():
+    """A corrupted row is a REFUSAL, not an 'unattributable' silent skip."""
+    board = (
+        _cursor(_prow("2026-07-04T10:00:00Z", "T1", 1, 3))
+        + "corrupted line with no pipes\n"
+    )
+    with pytest.raises(kt.TelemetryError, match="UNPARSEABLE"):
+        kt.parse_progress_events(board, "T1")
+
+
+def test_parse_progress_events_headerless_cursor_propagates():
+    """A cursor with no run-header has no run identity — refused, never partially read."""
+    headerless = kata_board.format_line(
+        utc="2026-07-04T10:00:00Z",
+        seq=1,
+        agent="agent-1",
+        type="PROGRESS",
+        task="T1",
+        msg="1/5 work",
+    )
+    with pytest.raises(kt.TelemetryError, match="UNPARSEABLE"):
+        kt.parse_progress_events(headerless, "T1")
 
 
 def test_parse_progress_events_malformed_doneowned_raises():
     """RAISES: a malformed done/owned on THIS task's PROGRESS line."""
-    board = "2026-07-04T10:00:00Z | agent-1 | PROGRESS | T1 | notafraction work"
+    board = _cursor(
+        ("2026-07-04T10:00:00Z", "agent-1", "PROGRESS", "T1", "notafraction work")
+    )
     with pytest.raises(kt.TelemetryError, match="done/owned"):
         kt.parse_progress_events(board, "T1")
 
