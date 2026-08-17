@@ -70,7 +70,10 @@ GRILL / AUTHORING / FREEZE boundaries are emitted by the skills that own those s
 and the freeze act) — this conductor does not double-stamp them.
 
 **`run-closed` is the terminal record**, written exactly once by `close_run` at the end of the
-whole loop. Nothing is legal on the cursor after it.
+whole loop — `close_run` is W7 `close-machinery` (`tools/kata_close.py`) and is **NOT YET BUILT**.
+Nothing is legal on the cursor after that line, but **until W7 lands the line is never written and
+the run stays open**. Do not simulate it: hand-writing a `run-closed` PHASE line would be a
+conductor authoring a seam TYPE, and the gap is meant to be visible, not papered over.
 
 ### 3. Position is READ, never remembered (TM-C5)
 
@@ -189,10 +192,19 @@ human's decision:
 ### Path A — "Run again (version-up)"
 
 **Record the loop-back on the cursor, then emit the compact loop-back banner** so the operator sees
-the new cycle begin. The order matters: `phase(kata, "open LOOP-BACK")` → close the phases the run
-still holds open → `close_run` writes the terminal `run-closed` record → the next run's
-`run_start(kata, force_new=True, prev_run=<this runId>)` mints a fresh `runId` whose header carries
-the `prev-run:` chain pointer. A loop-back **always re-mints**; only a crash-resume adopts.
+the new cycle begin. The order matters:
+
+1. `phase(kata, "open LOOP-BACK")`.
+2. Close the phases the run still holds open.
+3. **⛔ PARKED UNTIL W7 — not an executable step today.** The terminal `run-closed` record is
+   `close_run`'s to write, and `close_run` is W7 `close-machinery` (`tools/kata_close.py`), **NOT
+   YET BUILT**: a conductor following this sequence today finds nothing to call. **The sequence
+   STOPS here.** Record the gap — the run is left open on its cursor, with no terminal line — and
+   surface it; do not hand-write the line, and do not improvise a substitute close. What happens
+   between this step and the next run is W7's ruling to make, not this contract's to assume.
+4. *(after W7)* The next run's `run_start(kata, force_new=True, prev_run=<this runId>)` mints a
+   fresh `runId` whose header carries the `prev-run:` chain pointer. A loop-back **always
+   re-mints**; only a crash-resume adopts.
 
 `uv run python tools/kata_banner.py --color --goal "<next goal>" --tasks N --compact`
 (a single `↻ KATAHARNESS 改善型 · loop-back — …` line). Then:

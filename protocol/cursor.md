@@ -198,8 +198,12 @@ FINAL-GATE · CLOSEOUT · LOOP-BACK
 - **Position is READ, never remembered.** Every phase-aware contract derives its position from the
   cursor (`kata_dispatch.phase_state(cursor)` → `{open, closed, runClosed}`), never from what an
   agent believes it just did. A conversational recollection is not a position.
-- **`run-closed` is terminal and written exactly once**, by `close_run`. Nothing is legal on the
-  cursor after it; `run_start`'s resume test reads it (`kata_dispatch.is_run_closed`).
+- **`run-closed` is terminal and written exactly once**, by `close_run` (W7 `close-machinery`,
+  `tools/kata_close.py` — **NOT YET BUILT**; the §1.3 contract names it, no code exposes it today).
+  Nothing is legal on the cursor after it. **Until W7 lands, no terminal line is written and every
+  run stays open on its cursor** — stated so the absence is a known gap rather than a silent one.
+  The READER half already exists and is live: `run_start`'s resume test reads for the terminal line
+  via `kata_dispatch.is_run_closed`, and today it correctly finds none.
 - Re-opening a closed phase is a **DENY-class event**, recorded as a DENY line naming the legal
   path — not a silent no-op.
 
