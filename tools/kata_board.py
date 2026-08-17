@@ -828,6 +828,48 @@ def _read_cursor_bytes(path: Path) -> bytes:
         ) from exc
 
 
+def _publish_cursor(path: Path, data: bytes, *, exclusive: bool) -> None:
+    """Publish cursor bytes so the file is NEVER observable empty or half-written.
+
+    Two properties, and both are load-bearing on POSIX in a way they are not on Windows:
+
+    * **Complete-or-absent.** The bytes are written to a temp file in the same directory
+      and then linked/renamed into place, so a concurrent reader sees the whole cursor
+      or no cursor — never a zero-byte file.  The previous code created the cursor with
+      ``O_CREAT|O_EXCL`` and wrote afterwards, leaving a real window in which
+      ``board.md`` existed with no run-header.  Windows hides that window behind sharing
+      violations; POSIX does not, and a reader landing in it gets exactly
+      ``CursorParseError: cursor has no run-header block``.
+    * **Exclusive when it matters.** ``exclusive=True`` refuses if the name is already
+      taken (``FileExistsError``), which is what makes "exactly one run claims the
+      cursor" a fact rather than an assumption.  ``os.link`` gives atomic exclusive
+      publication on both platforms (verified on this host); a filesystem without usable
+      hardlinks falls back to exclusive-create-then-write, whose zero-byte window is a
+      stated residual rather than a hidden one.
+    """
+    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+        if not exclusive:
+            os.replace(tmp, path)
+            return
+        try:
+            os.link(tmp, path)
+        except FileExistsError:
+            raise
+        except (AttributeError, NotImplementedError, OSError):
+            # No usable hardlink on this filesystem — narrow, documented fallback.
+            fd2 = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd2, "wb") as fh2:
+                fh2.write(data)
+    finally:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
 def start_run(
     kata_dir: str | Path,
     *,
@@ -857,7 +899,11 @@ def start_run(
       always get DISTINCT names and no archive is ever clobbered; and
     * the moved bytes are verified against the bytes this call observed, so a rotation
       that interleaved with another rotation — or with a worker append — refuses
-      instead of archiving somebody else's cursor.
+      instead of archiving somebody else's cursor; and
+    * the header is published atomically and EXCLUSIVELY (:func:`_publish_cursor`), so
+      the cursor is never observable half-written and two runs can never both believe
+      they claimed it.  Publication is what elects the winner, which is also why
+      progress is guaranteed: whichever racer publishes first has succeeded.
 
     **A refused rotation is non-destructive:** it puts back what it moved, so the live
     cursor survives the refusal.  Every refusal names where the bytes ended up; nothing
@@ -871,6 +917,15 @@ def start_run(
     if observed.strip():
         stamp = (now or datetime.now(UTC)).astimezone(UTC).strftime(_UTC_COMPACT)
         _rotate_cursor(kata, path, observed, stamp)
+    elif path.exists():
+        # A blank cursor holds nothing to archive, but it does hold the NAME, and the
+        # claim below is exclusive.  Drop it (losing a race to another start_run doing
+        # the same is harmless — no data is involved) so a crash-left empty file cannot
+        # wedge every future run.
+        try:
+            path.unlink()
+        except OSError:
+            pass
 
     header = RunHeader(
         run_id=validate_run_id(run_id) if run_id else mint_run_id(now=now, entropy=entropy),
@@ -878,9 +933,16 @@ def start_run(
         parent_run=parent_run,
         prev_segment=prev_segment,
     )
+    # Claiming the cursor is the act that decides the winner: exactly one racer can
+    # publish the header, so two runs can never both believe they own this cursor.
     try:
-        path.write_text(format_header(header), encoding="utf-8")
-    except OSError as exc:  # the header write contends for the same path
+        _publish_cursor(path, format_header(header).encode("utf-8"), exclusive=True)
+    except FileExistsError as exc:
+        raise CursorGrammarError(
+            f"kata_board: another run claimed the cursor at {path} first — this "
+            "start_run is refused; two runs cannot share a cursor"
+        ) from exc
+    except OSError as exc:
         raise CursorGrammarError(
             f"kata_board: could not write the run header to {path} ({exc}) — another "
             "start_run raced this one; two runs cannot share a cursor"
@@ -929,9 +991,7 @@ def _rotate_cursor(kata: Path, path: Path, observed: bytes, stamp: str) -> Path:
             # cursor survives, and only keep them in the archive if a cursor already
             # exists again (exclusive create decides, so the restore cannot clobber).
             try:
-                fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                with os.fdopen(fd, "wb") as fh:
-                    fh.write(archived)
+                _publish_cursor(path, archived, exclusive=True)
                 archive.unlink()
                 where = f"restored to {path}"
             except OSError:
