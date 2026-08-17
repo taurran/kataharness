@@ -480,3 +480,15 @@ writing, and no ledger's authoring style was changed.
 - **Provenance:** tm-lc-hook-activation UNPROBED-scopes section + the honest post-activation
   posture note.
 - **Owed-to:** operator Human Moment (surfaced on the veto/decision ledger in the post-loop report).
+
+## DEF-32 — the build-and-run wiring-completeness gate is prose-claimed but unbuilt · OPEN (2026-08-17)
+
+- **What:** kata-review/RUBRIC.md:55 and kata-evaluate/SKILL.md:192 state the orchestrator
+  integration gate enforces build-and-run wiring completeness — a DIFFERENT mechanism from the
+  seam guard (which enforces dispatch-record identity, not that every designed action is
+  wired-and-exercised). That completeness gate is not built; the prose over-claims.
+- **Why:** both files are W5-owned (closed); the relabel task's grant was promise-audit +
+  observability + kata-orchestrate + badge_registry, not the review/evaluate contracts.
+- **Provenance:** tm-ld-guardian-relabel-pass DC-1 + its judge residual.
+- **Owed-to:** a W5-follow-up remediation task (relabel those two lines to the honest state, or
+  build the gate) — planning-window backlog candidate.

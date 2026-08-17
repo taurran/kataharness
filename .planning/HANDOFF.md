@@ -1,86 +1,68 @@
-# HANDOFF — Trust Model burn, EXECUTION window #2, mid-burn self-handoff (2026-08-17)
+# HANDOFF — Trust Model burn, EXECUTION window #2, near-close self-handoff (2026-08-17)
 
-> **Written by the running conductor at the kata context gauge's 70% trigger** (kata-selfhandoff,
-> task boundary = Loop-B integration). Supersedes the window-#1 handoff. Re-entry: read
-> `protocol/prime-directives.md` → `.planning/ORIENTATION-EXECUTION-2.md` → the frozen
-> `specs/trust-model/PLAN.md` → `specs/trust-model/OBSERVATIONS.md` IN FULL (it carries every
-> ruling G1–G28, D-1..D-29, and all wave/loop records) → this file.
+> Written at the context gauge trigger, Loop-D integration boundary. Re-entry: read
+> `protocol/prime-directives.md` → `.planning/ORIENTATION-EXECUTION-2.md` → frozen
+> `specs/trust-model/PLAN.md` → `specs/trust-model/OBSERVATIONS.md` IN FULL (every ruling
+> G1–G32, D-1..D-29, and all wave/loop records incl. the four consolidated-loop FINAL EVAL
+> PASSes) → this file.
 
-## Ground truth at handoff
+## The burn is all but done
 
-- Conduct from `C:\dev\projects\_kata_wt\trust-model\conductor` (branch `burn/trust-model-01`).
-  The main checkout may be a LIVE planning window — the two-window fence stands (OBSERVATIONS
-  frontmatter). Shell cwd RESETS between commands — cd explicitly, always.
-- **G19 (operator, recorded): waves 5–9 consolidated into FOUR back-to-back loops, run
-  autonomously overnight; veto surface accumulates to the post-loop report.** Loop A =
-  W5+detectors+close-machinery+doctrine · Loop B = corpora∥grounding∥EV-1 + stacked
-  gate-preconditions · Loop C = hook-activation ALONE · Loop D = guardian-relabel. Hook LAST
-  and relabel-after-hook stay frozen.
-- **Waves 1–4 and Loop A: CLOSED, each with a fresh-context default-FAIL FINAL EVAL PASS**
-  (records + the G26 CI strand D-28/D-29 in OBSERVATIONS). **Loop B: all five tasks
-  judge-PASSED** (corpora cured 262f584; others first-round), five trailered merges +
-  six conductor act commits in, validator 50 skills 0/0, spot-audit (the detector→fact-table
-  composition + tamper refusal) PASSED live.
-- **The live seam run:** runId `run-20260817T034343Z-e3b50e43`, kata dir `.kata/` in the
-  conductor worktree. EVERY dispatch is minted+claimed through `kata_dispatch` (dogfood,
-  Execution rule 4); judge verdicts captured via `capture()`; phases open/close per loop
-  (`EXECUTION wave=6` is OPEN = Loop B). Enforcement remains **Honor-system — stated** until
-  the Loop-C hook lands.
+- **Every build wave is CLOSED with a fresh-context default-FAIL FINAL EVAL PASS:** waves 1–4
+  + Loops A, B, C, D (the G19 4-loop consolidation of waves 5–9). CI green both platforms at
+  each loop tip. The full seam/cursor/evidence-identity/judge-contracts/Truth-Serum/grounding/
+  gate-preconditions/close-machinery/doctrine/EV-1/hook/relabel scope is built, gated,
+  integrated. **Enforcement is LIVE and four-leg-proven** (Loop C); the guardian relabel made
+  every trust label honest-or-downgraded (Loop D), EV-1 catches uncited badges live.
+- Conduct from `C:\dev\projects\_kata_wt\trust-model\conductor`, branch `burn/trust-model-01`.
+  The two-window fence STILL HOLDS (BACKLOG.md/DECISIONS.md never edited; the §10 closes +
+  BACKLOG truth-status table are FILED in OBSERVATIONS for the planning window to fold — that
+  includes the BL-X12 writeback, D-1).
+- The live seam run: `run-20260817T034343Z-e3b50e43`, `.kata/` in the conductor worktree.
+  Every dispatch minted+claimed through the engine; verdicts captured; phases open/close per
+  loop. `EXECUTION wave=8` is OPEN (Loop D) — CLOSE it after the Loop-D final eval.
 
-## Exactly where the loop stands (resume HERE)
+## Resume HERE (only the close + report remain)
 
-1. **IN FLIGHT at handoff:** the re-run gauntlet on the Loop-B integrated tree (background)
-   after the second tripwire catch (kata-grounding classified into
-   `NON_JUDGE_EVALUATE_SKILLS`, commit on the branch). On 4/4 green:
-2. Append the staged Loop-B record + DEF-23..28 (scratchpad files `loop-b-record.md`,
-   `defs-loop-b.md` — re-create from OBSERVATIONS context if lost) with the gauntlet figures,
-   commit, push.
-3. `gh workflow run gauntlet --ref burn/trust-model-01` + watch (the G26 precedent: a red CI
-   is root-caused via a stacked fix task, never waved through).
-4. Loop-B FINAL EVAL: fresh-context default-FAIL judge (Explore agent, anchor model), minted
-   through the seam, over the whole loop; on PASS close `EXECUTION wave=6`, open wave=7.
-5. **Loop C — hook-activation ALONE** (frozen W8 block + `evidence/hook-probe.md` OBSERVED
-   facts binding: deny-on-internal-error, matcher says "Agent" never "Task", capture needs
-   PostToolUse+SubagentStop BOTH, run-marker scope, settings digest, timeout below host's).
-   Builder Opus, worktree off the Loop-B-final tip. Its sink row MUST land in
-   protocol/exec-safety.md (the ev1 scan already reaches adapters/**/hooks/ — a missing row
-   fails the validator). Gate includes the live `probe:deny-tripwire`; run-start declaration
-   flips per probe results ONLY. Wave gate = final eval including the live tripwire result.
-6. **Loop D — guardian-relabel** (frozen W9 block + ruling G27: it gains
-   `tools/badge_registry.json`; every BUILT—Verified mark needs a registry row with a live
-   check in the same commit; the two pending_graduation rows route through promise-audit
-   finding 8; observability.md's 6 stale board.md refs + 5 stale anchors are its DEF-22 leg).
-   **BACKLOG.md leg: the planning-window fence has NOT been verified lifted — file the
-   truth-status table via OBSERVATIONS + park that leg (GATE-PLAN ruling 2).**
-7. **Program close:** `kata_close.close_run` over the burn's own cursor (Honor-system-declared
-   conductor capture legs; consent PARKS if prompted unattended — expected, surface it).
-   Close still-open phases LIFO (G25: most-recently-opened FIRST).
-8. **The post-loop report to the operator** (they are asleep; they want the full story on
-   waking): lead plain-language what-changed-and-why; the complete VETO LEDGER (all G3-class
-   pastes incl. cursor.md `efdaf047…` and doctrine `47d6a52b…`, G18 six re-approvals, rulings
-   G12–G28, the D-25/§1.5 erratum + D-8/D-9 standing items, DEF-1..28 dispositions, the open
-   `deny-probe-w4-cure` escalation); the honest labels (what is wired vs built-but-unwired:
-   DEF-15 allowed= wiring, DEF-24 gate wiring, fact-table consumer); CI citations per loop;
-   the lessons list (R14 narration-is-not-evidence, E7 bare-backticks, registry-tables-not-
-   prose, the six-instance divergence family D-25..D-29). Then STATE.md + orientation #3 (or
-   closeout) per the window's report contract.
+1. **IN FLIGHT:** the Loop-D integration gauntlet (background). On 4/4 green: fill the gauntlet
+   figure into the already-appended Loop-D record in OBSERVATIONS, commit the record + DEF-32 +
+   this handoff, push.
+2. `gh workflow run gauntlet --ref burn/trust-model-01` + watch (D-28 precedent: a red is
+   root-caused via a stacked fix, never waved through).
+3. **Loop-D FINAL EVAL** (fresh-context default-FAIL, minted evaluator) over the whole loop;
+   on PASS close `EXECUTION wave=8`.
+4. **PROGRAM CLOSE — `kata_close.close_run` over the burn's OWN parent cursor** (the close
+   machinery grounding the run that built it — the ultimate dogfood; Honor-system-declared
+   where the conductor invoked capture legs by hand). It closes still-open phases LIFO (G25:
+   most-recently-opened FIRST) then writes the terminal `run-closed`. If it demands consent and
+   runs unattended, it PARKS — expected, surface it. If it REFUSES (drift/absent record), that
+   is the close machinery working — resolve per its two legal paths, do not force.
+5. **THE POST-LOOP REPORT to the operator** (they slept through the burn; deliver the full
+   story on waking). Lead with plain-language what-changed-and-why by goal-aspect. Then:
+   - **The complete VETO LEDGER** — every operator-vetoable act, one line each, each revertible:
+     the G3-class fingerprint pastes (cursor.md `efdaf047…`, doctrine `47d6a52b…`,
+     observability.md `95a2052a…`, the six G18 protocol re-approvals, the W2-era board/intent
+     pins), rulings **G12–G32**, the D-25/§1.5 Windows-rename erratum, D-8/D-9 standing pins,
+     the D-28/D-29 platform-divergence strand, and the open escalation `deny-probe-w4-cure`.
+   - **The honest labels** (built vs built-but-unwired): DEF-15 (allowed= wired 1/6),
+     DEF-24 (preconditions not demanded at gate call sites), DEF-25 (fact-table presence-not-
+     schema), DEF-31 (hook install-gated, NOT installed in any live settings), DEF-32 (the
+     wiring-completeness gate prose-claimed-unbuilt). Enforcement grade: **Verified
+     (intercepting) WHERE INSTALLED** — this burn's own dispatches ran Honor-system.
+   - **The operator Human Moments still open:** the hook global-settings install + interactive/
+     Kiro/Codex/nested-Agent probes (DEF-31); the .snyk _safe_path policy call (DEF-28); the
+     PAT rotation (inherited); the planning-window folds (D-1/D-13/D-15/D-16/D-23 + the §10/
+     BACKLOG tables filed this window).
+   - CI citations per loop; the lessons list (R14 narration-is-not-evidence, E7 bare-backticks,
+     registry-tables-not-prose, the read-only-evaluator capability gap, the six-instance
+     platform/promise divergence family); DEF-1..32 disposition summary.
+   - Then STATE.md refresh + orientation #3 (or the closeout hand to kata-closeout) per the
+     window's REPORT CONTRACT.
 
-## Standing rules the resumer must not re-derive
-
-Judges: fresh-context Explore agents, no-write, default-FAIL, `VERDICT:` first line
-(PASS|NEEDS_WORK), minted as role=evaluator; cures go back to the SAME builder agent
-(SendMessage), re-verdict by the SAME judge. Builders: Opus (anchor for dispatch_class
-critical), briefs staged as scratchpad files passed by path, R14 rider + E7-bare-backticks +
-registry-tables-not-prose in every brief. Integration: merges via `-F <file>` (never `-F -`),
-`Kata-Task:` trailer integration-only + verified post-merge; G2 README `--write` once per
-loop; fingerprint pastes re-derived on the integrated tree first; G9 registry rows conductor-
-pasted after invariant re-verification. G11: concurrency suites ≥10× (fresh processes).
-`$?` after a pipe is the TAIL's exit — never pipe a gate then echo `$?` (bitten live this
-loop). Windows: `uv run --project tools python` (bare python is the Store stub).
-
-## Agent roster at handoff (SendMessage ids, may be stale after reset)
-
-corpora builder+judge, grounding builder+judge, ev1 builder+judge, gate-preconditions
-builder+judge: all task-complete/verdict-delivered. The judge-contracts builder (also served
-G16/G28 flips) and the rotation-fix builder are idle-complete. If a resumed session lacks
-these ids, dispatch fresh agents — all durable state is in git + OBSERVATIONS + `.kata/`.
+## Standing rules (do not re-derive) — unchanged from the prior handoff
+Judges fresh-context Explore, no-write, default-FAIL, VERDICT-first-line, minted role=evaluator;
+cures to the SAME builder, re-verdict by the SAME judge. Merges via `-F <file>`; Kata-Task
+trailer integration-only + verified post-merge; G2 README once per loop; fingerprint pastes
+re-derived on the integrated tree first; G9 registry rows conductor-pasted after invariant
+re-verify. Never pipe a gate then read `$?`. Windows: `uv run --project tools python`.
+All durable state is in git + OBSERVATIONS + `.kata/`.

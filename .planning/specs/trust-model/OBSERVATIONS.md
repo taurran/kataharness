@@ -1000,3 +1000,33 @@ is exactly the PD-2 behavior wanted. No re-eval required; the four-leg proof sta
 
 **Loop D is unlocked** — the final build wave (guardian-relabel, W9), carrying G27 (badge
 registry grant) + G31 (kata-orchestrate stop-pre-claiming) + the fence-parked BACKLOG table.
+
+## Loop-D integration record (2026-08-17 — the LAST build wave; truth in the labels)
+
+- **One task branch merged no-ff with its `Kata-Task:` trailer:** `tm-ld-guardian-relabel-pass`
+  (ab5b8ab). 4-file grant; BACKLOG.md + README byte-unchanged (fence + G2 held).
+- **Judge PASS first round:** every graduated `Verified` row's citation resolves to a passing
+  test + a real commit (R-ENF, R-ROLE); every honest downgrade genuinely unwired (5+
+  spot-checked: validate_core_config/run_preflight/contextTrigger/should_trigger/iac_apply all
+  callerless-or-absent); EV-1 mechanically green both directions; the two iac
+  pending_graduation rows correctly LEFT (finding-8 unwired); PD-2 install-gated qualifier on
+  R-ENF (no global-live overclaim).
+- **Conductor integration acts:** G3 observability.md pin paste `95a2052a…` (re-derived on the
+  integrated tree, exact) · G2 README regen (kata-orchestrate 0.19.1). Validator 50/0/0.
+- **Conductor spot-audit (ONE, live, adversarial):** injected an uncited `Verified
+  (intercepting)` badge into promise-audit.md on the integrated tree → EV-1 fired exactly 1
+  uncited-Guardian-badge error; restored byte-clean → 0/0. The trust-only-where-re-derivable
+  invariant is live end-to-end.
+- **Rulings:** G27/G31 executed (badge grant used; kata-orchestrate stop-pre-claiming +
+  recordId-in-brief documented, v0.19.1).
+- **FILED for the planning window (fence, GATE-PLAN ruling 2):** the §10 closes table
+  (BL-M33/M34/N01/N19-route/X11/X13/X14/X15/X12 → CLOSED with citations; BL-N20 stays FEEDS)
+  and the BACKLOG truth-status table — the builder's report carries both verbatim; the
+  conductor lands them via this OBSERVATIONS entry for the planning window to fold into
+  BACKLOG.md. **BL-X12 writeback (D-1) is in that set — BACKLOG.md:562 still 🔴 open, closed at
+  2a1b1cf.**
+- **Unmet leg surfaced (not silently relabeled):** kata-review/RUBRIC.md:55 +
+  kata-evaluate:192 still say "enforced by the orchestrator integration gate" for the UNBUILT
+  build-and-run wiring-completeness gate (a different mechanism from the seam guard) — DC-1,
+  out of grant, routed to a W5-follow-up class item (DEF-32).
+- **Integration gauntlet 4/4** (pytest-unit 0 · pytest-integration 0 · ruff 0 · validate-skills 0; validator 50 skills 0/0) clean first try; CI citation below.
