@@ -249,7 +249,7 @@ def test_unknown_probe_refusal_does_not_depend_on_a_writable_registry(tmp_path):
 def test_committed_registry_loads_and_carries_the_two_seeded_probes():
     entries = eg.load_probe_registry()
     assert set(entries) == {"deny-tripwire", "gauntlet"}
-    assert entries["deny-tripwire"].status == "declared-before-active"
+    assert entries["deny-tripwire"].status == "active"
     assert entries["gauntlet"].status == "active"
 
 
@@ -270,17 +270,22 @@ def test_committed_gauntlet_probe_points_at_a_real_target():
     assert target.is_file(), f"active probe target missing: {target}"
 
 
-def test_declared_before_active_probe_target_absence_is_recorded_not_hidden():
-    """The wave-8 deny-tripwire target does not exist yet — the status says so honestly."""
+def test_deny_tripwire_probe_graduated_to_active_with_a_real_target():
+    """W8 GRADUATION (this test's prior inversion, flipped as it instructed).
+
+    Until ``hook-activation`` landed, this test asserted the OPPOSITE — that
+    ``tools/tests/test_seam_guard.py`` did not exist — so that ``status:
+    declared-before-active`` could not quietly outlive the thing it was waiting for. The
+    wave-8 seam guard has now landed, so the status is ``active`` and the same rule
+    ``test_committed_gauntlet_probe_points_at_a_real_target`` applies to the gauntlet
+    applies here: an ``active`` probe's target must EXIST — status is a claim, not a hope.
+    """
     entries = eg.load_probe_registry()
     tripwire = entries["deny-tripwire"]
-    assert tripwire.status == "declared-before-active"
+    assert tripwire.status == "active"
     node = tripwire.argv[-2]
     target = _REPO_ROOT / tripwire.cwd / node.split("::")[0]
-    assert not target.exists(), (
-        "tools/tests/test_seam_guard.py now exists — flip deny-tripwire's registry status "
-        "to 'active' and delete this test's inversion."
-    )
+    assert target.is_file(), f"active probe target missing: {target}"
 
 
 @pytest.mark.parametrize(

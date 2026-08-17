@@ -25,7 +25,7 @@
       ],
       "cwd": "tools",
       "description": "The live deny-tripwire self-test: a record-less Agent dispatch that MUST be denied by the wave-8 PreToolUse seam guard. Its RESULT is what flips the Guardian enforcement declaration to 'Verified (intercepting)'; no result at all lands on Dormant, never inheriting a prior declaration (DESIGN 1.7 degrade table, RS-H4).",
-      "status": "declared-before-active"
+      "status": "active"
     },
     "gauntlet": {
       "argv": [

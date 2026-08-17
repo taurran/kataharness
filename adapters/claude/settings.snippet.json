@@ -36,6 +36,55 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"<repo>/tools/.venv/Scripts/python.exe\" \"<repo>/adapters/claude/hooks/kata-seam-guard.py\"",
+            "timeout": 20,
+            "digest": "87bbf853ad4126f974aaeaf6b97ad8372eb1cee9bfbb2c8db74f6b1aadec4538"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"<repo>/tools/.venv/Scripts/python.exe\" \"<repo>/adapters/claude/hooks/kata-seam-guard.py\"",
+            "timeout": 20,
+            "digest": "87bbf853ad4126f974aaeaf6b97ad8372eb1cee9bfbb2c8db74f6b1aadec4538"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"<repo>/tools/.venv/Scripts/python.exe\" \"<repo>/adapters/claude/hooks/kata-seam-guard.py\"",
+            "timeout": 20,
+            "digest": "87bbf853ad4126f974aaeaf6b97ad8372eb1cee9bfbb2c8db74f6b1aadec4538"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"<repo>/tools/.venv/Scripts/python.exe\" \"<repo>/adapters/claude/hooks/kata-seam-guard.py\"",
+            "timeout": 20,
+            "digest": "87bbf853ad4126f974aaeaf6b97ad8372eb1cee9bfbb2c8db74f6b1aadec4538"
+          }
+        ]
+      }
     ]
   }
 }
