@@ -71,11 +71,58 @@ def test_host_only_roles_allowed_on_host():
 # ---------------------------------------------------------------------------
 
 def test_role_groups_includes_dispatch_authoring_roles():
-    """ROLE_GROUPS gains exactly the two new roles — additive, closed-enum (DESIGN §6)."""
+    """ROLE_GROUPS carries the dispatch-authoring pair (DESIGN §6) — additive, closed-enum.
+
+    The exact-set assertion moved to ``test_role_groups_is_the_exact_closed_enum`` when the
+    trust-model seam wave added its seven roles; this test keeps its own subject (the two
+    authoring roles are members) rather than re-asserting the whole enum twice.
+    """
+    assert {"design-author", "plan-author"} <= kr.ROLE_GROUPS
+
+
+# ---------------------------------------------------------------------------
+# trust-model seam: the seven seam roles (DESIGN §1.6, R-M5)
+# ---------------------------------------------------------------------------
+
+_SEAM_ROLES = frozenset({
+    "reviewer", "slop", "inline-eval", "advisor", "critic", "challenger", "grounding",
+})
+
+
+def test_role_groups_is_the_exact_closed_enum():
+    """The enum is CLOSED — this is the one place its exact membership is pinned."""
     assert kr.ROLE_GROUPS == frozenset({
         "coder", "validator", "researcher", "orchestrator", "evaluator",
         "design-author", "plan-author",
+        "reviewer", "slop", "inline-eval", "advisor", "critic", "challenger", "grounding",
     })
+
+
+def test_seam_roles_are_additive():
+    """R-M5: the seam's launch surfaces gain role tokens; nothing existing is removed."""
+    assert _SEAM_ROLES <= kr.ROLE_GROUPS
+    assert {"coder", "validator", "researcher", "orchestrator", "evaluator"} <= kr.ROLE_GROUPS
+
+
+def test_host_only_roles_unchanged_by_the_seam_wave():
+    """R-M5 verbatim: HOST_ONLY_ROLES is UNCHANGED pending the cadre grill."""
+    assert kr.HOST_ONLY_ROLES == frozenset({"orchestrator", "evaluator"})
+    assert not (_SEAM_ROLES & kr.HOST_ONLY_ROLES)
+
+
+@pytest.mark.parametrize("role", sorted(_SEAM_ROLES))
+def test_every_seam_role_resolves_and_routes_off_host(role):
+    """Each new role is a first-class member: it defaults to the host and may route off it."""
+    assert kr.resolve_roles(None)[role]["platform"] == "claude"
+    resolved = kr.resolve_roles({role: {"platform": "codex"}}, ["codex"])
+    assert resolved[role]["platform"] == "codex"
+
+
+@pytest.mark.parametrize("role", sorted(_SEAM_ROLES))
+def test_every_seam_role_fails_closed_on_an_unconfirmed_platform(role):
+    """No special-casing bypasses the confirm check for the new roles."""
+    with pytest.raises(ValueError, match="not confirmed"):
+        kr.resolve_roles({role: {"platform": "codex"}}, confirmed_platforms=[])
 
 
 def test_dispatch_authoring_roles_not_host_only():

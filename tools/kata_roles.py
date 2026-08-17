@@ -8,6 +8,10 @@ platform that has been **confirmed** on this machine (`confirmedPlatforms`).
 Role groups (DESIGN LD1): coder · validator · researcher · orchestrator · evaluator.
 Dispatch-authoring roles (DESIGN §4.1, dispatch-authoring spec): design-author · plan-author —
 additive to the closed enum, neither is HOST_ONLY (§4.1).
+Seam roles (trust-model DESIGN §1.6, R-M5): reviewer · slop · inline-eval · advisor · critic ·
+challenger · grounding — the launch surfaces the seam gates that had no role token; additive to
+the closed enum, and ``HOST_ONLY_ROLES`` is deliberately UNCHANGED (the cadre grill owns any
+widening of the host-only set).
 
 Public API
 ----------
@@ -33,8 +37,12 @@ from __future__ import annotations
 import kata_models as _km
 
 ROLE_GROUPS = frozenset({
+    # LD1 originals
     "coder", "validator", "researcher", "orchestrator", "evaluator",
+    # dispatch-authoring spec §4.1
     "design-author", "plan-author",
+    # trust-model DESIGN §1.6 (R-M5) — the seam's dispatch-gated launch surfaces
+    "reviewer", "slop", "inline-eval", "advisor", "critic", "challenger", "grounding",
 })
 
 # Roles that MUST run on the orchestrator's own host in v1 (DESIGN LD11 / MM-1):
@@ -43,6 +51,12 @@ ROLE_GROUPS = frozenset({
 # "validated fail-closed at preflight"; this set is the code that makes the
 # host-only half of that promise real (an off-host assignment STOPs, never silently
 # resolves-then-drops).
+#
+# UNCHANGED by the trust-model seam wave (DESIGN §1.6 / R-M5, verbatim: "HOST_ONLY_ROLES
+# (kata_roles.py:46 — orchestrator, evaluator) is UNCHANGED pending the cadre grill").
+# The seven new seam roles are therefore all off-host-routable, exactly like validator
+# and researcher already are — adding any of them here is a cadre-grill decision, not a
+# build-time one.
 HOST_ONLY_ROLES = frozenset({"orchestrator", "evaluator"})
 
 # Relative model tokens recognised in a role's ``model`` field (DESIGN D59).
