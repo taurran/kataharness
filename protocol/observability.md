@@ -10,12 +10,12 @@ WHAT EXISTS at v0.2.0, plus the v0.2.1 additions (each marked below) — it does
 | Artifact | Path | Written by | Durability |
 |---|---|---|---|
 | Telemetry ledger | `.planning/telemetry-ledger.md` (harness repo) or the `telemetryLedger` locator in `.kata-settings.json` (target repo) | `kata_telemetry.build_ledger_row` + `append_ledger_row` at closeout | **Committed**, human-gated commit (D141(b), telemetry-ledger.md:6-9) |
-| Board | `.kata/board.md` at the integration/target-repo root | Workers (`CLAIM`/`PROGRESS`/`DONE`/`NOTE`/`BLOCK`/`ESCALATE` self-stamped) + orchestrator (`DECISION`) — protocol/board.md:6-20 | **Gitignored**, session-local; durably snapshotted to `refs/kata/trail` (orphan ref) after every integration commit via `kata_trail.snapshot_board` (SKILL.md:625-629, kata_trail.py:82) |
+| Board | `.kata/board.md` at the integration/target-repo root | Workers (`CLAIM`/`PROGRESS`/`DONE`/`NOTE`/`BLOCK`/`ESCALATE` self-stamped) + orchestrator (`DECISION`) + the seam (`PHASE`/`VERDICT`/`SPAWN`/`DOWN`/`DENY`) — protocol/cursor.md:73-86 | **Gitignored**, session-local; durably snapshotted to `refs/kata/trail` (orphan ref) after every integration commit via `kata_trail.snapshot_board` (SKILL.md:625-629, kata_trail.py:82) |
 | Per-task telemetry | `.kata/telemetry/<taskId>.json` | `kata_telemetry.write_task_telemetry` (kata_telemetry.py:951-974) | **Gitignored**, session-local (`.kata/` is never committed) |
 | Checkpoint trailers | `Kata-Checkpoint: {...}` trailer in commit messages on the task's **active attempt branch** (`<task>` or `<task>-attemptN`) | Worker, via `kata_telemetry emit-trailer` CLI (kata_telemetry.py:1314-1364) | **Committed** as part of normal task-branch history — durable as long as the branch/ref survives |
 | Preflight | `.kata/preflight.json` | `kata_preflight.py` (N3 schema; kata_preflight.py:6,535-568) | **Gitignored**, session-local |
 | Handoff | `.planning/HANDOFF.md` | [[kata-handoff]] — frontmatter carries `kind: manual/self/boundary` provenance (v0.2.1, CA-L21; protocol/handoff.md:18,41) | **Committed**, durable. Staleness rule (v0.2.1, CA-L19): protocol/handoff.md §Staleness |
-| Reports (v0.2.1, live) | `.kata/reports/<runId>-<taskId>-<agent>-<kind>.md` | Review/eval/forensics agents (gate agents, inline evaluators, etc.) | **Gitignored**, session-local. **If a DECISION line or a ledger row cites a report's contents, the citing artifact must quote/durably restate what it needs** — never point a durable citation at a file that can vanish with the session. |
+| Reports (v0.2.1, live) | `.kata/reports/<runId>-<taskId>-<agent>-<kind>.md` | Review/eval/forensics agents (gate agents, inline evaluators, etc.); `<runId>` is the **seam-minted** run id (`kata_dispatch.run_start` → `run-<utc-compact>-<hex>`, trust-model W3) — no longer a key nothing writes | **Gitignored**, session-local. **If a DECISION line or a ledger row cites a report's contents, the citing artifact must quote/durably restate what it needs** — never point a durable citation at a file that can vanish with the session. |
 
 Rule of thumb: if it must survive past this session (a DECISION, a ledger row, a calibration input), it
 lives in the ledger, in a commit trailer, or on `refs/kata/trail`. Everything under `.kata/` is scratch —
@@ -106,12 +106,13 @@ useful in-run, not citable after the fact unless re-derived from a committed art
 
 ## How to read the board
 
-- **Line grammar:** `<ISO-8601-UTC> | <agent-id> | <TYPE> | <task-id> | <one-line message>`
-  (protocol/board.md:9).
+- **Line grammar (6-field, post-cursor-migration):** `<utc> | <seq> | <agent-id> | <TYPE> | <task-id> | <one-line message>`
+  — the digits-only `seq` field is the primary parse discriminator and the old 5-field form parses
+  NOWHERE (protocol/cursor.md:38,54-58).
 - **`CLAIM`/`DONE` are worker self-stamped**, using the worker's own process clock — this is what makes
-  the board provable evidence of concurrency rather than an orchestrator's account of it (protocol/board.md:13-14,21).
+  the board provable evidence of concurrency rather than an orchestrator's account of it (protocol/cursor.md:75-76).
   `PROGRESS` is a mandated liveness heartbeat (`<done>/<owned> <label>`, F3) — excluded from coordination
-  logic, read by the liveness monitor and the M4 slack estimator (protocol/board.md:19,23-31).
+  logic, read by the liveness monitor and the M4 slack estimator (protocol/cursor.md:80,97-105).
 - **`DECISION` lines are orchestrator-only** and resolve a `BLOCK`/`ESCALATE`, or record a ladder event —
   `ladder: <task> trigger <n> @<sha> score <s> verdict <v>` (SKILL.md:713-715). The `@<sha>` on a ladder
   line is what makes cursor recovery sound after a conductor restart: adjudicated shas recount from these
@@ -124,7 +125,7 @@ useful in-run, not citable after the fact unless re-derived from a committed art
   recount — a corrupt trail must never silently under-count premium spend (D136).
 - **Archives + trail snapshots.** The orchestrator rotates any pre-existing board at run start — moved to
   `.kata/board.<utc>.archive.md` (or truncated) — so `.kata/board.md` holds only the current run's events
-  (protocol/board.md:45-50). Each integration commit additionally triggers a `refs/kata/trail` snapshot of
+  (protocol/cursor.md:166-176). Each integration commit additionally triggers a `refs/kata/trail` snapshot of
   the board (`kata_trail.snapshot_board`, SKILL.md:625-629) — this is the durable copy to read if the
   live `.kata/board.md` is gone or has since been rotated/archived.
 
@@ -144,10 +145,11 @@ useful in-run, not citable after the fact unless re-derived from a committed art
 - **Token columns may be null — host-dependent, never fabricate.** A `null` `tokensIn`/`tokensOut` is
   honest absence, not zero (kata_telemetry.py:908-910). The v3 `parentTokens` column carries the same
   contract: nulls preserved, never coerced to zero (`parent_tokens_of`, kata_telemetry.py:600-625).
-- **Board timestamps are process clocks, not a synchronized global clock.** They're accurate for ordering
-  within one writer and for proving overlap on a single host, but skew is possible at the margins across
-  writers — the concurrency-evidence snippet documents this assumption explicitly and flags it as a
-  revisit item before any multi-machine run (protocol/board.md:52-55).
+- **Cursor ordering lives in seq space, not wall-clock.** Ordering of record is `(runId, seq)` + parent
+  fold-order with file position as the tie-break; the `utc` field is recorded for humans and is
+  informational only — **never load-bearing**. This closes the pre-migration process-clock-skew
+  assumption (the old board derived concurrency from worker process clocks), so the multi-machine /
+  multi-model direction needs no skew-tolerant stamp for ordering to hold (protocol/cursor.md:112-122).
 - **`.kata/` is session-local.** Anything under it (board, telemetry, preflight, reports) can vanish with
   the session. A durable citation (a DECISION, a ledger row, a finding you want to survive review) must
   point at a committed artifact (the ledger, a commit trailer) or a trail ref (`refs/kata/trail`) — never

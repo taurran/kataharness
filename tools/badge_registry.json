@@ -118,6 +118,22 @@
       "claim": "Verified",
       "check": "test:tools/tests/test_kata_dispatch.py::test_resilience_is_a_fold_over_recorded_fact",
       "note": "DESIGN section 6.2's \"never the config flag\", enforced in code. The cited test is the one that folds RECORDED outcomes and refuses the flag as an input."
+    },
+    {
+      "id": "promise-audit-enforcement-structural-drift",
+      "file": ".planning/specs/trust-model/evidence/promise-audit.md",
+      "anchor": "**Verified (intercepting) — where installed**",
+      "claim": "Verified",
+      "check": "test:tools/tests/test_seam_guard.py::test_recordless_agent_call_denied",
+      "note": "R-ENF (guardian-relabel-pass, Loop D): the README:89 'workers structurally cannot drift' facade graduates because the dispatch seam (W3) mints a per-task record and the fail-closed pre-hook (Loop C) DENIES a record-less Agent launch at PreToolUse. The cited test drives that recordless-launch deny. The claim carries its own install-gated / Honor-system-where-not-installed qualifier on the same line, so the badge is Verified WHERE INSTALLED, not an unqualified always-live claim."
+    },
+    {
+      "id": "promise-audit-roles-code-enforced",
+      "file": ".planning/specs/trust-model/evidence/promise-audit.md",
+      "anchor": "Guardian grade: **Verified — role resolution",
+      "claim": "Verified",
+      "check": "test:tools/tests/test_kata_dispatch.py::test_mint_wires_the_role_resolver",
+      "note": "R-ROLE (guardian-relabel-pass, Loop D): config.md:32's 'roles wired, code-enforced, not advisory' graduates because role->rung resolution is consumed at mint by the seam governor (kata_dispatch._ROLE_CLASS / GOVERNOR_GRADE, role-class-scoped fail-closed rung). The cited test proves the mint wires the role resolver."
     }
   ],
   "pending_graduation": [
