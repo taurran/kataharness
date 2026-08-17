@@ -560,10 +560,10 @@ REQUIRED_PROTOCOL = {
     # ungated-protocol-files (UPF-2/UPF-10, 2026-08-03): the eight contracts that were on disk
     # but in no guard structure at all. Each term below is a word whose deletion would remove a
     # capability the file defines — the UPF-10 bar.
-    # board.md — the coordination-board register: the TYPE vocabulary IS the protocol, and the
-    # concurrency-evidence artifact is derived from it.
-    "board.md": ["CLAIM", "DONE", "BLOCK", "ESCALATE", "NOTE", "DECISION", "PROGRESS",
-                 "Append-only", "concurrency.json", "maxInFlight"],
+    # cursor.md (heritage key: board.md) — the cursor register: the TYPE vocabulary IS the
+    # protocol, and the concurrency-evidence artifact is derived from it.
+    "cursor.md": ["CLAIM", "DONE", "BLOCK", "ESCALATE", "NOTE", "DECISION", "PROGRESS",
+                  "Append-only", "concurrency.json", "maxInFlight"],
     # exec-safety.md — the RCE guard: the execution rule, the trust-domain table, the auditable
     # sink registry, and the in-process AST allowlist.
     "exec-safety.md": ["structured-argv-only", "shell=False", "Trust domains", "Sink registry",
@@ -834,9 +834,10 @@ PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
     # were guarded by nothing. Same bar as everything above: stating the
     # OPPOSITE of the directive must be impossible while the clause stands.
     # ------------------------------------------------------------------ #
-    "board.md": [
+    "cursor.md": [
         # EXACTLY two clauses, and NEITHER may span the "(or truncate it)" parenthetical at
-        # board.md:46-48 (UPF-4). Clause matching is a substring test after normalisation and
+        # the run-isolation section (UPF-4). Clause matching is a substring test after
+        # normalisation and
         # does NOT strip parentheticals, so the run-isolation MUST and the rotation duty are
         # pinned as two short spans that sit on either side of it. Pinning the truncation
         # permission would make the LOOPHOLE load-bearing — a tamper-evident contract must
@@ -948,7 +949,10 @@ PROTOCOL_PINNED_CLAUSES: dict[str, list[str]] = {
 PROTOCOL_FINGERPRINTS: dict[str, str] = {
     "advice.md": "c811801ef8701f0873a8e2dc9edd093da891d17a1c1eb250e1fd8fdca69f500a",
     "authored-artifact-gate.md": "b90eb9ded18eb324382d23772cabc7740112da964983317ed196858c486ae535",
-    "board.md": "9faea138d52b639649874cc9c7a00791a017de6ecc7db410f7b79cfd61849f60",
+    # Heritage key `board.md` renamed to `cursor.md` with the file (W4). The digest below is
+    # the PRE-rename value and is EXPECTED to mismatch until the conductor's G3 re-approval
+    # paste — the two-step working, not a regression. Never paste it from a builder.
+    "cursor.md": "9faea138d52b639649874cc9c7a00791a017de6ecc7db410f7b79cfd61849f60",
     "deferral.md": "249b9eb666be0988c1f2529175dd98fdff0707baff8c866cbe01b41d8c0829e8",
     "dependencies.md": "652df1a8f46b93cd13f1e54ba19ec8725ec9e48c02e4b03ea5a8e27bcafe972c",
     "engram.md": "ad01a873d4aff387c85f3798db7494ed6750aab4c1054b876e9282c9fbf2d879",
