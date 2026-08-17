@@ -32,6 +32,23 @@ Public surface:
         non-string/empty ⇒ None (NO ``os.getcwd()`` fallback here — that posture belongs to
         the hook caller, never to a replace-decision). Normalization lives here too (v2-F2):
         the returned path is ``.resolve()``d; a resolution OSError ⇒ None.
+    find_run_marker(start, *, max_levels=10) -> Path | None
+        The W8 RUN-MARKER scope check (DESIGN §8 RS-L5). Returns the path of the
+        seam-init-written ``<root>/.kata/run-marker.json`` at or above *start*, or None.
+
+RS-L5 extension (wave 8, ``hook-activation``) — why a SECOND question exists here.
+``is_kata_scope`` answers *"is this cwd inside a kata project?"* (a ``.kata/`` dir or a
+``kata.config`` is enough — a checkout with no run in flight still answers yes). The
+fail-closed deny hook needs the strictly narrower question *"is a kata RUN live here?"*,
+whose only honest evidence is the marker ``kata_dispatch.run_start`` writes at seam init.
+Widening ``is_kata_scope`` to mean that would silently change the gauge hook and the
+statusline; adding the narrower predicate beside it keeps each consumer's posture intact.
+**There is still exactly ONE walk.** ``find_run_marker`` does not re-implement it and does
+not add a second loop anywhere in the tree: it CALLS ``find_kata_root`` and then performs a
+single direct existence check on that root's marker. The D2 "ONE definition, never two"
+property that motivated this module is therefore not re-broken by the second predicate, and
+``test_statusline_chain.TestScopeDrift`` (the AST canary that pins the parent-loop to
+``find_kata_root`` and to nothing else) stays green unchanged.
 """
 
 from __future__ import annotations
@@ -43,6 +60,15 @@ from typing import Any, Optional
 #: checks; the walk also stops early at the filesystem root. Moved here from the gauge hook
 #: (EV-1) so the single owner of the walk owns the single owner of the cap.
 _SCOPE_WALK_CAP = 10
+
+#: The run-state directory name. A LOCAL literal, deliberately: this module is pure stdlib
+#: and core-legal precisely because it imports nothing (three consumers, one of them a
+#: host-triggered hook), so it must not pull in the seam engine for two strings.
+#: ``tools/tests/test_seam_guard.py::test_kata_scope_marker_constants_match_the_engine``
+#: pins both against ``kata_dispatch`` — drift is a RED test, not a review duty.
+_KATA_DIRNAME = ".kata"
+#: Mirror of ``kata_dispatch.RUN_MARKER_FILENAME`` (pinned by the test named above).
+RUN_MARKER_FILENAME = "run-marker.json"
 
 
 def find_kata_root(start: Path, *, max_levels: int = _SCOPE_WALK_CAP) -> Optional[Path]:
@@ -107,4 +133,45 @@ def resolve_start(payload: Any) -> Optional[Path]:
     except (OSError, ValueError):
         # ValueError: e.g. a null byte in the path on POSIX — the "never raise"
         # contract must hold for future consumers too (sweep finding 4).
+        return None
+
+
+def find_run_marker(start: Path, *, max_levels: int = _SCOPE_WALK_CAP) -> Optional[Path]:
+    """Return the seam-init RUN MARKER at/above *start*, or None (DESIGN §8 RS-L5).
+
+    The marker is ``<root>/.kata/run-marker.json``, written by
+    ``kata_dispatch.run_start`` when a run opens. It is the deny hook's ENTIRE scope
+    decision: **present ⇒ a kata run is live here ⇒ the hook fails CLOSED; absent ⇒ the
+    session is not ours ⇒ the hook allows the call untouched and emits nothing.**
+
+    Deliberately narrower than :func:`find_kata_root`: a checkout carrying ``kata.config``
+    but no live run answers None here, so installing the guard globally cannot deny an
+    Agent call in a repo that merely *looks* like a kata project.
+
+    **No second walk.** This delegates to :func:`find_kata_root` — the ONE bounded upward
+    walk, with its cap, its root-stop and its fail-soft posture — and then does a single
+    direct existence check. Nothing here loops.
+
+    STATED EDGE (shadowing): because the delegated walk stops at the FIRST ancestor
+    carrying kata evidence, a nested inner directory that has a bare ``.kata/`` or a
+    ``kata.config`` but no marker SHADOWS a live run further up, and this returns None.
+    That resolves to "allow, untouched" — the same direction as every other scope miss, and
+    the same class as the marker-loss edge below. It is not silently permissive: the run's
+    own cursor still shows the SPAWN line with no matching DENY/VERDICT at the next
+    lineage audit. Naming it here so it is a known residual rather than a surprise.
+
+    **The OSError posture is the hook's ONE fail-open window and is a STATED residual**
+    (RS-L5): a marker that cannot be read reads as "not a kata run" and the call proceeds.
+    That direction is chosen deliberately — the alternative is denying every tool call in
+    every non-kata session on a transient filesystem error. The residual channel is
+    post-hoc: a run whose marker vanished mid-flight shows up as missing DENY/lineage at
+    the next cursor-lineage audit.
+    """
+    root = find_kata_root(start, max_levels=max_levels)
+    if root is None:
+        return None
+    marker = root / _KATA_DIRNAME / RUN_MARKER_FILENAME
+    try:
+        return marker if marker.is_file() else None
+    except OSError:
         return None
