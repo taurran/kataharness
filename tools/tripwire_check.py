@@ -285,7 +285,11 @@ JUDGES: tuple[JudgeContract, ...] = (
 #: report, they never return a gating VERDICT.  Enumerated so the completeness check
 #: can tell "not a judge" from "a judge nobody registered".
 NON_JUDGE_EVALUATE_SKILLS: frozenset[str] = frozenset(
-    {"kata-report", "kata-benchmark-report", "kata-debrief", "kata-review"}
+    {"kata-report", "kata-benchmark-report", "kata-debrief", "kata-review",
+     # kata-grounding attests FACTS pre-judgment (its own contract: "grounding is not a
+     # judge" — no judge verdict vocabulary, no TM-D3 corpus owed). Filed at Loop-B
+     # integration when this completeness check caught the sibling-branch skill unclassified.
+     "kata-grounding"}
 )
 
 #: Record kind for the cursor NOTE (mirrors kata_trail's RECORD_KIND_* convention).
