@@ -120,3 +120,65 @@ vocabulary of machinery ("wired", "engine-enforced", "code-enforced", "structura
 - `README.md:235-241` durable board / restore — FACADE for the trail snapshot path in live terms
   (writer orphaned), FACT for the PreCompact hook when installed, PARTIAL for /kata-resume
   (real code, prompt-triggered).
+
+---
+
+## Guardian relabel pass — truth-in-the-labels (Loop D / W9, guardian-relabel-pass)
+
+**What this section is.** The audit above graded each promise in the internal FACT/PARTIAL/PROSE/
+FACADE/FALSE vocabulary as of the burn's fork (`fea7ccb`). This section re-grades every FALSE and
+FACADE row in the **Guardian scale** (DESIGN §6.2 — the user-facing vocabulary), **with the
+mechanism cited where the wiring actually landed this burn** (TM-A1: remediation THROUGH the loop,
+never out-of-band edits). A row whose wiring did NOT land keeps an honest **downgrade** grade
+(`Honor-system` · `Dormant` · `Broken`) and routes to its backlog home — a downgrade asserts no
+trust and needs no citation (EV-1 residual 3). A row that graduated to a machine-checkable trust
+grade carries a live check in the `tools/badge_registry.json` entry that covers it (EV-1 forward
+direction); the two such lines below are the only new claim sites this pass introduces.
+
+**The two rows that GRADUATED to a claim term this burn** (each backed by a live check registered in
+`tools/badge_registry.json`, same commit):
+
+- **R-ENF** — `README.md:89` "workers **structurally** cannot drift" + the whole "no dispatch seam,
+  no worktree enforcement, no ownership check, no per-task record" facade: the dispatch seam
+  (`tools/kata_dispatch.py`, W3 seam-engine `4ee15af`/`58732cb`) now mints a per-task record with a
+  `SPAWN` cursor line and refuses an unfrozen-plan mint (`test_mint_refuses_unmet_governor_state`),
+  and the fail-closed pre-hook (`adapters/claude/hooks/kata-seam-guard.py`, Loop C `6dddf32`,
+  integration `0301955`) **denies a record-less `Agent` launch at `PreToolUse`**. Guardian grade:
+  **Verified (intercepting) — where installed** · check `test:tools/tests/test_seam_guard.py::test_recordless_agent_call_denied`
+  · corroborated by `probe:deny-tripwire` (active, G29/G30) and CI run `32028410601` (both platforms,
+  Loop-C tip). Honest qualifier carried (§11): enforcement is **install-gated** — a host without the
+  guard in `~/.claude/settings.json` runs `Honor-system` (nothing denies a bypass); the burn's own
+  conductor dispatches ran Honor-system for exactly this reason.
+- **R-ROLE** — `config.md:32` `roles` "**wired** … code-enforced, not advisory" (the one contract
+  line that drew the code-vs-advisory distinction and landed on the wrong side): role→rung
+  resolution is now consumed at mint by the seam governor (`kata_dispatch._ROLE_CLASS` /
+  `GOVERNOR_GRADE`, role-class-scoped fail-closed rung). Guardian grade: **Verified — role resolution
+  enforced at mint** · check `test:tools/tests/test_kata_dispatch.py::test_mint_wires_the_role_resolver`.
+
+**Every remaining FALSE/FACADE row — honest downgrade + backlog route** (grades here are downgrades,
+not claim terms; the "old" column is the audit's internal verdict):
+
+| Audit row | Old | Guardian grade (mode) | Mechanism / why unwired | Route |
+|---|---|---|---|---|
+| `config.md:35` `contextTrigger` walk-away dial | FALSE | **Broken** | the key is absent from **every** Python file (re-verified 2026-08-17); the live gauge hardcodes `DEFAULT_TRIGGER_FRACTION` and never opens `kata.config` — not built this burn | backlog: M4 walk-away dial |
+| `config.md:31` `on` = "P1 consuming mode, now LIVE" | FALSE | **Dormant** | no scheduler process exists; `kata_risk.should_trigger` still has no production caller — not built this burn | backlog: M4 consuming mode |
+| `config.md:144` `delivery` "load-guard validates strictly" | FALSE | **Broken** | `validate_core_config` still does not validate `delivery` and no other validator exists | backlog: config-schema load-guard |
+| `config.md:193` + `kata-orchestrate:38-50` Core load-guard | FACADE | **Broken** | `validate_core_config` has **zero call sites** in `tools/*.py` (re-verified 2026-08-17); the seam governor is a *different*, live load-guard for plan/governor state (`test_mint_refuses_unmet_governor_state`), it does not resurrect this function | backlog: config load-guard wiring |
+| `kata-bootstrap:250` "defers to kata-orchestrate's fail-closed load-guard" | FACADE | **Broken** | same family — validation is deferred to `validate_core_config`, which never runs | backlog: config load-guard wiring |
+| `config.md:43,45,47` "(engine-enforced)" ×3 | FACADE | **Honor-system** | `kata_preflight.run_preflight` still has **no production caller** (re-verified 2026-08-17: referenced only in docstrings/skill prose) | backlog: preflight wiring |
+| `README.md:212-213` promotion gate "built and validator-enforced" | FALSE/FACADE | **Broken** | no promotion gate was built this burn; `kata-promote` still sees no candidates and the validator has no promotion check | backlog: skill promotion gate. (README source is conductor's G2 regen — out of grant) |
+| `README.md:60-61` fresh-context evaluator (unqualified) | FACADE | **Honor-system** | `kata-evaluate` genuinely runs as a no-write subagent, but freshness "is NOT verified and NOT recorded anywhere" (the skill's own qualifier); presenting it unqualified is the facade | README G2 regen carries the qualifier; kata-evaluate already carries it |
+| `kata-review/RUBRIC.md:55` + `kata-evaluate:110-111`/`:192` "enforced by the orchestrator integration gate" | FALSE/FACADE | **Broken** | the cited "scheduled wiring-completeness build gate" is a *different* mechanism from the seam guard and was **not** built this burn; the word "enforced" still applies to an unbuilt gate | backlog: wiring-completeness build gate. **UNMET LEG:** the RUBRIC/evaluate source lines still carry "enforced" (out of grant — surfaced) |
+| `kata-evaluate:219` "soundness never rests on orchestrator compliance" | FACADE | **Honor-system** | the orchestrator-independent evidence substrate (the cursor + git-durable trailers) is now LIVE (W3–W4), but the gate does not yet *consume* it — the fact-table→final-gate hop is honestly unwired (Loop B record) | backlog: gate-consumption wiring (BL-N19 route) |
+| `iac-safety.md:297-299` + the `iac_apply` sibling table headers | FACADE | **Honor-system** | `iac_apply` is a declared n=0-live surface; wiring did NOT land this burn (finding 8, re-read) — the two rows stay in `pending_graduation` per ruling G27 | BL-N24 / iac follow-up |
+| `observability.md:27,58,92` read suite ("RAISES / never null-as-0 / treat-as-triggered") | FACADE | **Honor-system** | implemented + clause-pinned; the cursor-consumer migration (D-21) wired the *parsers*, but a production consumer of the ledger read-suite is not established this burn | BL-N16 substrate |
+| `observability.md:18` reports at `.kata/reports/<runId>` | FALSE | **RESOLVED this pass** | `<runId>` is now minted by `kata_dispatch.run_start` (W3; dogfood run `run-20260817T034343Z-e3b50e43`); `protocol/observability.md:18` updated to cite the seam — no longer "a key nothing writes" | — |
+
+**The audit's ~25 unenumerated FACADE rows** that are not individually listed above fall in the
+**callerless-engine family** (`validate_core_config`, `kata_preflight.run_preflight`, the
+`kata_telemetry` read-suite, and the iac verification tables): each carries **`Honor-system`** until a
+production consumer *and* a live check land, and each routes to its backlog home (config load-guard /
+preflight / BL-N16 / BL-N24). None is graded a claim term, so none is a facade-with-a-footnote.
+EV-1 (`check_badge_registry`) is what keeps this honest going forward: a future line that spells a
+Guardian trust-claim term on any of these surfaces fails the gauntlet on the commit that adds it,
+until a human classifies it.

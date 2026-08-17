@@ -6,7 +6,7 @@ description: >-
   per task into isolated worktrees, gate every task default-FAIL, route escalations, and hold the no-drift
   line. Invoke when you have a frozen plan and need faithful distributed execution (not re-planning).
 license: Apache-2.0
-version: 0.19.0
+version: 0.19.1
 category: coordinate
 status: beta
 agnostic: true
@@ -78,13 +78,30 @@ prose** in § The loop (which now points here).
 silent-permissive class. `mint` also requires `brief=` (hashed here) **or** `brief_digest=`: `briefHash` is a
 required record field.
 
-**Record consumption is an ATOMIC SINGLE-USE CLAIM.** After W8 the pre-hook consumes it
-(`kata_dispatch.claim_and_validate`). **Until W8 ships (enforcement `Dormant (pre-activation)`), YOU claim it
-yourself**: call `kata_dispatch.claim_record(kata_dir, recordId)` immediately before the launch. A `RecordClaimRefused`
-means the record is consumed, absent, or lost a race — **never reuse a consumed record.** A legitimate retry
-racing its own consumed record is denied with `kata_dispatch.retry_race_deny_message(recordId)` +
-`kata_dispatch.RETRY_RACE_LEGAL_PATH`: **re-mint and relaunch against the NEW record.** Every retry, every
-fallback step-down, and every reroll is therefore its own mint — records are never recycled.
+**Record consumption is an ATOMIC SINGLE-USE CLAIM.** The pre-hook
+(`adapters/claude/hooks/kata-seam-guard.py`) is now **LIVE** — it landed at Loop C / W8 (`6dddf32`,
+integration `0301955`) and consumes the record on every `Agent` launch via
+`kata_dispatch.claim_and_validate`, denying a record-less or already-consumed launch at
+`PreToolUse` (proven by `tools/tests/test_seam_guard.py::test_recordless_agent_call_denied` and CI
+run `32028410601`). **Do NOT pre-claim the record by hand:** the earlier "until W8, YOU call
+`claim_record` yourself" instruction is retired now that the guard owns the claim. **Enforcement is
+install-gated (§11 residual):** where the guard is installed into the host's `~/.claude/settings.json`
+it intercepts; where it is **not**, the host runs **Honor-system** — nothing denies a bypass — and on
+such a host `kata_dispatch.claim_record(kata_dir, recordId)` immediately before the launch remains the
+manual fallback consumer.
+
+**The record-token-in-brief convention (§2.5 — MANDATORY at every launch site).** A launch site MUST
+name its `recordId` in the `Agent` brief itself — the guard scans the launched `prompt` and
+`description` (`kata-seam-guard.extract_record_ids` / `_agent_texts`) for a dispatch-record id in
+`kata_dispatch._guard_record_id`'s grammar, so the token travels in the brief and needs no side
+channel. A launch whose brief carries **no** record id, or names **more than one**, is **DENIED**
+post-activation (`_validate_or_deny`). Mint returns the `recordId`; put it in the brief.
+
+A `RecordClaimRefused` means the record is consumed, absent, or lost a race — **never reuse a consumed
+record.** A legitimate retry racing its own consumed record is denied with
+`kata_dispatch.retry_race_deny_message(recordId)` + `kata_dispatch.RETRY_RACE_LEGAL_PATH`: **re-mint
+and relaunch against the NEW record.** Every retry, every fallback step-down, and every reroll is
+therefore its own mint — records are never recycled.
 
 ### The governor rung — every mint in this file is `governs="plan"`
 
