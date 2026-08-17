@@ -1,0 +1,42 @@
+{
+  "_readme": [
+    "The committed probe registry for the `probe:<registered-name>` evidence form",
+    "(DESIGN 3.5 / RS-H1; protocol/exec-safety.md `evidence_grammar - probe: form` row).",
+    "A `probe:` value in a frozen PLAN is a NAME, never a command: it selects one entry",
+    "here, and the executed argv comes from this file, which is repo-committed and",
+    "reviewed like code. An unregistered name is REFUSED - never executed as a command,",
+    "never auto-registered on first use (fail closed, D136).",
+    "Every `argv` is a STRUCTURED ARRAY, never a string; every probe runs with",
+    "shell=False. `cwd` is repo-relative and stated, never inferred - a probe run from",
+    "the wrong directory is a different probe. `status` is `active` (the argv target",
+    "exists today) or `declared-before-active` (the target is a later wave's deliverable;",
+    "an executor MUST NOT read a missing target as a pass).",
+    "Loader + validator: tools/evidence_grammar.py `load_probe_registry`."
+  ],
+  "version": 1,
+  "probes": {
+    "deny-tripwire": {
+      "argv": [
+        "uv",
+        "run",
+        "pytest",
+        "tests/test_seam_guard.py::test_recordless_agent_call_denied",
+        "-q"
+      ],
+      "cwd": "tools",
+      "description": "The live deny-tripwire self-test: a record-less Agent dispatch that MUST be denied by the wave-8 PreToolUse seam guard. Its RESULT is what flips the Guardian enforcement declaration to 'Verified (intercepting)'; no result at all lands on Dormant, never inheriting a prior declaration (DESIGN 1.7 degrade table, RS-H4).",
+      "status": "declared-before-active"
+    },
+    "gauntlet": {
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "scripts/gauntlet.py"
+      ],
+      "cwd": "tools",
+      "description": "The four-gate honest-exit gauntlet (pytest-unit, pytest-integration, ruff, validate-skills) - D158's runner, which streams output uncaptured and exits with the first non-zero gate code. Operator-domain, fixed argvs hard-coded in the script; registered at tools/scripts/gauntlet.py in protocol/exec-safety.md.",
+      "status": "active"
+    }
+  }
+}

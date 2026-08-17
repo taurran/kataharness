@@ -1614,3 +1614,168 @@ def test_plan_status_live_draft_value_with_trailing_prose_parses_as_draft(tmp_pa
     assert kata_restore.plan_status(plan_path) == "draft"
     with pytest.raises(ValueError, match="not frozen"):
         kata_restore.assert_frozen(plan_path)
+
+
+# ---------------------------------------------------------------------------
+# TM-F1 / R-M9 — the per-task `evidence:` declaration (trust-model wave 2)
+#
+# `parse_plan_tasks` gains a keyword-only `check_evidence` flag (default OFF, so every
+# existing caller's contract is untouched) and a companion `parse_plan_evidence` that
+# CARRIES the map.  DESIGN §5.1: no plan item freezes without its completion-evidence
+# declaration; DESIGN §3.5: the declaration grammar is closed to three forms.
+# ---------------------------------------------------------------------------
+
+import evidence_grammar
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+_TRUST_MODEL_PLAN = _REPO_ROOT / ".planning" / "specs" / "trust-model" / "PLAN.md"
+
+
+def _write_plan_with_evidence(tmp_path: Path, evidence_block: str) -> Path:
+    plan_dir = tmp_path / "specs" / "demo"
+    plan_dir.mkdir(parents=True)
+    content = (
+        "---\n"
+        "status: frozen\n"
+        "ownership:\n"
+        "  T1: [src/a.py]\n"
+        "  T2: [src/b.py]\n"
+        f"{evidence_block}"
+        "---\n\n"
+        "# Demo plan\n"
+    )
+    plan_path = plan_dir / "PLAN.md"
+    plan_path.write_text(content, encoding="utf-8")
+    return plan_path
+
+
+def test_parse_plan_tasks_default_ignores_evidence_backcompat(tmp_path):
+    """BC: the pre-TM-F1 contract is unchanged — no evidence: map, no complaint.
+
+    Every existing caller (kata_restore.restore's own step 3, and any orchestrator
+    reading the task set) calls this positionally with no keyword.  If the check were
+    on by default, every plan authored before the rule would stop parsing.
+    """
+    plan_path = _write_plan_with_evidence(tmp_path, "")
+    assert kata_restore.parse_plan_tasks(plan_path) == {"T1", "T2"}
+
+
+def test_parse_plan_tasks_check_evidence_accepts_a_declared_plan(tmp_path):
+    plan_path = _write_plan_with_evidence(
+        tmp_path,
+        "evidence:\n"
+        '  T1: ["artifact:src/a.py"]\n'
+        '  T2: ["test:tests/test_b.py::test_b"]\n',
+    )
+    assert kata_restore.parse_plan_tasks(plan_path, check_evidence=True) == {"T1", "T2"}
+
+
+def test_parse_plan_tasks_check_evidence_fails_a_task_with_no_declaration(tmp_path):
+    """A PLAN with a task missing `evidence:` FAILS the extended check (TM-F1)."""
+    plan_path = _write_plan_with_evidence(
+        tmp_path, "evidence:\n  T1: [\"artifact:src/a.py\"]\n"
+    )
+    with pytest.raises(evidence_grammar.EvidenceGrammarError, match="T2"):
+        kata_restore.parse_plan_tasks(plan_path, check_evidence=True)
+
+
+def test_parse_plan_tasks_check_evidence_fails_an_absent_evidence_map(tmp_path):
+    plan_path = _write_plan_with_evidence(tmp_path, "")
+    with pytest.raises(evidence_grammar.EvidenceGrammarError, match="no per-task"):
+        kata_restore.parse_plan_tasks(plan_path, check_evidence=True)
+
+
+@pytest.mark.parametrize(
+    "declaration",
+    [
+        "uv run pytest tests/test_b.py",   # freeform command string
+        "test:../../etc/test_x.py::test_y",  # CWE-23 traversal
+        "artifact:../../../etc/passwd",      # CWE-23 traversal
+        "probe:not-registered-anywhere",     # unregistered probe
+    ],
+)
+def test_parse_plan_tasks_check_evidence_fails_a_grammar_invalid_declaration(
+    tmp_path, declaration
+):
+    plan_path = _write_plan_with_evidence(
+        tmp_path,
+        "evidence:\n"
+        '  T1: ["artifact:src/a.py"]\n'
+        f'  T2: ["{declaration}"]\n',
+    )
+    with pytest.raises(evidence_grammar.EvidenceGrammarError):
+        kata_restore.parse_plan_tasks(plan_path, check_evidence=True)
+
+
+def test_evidence_grammar_error_is_a_valueerror_for_existing_callers(tmp_path):
+    """Fail-closed callers that catch ValueError keep catching this one."""
+    plan_path = _write_plan_with_evidence(tmp_path, "evidence:\n  T1: [\"make test\"]\n")
+    with pytest.raises(ValueError):
+        kata_restore.parse_plan_tasks(plan_path, check_evidence=True)
+
+
+def test_parse_plan_evidence_carries_the_map(tmp_path):
+    plan_path = _write_plan_with_evidence(
+        tmp_path,
+        "evidence:\n"
+        '  T1: ["artifact:src/a.py"]\n'
+        '  T2: ["test:tests/test_b.py::test_b", "probe:gauntlet"]\n',
+    )
+    carried = kata_restore.parse_plan_evidence(plan_path)
+    assert list(carried) == ["T1", "T2"]
+    assert [d.form for d in carried["T2"]] == ["test", "probe"]
+    assert carried["T1"][0].value == "src/a.py"
+
+
+def test_parse_plan_evidence_raises_the_same_frontmatter_messages(tmp_path):
+    """The evidence reader shares `parse_plan_tasks`' frontmatter failure contract."""
+    plan_dir = tmp_path / "specs" / "demo"
+    plan_dir.mkdir(parents=True)
+    plan_path = plan_dir / "PLAN.md"
+    plan_path.write_text("# no frontmatter here\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="refusing to under-dispatch"):
+        kata_restore.parse_plan_evidence(plan_path)
+    with pytest.raises(ValueError, match="cannot read frozen PLAN"):
+        kata_restore.parse_plan_evidence(plan_dir / "ABSENT.md")
+
+
+# --- The reflexive TM-F1 acceptance ----------------------------------------
+
+
+def test_this_burns_own_frozen_plan_passes_the_evidence_check():
+    """REFLEXIVE TM-F1: the first PLAN authored under the rule validates under the rule.
+
+    Run against the REAL frozen plan on disk, not a fixture — a machinery that only ever
+    sees its own fixtures is exactly the vacuity this burn exists to end.  If this fails,
+    either the plan is undeclared or the grammar is wrong; both are loud.
+    """
+    assert _TRUST_MODEL_PLAN.is_file(), f"missing frozen PLAN: {_TRUST_MODEL_PLAN}"
+    carried = kata_restore.parse_plan_evidence(_TRUST_MODEL_PLAN)
+    task_ids = kata_restore.parse_plan_tasks(_TRUST_MODEL_PLAN)
+    assert set(carried) == task_ids, "every frozen task carries a declaration"
+    assert carried, "the frozen plan declares evidence"
+    forms = {d.form for decls in carried.values() for d in decls}
+    assert forms <= {"artifact", "test", "probe"}
+    # All three forms are exercised by the real plan — the grammar is not a
+    # two-thirds-dead surface pinned by a one-form corpus.
+    assert forms == {"artifact", "test", "probe"}
+
+
+def test_this_burns_own_frozen_plan_passes_via_the_extended_parse_plan_tasks():
+    assert kata_restore.parse_plan_tasks(
+        _TRUST_MODEL_PLAN, check_evidence=True
+    ) == kata_restore.parse_plan_tasks(_TRUST_MODEL_PLAN)
+
+
+def test_every_frozen_plan_test_declaration_compiles_to_the_design_argv():
+    """Every `test:` node in the real plan compiles to the pinned DESIGN §3.5 argv."""
+    carried = kata_restore.parse_plan_evidence(_TRUST_MODEL_PLAN)
+    seen = 0
+    for decls in carried.values():
+        for decl in decls:
+            if decl.form != "test":
+                continue
+            compiled = evidence_grammar.compile_declaration(decl, repo_root=_REPO_ROOT)
+            assert compiled.argv == ("python", "-m", "pytest", decl.value)
+            seen += 1
+    assert seen > 0, "the frozen plan declares at least one test: node"
