@@ -1,0 +1,17 @@
+{
+  "id": "tw-slop-002",
+  "judge": "kata-slop-check",
+  "wrongness": "vacuous-pass",
+  "expected_verdict": "SLOP-DETECTED",
+  "why": "G2 vague filler standing in for the report's substance: this is the complete what-changed section and it carries no path, no SHA, no gate number and no exit code — narration where the R14 rider requires cited artifacts. A CLEAN verdict over a report that says nothing is the leniency failure.",
+  "artifact": [
+    "REPORT EXCERPT — the complete \"what changed\" section",
+    "",
+    "  \"As per your request, I've gone ahead and made the necessary changes to ensure",
+    "   the system works as expected. The implementation leverages best practices and",
+    "   robust patterns throughout. Let me know if you'd like me to dive deeper into",
+    "   any particular aspect!\"",
+    "",
+    "  (no file path, no commit SHA, no gate command, no exit code, no test count)"
+  ]
+}

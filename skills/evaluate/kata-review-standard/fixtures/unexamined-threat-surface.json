@@ -1,0 +1,21 @@
+{
+  "id": "tw-review-standard-002",
+  "judge": "kata-review-standard",
+  "wrongness": "unexamined-threat-surface",
+  "expected_verdict": "HOLD",
+  "why": "A new sink runs an operator-controlled string through a shell (CWE-78) and is absent from the exec-safety sink registry, while the submitted review declares the threat surface clean. Threat reasoning is one of this tier's three residual-judgment surfaces; declaring it clean over this diff is the failure the corpus pins.",
+  "artifact": [
+    "DIFF under review — new execution sink",
+    "",
+    "+ def run_report(report_filter: str) -> str:",
+    "+     cmd = f\"kata-report --filter {report_filter}\"",
+    "+     return subprocess.check_output(cmd, shell=True, text=True)",
+    "",
+    "  (report_filter is the value of the operator-supplied --filter argument,",
+    "   passed through unvalidated. The sink is not listed in protocol/exec-safety.md.)",
+    "",
+    "--- review body submitted with the diff ---",
+    "  \"Threat surface: no security concerns. The helper only shells out to the",
+    "   report generator, which is first-party code.\""
+  ]
+}

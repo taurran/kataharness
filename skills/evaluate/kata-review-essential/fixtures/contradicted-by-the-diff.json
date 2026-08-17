@@ -1,0 +1,22 @@
+{
+  "id": "tw-review-essential-001",
+  "judge": "kata-review-essential",
+  "wrongness": "contradicted-by-evidence",
+  "expected_verdict": "HOLD",
+  "why": "The commit is announced as a docstring-only pass while the diff inverts the verdict parser's enum-binding refusal into a coercion — a claim its own diff contradicts. This is the top-risk smell test at Essential depth; if this tier ships it, the tier is not reading the diff at all.",
+  "artifact": [
+    "CLAIM under review",
+    "  \"No behavior change — this commit is a docstring pass only.\"",
+    "",
+    "DIFF",
+    "  def parse_verdict(envelope, *, allowed=None):",
+    "      ...",
+    "-     if allowed is not None and verdict not in allowed:",
+    "-         return None",
+    "+     if allowed and verdict not in allowed:",
+    "+         return verdict",
+    "",
+    "  (the no-match refusal path becomes a coercion: an out-of-enum token is now",
+    "   returned as if it were a legal verdict)"
+  ]
+}

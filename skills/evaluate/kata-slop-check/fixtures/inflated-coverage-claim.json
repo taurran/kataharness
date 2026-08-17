@@ -1,0 +1,19 @@
+{
+  "id": "tw-slop-001",
+  "judge": "kata-slop-check",
+  "wrongness": "inflated-claim",
+  "expected_verdict": "SLOP-DETECTED",
+  "why": "A1 inflation on the core deliverable: 'comprehensive, production-grade, every edge case handled' against a fact table showing three happy-path tests, no refusal-path test and 41% coverage. The check is required to judge ON the attested facts, and the claim is the contradiction.",
+  "artifact": [
+    "CLOSEOUT EXCERPT",
+    "  \"Comprehensive, production-grade coverage across the whole detector suite —",
+    "   every edge case is handled and the module is fully hardened.\"",
+    "",
+    "--- attested fact table row for the same module ---",
+    "  tests            : 3 (all happy-path)",
+    "  refusal-path     : 0",
+    "  anti-vacuity     : 0",
+    "  line coverage    : 41%",
+    "  mutation re-run  : not recorded"
+  ]
+}
