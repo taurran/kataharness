@@ -146,6 +146,24 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   declared). W3 inputs flagged by the builder: the PHASE msg enum is the seam's to enforce;
   SPAWN/DOWN child-span placement is seam machinery.
 
+- **D-20 · evidence-grammar landed; ruling G9 (path-guard registry acknowledgment at
+  integration).** Gate re-run 139/139. Reflexive TM-F1 proven against the REAL frozen plan
+  (all 28 declarations parse; all three forms exercised); D-3 reconciliation implemented as
+  literal-DESIGN-argv + a named opt-in `uv_wrapped_argv` boundary, pinned by tests; the
+  guard-grammar "reuse" honestly implemented as the repo's established fourth local copy
+  (claims the checks, not the code); probe registry carries `status:
+  declared-before-active` for the W8 deny-tripwire target (a test asserts the target is
+  still absent and instructs W8 to flip it) + explicit per-probe `cwd`. **G9:**
+  `tools/tests/test_path_guard_family.py::test_guard_family_membership_is_complete` fired
+  exactly as designed on the new `_guard_path` — the un-owned one-line registry
+  acknowledgment (`("evidence_grammar", "_guard_path")`) is a conductor INTEGRATION act
+  (G3 class), distinct commit, after verifying both family invariants (builder verified;
+  conductor re-verifies at the paste). **Third first-use registry with no on-ramp**
+  (fingerprints D-8, guard family D-20) — pattern candidate for the backlog via the
+  planning window. Also flagged: `docs/DETERMINISM-DOCTRINE.md:56-58`'s law-8 example
+  still describes the retired mutation_run shell=True exception — owed to the W7
+  doctrine-amendment task's fold (recorded here so it is folded, not rediscovered).
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
