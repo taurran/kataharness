@@ -85,6 +85,18 @@ cosmetic deviation-list ordering). **Wave 2 is unlocked.**
   statuses, and the only governor ledger this burn mints against is trust-model's — the
   partial normalization is safe and DECLARED, not silent.
 
+- **D-16 · Ledger-status normalization: the corpus is worse than the plan assumed, and the
+  fix is filed, not forced.** Full 29-ledger table + conductor rulings R1–R5 durably at
+  `evidence/ledger-status-table.md`. Headlines: 15/29 ledgers have NO `status:` key at all
+  (the frozen acceptance grep passes vacuously on them — acceptance amended, R1);
+  dispatch-seam already parses `absorbed` (off the fence list, R2) but its routing target is
+  prose-only (W3 input, R2); three ledger-as-contract specs ruled `converged` conservatively
+  (R3); root cause is the DECISION-LEDGER.md format doc prescribing no frontmatter — fixed
+  authoring-side in W4 per ownership amendment G5 (R4). **FOR THE PLANNING WINDOW:** the 18
+  fence-blocked normalizations in the table (3 free-prose + 15 key-absent), with required
+  values pre-derived. Task tm-w2-ledger-status-normalization itself: complete at G4 scope,
+  zero edits (trust-model verified conformant), validator green.
+
 ## Discoveries (append-only)
 
 - **D-1 · The BL-X12 writeback gap (FOR THE PLANNING WINDOW to fold — fence-respecting
