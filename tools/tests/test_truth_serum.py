@@ -34,6 +34,7 @@ No network, no subprocess, no mutation of the repo.
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 from pathlib import Path
 
@@ -58,6 +59,19 @@ def _write(root: Path, rel: str, text: str) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     return rel
+
+
+def _case_dir(tmp_path: Path, *parts: str) -> Path:
+    """A per-parametrised-case fixture dir with a STABLE name.
+
+    ``hash()`` on a str is PYTHONHASHSEED-dependent (Determinism Doctrine law 3); a
+    detector suite that exists to enforce that doctrine does not get to break it in its
+    own fixtures, even for a directory name.
+    """
+    digest = hashlib.sha256("\x00".join(parts).encode("utf-8")).hexdigest()[:12]
+    root = tmp_path / f"repo_{digest}"
+    root.mkdir()
+    return root
 
 
 def _build_graph(root: Path) -> dict:
@@ -167,8 +181,7 @@ def test_def_ref_on_a_neighbouring_line_does_not_suppress(tmp_path: Path) -> Non
     ],
 )
 def test_explicit_mechanical_suppressors_suppress(tmp_path: Path, rel: str, source: str) -> None:
-    root = tmp_path / f"repo{abs(hash((rel, source))) % 10**8}"
-    root.mkdir()
+    root = _case_dir(tmp_path, rel, source)
     _write(root, rel, source)
     report = _b1(root, [rel])
     assert report.verdict == ts.VERDICT_PASS, report.summary()
@@ -390,8 +403,7 @@ def test_debt_marker_without_def_ref_blocks(tmp_path: Path, marker: str) -> None
     ],
 )
 def test_same_line_formal_follow_up_suppresses(tmp_path: Path, line: str) -> None:
-    root = tmp_path / f"repo{abs(hash(line)) % 10**8}"
-    root.mkdir()
+    root = _case_dir(tmp_path, line)
     rel = _write(root, "notes.md", f"{line}\n")
     report = ts.scan_debt_markers(root, [rel])
     assert report.verdict == ts.VERDICT_PASS, report.summary()
@@ -457,8 +469,7 @@ def test_b5_resolves_real_citations(tmp_path: Path) -> None:
     ],
 )
 def test_b5_blocks_an_unresolvable_citation(tmp_path: Path, body: str, expect_family: str) -> None:
-    root = tmp_path / f"repo{abs(hash(body)) % 10**8}"
-    root.mkdir()
+    root = _case_dir(tmp_path, body)
     _write(root, "src/mod.py", "a = 1\nb = 2\nc = 3\n")
     rel = _write(root, "artifact.md", body)
     report = ts.resolve_citations(root, rel)
