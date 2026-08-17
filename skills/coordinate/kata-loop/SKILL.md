@@ -200,7 +200,7 @@ the new cycle begin. The order matters:
    requiring the predecessor to be closed first would make the record unwritable in the only
    situation it describes. (The ruling; `phase()` already permits it — it refuses only a re-open.)
 2. `close_run(kata, plan_path=…, repo_root=…)`. **Do not close the open phases by hand.** The
-   closer closes every still-open phase **LIFO** — `LOOP-BACK` last, because it was opened last —
+   closer closes every still-open phase **LIFO** — `LOOP-BACK` first, because it was opened last —
    and only then stamps the terminal `run-closed` line, which records `loopBack=1` so the
    successor's `prev-run:` chain is corroborated by the predecessor's own terminal record.
    Reconciliation happens AT the close; a phase is never left open across the terminal line.

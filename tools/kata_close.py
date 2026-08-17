@@ -67,7 +67,7 @@ refuses.  The ruling implemented here, in two halves:
   ruling is a statement of the existing mechanism, not a change to it.
 * **Reconciliation happens at the CLOSE, never by leaving a phase open across the
   terminal line.**  :func:`close_run` closes every still-open phase **LIFO** (most
-  recently opened first, so ``LOOP-BACK`` closes last — it was opened last) and only then
+  recently opened first, so ``LOOP-BACK`` closes first — it was opened last) and only then
   writes ``run-closed``.  With ``close_open_phases=False`` it REFUSES instead, naming the
   instruction.  A run therefore never carries an open phase past its terminal record, and
   the successor's ``prev-run:`` chain is corroborated by the predecessor's own terminal
@@ -1588,7 +1588,7 @@ def _close_elected(
                 f"kata_close: run {run_id} still holds open phase(s) {open_phases} and "
                 "close_open_phases=False. The terminal 'run-closed' line is refused while "
                 "any phase is open (DESIGN §2.6). INSTRUCTION: close them — call close_run "
-                "with close_open_phases=True, which closes them LIFO (LOOP-BACK last, "
+                "with close_open_phases=True, which closes them LIFO (LOOP-BACK first, "
                 "because it was opened last), or close each one yourself via "
                 "kata_dispatch.phase(kata, 'close <PHASE>') and re-run the close.",
                 fact_class="phase",
@@ -1599,7 +1599,7 @@ def _close_elected(
 
     loop_back = "LOOP-BACK" in open_phases or "LOOP-BACK" in state["closed"]
     closed_now: list[str] = []
-    for key in reversed(open_phases):  # LIFO — LOOP-BACK closes last, it was opened last
+    for key in reversed(open_phases):  # LIFO — LOOP-BACK closes first, it was opened last
         _kd.phase(kata, f"close {_phase_close_msg(key)}", task="close",
                   repo_root=str(repo_root), now=now)
         closed_now.append(key)

@@ -1006,7 +1006,7 @@ def test_close_run_closes_open_phases_lifo_including_loop_back(tmp_path):
 
     kata-loop's Path A opens LOOP-BACK while the run still holds phases open.  The seam
     refuses `run-closed` while ANY phase is open, so the close must close them — LIFO, so
-    LOOP-BACK (opened last) closes last — and only then write the terminal line.  The
+    LOOP-BACK (opened last) closes FIRST — and only then write the terminal line.  The
     terminal line records `loopBack=1`, so the successor's `prev-run:` chain is
     corroborated by the predecessor's own terminal record.
     """

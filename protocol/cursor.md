@@ -203,7 +203,7 @@ FINAL-GATE · CLOSEOUT · LOOP-BACK
   refuse to append past it. Exactly-once is structural, not conventional: `close_run` elects one
   closer by `O_CREAT|O_EXCL` exclusive create before it writes, and the terminal line itself is
   what makes a second close refuse. A run that still holds phases open cannot be closed — the
-  closer closes them **LIFO** (so a `LOOP-BACK` opened last is closed last) and only then stamps
+  closer closes them **LIFO** (so a `LOOP-BACK` opened last is closed FIRST) and only then stamps
   the terminal line, or refuses and names that instruction. The READER half is live too:
   `run_start`'s resume test reads for the terminal line via `kata_dispatch.is_run_closed`.
 - Re-opening a closed phase is a **DENY-class event**, recorded as a DENY line naming the legal
