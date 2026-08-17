@@ -1029,28 +1029,116 @@ def test_the_election_precedes_the_move_so_a_held_token_denies(tmp_path):
     assert kd.record_path(kata, rid).is_file()          # ...and was not consumed
 
 
-def test_os_rename_alone_is_not_a_single_winner_primitive_here(tmp_path):
-    """The measured fact the fix rests on — regression-pinned, not folklore.
+def _raw_rename_race(root: Path, *, threads: int = 8) -> int:
+    """Race raw ``os.rename`` (NO kata code). Returns how many callers reported success."""
+    root.mkdir(parents=True, exist_ok=True)
+    src, dst = root / "src", root / "dst"
+    src.write_text("payload", encoding="utf-8")
+    barrier = threading.Barrier(threads)
 
-    DESIGN §1.5 reasons from POSIX ("one rename wins; the loser's ENOENT denies it").
-    On Windows a rename runs against an OPEN HANDLE to the source, and renaming a file
-    to the path it already occupies is a no-op SUCCESS, so concurrent claimants can all
-    report success. This test asserts the sequential contract that made the bug look
-    absent, and — on the platform where it bites — the concurrent one that exposed it.
+    def worker():
+        barrier.wait()
+        try:
+            os.rename(src, dst)
+            return 1
+        except OSError:
+            return 0
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as pool:
+        return sum(f.result() for f in [pool.submit(worker) for _ in range(threads)])
+
+
+def test_a_retained_record_is_never_clobbered_on_either_platform(tmp_path):
+    """Platform-uniform refusal when a retained record exists but its token does not.
+
+    Windows' rename refuses to replace; POSIX's rename replaces silently. Left to the OS
+    this would destroy retained lineage and return a false "win" on Linux only — the same
+    divergence class as the election defect itself. The engine refuses on both.
+    """
+    kata = _kata(tmp_path)
+    rid = _mint_ok(kata, _FROZEN_PLAN)["recordId"]
+    kd.claim_record(kata, rid)                       # legitimate claim: record retained
+    retained = kd.record_path(kata, rid, consumed=True)
+    assert retained.is_file()
+    original = retained.read_text(encoding="utf-8")
+
+    # A second record appears at the pending path and the token is gone (hand-removed).
+    kd.record_path(kata, rid).write_text('{"impostor": true}', encoding="utf-8")
+    kd.claim_token_path(kata, rid).unlink()
+
+    with pytest.raises(kd.RecordClaimRefused, match="RE-MINT"):
+        kd.claim_record(kata, rid)
+    assert retained.read_text(encoding="utf-8") == original, "retained lineage was clobbered"
+
+
+def test_os_rename_alone_is_not_a_portable_single_winner_primitive(tmp_path):
+    """Why the claim election is O_CREAT|O_EXCL — the OS facts, pinned PER PLATFORM.
+
+    DESIGN §1.5 reasons from POSIX: "two racing pre-hooks ⇒ one rename wins; the loser's
+    validation fails". That reasoning is CORRECT on POSIX and WRONG on Windows, and the
+    claim has to be single-winner on both. This pins the divergence so the fix's rationale
+    stays evidence rather than folklore.
+
+    **Windows** — measured by the builder on this host (CPython 3.14.3, NTFS)::
+
+        rename(EXISTING -> EXISTING) : FileExistsError    (no replace)
+        rename(SAME     -> SAME    ) : SUCCESS, a no-op   <-- the mechanism
+        8 threads, same src -> same dst : ALL 8 succeeded, 200/200 rounds
+
+    A Windows rename is issued against an OPEN HANDLE to the source (``FileRenameInfo``),
+    so claimants that opened the source before the winner's rename landed are renaming a
+    file to the path it already occupies — the no-op success above — and all report
+    success. The primitive degrades from an election into a no-op.
+
+    **POSIX** — reasoned from POSIX.1 ``rename(2)``, and PROVEN BY CI RATHER THAN BY THE
+    BUILDER: I have no Linux host and did not run these locally, so the ubuntu leg is the
+    evidence, not my assertion::
+
+        rename(EXISTING -> EXISTING) : SUCCESS, atomically REPLACING dst
+        rename(MISSING  -> *       ) : ENOENT / FileNotFoundError
+        8 threads, same src -> same dst : exactly 1 winner
+
+    POSIX ``rename`` resolves the source BY PATH and unlinks its directory entry
+    atomically, so after the winner the source is gone and every later caller gets ENOENT
+    — a genuine election. The replace-on-existing behaviour is exactly why ``os.replace``
+    exists: to give Windows the POSIX semantics.
+
+    An earlier revision of this test asserted the Windows refusal
+    (``pytest.raises(OSError)`` on rename-over-existing) UNCONDITIONALLY and went red on
+    the ubuntu CI leg — the D-25 lesson (platform-divergent primitives need
+    platform-honest tests) applied to its own pin.
+
+    Either way **the CLAIM is single-winner on both platforms**; that property is proven
+    platform-agnostically by ``test_record_claim_is_atomic_single_use`` (25 in-process
+    rounds) and ``test_claim_election_is_exclusive_under_a_forced_interleaving``.
     """
     src, dst = tmp_path / "src", tmp_path / "dst"
     src.write_text("x", encoding="utf-8")
     dst.write_text("y", encoding="utf-8")
-    # Sequentially the primitive looks like a perfect election on every platform...
-    with pytest.raises(OSError):
-        os.rename(src, dst)
 
     if sys.platform == "win32":
-        # ...and here is the no-op-success behaviour that breaks it concurrently.
+        with pytest.raises(FileExistsError):
+            os.rename(src, dst)                  # Windows refuses to replace
         same = tmp_path / "same"
         same.write_text("z", encoding="utf-8")
-        os.rename(same, same)                    # no raise: a rename to self succeeds
+        os.rename(same, same)                    # no raise: rename-to-self is a no-op
         assert same.is_file()
+    else:
+        os.rename(src, dst)                      # POSIX silently REPLACES the destination
+        assert not src.exists()
+        assert dst.read_text(encoding="utf-8") == "x"
+        with pytest.raises(FileNotFoundError):   # the source is gone — the POSIX election
+            os.rename(src, dst)
+
+    winners = _raw_rename_race(tmp_path / "race")
+    if sys.platform == "win32":
+        # Deliberately WEAK. >1 is the defect and it is timing-dependent, so asserting it
+        # exactly would be flaky — the very failure mode that produced this whole cure.
+        # What matters is that 1 is NOT guaranteed here, which the docstring's measured
+        # 200/200 tally records.
+        assert winners >= 1
+    else:
+        assert winners == 1, "POSIX rename must elect exactly one winner"
 
 
 # ----- THE DECLARED EVIDENCE NODE (PLAN frontmatter `evidence:` for seam-engine) -----
