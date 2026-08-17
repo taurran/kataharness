@@ -38,6 +38,7 @@ from pathlib import Path
 from typing import Any
 
 import footprint
+import kata_board  # the ONE canonical cursor parser (protocol/board.md / DESIGN §2.2)
 from kata_advisor import ADVISOR_OUTCOMES
 
 # ---------------------------------------------------------------------------
@@ -499,33 +500,52 @@ def validate_inline_eval(value: Any) -> str:
 
 
 def parse_progress_events(board_text: str, task_id: str) -> list[dict]:
-    """Return ``{ts, done, owned}`` events from *task_id*'s ``PROGRESS`` board lines.
+    """Return ``{ts, done, owned}`` events from *task_id*'s ``PROGRESS`` cursor lines.
 
-    The board line format is
-    ``<ts> | <agent> | <TYPE> | <task-id> | <msg>`` and a PROGRESS ``msg`` opens with
-    ``<done>/<owned> <label>`` (F3). Other tasks' lines and non-PROGRESS types are
-    ignored (the board legitimately holds them). A corrupted line that no longer
-    splits into 5 fields is UNATTRIBUTABLE (its task-id field is unreadable) and is
-    skipped — the board-snippet skip precedent (gate v1 LOW-12). The board format is
-    UNTOUCHED.
+    Parsing delegates to :func:`kata_board.parse_cursor`, the ONE canonical parser
+    (DESIGN §2.2).  The cursor line format is
+    ``<utc> | <seq>[~<parent>] | <agent> | <TYPE> | <task-id> | <msg>`` and a
+    PROGRESS ``msg`` opens with ``<done>/<owned> <label>`` (F3). Other tasks' lines
+    and non-PROGRESS types are ignored (the cursor legitimately holds them).
+
+    Cursor-refusal handling (decided deliberately for this consumer): this is a
+    **gate parser** — its whole posture is "never skip-and-average an attributable
+    signal" — so a refusal **PROPAGATES** as ``TelemetryError``. This REPLACES the
+    old LOW-12 skip of a short line: under the cursor grammar an ill-formed row is
+    not "unattributable, therefore harmless", it means the cursor itself is not
+    trustworthy, and silently averaging over the remainder would be the
+    skip-and-average failure this function exists to refuse. The orchestrator's
+    response is STOP + escalate.
 
     Args:
-        board_text: The full ``.kata/board.md`` text.
+        board_text: The full ``.kata/board.md`` (cursor) text.
         task_id: The task whose PROGRESS lines to extract.
 
     Returns:
-        In-order list of ``{"ts", "done", "owned"}`` events.
+        In-order list of ``{"ts", "done", "owned"}`` events. Empty ``board_text``
+        (no cursor written yet — absence, not refusal) returns ``[]``.
 
     Raises:
-        TelemetryError: On a malformed ``done/owned`` on an attributable PROGRESS
-            line for THIS task (never skip-and-average an attributable signal).
+        TelemetryError: On a cursor the canonical parser refuses (including any
+            LEGACY 5-field line, which parses nowhere after the migration), and on
+            a malformed ``done/owned`` on an attributable PROGRESS line for THIS
+            task.
     """
     events: list[dict] = []
-    for raw in board_text.splitlines():
-        parts = [p.strip() for p in raw.split("|")]
-        if len(parts) < 5:
-            continue  # unattributable — fail-safe skip (LOW-12)
-        ts, _agent, typ, task, msg = parts[:5]
+    if not board_text or not board_text.strip():
+        return events
+    try:
+        cursor = kata_board.parse_cursor(board_text)
+    except kata_board.CursorError as exc:
+        raise TelemetryError(
+            f"parse_progress_events: the cursor is UNPARSEABLE for {task_id!r} — {exc} "
+            "A refusal is never a skip (DESIGN §2.2): slack timing computed over a "
+            "partially-readable cursor would be skip-and-average on an attributable "
+            "signal. STOP + escalate."
+        ) from exc
+
+    for line in cursor.lines:
+        ts, typ, task, msg = line.utc, line.type, line.task, line.msg
         if typ != "PROGRESS" or task != task_id:
             continue
         tokens = msg.split()

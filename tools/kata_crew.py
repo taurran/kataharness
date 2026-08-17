@@ -41,10 +41,17 @@ render_model_chip(payload) -> str                                # dim shortname
 from __future__ import annotations
 
 import json
+import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import kata_board  # the ONE canonical cursor parser (protocol/board.md / DESIGN §2.2)
 from fs_atomic import atomic_write_text
+
+#: Where a cursor REFUSAL is RECORDED.  This module may never raise on cursor text
+#: (freeze-gate F3), so the log is the channel that keeps the refusal from being a
+#: silent drop.
+_LOG = logging.getLogger(__name__)
 
 #: Roster schema version (`.kata/dispatch.json` top-level ``v``).
 ROSTER_VERSION = 1
@@ -153,24 +160,41 @@ def _parse_iso(value: object) -> datetime | None:
 def _latest_board_heartbeat(board_text: object, task_id: str) -> datetime | None:
     """The latest CLAIM/PROGRESS self-stamp for ``task_id``, or ``None``.
 
-    Own LENIENT parse of the board line grammar ``<ts> | <agent> | <TYPE> | <task> | <msg>``
-    (protocol/board.md): an unparseable line is SKIPPED — this NEVER raises on malformed
-    ``board_text`` (freeze-gate F3). Deliberately does NOT reuse ``kata_telemetry.parse_progress_events``
-    (that raises by design — it is a gate parser; this is a statusline tick).
+    Parsing delegates to :func:`kata_board.parse_cursor` — the ONE canonical parser
+    (DESIGN §2.2).  This module keeps NO grammar of its own; the previous lenient
+    hand-rolled 5-field split is gone, because it silently mis-read the new
+    grammar (seq as agent, agent as TYPE) and would have reported a fabricated ▰.
+
+    Cursor-refusal handling (decided deliberately for this consumer): this is a
+    **statusline tick** under the freeze-gate F3 never-raise contract, so the
+    degraded-mode contract is **tolerate-and-continue** — a refused cursor yields
+    ``None``, which :func:`liveness` reads as STALE (▱ hollow), never as a
+    fabricated freshness.  The refusal is not dropped silently: it is RECORDED via
+    ``logging.warning`` on this module's logger.  Deliberately does NOT reuse
+    ``kata_telemetry.parse_progress_events`` (that propagates by design — it is a
+    gate parser; this is display-only and NEVER gates, GRILL D3).
     """
-    if not isinstance(board_text, str):
+    if not isinstance(board_text, str) or not board_text.strip():
+        return None  # absence, not refusal — nothing to record
+
+    try:
+        cursor = kata_board.parse_cursor(board_text)
+    except Exception as exc:  # noqa: BLE001 — F3: this function NEVER raises
+        _LOG.warning(
+            "kata_crew: cursor REFUSED for task %r — %s; liveness degrades to STALE "
+            "(▱ hollow), never a fabricated fresh heartbeat.",
+            task_id,
+            exc,
+        )
         return None
+
     latest: datetime | None = None
-    for raw in board_text.splitlines():
-        parts = [p.strip() for p in raw.split("|")]
-        if len(parts) < 5:
+    for line in cursor.lines:
+        if line.type not in ("CLAIM", "PROGRESS"):
             continue
-        ts, _agent, typ, task, _msg = parts[:5]
-        if typ not in ("CLAIM", "PROGRESS"):
+        if line.task != str(task_id):
             continue
-        if task != str(task_id):
-            continue
-        when = _parse_iso(ts)
+        when = _parse_iso(line.utc)
         if when is None:
             continue
         if latest is None or when > latest:

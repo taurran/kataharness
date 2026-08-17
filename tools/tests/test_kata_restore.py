@@ -34,8 +34,42 @@ from pathlib import Path
 
 import pytest
 
+import kata_board
 import kata_restore
 import kata_trail
+
+# ---------------------------------------------------------------------------
+# Cursor fixtures — built through the canonical EMITTER, never hand-typed
+# ---------------------------------------------------------------------------
+# DESIGN §2.2: the legacy 5-field grammar parses NOWHERE after the migration, so a
+# legacy board fixture that still folded would prove the migration never happened.
+# Every board fixture below therefore goes through kata_board.format_header /
+# format_line.  Legacy strings survive ONLY inside the refusal tests.
+
+_RUN_ID = "run-20240101T100000Z-beef0003"
+
+#: A LEGACY 5-field CLAIM line — kept only to be REFUSED.
+LEGACY_LINE = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1"
+
+
+def _cursor(*rows: tuple[str, str, str, str, str], run_id: str = _RUN_ID) -> str:
+    """Build a cursor from ``(utc, agent, TYPE, task, msg)`` rows; seq stamped 1..N."""
+    header = kata_board.format_header(kata_board.RunHeader(run_id=run_id))
+    return header + "".join(
+        kata_board.format_line(
+            utc=utc, seq=i, agent=agent, type=typ, task=task, msg=msg
+        )
+        for i, (utc, agent, typ, task, msg) in enumerate(rows, start=1)
+    )
+
+
+def _claim(utc: str, agent: str, task: str, msg: str = "starting") -> tuple[str, str, str, str, str]:
+    return (utc, agent, "CLAIM", task, msg)
+
+
+def _done(utc: str, agent: str, task: str, msg: str = "verify passed") -> tuple[str, str, str, str, str]:
+    return (utc, agent, "DONE", task, msg)
+
 
 # ---------------------------------------------------------------------------
 # Shared git helpers
@@ -175,7 +209,7 @@ def test_redispatch_set_is_plan_minus_integration(tmp_path):
     _add_integration_commit(repo, "integration", "T1")
 
     # Board shows T1 CLAIM-without-DONE (stale snapshot from before crash)
-    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    board = _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"))
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)
 
@@ -214,10 +248,10 @@ def test_early_wave_crash_no_fewer(tmp_path):
     _git(["checkout", "-b", "integration"], repo)
     # No integration commits — wide first wave, nothing finished.
 
-    board = (
-        "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
-        "2024-01-01T10:00:01+00:00 | worker-2 | CLAIM | T2 | starting T2\n"
-        "2024-01-01T10:00:02+00:00 | worker-3 | CLAIM | T3 | starting T3\n"
+    board = _cursor(
+        _claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"),
+        _claim("2024-01-01T10:00:01+00:00", "worker-2", "T2", "starting T2"),
+        _claim("2024-01-01T10:00:02+00:00", "worker-3", "T3", "starting T3"),
     )
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)  # crash simulation
@@ -258,7 +292,7 @@ def test_reconcile_no_more(tmp_path):
     _add_integration_commit(repo, "integration", "T1")
 
     # Stale board: T1 CLAIM-without-DONE (snapshot pre-dates the integration commit)
-    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    board = _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"))
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)
 
@@ -296,9 +330,9 @@ def test_done_but_not_integrated_is_redispatched(tmp_path):
     _git(["checkout", "-b", "integration"], repo)
     # No integration commit for T1.
 
-    board = (
-        "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
-        "2024-01-01T10:30:00+00:00 | worker-1 | DONE | T1 | tests green\n"
+    board = _cursor(
+        _claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"),
+        _done("2024-01-01T10:30:00+00:00", "worker-1", "T1", "tests green"),
     )
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)
@@ -389,8 +423,8 @@ def test_resume_does_not_rotate_board(tmp_path):
 
     _git(["checkout", "-b", "integration"], repo)
 
-    board_content = (
-        "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    board_content = _cursor(
+        _claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"),
     )
     _write_board_and_snapshot(repo, board_content)
     _delete_tier3(repo)
@@ -550,7 +584,7 @@ def test_restore_raises_on_unreadable_plan_no_silent_underdispatch(tmp_path):
     _commit_plan(repo)
     _git(["checkout", "-b", "integration"], repo)
 
-    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    board = _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"))
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)  # lost-run condition
 
@@ -617,9 +651,9 @@ def test_collect_integrated_tasks_bounded_by_plan_freeze(tmp_path):
     )
 
     # --- Verify full restore() re-dispatches B1 (not under-dispatched) ---
-    board = (
-        "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | B1 | starting B1\n"
-        "2024-01-01T10:00:01+00:00 | worker-2 | CLAIM | T2 | starting T2\n"
+    board = _cursor(
+        _claim("2024-01-01T10:00:00+00:00", "worker-1", "B1", "starting B1"),
+        _claim("2024-01-01T10:00:01+00:00", "worker-2", "T2", "starting T2"),
     )
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)
@@ -658,18 +692,17 @@ def test_fold_board_parity_canonical_reduce():
     - completed = tasks with both a CLAIM and a DONE
 
     A small fixture exercises all four invariants to guard against drift from
-    the canonical snippet (K3 — single source of truth).
+    the canonical snippet (K3 — single source of truth).  Fold semantics are
+    UNCHANGED by the cursor migration; only the parser moved (DESIGN §2.2).
     """
-    board = (
+    board = _cursor(
         # T1: two CLAIMs (re-dispatched), two DONEs — earliest/latest must be selected
-        "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | first dispatch\n"
-        "2024-01-01T10:05:00+00:00 | worker-2 | CLAIM | T1 | re-dispatched claim\n"
-        "2024-01-01T10:10:00+00:00 | worker-1 | DONE  | T1 | first done attempt\n"
-        "2024-01-01T10:15:00+00:00 | worker-2 | DONE  | T1 | latest done\n"
+        _claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "first dispatch"),
+        _claim("2024-01-01T10:05:00+00:00", "worker-2", "T1", "re-dispatched claim"),
+        _done("2024-01-01T10:10:00+00:00", "worker-1", "T1", "first done attempt"),
+        _done("2024-01-01T10:15:00+00:00", "worker-2", "T1", "latest done"),
         # T2: only CLAIM, no DONE → in_flight
-        "2024-01-01T09:00:00+00:00 | worker-3 | CLAIM | T2 | only claim\n"
-        # Corrupted/non-ISO row — must be silently skipped (never abort)
-        "not-a-timestamp | worker-x | CLAIM | T3 | bad row\n"
+        _claim("2024-01-01T09:00:00+00:00", "worker-3", "T2", "only claim"),
     )
 
     frontier = kata_restore.fold_board(board)
@@ -697,9 +730,64 @@ def test_fold_board_parity_canonical_reduce():
     assert "T2" in frontier["in_flight"], "T2 has only CLAIM → in_flight"
     assert "T2" not in frontier["completed"], "T2 has no DONE → not completed"
 
-    # T3: corrupted row skipped — must not appear in frontier
-    assert "T3" not in frontier["starts"], "corrupted row must be silently skipped"
-    assert "T3" not in frontier["in_flight"]
+
+def test_fold_board_refuses_a_corrupted_row_instead_of_skipping_it():
+    """A non-ISO / corrupted row is now a REFUSAL, not a silent skip (DESIGN §2.2).
+
+    This REPLACES the pre-migration behaviour ("corrupted row must be silently
+    skipped").  A silently skipped row is an invisible hole in the audit trail —
+    the class the cursor contract exists to remove.
+    """
+    board = (
+        _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "ok"))
+        + "not-a-timestamp | 2 | worker-x | CLAIM | T3 | bad row\n"
+    )
+    with pytest.raises(kata_board.CursorParseError, match="not ISO-8601"):
+        kata_restore.fold_board(board)
+
+
+def test_fold_board_refuses_a_legacy_5_field_line():
+    """MIGRATION PROOF: the LEGACY grammar parses NOWHERE, including here."""
+    board = _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "ok")) + LEGACY_LINE + "\n"
+    with pytest.raises(kata_board.CursorParseError, match="LEGACY 5-field"):
+        kata_restore.fold_board(board)
+
+
+def test_fold_board_refuses_a_headerless_cursor():
+    """A cursor is ``run-header line*``; a headerless board has no run identity."""
+    headerless = kata_board.format_line(
+        utc="2024-01-01T10:00:00+00:00",
+        seq=1,
+        agent="worker-1",
+        type="CLAIM",
+        task="T1",
+        msg="ok",
+    )
+    with pytest.raises(kata_board.CursorParseError, match="must open with 'RUN"):
+        kata_restore.fold_board(headerless)
+
+
+def test_fold_board_empty_content_is_absence_not_refusal():
+    """The Q-14 board-unreadable fail-soft passes "" — that folds to an EMPTY frontier."""
+    for empty in ("", "   ", "\n\n"):
+        frontier = kata_restore.fold_board(empty)
+        assert frontier["starts"] == {}
+        assert frontier["ends"] == {}
+        assert frontier["owners"] == {}
+        assert frontier["in_flight"] == frozenset()
+        assert frontier["completed"] == frozenset()
+
+
+def test_fold_board_does_not_misread_seq_as_agent():
+    """MIGRATION PROOF: owners come from the AGENT field, never from ``seq``.
+
+    The pre-migration hand-rolled split read the new grammar's ``seq`` as the
+    agent — so every owner would have been the string ``"1"``, silently.
+    """
+    board = _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "ok"))
+    frontier = kata_restore.fold_board(board)
+    assert frontier["owners"]["T1"] == "worker-1"
+    assert "T1" in frontier["in_flight"]
 
 
 # ---------------------------------------------------------------------------
@@ -809,9 +897,9 @@ def test_restore_redispatches_invalidated_integrated_task(tmp_path):
     _add_integration_commit(repo, "integration", "T2")
     _add_invalidation_commit(repo, "integration", "T1")
 
-    board = (
-        "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
-        "2024-01-01T10:00:01+00:00 | worker-2 | CLAIM | T2 | starting T2\n"
+    board = _cursor(
+        _claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"),
+        _claim("2024-01-01T10:00:01+00:00", "worker-2", "T2", "starting T2"),
     )
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)
@@ -1020,10 +1108,10 @@ def test_parse_plan_tasks_scalar_builds_against_is_bc_noop(tmp_path):
 def test_fold_board_ignores_progress_lines():
     # F8(7): a PROGRESS heartbeat line (F3) must never enter starts/ends/owners —
     # the board reduce is CLAIM/DONE only (corroboration stays uncorrupted).
-    board = (
-        "2026-07-02T10:00:00 | w1 | CLAIM | T1 | starting\n"
-        "2026-07-02T10:05:00 | w1 | PROGRESS | T1 | 1/3 modules\n"
-        "2026-07-02T10:06:00 | w2 | PROGRESS | T9 | 2/2 modules\n"
+    board = _cursor(
+        ("2026-07-02T10:00:00", "w1", "CLAIM", "T1", "starting"),
+        ("2026-07-02T10:05:00", "w1", "PROGRESS", "T1", "1/3 modules"),
+        ("2026-07-02T10:06:00", "w2", "PROGRESS", "T9", "2/2 modules"),
     )
     folded = kata_restore.fold_board(board)
     assert set(folded["starts"]) == {"T1"}
@@ -1125,7 +1213,7 @@ def test_restore_carries_degraded_keys_on_lost_run(tmp_path):
     _git(["checkout", "-b", "integration"], repo)
     _add_integration_commit(repo, "integration", "T1")
 
-    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    board = _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"))
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)
 
@@ -1337,7 +1425,7 @@ def test_restore_board_unreadable_sets_degraded(tmp_path, monkeypatch):
     _git(["checkout", "-b", "integration"], repo)
     _add_integration_commit(repo, "integration", "T1")
 
-    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    board = _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"))
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)  # lost-run condition
 
@@ -1358,6 +1446,59 @@ def test_restore_board_unreadable_sets_degraded(tmp_path, monkeypatch):
     # PLAN-minus-integration despite the empty frontier.
     assert "T2" in result["redispatch"] and "T1" not in result["redispatch"]
     assert result["board_content"] == ""
+
+
+def test_restore_board_unparseable_sets_degraded(tmp_path):
+    """The cursor migration's refusal is RECORDED at restore(), never a silent drop.
+
+    A LEGACY 5-field board recovered from the trail no longer folds (DESIGN §2.2).
+    restore()'s degraded-mode contract is tolerate-and-continue — the board
+    corroborates and never gates — but the loss must be VISIBLE, exactly like the
+    Q-14 board-unreadable loss.
+
+    MUTATION PROOF: dropping the ``board_unparseable`` branch in restore() makes this
+    test go RED (degraded False / reason absent) while direction stays safe.
+    """
+    repo = _make_git_repo(tmp_path)
+    plan_path = _make_plan(repo, ["T1", "T2"])
+    _commit_plan(repo)
+    _git(["checkout", "-b", "integration"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+
+    _write_board_and_snapshot(repo, LEGACY_LINE + "\n")
+    _delete_tier3(repo)  # lost-run condition
+
+    result = kata_restore.restore(
+        repo_root=str(repo), plan_path=str(plan_path), integration_branch="integration"
+    )
+    assert result["lost_run"] is True
+    assert result["degraded"] is True
+    assert "board-unparseable" in result["degraded_reasons"]
+    # Empty frontier, but the raw recovered content is NOT destroyed.
+    assert result["board_frontier"]["starts"] == {}
+    assert "CLAIM" in result["board_content"]
+    # Board corroborates but never gates: direction stays PLAN-minus-integration.
+    assert "T2" in result["redispatch"] and "T1" not in result["redispatch"]
+
+
+def test_restore_new_grammar_board_is_not_degraded(tmp_path):
+    """Control for the test above: a NEW-grammar cursor folds cleanly, no refusal."""
+    repo = _make_git_repo(tmp_path)
+    plan_path = _make_plan(repo, ["T1", "T2"])
+    _commit_plan(repo)
+    _git(["checkout", "-b", "integration"], repo)
+    _add_integration_commit(repo, "integration", "T1")
+
+    _write_board_and_snapshot(
+        repo, _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"))
+    )
+    _delete_tier3(repo)
+
+    result = kata_restore.restore(
+        repo_root=str(repo), plan_path=str(plan_path), integration_branch="integration"
+    )
+    assert "board-unparseable" not in result["degraded_reasons"]
+    assert result["board_frontier"]["owners"] == {"T1": "worker-1"}
 
 
 # ---------------------------------------------------------------------------
@@ -1388,7 +1529,7 @@ def test_degraded_scan_skips_cleanup_no_branch_mutation(tmp_path):
     for tid in ["T1", "T2", "T3"]:
         _make_task_branch(repo, tid)
 
-    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    board = _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"))
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)
 
@@ -1426,7 +1567,7 @@ def test_bl_m21_default_integration_branch_missing_survives(tmp_path):
     for tid in ["T1", "T2"]:
         _make_task_branch(repo, tid)
 
-    board = "2024-01-01T10:00:00+00:00 | worker-1 | CLAIM | T1 | starting T1\n"
+    board = _cursor(_claim("2024-01-01T10:00:00+00:00", "worker-1", "T1", "starting T1"))
     _write_board_and_snapshot(repo, board)
     _delete_tier3(repo)
 

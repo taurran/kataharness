@@ -120,35 +120,87 @@ def test_state_json_has_updated_utc(tmp_path):
 
 
 def _parse_board_lines(board_text: str):
-    """Parse board lines into list of dicts; skip blank/malformed."""
-    lines = []
-    for raw in board_text.splitlines():
-        line = raw.strip()
-        if not line:
-            continue
-        parts = line.split("|", maxsplit=4)
-        if len(parts) < 5:
-            continue
-        utc, agent, typ, task, msg = (p.strip() for p in parts)
-        lines.append({"utc": utc, "agent": agent, "type": typ, "task": task, "msg": msg})
-    return lines
+    """Parse cursor lines into list of dicts via the ONE canonical parser.
+
+    Delegates to ``kata_board.parse_cursor`` rather than hand-indexing fields —
+    a second parser in a test is still a second source of truth, and hand-indexing
+    is exactly what silently mis-read the migrated grammar.  Any grammar violation
+    (including a LEGACY 5-field line) PROPAGATES as ``CursorParseError``: this
+    helper never skips, so a demo that emitted a bad cursor fails loudly.
+    """
+    import kata_board
+
+    return [
+        {
+            "utc": ln.utc,
+            "seq": ln.seq,
+            "agent": ln.agent,
+            "type": ln.type,
+            "task": ln.task,
+            "msg": ln.msg,
+        }
+        for ln in kata_board.parse_cursor(board_text).lines
+    ]
 
 
-def test_board_has_5_field_lines(tmp_path):
-    """Every non-blank board.md line must be a valid 5-field pipe-delimited entry."""
+def test_board_opens_with_a_run_header(tmp_path):
+    """The demo must mint the run via kata_board.start_run — the ONE legal path.
+
+    A cursor is ``run-header line*`` (DESIGN §2.2); without the header the first
+    append is refused, which is precisely how the grammar migration broke the demo.
+    """
+    import kata_board
+
     import kata_dash_demo
 
     kata_dir = tmp_path / ".kata"
     kata_dash_demo.main(["--kata-dir", str(kata_dir), "--once"])
 
     board_text = (kata_dir / "board.md").read_text(encoding="utf-8")
-    # Count lines that are non-blank
-    non_blank = [l for l in board_text.splitlines() if l.strip()]
+    assert board_text.startswith("RUN run-"), (
+        f"cursor must open with a run-header block, got: {board_text[:60]!r}"
+    )
+    cursor = kata_board.parse_cursor(board_text)
+    kata_board.validate_run_id(cursor.run_id)
+
+
+def test_board_lines_are_canonical_cursor_lines(tmp_path):
+    """Every non-header, non-blank cursor line must satisfy the 6-field grammar."""
+    import kata_board
+
+    import kata_dash_demo
+
+    kata_dir = tmp_path / ".kata"
+    kata_dash_demo.main(["--kata-dir", str(kata_dir), "--once"])
+
+    board_text = (kata_dir / "board.md").read_text(encoding="utf-8")
+    _header, consumed = kata_board.parse_header(board_text)
+    non_blank = [l for l in board_text.splitlines()[consumed:] if l.strip()]
     parsed = _parse_board_lines(board_text)
     assert len(parsed) == len(non_blank), (
-        f"All non-blank lines must be valid 5-field entries. "
+        f"All non-blank lines must be canonical cursor lines. "
         f"Non-blank: {len(non_blank)}, parsed: {len(parsed)}"
     )
+    assert parsed, "demo must emit at least one cursor line"
+
+
+def test_demo_board_rejects_the_legacy_grammar(tmp_path):
+    """Proof the migration happened: a LEGACY 5-field line is REFUSED, not parsed.
+
+    If this helper still accepted the old grammar the migration would be
+    unverified — a legacy fixture that passes proves nothing changed.
+    """
+    import kata_board
+
+    import kata_dash_demo
+
+    kata_dir = tmp_path / ".kata"
+    kata_dash_demo.main(["--kata-dir", str(kata_dir), "--once"])
+
+    board_text = (kata_dir / "board.md").read_text(encoding="utf-8")
+    legacy = board_text + "2026-06-21T10:00:00Z | worker-S1a | CLAIM | S1a-emitter | legacy\n"
+    with pytest.raises(kata_board.CursorParseError, match="LEGACY 5-field"):
+        _parse_board_lines(legacy)
 
 
 def test_board_contains_claim_lines(tmp_path):

@@ -1,4 +1,4 @@
-"""kata_dash_model.py — pure board+state parser -> dashboard ViewModel.
+"""kata_dash_model.py — pure cursor+state parser -> dashboard ViewModel.
 
 No I/O beyond accepting strings/dicts.
 No 'rich' import (this is the pure layer; rendering lives in kata_dash.py).
@@ -16,11 +16,20 @@ Wave field convention:
     wave = str(len(wavesDone)) + "/?" when wavesDone is present and non-empty,
            "0/?" when wavesDone is present but empty,
            None when wavesDone key is absent from state.
+
+Cursor grammar (DESIGN §2.2): this module owns NO grammar of its own — it delegates
+every parse to ``kata_board.parse_cursor``, the ONE canonical parser
+(``protocol/board.md``: "a second parser is a second source of truth").  The
+hand-rolled 5-field split this replaced silently mis-read a new-grammar line — seq as
+agent, agent as TYPE — which is exactly the invisible-corruption class the migration
+exists to remove.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+
+import kata_board
 
 # ---------------------------------------------------------------------------
 # Dataclasses
@@ -29,7 +38,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class BoardEvent:
-    """A single parsed line from .kata/board.md."""
+    """A single parsed line from the run's cursor (``.kata/board.md``)."""
 
     utc: str
     agent: str
@@ -74,30 +83,63 @@ class ViewModel:
 # parse_board
 # ---------------------------------------------------------------------------
 
-_MAX_EVENTS = 6  # number of recent board events to surface in the ViewModel
+_MAX_EVENTS = 6  # number of recent cursor events to surface in the ViewModel
 
 
 def parse_board(text: str) -> list[BoardEvent]:
-    """Parse .kata/board.md text into an ordered list of BoardEvent.
+    """Parse cursor (``.kata/board.md``) text into an ordered list of BoardEvent.
 
-    Format per protocol/board.md:
-        <ISO-8601-UTC> | <agent-id> | <TYPE> | <task-id> | <one-line message>
+    Delegates to :func:`kata_board.parse_cursor` — the ONE canonical parser
+    (``protocol/board.md``).  Format per DESIGN §2.2::
 
-    Tolerant: blank lines and lines with fewer than 5 pipe-delimited fields are
-    silently skipped.  Order is preserved (top-of-file first → most recent last).
-    The msg field is everything after the 4th pipe, so it may itself contain pipes.
+        RUN <run-id>
+        <utc> | <seq>[~<parent-seq>] | <agent> | <TYPE> | <task> | <msg>[ payload=<p>]
+
+    Order is preserved (top-of-file first → most recent last).  A parsed payload
+    pointer is re-appended to ``msg`` so the operator-visible event text drops
+    nothing the cursor recorded.
+
+    ABSENCE vs REFUSAL — the two are NOT the same and are not conflated:
+
+    - **Absence** (empty / whitespace-only text = no cursor written yet) returns
+      ``[]``.  This is the dashboard's legitimate "waiting for a run" path.
+    - **Refusal** (anything else that does not satisfy the grammar — above all a
+      LEGACY 5-field line, which parses NOWHERE after the migration) raises
+      :class:`kata_board.CursorParseError`, which PROPAGATES to the caller.
+
+    :func:`build_view_model` is the consumer that decides what to do with the
+    refusal; see its docstring for the recorded fail-soft.
+
+    Raises:
+        kata_board.CursorParseError: On any line/header the cursor grammar refuses.
     """
-    events: list[BoardEvent] = []
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line:
-            continue
-        parts = line.split("|", maxsplit=4)
-        if len(parts) < 5:
-            continue
-        utc, agent, typ, task, msg = (p.strip() for p in parts)
-        events.append(BoardEvent(utc=utc, agent=agent, type=typ, task=task, msg=msg))
-    return events
+    if not text or not text.strip():
+        return []
+    cursor = kata_board.parse_cursor(text)
+    return [
+        BoardEvent(
+            utc=ln.utc,
+            agent=ln.agent,
+            type=ln.type,
+            task=ln.task,
+            msg=(
+                f"{ln.msg}{kata_board.PAYLOAD_TOKEN}{ln.payload}"
+                if ln.payload is not None
+                else ln.msg
+            ),
+        )
+        for ln in cursor.lines
+    ]
+
+
+def _refusal_event(reason: str) -> str:
+    """Format the operator-visible record of a cursor parse refusal.
+
+    A refused cursor is NEVER dropped silently: the reason is surfaced in the
+    ViewModel's events pane so the dashboard/statusline operator can see that the
+    cursor — not the run — is what stopped being readable.
+    """
+    return f"⚠ cursor UNREADABLE — {reason}"
 
 
 # ---------------------------------------------------------------------------
@@ -241,17 +283,40 @@ def build_view_model(
         ViewModel with all fields populated.
 
     waiting semantics:
-        True iff state is None AND parse_board(board_text) is empty —
-        i.e. there is genuinely no live run data.
+        True iff state is None AND parse_board(board_text) is empty AND the cursor
+        did not refuse — i.e. there is genuinely no live run data.  A REFUSED
+        cursor is never reported as "idle": that would be a false statement about
+        the run.
+
+    Cursor-refusal handling (DESIGN §2.2 — decided deliberately for this consumer):
+        This is a live TUI / statusline tick (``kata_dash``, ``kata_statusline``,
+        ``kata_web`` all call this on a timer and cannot catch per-tick), so the
+        degraded-mode contract is **tolerate-and-continue** — but the refusal is
+        **RECORDED, never a silent drop**: it becomes the sole entry in
+        ``events`` (``⚠ cursor UNREADABLE — …``), naming the grammar violation.
+        State-derived fields (tasks, gate, drift, wave) stay truthful because they
+        come from ``state.json``, not from the cursor; only cursor-derived detail
+        (the event tail and PROGRESS smooth-bar) degrades — to the stepped
+        percent, never to a fabricated one.  Callers that want the raw refusal
+        call :func:`parse_board` directly, which propagates it.
     """
-    events_parsed = parse_board(board_text)
+    cursor_refusal: str | None = None
+    try:
+        events_parsed = parse_board(board_text)
+    except kata_board.CursorError as exc:
+        events_parsed = []
+        cursor_refusal = str(exc)
 
     # ----- waiting check ---------------------------------------------------
-    waiting = state is None and len(events_parsed) == 0
+    waiting = state is None and len(events_parsed) == 0 and cursor_refusal is None
 
     # ----- defaults when no state ------------------------------------------
     if state is None:
-        formatted_events = [_format_event(e) for e in events_parsed[-_MAX_EVENTS:]]
+        formatted_events = (
+            [_refusal_event(cursor_refusal)]
+            if cursor_refusal is not None
+            else [_format_event(e) for e in events_parsed[-_MAX_EVENTS:]]
+        )
         return ViewModel(
             spec=spec,
             wave=None,
@@ -313,7 +378,11 @@ def build_view_model(
     phase = _derive_phase(tasks_raw, gate_raw)
 
     # ----- events (last _MAX_EVENTS, most-recent-last) --------------------
-    formatted_events = [_format_event(e) for e in events_parsed[-_MAX_EVENTS:]]
+    formatted_events = (
+        [_refusal_event(cursor_refusal)]
+        if cursor_refusal is not None
+        else [_format_event(e) for e in events_parsed[-_MAX_EVENTS:]]
+    )
 
     # ----- spec ------------------------------------------------------------
     resolved_spec = spec or state.get("plan")

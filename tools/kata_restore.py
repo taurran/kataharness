@@ -41,6 +41,10 @@ from typing import Any
 
 import yaml
 
+# The ONE canonical cursor parser (protocol/board.md / DESIGN §2.2).  ``fold_board``
+# owns no grammar of its own — a second parser is a second source of truth.
+import kata_board
+
 # ---------------------------------------------------------------------------
 # Ref constant (mirrors kata_trail.py)
 # ---------------------------------------------------------------------------
@@ -146,8 +150,21 @@ def fold_board(board_content: str) -> dict[str, Any]:
 
     The reduce pairs the earliest CLAIM (true in-flight start) and the latest
     DONE (true in-flight end) per task, exactly as the canonical snippet does,
-    to correctly span re-dispatched tasks.  Non-ISO / corrupted rows are skipped
-    (never raise).
+    to correctly span re-dispatched tasks.  **Fold semantics are unchanged by the
+    cursor migration** — only the parser moved.
+
+    Parsing delegates to :func:`kata_board.parse_cursor`, the ONE canonical parser
+    (DESIGN §2.2).  This function no longer hand-rolls the line grammar and no
+    longer skips corrupted rows:
+
+    - **Absence** (empty / whitespace-only ``board_content`` — e.g. the Q-14
+      board-unreadable fail-soft in :func:`restore`) folds to an EMPTY frontier.
+    - **Refusal** (any line the grammar rejects — above all a LEGACY 5-field line,
+      which parses NOWHERE after the migration) raises
+      :class:`kata_board.CursorParseError`.  A silently skipped row is an invisible
+      hole in the audit trail, which is the class the cursor contract removes.
+      :func:`restore` catches the refusal and RECORDS it as a degraded reason
+      (``board-unparseable``) — never a silent drop.
 
     Returns
     -------
@@ -160,6 +177,11 @@ def fold_board(board_content: str) -> dict[str, Any]:
             "completed": frozenset[str],         # both CLAIM and DONE (corroborating)
         }``
 
+    Raises
+    ------
+    kata_board.CursorParseError
+        When *board_content* is non-empty and does not satisfy the cursor grammar.
+
     The board CORROBORATES in-flight ownership but NEVER gates the re-dispatch
     set (DESIGN §2 B3 step 3 / Gap-table row 3).
     """
@@ -167,15 +189,17 @@ def fold_board(board_content: str) -> dict[str, Any]:
     ends:   dict[str, datetime] = {}
     owner:  dict[str, str]      = {}
 
-    for raw in board_content.splitlines():
-        parts = [p.strip() for p in raw.split("|")]
-        if len(parts) < 5:
-            continue
-        ts, agent, typ, task, _msg = parts[:5]
-        try:
-            when = datetime.fromisoformat(ts)
-        except ValueError:
-            continue  # non-ISO / corrupted row — skip, never abort
+    lines = (
+        kata_board.parse_cursor(board_content).lines
+        if board_content and board_content.strip()
+        else ()
+    )
+
+    for line in lines:
+        # utc is grammar-validated by parse_cursor; it stays the fold's selector here
+        # so the frontier's semantics are byte-identical to the pre-migration reduce.
+        when = datetime.fromisoformat(line.utc.replace("Z", "+00:00"))
+        task, agent, typ = line.task, line.agent, line.type
 
         if typ == "CLAIM":
             if task not in starts or when < starts[task]:
@@ -972,7 +996,19 @@ def restore(
         board_content = ""
         board_unreadable = True
 
-    frontier = fold_board(board_content)
+    # The cursor migration (DESIGN §2.2) makes an ill-formed board a REFUSAL, not a
+    # silent row-skip.  restore()'s degraded-mode contract is tolerate-and-continue —
+    # the board corroborates and never gates, so an empty frontier keeps the
+    # re-dispatch DIRECTION safe (over-dispatch) — but the refusal is RECORDED in
+    # degraded_reasons, exactly like the Q-14 board-unreadable loss, so it is never a
+    # silent drop.  Note the raw board_content is still returned and written back
+    # (step 5), so nothing recovered from the trail is destroyed by the refusal.
+    board_unparseable = False
+    try:
+        frontier = fold_board(board_content)
+    except kata_board.CursorError:
+        frontier = fold_board("")
+        board_unparseable = True
 
     # Step 3 — re-dispatch set (PLAN-derived; board corroborates, never gates)
     plan_tasks: set[str] = set()
@@ -996,6 +1032,9 @@ def restore(
     degraded = bool(integrated_ex["degraded"])
     if board_unreadable:
         degraded_reasons.append("board-unreadable")
+        degraded = True
+    if board_unparseable:
+        degraded_reasons.append("board-unparseable")
         degraded = True
 
     # Step 4 — C2 cleanup for each task to be re-dispatched.

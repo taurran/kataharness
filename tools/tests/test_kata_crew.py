@@ -26,7 +26,28 @@ from pathlib import Path
 
 import pytest
 
+import kata_board
 import kata_crew as kc
+
+# --- Cursor fixtures: built through the canonical EMITTER, never hand-typed -----------
+# DESIGN §2.2 — the legacy 5-field grammar parses NOWHERE, so a legacy fixture that still
+# passed would prove the migration never happened.  Legacy strings appear below ONLY
+# inside refusal tests.
+_RUN_ID = "run-20260714T110000Z-beef0002"
+
+#: A LEGACY 5-field CLAIM line for task t1 — kept only to be REFUSED.
+LEGACY_LINE = "2026-07-14T11:59:00+00:00 | worker-t1 | CLAIM | t1 | starting"
+
+
+def _cursor(*rows: tuple[str, str, str, str, str]) -> str:
+    """Build a cursor from ``(utc, agent, TYPE, task, msg)`` rows; seq stamped 1..N."""
+    header = kata_board.format_header(kata_board.RunHeader(run_id=_RUN_ID))
+    return header + "".join(
+        kata_board.format_line(
+            utc=utc, seq=i, agent=agent, type=typ, task=task, msg=msg
+        )
+        for i, (utc, agent, typ, task, msg) in enumerate(rows, start=1)
+    )
 
 # --- Real ANSI theme bytes (mirror statusline_chain._ANSI_DIM/_ANSI_RESET) -------------
 DIM = "\x1b[2m"
@@ -417,9 +438,9 @@ def test_liveness_boundary_stale_at_deadline_plus_epsilon():
 def test_liveness_board_corroboration_beats_dispatched():
     # dispatchedAt is STALE, but a recent board PROGRESS heartbeat for the task ⇒ FRESH
     entry = _entry("coder", "opus", "H", STALE)
-    board = (
-        "2026-07-14T11:00:00+00:00 | worker-t1 | CLAIM | t1 | starting\n"
-        "2026-07-14T11:59:00+00:00 | worker-t1 | PROGRESS | t1 | 3/5 writing tests\n"
+    board = _cursor(
+        ("2026-07-14T11:00:00+00:00", "worker-t1", "CLAIM", "t1", "starting"),
+        ("2026-07-14T11:59:00+00:00", "worker-t1", "PROGRESS", "t1", "3/5 writing tests"),
     )
     assert kc.liveness(entry, board, "t1", now=NOW, deadline_minutes=10) is True
 
@@ -427,15 +448,34 @@ def test_liveness_board_corroboration_beats_dispatched():
 def test_liveness_board_only_matches_own_task():
     # a fresh heartbeat for a DIFFERENT task must not rescue this stale entry
     entry = _entry("coder", "opus", "H", STALE)
-    board = "2026-07-14T11:59:00+00:00 | worker-t2 | PROGRESS | t2 | 1/2 building\n"
+    board = _cursor(
+        ("2026-07-14T11:59:00+00:00", "worker-t2", "PROGRESS", "t2", "1/2 building")
+    )
     assert kc.liveness(entry, board, "t1", now=NOW, deadline_minutes=10) is False
 
 
 def test_liveness_board_ignores_non_heartbeat_types():
     # DONE/NOTE/BLOCK are not CLAIM/PROGRESS ⇒ do not corroborate liveness
     entry = _entry("coder", "opus", "H", STALE)
-    board = "2026-07-14T11:59:00+00:00 | worker-t1 | DONE | t1 | finished\n"
+    board = _cursor(
+        ("2026-07-14T11:59:00+00:00", "worker-t1", "DONE", "t1", "finished")
+    )
     assert kc.liveness(entry, board, "t1", now=NOW, deadline_minutes=10) is False
+
+
+def test_liveness_board_does_not_misread_seq_as_agent():
+    """MIGRATION PROOF: the canonical parser puts each field where it belongs.
+
+    The old hand-rolled 5-field split read the migrated grammar's ``seq`` as the
+    agent and the agent as the TYPE — so a PROGRESS line's TYPE field read as an
+    agent-id, no heartbeat was ever found, and every worker rendered STALE.
+    """
+    entry = _entry("coder", "opus", "H", STALE)
+    board = _cursor(
+        ("2026-07-14T11:59:00+00:00", "worker-t1", "PROGRESS", "t1", "3/5 writing tests")
+    )
+    assert kc._latest_board_heartbeat(board, "t1") is not None
+    assert kc.liveness(entry, board, "t1", now=NOW, deadline_minutes=10) is True
 
 
 def test_liveness_never_raises_on_garbage_board():
@@ -448,9 +488,40 @@ def test_liveness_never_raises_on_garbage_board():
         "2026-13-99T99:99 | x | PROGRESS | t1 | msg",  # unparseable ts
         "",
         "\n\n\n",
+        LEGACY_LINE,  # the LEGACY 5-field grammar: refused, never mis-parsed
+        _cursor(("2026-07-14T11:59:00+00:00", "w", "CLAIM", "t1", "ok")) + LEGACY_LINE,
     ):
         result = kc.liveness(entry, garbage, "t1", now=NOW, deadline_minutes=10)
         assert isinstance(result, bool)
+
+
+def test_latest_board_heartbeat_records_a_cursor_refusal(caplog):
+    """The fail-soft is at the CONSUMER, but the refusal is RECORDED — never a silent drop."""
+    import logging
+
+    board = _cursor(("2026-07-14T11:59:00+00:00", "w", "PROGRESS", "t1", "1/2 x")) + LEGACY_LINE
+    with caplog.at_level(logging.WARNING, logger="kata_crew"):
+        assert kc._latest_board_heartbeat(board, "t1") is None
+    assert any("cursor REFUSED" in r.getMessage() for r in caplog.records), (
+        "a refused cursor must be logged, not swallowed"
+    )
+
+
+def test_liveness_refused_cursor_degrades_to_stale_never_fabricated_fresh(caplog):
+    """A refused cursor must never rescue a stale entry into a fabricated ▰."""
+    entry = _entry("coder", "opus", "H", STALE)
+    board = _cursor(("2026-07-14T11:59:00+00:00", "w", "PROGRESS", "t1", "1/2 x")) + LEGACY_LINE
+    assert kc.liveness(entry, board, "t1", now=NOW, deadline_minutes=10) is False
+
+
+def test_latest_board_heartbeat_absent_board_records_nothing(caplog):
+    """Absence is not a refusal: an empty/None board logs nothing."""
+    import logging
+
+    with caplog.at_level(logging.WARNING, logger="kata_crew"):
+        assert kc._latest_board_heartbeat("", "t1") is None
+        assert kc._latest_board_heartbeat(None, "t1") is None
+    assert not caplog.records
 
 
 def test_liveness_never_raises_on_non_string_board():
