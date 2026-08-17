@@ -428,3 +428,41 @@ from merges+attestations alone, full gauntlet re-run 4/4 at the cured HEAD, CI c
 cd5e2d5 intact. Residual table carried in the verdict. **Wave 3 unlocked.** Operator
 surface: D-22 (the burn record carried a false claim for one gate cycle) + the two G3
 re-approvals (one revert each).
+
+## Wave-3 integration record (2026-08-16 -- cure of the wave-gate F1/F2 records findings; every fact below mechanically derived, not written from intent)
+
+- **Five merges, trailers re-derived raw** (`git log --merges 5993402..HEAD --format=...`):
+  `6bd7e7d tm-w2-cursor-grammar · 4ee15af tm-w3-seam-engine · d5fd1ee
+  tm-w3-evidence-identity · 58732cb tm-w3-seam-engine · f4e962f tm-w2-cursor-grammar`.
+  (G10.2 verification recorded for ALL five, curing the one-of-five gap.)
+- **D-27 · The CI red strand D-26 predates (instances 2 and 3 of the D-25/D-26
+  platform-divergence class):** run 31989512531 went RED on the ubuntu leg only, forcing
+  two further fixes AFTER D-26 was written -- `2bb51ec` (the rename pin made
+  platform-honest, PLUS its ordered sweep finding a REAL production defect: `claim_record`'s
+  retention move would silently clobber a retained record on POSIX, returning a false win on
+  Linux only -- now refused uniformly pre-rename, safe because the election serializes the
+  window) and `451bf4b` (cursor publication made complete-or-absent + exclusive via
+  temp+os.link, closing a POSIX strand where a zero-byte cursor was observable and two
+  racers could both skip rotation -- falsified LOCALLY pre-fix 5/12 rounds, 0 post-fix).
+  D-26's "cures verified" scope is hereby corrected: it was written before this strand.
+- **Green CI citation (the wave's proof):** run 31990449823 @ `6bd7e7d` (== the wave tip,
+  zero post-CI commits) -- SUCCESS on both jobs: gauntlet (windows-latest) 95272902603 ·
+  gauntlet (ubuntu-latest) 95272902671.
+- **NEW carried residual (lifted from the 451bf4b docstring per PD-2
+  labels-travel-with-the-claim):** `_publish_cursor`'s fallback for filesystems without
+  usable hardlinks reverts to exclusive-create-then-write, whose zero-byte window is a
+  stated residual -- now operator-visible here, and a W4-brief input.
+- **Post-W2-gate note for the next gate:** `52dd729` + `451bf4b` are post-W2-gate changes
+  to W2-gated `kata_board` contracts, attributed `tm-w2-cursor-grammar` -- judge-ordered
+  (rotation TOCTOU) and CI-forced (POSIX strand); NOT drift.
+- **F2 cure -- D-25 operator-surface line:** the D-25 erratum REPLACES a mechanism named in
+  the frozen gated DESIGN (S1.5 "atomic claim by os.rename" -> O_CREAT|O_EXCL election;
+  retention rename unchanged). **Surfaced to the operator at the wave report + handoff as a
+  vetoable-by-objection erratum** (the D-8/D-9 precedent), with the raw-OS measurements as
+  its evidence.
+- **N1 label (the D-22 precedent):** BOTH W3 surfaces have ZERO production callers today --
+  the seam engine until W4 wires the ~52 launch sites (the dogfood rule), the evidence
+  identity gate until W5/W7 wire consumers. Legitimate per the frozen PLAN, stated here so
+  the record carries what the docstrings claim.
+- D-23..D-26 physically sit under the Wave-2 heading (append-only discipline); this section
+  is wave 3's record of them plus the strand above.
