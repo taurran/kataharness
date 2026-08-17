@@ -969,7 +969,7 @@ PROTOCOL_FINGERPRINTS: dict[str, str] = {
     "prime-directives.md": "3d5787e3bab577bd0ae3111bcfcad8712fd69dde43b9f61af2c54d4fd378b829",
     "recall.md": "6edfd018c9c4d62f27f9b94e081e6e15b4002dd13a2277aa7d214ddff4f0d405",
     "reuse-claims.md": "4cc12760aca1c920f72f833b9f7b7a6131e21ed447cc3bcc2ef8b4d52921f732",
-    "state.md": "19e0e36c263df02170133de4271f07566fb8e7cc94e0364f843d2c012d27c767",
+    "state.md": "dd5151e5c009219b2577359f3c63334f4bf628bd4b2a33a8ec0e13898fed77f7",
     "steering.md": "df9bed6779b1e96244d9c0f087bb3a7c450187b44bad8b9857fab62f2086f5b4",
     "validation-misses.md": "e91ebdad99de2e7d38f49fbc00ab8c5a1c1a45a2d34bd544ed3fca4fd8ede461",
 }
