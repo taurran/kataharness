@@ -365,6 +365,107 @@ def record_accepted_defaults(entries: dict, home: str | Path | None = None) -> P
     return _merge_write({"acceptedDefaults": merged_defaults}, home)
 
 
+# ---------------------------------------------------------------------------
+# TM-A2 / RS-M6 (DESIGN §5.4) — the machine-local home for the trust-model close
+#
+# Two blocks, both machine-local by design and neither ever committed:
+#
+#   machineLocal   — the personal-path values split out of `kata.config` so the committed
+#                    config is clean, comparable run provenance (kata_config's
+#                    MACHINE_LOCAL_KEYS is the authority on WHICH keys those are).
+#   targetConsent  — the per-target first-run consent decisions for committing run
+#                    provenance into a TARGET repo.  Remembered here and NOT in the
+#                    target repo, because the target repo is the thing being consented to;
+#                    a consent record living inside it would be self-certifying.
+# ---------------------------------------------------------------------------
+
+#: Settings key holding the machine-local values split out of `kata.config`.
+MACHINE_LOCAL_BLOCK = "machineLocal"
+
+#: Settings key holding per-target first-run consent decisions (RS-M6).
+TARGET_CONSENT_BLOCK = "targetConsent"
+
+
+def record_machine_local(values: dict, *, home: str | Path | None = None) -> Path:
+    """Merge machine-local config values into the ``machineLocal`` block (per-key last-write-wins).
+
+    ``values`` is ``{dotted_key: value}`` as produced by
+    ``kata_config.split_machine_local``.  Keys absent from *values* are preserved — a
+    migration that moves one key must never erase another machine's earlier one.
+
+    Fail-closed on a corrupt settings file (C-4): ``_load_existing`` RAISES and the file is
+    left byte-unchanged.  A writer about to overwrite must not destroy data it cannot
+    understand.
+    """
+    if not isinstance(values, dict):
+        raise ValueError("kata_settings: machineLocal values must be a dict")
+    for key in values:
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError(f"kata_settings: machineLocal key must be a non-empty str: {key!r}")
+    p = settings_path(home)
+    existing = _load_existing(p)  # fail-closed
+    merged = {**existing.get(MACHINE_LOCAL_BLOCK, {}), **values}
+    return _merge_write({MACHINE_LOCAL_BLOCK: dict(sorted(merged.items()))}, home)
+
+
+def machine_local(home: str | Path | None = None) -> dict:
+    """The recorded machine-local config values (``{}`` when none/unreadable)."""
+    block = read_settings(home).get(MACHINE_LOCAL_BLOCK)
+    return dict(block) if isinstance(block, dict) else {}
+
+
+def record_target_consent(
+    target: str, decision: dict, *, home: str | Path | None = None
+) -> Path:
+    """Record the RS-M6 first-run consent decision for one TARGET repo.
+
+    ``decision`` is ``{"granted": bool, "by": str, "at": ISO-utc}``.  All three are
+    REQUIRED and validated: a consent record missing its ``by``/``at`` is exactly the
+    unattributable approval ``protocol/deferral.md`` refuses to credit, and a
+    ``granted`` that is not a bool is the silent-permissive class (D136).
+
+    Per-target last-write-wins — an operator may change their mind, and the change is a
+    deliberate re-record, never an inferred one.  Fail-closed on a corrupt settings file.
+    """
+    if not isinstance(target, str) or not target.strip():
+        raise ValueError("kata_settings: consent target is required")
+    if not isinstance(decision, dict):
+        raise ValueError("kata_settings: consent decision must be a dict")
+    if not isinstance(decision.get("granted"), bool):
+        raise ValueError("kata_settings: consent decision 'granted' must be a bool")
+    for field in ("by", "at"):
+        if not isinstance(decision.get(field), str) or not decision[field].strip():
+            raise ValueError(
+                f"kata_settings: consent decision {field!r} must be a non-empty string — "
+                "an unattributable consent record is never credited"
+            )
+    block = {
+        "granted": decision["granted"], "by": decision["by"], "at": decision["at"],
+    }
+    p = settings_path(home)
+    existing = _load_existing(p)  # fail-closed
+    merged = {**existing.get(TARGET_CONSENT_BLOCK, {}), target: block}
+    return _merge_write({TARGET_CONSENT_BLOCK: dict(sorted(merged.items()))}, home)
+
+
+def target_consent(target: str, *, home: str | Path | None = None) -> dict | None:
+    """The remembered consent decision for *target*, or ``None`` when none is recorded.
+
+    ``None`` means UNASKED and must never be read as declined OR as granted — it is the
+    condition that triggers the consent moment, and both coercions are wrong in opposite
+    directions.  A malformed stored entry also returns ``None``: an entry a reader cannot
+    understand has not recorded a decision, so the operator is asked again rather than
+    having a broken record spent on their behalf.
+    """
+    block = read_settings(home).get(TARGET_CONSENT_BLOCK)
+    if not isinstance(block, dict):
+        return None
+    entry = block.get(target)
+    if not isinstance(entry, dict) or not isinstance(entry.get("granted"), bool):
+        return None
+    return {"granted": entry["granted"], "by": entry.get("by"), "at": entry.get("at")}
+
+
 def delete_settings_key(key: str, home: str | Path | None = None) -> bool:
     """Remove ``key`` from the settings file; return whether a delete happened.
 

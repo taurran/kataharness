@@ -1162,6 +1162,68 @@ def test_redact_clean_text_untouched():
     assert counts == {}
 
 
+# ----- RS-M7: the class-table EXTENSION (trust-model close-machinery) -----
+#
+# One scrub, two call points.  These tests bind the CLASSES; the two call points and
+# their (different) blocking postures are tested in tests/test_kata_close.py.
+
+@pytest.mark.parametrize("cls,sample,secret", [
+    ("anthropic-key", "use sk-ant-api03-AbCdEf0123456789xyz now", "sk-ant-api03-AbCdEf0123456789xyz"),
+    ("openai-key", "OPENAI sk-abcdefghijklmnopqrstuvwx here", "sk-abcdefghijklmnopqrstuvwx"),
+    ("google-api-key", "AIzaSyA1234567890abcdefghijklmnopqrstuv x", "AIzaSyA1234567890abcdefghijklmnopqrstuv"),
+    ("slack-token", "xoxb-1234567890-abcdefghij done", "xoxb-1234567890-abcdefghij"),
+    ("jwt", "auth eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NX0.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1g end",
+     "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NX0.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1g"),
+    ("connection-string", "postgres://svc:hunter2@db.internal/x", "postgres://svc:hunter2@"),
+    ("bearer", "Authorization: Bearer abcdefghijklmnop.qrst", "Bearer abcdefghijklmnop.qrst"),
+    ("api-key", "api_key = ABCDEFGHIJ", "ABCDEFGHIJ"),
+    ("credential", "client_secret: zzz-9999-yyy", "zzz-9999-yyy"),
+])
+def test_redact_extension_classes(cls, sample, secret):
+    """Each RS-M7 class is detected, named, and its value removed."""
+    scrubbed, counts = learn_feed.redact(sample)
+    assert secret not in scrubbed, f"{cls}: the value survived the scrub"
+    assert f"[REDACTED:{cls}]" in scrubbed, f"{cls}: wrong class name recorded"
+    assert counts.get(cls, 0) >= 1
+
+
+def test_redact_extension_preserves_the_original_six_apply_order():
+    """BC: the first six classes keep their names, order, and counts (rows 1-6 unmoved)."""
+    names = [cls for cls, _ in learn_feed._REDACTION_PATTERNS]
+    assert names[:6] == [
+        "aws-key", "github-pat", "private-key", "password", "token", "secret"
+    ]
+    text = "AKIAABCDEFGHIJKLMNOP password: hunter2 token=abc123 secret: s3cr3t"
+    _, counts = learn_feed.redact(text)
+    assert counts == {"aws-key": 1, "password": 1, "token": 1, "secret": 1}
+
+
+def test_redact_extension_is_deterministic_same_input_same_bytes():
+    """Doctrine: the scrub is a fixed-order pass; two runs produce identical bytes."""
+    text = "sk-ant-api03-AAAAAAAAAAAAAAAAAA and api_key = QQQQQQQQQQ and Bearer aaaaaaaaaaaa.bb"
+    first = learn_feed.redact(text)
+    second = learn_feed.redact(text)
+    assert first == second
+
+
+def test_redact_extension_does_not_fire_on_ordinary_prose():
+    """Over-firing is a real cost: a scrub that eats normal text trains people to ignore it."""
+    text = (
+        "The api key registry is documented in protocol/config.md; the bearer of the "
+        "token contract is the seam. See https://example.com/docs and sk-ip the rest."
+    )
+    scrubbed, counts = learn_feed.redact(text)
+    assert counts == {}
+    assert scrubbed == text
+
+
+def test_redact_never_raises_on_pathological_input():
+    """ReDoS-safety by construction: bounded quantifiers, linear scan, no nesting."""
+    text = ("a" * 20000) + " Bearer " + ("b" * 20000) + " sk-" + ("c" * 20000)
+    scrubbed, counts = learn_feed.redact(text)
+    assert isinstance(scrubbed, str) and isinstance(counts, dict)
+
+
 def test_render_redacts_and_marks_never_blocks():
     """SB-L4: the page is still emitted, scrubbed, with frontmatter redactions: N."""
     entry = _entry(body="the value was password: hunter2 in the log")
