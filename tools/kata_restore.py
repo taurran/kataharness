@@ -14,7 +14,14 @@ Implements the five-step restore flow from DESIGN §2 B3:
 5. restore (top-level)  — orchestrates steps 1–4 and writes the board back to
    .kata/board.md WITHOUT rotation (no archive file).
 
-STDLIB + subprocess(git) + yaml (pyyaml, a tools dependency); no validate_skills.
+Also carries the PLAN-side reader for the per-task ``evidence:`` declaration
+(TM-F1 / R-M9, trust-model wave 2): ``parse_plan_tasks(..., check_evidence=True)`` and
+``parse_plan_evidence`` carry and grammar-check the map through the closed three-form
+grammar in ``tools/evidence_grammar.py`` (DESIGN §3.5).  The plan-task contract is
+unchanged for every existing caller — the check is keyword-only and defaults OFF.
+
+STDLIB + subprocess(git) + yaml (pyyaml, a tools dependency) + evidence_grammar
+(stdlib-only sibling module); no validate_skills.
 
 Invariants (DESIGN §2 B3 / §0 C2 / §0 L1):
 - Re-dispatch set = PLAN-derived, never board-derived.
@@ -40,6 +47,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
+import evidence_grammar
 
 # The ONE canonical cursor parser (protocol/board.md / DESIGN §2.2).  ``fold_board``
 # owns no grammar of its own — a second parser is a second source of truth.
@@ -256,29 +265,15 @@ _KATA_SUPERSEDE_PREFIX_RE = re.compile(r"^\s*Kata-Supersede\s*:", re.IGNORECASE)
 _FM_RE = re.compile(r"^---[ \t]*\n(.*?)\n---", re.DOTALL)
 
 
-def parse_plan_tasks(plan_path: str | Path) -> set[str]:
-    """Parse task-ids from a frozen PLAN.md's YAML frontmatter.
+def _plan_frontmatter(plan_path: str | Path) -> dict:
+    """Read a frozen PLAN's YAML frontmatter as a dict, or raise.
 
-    The YAML frontmatter ``ownership:``, ``waves:``, ``depends_on:``, and
-    ``builds_against:`` (Freeze/Float M1-L2) keys are AUTHORITATIVE for the
-    complete task-id set.  The four maps cover every per-task key the orchestrator
-    reads (RUBRIC.md / kata-orchestrate precondition 2).
-    Heading-based scraping is NOT used — it was a drift-prone second source of truth
-    that silently dropped tasks with colon separators or non-standard hash levels.
-
-    Returns
-    -------
-    set[str]
-        Union of task-ids from ``ownership:`` keys, ``depends_on:`` keys,
-        ``builds_against:`` keys, and task-ids in ``waves:`` value lists.
-
-    Raises
-    ------
-    ValueError
-        When the PLAN has no YAML frontmatter, the frontmatter is not valid YAML,
-        or the frontmatter contains no ownership/waves/depends_on/builds_against task structure.
-        Never returns an empty or partial set silently — a silent empty set is the
-        under-dispatch bug this function is designed to prevent.
+    Extracted from ``parse_plan_tasks`` so the evidence reader (TM-F1/R-M9) parses the
+    SAME frontmatter through the SAME failure messages — two independent readers of one
+    file is exactly how the two would drift apart.  Every raised message here is
+    byte-identical to the one ``parse_plan_tasks`` raised before the extraction; its
+    error-message contract is pinned by tests ("refusing to under-dispatch" /
+    "cannot determine the run's task set") and did not move.
     """
     path = Path(plan_path)
     try:
@@ -314,6 +309,49 @@ def parse_plan_tasks(plan_path: str | Path) -> set[str]:
             "ownership/waves/depends_on/builds_against frontmatter; refusing to under-dispatch. "
             "Resolve manually."
         )
+    return fm
+
+
+def parse_plan_tasks(plan_path: str | Path, *, check_evidence: bool = False) -> set[str]:
+    """Parse task-ids from a frozen PLAN.md's YAML frontmatter.
+
+    The YAML frontmatter ``ownership:``, ``waves:``, ``depends_on:``, and
+    ``builds_against:`` (Freeze/Float M1-L2) keys are AUTHORITATIVE for the
+    complete task-id set.  The four maps cover every per-task key the orchestrator
+    reads (RUBRIC.md / kata-orchestrate precondition 2).
+    Heading-based scraping is NOT used — it was a drift-prone second source of truth
+    that silently dropped tasks with colon separators or non-standard hash levels.
+
+    Parameters
+    ----------
+    plan_path
+        Path to the frozen PLAN.md.
+    check_evidence
+        Keyword-only, default ``False`` — **the pre-TM-F1 contract is unchanged for every
+        existing caller.**  When ``True``, the per-task ``evidence:`` frontmatter map is
+        additionally carried and grammar-checked (TM-F1/R-M9): a task with no declaration,
+        or a declaration outside the closed three-form grammar, RAISES.  The return type
+        is unchanged either way — the carried map is available from
+        :func:`parse_plan_evidence`, so no caller's unpacking has to change to gain the
+        check.
+
+    Returns
+    -------
+    set[str]
+        Union of task-ids from ``ownership:`` keys, ``depends_on:`` keys,
+        ``builds_against:`` keys, and task-ids in ``waves:`` value lists.
+
+    Raises
+    ------
+    ValueError
+        When the PLAN has no YAML frontmatter, the frontmatter is not valid YAML,
+        or the frontmatter contains no ownership/waves/depends_on/builds_against task structure.
+        Never returns an empty or partial set silently — a silent empty set is the
+        under-dispatch bug this function is designed to prevent.
+        Also, under ``check_evidence=True``, on any missing or grammar-invalid ``evidence:``
+        declaration (``evidence_grammar.EvidenceGrammarError``, a ``ValueError`` subclass).
+    """
+    fm = _plan_frontmatter(plan_path)
 
     task_ids: set[str] = set()
 
@@ -350,7 +388,76 @@ def parse_plan_tasks(plan_path: str | Path) -> set[str]:
             "Resolve manually."
         )
 
+    if check_evidence:
+        evidence_grammar.check_evidence_map(
+            fm.get("evidence"), task_ids, repo_root=_derive_repo_root(plan_path)
+        )
+
     return task_ids
+
+
+def _derive_repo_root(plan_path: str | Path) -> Path | None:
+    """Walk up from *plan_path* to the enclosing git repo root, or ``None``.
+
+    The declared ``artifact:``/``test:`` values are REPO-relative, so the containment
+    guard needs the repo root, not the PLAN's own directory.  When no ``.git`` is found
+    (a PLAN handed over out of tree, a fixture in a bare tmp dir) the answer is ``None``
+    and the grammar skips containment ONLY — the ``..`` traversal guard, the leading-``-``
+    guard, and the shape guards all still apply, so a fixture without a repo is checked
+    less deeply but never checked permissively.
+    """
+    here = Path(plan_path).resolve().parent
+    for candidate in (here, *here.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    return None
+
+
+def parse_plan_evidence(
+    plan_path: str | Path,
+    *,
+    repo_root: str | Path | None = None,
+) -> dict[str, tuple[evidence_grammar.EvidenceDeclaration, ...]]:
+    """Carry + grammar-check a frozen PLAN's per-task ``evidence:`` map (TM-F1 / R-M9).
+
+    The DESIGN §5.1 rule is that **no plan item freezes without its completion-evidence
+    declaration**.  This is the reader side of it: it parses the same frontmatter
+    ``parse_plan_tasks`` reads, derives the authoritative task set the same way, and hands
+    every declaration to the closed three-form grammar
+    (``tools/evidence_grammar.py``, DESIGN §3.5).
+
+    Fail-closed: a missing map, a task with no declaration, a declaration outside the
+    grammar (a freeform command string above all), a traversal attempt, or an unregistered
+    probe name all RAISE.  Nothing is executed here — this is a declaration check, and the
+    ``artifact:`` form is never executed at all, by contract.
+
+    Parameters
+    ----------
+    plan_path
+        Path to the frozen PLAN.md.
+    repo_root
+        Root the declared paths/node-IDs are relative to, for the containment guards.
+        Defaults to the PLAN's own repo root when it can be derived from the path, else
+        containment is skipped (the ``..`` / leading-``-`` / shape guards still apply).
+
+    Returns
+    -------
+    dict[str, tuple[EvidenceDeclaration, ...]]
+        ``{task_id: (declaration, ...)}`` for EVERY task in the plan's task set, keys in
+        sorted order.
+
+    Raises
+    ------
+    ValueError
+        On any frontmatter failure (same messages as ``parse_plan_tasks``) or any
+        ``evidence_grammar.EvidenceGrammarError`` (a ``ValueError`` subclass).
+    """
+    fm = _plan_frontmatter(plan_path)
+    task_ids = parse_plan_tasks(plan_path)
+    root = _derive_repo_root(plan_path) if repo_root is None else repo_root
+    return evidence_grammar.check_evidence_map(
+        fm.get("evidence"), task_ids, repo_root=root
+    )
 
 
 # ---------------------------------------------------------------------------
