@@ -952,7 +952,7 @@ PROTOCOL_FINGERPRINTS: dict[str, str] = {
     # Heritage key `board.md` renamed to `cursor.md` with the file (W4). The digest below is
     # the PRE-rename value and is EXPECTED to mismatch until the conductor's G3 re-approval
     # paste — the two-step working, not a regression. Never paste it from a builder.
-    "cursor.md": "0ccfc698ac5fc435f9c9e19d137420f5fcd483c631fa059888e6e9fdf644bace",
+    "cursor.md": "efdaf04727280033b9d755d4703304d3185284bcef588cc476601cf5a6733ade",
     "deferral.md": "249b9eb666be0988c1f2529175dd98fdff0707baff8c866cbe01b41d8c0829e8",
     "dependencies.md": "652df1a8f46b93cd13f1e54ba19ec8725ec9e48c02e4b03ea5a8e27bcafe972c",
     "engram.md": "ad01a873d4aff387c85f3798db7494ed6750aab4c1054b876e9282c9fbf2d879",
