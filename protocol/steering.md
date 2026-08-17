@@ -15,7 +15,7 @@ Directives, `protocol/prime-directives.md`, exist to prevent.)
    `kata_steer.stop_requested(kata_dir)`. On a positive result the orchestrator: finishes nothing
    new, **parks** in-flight tasks (they resume via the normal restore path), writes/refreshes the
    `HANDOFF.md`, and stops cleanly **at the current boundary**. This composes with the board's
-   "never a blind kill" rule (`protocol/board.md`) — a stop is a boundary halt, not a `SIGKILL`.
+   "never a blind kill" rule (`protocol/cursor.md`) — a stop is a boundary halt, not a `SIGKILL`.
 2. **Active directives** — the non-empty, non-placeholder lines under `## Active directives` in
    `STEERING.md`, read by `kata_steer.read_active_directives(path)` (deterministic: source order,
    no dedupe). Each is operator guidance for the run (e.g. "prioritize the auth module",

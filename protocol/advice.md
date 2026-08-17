@@ -3,7 +3,7 @@
 Structured request/response payload for the **advisor consult** (the advisor-executor pattern). Machine
 state — JSON at `.kata/advice/<task-id>-<n>.json`, where `n` is the **1-based per-task consult ordinal**
 (the first consult on task `T4` is `.kata/advice/T4-1.json`, the second `.kata/advice/T4-2.json`, …). This
-is the durable conductor-side record of one consult; the append-only board (`protocol/board.md`) carries
+is the durable conductor-side record of one consult; the append-only board (`protocol/cursor.md`) carries
 only the one-line pointers (a `NOTE` at request, a `DECISION` at disposition — see *Board-line contract*).
 
 The advice payload is **machine-ingestible, agent-consumed, automated in-execution** (G-7): the response is
@@ -82,7 +82,7 @@ against the composed payload finds no divergence.
 
 ## Board-line contract
 
-Two board lines per consult (`protocol/board.md` register), plus the spend line:
+Two board lines per consult (`protocol/cursor.md` register), plus the spend line:
 
 - **NOTE at request** (worker/conductor lateral info): the consult was requested — task, event, question
   summary. A NO-FIRE on any legality conjunct (`advisor_status`) is *also* a surfaced `NOTE` (the reason),
@@ -154,5 +154,5 @@ never overrides the default-FAIL gate or a LOCKED decision.
 - `protocol/escalation.md` — the `advice-requested` escalation kind a worker/planner raises to request a
   consult.
 - `protocol/config.md` — the `advisor` block (legality/spend grant, budget pool, hooks).
-- `protocol/board.md` — the `NOTE` / `DECISION` board register the consult writes to.
+- `protocol/cursor.md` — the `NOTE` / `DECISION` board register the consult writes to.
 - `skills/plan/kata-advise/SKILL.md` — the advisor skill the conductor dispatches (fresh-context, no-write).

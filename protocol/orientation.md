@@ -19,7 +19,7 @@ drop **stable**. Each tier names its sources; absent sources degrade gracefully 
 |---|---|---|
 | **stable** | identity · **the Prime Directives** · the spine · conventions · model-routing — the non-negotiables, same every task | `protocol/prime-directives.md` (always injected, never summarized away), root `AGENTS.md` (+ adapter `CLAUDE.md` notes), `docs/STANDARDS.md` |
 | **context** | where the work sits + who it collaborates with | the **frozen DESIGN/PLAN slice** for this task · **nearest-module `AGENTS.md`/`CLAUDE.md`** (vertical rollup) · `CONTEXT.md` glossary · relevant ADRs · **lateral adjacency pointers** (below) · **worker recall brief** (below, D156 — first context item dropped under budget pressure) |
-| **volatile** | the assignment + current state | task `<action>`/`<owned files>`/`<acceptance>` · `kata-board`/state · open escalations · any inbound `kata-handoff` artifact |
+| **volatile** | the assignment + current state | task `<action>`/`<owned files>`/`<acceptance>` · `kata-cursor`/state · open escalations · any inbound `kata-handoff` artifact |
 
 ## Vertical rollup (the 2026 nested-AGENTS.md standard)
 Compose **root invariants + the nearest module's `AGENTS.md`/`CLAUDE.md` along the path** to the task's owned

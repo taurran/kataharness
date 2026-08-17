@@ -1,7 +1,7 @@
 # protocol/narration.md — narration contract (phase→plain-language map)
 
 The narration contract for the **conversation channel** — the human-facing voice emitted by the harness
-during a run. This is **distinct from the board/state firehose** (`protocol/board.md`, `.kata/board.md`):
+during a run. This is **distinct from the board/state firehose** (`protocol/cursor.md`, `.kata/board.md`):
 the board carries every granular machine event for the dashboard; narration carries the human-meaningful
 milestones and alerts in the conversation itself.
 
@@ -43,7 +43,7 @@ to the user**; the user sees only the plain-language phrasing.
 **Narrate at meaningful boundaries; stay quiet between.**
 
 The harness narrates when a phase transition or a meaningful milestone actually occurs — not as a progress
-stream. The `改善型` dashboard, the statusline, and the append-only board (`protocol/board.md`) carry the
+stream. The `改善型` dashboard, the statusline, and the append-only board (`protocol/cursor.md`) carry the
 granular live view for whoever wants to watch; they are the firehose, not the conversation.
 
 **What counts as a meaningful boundary:**
@@ -71,7 +71,7 @@ something worth reading. Silence is not neglect — it is the dashboard's job to
 regardless of routine quiet.**
 
 This invariant is **never tiered** and admits no exceptions. It is the narration-channel analogue of the
-board's `ESCALATE`/`BLOCK` invariant (see `protocol/board.md`), adapted for the conversation:
+board's `ESCALATE`/`BLOCK` invariant (see `protocol/cursor.md`), adapted for the conversation:
 
 | Trigger | Narration action |
 |---|---|

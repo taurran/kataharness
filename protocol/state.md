@@ -4,7 +4,7 @@ Canonical schema for the live run state owned by the plan-guardian ([[kata-orche
 kept separate from durable Obsidian docs ([[STANDARDS]] §5).
 
 - **Single writer.** ONLY the orchestrator writes this file. Workers never write it (they append to
-  [[kata-board]]). This is the fix for the shared-state corruption in [[LESSONS-LEARNED]] L3.
+  [[kata-cursor]]). This is the fix for the shared-state corruption in [[LESSONS-LEARNED]] L3.
 - **Location:** `.kata/state.json` in the target repo's integration worktree.
 - **Shape:**
 ```json
