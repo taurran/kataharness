@@ -966,7 +966,7 @@ PROTOCOL_FINGERPRINTS: dict[str, str] = {
     "iac-safety.md": "ae8971eaf8ec94b123129663148a4453a72f2b7fdc4c00abde15d5bca36f62d0",
     "intent.md": "3a45250790721964fc3140420cedf5e2054551e438a90190568760b573245722",
     "narration.md": "e751971438b9ed2dce081b66cae8b7ac9544fc7d2f59f51cdc51c46b4cb12f33",
-    "observability.md": "d9d71aa9f8c596ff1f391158038ee5fe08954031a3f287672b544154e66ef439",
+    "observability.md": "95a2052a09d1f9ea3a1beb419d46007e1788ebf3622e3ff513430d0280a78c0f",
     "orchestration.md": "bc0aee0520b48b69f94f3b9242ac427bb587866e7d45dd74d221317de02b2daf",
     "orientation.md": "c4393c4c05f59c581e9e0f73814d3a35c9bdd3ef71b618cf51902a028a79cce9",
     "persona.md": "987ab6fd61e6688508b638e6a05118371aa061f319167f944ab16a45cf1c23ab",
