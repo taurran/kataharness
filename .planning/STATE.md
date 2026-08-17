@@ -7,6 +7,41 @@ last_updated: "2026-08-16T12:00:00.000Z"
 
 # STATE — KataHarness
 
+> **CURRENT (2026-08-17 — EXECUTION WINDOW #1 CLOSED: Trust Model burn waves 1–3 COMPLETE,
+> each gate-PASS; branch `burn/trust-model-01` @ `6a06b4b` PUSHED; CI GREEN both platforms
+> (run 31990449823); waves 4–9 hand off to EXECUTION WINDOW #2 via
+> `.planning/ORIENTATION-EXECUTION-2.md` on the burn branch):**
+> **(1) STEP 0 done:** PLAN six-row-gated PASS-WITH-FOLDS + FROZEN per D169 (`08ce3da`),
+> D173 task confirmed; `GATE-PLAN.md` is the record; operator veto standing.
+> **(2) Wave 1 (7 tasks):** 🔴 BL-X14 root-caused (filed hypothesis FALSIFIED — `cd /d`
+> under `/bin/sh`, not import paths; sink now closed-grammar structured argv) — **CI's
+> 12-day red ENDED** (run 31979757460); BL-X15 fixed platform-independently; BL-X12
+> three-quarters pre-existing (`2a1b1cf`, the backlog lied — writeback owed) + the
+> `--decisions` wrapped-span residue BUILT (`cd8723b`, neighbor-corruption found);
+> `protocol/deferral.md` NEW + clause-pinned + fingerprinted; exec-safety `evidence:`
+> registration; hook capability probe (OBSERVED: deny works, fail-OPEN on hook error,
+> matcher says Agent-not-Task, capture needs both edges); **the trust-model grill's
+> retroactive emit RAN — 29 pages into Kiban**.
+> **(3) Wave 2 (5+1 tasks):** the CURSOR — §2.2 grammar transcribed (kata_board = the one
+> writer/parser), durability (trails/<runId> refs — DESIGN erratum D-17), the closed
+> `evidence:` grammar + reflexive check against the burn's own frozen PLAN, INTENT freeze
+> field, ledger census (15/29 ledgers have NO status key — table filed for the planning
+> window), G8 consumer migration (4 silent 5-field mis-parsers killed). Gate first-round
+> NEEDS_WORK on the CONDUCTOR (six merge trailers lost + a false record sentence — D-22,
+> ruling G10) — cured, PASS on re-verdict.
+> **(4) Wave 3 (2 tasks):** **the SEAM ENGINE** (mint/governor ladder/atomic records/
+> run_start/capture/phase/deny + honest Guardian declaration; live spot-audit PASS) +
+> evidence identity (runId-exact crediting, BL-X11 code + BL-X13). **The burn's deepest
+> catches:** D-25 Windows rename-election no-op (replay control silently broken; cured
+> O_CREAT|O_EXCL, DESIGN §1.5 erratum operator-surfaced) + two POSIX-only production
+> data-loss holes CI's ubuntu leg forced out (D-27). Pattern named (D-26): promised-in-
+> prose/unenforced-at-boundary — the burn's own thesis, caught in its own code.
+> **★ NEXT SESSION = EXECUTION WINDOW #2:** read `ORIENTATION-EXECUTION-2.md` (burn
+> branch) — wave 4 fan-out (3 builders, seam-MINTED dispatches per the dogfood rule,
+> advisor channel), then W5–W9, hook LAST, presentation OUT. Rulings G1–G11 bind.
+> **★ OPERATOR:** the vetoable acts list + owed items in the orientation's OPERATOR GATES.
+> *(Prior CURRENT blocks below are history.)*
+
 > **CURRENT (2026-08-16 evening — MERGED, INSTALLED, TURNED OVER):**
 > **Everything is on master (`de8578c`)** — PR #54 (Backlog Burn 01 + the planning marathon) and
 > PR #56 (Backlog Burn 02 + the loop-bypass reckoning; replaced #55, which GitHub closed instead
