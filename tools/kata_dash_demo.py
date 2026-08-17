@@ -64,7 +64,7 @@ def _append_board_line(
     task: str,
     msg: str,
 ) -> None:
-    """Append one protocol/board.md line via the shared kata_board emitter."""
+    """Append one protocol/cursor.md line via the shared kata_board emitter."""
     kata_board.append_event(board_file.parent, agent, typ, task, msg)
 
 

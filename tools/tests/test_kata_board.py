@@ -474,7 +474,7 @@ def test_cursor_grammar_roundtrip(tmp_path):
         "judge returned",
         {
             "verdict": "PASS",
-            "evidencePointers": ["artifact:protocol/board.md"],
+            "evidencePointers": ["artifact:protocol/cursor.md"],
             "judgeDispatchSeq": spawn_seq,
             "runId": RUN_B,
         },
@@ -599,7 +599,7 @@ def test_msg_with_bare_payload_token_is_refused(tmp_path):
 
 
 def test_legacy_five_field_line_is_refused():
-    """The old grammar (protocol/board.md:9 pre-migration) is a parse REFUSAL."""
+    """The old grammar (protocol/cursor.md:9 pre-migration) is a parse REFUSAL."""
     legacy = "2026-08-16T10:15:00+00:00 | S1a-worker | CLAIM | T1 | starting task"
     with pytest.raises(kata_board.CursorParseError) as exc:
         kata_board.parse_line(legacy)

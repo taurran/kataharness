@@ -41,7 +41,7 @@ skills/<cat>/kata-<verb>-<tier>/SKILL.md    # a thin PEER carrying ONLY its dept
 
 ## Spine vs module
 - **Spine** (always runs — the consistency machine): `kata-grill` · `kata-context` · `kata-design-doc` · `kata-plan` ·
-  `kata-orchestrate` · `kata-board` · `kata-worktree` · `kata-tdd` · `kata-evaluate` · `kata-handoff` ·
+  `kata-orchestrate` · `kata-cursor` · `kata-worktree` · `kata-tdd` · `kata-evaluate` · `kata-handoff` ·
   `kata-orient` · `kata-selfhandoff` · `kata-bootstrap` · `kata-readiness` · (pre-flight, Spec D). Every mode ends at the same `kata-evaluate` default-FAIL gate.
   - `kata-orient` is **spine** — the *receiving* half of the two-way handoff (spine #5): it assembles launch orientation for every dispatched subagent (`protocol/orientation.md`). The writing half is `kata-handoff`.
   - `kata-bootstrap` and `kata-readiness` are **spine** (core, always-available; not optional feature modules): `kata-bootstrap` is the mandatory on-ramp that writes `kata.config`; `kata-readiness` is its pre-flight delegate.
@@ -71,7 +71,7 @@ price a mode + each à-la-carte add. Dominant axis = amplification (spawn ≫ lo
 `kata-plan` 2/3/4) — see the per-tier table above and `.planning/SKILL-COST-RATINGS.md`.
 
 ## Protocol files
-`protocol/config.md` (`kata.config`) · `protocol/dependencies.md` (manifest) · `protocol/board.md` ·
+`protocol/config.md` (`kata.config`) · `protocol/dependencies.md` (manifest) · `protocol/cursor.md` ·
 `protocol/state.md` · `protocol/handoff.md`. Tracking surfaces (the installed-library registry, a future
 `kata-tasklist` board) expose documented pointers here so an *optional* external PM overlay can attach
 without the core depending on it (D30).

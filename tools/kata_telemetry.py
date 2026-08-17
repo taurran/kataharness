@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Any
 
 import footprint
-import kata_board  # the ONE canonical cursor parser (protocol/board.md / DESIGN §2.2)
+import kata_board  # the ONE canonical cursor parser (protocol/cursor.md / DESIGN §2.2)
 from kata_advisor import ADVISOR_OUTCOMES
 
 # ---------------------------------------------------------------------------

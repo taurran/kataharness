@@ -92,7 +92,7 @@ D33). Core repo skills never carry these fields.
 
 ## 2. Naming convention (permeates everything)
 
-- **Skills:** `kata-<verb>` — `kata-grill`, `kata-plan`, `kata-orchestrate`, `kata-board`,
+- **Skills:** `kata-<verb>` — `kata-grill`, `kata-plan`, `kata-orchestrate`, `kata-cursor`,
   `kata-evaluate`, `kata-handoff`, `kata-write-skill`. Verb-first = action-oriented + collision-safe.
 - **Categories (dirs)** = the loop phases: `plan/ coordinate/ execute/ evaluate/ handoff/ meta/ cognition/`.
 - **Layout:** `skills/<category>/<name>/SKILL.md` (+ optional `resources/`, `CHANGELOG.md`).

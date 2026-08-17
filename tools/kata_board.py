@@ -882,7 +882,7 @@ def start_run(
 ) -> RunHeader:
     """Rotate any pre-existing cursor, then write this run's header block.
 
-    The run-isolation duty (see ``protocol/board.md``): a pre-existing cursor is
+    The run-isolation duty (see ``protocol/cursor.md``): a pre-existing cursor is
     moved to ``board.<utc-compact>.archive.md`` before the header is written, so the
     live cursor carries only the current run's events and prior-run CLAIM/DONE pairs
     cannot contaminate the fold.
@@ -1104,7 +1104,7 @@ def append_event(
     never mints identity, because ``runId`` is minted by ONE seam act at run start
     (DESIGN §2.4); an implicit second minting path is the silent-permissive class.
 
-    Line format (``protocol/board.md``)::
+    Line format (``protocol/cursor.md``)::
 
         <utc> | <seq>[~<parent-seq>] | <agent> | <TYPE> | <task> | <msg>[ payload=<path>]
 
@@ -1175,7 +1175,7 @@ def append_progress(
     msg formatted as ``"<step>/<n> <label>"`` (e.g. ``"3/5 writing tests"``).
 
     PROGRESS lines are the MANDATED worker liveness heartbeat (Milestone-1 F3;
-    see protocol/board.md) — read by the dashboard and the orchestrator's
+    see protocol/cursor.md) — read by the dashboard and the orchestrator's
     liveness monitor, excluded from coordination and concurrency evidence.
     They are IGNORED by coordination logic (DECISION/BLOCK/ESCALATE invariants
     are unchanged).
@@ -1236,7 +1236,7 @@ def emit_concurrency(
 ) -> dict:
     """Fold the run's cursor(s) and write ``<kata_dir>/concurrency.json``.
 
-    The canonical emitter behind ``protocol/board.md``'s concurrency-evidence
+    The canonical emitter behind ``protocol/cursor.md``'s concurrency-evidence
     section.  Reads, then folds PURELY, then — and only then — writes: if the fold
     refuses, no artifact is produced.
     """

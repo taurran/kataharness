@@ -19,7 +19,7 @@ Wave field convention:
 
 Cursor grammar (DESIGN §2.2): this module owns NO grammar of its own — it delegates
 every parse to ``kata_board.parse_cursor``, the ONE canonical parser
-(``protocol/board.md``: "a second parser is a second source of truth").  The
+(``protocol/cursor.md``: "a second parser is a second source of truth").  The
 hand-rolled 5-field split this replaced silently mis-read a new-grammar line — seq as
 agent, agent as TYPE — which is exactly the invisible-corruption class the migration
 exists to remove.
@@ -90,7 +90,7 @@ def parse_board(text: str) -> list[BoardEvent]:
     """Parse cursor (``.kata/board.md``) text into an ordered list of BoardEvent.
 
     Delegates to :func:`kata_board.parse_cursor` — the ONE canonical parser
-    (``protocol/board.md``).  Format per DESIGN §2.2::
+    (``protocol/cursor.md``).  Format per DESIGN §2.2::
 
         RUN <run-id>
         <utc> | <seq>[~<parent-seq>] | <agent> | <TYPE> | <task> | <msg>[ payload=<p>]

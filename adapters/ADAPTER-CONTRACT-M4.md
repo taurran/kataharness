@@ -16,7 +16,7 @@ An adapter supporting `inlineEval: on` MUST provide **both**:
 - **(a) Worker board-append at the integration root (S3b).** The worker context can append `CLAIM` /
   `PROGRESS` / `DONE` / `NOTE` / `Kata-Checkpoint:`-bearing commits that are visible from the shared
   `.kata/board.md` at the **integration/target-repo root** (not the per-task worktree's `.kata/`) — the
-  S3b shared-root rule ([`protocol/board.md`](../protocol/board.md)). This is what makes every checkpoint
+  S3b shared-root rule ([`protocol/cursor.md`](../protocol/cursor.md)). This is what makes every checkpoint
   a durable, orchestrator-readable event.
 - **(b) Session kill + fresh-dispatch, confirmed-dead.** The platform can **kill** a dispatched worker
   session and **dispatch a fresh one** from an anchor commit. The kill MUST be **confirmed-dead before any

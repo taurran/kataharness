@@ -7,7 +7,7 @@ description: >-
   (routed: answer-inline / research-needed / human-required). Invoke from kata-orchestrate per dispatch so a
   worker starts oriented, not cold.
 license: Apache-2.0
-version: 0.4.0
+version: 0.5.0
 category: handoff
 status: beta
 agnostic: true
@@ -47,7 +47,7 @@ or dispatch. The full contract is **`protocol/orientation.md`** — this skill i
      `AGENTS.md`/`CLAUDE.md` along the task's owned-files path) · `CONTEXT.md` glossary · relevant ADRs ·
      **lateral adjacency pointers** projected from [[kata-graph]]'s `kata.graph.json` (collaborating modules — a
      path + one-line why, **lazy-loaded, never inlined**; no graph ⇒ skip, vertical rollup still applies).
-   - **volatile** — the task `<action>`/`<owned files>`/`<acceptance>` · [[kata-board]]/state · open
+   - **volatile** — the task `<action>`/`<owned files>`/`<acceptance>` · [[kata-cursor]]/state · open
      escalations · any inbound [[kata-handoff]] artifact (maps directly into context+volatile — see its
      *Orientation tie-in*).
    Over budget ⇒ degrade from the bottom (volatile → pointers) before touching context; never drop stable.
@@ -85,7 +85,7 @@ If no trail → no durable state to restore from; surface as WARN and offer a co
 ### Read the durable board
 `git cat-file -p refs/kata/trail:board.md` reads the last durably committed board snapshot.
 Fold it to a frontier view with the canonical concurrency reduce (`fold_board` in `tools/kata_restore.py`,
-which implements the `protocol/board.md` canonical snippet).  The folded frontier shows which tasks had
+which implements the `protocol/cursor.md` canonical snippet).  The folded frontier shows which tasks had
 in-flight CLAIMs and which had completed CLAIM+DONE at the point of loss.
 
 ### Compute the re-dispatch set (PLAN-minus-integration)

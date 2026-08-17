@@ -7,7 +7,7 @@ description: >-
   high/critical findings; escalate any destroy/replace on stateful resources. Tier 1 only — NO live
   terraform plan or apply.
 license: Apache-2.0
-version: 0.2.0
+version: 0.3.0
 category: execute
 status: beta
 agnostic: true
@@ -40,7 +40,7 @@ See also the sibling specialist: [[kata-iac-cloudformation]].
 ## Hard constraints
 
 - **Stay in your lane.** Edit only the files this task OWNS. Touching another task's file is drift.
-- **Do not re-plan.** Decisions are frozen. If something is unclear, `ESCALATE` to [[kata-board]] and STOP.
+- **Do not re-plan.** Decisions are frozen. If something is unclear, `ESCALATE` to [[kata-cursor]] and STOP.
 - **Tier 1 only — NO live plan or apply.** The harness carries no cloud credentials; `terraform plan`
   requires creds + a state backend; `terraform apply` is not git-reversible. Tier 1 is
   **author / analyze / gate**. Generating or executing a live plan is Tier 2 (`specs/iac-live-apply/`).
@@ -242,9 +242,9 @@ On `verdict: "escalate"`, the **orchestrator** (not this worker) calls
 with `kind: "human-required"` and parks the task per `protocol/escalation.md`.
 
 This worker does NOT write the escalation payload. On an `escalate` verdict, emit `.kata/iac.json`
-and append `ESCALATE` to [[kata-board]] with a one-line summary. Stop; do not apply or re-gate.
+and append `ESCALATE` to [[kata-cursor]] with a one-line summary. Stop; do not apply or re-gate.
 
-On `verdict: "fail"`, append `BLOCK` to [[kata-board]] with the specific finding. Revise the IaC,
+On `verdict: "fail"`, append `BLOCK` to [[kata-cursor]] with the specific finding. Revise the IaC,
 re-run the gate from Step 1. On `verdict: "pass"`, append `DONE` and hand the diff to the
 orchestrator for integration.
 
