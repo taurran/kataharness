@@ -8,7 +8,9 @@ non-zero when any ERROR finding is present.
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
+import json
 import re
 import subprocess
 import sys
@@ -18,11 +20,13 @@ from pathlib import Path
 
 import yaml
 
+import evidence_grammar
 import footprint
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
 MODULES_DIR = REPO_ROOT / "modules"
+ADAPTERS_DIR = REPO_ROOT / "adapters"
 README = REPO_ROOT / "README.md"
 
 CATEGORY_ORDER = ["plan", "coordinate", "execute", "evaluate", "handoff", "meta", "cognition"]
@@ -1006,6 +1010,84 @@ def check_protocol_integrity(_skills: list[Skill]) -> list[Finding]:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# G24 — the DOC-LAYER fingerprint pin (conductor ruling, Loop A 2026-08-17)
+#
+# THE GAP, DEMONSTRATED LIVE, NOT ARGUED: the fingerprint machinery above is
+# PROTOCOL_DIR-scoped — `PROTOCOL_FINGERPRINTS` is keyed by bare filename and
+# resolved as `PROTOCOL_DIR / fname`. `docs/DETERMINISM-DOCTRINE.md` is a frozen
+# behavioural contract of exactly the same class as a protocol schema (AGENTS.md
+# routes every run through it), and it had NO pin of any kind. The conductor's
+# Loop-A spot-audit mutated ONE WORD of the doctrine (RETIRED -> RETAINED), ran
+# the validator, and got exit 0: the mutation was not caught, and the file was
+# restored byte-clean. That is the KH-T02 shape in a second directory.
+#
+# WHY A SECOND TABLE RATHER THAN WIDENING THE FIRST: `PROTOCOL_FINGERPRINTS`'
+# keys are BARE FILENAMES with an implied `protocol/` parent, and that implication
+# is load-bearing in two other places — `check_protocol_folder_is_fully_registered`
+# enumerates `protocol/` and requires every file there to be registered, and
+# `test_validate_prime_directives` pins the fingerprint set to REQUIRED_PROTOCOL
+# minus its two declared exemptions. A `docs/...` key in that dict would either
+# break the set equality or force the folder enumerator to special-case a foreign
+# path. Two tables, each with ONE uniform key grammar, keeps both invariants exact
+# and costs nothing but a second loop: the normaliser, the digest function, the
+# `--update-protocol-fingerprint` printer and the two-step discipline are shared,
+# not duplicated.
+#
+# THE TWO-STEP IS PRESERVED EXACTLY. The updater PRINTS; it never rewrites the
+# pin. A tamper-check that re-blesses itself is not a tamper-check — a human
+# pasting the value is what makes the step a review. The INITIAL value below is a
+# deliberate non-digest SENTINEL: it is EXPECTED to mismatch, loudly and by name,
+# until the conductor pastes the reviewed digest at integration. This follows the
+# `cursor.md` precedent recorded above — a pin whose value is knowingly wrong is
+# the two-step working, not a regression — and it is why a builder never pastes
+# the first value of a pin it just created: self-blessing at birth would make the
+# whole mechanism ornamental.
+#
+# CLAUSE PINS ARE DELIBERATELY OUT OF SCOPE HERE. Ruling G24 is the fingerprint
+# ADDITION. A doc-layer clause layer is a real follow-on (it is what survives an
+# approved reflow), and it is recorded as such rather than smuggled in beside it.
+# --------------------------------------------------------------------------- #
+
+#: Digest of the normalised DOC-layer file, keyed by REPO-RELATIVE POSIX path.
+#: Update ONLY via --update-protocol-fingerprint, after reviewing the diff.
+DOCS_FINGERPRINTS: dict[str, str] = {
+    # G24, wave 8: the pin ADDITION. The value below is the sentinel described
+    # above — it MUST mismatch until the conductor reviews the printed candidate
+    # and pastes it at integration. Never paste it from a builder.
+    "docs/DETERMINISM-DOCTRINE.md": "PENDING-CONDUCTOR-PASTE",
+}
+
+
+@check
+def check_docs_integrity(_skills: list[Skill]) -> list[Finding]:
+    """G24: pinned DOC-layer contracts must match their approved digest.
+
+    The protocol-side sibling of this check is ``check_protocol_integrity``; the
+    normalisation, the digest and the re-approval flow are literally the same
+    functions, so a reflow or a bolded word costs nothing here either.
+
+    Returns:
+        One ``ERROR`` per missing or mismatched pinned doc.
+    """
+    out: list[Finding] = []
+    for rel, golden in sorted(DOCS_FINGERPRINTS.items()):
+        path = REPO_ROOT / rel
+        if not path.exists():
+            out.append(Finding("ERROR", rel, "pinned doc-layer contract missing"))
+            continue
+        actual = protocol_fingerprint(path)
+        if actual != golden:
+            out.append(Finding(
+                "ERROR", rel,
+                f"fingerprint mismatch (expected {golden[:12]}…, got {actual[:12]}…). "
+                "If this edit is intended: review the diff, then run "
+                "`python validate_skills.py --update-protocol-fingerprint` and paste the new value "
+                "into DOCS_FINGERPRINTS.",
+            ))
+    return out
+
+
 TAXONOMY = REPO_ROOT / "docs" / "TAXONOMY.md"
 
 
@@ -1138,6 +1220,391 @@ def check_model_in_skill_frontmatter(skills: list[Skill]) -> list[Finding]:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# EV-1 — the Trust Regression Suite: the badge -> check registry (DESIGN §9, LOCKED)
+#
+# "Trust can only be claimed where a machine can re-derive the claim." The one-time
+# promise audit found that honest labels live exactly where validate_skills runs;
+# EV-1 turns that correlation into a standing CI regression, so facade REGROWTH is a
+# validator failure rather than a future hand-audit finding.
+#
+# The registry (tools/badge_registry.json) maps every Guardian claim site in the
+# declared doc layer to one of three buckets, and this check walks BOTH directions —
+# the `check_reuse_claims_producers_exist` registry-vs-tree precedent, doubled:
+#
+#   forward   an UNCITED badge fails: a doc-layer line carrying a claim term that no
+#             registry entry covers is an ERROR, by file and line.
+#   backward  a CITED-BUT-DEAD check fails: a `badges` entry whose check id does not
+#             resolve live is an ERROR, and so is any entry (in any bucket) whose
+#             file/anchor no longer resolves to a claim site — a registry pointing at
+#             a badge that has moved on is a registry that guards nothing.
+#
+# ANTI-VACUITY COMPANION (TM-D3, the stated design law): this check REFUSES to certify
+# over an empty scan. Zero doc-layer files discovered, or zero claim sites found across
+# them, is an ERROR — never a silent green. A guard that certifies nothing must say so,
+# because "0 findings" and "0 inputs" are the two states a facade lives in.
+# --------------------------------------------------------------------------- #
+
+BADGE_REGISTRY = REPO_ROOT / "tools" / "badge_registry.json"
+
+#: Schema version this checker reads. A future shape bumps it and fails loudly here
+#: rather than being half-read by an older validator (the ledger-version discipline).
+BADGE_REGISTRY_VERSION = 1
+
+#: The three buckets, in the order findings are reported.
+BADGE_BUCKETS: tuple[str, ...] = ("badges", "pending_graduation", "non_claims")
+
+#: Guardian grades that assert NO trust. Legal as a `pending_graduation.honest_grade`;
+#: never a claim term, because an honest downgrade needs no citation (DESIGN §6.2).
+BADGE_DOWNGRADES: frozenset[str] = frozenset({"Honor-system", "Dormant", "Broken"})
+
+
+class BadgeRegistryError(ValueError):
+    """The registry could not be read or does not conform. Fail-closed (D136)."""
+
+
+def load_badge_registry(path: Path | None = None) -> dict:
+    """Load + shape-check the committed badge registry.
+
+    Fail-closed at every step, for the same reason ``load_probe_registry`` is: an
+    absent or malformed registry must read as a TOOLING refusal, never as an empty
+    registry that silently turns every badge site into a pass.
+
+    Args:
+        path: Explicit registry path, or ``None`` for the committed default.
+
+    Returns:
+        The parsed registry mapping.
+
+    Raises:
+        BadgeRegistryError: on any read, JSON, version or shape violation.
+    """
+    target = BADGE_REGISTRY if path is None else Path(path)
+    try:
+        text = target.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise BadgeRegistryError(
+            f"cannot read the committed badge registry at {str(target)!r} ({exc}) — "
+            "refusing to certify any Guardian badge (EV-1 fail-closed)."
+        ) from exc
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise BadgeRegistryError(f"badge registry is not valid JSON ({exc}).") from exc
+    if not isinstance(data, dict):
+        raise BadgeRegistryError("badge registry must be a JSON object.")
+    if data.get("version") != BADGE_REGISTRY_VERSION:
+        raise BadgeRegistryError(
+            f"badge registry version {data.get('version')!r} is not the version this "
+            f"validator reads ({BADGE_REGISTRY_VERSION})."
+        )
+    for key in ("doc_layer", "claim_terms"):
+        value = data.get(key)
+        if not isinstance(value, list) or not value or not all(isinstance(v, str) and v for v in value):
+            raise BadgeRegistryError(f"badge registry '{key}' must be a non-empty list of strings.")
+    for bucket in BADGE_BUCKETS:
+        value = data.get(bucket)
+        if not isinstance(value, list) or not all(isinstance(e, dict) for e in value):
+            raise BadgeRegistryError(f"badge registry '{bucket}' must be a list of objects.")
+    return data
+
+
+def _badge_doc_layer_files(registry: dict, repo_root: Path) -> list[Path]:
+    """Every file the declared ``doc_layer`` globs resolve to, sorted and de-duplicated.
+
+    ``sorted`` is mandatory, not cosmetic: DETERMINISM-DOCTRINE law 2 — no unsorted glob
+    result may drive artifact content, and findings ARE content.
+    """
+    found: set[Path] = set()
+    for pattern in registry["doc_layer"]:
+        found.update(p for p in repo_root.glob(pattern) if p.is_file())
+    return sorted(found)
+
+
+def _badge_sites(registry: dict, repo_root: Path) -> list[tuple[str, int, str]]:
+    """Every ``(repo-relative path, 1-based line number, line)`` carrying a claim term."""
+    terms = registry["claim_terms"]
+    sites: list[tuple[str, int, str]] = []
+    for path in _badge_doc_layer_files(registry, repo_root):
+        rel = path.relative_to(repo_root).as_posix()
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if any(term in line for term in terms):
+                sites.append((rel, lineno, line))
+    return sites
+
+
+def _test_node_is_defined(repo_root: Path, node_id: str) -> str | None:
+    """Liveness of a ``test:`` node id: the file exists AND defines the named test.
+
+    Returns:
+        ``None`` when the node resolves; otherwise the reason it is dead.
+    """
+    rel, _, name = node_id.rpartition("::")
+    name = name.split("[", 1)[0]              # a parametrized id names the same function
+    rel = rel.split("::", 1)[0]               # `path::Class::method` -> the file part
+    path = repo_root / rel
+    if not path.is_file():
+        return f"test file {rel!r} does not exist"
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except SyntaxError as exc:
+        return f"test file {rel!r} does not parse ({exc.__class__.__name__})"
+    defined = {
+        n.name for n in ast.walk(tree)
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+    }
+    if name not in defined:
+        return f"{rel!r} defines no test named {name!r}"
+    return None
+
+
+def _badge_check_is_live(raw: str, repo_root: Path) -> str | None:
+    """Resolve one badge check id. ``None`` means live; a string is why it is dead.
+
+    Grammar and path guarding are ``evidence_grammar``'s, unchanged and NOT
+    re-implemented: :func:`evidence_grammar.compile_declaration` parses the closed
+    three-form declaration, refuses a freeform command string, guards the path, and
+    resolves a ``probe:`` NAME against the committed probe registry. LIVENESS is the
+    layer this function adds on top — ``compile_declaration`` documents that it checks
+    existence of nothing, deliberately, because a frozen PLAN may declare evidence for
+    files a later wave creates. A BADGE is the opposite case: the claim is being made
+    NOW, so its check must exist NOW.
+    """
+    try:
+        compiled = evidence_grammar.compile_declaration(raw, repo_root=repo_root)
+    except evidence_grammar.EvidenceGrammarError as exc:
+        return f"check id is not a legal evidence declaration: {exc}"
+    if compiled.form == "artifact":
+        return None if (repo_root / compiled.path).exists() else f"artifact {str(compiled.path)!r} does not exist"
+    if compiled.form == "test":
+        return _test_node_is_defined(repo_root, raw.split(":", 1)[1])
+    if compiled.status != "active":
+        return (
+            f"probe is registered with status {compiled.status!r} — a declared-before-active "
+            "probe is not a live check for a claim being made today; this site belongs in "
+            "`pending_graduation` until the probe goes active"
+        )
+    return None
+
+
+@check
+def check_badge_registry(_skills: list[Skill]) -> list[Finding]:
+    """EV-1 (default-FAIL): every Guardian claim in the doc layer is registered, both ways.
+
+    Returns:
+        ``ERROR`` findings for: an unreadable/malformed registry, an empty scan (zero
+        files or zero sites), a duplicate entry id, a malformed entry, an uncited badge
+        site, a stale registry entry, and a ``badges`` entry whose check is dead.
+    """
+    try:
+        registry = load_badge_registry()
+    except BadgeRegistryError as exc:
+        return [Finding("ERROR", "tools/badge_registry.json", str(exc))]
+
+    out: list[Finding] = []
+
+    # ---- shape: ids unique, required fields present, honest grades honest ----
+    seen_ids: set[str] = set()
+    entries: list[tuple[str, dict]] = []
+    required = {
+        "badges": ("id", "file", "anchor", "claim", "check"),
+        "pending_graduation": ("id", "file", "anchor", "claim", "honest_grade", "route"),
+        "non_claims": ("id", "file", "anchor", "reason"),
+    }
+    for bucket in BADGE_BUCKETS:
+        for entry in registry[bucket]:
+            entry_id = entry.get("id")
+            where = f"badge_registry.{bucket}[{entry_id!r}]"
+            missing = [k for k in required[bucket] if not isinstance(entry.get(k), str) or not entry[k].strip()]
+            if missing:
+                out.append(Finding("ERROR", where, f"entry is missing non-empty field(s): {missing}"))
+                continue
+            if entry_id in seen_ids:
+                out.append(Finding("ERROR", where, "duplicate registry entry id"))
+                continue
+            seen_ids.add(entry_id)
+            if bucket == "pending_graduation" and entry["honest_grade"] not in BADGE_DOWNGRADES:
+                out.append(Finding(
+                    "ERROR", where,
+                    f"honest_grade {entry['honest_grade']!r} is not a Guardian downgrade "
+                    f"({sorted(BADGE_DOWNGRADES)}). A row waiting on its wiring must be readable "
+                    "TODAY at a grade that claims no trust — otherwise the bucket is a place to "
+                    "park a badge instead of a place to route one.",
+                ))
+            entries.append((bucket, entry))
+
+    # ---- anti-vacuity: refuse to certify an empty scan (TM-D3) ----
+    files = _badge_doc_layer_files(registry, REPO_ROOT)
+    if not files:
+        out.append(Finding(
+            "ERROR", "tools/badge_registry.json",
+            "0 doc-layer files discovered from the declared `doc_layer` globs — refusing to "
+            "certify an empty scan (check the globs and the repo root).",
+        ))
+        return out
+    sites = _badge_sites(registry, REPO_ROOT)
+    if not sites:
+        out.append(Finding(
+            "ERROR", "tools/badge_registry.json",
+            f"0 Guardian claim sites found across {len(files)} doc-layer file(s) — refusing to "
+            "certify a scan with zero inputs. Either `claim_terms` no longer matches the "
+            "Guardian vocabulary or the doc layer is mis-rooted.",
+        ))
+        return out
+
+    # ---- forward: every claim site is covered by exactly one bucket entry ----
+    by_file: dict[str, list[tuple[str, dict]]] = {}
+    for bucket, entry in entries:
+        by_file.setdefault(entry["file"], []).append((bucket, entry))
+    matched_ids: set[str] = set()
+    for rel, lineno, line in sites:
+        covering = [(b, e) for b, e in by_file.get(rel, []) if e["anchor"] in line]
+        if not covering:
+            out.append(Finding(
+                "ERROR", f"{rel}:{lineno}",
+                "uncited Guardian badge — this line carries a claim term and no "
+                "tools/badge_registry.json entry covers it. Register it: `badges` with a live "
+                "check id if the claim is machine-re-derivable, `pending_graduation` with its "
+                "honest grade and route if the wiring has not landed, or `non_claims` with a "
+                "written reason if it asserts no trust. EV-1: trust can only be claimed where a "
+                f"machine can re-derive the claim. Line: {line.strip()!r}",
+            ))
+            continue
+        matched_ids.update(e["id"] for _, e in covering)
+
+    # ---- backward 1: no entry points at a badge site that is gone ----
+    for bucket, entry in entries:
+        if entry["id"] in matched_ids:
+            continue
+        out.append(Finding(
+            "ERROR", f"badge_registry.{bucket}[{entry['id']!r}]",
+            f"stale registry entry — no line in {entry['file']!r} both carries a claim term and "
+            f"contains the anchor {entry['anchor']!r}. The badge moved, was reworded, or the file "
+            "is outside the declared doc_layer; re-anchor the entry or remove it.",
+        ))
+
+    # ---- backward 2: no badge cites a dead check ----
+    for entry in registry["badges"]:
+        if not isinstance(entry.get("check"), str) or not entry["check"].strip():
+            continue  # already reported by the shape pass
+        dead = _badge_check_is_live(entry["check"], REPO_ROOT)
+        if dead:
+            out.append(Finding(
+                "ERROR", f"badge_registry.badges[{entry.get('id')!r}]",
+                f"cited-but-dead check {entry['check']!r} — {dead}. A badge whose check cannot be "
+                "re-run is a facade with a footnote; fix the citation, or move the row to "
+                "`pending_graduation` with its honest grade until the check exists.",
+            ))
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Exec-safety mechanical scan — SCOPE EXTENSION to adapters/**/hooks/*.py (RS-L4)
+#
+# The AST scan in tools/tests/test_exec_safety.py binds to `tools/*.py` only. Hooks are
+# the one surface that runs on the HOST's trigger rather than on ours, with the host's
+# environment and the host's payload on stdin — the highest-value place for an
+# unregistered sink to appear, and the only production Python the scan could not see.
+# The wave-8 seam guard lands at adapters/claude/hooks/kata-seam-guard.py, so the scope
+# is widened BEFORE the file exists: registering the guard after the guarded thing
+# arrives is the D111 whack-a-mole order this repo deliberately inverts.
+#
+# Two rules, matching the contract's own two:
+#   1. NO `shell=True` in a hook, at all. The operator-domain allowlist that admits
+#      mutation_run/run_result is a tools/ concession; a hook has no such standing.
+#   2. Any hook holding a real subprocess sink must be REGISTERED by name in
+#      protocol/exec-safety.md — the sink registry's verify-before-add duty.
+#
+# Anti-vacuity companion (TM-D3): zero hook files discovered is an ERROR. A scan of
+# nothing certifies nothing.
+# --------------------------------------------------------------------------- #
+
+EXEC_SAFETY_DOC = REPO_ROOT / "protocol" / "exec-safety.md"
+
+#: The hook scan scope. `**` is deliberate: an adapter may nest its hooks.
+HOOK_SCAN_GLOB = "**/hooks/*.py"
+
+#: The subprocess entry points the sink scan recognises (mirrors the tools/ scan's set).
+_SUBPROCESS_SINK_ATTRS: frozenset[str] = frozenset({"run", "Popen", "call", "check_output", "check_call"})
+
+
+def _hook_scan_paths(adapters_dir: Path = None) -> list[Path]:
+    """Every adapter hook module, sorted (Determinism Doctrine law 2)."""
+    root = ADAPTERS_DIR if adapters_dir is None else adapters_dir
+    return sorted(p for p in root.glob(HOOK_SCAN_GLOB) if p.is_file()) if root.exists() else []
+
+
+def _module_has_subprocess_sink(tree: ast.Module) -> bool:
+    """True when *tree* contains a real ``subprocess.<sink>(...)`` call node.
+
+    AST, not grep: a docstring or comment that mentions subprocess is not a sink, and a
+    check that could not tell them apart would be trained away within a week.
+    """
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr in _SUBPROCESS_SINK_ATTRS
+                and isinstance(node.func.value, ast.Name) and node.func.value.id == "subprocess"):
+            return True
+    return False
+
+
+def _module_uses_shell_true(tree: ast.Module) -> bool:
+    """True when *tree* passes a literal ``shell=True`` to any call."""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            for kw in node.keywords:
+                if kw.arg == "shell" and isinstance(kw.value, ast.Constant) and kw.value.value is True:
+                    return True
+    return False
+
+
+@check
+def check_adapter_hook_exec_safety(_skills: list[Skill]) -> list[Finding]:
+    """RS-L4: adapter hooks obey the exec-safety contract the tools/ scan already enforces.
+
+    Returns:
+        ``ERROR`` findings for an empty scan, an unparseable hook, a ``shell=True`` in a
+        hook, and any hook with a subprocess sink that ``protocol/exec-safety.md`` does
+        not register by name.
+    """
+    paths = _hook_scan_paths()
+    if not paths:
+        return [Finding(
+            "ERROR", "adapters/**/hooks/",
+            "0 adapter hook modules discovered — refusing to certify an empty exec-safety scan "
+            "(TM-D3 anti-vacuity: a scan over zero inputs certifies nothing). Check ADAPTERS_DIR.",
+        )]
+    if not EXEC_SAFETY_DOC.exists():
+        return [Finding("ERROR", "protocol/exec-safety.md", "the exec-safety contract is missing")]
+    doc = EXEC_SAFETY_DOC.read_text(encoding="utf-8")
+
+    out: list[Finding] = []
+    for path in paths:
+        rel = path.relative_to(REPO_ROOT).as_posix()
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except SyntaxError as exc:
+            out.append(Finding("ERROR", rel, f"hook does not parse ({exc.__class__.__name__}: {exc}) — "
+                                             "an unreadable decision input is never a permissive pass (D136)"))
+            continue
+        if _module_uses_shell_true(tree):
+            out.append(Finding(
+                "ERROR", rel,
+                "shell=True in an adapter hook. A hook runs on the HOST's trigger with the host's "
+                "environment and a host-supplied payload on stdin — external trust domain. Build a "
+                "validated structured argv with shell=False (protocol/exec-safety.md).",
+            ))
+        if _module_has_subprocess_sink(tree) and path.stem not in doc:
+            out.append(Finding(
+                "ERROR", rel,
+                f"subprocess sink in an UNREGISTERED hook: {path.stem!r} does not appear in "
+                "protocol/exec-safety.md. Add its row to the sink registry with its trust domain "
+                "and guard — an unregistered sink is a live security finding, never a test to "
+                "silence.",
+            ))
+    return out
+
+
 def run_checks(skills: list[Skill]) -> list[Finding]:
     findings: list[Finding] = []
     for fn in CHECKS:
@@ -1155,23 +1622,34 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--update-protocol-fingerprint", action="store_true",
-        help="print the current fingerprint of each pinned protocol file so it can be pasted into "
-             "PROTOCOL_FINGERPRINTS after reviewing the diff (KH-T02). Prints only — it never "
-             "rewrites the pin, because a self-updating tamper-check protects nothing.",
+        help="print the current fingerprint of each pinned protocol file AND each pinned doc-layer "
+             "file (G24) so it can be pasted into PROTOCOL_FINGERPRINTS / DOCS_FINGERPRINTS after "
+             "reviewing the diff (KH-T02). Prints only — it never rewrites the pin, because a "
+             "self-updating tamper-check protects nothing.",
     )
     args = parser.parse_args(argv)
 
     if args.update_protocol_fingerprint:
         # Deliberately print-only. Auto-writing the golden would let any edit re-bless
-        # itself, which is exactly the workaround this check exists to remove.
+        # itself, which is exactly the workaround this check exists to remove. G24 adds a
+        # SECOND section for the doc layer; both are printed by one command so the
+        # re-approval is one review, not two half-remembered ones.
+        print("# PROTOCOL_FINGERPRINTS")
         for fname in sorted(PROTOCOL_FINGERPRINTS):
             path = PROTOCOL_DIR / fname
             if not path.exists():
                 print(f"ERROR: protocol/{fname}: missing", file=sys.stderr)
                 return 1
             print(f'    "{fname}": "{protocol_fingerprint(path)}",')
-        print("\nReview the diff, then paste the line(s) above into PROTOCOL_FINGERPRINTS "
-              "in validate_skills.py.", file=sys.stderr)
+        print("# DOCS_FINGERPRINTS (G24)")
+        for rel in sorted(DOCS_FINGERPRINTS):
+            path = REPO_ROOT / rel
+            if not path.exists():
+                print(f"ERROR: {rel}: missing", file=sys.stderr)
+                return 1
+            print(f'    "{rel}": "{protocol_fingerprint(path)}",')
+        print("\nReview the diff, then paste the line(s) above into PROTOCOL_FINGERPRINTS / "
+              "DOCS_FINGERPRINTS in validate_skills.py.", file=sys.stderr)
         return 0
 
     skills = load_skills()

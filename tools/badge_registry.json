@@ -1,0 +1,277 @@
+{
+  "_readme": [
+    "EV-1 - the badge->check registry (trust-model DESIGN section 9, LOCKED).",
+    "",
+    "THE RULE: trust can only be claimed where a machine can re-derive the claim. Every",
+    "Guardian claim term appearing anywhere in the declared `doc_layer` must be accounted",
+    "for HERE, in exactly one of three buckets, and `validate_skills.check_badge_registry`",
+    "walks BOTH directions on every commit:",
+    "",
+    "  forward  - a doc-layer line carrying a claim term that no entry covers FAILS",
+    "             (the uncited-badge direction: facade regrowth is a validator failure,",
+    "             not a future hand-audit finding).",
+    "  backward - a registry entry whose file/anchor no longer resolves FAILS, and a",
+    "             `badges` entry whose cited check is dead FAILS (the cited-but-dead",
+    "             direction). The registry-vs-tree precedent is",
+    "             `validate_skills.check_reuse_claims_producers_exist`.",
+    "",
+    "THE THREE BUCKETS:",
+    "  badges              - a real Guardian trust/enforcement claim WITH a live check id.",
+    "  pending_graduation  - a real claim whose check is NOT yet live. Carries the honest",
+    "                        non-claim Guardian grade it must be read at today plus the",
+    "                        route that will make it true. This is the bucket the T6-T11",
+    "                        facade rows sit in until their wiring lands.",
+    "  non_claims          - the term appears but asserts no trust: a vocabulary",
+    "                        definition, a heading, a negation (\"never render it as",
+    "                        Verified\"), a different vocabulary that collides on the word",
+    "                        (reuse-claims' `Verified` class), or ordinary English.",
+    "                        Each carries a WRITTEN reason. This is an escape hatch by",
+    "                        construction - the reason field and the commit are what make",
+    "                        using it a loud act rather than a quiet one (the",
+    "                        PROTOCOL_EXEMPT bargain, stated not designed away).",
+    "",
+    "THE GRADUATION MECHANISM (how a facade row becomes an honest badge):",
+    "  a `pending_graduation` row graduates by being MOVED into `badges` by the task that",
+    "  lands its wiring, in the same commit, gaining a `check` that resolves live. It",
+    "  cannot graduate any other way: `badges` refuses an entry without a live check, and",
+    "  DELETING the row instead leaves its badge site uncovered in the tree, which fails",
+    "  the forward direction by name. Downgrading it stays legal and honest - move it to",
+    "  `non_claims` only if the site stops making a claim at all.",
+    "",
+    "CHECK-ID GRAMMAR: the CLOSED three-form evidence grammar, unchanged and not",
+    "  re-implemented - `artifact:<repo-relative-path>` | `test:<pytest-node-id>` |",
+    "  `probe:<registered-name>`, parsed and guarded by",
+    "  `evidence_grammar.compile_declaration` (tools/evidence_grammar.py). Paths are",
+    "  REPO-relative, matching the PLAN's `evidence:` declarations. Liveness is checked on",
+    "  top of the grammar: a `test:` node's file must exist AND define the named test, an",
+    "  `artifact:` path must exist, and a `probe:` name must be registered in",
+    "  tools/probe_registry.json with status `active` - a `declared-before-active` probe is",
+    "  NOT a live check for a Verified badge, it is a `pending_graduation` route.",
+    "",
+    "WHY THIS FILE IS NOT FINGERPRINTED: it is a registry that grows with the codebase,",
+    "  the same structural exemption `protocol/config.md` and `protocol/exec-safety.md`",
+    "  earn in PROTOCOL_FINGERPRINTS. The risk here is a MISSING entry, which the forward",
+    "  direction already covers; a digest would impose a re-approval per routine addition,",
+    "  which is exactly how blind re-approval gets trained.",
+    "",
+    "HONEST RESIDUALS, stated rather than designed away:",
+    "  1. Claim-term matching is CASE-SENSITIVE and literal. A site that spells the grade",
+    "     some other way is invisible to this check. Guarding the Guardian vocabulary is",
+    "     what EV-1 scopes; guarding arbitrary trust-flavoured prose is judgment and stays",
+    "     with the reviewer and the grounding gate.",
+    "  2. Classification into the three buckets is HUMAN judgment, committed as data. The",
+    "     check enforces that every site is classified and that every cited check is live;",
+    "     it does not and cannot decide that a classification was honest.",
+    "  3. Guardian DOWNGRADES (`Honor-system`, `Dormant`, `Broken`) are deliberately NOT",
+    "     claim terms. EV-1 guards the claim of verification; an honest downgrade asserts",
+    "     no trust and needs no citation."
+  ],
+  "version": 1,
+  "doc_layer": [
+    "protocol/*.md",
+    "docs/*.md",
+    "docs/platforms/*.md",
+    "skills/*/*/SKILL.md",
+    "skills/*/*/RUBRIC.md",
+    "modules/*/*/SKILL.md",
+    "AGENTS.md",
+    "CONTEXT.md",
+    "README.md",
+    ".planning/BACKLOG.md",
+    ".planning/specs/trust-model/evidence/promise-audit.md"
+  ],
+  "_doc_layer_note": [
+    "The declared claim-bearing surface: the shipped contract layer (protocol/, docs/,",
+    "skills/, modules/, the root docs) plus the two named .planning artifacts that carry",
+    "standing Guardian marks - BACKLOG.md (the section 6.6 truth-status rule: \"BUILT\" is",
+    "legal ONLY with the Verified evidence citation) and the promise audit (the row set",
+    "wave 9 relabels). The REST of .planning/** is deliberately out of scope: grill",
+    "ledgers, observation logs and design records are an ACCOUNT of a discussion, not a",
+    "standing claim to a reader, and pulling them in would make the registry a transcript",
+    "index. Narrowing this list is a visible edit to a committed file, by design."
+  ],
+  "claim_terms": [
+    "Verified",
+    "Partially verified"
+  ],
+  "badges": [
+    {
+      "id": "orchestrate-plan-governor-rung",
+      "file": "skills/coordinate/kata-orchestrate/SKILL.md",
+      "anchor": "**Verified** (`kata_dispatch.GOVERNOR_GRADE",
+      "claim": "Verified",
+      "check": "test:tools/tests/test_kata_dispatch.py::test_mint_refuses_unmet_governor_state",
+      "note": "The `plan` governor rung is graded Verified because the mint REFUSES on an unfrozen plan - the cited test exercises that refusal (`governs='plan'` against a draft plan -> 'plan rung unmet'), so the grade is re-derivable rather than asserted."
+    },
+    {
+      "id": "orchestrate-resilience-local-default",
+      "file": "skills/coordinate/kata-orchestrate/SKILL.md",
+      "anchor": "`resilience: Partially verified (local)`",
+      "claim": "Partially verified",
+      "check": "test:tools/tests/test_kata_dispatch.py::test_a_worker_note_cannot_lift_the_resilience_level",
+      "note": "The healthy default level. The cited test pins it to RESILIENCE_LOCAL and proves the level cannot be lifted by a worker-authored record - the failure mode that would turn this Partially-verified into a manufactured Verified."
+    },
+    {
+      "id": "config-resilience-receipt-never-the-flag",
+      "file": "protocol/config.md",
+      "anchor": "grades `Verified (full)` only on a push",
+      "claim": "Verified",
+      "check": "test:tools/tests/test_kata_dispatch.py::test_resilience_is_a_fold_over_recorded_fact",
+      "note": "DESIGN section 6.2's \"never the config flag\", enforced in code. The cited test is the one that folds RECORDED outcomes and refuses the flag as an input."
+    }
+  ],
+  "pending_graduation": [
+    {
+      "id": "iac-safety-claim-table-header",
+      "file": "protocol/iac-safety.md",
+      "anchor": "| Claim | Verified surface |",
+      "claim": "Verified",
+      "honest_grade": "Honor-system",
+      "route": "guardian-relabel-pass (wave 9) - promise-audit finding 8: the table is \"a verification ritual whose cited proof is a function with no caller. The ritual itself is the facade.\"",
+      "note": "The header names the whole table a verified surface, which is a trust claim about every row beneath it. It graduates when the cited surfaces have live callers and a test that re-derives them."
+    },
+    {
+      "id": "iac-safety-apply-claim-table-header",
+      "file": "protocol/iac-safety.md",
+      "anchor": "| Claim | Verified surface (`tools/iac_apply.py`) |",
+      "claim": "Verified",
+      "honest_grade": "Honor-system",
+      "route": "guardian-relabel-pass (wave 9) - the same finding-8 class as the section 297 table; iac_apply is a declared n=0-live surface.",
+      "note": "Same shape as the sibling table above and graded the same way: the column header asserts a verified surface for every row, with no check id behind it yet."
+    }
+  ],
+  "non_claims": [
+    {
+      "id": "backlog-truth-status-rule",
+      "file": ".planning/BACKLOG.md",
+      "anchor": "legal only with cited Verified evidence",
+      "reason": "States the section 6.6 rule itself (\"BUILT\" is legal only with a cited Verified evidence pointer). A statement of the citation rule is not a claim that anything is verified."
+    },
+    {
+      "id": "backlog-bl-n20-dated-audit-note",
+      "file": ".planning/BACKLOG.md",
+      "anchor": "Verified 2026-08-16: no",
+      "reason": "English past participle introducing a DATED audit observation whose evidence is inline on the following lines (`adapters/claude/agents/` absent, no repo agent definitions). It grades no harness surface and asserts no standing machine check."
+    },
+    {
+      "id": "backlog-verified-gap-prose",
+      "file": ".planning/BACKLOG.md",
+      "anchor": "Verified gap: host-Agent-tool",
+      "reason": "Ordinary English (\"a gap that was verified\") describing a research finding, not a Guardian grade on a surface."
+    },
+    {
+      "id": "backlog-dormant-not-verified-negation",
+      "file": ".planning/BACKLOG.md",
+      "anchor": "is Dormant, not Verified",
+      "reason": "A NEGATION restating the TM-D3 rule (a prover that cannot prove it can fail is Dormant). It withholds the badge rather than claiming it."
+    },
+    {
+      "id": "backlog-verified-before-proposing-prose",
+      "file": ".planning/BACKLOG.md",
+      "anchor": "Verified before proposing anything:",
+      "reason": "Ordinary English introducing the author's own pre-proposal checks; not a Guardian grade on a harness surface."
+    },
+    {
+      "id": "promise-audit-quotes-iac-table-header",
+      "file": ".planning/specs/trust-model/evidence/promise-audit.md",
+      "anchor": "the \"| Claim | Verified surface |\" table",
+      "reason": "A QUOTATION of the iac-safety table header inside the audit finding that grades it a facade. The claim itself is registered at its real site (pending_graduation `iac-safety-claim-table-header`); quoting a facade in order to name it is the opposite of asserting it."
+    },
+    {
+      "id": "context-guardian-scale-definition-verified",
+      "file": "CONTEXT.md",
+      "anchor": "**Verified** (a machine",
+      "reason": "The TM-A1 Guardian scale DEFINITION - the glossary entry that gives the word its meaning. Defining the vocabulary is not using it on a surface."
+    },
+    {
+      "id": "context-guardian-scale-definition-partial",
+      "file": "CONTEXT.md",
+      "anchor": "**Partially verified** (a machine checks part;",
+      "reason": "The same Guardian scale definition, continued onto the next line."
+    },
+    {
+      "id": "initiate-never-render-as-verified",
+      "file": "modules/initiation/kata-initiate/SKILL.md",
+      "anchor": "Never render it as Verified.",
+      "reason": "A NEGATION: the initiation rung is declared Honor-system and this sentence forbids the badge. Withholding, not claiming."
+    },
+    {
+      "id": "reuse-claims-heading",
+      "file": "protocol/reuse-claims.md",
+      "anchor": "## Verified vs phantom reuse claims",
+      "reason": "A section HEADING in the reuse-claims vocabulary, which collides on the word: a \"Verified\" reuse claim is a claim citing a resolvable surface, not a Guardian trust grade. Guarded by protocol/reuse-claims.md's own clause pins and the B5 citation-existence resolver."
+    },
+    {
+      "id": "reuse-claims-class-definition",
+      "file": "protocol/reuse-claims.md",
+      "anchor": "| **Verified** | The claim cites a concrete",
+      "reason": "The DEFINITION row for that reuse-claim class. Defining the term is not grading a surface with it."
+    },
+    {
+      "id": "bootstrap-never-dressed-as-verified",
+      "file": "skills/coordinate/kata-bootstrap/SKILL.md",
+      "anchor": "declared and never dressed as Verified;",
+      "reason": "A NEGATION guarding an Honor-system rung against being upgraded in prose."
+    },
+    {
+      "id": "orchestrate-never-render-capture-verified",
+      "file": "skills/coordinate/kata-orchestrate/SKILL.md",
+      "anchor": "never render it as `Verified (post-edge)`",
+      "reason": "A NEGATION: the capture grade is Honor-system (engine-by-conductor) until the capture edge lands, and this sentence forbids the badge."
+    },
+    {
+      "id": "evaluate-dormant-not-verified",
+      "file": "skills/evaluate/kata-evaluate/SKILL.md",
+      "anchor": "is **Dormant, not Verified**",
+      "reason": "The R-M6 negation: a judge that cannot demonstrate failure-capability is Dormant. Withholding the badge."
+    },
+    {
+      "id": "inline-eval-dormant-not-verified",
+      "file": "skills/evaluate/kata-inline-eval/SKILL.md",
+      "anchor": "is **Dormant, not Verified**",
+      "reason": "The same R-M6 negation, on the inline evaluator."
+    },
+    {
+      "id": "review-advanced-dormant-not-verified",
+      "file": "skills/evaluate/kata-review-advanced/SKILL.md",
+      "anchor": "is **Dormant, not Verified**",
+      "reason": "The same R-M6 negation, on the advanced reviewer."
+    },
+    {
+      "id": "review-essential-dormant-not-verified",
+      "file": "skills/evaluate/kata-review-essential/SKILL.md",
+      "anchor": "is **Dormant, not Verified**",
+      "reason": "The same R-M6 negation, on the essential reviewer."
+    },
+    {
+      "id": "review-standard-dormant-not-verified",
+      "file": "skills/evaluate/kata-review-standard/SKILL.md",
+      "anchor": "is **Dormant, not Verified**",
+      "reason": "The same R-M6 negation, on the standard reviewer."
+    },
+    {
+      "id": "slop-check-dormant-not-verified",
+      "file": "skills/evaluate/kata-slop-check/SKILL.md",
+      "anchor": "is **Dormant, not Verified**",
+      "reason": "The same R-M6 negation, on the slop check."
+    },
+    {
+      "id": "iac-cloudformation-verified-reuse",
+      "file": "skills/execute/kata-iac-cloudformation/SKILL.md",
+      "anchor": "**Verified reuse:** `iac_detect.scan_cfn_changeset`",
+      "reason": "The reuse-claims vocabulary again, not the Guardian scale: it asserts the cited producer EXISTS, which protocol/reuse-claims.md and the B5 citation resolver own. It makes no claim about a machine grading trust."
+    },
+    {
+      "id": "iac-terraform-verified-reuse",
+      "file": "skills/execute/kata-iac-terraform/SKILL.md",
+      "anchor": "**Verified reuse:** `iac_detect.scan_tf_plan`",
+      "reason": "The same reuse-claims vocabulary, on the terraform specialist."
+    },
+    {
+      "id": "lang-profile-reuse-surface-verified-real",
+      "file": "skills/execute/kata-lang-profile/SKILL.md",
+      "anchor": "Verified real; this skill's overlay is",
+      "reason": "Sits under the \"Reuse surfaces (verified - cite by name, protocol/reuse-claims.md)\" heading: it asserts the cited PRECEDENT exists, which is the reuse-claims guard's job, not a Guardian trust grade."
+    }
+  ]
+}
