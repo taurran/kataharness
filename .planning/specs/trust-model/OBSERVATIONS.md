@@ -896,3 +896,23 @@ G21–G26 (one veto line each) + the cursor.md paste + the two G9 commits.
   honor-system-rows cosmetic) recorded HERE as fold-candidates for any authorized touch.
 - **Operator veto surface this loop:** the G24 paste (one revert) · the four other act
   commits · rulings G27/G28 (vetoable by objection).
+
+## Loop-B FINAL EVAL — PASS (2026-08-17, fresh-context default-FAIL judge @ 000f2a6)
+
+Hostile re-derivation under the judge's own execution: 5 trailered merges + 8 named conductor
+acts (topology exact, zero substitution); zero drift across 38 paths; validator 50/0/0, ruff
+clean, full pytest 5333 passed/3 skipped ZERO failures; all six evidence nodes standalone; the
+five per-task acceptance spot-checks (corpora activation scratch-derived incl. the
+identical-hash-on-restore, gate-preconditions E8 live linux+win32-active/darwin-honor,
+grounding law-13 tamper refusal, EV-1 doctrine pin the FIFTH independent 47d6a52b derivation +
+mutation-sensitive, the G28 landed-truth clauses). **Both in-integration catches reproduced
+NUMERICALLY EXACTLY** — EV-1's 16 errors = 11 uncited + 5 stale-anchor (checked out the
+pre-reconciliation registry against the current tree), and the corpora completeness catch
+`['kata-grounding']` by name (revert-check). 12 record claims spot-verified, zero false; the
+conductor's self-reported piped-exit-code defect verified as honest-against-interest (the judge
+hit the same pipe class twice itself and re-ran every gate exit-direct). PD-2 sweep: every gap
+disclosed, no overclaim. Residuals R1–R12 carried to Loop C — **R11 is a HARD gate: the ev1
+exec-safety scan already reaches adapters/claude/hooks/, so the hook task MUST register its
+sink row or the validator fails; R5/DEF-24 (preconditions not yet demanded at the gate call
+sites) must not calcify; R10/DEF-15 (allowed= wiring) needs a ruling if ridden on the hook
+wave.** **Loop C is unlocked.**
